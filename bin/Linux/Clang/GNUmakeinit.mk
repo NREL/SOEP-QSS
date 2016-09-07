@@ -1,0 +1,54 @@
+# QSS Make Initialization File
+#
+# Language: GNU Make
+#
+# Platform: Linux/Clang
+
+# Extensions
+.SUFFIXES: # Clear default extensions
+.SUFFIXES: .cc .cpp .c .hh .hpp .h .d .o .exe .a .so
+
+# Flags
+ARFLAGS := rD
+
+# Commands
+CXX := clang++
+C := clang
+MAKEDEPEND := makedep.py
+
+# Paths
+OBJ_PATH := .
+BIN_PATH := $(QSS_bin)
+
+# Search Paths
+vpath %.cc  $(SRC_PATH)
+vpath %.cpp $(SRC_PATH)
+vpath %.c   $(SRC_PATH)
+vpath %.hh  $(INC_PATH)
+vpath %.hpp $(INC_PATH)
+vpath %.h   $(INC_PATH)
+vpath %.d   $(OBJ_PATH)
+vpath %.o   $(OBJ_PATH)
+vpath %.exe $(BIN_PATH)
+vpath %.a   $(BIN_PATH)
+vpath %.so  $(BIN_PATH)
+
+# Implicit Rules
+
+%.o : %.cc
+	@$(MAKEDEPEND) $<
+	$(CXX) $(CXXFLAGS) $(PGO) -c -o $@ $<
+
+%.o : %.cpp
+	@$(MAKEDEPEND) $<
+	$(CXX) $(CXXFLAGS) $(PGO) -c -o $@ $<
+
+%.o : %.c
+	@$(MAKEDEPEND) $<
+	$(C) $(CFLAGS) $(PGO) -c -o $@ $<
+
+%.lib : %.o
+	$(AR) $(ARFLAGS) $@ $?
+
+# Directives
+.DELETE_ON_ERROR : # Delete a target if error occurs during command execution

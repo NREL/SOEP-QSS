@@ -1,0 +1,7 @@
+#!/bin/bash
+# Google Test Linux Setup
+
+# Ubuntu doesn't provide a binary distribution so this is where we assume gtest was installed
+# Should not hurt to have this on platforms that install gtest to standard directories
+export GTEST_BIN=/opt/gtest
+export GTEST_INC=/opt/gtest/include

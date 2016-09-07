@@ -1,0 +1,10 @@
+#!/bin/bash
+# Clang C++ Build Release
+
+if [ -f $1.cc ]; then
+  CxxMainSource=$1.cc
+  OutputSpec="-o $1"
+  shift
+fi
+
+clang++ -pipe -std=c++11 -pedantic -Wall -Wextra -Winline -Wno-unknown-pragmas -ffor-scope -m64 -march=native -DNDEBUG -Ofast -fno-stack-protector -s $CxxMainSource $@ $OutputSpec

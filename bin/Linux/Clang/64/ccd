@@ -1,0 +1,3 @@
+#!/bin/bash
+# Clang C++ Compile Debug
+clang++ -pipe -std=c++11 -pedantic -Wall -Wextra -Wno-unknown-pragmas -ffor-scope -m64 -march=native -fno-omit-frame-pointer -O0 -ggdb -c $@

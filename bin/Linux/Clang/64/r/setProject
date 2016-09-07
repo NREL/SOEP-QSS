@@ -1,0 +1,18 @@
+#!/bin/bash
+# QSS Linux Clang 64-Bit Release Setup
+
+export QSS_bin=$(dirname $(readlink -m "${BASH_SOURCE[0]}"))
+
+if [ -z "$QSS" ]; then
+  export QSS=$(dirname $(dirname $(dirname $(dirname $(dirname $(dirname $(readlink -m "${BASH_SOURCE[0]}")))))))
+fi
+
+export PlatformFull=Linux/Clang/64/r
+
+export PATH=$PATH:$QSS_bin
+
+export LIBRARY_PATH=$QSS_bin:$LIBRARY_PATH
+
+export LD_LIBRARY_PATH=$QSS_bin:$LD_LIBRARY_PATH
+
+source $QSS/bin/Linux/Clang/64/setProject

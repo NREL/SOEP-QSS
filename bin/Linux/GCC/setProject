@@ -1,0 +1,15 @@
+#!/bin/bash
+# QSS Linux GCC Setup
+
+if [ -z "$QSS" ]; then
+  export QSS=$(dirname $(dirname $(dirname $(dirname $(readlink -m "${BASH_SOURCE[0]}")))))
+fi
+
+export PlatformOS=Linux
+export PlatformCompiler=Linux/GCC
+
+export PATH=$PATH:$QSS/bin/$PlatformCompiler
+
+export CPATH=.:$QSS/src:$CPATH
+
+source $QSS/bin/Linux/setProject

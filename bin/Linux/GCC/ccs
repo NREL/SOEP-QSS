@@ -1,0 +1,13 @@
+#!/bin/bash
+# GCC C++ Compile Syntax
+
+if   [ -f $1     ]; then CxxSource=$1
+elif [ -f $1.cc  ]; then CxxSource=$1.cc
+elif [ -f $1.cpp ]; then CxxSource=$1.cpp
+elif [ -f $1.cxx ]; then CxxSource=$1.cxx
+elif [ -f $1.ii  ]; then CxxSource=$1.ii
+fi
+
+[ "$CxxSource" ] && shift
+
+g++ -pipe -std=c++11 -pedantic -Wall -Wextra -Wno-unknown-pragmas -ffor-scope -fsyntax-only -x c++ -c $@ $CxxSource

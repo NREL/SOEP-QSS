@@ -1,0 +1,12 @@
+#!/bin/bash
+# QSS Linux Clang 64-Bit Setup
+
+if [ -z "$QSS" ]; then
+  export QSS=$(dirname $(dirname $(dirname $(dirname $(dirname $(readlink -m "${BASH_SOURCE[0]}"))))))
+fi
+
+export PlatformBits=Linux/Clang/64
+
+export PATH=$PATH:$QSS/bin/$PlatformBits
+
+source $QSS/bin/Linux/Clang/setProject

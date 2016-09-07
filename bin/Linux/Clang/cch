@@ -1,0 +1,25 @@
+#!/bin/bash
+# Clang C++ Wrapped Header Compile for Syntax-Checking
+
+if   [ -f $1     ]; then HeaderSource=$1
+elif [ -f $1.h   ]; then HeaderSource=$1.h
+elif [ -f $1.hh  ]; then HeaderSource=$1.hh
+elif [ -f $1.hpp ]; then HeaderSource=$1.hpp
+elif [ -f $1.hxx ]; then HeaderSource=$1.hxx
+elif [ -f $1.ii  ]; then HeaderSource=$1.ii
+fi
+
+if [ -z $HeaderSource ]; then
+  echo ERROR: Header file with that name not found
+  exit 1
+fi
+
+if [ -f $HeaderSource.cc ]; then
+  echo ERROR: Target source file exists: $HeaderSource.cc
+  exit 1
+fi
+
+echo -e \#include \"$HeaderSource\" > $HeaderSource.cc
+shift
+ccs $HeaderSource.cc $@
+rm -f $HeaderSource.cc
