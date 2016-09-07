@@ -53,13 +53,13 @@ clean :
 	-rm -f *.d *.obj $(subst \,/,$(SLB)) $(subst \,/,$(EXE))
 
 # Library from objects
-$(SLB) : $(filter-out main.obj,$(OBJ))
+$(SLB) : $(filter-out QSS.obj,$(OBJ))
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.obj)) # Prune obs objs
 	$(AR) $(ARFLAGS) /out:$@ $?
 
 # Executable from libraries
-#$(EXE) : main.obj $(SLB)
+#$(EXE) : QSS.obj $(SLB)
 #	$(LD) $(LDFLAGS) /out:$@ $^
 
 # Executable from objects
@@ -67,9 +67,6 @@ $(EXE) : $(OBJ)
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.obj)) # Prune obs objs
 	$(LD) $(LDFLAGS) /out:$@ $^
-
-# Heap allocators:
-#  ltalloc: put ltalloc.cc in source directory
 
 # Dependencies
 -include $(DEP)
