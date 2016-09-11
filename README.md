@@ -34,7 +34,7 @@ Notes:
 
 ### Variable
 * Hierarchy typed by the QSS solver method: This brings in some virtual functions that could be a performance bottleneck.
-* Integration and quantization are handled internally to avoid the cost of calls to other objects or passing of 
+* Integration and quantization are handled internally to avoid the cost of calls to other objects and passing of data packets between them.
 * Holds the iterator of its entry in the event queue to save one _O_( log N ) lookup.
 * Faster derivative update method will be added for observer variable updates from a trigger variable requantization.
 
