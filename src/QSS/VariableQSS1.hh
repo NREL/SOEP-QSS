@@ -4,7 +4,7 @@
 // QSS1 Variable
 
 // QSS Headers
-#include <QSS/QSS.hh>
+#include <QSS/globals.hh>
 #include <QSS/Variable.hh>
 #include <QSS/Function.hh>
 #include <QSS/EventQueue.hh>

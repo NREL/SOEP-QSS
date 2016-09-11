@@ -1,3 +1,5 @@
+// QSS Solver Prototype Runner
+
 // C++ Headers
 #include <algorithm>
 #include <fstream>
@@ -5,11 +7,8 @@
 #include <iostream>
 
 // QSS Headers
-#include <QSS/QSS.hh>
+#include <QSS/globals.hh>
 #include <QSS/VariableQSS1.hh>
-
-// Globals
-EventQueue< Variable > events;
 
 int
 main()
