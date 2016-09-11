@@ -1,9 +1,7 @@
 #ifndef QSS_Function_hh_INCLUDED
 #define QSS_Function_hh_INCLUDED
 
-// Linear Function Class
-
-// QSS Headers
+// Linear Function
 
 // C++ Headers
 #include <cassert>

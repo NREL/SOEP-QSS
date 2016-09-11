@@ -4,6 +4,7 @@
 // QSS Variable Abstract Base Class
 
 // QSS Headers
+#include <QSS/EventQueue.hh>
 
 // C++ Headers
 #include <algorithm>
@@ -11,12 +12,15 @@
 #include <string>
 #include <vector>
 
+// QSS Variable Abstract Base Class
 class Variable
 {
 
 public: // Types
 
+	using Time = double;
 	using Variables = std::vector< Variable * >;
+	using EventQ = EventQueue< Variable >;
 
 protected: // Creation
 
@@ -59,6 +63,21 @@ protected: // Assignment
 	operator =( Variable && ) noexcept = default;
 
 public: // Properties
+
+	// Event Queue Iterator
+	EventQ::iterator &
+	event()
+	{
+		return event_;
+	}
+
+	// Set Event Queue Iterator
+	void
+	event( EventQ::iterator const i )
+	{
+		event_ = i;
+		assert( event_->second == this );
+	}
 
 	// Observers
 	Variables const &
@@ -115,22 +134,22 @@ public: // Methods
 	// Continuous Value at Time t
 	virtual
 	double
-	x( double const t ) const = 0;
+	x( Time const t ) const = 0;
 
 	// Quantized Value at Time t
 	virtual
 	double
-	q( double const t ) const = 0;
+	q( Time const t ) const = 0;
 
 	// Continuous Derivative Value at Time t
 	virtual
 	double
-	d_x( double const t ) const = 0;
+	d_x( Time const t ) const = 0;
 
 	// Quantized Derivative Value at Time t
 	virtual
 	double
-	d_q( double const t ) const = 0;
+	d_q( Time const t ) const = 0;
 
 	// Advance Trigger to Time tEnd
 	virtual
@@ -140,17 +159,22 @@ public: // Methods
 	// Advance Observer to Time t
 	virtual
 	void
-	advance( double const t ) = 0;
+	advance( Time const t ) = 0;
 
 public: // Data
 
 	std::string name;
 	double aTol{ 1.0e-6 }, rTol{ 1.0e-6 }; // Absolute and relative tolerances
-	double tBeg{ 0.0 }, tEnd{ 0.0 }; // Active time range
+	Time tBeg{ 0.0 }, tEnd{ infinity }; // Active time range
 
 private: // Data
 
 	Variables observers_; // Variables dependent on this Variable
+	EventQ::iterator event_; // Iterator to event queue entry
+
+public: // Static Data
+
+	static Time const infinity;
 
 };
 

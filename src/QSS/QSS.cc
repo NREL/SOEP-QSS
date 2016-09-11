@@ -5,7 +5,11 @@
 #include <iostream>
 
 // QSS Headers
+#include <QSS/QSS.hh>
 #include <QSS/VariableQSS1.hh>
+
+// Globals
+EventQueue< Variable > events;
 
 int
 main()
@@ -28,17 +32,35 @@ main()
 //	std::cout << 0.0 << ' ' << x1.name << ' ' << x1.x( 0.0 ) << ' ' << x1.q( 0.0 ) << ' ' << x1.tEnd << '\n'
 //	std::cout << 0.0 << ' ' << x2.name << ' ' << x2.x( 0.0 ) << ' ' << x2.q( 0.0 ) << ' ' << x2.tEnd << '\n'
 
-	double t( std::min( x1.tEnd, x2.tEnd ) );
-	while ( t < tEnd ) {
-		if ( x1.tEnd == t ) {
-			x1.advance();
-			x1_stream << t << '\t' << x1.x( t ) << '\n';
-//			std::cout << t << ' ' << x1.name << ' ' << x1.x( t ) << ' ' << x1.q( t ) << ' ' << x1.tEnd << '\n';
-		} else { // x2.tEnd == t
-			x2.advance();
-			x2_stream << t << '\t' << x2.x( t ) << '\n';
-//			std::cout << t << ' ' << x2.name << ' ' << x2.x( t ) << ' ' << x2.q( t ) << ' ' << x2.tEnd << '\n';
+	// No event queue
+//	double t( std::min( x1.tEnd, x2.tEnd ) );
+//	while ( t < tEnd ) {
+//		if ( x1.tEnd == t ) {
+//			x1.advance();
+//			x1_stream << t << '\t' << x1.x( t ) << '\n';
+////			std::cout << t << ' ' << x1.name << ' ' << x1.x( t ) << ' ' << x1.q( t ) << ' ' << x1.tEnd << '\n';
+//		} else { // x2.tEnd == t
+//			x2.advance();
+//			x2_stream << t << '\t' << x2.x( t ) << '\n';
+////			std::cout << t << ' ' << x2.name << ' ' << x2.x( t ) << ' ' << x2.q( t ) << ' ' << x2.tEnd << '\n';
+//		}
+//		t = std::min( x1.tEnd, x2.tEnd );
+//	}
+
+	// Use event queue
+	double t( 0.0 );
+	while ( t <= tEnd ) {
+		Variable * const x( events.top() );
+		t = x->tEnd;
+		x->advance();
+		if ( t <= tEnd ) {
+			if ( x == &x1 ) { // Variable needs access to its stream to avoid this if block
+				x1_stream << t << '\t' << x1.x( t ) << '\n';
+//				std::cout << t << ' ' << x1.name << ' ' << x1.x( t ) << ' ' << x1.q( t ) << ' ' << x1.tEnd << '\n';
+			} else {
+				x2_stream << t << '\t' << x2.x( t ) << '\n';
+//				std::cout << t << ' ' << x2.name << ' ' << x2.x( t ) << ' ' << x2.q( t ) << ' ' << x2.tEnd << '\n';
+			}
 		}
-		t = std::min( x1.tEnd, x2.tEnd );
 	}
 }

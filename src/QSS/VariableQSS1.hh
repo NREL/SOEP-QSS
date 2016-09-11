@@ -1,24 +1,27 @@
 #ifndef QSS_VariableQSS1_hh_INCLUDED
 #define QSS_VariableQSS1_hh_INCLUDED
 
-// QSS1 Variable Class
+// QSS1 Variable
 
 // QSS Headers
+#include <QSS/QSS.hh>
 #include <QSS/Variable.hh>
 #include <QSS/Function.hh>
+#include <QSS/EventQueue.hh>
 
 // C++ Headers
 #include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <limits>
 #include <string>
 
+// QSS1 Variable
 class VariableQSS1 final : public Variable
 {
 
 public: // Types
 
+	using Time = Variable::Time;
 	using Derivative = Function< Variable >;
 	using Coefficient = Derivative::Coefficient;
 
@@ -120,11 +123,12 @@ public: // Methods
 	{
 		x1_ = d_( tBeg ); // Assumes tBeg shared by all Variables at init time and init
 		tEnd = tEndNext();
+		event( events.add( tEnd, this ) );
 	}
 
 	// Continuous Value at Time t
 	double
-	x( double const t ) const
+	x( Time const t ) const
 	{
 		assert( ( tBeg <= t ) && ( t <= tEnd ) );
 		return x0_ + x1_ * ( t - tBeg );
@@ -132,7 +136,7 @@ public: // Methods
 
 	// Quantized Value at Time t
 	double
-	q( double const t ) const
+	q( Time const t ) const
 	{
 		assert( ( tBeg <= t ) && ( t <= tEnd ) );
 		return q_;
@@ -140,7 +144,7 @@ public: // Methods
 
 	// Continuous Derivative Value at Time t
 	double
-	d_x( double const t ) const
+	d_x( Time const t ) const
 	{
 		assert( ( tBeg <= t ) && ( t <= tEnd ) );
 		return d_.x( t );
@@ -148,14 +152,14 @@ public: // Methods
 
 	// Quantized Derivative Value at Time t
 	double
-	d_q( double const t ) const
+	d_q( Time const t ) const
 	{
 		assert( ( tBeg <= t ) && ( t <= tEnd ) );
 		return d_.q( t );
 	}
 
 	// Next End Time
-	double
+	Time
 	tEndNext()
 	{
 		return
@@ -171,6 +175,7 @@ public: // Methods
 		x0_ = q_ = x0_ + ( x1_ * ( tEnd - tBeg ) );
 		x1_ = d_.q( tBeg = tEnd );
 		tEnd = tEndNext();
+		event( events.shift( tEnd, event() ) );
 		for ( Variable * observer : observers() ) { // Advance observers
 			observer->advance( tBeg );
 		}
@@ -178,19 +183,16 @@ public: // Methods
 
 	// Advance Observer to Time t
 	void
-	advance( double const t )
+	advance( Time const t )
 	{
 		assert( ( tBeg <= t ) && ( t <= tEnd ) );
 		if ( tBeg < t ) { // Could observe multiple variables with simultaneous triggering
 			x0_ = x0_ + ( x1_ * ( t - tBeg ) );
 			x1_ = d_.q( tBeg = t );
 			tEnd = tEndNext();
+			event( events.shift( tEnd, event() ) );
 		}
 	}
-
-private: // Static Data
-
-	static double const infinity;
 
 private: // Data
 
