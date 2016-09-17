@@ -4,10 +4,10 @@
 // QSS1 Variable
 
 // QSS Headers
-#include <QSS/globals.hh>
 #include <QSS/Variable.hh>
-#include <QSS/Function.hh>
 #include <QSS/EventQueue.hh>
+#include <QSS/Function.hh>
+#include <QSS/globals.hh>
 
 // C++ Headers
 #include <algorithm>
@@ -39,32 +39,63 @@ public: // Creation
 
 public: // Properties
 
-	// Continuous Constant on Active Segment
+	// Continuous Value at Time t
 	double
-	x0() const
+	x( Time const t ) const
 	{
-		return x0_;
+		assert( ( tCon <= t ) && ( t <= tEnd ) );
+		return x0_ + ( x1_ * ( t - tCon ) );
 	}
 
-	// Continuous Slope on Active Segment
+	// Quantized Value at Time t
 	double
-	x1() const
+	q( Time const t ) const
 	{
-		return x1_;
+		assert( ( tBeg <= t ) && ( t <= tEnd ) );
+		(void)t; // Suppress unused parameter warning
+		return q_;
 	}
 
-	// Derivative Function
-	Derivative const &
-	d() const
+	// Quantized Value at tBeg
+	double
+	q0() const
 	{
-		return d_;
+		return q_;
 	}
 
-	// Derivative Function
-	Derivative &
-	d()
+	// Quantized Slope at tBeg
+	double
+	q1() const
 	{
-		return d_;
+		return 0.0;
+	}
+
+	// Quantized Slope at Time t
+	double
+	q1( Time const t ) const
+	{
+		assert( ( tBeg <= t ) && ( t <= tEnd ) );
+		(void)t; // Suppress unused parameter warning
+		return 0.0;
+	}
+
+	// Next End Time on Trigger Update
+	Time
+	tEndTrigger() const
+	{
+		return
+		 ( x1_ != 0.0 ? tBeg + ( qTol / std::abs( x1_ ) ) : // Slope != 0
+		 infinity ); // Slope == 0
+	}
+
+	// Next End Time on Observer Update
+	Time
+	tEndObserver() const
+	{
+		return
+		 ( x1_ > 0.0 ? tCon + ( ( ( q_ - x0_ ) + qTol ) / x1_ ) : // Slope > 0
+		 ( x1_ < 0.0 ? tCon + ( ( ( q_ - x0_ ) - qTol ) / x1_ ) : // Slope < 0
+		 infinity ) ); // Slope == 0
 	}
 
 public: // Methods
@@ -74,6 +105,7 @@ public: // Methods
 	init_val()
 	{
 		q_ = x0_;
+		set_qTol();
 		return *this;
 	}
 
@@ -82,6 +114,7 @@ public: // Methods
 	init_val( double const xBeg )
 	{
 		x0_ = q_ = xBeg;
+		set_qTol();
 		return *this;
 	}
 
@@ -117,64 +150,37 @@ public: // Methods
 		return *this;
 	}
 
-	// Initialize Derivative and Quantize
+	// Initialize First Derivative
 	void
 	init_der()
 	{
-		x1_ = d_( tBeg ); // Assumes tBeg shared by all Variables at init time and init
-		tEnd = tEndNext();
+		x1_ = d_.q0();
+	}
+
+	// Initialize Event in Queue
+	void
+	init_event()
+	{
+		tEnd = tEndTrigger();
 		event( events.add( tEnd, this ) );
 	}
 
-	// Continuous Value at Time t
-	double
-	x( Time const t ) const
+	// Set Current Tolerance
+	void
+	set_qTol()
 	{
-		assert( ( tBeg <= t ) && ( t <= tEnd ) );
-		return x0_ + x1_ * ( t - tBeg );
+		qTol = std::max( aTol, rTol * std::abs( q_ ) );
+		assert( qTol > 0.0 );
 	}
 
-	// Quantized Value at Time t
-	double
-	q( Time const t ) const
-	{
-		assert( ( tBeg <= t ) && ( t <= tEnd ) );
-		return q_;
-	}
-
-	// Continuous Derivative Value at Time t
-	double
-	d_x( Time const t ) const
-	{
-		assert( ( tBeg <= t ) && ( t <= tEnd ) );
-		return d_.x( t );
-	}
-
-	// Quantized Derivative Value at Time t
-	double
-	d_q( Time const t ) const
-	{
-		assert( ( tBeg <= t ) && ( t <= tEnd ) );
-		return d_.q( t );
-	}
-
-	// Next End Time
-	Time
-	tEndNext()
-	{
-		return
-		 ( x1_ > 0.0 ? tBeg + ( ( ( q_ - x0_ ) + std::max( aTol, std::abs( rTol * x0_ ) ) ) / x1_ ) : // Slope > 0
-		 ( x1_ < 0.0 ? tBeg + ( ( ( q_ - x0_ ) - std::max( aTol, std::abs( rTol * x0_ ) ) ) / x1_ ) : // Slope < 0
-		 infinity ) ); // Slope == 0
-	}
-
-	// Advance Trigger to Time tEnd
+	// Advance Trigger to Time tEnd and Requantize
 	void
 	advance()
 	{
-		x0_ = q_ = x0_ + ( x1_ * ( tEnd - tBeg ) );
-		x1_ = d_.q( tBeg = tEnd );
-		tEnd = tEndNext();
+		x0_ = q_ = x0_ + ( x1_ * ( tEnd - tCon ) );
+		x1_ = d_.q( tBeg = tCon = tEnd );
+		set_qTol();
+		tEnd = tEndTrigger();
 		event( events.shift( tEnd, event() ) );
 		for ( Variable * observer : observers() ) { // Advance observers
 			observer->advance( tBeg );
@@ -185,11 +191,11 @@ public: // Methods
 	void
 	advance( Time const t )
 	{
-		assert( ( tBeg <= t ) && ( t <= tEnd ) );
-		if ( tBeg < t ) { // Could observe multiple variables with simultaneous triggering
-			x0_ = x0_ + ( x1_ * ( t - tBeg ) );
-			x1_ = d_.q( tBeg = t );
-			tEnd = tEndNext();
+		assert( ( tCon <= t ) && ( t <= tEnd ) );
+		if ( tCon < t ) { // Could observe multiple variables with simultaneous triggering
+			x0_ = x0_ + ( x1_ * ( t - tCon ) );
+			x1_ = d_.q( tCon = t );
+			tEnd = tEndObserver();
 			event( events.shift( tEnd, event() ) );
 		}
 	}

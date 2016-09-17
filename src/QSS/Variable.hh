@@ -93,6 +93,31 @@ public: // Properties
 		return observers_;
 	}
 
+	// Continuous Value at Time t
+	virtual
+	double
+	x( Time const t ) const = 0;
+
+	// Quantized Value at Time t
+	virtual
+	double
+	q( Time const t ) const = 0;
+
+	// Quantized Value at tBeg
+	virtual
+	double
+	q0() const = 0;
+
+	// Quantized Slope at tBeg
+	virtual
+	double
+	q1() const = 0;
+
+	// Quantized Slope at Time t
+	virtual
+	double
+	q1( Time const t ) const = 0;
+
 public: // Methods
 
 	// Add Observer
@@ -126,32 +151,23 @@ public: // Methods
 	Variable &
 	init_val( double const xBeg ) = 0;
 
-	// Initialize Derivative and Quantize
+	// Initialize First Derivative
 	virtual
 	void
 	init_der() = 0;
 
-	// Continuous Value at Time t
+	// Initialize Second Derivative
 	virtual
-	double
-	x( Time const t ) const = 0;
+	void
+	init_der2()
+	{}
 
-	// Quantized Value at Time t
+	// Initialize Event in Queue
 	virtual
-	double
-	q( Time const t ) const = 0;
+	void
+	init_event() = 0;
 
-	// Continuous Derivative Value at Time t
-	virtual
-	double
-	d_x( Time const t ) const = 0;
-
-	// Quantized Derivative Value at Time t
-	virtual
-	double
-	d_q( Time const t ) const = 0;
-
-	// Advance Trigger to Time tEnd
+	// Advance Trigger to Time tEnd and Requantize
 	virtual
 	void
 	advance() = 0;
@@ -164,8 +180,12 @@ public: // Methods
 public: // Data
 
 	std::string name;
-	double aTol{ 1.0e-6 }, rTol{ 1.0e-6 }; // Absolute and relative tolerances
-	Time tBeg{ 0.0 }, tEnd{ infinity }; // Active time range
+	double aTol{ 1.0e-6 }; // Absolute tolerance
+	double rTol{ 1.0e-6 }; // Relative tolerance
+	double qTol{ 1.0e-6 }; // Current quantization tolerance
+	Time tBeg{ 0.0 }; // Quantized time range begin
+	Time tCon{ 0.0 }; // Continuous time range begin
+	Time tEnd{ infinity }; // Time range end: tBeg <= tCon <= tEnd
 
 private: // Data
 

@@ -19,8 +19,8 @@ TEST( VariableQSS1Test, Basic )
 	EXPECT_EQ( 1.0e-6, x1.rTol );
 	EXPECT_EQ( 2.5, x1.x0() );
 	EXPECT_EQ( 17.0, x1.x1() );
-	EXPECT_EQ( 17.0, x1.d_x( 0.0 ) );
 	EXPECT_EQ( 2.5, x1.q( 1.0e-7 ) );
+	EXPECT_EQ( 0.0, x1.q1( 1.0e-7 ) );
 	EXPECT_DOUBLE_EQ( 2.5 + 17.0e-7, x1.x( 1.0e-7 ) );
 	EXPECT_EQ( 0.0, x1.tBeg );
 	EXPECT_DOUBLE_EQ( std::max( x1.aTol, x1.rTol * 2.5 ) / 17.0, x1.tEnd );

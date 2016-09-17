@@ -137,6 +137,42 @@ public: // Methods
 		return v;
 	}
 
+	// Quantized Value at Initialization Time
+	double
+	q0() const
+	{
+		assert( c_.size() == x_.size() );
+		double v( c0_ ); // Value
+		for ( Coefficients::size_type i = 0, n = c_.size(); i < n; ++i ) {
+			v += c_[ i ] * x_[ i ]->q0();
+		}
+		return v;
+	}
+
+	// Quantized Slope at Initialization Time
+	double
+	q1() const
+	{
+		assert( c_.size() == x_.size() );
+		double s( 0.0 ); // Slope
+		for ( Coefficients::size_type i = 0, n = c_.size(); i < n; ++i ) {
+			s += c_[ i ] * x_[ i ]->q1();
+		}
+		return s;
+	}
+
+	// Quantized Slope at Time t
+	double
+	q1( double const t ) const
+	{
+		assert( c_.size() == x_.size() );
+		double s( 0.0 ); // Slope
+		for ( Coefficients::size_type i = 0, n = c_.size(); i < n; ++i ) {
+			s += c_[ i ] * x_[ i ]->q1( t );
+		}
+		return s;
+	}
+
 private: // Data
 
 	Coefficient c0_{ 0.0 };

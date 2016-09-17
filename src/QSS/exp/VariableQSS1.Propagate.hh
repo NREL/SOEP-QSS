@@ -119,7 +119,7 @@ public: // Methods
 	init_der()
 	{
 		x1_ = d_( tBeg ); // Assumes tBeg shared by all Variables at init time and init
-		tEnd = tEndNext();
+		tEnd = tEndObserver();
 	}
 
 	// Continuous Value at Time t
@@ -135,28 +135,22 @@ public: // Methods
 	q( double const t ) const
 	{
 		assert( ( tBeg <= t ) && ( t <= tEnd ) );
+		(void)t; // Suppress unused parameter warning
 		return q_;
 	}
 
-	// Continuous Derivative Value at Time t
+	// Quantized Slope at Time t
 	double
-	d_x( double const t ) const
+	q1( Time const t ) const
 	{
 		assert( ( tBeg <= t ) && ( t <= tEnd ) );
-		return d_.x( t );
-	}
-
-	// Quantized Derivative Value at Time t
-	double
-	d_q( double const t ) const
-	{
-		assert( ( tBeg <= t ) && ( t <= tEnd ) );
-		return d_.q( t );
+		(void)t; // Suppress unused parameter warning
+		return 0.0;
 	}
 
 	// Next End Time
 	double
-	tEndNext()
+	tEndObserver()
 	{
 		return ( x1_ != 0.0 ? tBeg + ( std::max( aTol, std::abs( rTol * x0_ ) ) / std::abs( x1_ ) ) : infinity );
 	}
@@ -169,7 +163,7 @@ public: // Methods
 		x1_ = d_( tEnd );
 		x0_ = q_;
 		tBeg = tEnd;
-		tEnd = tEndNext();
+		tEnd = tEndObserver();
 		for ( Variable * observer : observers() ) { // Advance observers recursively
 			observer->advance( tBeg );
 		}
@@ -185,7 +179,7 @@ public: // Methods
 			x1_ = d_( t );
 			x0_ = q_;
 			tBeg = t;
-			tEnd = tEndNext();
+			tEnd = tEndObserver();
 			for ( Variable * observer : observers() ) { // Advance observers recursively
 				observer->advance( t );
 			}
