@@ -10,6 +10,7 @@
 #include <QSS/globals.hh>
 #include <QSS/VariableQSS1.hh>
 #include <QSS/VariableQSS2.hh>
+#include <QSS/VariableQSS3.hh>
 
 int
 main()
@@ -19,8 +20,8 @@ main()
 	// Achilles and the Tortoise
 
 	double const tEnd( 10.0 );
-	VariableQSS2 x1( "x1", 1.0e-4, 1.0e-4 );
-	VariableQSS2 x2( "x2", 1.0e-4, 1.0e-4 );
+	VariableQSS3 x1( "x1", 1.0e-4, 1.0e-4 );
+	VariableQSS3 x2( "x2", 1.0e-4, 1.0e-4 );
 	x1.init_val( 0.0 );
 	x2.init_val( 2.0 );
 	x1.add_der( -0.5, x1 ).add_der( 1.5, x2 );
@@ -29,6 +30,8 @@ main()
 	x2.init_der();
 	x1.init_der2();
 	x2.init_der2();
+	x1.init_der3();
+	x2.init_der3();
 	x1.init_event();
 	x2.init_event();
 

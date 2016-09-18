@@ -173,6 +173,30 @@ public: // Methods
 		return s;
 	}
 
+	// Quantized Curvature at Initialization Time
+	double
+	q2() const
+	{
+		assert( c_.size() == x_.size() );
+		double c( 0.0 ); // Curvature
+		for ( Coefficients::size_type i = 0, n = c_.size(); i < n; ++i ) {
+			c += c_[ i ] * x_[ i ]->q2();
+		}
+		return c;
+	}
+
+	// Quantized Curvature at Time t
+	double
+	q2( double const t ) const
+	{
+		assert( c_.size() == x_.size() );
+		double c( 0.0 ); // Curvature
+		for ( Coefficients::size_type i = 0, n = c_.size(); i < n; ++i ) {
+			c += c_[ i ] * x_[ i ]->q2( t );
+		}
+		return c;
+	}
+
 private: // Data
 
 	Coefficient c0_{ 0.0 };

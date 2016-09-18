@@ -1,7 +1,7 @@
-#ifndef QSS_VariableQSS2_hh_INCLUDED
-#define QSS_VariableQSS2_hh_INCLUDED
+#ifndef QSS_VariableQSS3_hh_INCLUDED
+#define QSS_VariableQSS3_hh_INCLUDED
 
-// QSS2 Variable
+// QSS3 Variable
 
 // QSS Headers
 #include <QSS/Variable.hh>
@@ -10,8 +10,8 @@
 #include <QSS/globals.hh>
 #include <QSS/math.hh>
 
-// QSS2 Variable
-class VariableQSS2 final : public Variable
+// QSS3 Variable
+class VariableQSS3 final : public Variable
 {
 
 public: // Types
@@ -24,7 +24,7 @@ public: // Creation
 
 	// Constructor
 	explicit
-	VariableQSS2(
+	VariableQSS3(
 	 std::string const & name,
 	 double const aTol = 1.0e-6,
 	 double const rTol = 1.0e-6
@@ -39,7 +39,8 @@ public: // Properties
 	x( Time const t ) const
 	{
 		assert( ( tCon <= t ) && ( t <= tEnd ) );
-		return x0_ + ( x1_ * ( t - tCon ) ) + ( x2_ * square( t - tCon ) );
+		Time const tDel( t - tCon );
+		return x0_ + ( x1_ * tDel ) + ( x2_ * square( tDel ) + ( x3_ * cube( tDel ) ) );
 	}
 
 	// Quantized Value at Time t
@@ -47,7 +48,7 @@ public: // Properties
 	q( Time const t ) const
 	{
 		assert( ( tBeg <= t ) && ( t <= tEnd ) );
-		return q0_ + ( q1_ * ( t - tBeg ) );
+		return q0_ + ( q1_ * ( t - tBeg ) ) + ( q2_ * square( t - tBeg ) );
 	}
 
 	// Quantized Value at tBeg
@@ -69,8 +70,23 @@ public: // Properties
 	q1( Time const t ) const
 	{
 		assert( ( tBeg <= t ) && ( t <= tEnd ) );
+		return q1_ + ( two * q2_ * ( t - tBeg ) );
+	}
+
+	// Quantized Curvature at tBeg
+	double
+	q2() const
+	{
+		return q2_;
+	}
+
+	// Quantized Curvature at Time t
+	double
+	q2( Time const t ) const
+	{
+		assert( ( tBeg <= t ) && ( t <= tEnd ) );
 		(void)t; // Suppress unused parameter warning
-		return q1_;
+		return q2_;
 	}
 
 	// Next End Time on Trigger Update
@@ -78,7 +94,7 @@ public: // Properties
 	tEndTrigger() const
 	{
 		return
-		 ( x2_ != 0.0 ? tBeg + std::sqrt( qTol / std::abs( x2_ ) ) : // Curvature != 0
+		 ( x3_ != 0.0 ? tBeg + std::cbrt( qTol / std::abs( x3_ ) ) : // 3rd deriv != 0
 		 infinity ); // Curvature == 0
 	}
 
@@ -86,32 +102,25 @@ public: // Properties
 	Time
 	tEndObserver() const
 	{
-		double const d0( x0_ - ( q0_ + ( q1_ * ( tCon - tBeg ) ) ) );
-		if ( x1_ - q1_ >= 0.0 ) {
-			Time const tPosQ( min_root_quadratic( x2_, x1_ - q1_, d0 - qTol ) );
-			if ( x2_ >= 0.0 ) { // Only need to check +qTol
-				return ( tPosQ == infinity ? infinity : tCon + tPosQ );
-			} else {
-				Time const tNegQ( min_root_quadratic( x2_, x1_ - q1_, d0 + qTol ) );
-				Time const tMinQ( std::min( tPosQ, tNegQ ) );
-				return ( tMinQ == infinity ? infinity : tCon + tMinQ );
-			}
-		} else { // x1 - q1 < 0
-			Time const tNegQ( min_root_quadratic( x2_, x1_ - q1_, d0 + qTol ) );
-			if ( x2_ <= 0.0 ) { // Only need to check -qTol
-				return ( tNegQ == infinity ? infinity : tCon + tNegQ );
-			} else {
-				Time const tPosQ( min_root_quadratic( x2_, x1_ - q1_, d0 - qTol ) );
-				Time const tMinQ( std::min( tPosQ, tNegQ ) );
-				return ( tMinQ == infinity ? infinity : tCon + tMinQ );
-			}
+		double const d0( x0_ - ( q0_ + ( q1_ * ( tCon - tBeg ) ) + ( q2_ * square( tCon - tBeg ) ) ) );
+		if ( ( x3_ >= 0.0 ) && ( x2_ - q2_ >= 0.0 ) && ( x1_ - q1_ >= 0.0 ) ) { // Only need to check +qTol
+			Time const tPosQ( min_root_cubic( x3_, x2_ - q2_, x1_ - q1_, d0 - qTol ) );
+			return ( tPosQ == infinity ? infinity : tCon + tPosQ );
+		} else if ( ( x3_ <= 0.0 ) && ( x2_ - q2_ <= 0.0 ) && ( x1_ - q1_ <= 0.0 ) ) { // Only need to check -qTol
+			Time const tNegQ( min_root_cubic( x3_, x2_ - q2_, x1_ - q1_, d0 + qTol ) );
+			return ( tNegQ == infinity ? infinity : tCon + tNegQ );
+		} else { // Check +qTol and -qTol
+			Time const tPosQ( min_root_cubic( x3_, x2_ - q2_, x1_ - q1_, d0 - qTol ) );
+			Time const tNegQ( min_root_cubic( x3_, x2_ - q2_, x1_ - q1_, d0 + qTol ) );
+			Time const tMinQ( std::min( tPosQ, tNegQ ) );
+			return ( tMinQ == infinity ? infinity : tCon + tMinQ );
 		}
 	}
 
 public: // Methods
 
 	// Initialize Value
-	VariableQSS2 &
+	VariableQSS3 &
 	init_val()
 	{
 		q0_ = x0_;
@@ -120,7 +129,7 @@ public: // Methods
 	}
 
 	// Initialize to Value
-	VariableQSS2 &
+	VariableQSS3 &
 	init_val( double const xBeg )
 	{
 		x0_ = q0_ = xBeg;
@@ -129,7 +138,7 @@ public: // Methods
 	}
 
 	// Add Constant to Derivative
-	VariableQSS2 &
+	VariableQSS3 &
 	add_der( Coefficient const c0 )
 	{
 		d_.add( c0 );
@@ -137,7 +146,7 @@ public: // Methods
 	}
 
 	// Add a Coefficient + Variable to Derivative
-	VariableQSS2 &
+	VariableQSS3 &
 	add_der(
 	 Coefficient const c_i,
 	 Variable & x_i
@@ -149,7 +158,7 @@ public: // Methods
 	}
 
 	// Add a Coefficient + Variable to Derivative
-	VariableQSS2 &
+	VariableQSS3 &
 	add_der(
 	 Coefficient const c_i,
 	 Variable * x_i
@@ -171,7 +180,14 @@ public: // Methods
 	void
 	init_der2()
 	{
-		x2_ = one_half * d_.q1();
+		x2_ = q2_ = one_half * d_.q1();
+	}
+
+	// Initialize Third Derivative
+	void
+	init_der3()
+	{
+		x3_ = one_third * d_.q2();
 	}
 
 	// Initialize Event in Queue
@@ -194,9 +210,11 @@ public: // Methods
 	void
 	advance()
 	{
-		x0_ = q0_ = x0_ + ( x1_ * ( tEnd - tCon ) ) + ( x2_ * square( tEnd - tCon ) );
+		Time const tDel( tEnd - tCon );
+		x0_ = q0_ = x0_ + ( x1_ * tDel ) + ( x2_ * square( tDel ) ) + ( x3_ * cube( tDel ) );
 		x1_ = q1_ = d_.q( tBeg = tCon = tEnd );
-		x2_ = one_half * d_.q1( tBeg );
+		x2_ = q2_ = one_half * d_.q1( tBeg );
+		x3_ = one_third * d_.q2( tBeg );
 		set_qTol();
 		tEnd = tEndTrigger();
 		event( events.shift( tEnd, event() ) );
@@ -211,9 +229,11 @@ public: // Methods
 	{
 		assert( ( tCon <= t ) && ( t <= tEnd ) );
 		if ( tCon < t ) { // Could observe multiple variables with simultaneous triggering
-			x0_ = x0_ + ( x1_ * ( t - tCon ) ) + ( x2_ * square( t - tCon ) );
+			Time const tDel( t - tCon );
+			x0_ = x0_ + ( x1_ * tDel ) + ( x2_ * square( tDel ) ) + ( x3_ * cube( tDel ) );
 			x1_ = d_.q( t );
 			x2_ = one_half * d_.q1( t );
+			x3_ = one_third * d_.q2( t );
 			tCon = t;
 			tEnd = tEndObserver();
 			event( events.shift( tEnd, event() ) );
@@ -222,8 +242,8 @@ public: // Methods
 
 private: // Data
 
-	double x0_{ 0.0 }, x1_{ 0.0 }, x2_{ 0.0 }; // Continuous value coefficients for active time segment
-	double q0_{ 0.0 }, q1_{ 0.0 }; // Quantized value coefficients for active time segment
+	double x0_{ 0.0 }, x1_{ 0.0 }, x2_{ 0.0 }, x3_{ 0.0 }; // Continuous value coefficients for active time segment
+	double q0_{ 0.0 }, q1_{ 0.0 }, q2_{ 0.0 }; // Quantized value coefficients for active time segment
 	Derivative d_; // Derivative function
 
 };

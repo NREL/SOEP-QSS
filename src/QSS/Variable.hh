@@ -5,6 +5,7 @@
 
 // QSS Headers
 #include <QSS/EventQueue.hh>
+#include <QSS/math.hh>
 
 // C++ Headers
 #include <algorithm>
@@ -111,12 +112,38 @@ public: // Properties
 	// Quantized Slope at tBeg
 	virtual
 	double
-	q1() const = 0;
+	q1() const
+	{
+		return 0.0;
+	}
 
 	// Quantized Slope at Time t
 	virtual
 	double
-	q1( Time const t ) const = 0;
+	q1( Time const t ) const
+	{
+		assert( ( tBeg <= t ) && ( t <= tEnd ) );
+		(void)t; // Suppress unused parameter warning
+		return 0.0;
+	}
+
+	// Quantized Curvature at tBeg
+	virtual
+	double
+	q2() const
+	{
+		return 0.0;
+	}
+
+	// Quantized Curvature at Time t
+	virtual
+	double
+	q2( Time const t ) const
+	{
+		assert( ( tBeg <= t ) && ( t <= tEnd ) );
+		(void)t; // Suppress unused parameter warning
+		return 0.0;
+	}
 
 public: // Methods
 
@@ -162,6 +189,12 @@ public: // Methods
 	init_der2()
 	{}
 
+	// Initialize Third Derivative
+	virtual
+	void
+	init_der3()
+	{}
+
 	// Initialize Event in Queue
 	virtual
 	void
@@ -191,10 +224,6 @@ private: // Data
 
 	Variables observers_; // Variables dependent on this Variable
 	EventQ::iterator event_; // Iterator to event queue entry
-
-public: // Static Data
-
-	static Time const infinity;
 
 };
 

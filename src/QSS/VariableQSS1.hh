@@ -9,12 +9,6 @@
 #include <QSS/Function.hh>
 #include <QSS/globals.hh>
 
-// C++ Headers
-#include <algorithm>
-#include <cassert>
-#include <cmath>
-#include <string>
-
 // QSS1 Variable
 class VariableQSS1 final : public Variable
 {
@@ -61,22 +55,6 @@ public: // Properties
 	q0() const
 	{
 		return q_;
-	}
-
-	// Quantized Slope at tBeg
-	double
-	q1() const
-	{
-		return 0.0;
-	}
-
-	// Quantized Slope at Time t
-	double
-	q1( Time const t ) const
-	{
-		assert( ( tBeg <= t ) && ( t <= tEnd ) );
-		(void)t; // Suppress unused parameter warning
-		return 0.0;
 	}
 
 	// Next End Time on Trigger Update
