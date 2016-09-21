@@ -102,16 +102,19 @@ public: // Properties
 	Time
 	tEndObserver() const
 	{
-		double const d0( x0_ - ( q0_ + ( q1_ * ( tCon - tBeg ) ) + ( q2_ * square( tCon - tBeg ) ) ) );
-		if ( ( x3_ >= 0.0 ) && ( x2_ - q2_ >= 0.0 ) && ( x1_ - q1_ >= 0.0 ) ) { // Only need to check +qTol
-			Time const tPosQ( min_root_cubic( x3_, x2_ - q2_, x1_ - q1_, d0 - qTol ) );
+		double const tCB( tCon - tBeg );
+		double const d0( x0_ - ( q0_ + ( q1_ * tCB ) + ( q2_ * ( tCB * tCB ) ) ) );
+		double const d1( x1_ - ( q1_ + ( two * q2_ * tCB ) ) );
+		double const d2( x2_ - q2_ );
+		if ( ( x3_ >= 0.0 ) && ( d2 >= 0.0 ) && ( d1 >= 0.0 ) ) { // Only need to check +qTol
+			Time const tPosQ( min_root_cubic( x3_, d2, d1, d0 - qTol ) );
 			return ( tPosQ == infinity ? infinity : tCon + tPosQ );
-		} else if ( ( x3_ <= 0.0 ) && ( x2_ - q2_ <= 0.0 ) && ( x1_ - q1_ <= 0.0 ) ) { // Only need to check -qTol
-			Time const tNegQ( min_root_cubic( x3_, x2_ - q2_, x1_ - q1_, d0 + qTol ) );
+		} else if ( ( x3_ <= 0.0 ) && ( d2 <= 0.0 ) && ( d1 <= 0.0 ) ) { // Only need to check -qTol
+			Time const tNegQ( min_root_cubic( x3_, d2, d1, d0 + qTol ) );
 			return ( tNegQ == infinity ? infinity : tCon + tNegQ );
 		} else { // Check +qTol and -qTol
-			Time const tPosQ( min_root_cubic( x3_, x2_ - q2_, x1_ - q1_, d0 - qTol ) );
-			Time const tNegQ( min_root_cubic( x3_, x2_ - q2_, x1_ - q1_, d0 + qTol ) );
+			Time const tPosQ( min_root_cubic( x3_, d2, d1, d0 - qTol ) );
+			Time const tNegQ( min_root_cubic( x3_, d2, d1, d0 + qTol ) );
 			Time const tMinQ( std::min( tPosQ, tNegQ ) );
 			return ( tMinQ == infinity ? infinity : tCon + tMinQ );
 		}
@@ -211,7 +214,8 @@ public: // Methods
 	advance()
 	{
 		Time const tDel( tEnd - tCon );
-		x0_ = q0_ = x0_ + ( x1_ * tDel ) + ( x2_ * square( tDel ) ) + ( x3_ * cube( tDel ) );
+		Time const tDel_sq( tDel * tDel );
+		x0_ = q0_ = x0_ + ( x1_ * tDel ) + ( x2_ * tDel_sq ) + ( x3_ * ( tDel_sq * tDel ) );
 		x1_ = q1_ = d_.q( tBeg = tCon = tEnd );
 		x2_ = q2_ = one_half * d_.q1( tBeg );
 		x3_ = one_third * d_.q2( tBeg );
@@ -230,7 +234,8 @@ public: // Methods
 		assert( ( tCon <= t ) && ( t <= tEnd ) );
 		if ( tCon < t ) { // Could observe multiple variables with simultaneous triggering
 			Time const tDel( t - tCon );
-			x0_ = x0_ + ( x1_ * tDel ) + ( x2_ * square( tDel ) ) + ( x3_ * cube( tDel ) );
+			Time const tDel_sq( tDel * tDel );
+			x0_ = x0_ + ( x1_ * tDel ) + ( x2_ * tDel_sq ) + ( x3_ * ( tDel_sq * tDel ) );
 			x1_ = d_.q( t );
 			x2_ = one_half * d_.q1( t );
 			x3_ = one_third * d_.q2( t );
