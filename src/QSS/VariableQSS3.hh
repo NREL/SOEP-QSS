@@ -40,7 +40,29 @@ public: // Properties
 	{
 		assert( ( tCon <= t ) && ( t <= tEnd ) );
 		Time const tDel( t - tCon );
-		return x0_ + ( x1_ * tDel ) + ( x2_ * square( tDel ) + ( x3_ * cube( tDel ) ) );
+		Time const tDel_sq( tDel * tDel );
+		return x0_ + ( x1_ * tDel ) + ( x2_ * tDel_sq ) + ( x3_ * ( tDel_sq * tDel ) );
+	}
+
+	// Quantized Value at Time tBeg
+	double
+	q() const
+	{
+		return q0_;
+	}
+
+	// Quantized First Derivative at Time tBeg
+	double
+	q1() const
+	{
+		return q1_;
+	}
+
+	// Quantized Second Derivative at Time tBeg
+	double
+	q2() const
+	{
+		return two * q2_;
 	}
 
 	// Quantized Value at Time t
@@ -48,24 +70,11 @@ public: // Properties
 	q( Time const t ) const
 	{
 		assert( ( tBeg <= t ) && ( t <= tEnd ) );
-		return q0_ + ( q1_ * ( t - tBeg ) ) + ( q2_ * square( t - tBeg ) );
+		Time const tDel( t - tBeg );
+		return q0_ + ( q1_ * tDel ) + ( q2_ * ( tDel * tDel ) );
 	}
 
-	// Quantized Value at tBeg
-	double
-	q0() const
-	{
-		return q0_;
-	}
-
-	// Quantized Slope at tBeg
-	double
-	q1() const
-	{
-		return q1_;
-	}
-
-	// Quantized Slope at Time t
+	// Quantized First Derivative at Time t
 	double
 	q1( Time const t ) const
 	{
@@ -73,20 +82,13 @@ public: // Properties
 		return q1_ + ( two * q2_ * ( t - tBeg ) );
 	}
 
-	// Quantized Curvature at tBeg
-	double
-	q2() const
-	{
-		return q2_;
-	}
-
-	// Quantized Curvature at Time t
+	// Quantized Second Derivative at Time t
 	double
 	q2( Time const t ) const
 	{
 		assert( ( tBeg <= t ) && ( t <= tEnd ) );
 		(void)t; // Suppress unused parameter warning
-		return q2_;
+		return two * q2_;
 	}
 
 	// Next End Time on Trigger Update
@@ -94,8 +96,8 @@ public: // Properties
 	tEndTrigger() const
 	{
 		return
-		 ( x3_ != 0.0 ? tBeg + std::cbrt( qTol / std::abs( x3_ ) ) : // 3rd deriv != 0
-		 infinity ); // Curvature == 0
+		 ( x3_ != 0.0 ? tBeg + std::cbrt( qTol / std::abs( x3_ ) ) :
+		 infinity );
 	}
 
 	// Next End Time on Observer Update
@@ -190,7 +192,7 @@ public: // Methods
 	void
 	init_der3()
 	{
-		x3_ = one_third * d_.q2();
+		x3_ = one_sixth * d_.q2();
 	}
 
 	// Initialize Event in Queue
@@ -218,7 +220,7 @@ public: // Methods
 		x0_ = q0_ = x0_ + ( x1_ * tDel ) + ( x2_ * tDel_sq ) + ( x3_ * ( tDel_sq * tDel ) );
 		x1_ = q1_ = d_.q( tBeg = tCon = tEnd );
 		x2_ = q2_ = one_half * d_.q1( tBeg );
-		x3_ = one_third * d_.q2( tBeg );
+		x3_ = one_sixth * d_.q2( tBeg );
 		set_qTol();
 		tEnd = tEndTrigger();
 		event( events.shift( tEnd, event() ) );
@@ -238,7 +240,7 @@ public: // Methods
 			x0_ = x0_ + ( x1_ * tDel ) + ( x2_ * tDel_sq ) + ( x3_ * ( tDel_sq * tDel ) );
 			x1_ = d_.q( t );
 			x2_ = one_half * d_.q1( t );
-			x3_ = one_third * d_.q2( t );
+			x3_ = one_sixth * d_.q2( t );
 			tCon = t;
 			tEnd = tEndObserver();
 			event( events.shift( tEnd, event() ) );

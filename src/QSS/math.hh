@@ -16,6 +16,7 @@ extern double const four;
 extern double const one_half;
 extern double const one_third;
 extern double const one_fourth;
+extern double const one_sixth;
 extern double const one_ninth;
 extern double const pi;
 extern double const infinity;

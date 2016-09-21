@@ -41,6 +41,13 @@ public: // Properties
 		return x0_ + ( x1_ * ( t - tCon ) );
 	}
 
+	// Quantized Value at Time tBeg
+	double
+	q() const
+	{
+		return q_;
+	}
+
 	// Quantized Value at Time t
 	double
 	q( Time const t ) const
@@ -50,20 +57,13 @@ public: // Properties
 		return q_;
 	}
 
-	// Quantized Value at tBeg
-	double
-	q0() const
-	{
-		return q_;
-	}
-
 	// Next End Time on Trigger Update
 	Time
 	tEndTrigger() const
 	{
 		return
-		 ( x1_ != 0.0 ? tBeg + ( qTol / std::abs( x1_ ) ) : // Slope != 0
-		 infinity ); // Slope == 0
+		 ( x1_ != 0.0 ? tBeg + ( qTol / std::abs( x1_ ) ) :
+		 infinity );
 	}
 
 	// Next End Time on Observer Update
@@ -71,9 +71,9 @@ public: // Properties
 	tEndObserver() const
 	{
 		return
-		 ( x1_ > 0.0 ? tCon + ( ( ( q_ - x0_ ) + qTol ) / x1_ ) : // Slope > 0
-		 ( x1_ < 0.0 ? tCon + ( ( ( q_ - x0_ ) - qTol ) / x1_ ) : // Slope < 0
-		 infinity ) ); // Slope == 0
+		 ( x1_ > 0.0 ? tCon + ( ( ( q_ - x0_ ) + qTol ) / x1_ ) :
+		 ( x1_ < 0.0 ? tCon + ( ( ( q_ - x0_ ) - qTol ) / x1_ ) :
+		 infinity ) );
 	}
 
 public: // Methods

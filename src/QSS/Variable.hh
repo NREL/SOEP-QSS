@@ -99,17 +99,19 @@ public: // Properties
 	double
 	x( Time const t ) const = 0;
 
-	// Quantized Value at Time t
+	// Quantized Value at Time tBeg
 	virtual
 	double
-	q( Time const t ) const = 0;
+	q() const = 0;
 
-	// Quantized Value at tBeg
-	virtual
+	// Quantized Value at Time tBeg
 	double
-	q0() const = 0;
+	q0() const
+	{
+		return q();
+	}
 
-	// Quantized Slope at tBeg
+	// Quantized First Derivative at Time tBeg
 	virtual
 	double
 	q1() const
@@ -117,7 +119,20 @@ public: // Properties
 		return 0.0;
 	}
 
-	// Quantized Slope at Time t
+	// Quantized Second Derivative at Time tBeg
+	virtual
+	double
+	q2() const
+	{
+		return 0.0;
+	}
+
+	// Quantized Value at Time t
+	virtual
+	double
+	q( Time const t ) const = 0;
+
+	// Quantized First Derivative at Time t
 	virtual
 	double
 	q1( Time const t ) const
@@ -127,15 +142,7 @@ public: // Properties
 		return 0.0;
 	}
 
-	// Quantized Curvature at tBeg
-	virtual
-	double
-	q2() const
-	{
-		return 0.0;
-	}
-
-	// Quantized Curvature at Time t
+	// Quantized Second Derivative at Time t
 	virtual
 	double
 	q2( Time const t ) const

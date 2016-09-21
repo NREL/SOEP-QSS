@@ -39,7 +39,22 @@ public: // Properties
 	x( Time const t ) const
 	{
 		assert( ( tCon <= t ) && ( t <= tEnd ) );
-		return x0_ + ( x1_ * ( t - tCon ) ) + ( x2_ * square( t - tCon ) );
+		Time const tDel( t - tCon );
+		return x0_ + ( x1_ * tDel ) + ( x2_ * ( tDel * tDel ) );
+	}
+
+	// Quantized Value at Time tBeg
+	double
+	q() const
+	{
+		return q0_;
+	}
+
+	// Quantized First Derivative at Time tBeg
+	double
+	q1() const
+	{
+		return q1_;
 	}
 
 	// Quantized Value at Time t
@@ -50,21 +65,7 @@ public: // Properties
 		return q0_ + ( q1_ * ( t - tBeg ) );
 	}
 
-	// Quantized Value at tBeg
-	double
-	q0() const
-	{
-		return q0_;
-	}
-
-	// Quantized Slope at tBeg
-	double
-	q1() const
-	{
-		return q1_;
-	}
-
-	// Quantized Slope at Time t
+	// Quantized First Derivative at Time t
 	double
 	q1( Time const t ) const
 	{
@@ -78,8 +79,8 @@ public: // Properties
 	tEndTrigger() const
 	{
 		return
-		 ( x2_ != 0.0 ? tBeg + std::sqrt( qTol / std::abs( x2_ ) ) : // Curvature != 0
-		 infinity ); // Curvature == 0
+		 ( x2_ != 0.0 ? tBeg + std::sqrt( qTol / std::abs( x2_ ) ) :
+		 infinity );
 	}
 
 	// Next End Time on Observer Update
@@ -194,7 +195,8 @@ public: // Methods
 	void
 	advance()
 	{
-		x0_ = q0_ = x0_ + ( x1_ * ( tEnd - tCon ) ) + ( x2_ * square( tEnd - tCon ) );
+		Time const tDel( tEnd - tCon );
+		x0_ = q0_ = x0_ + ( x1_ * tDel ) + ( x2_ * ( tDel * tDel ) );
 		x1_ = q1_ = d_.q( tBeg = tCon = tEnd );
 		x2_ = one_half * d_.q1( tBeg );
 		set_qTol();
@@ -211,7 +213,8 @@ public: // Methods
 	{
 		assert( ( tCon <= t ) && ( t <= tEnd ) );
 		if ( tCon < t ) { // Could observe multiple variables with simultaneous triggering
-			x0_ = x0_ + ( x1_ * ( t - tCon ) ) + ( x2_ * square( t - tCon ) );
+			Time const tDel( t - tCon );
+			x0_ = x0_ + ( x1_ * tDel ) + ( x2_ * ( tDel * tDel ) );
 			x1_ = d_.q( t );
 			x2_ = one_half * d_.q1( t );
 			tCon = t;

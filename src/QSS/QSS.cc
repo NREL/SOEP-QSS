@@ -51,10 +51,10 @@ main()
 		Variable * const x( events.top() );
 		t = x->tEnd;
 		while ( to < std::min( t, tEnd ) ) { // Sampled outputs
-			x1_stream << to << '\t' << x1.x( to ) << '\n'; // Comment me out for no sampled output
-			q1_stream << to << '\t' << x1.q( to ) << '\n'; // Comment me out for no sampled output
-			x2_stream << to << '\t' << x2.x( to ) << '\n'; // Comment me out for no sampled output
-			q2_stream << to << '\t' << x2.q( to ) << '\n'; // Comment me out for no sampled output
+//			x1_stream << to << '\t' << x1.x( to ) << '\n'; // Comment me out for no sampled output
+//			q1_stream << to << '\t' << x1.q( to ) << '\n'; // Comment me out for no sampled output
+//			x2_stream << to << '\t' << x2.x( to ) << '\n'; // Comment me out for no sampled output
+//			q2_stream << to << '\t' << x2.q( to ) << '\n'; // Comment me out for no sampled output
 			to += dto;
 		}
 		x->advance();
