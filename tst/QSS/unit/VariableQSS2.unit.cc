@@ -14,7 +14,7 @@ TEST( VariableQSS2Test, Basic )
 {
 	VariableQSS2 x1( "x1" );
 	x1.init_val( 2.5 );
-	x1.add_der( 12.0 ).add_der( 2.0, x1 );
+	x1.add_der( 12.0 ).add_der( 2.0, x1 ).finalize_der();
 	x1.init_der();
 	x1.init_der2();
 	x1.init_event();
@@ -31,7 +31,7 @@ TEST( VariableQSS2Test, Basic )
 
 	VariableQSS2 x2( "x2", 1.0e-3, 1.0e-4 );
 	x2.init_val( 2.5 );
-	x2.add_der( 12.0 ).add_der( 2.0, x2 );
+	x2.add_der( 12.0 ).add_der( 2.0, x2 ).finalize_der();
 	x2.init_der();
 	x2.init_der2();
 	x2.init_event();
