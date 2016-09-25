@@ -184,6 +184,24 @@ public: // Methods
 		}
 	}
 
+	// Advance Simultaneous Trigger to Time tEnd and Requantize: Step 0
+	void
+	advance0()
+	{
+		x0_ = q_ = x0_ + ( x1_ * ( tEnd - tCon ) );
+		set_qTol();
+	}
+
+	// Advance Simultaneous Trigger to Time tEnd and Requantize: Step 1
+	void
+	advance1()
+	{
+		x1_ = d_.q( tBeg = tCon = tEnd );
+		advanced = false;
+		tEnd = tEndTrigger();
+		event( events.shift( tEnd, event() ) );
+	}
+
 	// Advance Observer to Time t
 	void
 	advance( Time const t )

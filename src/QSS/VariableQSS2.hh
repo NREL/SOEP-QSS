@@ -229,6 +229,32 @@ public: // Methods
 		}
 	}
 
+	// Advance Simultaneous Trigger to Time tEnd and Requantize: Step 0
+	void
+	advance0()
+	{
+		Time const tDel( tEnd - tCon );
+		x0_ = q0_ = x0_ + ( x1_ * tDel ) + ( x2_ * ( tDel * tDel ) );
+		set_qTol();
+	}
+
+	// Advance Simultaneous Trigger to Time tEnd and Requantize: Step 1
+	void
+	advance1()
+	{
+		x1_ = q1_ = d_.q( tBeg = tCon = tEnd );
+	}
+
+	// Advance Simultaneous Trigger to Time tEnd and Requantize: Step 2
+	void
+	advance2()
+	{
+		x2_ = one_half * d_.q1( tBeg );
+		advanced = false;
+		tEnd = tEndTrigger();
+		event( events.shift( tEnd, event() ) );
+	}
+
 	// Advance Observer to Time t
 	void
 	advance( Time const t )

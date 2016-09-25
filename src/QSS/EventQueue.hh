@@ -10,6 +10,7 @@
 // C++ Headers
 #include <cassert>
 #include <map>
+#include <vector>
 
 // QSS Event Queue Based on std::multimap
 template< typename V >
@@ -20,6 +21,7 @@ public: // Types
 
 	using Time = double;
 	using Variable = V;
+	using Variables = std::vector< Variable * >;
 
 	using EventMap = std::multimap< Time, Variable * >;
 	using size_type = typename EventMap::size_type;
@@ -72,19 +74,48 @@ public: // Collection Methods
 	iterator
 	top_iterator()
 	{
-		assert ( ! m_.empty() );
 		return m_.begin();
 	}
 
-	// Pop and Return Top Event Variable
-	Variable *
-	pop()
+//	// Pop and Return Top Event Variable
+//	Variable *
+//	pop()
+//	{
+//		assert ( ! m_.empty() );
+//		iterator const begin( m_.begin() );
+//		Variable * x( begin->second );
+//		m_.erase( begin );
+//		return x;
+//	}
+
+	// Simultaneous Trigger Variables?
+	bool
+	simultaneous() const
 	{
-		assert ( ! m_.empty() );
-		iterator const begin( m_.begin() );
-		Variable * x( begin->second );
-		m_.erase( begin );
-		return x;
+		if ( m_.size() >= 2u ) {
+			const_iterator const event1( m_.begin() );
+			const_iterator const event2( ++m_.begin() );
+			return ( event1->first == event2->first );
+		} else {
+			return false;
+		}
+	}
+
+	// Simultaneous Trigger Variables
+	Variables
+	simultaneous_variables() const
+	{
+		Variables vars;
+		if ( ! m_.empty() ) {
+			const_iterator i( m_.begin() );
+			const_iterator e( m_.end() );
+			Time const t( i->first );
+			while ( ( i != e ) && ( i->first == t ) ) {
+				vars.push_back( i->second );
+				++i;
+			}
+		}
+		return vars;
 	}
 
 	// Clear
@@ -92,6 +123,36 @@ public: // Collection Methods
 	clear()
 	{
 		m_.clear();
+	}
+
+public: // Iterators
+
+	// Begin Iterator
+	const_iterator
+	begin() const
+	{
+		return m_.begin();
+	}
+
+	// Begin Iterator
+	iterator
+	begin()
+	{
+		return m_.begin();
+	}
+
+	// End Iterator
+	const_iterator
+	end() const
+	{
+		return m_.end();
+	}
+
+	// End Iterator
+	iterator
+	end()
+	{
+		return m_.end();
 	}
 
 public: // Time Methods

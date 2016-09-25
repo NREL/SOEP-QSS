@@ -217,6 +217,39 @@ public: // Methods
 	void
 	advance() = 0;
 
+	// Advance Simultaneous Trigger to Time tEnd and Requantize: Step 0
+	virtual
+	void
+	advance0()
+	{}
+
+	// Advance Simultaneous Trigger to Time tEnd and Requantize: Step 1
+	virtual
+	void
+	advance1()
+	{}
+
+	// Advance Simultaneous Trigger to Time tEnd and Requantize: Step 2
+	virtual
+	void
+	advance2()
+	{}
+
+	// Advance Simultaneous Trigger to Time tEnd and Requantize: Step 3
+	virtual
+	void
+	advance3()
+	{}
+
+	// Advance Simultaneous Trigger to Time tEnd and Requantize: Step Observers
+	void
+	advance_observers()
+	{
+		for ( Variable * observer : observers() ) { // Advance observers
+			observer->advance( tBeg );
+		}
+	}
+
 	// Advance Observer to Time t
 	virtual
 	void
