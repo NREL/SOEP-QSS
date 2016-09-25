@@ -33,6 +33,13 @@ public: // Creation
 
 public: // Properties
 
+	// Order of QSS Method
+	int
+	order() const
+	{
+		return 1;
+	}
+
 	// Continuous Value at Time t
 	double
 	x( Time const t ) const
@@ -61,19 +68,23 @@ public: // Properties
 	Time
 	tEndTrigger() const
 	{
-		return
-		 ( x1_ != 0.0 ? tBeg + ( qTol / std::abs( x1_ ) ) :
-		 infinity );
+		return ( x1_ != 0.0 ? tBeg + ( qTol / std::abs( x1_ ) ) : infinity );
 	}
 
 	// Next End Time on Observer Update
 	Time
 	tEndObserver() const
 	{
-		return
-		 ( x1_ > 0.0 ? tCon + ( ( ( q_ - x0_ ) + qTol ) / x1_ ) :
-		 ( x1_ < 0.0 ? tCon + ( ( ( q_ - x0_ ) - qTol ) / x1_ ) :
-		 infinity ) );
+		if ( advanced ) {
+			return
+			 ( x1_ > 0.0 ? tCon + ( ( ( q_ - x0_ ) + qTol ) / x1_ ) :
+			 ( x1_ < 0.0 ? tCon + ( ( ( q_ - x0_ ) - qTol ) / x1_ ) :
+			 infinity ) );
+		} else {
+			assert( tBeg == tCon );
+			assert( q_ == x0_ );
+			return ( x1_ != 0.0 ? tBeg + ( qTol / std::abs( x1_ ) ) : infinity );
+		}
 	}
 
 public: // Methods
@@ -128,6 +139,13 @@ public: // Methods
 		return *this;
 	}
 
+	// Finalize Derivative Function
+	void
+	finalize_der()
+	{
+		d_.finalize();
+	}
+
 	// Initialize First Derivative
 	void
 	init_der()
@@ -158,6 +176,7 @@ public: // Methods
 		x0_ = q_ = x0_ + ( x1_ * ( tEnd - tCon ) );
 		x1_ = d_.q( tBeg = tCon = tEnd );
 		set_qTol();
+		advanced = false;
 		tEnd = tEndTrigger();
 		event( events.shift( tEnd, event() ) );
 		for ( Variable * observer : observers() ) { // Advance observers
@@ -173,6 +192,7 @@ public: // Methods
 		if ( tCon < t ) { // Could observe multiple variables with simultaneous triggering
 			x0_ = x0_ + ( x1_ * ( t - tCon ) );
 			x1_ = d_.q( tCon = t );
+			advanced = true;
 			tEnd = tEndObserver();
 			event( events.shift( tEnd, event() ) );
 		}

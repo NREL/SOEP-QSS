@@ -34,6 +34,13 @@ public: // Creation
 
 public: // Properties
 
+	// Order of QSS Method
+	int
+	order() const
+	{
+		return 2;
+	}
+
 	// Continuous Value at Time t
 	double
 	x( Time const t ) const
@@ -78,34 +85,39 @@ public: // Properties
 	Time
 	tEndTrigger() const
 	{
-		return
-		 ( x2_ != 0.0 ? tBeg + std::sqrt( qTol / std::abs( x2_ ) ) :
-		 infinity );
+		return ( x2_ != 0.0 ? tBeg + std::sqrt( qTol / std::abs( x2_ ) ) : infinity );
 	}
 
 	// Next End Time on Observer Update
 	Time
 	tEndObserver() const
 	{
-		double const d0( x0_ - ( q0_ + ( q1_ * ( tCon - tBeg ) ) ) );
-		if ( x1_ - q1_ >= 0.0 ) {
-			Time const tPosQ( min_root_quadratic( x2_, x1_ - q1_, d0 - qTol ) );
-			if ( x2_ >= 0.0 ) { // Only need to check +qTol
-				return ( tPosQ == infinity ? infinity : tCon + tPosQ );
-			} else {
-				Time const tNegQ( min_root_quadratic( x2_, x1_ - q1_, d0 + qTol ) );
-				Time const tMinQ( std::min( tPosQ, tNegQ ) );
-				return ( tMinQ == infinity ? infinity : tCon + tMinQ );
-			}
-		} else { // x1 - q1 < 0
-			Time const tNegQ( min_root_quadratic( x2_, x1_ - q1_, d0 + qTol ) );
-			if ( x2_ <= 0.0 ) { // Only need to check -qTol
-				return ( tNegQ == infinity ? infinity : tCon + tNegQ );
-			} else {
+		if ( advanced ) {
+			double const d0( x0_ - ( q0_ + ( q1_ * ( tCon - tBeg ) ) ) );
+			if ( x1_ - q1_ >= 0.0 ) {
 				Time const tPosQ( min_root_quadratic( x2_, x1_ - q1_, d0 - qTol ) );
-				Time const tMinQ( std::min( tPosQ, tNegQ ) );
-				return ( tMinQ == infinity ? infinity : tCon + tMinQ );
+				if ( x2_ >= 0.0 ) { // Only need to check +qTol
+					return ( tPosQ == infinity ? infinity : tCon + tPosQ );
+				} else {
+					Time const tNegQ( min_root_quadratic( x2_, x1_ - q1_, d0 + qTol ) );
+					Time const tMinQ( std::min( tPosQ, tNegQ ) );
+					return ( tMinQ == infinity ? infinity : tCon + tMinQ );
+				}
+			} else { // x1 - q1 < 0
+				Time const tNegQ( min_root_quadratic( x2_, x1_ - q1_, d0 + qTol ) );
+				if ( x2_ <= 0.0 ) { // Only need to check -qTol
+					return ( tNegQ == infinity ? infinity : tCon + tNegQ );
+				} else {
+					Time const tPosQ( min_root_quadratic( x2_, x1_ - q1_, d0 - qTol ) );
+					Time const tMinQ( std::min( tPosQ, tNegQ ) );
+					return ( tMinQ == infinity ? infinity : tCon + tMinQ );
+				}
 			}
+		} else {
+			assert( tBeg == tCon );
+			assert( q0_ == x0_ );
+			assert( q1_ == x1_ );
+			return ( x2_ != 0.0 ? tBeg + std::sqrt( qTol / std::abs( x2_ ) ) : infinity );
 		}
 	}
 
@@ -161,6 +173,13 @@ public: // Methods
 		return *this;
 	}
 
+	// Finalize Derivative Function
+	void
+	finalize_der()
+	{
+		d_.finalize();
+	}
+
 	// Initialize First Derivative
 	void
 	init_der()
@@ -181,6 +200,7 @@ public: // Methods
 	{
 		tEnd = tEndTrigger();
 		event( events.add( tEnd, this ) );
+//std::cout << "! " << name << '(' << tBeg << ')' << " = " << q0_ << "+" << q1_ << "*t quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2 internal   tEnd=" << tEnd << '\n';
 	}
 
 	// Set Current Tolerance
@@ -200,7 +220,9 @@ public: // Methods
 		x1_ = q1_ = d_.q( tBeg = tCon = tEnd );
 		x2_ = one_half * d_.q1( tBeg );
 		set_qTol();
+		advanced = false;
 		tEnd = tEndTrigger();
+//std::cout << "! " << name << '(' << tBeg << ')' << " = " << q0_ << "+" << q1_ << "*t quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2 internal   tEnd=" << tEnd << '\n';
 		event( events.shift( tEnd, event() ) );
 		for ( Variable * observer : observers() ) { // Advance observers
 			observer->advance( tBeg );
@@ -218,7 +240,9 @@ public: // Methods
 			x1_ = d_.q( t );
 			x2_ = one_half * d_.q1( t );
 			tCon = t;
+			advanced = true;
 			tEnd = tEndObserver();
+//std::cout << "  " << name << '(' << tBeg << ')' << " = " << q0_ << "+" << q1_ << "*t quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2 internal   tEnd=" << tEnd << '\n';
 			event( events.shift( tEnd, event() ) );
 		}
 	}

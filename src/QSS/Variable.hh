@@ -94,6 +94,11 @@ public: // Properties
 		return observers_;
 	}
 
+	// Order of QSS Method
+	virtual
+	int
+	order() const = 0;
+
 	// Continuous Value at Time t
 	virtual
 	double
@@ -226,6 +231,7 @@ public: // Data
 	Time tBeg{ 0.0 }; // Quantized time range begin
 	Time tCon{ 0.0 }; // Continuous time range begin
 	Time tEnd{ infinity }; // Time range end: tBeg <= tCon <= tEnd
+	bool advanced{ false }; // Continuous rep advanced past quantized (tCon > tBeg)?
 
 private: // Data
 

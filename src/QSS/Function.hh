@@ -5,6 +5,7 @@
 
 // C++ Headers
 #include <cassert>
+//#include <numeric> // std::iota
 #include <vector>
 
 // Linear Function
@@ -19,6 +20,8 @@ public: // Types
 
 	using Variable = V;
 	using Variables = typename V::Variables;
+
+	using size_type = Coefficients::size_type;
 
 public: // Creation
 
@@ -91,14 +94,32 @@ public: // Methods
 		return *this;
 	}
 
-	// Shrink Coefficient and Variable Collections
+	// Finalize Function Representation for Efficient Operations
 	void
-	shrink() // May be worth calling after all entries added to improve memory and cache use
+	finalize()
 	{
 		assert( c_.size() == x_.size() );
-		c_.shrink_to_fit();
-		x_.shrink_to_fit();
-		assert( c_.size() == x_.size() );
+		size_type n( c_.size() );
+		Coefficients c;
+		c.reserve( n );
+		Variables x;
+		x.reserve( n );
+		for ( int order = 1; order <= max_order; ++order ) { // Sort elements by QSS method order (not max efficiency!)
+			iBeg[ order ] = c.size();
+			for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
+				if ( x_[ i ]->order() == order ) {
+					c.push_back( c_[ i ] );
+					x.push_back( x_[ i ] );
+				}
+			}
+		}
+		c_.swap( c );
+		x_.swap( x );
+// Consider doing an in-place permutation if this is a bottleneck
+//		std::vector< size_type > p( n ); // Permutation
+//		std::iota( p.begin(), p.end(), 0u );
+//		std::stable_sort( p.begin(), p.end(), [&]( size_type i, size_type j ){ return x_[ i ]->order() < x_[ j ]->order() } );
+//		...
 	}
 
 	// Continuous Value at Time t
@@ -107,7 +128,7 @@ public: // Methods
 	{
 		assert( c_.size() == x_.size() );
 		double v( c0_ ); // Value
-		for ( Coefficients::size_type i = 0, n = c_.size(); i < n; ++i ) {
+		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
 			v += c_[ i ] * x_[ i ]->x( t );
 		}
 		return v;
@@ -119,7 +140,7 @@ public: // Methods
 	{
 		assert( c_.size() == x_.size() );
 		double v( c0_ ); // Value
-		for ( Coefficients::size_type i = 0, n = c_.size(); i < n; ++i ) {
+		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
 			v += c_[ i ] * x_[ i ]->x( t );
 		}
 		return v;
@@ -131,7 +152,7 @@ public: // Methods
 	{
 		assert( c_.size() == x_.size() );
 		double v( c0_ ); // Value
-		for ( Coefficients::size_type i = 0, n = c_.size(); i < n; ++i ) {
+		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
 			v += c_[ i ] * x_[ i ]->q( t );
 		}
 		return v;
@@ -143,7 +164,7 @@ public: // Methods
 	{
 		assert( c_.size() == x_.size() );
 		double v( c0_ ); // Value
-		for ( Coefficients::size_type i = 0, n = c_.size(); i < n; ++i ) {
+		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
 			v += c_[ i ] * x_[ i ]->q0();
 		}
 		return v;
@@ -155,7 +176,7 @@ public: // Methods
 	{
 		assert( c_.size() == x_.size() );
 		double s( 0.0 ); // Slope
-		for ( Coefficients::size_type i = 0, n = c_.size(); i < n; ++i ) {
+		for ( size_type i = iBeg[ 2 ], n = c_.size(); i < n; ++i ) {
 			s += c_[ i ] * x_[ i ]->q1();
 		}
 		return s;
@@ -167,7 +188,7 @@ public: // Methods
 	{
 		assert( c_.size() == x_.size() );
 		double s( 0.0 ); // Slope
-		for ( Coefficients::size_type i = 0, n = c_.size(); i < n; ++i ) {
+		for ( size_type i = iBeg[ 2 ], n = c_.size(); i < n; ++i ) {
 			s += c_[ i ] * x_[ i ]->q1( t );
 		}
 		return s;
@@ -179,7 +200,7 @@ public: // Methods
 	{
 		assert( c_.size() == x_.size() );
 		double c( 0.0 ); // Curvature
-		for ( Coefficients::size_type i = 0, n = c_.size(); i < n; ++i ) {
+		for ( size_type i = iBeg[ 3 ], n = c_.size(); i < n; ++i ) {
 			c += c_[ i ] * x_[ i ]->q2();
 		}
 		return c;
@@ -191,17 +212,22 @@ public: // Methods
 	{
 		assert( c_.size() == x_.size() );
 		double c( 0.0 ); // Curvature
-		for ( Coefficients::size_type i = 0, n = c_.size(); i < n; ++i ) {
+		for ( size_type i = iBeg[ 3 ], n = c_.size(); i < n; ++i ) {
 			c += c_[ i ] * x_[ i ]->q2( t );
 		}
 		return c;
 	}
+
+public: // Static Data
+
+	static int const max_order = 3; // Max QSS order supported
 
 private: // Data
 
 	Coefficient c0_{ 0.0 };
 	Coefficients c_;
 	Variables x_;
+	size_type iBeg[ max_order + 1 ];
 
 };
 
