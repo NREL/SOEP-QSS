@@ -25,7 +25,10 @@ main()
 
 	using size_type = Variable::Variables::size_type;
 
+	enum QSS_Method { QSS1 = 1, QSS2, QSS3, QSS4 };
+
 //	// Simple x, y, z
+//	QSS_Method const qss_max( QSS2 );
 //	double const tEnd( 5.0 );
 //	double t( 0.0 ), dto( 1.0e-3 ), to( dto );
 //	VariableQSS2 x( "x", 1.0, 0.0 );
@@ -48,6 +51,7 @@ main()
 //	// A      = [[0, -1], [+1, 0]]
 //	// Q      = 1
 //	// order  = 1
+//	QSS_Method const qss_max( QSS2 );
 //	double const tEnd( 10.0 );
 //	double t( 0.0 ), dto( 1.0e-3 ), to( dto );
 //	VariableQSS2 x1( "x1", 1.0, 0.0 );
@@ -61,6 +65,7 @@ main()
 //	vars.push_back( &x2 );
 
 	// Achilles and the Tortoise
+	QSS_Method const qss_max( QSS2 );
 	double const tEnd( 10.0 );
 	double t( 0.0 ), dto( 1.0e-3 ), to( dto );
 	VariableQSS2 x1( "x1", 1.0, 0.0 );
@@ -77,11 +82,15 @@ main()
 	for ( auto var : vars ) {
 		var->init_der();
 	}
-	for ( auto var : vars ) {
-		var->init_der2();
-	}
-	for ( auto var : vars ) {
-		var->init_der3();
+	if ( qss_max >= QSS2 ) {
+		for ( auto var : vars ) {
+			var->init_der2();
+		}
+		if ( qss_max >= QSS3 ) {
+			for ( auto var : vars ) {
+				var->init_der3();
+			}
+		}
 	}
 	for ( auto var : vars ) {
 		var->init_event();
@@ -96,7 +105,7 @@ main()
 	while ( ( t <= tEnd ) || ( to <= tEnd ) ) {
 		t = events.top_time();
 		while ( to < std::min( t, tEnd ) ) { // Sampled outputs
-			for ( size_type i = 0; i < n_vars; ++i ) { // Comment block out for no sampled output
+			for ( size_type i = 0; i < n_vars; ++i ) { // Comment this block out for no sampled output
 				q_streams[ i ] << to << '\t' << vars[ i ]->q( to ) << '\n';
 				x_streams[ i ] << to << '\t' << vars[ i ]->x( to ) << '\n';
 			}
@@ -104,7 +113,7 @@ main()
 		}
 		if ( events.simultaneous() ) {
 //			std::cout << "Simultaneous trigger event at t = " << t << std::endl;
-			EventQueue< Variable >::Variables triggers( events.simultaneous_variables() );
+			EventQueue< Variable >::Variables triggers( events.simultaneous_variables() ); // Chg to generator approach to avoid heap hit // Sort/ptn by QSS order to save unnec loops/calls below
 			for ( Variable * trigger : triggers ) {
 				assert( trigger->tEnd == t );
 				trigger->advance0();
@@ -112,11 +121,15 @@ main()
 			for ( Variable * trigger : triggers ) {
 				trigger->advance1();
 			}
-			for ( Variable * trigger : triggers ) {
-				trigger->advance2();
-			}
-			for ( Variable * trigger : triggers ) {
-				trigger->advance3();
+			if ( qss_max >= QSS2 ) {
+				for ( Variable * trigger : triggers ) {
+					trigger->advance2();
+				}
+				if ( qss_max >= QSS3 ) {
+					for ( Variable * trigger : triggers ) {
+						trigger->advance3();
+					}
+				}
 			}
 			for ( Variable * trigger : triggers ) {
 				trigger->advance_observers();
