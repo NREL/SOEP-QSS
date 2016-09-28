@@ -30,8 +30,9 @@ main()
 	enum QSS_Method { QSS1 = 1, QSS2, QSS3, QSS4 };
 
 	// Settings
-	bool const sampled( false ); // Sampled outputs?
+	bool const sampled( true ); // Sampled outputs?
 	bool const all_vars_out( false ); // Output all variables at every requantization event?
+	bool const q_out( sampled || all_vars_out ); // Quantized output would differ from continous?
 
 //	// Simple x, y, z
 //	Time const dto( 1.0e-3 ); // Sampling time step
@@ -108,9 +109,11 @@ main()
 		var->init_event();
 	}
 	for ( auto var : vars ) {
-		q_streams.push_back( std::ofstream( var->name + "_q.out" ) );
+		if ( q_out ) {
+			q_streams.push_back( std::ofstream( var->name + "_q.out" ) );
+			q_streams.back() << std::setprecision( 16 ) << t << '\t' << var->q( t ) << '\n';
+		}
 		x_streams.push_back( std::ofstream( var->name + "_x.out" ) );
-		q_streams.back() << std::setprecision( 16 ) << t << '\t' << var->q( t ) << '\n';
 		x_streams.back() << std::setprecision( 16 ) << t << '\t' << var->x( t ) << '\n';
 	}
 	size_type n_vars( vars.size() );
@@ -120,7 +123,7 @@ main()
 			Time const tStop( std::min( t, tEnd ) );
 			while ( to < tStop ) {
 				for ( size_type i = 0; i < n_vars; ++i ) {
-					q_streams[ i ] << to << '\t' << vars[ i ]->q( to ) << '\n';
+					if ( q_out ) q_streams[ i ] << to << '\t' << vars[ i ]->q( to ) << '\n';
 					x_streams[ i ] << to << '\t' << vars[ i ]->x( to ) << '\n';
 				}
 				to += dto;
@@ -159,7 +162,7 @@ main()
 				} else {
 					for ( size_type i = 0; i < n_vars; ++i ) { // Give Variable access to its stream to avoid this loop
 						if ( trigger == vars[ i ] ) {
-							q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
+							if ( q_out ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
 							x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
 							break;
 						}
@@ -178,7 +181,7 @@ main()
 			} else {
 				for ( size_type i = 0; i < n_vars; ++i ) { // Give Variable access to its stream to avoid this loop
 					if ( trigger == vars[ i ] ) {
-						q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
+						if ( q_out ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
 						x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
 						break;
 					}
@@ -189,7 +192,7 @@ main()
 	for ( size_type i = 0; i < n_vars; ++i ) { // Add tEnd outputs
 		Variable const * var( vars[ i ] );
 		if ( var->tBeg < tEnd ) {
-			q_streams[ i ] << tEnd << '\t' << var->q( tEnd ) << '\n';
+			if ( q_out ) q_streams[ i ] << tEnd << '\t' << var->q( tEnd ) << '\n';
 			x_streams[ i ] << tEnd << '\t' << var->x( tEnd ) << '\n';
 		}
 	}
