@@ -9,6 +9,7 @@
 
 // QSS Headers
 #include <QSS/globals.hh>
+#include <QSS/math.hh>
 #include <QSS/VariableQSS1.hh>
 #include <QSS/VariableQSS2.hh>
 #include <QSS/VariableQSS3.hh>
@@ -24,17 +25,19 @@ main()
 	std::vector< std::ofstream > x_streams; // Continuous output streams
 
 	using size_type = Variable::Variables::size_type;
+	using Time = double;
 
 	enum QSS_Method { QSS1 = 1, QSS2, QSS3, QSS4 };
 
 	// Settings
 	bool const sampled( false ); // Sampled outputs?
 	bool const all_vars_out( false ); // Output all variables at every requantization event?
-	double const dto( 1.0e-3 ); // Sampling time step
 
 //	// Simple x, y, z
-//	double const tEnd( 5.0 );
-//	double t( 0.0 ), to( t + dto );
+//	Time const dto( 1.0e-3 ); // Sampling time step
+//	Time const tEnd( 5.0 ); // Simulation end time
+//	Time t( 0.0 ); // Simulation time
+//	Time to( t + dto ); // Sampling time
 //	QSS_Method const qss_max( QSS2 );
 //	VariableQSS2 x( "x", 1.0, 0.0 );
 //	VariableQSS2 y( "y", 1.0, 0.0 );
@@ -56,8 +59,10 @@ main()
 //	// A      = [[0, -1], [+1, 0]]
 //	// Q      = 1
 //	// order  = 1
-//	double const tEnd( 10.0 );
-//	double t( 0.0 ), to( t + dto );
+//	Time const dto( 1.0e-3 ); // Sampling time step
+//	Time const tEnd( 10.0 ); // Simulation end time
+//	Time t( 0.0 ); // Simulation time
+//	Time to( t + dto ); // Sampling time
 //	QSS_Method const qss_max( QSS2 );
 //	VariableQSS2 x1( "x1", 1.0, 0.0 );
 //	VariableQSS2 x2( "x2", 1.0, 0.0 );
@@ -70,8 +75,10 @@ main()
 //	vars.push_back( &x2 );
 
 	// Achilles and the Tortoise
-	double const tEnd( 10.0 );
-	double t( 0.0 ), to( t + dto );
+	Time const dto( 1.0e-3 ); // Sampling time step
+	Time const tEnd( 10.0 ); // Simulation end time
+	Time t( 0.0 ); // Simulation time
+	Time to( t + dto ); // Sampling time
 	QSS_Method const qss_max( QSS2 );
 	VariableQSS2 x1( "x1", 1.0, 0.0 );
 	VariableQSS2 x2( "x2", 1.0, 0.0 );
@@ -110,7 +117,8 @@ main()
 	while ( ( t <= tEnd ) || ( sampled && ( to <= tEnd ) ) ) {
 		t = events.top_time();
 		if ( sampled ) { // Sampled outputs
-			while ( to < std::min( t, tEnd ) ) {
+			Time const tStop( std::min( t, tEnd ) );
+			while ( to < tStop ) {
 				for ( size_type i = 0; i < n_vars; ++i ) {
 					q_streams[ i ] << to << '\t' << vars[ i ]->q( to ) << '\n';
 					x_streams[ i ] << to << '\t' << vars[ i ]->x( to ) << '\n';
@@ -118,6 +126,7 @@ main()
 				to += dto;
 			}
 		}
+		if ( t > tEnd ) break; // Don't requantize
 		if ( events.simultaneous() ) {
 //			std::cout << "Simultaneous trigger event at t = " << t << std::endl;
 			EventQueue< Variable >::Variables triggers( events.simultaneous_variables() ); // Chg to generator approach to avoid heap hit // Sort/ptn by QSS order to save unnec loops/calls below
@@ -142,28 +151,6 @@ main()
 				trigger->advance_observers();
 			}
 			for ( Variable * trigger : triggers ) {
-				if ( t <= tEnd ) { // Requantization outputs
-					if ( all_vars_out ) {
-						for ( size_type i = 0; i < n_vars; ++i ) {
-							q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
-							x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-						}
-					} else {
-						for ( size_type i = 0; i < n_vars; ++i ) { // Give Variable access to its stream to avoid this loop
-							if ( trigger == vars[ i ] ) {
-								q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
-								x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-								break;
-							}
-						}
-					}
-				}
-			}
-		} else {
-			Variable * trigger( events.top() );
-			assert( trigger->tEnd == t );
-			trigger->advance();
-			if ( t <= tEnd ) { // Requantization outputs
 				if ( all_vars_out ) {
 					for ( size_type i = 0; i < n_vars; ++i ) {
 						q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
@@ -179,6 +166,31 @@ main()
 					}
 				}
 			}
+		} else {
+			Variable * trigger( events.top() );
+			assert( trigger->tEnd == t );
+			trigger->advance();
+			if ( all_vars_out ) {
+				for ( size_type i = 0; i < n_vars; ++i ) {
+					q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
+					x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
+				}
+			} else {
+				for ( size_type i = 0; i < n_vars; ++i ) { // Give Variable access to its stream to avoid this loop
+					if ( trigger == vars[ i ] ) {
+						q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
+						x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
+						break;
+					}
+				}
+			}
+		}
+	}
+	for ( size_type i = 0; i < n_vars; ++i ) { // Add tEnd outputs
+		Variable const * var( vars[ i ] );
+		if ( var->tBeg < tEnd ) {
+			q_streams[ i ] << tEnd << '\t' << var->q( tEnd ) << '\n';
+			x_streams[ i ] << tEnd << '\t' << var->x( tEnd ) << '\n';
 		}
 	}
 }
