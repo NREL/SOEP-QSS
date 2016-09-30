@@ -180,31 +180,31 @@ public: // Methods
 		observers_.shrink_to_fit();
 	}
 
-	// Initialize Value
-	virtual
-	Variable &
-	init_val() = 0;
-
-	// Initialize to Value
-	virtual
-	Variable &
-	init_val( double const xBeg ) = 0;
-
-	// Initialize First Derivative
+	// Finalize Derivative Function
 	virtual
 	void
-	init_der() = 0;
+	finalize_der() = 0;
 
-	// Initialize Second Derivative
+	// Initialize Constant Term
+	virtual
+	Variable &
+	init0( double const x ) = 0;
+
+	// Initialize Linear Coefficient
 	virtual
 	void
-	init_der2()
+	init1() = 0;
+
+	// Initialize Quadratic Coefficient
+	virtual
+	void
+	init2()
 	{}
 
-	// Initialize Third Derivative
+	// Initialize Cubic Coefficient
 	virtual
 	void
-	init_der3()
+	init3()
 	{}
 
 	// Initialize Event in Queue
@@ -266,7 +266,7 @@ public: // Data
 	Time tEnd{ infinity }; // Time range end: tBeg <= tCon <= tEnd
 	bool advanced{ false }; // Continuous rep advanced past quantized (tCon > tBeg)?
 
-private: // Data
+protected: // Data
 
 	Variables observers_; // Variables dependent on this Variable
 	EventQ::iterator event_; // Iterator to event queue entry

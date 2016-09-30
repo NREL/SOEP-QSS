@@ -1,16 +1,16 @@
-#ifndef QSS_Function_hh_INCLUDED
-#define QSS_Function_hh_INCLUDED
+#ifndef QSS_FunctionLTI_hh_INCLUDED
+#define QSS_FunctionLTI_hh_INCLUDED
 
-// Linear Function
+// Linear Time-Invariant Function
 
 // C++ Headers
 #include <cassert>
 //#include <numeric> // std::iota
 #include <vector>
 
-// Linear Function
+// Linear Time-Invariant Function
 template< typename V > // Template to avoid cyclic inclusion with Variable
-class Function // : public FunctionABC
+class FunctionLTI
 {
 
 public: // Types
@@ -26,17 +26,11 @@ public: // Types
 public: // Creation
 
 	// Default Constructor
-	Function()
+	FunctionLTI()
 	{}
 
-//	// Copy Constructor
-//	Function( Function const & ) = default;
-//
-//	// Move Constructor
-//	Function( Function && ) noexcept = default;
-
 	// Constructor
-	Function(
+	FunctionLTI(
 	 Coefficients const & c,
 	 Variables const & x
 	) :
@@ -46,20 +40,10 @@ public: // Creation
 		assert( c_.size() == x_.size() );
 	}
 
-//public: // Assignment
-//
-//	// Copy Assignment
-//	Function &
-//	operator =( Function const & ) = default;
-//
-//	// Move Assignment
-//	Function &
-//	operator =( Function && ) noexcept = default;
-
 public: // Methods
 
 	// Add Constant
-	Function &
+	FunctionLTI &
 	add( Coefficient const c0 )
 	{
 		c0_ = c0;
@@ -67,7 +51,7 @@ public: // Methods
 	}
 
 	// Add a Coefficient + Variable
-	Function &
+	FunctionLTI &
 	add(
 	 Coefficient const c_i,
 	 Variable & x_i
@@ -81,7 +65,7 @@ public: // Methods
 	}
 
 	// Add a Coefficient + Variable
-	Function &
+	FunctionLTI &
 	add(
 	 Coefficient const c_i,
 	 Variable * x_i
@@ -94,17 +78,20 @@ public: // Methods
 		return *this;
 	}
 
-	// Finalize Function Representation for Efficient Operations
+	// Finalize FunctionLTI Representation for Efficient Operations
 	void
-	finalize()
+	finalize( Variable * v )
 	{
+		assert( v != nullptr );
 		assert( c_.size() == x_.size() );
 		size_type n( c_.size() );
+
+		// Sort elements by QSS method order (not max efficiency!)
 		Coefficients c;
 		c.reserve( n );
 		Variables x;
 		x.reserve( n );
-		for ( int order = 1; order <= max_order; ++order ) { // Sort elements by QSS method order (not max efficiency!)
+		for ( int order = 1; order <= max_order; ++order ) {
 			iBeg[ order ] = c.size();
 			for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
 				if ( x_[ i ]->order() == order ) {
@@ -120,6 +107,16 @@ public: // Methods
 //		std::iota( p.begin(), p.end(), 0u );
 //		std::stable_sort( p.begin(), p.end(), [&]( size_type i, size_type j ){ return x_[ i ]->order() < x_[ j ]->order() } );
 //		...
+
+		// Add variables as observer of owning variable
+		for ( Variable * x : x_ ) x->add_observer( v );
+	}
+
+	// Finalize FunctionLTI Representation for Efficient Operations
+	void
+	finalize( Variable & v )
+	{
+		finalize( &v );
 	}
 
 	// Continuous Value at Time t
@@ -170,7 +167,7 @@ public: // Methods
 		return v;
 	}
 
-	// Quantized Slope at Initialization Time
+	// Quantized Derivative at Initialization Time
 	double
 	q1() const
 	{
@@ -182,7 +179,7 @@ public: // Methods
 		return s;
 	}
 
-	// Quantized Slope at Time t
+	// Quantized Derivative at Time t
 	double
 	q1( double const t ) const
 	{
@@ -194,7 +191,7 @@ public: // Methods
 		return s;
 	}
 
-	// Quantized Curvature at Initialization Time
+	// Quantized Second Derivative at Initialization Time
 	double
 	q2() const
 	{
@@ -206,7 +203,7 @@ public: // Methods
 		return c;
 	}
 
-	// Quantized Curvature at Time t
+	// Quantized Second Derivative at Time t
 	double
 	q2( double const t ) const
 	{

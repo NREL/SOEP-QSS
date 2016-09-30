@@ -5,20 +5,19 @@
 
 // QSS Headers
 #include <QSS/Variable.hh>
-#include <QSS/EventQueue.hh>
-#include <QSS/Function.hh>
 #include <QSS/globals.hh>
-#include <QSS/math.hh>
 
 // QSS3 Variable
+template< template< typename > typename F >
 class VariableQSS3 final : public Variable
 {
 
 public: // Types
 
 	using Time = Variable::Time;
+	template< typename V > using Function = F< V >;
 	using Derivative = Function< Variable >;
-	using Coefficient = Derivative::Coefficient;
+	using Coefficient = typename Derivative::Coefficient;
 
 public: // Creation
 
@@ -33,6 +32,20 @@ public: // Creation
 	{}
 
 public: // Properties
+
+	// Derivative Function
+	Derivative const &
+	d() const
+	{
+		return d_;
+	}
+
+	// Derivative Function
+	Derivative &
+	d()
+	{
+		return d_;
+	}
 
 	// Order of QSS Method
 	int
@@ -137,80 +150,39 @@ public: // Properties
 
 public: // Methods
 
-	// Initialize Value
-	VariableQSS3 &
-	init_val()
-	{
-		q0_ = x0_;
-		set_qTol();
-		return *this;
-	}
-
-	// Initialize to Value
-	VariableQSS3 &
-	init_val( double const xBeg )
-	{
-		x0_ = q0_ = xBeg;
-		set_qTol();
-		return *this;
-	}
-
-	// Add Constant to Derivative
-	VariableQSS3 &
-	add_der( Coefficient const c0 )
-	{
-		d_.add( c0 );
-		return *this;
-	}
-
-	// Add a Coefficient + Variable to Derivative
-	VariableQSS3 &
-	add_der(
-	 Coefficient const c_i,
-	 Variable & x_i
-	)
-	{
-		d_.add( c_i, x_i );
-		x_i.add_observer( this );
-		return *this;
-	}
-
-	// Add a Coefficient + Variable to Derivative
-	VariableQSS3 &
-	add_der(
-	 Coefficient const c_i,
-	 Variable * x_i
-	)
-	{
-		d_.add( c_i, x_i );
-		x_i->add_observer( this );
-		return *this;
-	}
-
 	// Finalize Derivative Function
 	void
 	finalize_der()
 	{
-		d_.finalize();
+		d_.finalize( this );
 	}
 
-	// Initialize First Derivative
+	// Initialize Constant Term
+	VariableQSS3 &
+	init0( double const x )
+	{
+		x0_ = q0_ = x;
+		set_qTol();
+		return *this;
+	}
+
+	// Initialize Linear Coefficient
 	void
-	init_der()
+	init1()
 	{
 		x1_ = q1_ = d_.q0();
 	}
 
-	// Initialize Second Derivative
+	// Initialize Quadratic Coefficient
 	void
-	init_der2()
+	init2()
 	{
 		x2_ = q2_ = one_half * d_.q1();
 	}
 
-	// Initialize Third Derivative
+	// Initialize Cubic Coefficient
 	void
-	init_der3()
+	init3()
 	{
 		x3_ = one_sixth * d_.q2();
 	}
@@ -305,9 +277,9 @@ public: // Methods
 
 private: // Data
 
+	Derivative d_; // Derivative function
 	double x0_{ 0.0 }, x1_{ 0.0 }, x2_{ 0.0 }, x3_{ 0.0 }; // Continuous value coefficients for active time segment
 	double q0_{ 0.0 }, q1_{ 0.0 }, q2_{ 0.0 }; // Quantized value coefficients for active time segment
-	Derivative d_; // Derivative function
 
 };
 

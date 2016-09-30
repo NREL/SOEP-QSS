@@ -8,6 +8,7 @@
 #include <vector>
 
 // QSS Headers
+#include <QSS/FunctionLTI.hh>
 #include <QSS/globals.hh>
 #include <QSS/math.hh>
 #include <QSS/VariableQSS1.hh>
@@ -30,7 +31,7 @@ main()
 	enum QSS_Method { QSS1 = 1, QSS2, QSS3, QSS4 };
 
 	// Settings
-	bool const sampled( true ); // Sampled outputs?
+	bool const sampled( false ); // Sampled outputs?
 	bool const all_vars_out( false ); // Output all variables at every requantization event?
 	bool const q_out( sampled || all_vars_out ); // Quantized output would differ from continous?
 
@@ -40,15 +41,15 @@ main()
 //	Time t( 0.0 ); // Simulation time
 //	Time to( t + dto ); // Sampling time
 //	QSS_Method const qss_max( QSS2 );
-//	VariableQSS2 x( "x", 1.0, 0.0 );
-//	VariableQSS2 y( "y", 1.0, 0.0 );
-//	VariableQSS2 z( "z", 1.0, 0.0 );
-//	x.init_val( 0.0 );
-//	y.init_val( 0.0 );
-//	z.init_val( 0.0 );
-//	x.add_der( 1.0 ).finalize_der();
-//	y.add_der( 1.0, x ).finalize_der();
-//	z.add_der( 1.0, y ).finalize_der();
+//	VariableQSS2< FunctionLTI > x( "x", 1.0, 0.0 );
+//	VariableQSS2< FunctionLTI > y( "y", 1.0, 0.0 );
+//	VariableQSS2< FunctionLTI > z( "z", 1.0, 0.0 );
+//	x.init0( 0.0 );
+//	y.init0( 0.0 );
+//	z.init0( 0.0 );
+//	x.d().add( 1.0 );
+//	y.d().add( 1.0, x );
+//	z.d().add( 1.0, y );
 //	vars.reserve( 3 );
 //	vars.push_back( &x );
 //	vars.push_back( &y );
@@ -65,12 +66,12 @@ main()
 //	Time t( 0.0 ); // Simulation time
 //	Time to( t + dto ); // Sampling time
 //	QSS_Method const qss_max( QSS2 );
-//	VariableQSS2 x1( "x1", 1.0, 0.0 );
-//	VariableQSS2 x2( "x2", 1.0, 0.0 );
-//	x1.init_val( 1.0 );
-//	x2.init_val( 0.0 );
-//	x1.add_der( -1.0, x2 ).finalize_der();
-//	x2.add_der( 1.0, x1 ).finalize_der();
+//	VariableQSS2< FunctionLTI > x1( "x1", 1.0, 0.0 );
+//	VariableQSS2< FunctionLTI > x2( "x2", 1.0, 0.0 );
+//	x1.init0( 1.0 );
+//	x2.init0( 0.0 );
+//	x1.d().add( -1.0, x2 );
+//	x2.d().add( 1.0, x1 );
 //	vars.reserve( 2 );
 //	vars.push_back( &x1 );
 //	vars.push_back( &x2 );
@@ -81,27 +82,31 @@ main()
 	Time t( 0.0 ); // Simulation time
 	Time to( t + dto ); // Sampling time
 	QSS_Method const qss_max( QSS2 );
-	VariableQSS2 x1( "x1", 1.0, 0.0 );
-	VariableQSS2 x2( "x2", 1.0, 0.0 );
-	x1.init_val( 0.0 );
-	x2.init_val( 2.0 );
-	x1.add_der( -0.5, x1 ).add_der( 1.5, x2 ).finalize_der();
-	x2.add_der( -1.0, x1 ).finalize_der();
+	VariableQSS2< FunctionLTI > x1( "x1", 1.0, 0.0 );
+	VariableQSS2< FunctionLTI > x2( "x2", 1.0, 0.0 );
+	x1.init0( 0.0 );
+	x2.init0( 2.0 );
+	x1.d().add( -0.5, x1 ).add( 1.5, x2 );
+	x2.d().add( -1.0, x1 );
 	vars.reserve( 2 );
 	vars.push_back( &x1 );
 	vars.push_back( &x2 );
 
 	// Solver master logic
 	for ( auto var : vars ) {
-		var->init_der();
+		var->finalize_der();
+		var->shrink_observers(); // Optional
+	}
+	for ( auto var : vars ) {
+		var->init1();
 	}
 	if ( qss_max >= QSS2 ) {
 		for ( auto var : vars ) {
-			var->init_der2();
+			var->init2();
 		}
 		if ( qss_max >= QSS3 ) {
 			for ( auto var : vars ) {
-				var->init_der3();
+				var->init3();
 			}
 		}
 	}
