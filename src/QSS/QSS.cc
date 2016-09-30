@@ -116,8 +116,8 @@ main()
 //	Time const tEnd( 5.0 ); // Simulation end time
 //	Time t( 0.0 ); // Simulation time
 //	Time to( t + dto ); // Sampling time
-//	QSS_Method const qss_max( QSS2 );
-//	VariableQSS2< Function_NonlinearEx1 > y( "y", 1.0e-6, 1.0e-6 );
+//	QSS_Method const qss_max( QSS3 );
+//	VariableQSS3< Function_NonlinearEx1 > y( "y", 1.0e-3, 1.0e-3 );
 //	y.init0( 2.0 );
 //	y.d().var( y );
 //	vars.reserve( 1 );
