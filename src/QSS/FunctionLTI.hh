@@ -78,7 +78,7 @@ public: // Methods
 		return *this;
 	}
 
-	// Finalize FunctionLTI Representation for Efficient Operations
+	// Finalize Function Representation
 	void
 	finalize( Variable * v )
 	{
@@ -112,11 +112,47 @@ public: // Methods
 		for ( Variable * x : x_ ) x->add_observer( v );
 	}
 
-	// Finalize FunctionLTI Representation for Efficient Operations
+	// Finalize Function Representation
 	void
 	finalize( Variable & v )
 	{
 		finalize( &v );
+	}
+
+	// Quantized Value at Initialization Time
+	double
+	q() const
+	{
+		assert( c_.size() == x_.size() );
+		double v( c0_ ); // Value
+		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
+			v += c_[ i ] * x_[ i ]->q();
+		}
+		return v;
+	}
+
+	// Quantized First Derivative at Initialization Time
+	double
+	q1() const
+	{
+		assert( c_.size() == x_.size() );
+		double s( 0.0 ); // Slope
+		for ( size_type i = iBeg[ 2 ], n = c_.size(); i < n; ++i ) {
+			s += c_[ i ] * x_[ i ]->q1();
+		}
+		return s;
+	}
+
+	// Quantized Second Derivative at Initialization Time
+	double
+	q2() const
+	{
+		assert( c_.size() == x_.size() );
+		double c( 0.0 ); // Curvature
+		for ( size_type i = iBeg[ 3 ], n = c_.size(); i < n; ++i ) {
+			c += c_[ i ] * x_[ i ]->q2();
+		}
+		return c;
 	}
 
 	// Continuous Value at Time t
@@ -155,31 +191,7 @@ public: // Methods
 		return v;
 	}
 
-	// Quantized Value at Initialization Time
-	double
-	q0() const
-	{
-		assert( c_.size() == x_.size() );
-		double v( c0_ ); // Value
-		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
-			v += c_[ i ] * x_[ i ]->q0();
-		}
-		return v;
-	}
-
-	// Quantized Derivative at Initialization Time
-	double
-	q1() const
-	{
-		assert( c_.size() == x_.size() );
-		double s( 0.0 ); // Slope
-		for ( size_type i = iBeg[ 2 ], n = c_.size(); i < n; ++i ) {
-			s += c_[ i ] * x_[ i ]->q1();
-		}
-		return s;
-	}
-
-	// Quantized Derivative at Time t
+	// Quantized First Derivative at Time t
 	double
 	q1( double const t ) const
 	{
@@ -189,18 +201,6 @@ public: // Methods
 			s += c_[ i ] * x_[ i ]->q1( t );
 		}
 		return s;
-	}
-
-	// Quantized Second Derivative at Initialization Time
-	double
-	q2() const
-	{
-		assert( c_.size() == x_.size() );
-		double c( 0.0 ); // Curvature
-		for ( size_type i = iBeg[ 3 ], n = c_.size(); i < n; ++i ) {
-			c += c_[ i ] * x_[ i ]->q2();
-		}
-		return c;
 	}
 
 	// Quantized Second Derivative at Time t

@@ -123,7 +123,7 @@ public: // Methods
 	void
 	init1()
 	{
-		x1_ = d_.q0();
+		x1_ = d_.q();
 	}
 
 	// Initialize Event in Queue

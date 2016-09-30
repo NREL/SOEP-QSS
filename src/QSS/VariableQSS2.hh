@@ -156,7 +156,7 @@ public: // Methods
 	void
 	init1()
 	{
-		x1_ = q1_ = d_.q0();
+		x1_ = q1_ = d_.q();
 	}
 
 	// Initialize Quadratic Coefficient

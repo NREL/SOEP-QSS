@@ -9,6 +9,9 @@
 
 // QSS Headers
 #include <QSS/FunctionLTI.hh>
+#include <QSS/Function_achilles1.hh>
+#include <QSS/Function_achilles2.hh>
+#include <QSS/Function_NonlinearEx1.hh>
 #include <QSS/globals.hh>
 #include <QSS/math.hh>
 #include <QSS/VariableQSS1.hh>
@@ -91,6 +94,41 @@ main()
 	vars.reserve( 2 );
 	vars.push_back( &x1 );
 	vars.push_back( &x2 );
+
+//	// Achilles and the Tortoise: Using Custom Functions
+//	Time const dto( 1.0e-3 ); // Sampling time step
+//	Time const tEnd( 10.0 ); // Simulation end time
+//	Time t( 0.0 ); // Simulation time
+//	Time to( t + dto ); // Sampling time
+//	QSS_Method const qss_max( QSS2 );
+//	VariableQSS2< Function_achilles1 > x1( "x1", 1.0, 0.0 );
+//	VariableQSS2< Function_achilles2 > x2( "x2", 1.0, 0.0 );
+//	x1.init0( 0.0 );
+//	x2.init0( 2.0 );
+//	x1.d().var( x1, x2 );
+//	x2.d().var( x1 );
+//	vars.reserve( 2 );
+//	vars.push_back( &x1 );
+//	vars.push_back( &x2 );
+
+//	// Nonlinear Example 1
+//	Time const dto( 1.0e-3 ); // Sampling time step
+//	Time const tEnd( 5.0 ); // Simulation end time
+//	Time t( 0.0 ); // Simulation time
+//	Time to( t + dto ); // Sampling time
+//	QSS_Method const qss_max( QSS2 );
+//	VariableQSS2< Function_NonlinearEx1 > y( "y", 1.0e-6, 1.0e-6 );
+//	y.init0( 2.0 );
+//	y.d().var( y );
+//	vars.reserve( 1 );
+//	vars.push_back( &y );
+//	std::ofstream e_stream( "y_e.out" ); // Exact solution output
+//	while ( to <= tEnd * ( 1.0 + 1.0e-14 ) ) {
+//		e_stream << to << '\t' << y.d().e( to ) << '\n';
+//		to += dto;
+//	}
+//	e_stream.close();
+//	to = 0.0;
 
 	// Solver master logic
 	for ( auto var : vars ) {
@@ -200,5 +238,9 @@ main()
 			if ( q_out ) q_streams[ i ] << tEnd << '\t' << var->q( tEnd ) << '\n';
 			x_streams[ i ] << tEnd << '\t' << var->x( tEnd ) << '\n';
 		}
+	}
+	for ( size_type i = 0; i < n_vars; ++i ) { // Close streams
+		if ( q_out ) q_streams[ i ].close();
+		x_streams[ i ].close();
 	}
 }

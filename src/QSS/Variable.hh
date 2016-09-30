@@ -109,13 +109,6 @@ public: // Properties
 	double
 	q() const = 0;
 
-	// Quantized Value at Time tBeg
-	double
-	q0() const
-	{
-		return q();
-	}
-
 	// Quantized First Derivative at Time tBeg
 	virtual
 	double
