@@ -66,3 +66,21 @@ Specifically, evaluation of alternative event queue designs is likely to be wort
 
 * Case runs are being compared with results from [Qss Solver](https://sourceforge.net/projects/qssengine/) for now.
 * Unit tests are included and will be extended for wider coverage as the code progresses.
+
+## Running
+
+To build the QSS prototype on Linux:
+* `cd <path_to_repository>`
+* `source bin/Linux/GCC/64/r/setProject` for release builds or `source bin/Linux/GCC/64/d/setProject` for debug builds
+* `cd src/QSS`
+* `mak -j8` to build the demo from the QSS.cc main (adjust -j value for the number of parallel compiles like make)
+* `./QSS` to run the demo
+
+To build the QSS prototype on Windows:
+* `cd <path_to_repository>`
+* `bin\Windows\VC\64\r\setProject` for VC++ release builds or `bin\Windows\VC\64\d\setProject` for VC++ debug builds (or similarly for GCC or IC for Intel C++)
+* `cd src\QSS`
+* `mak -j8` to build the demo from the QSS.cc main (adjust -j value for the number of parallel compiles like make)
+* `QSS` to run the demo
+
+You can edit QSS.cc to enable different example cases in there (or add one) and the options near the top control whether uniform sampled time step outputs are generated, the time step size for that, and whether outputs occur for all variables when any variable requantizes.
