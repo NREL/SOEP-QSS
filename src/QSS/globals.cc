@@ -4,3 +4,4 @@
 
 // QSS Globals
 EventQueue< Variable > events;
+bool diag( false ); // Diagnostic output?

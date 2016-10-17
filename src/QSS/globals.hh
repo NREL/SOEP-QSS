@@ -7,5 +7,6 @@ class Variable;
 
 // QSS Globals
 extern EventQueue< Variable > events;
+extern bool diag; // Diagnostic output?
 
 #endif

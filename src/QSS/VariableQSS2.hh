@@ -172,6 +172,7 @@ public: // Methods
 	{
 		tEnd = tEndTrigger();
 		event( events.add( tEnd, this ) );
+		if ( diag ) std::cout << "! " << name << '(' << tBeg << ')' << " = " << q0_ << "+" << q1_ << "*t quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2 internal   tEnd=" << tEnd << '\n';
 	}
 
 	// Set Current Tolerance
@@ -193,6 +194,7 @@ public: // Methods
 		set_qTol();
 		advanced = false;
 		tEnd = tEndTrigger();
+		if ( diag ) std::cout << "! " << name << '(' << tBeg << ')' << " = " << q0_ << "+" << q1_ << "*t quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2 internal   tEnd=" << tEnd << '\n';
 		event( events.shift( tEnd, event() ) );
 		for ( Variable * observer : observers() ) { // Advance observers
 			observer->advance( tBeg );
@@ -222,6 +224,7 @@ public: // Methods
 		x2_ = one_half * d_.q1( tBeg );
 		advanced = false;
 		tEnd = tEndTrigger();
+		if ( diag ) std::cout << "= " << name << '(' << tBeg << ')' << " = " << q0_ << "+" << q1_ << "*t quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2 internal   tEnd=" << tEnd << '\n';
 		event( events.shift( tEnd, event() ) );
 	}
 
@@ -238,6 +241,7 @@ public: // Methods
 			tCon = t;
 			advanced = true;
 			tEnd = tEndObserver();
+			if ( diag ) std::cout << "  " << name << '(' << t << ')' << " = " << q0_ << "+" << q1_ << "*t quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2 internal   tEnd=" << tEnd << '\n';
 			event( events.shift( tEnd, event() ) );
 		}
 	}

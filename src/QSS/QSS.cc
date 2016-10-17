@@ -34,6 +34,7 @@ main()
 	enum QSS_Method { QSS1 = 1, QSS2, QSS3, QSS4 };
 
 	// Settings
+//	diag = true; // Enable for diagnostic output of requantization events
 	bool const sampled( false ); // Sampled outputs?
 	bool const all_vars_out( false ); // Output all variables at every requantization event?
 	bool const q_out( sampled || all_vars_out ); // Quantized output would differ from continous?
@@ -85,8 +86,8 @@ main()
 	Time t( 0.0 ); // Simulation time
 	Time to( t + dto ); // Sampling time
 	QSS_Method const qss_max( QSS2 );
-	VariableQSS2< FunctionLTI > x1( "x1", 1.0, 0.0 );
-	VariableQSS2< FunctionLTI > x2( "x2", 1.0, 0.0 );
+	VariableQSS1< FunctionLTI > x1( "x1", 1.0, 0.0 );
+	VariableQSS1< FunctionLTI > x2( "x2", 1.0, 0.0 );
 	x1.init0( 0.0 );
 	x2.init0( 2.0 );
 	x1.d().add( -0.5, x1 ).add( 1.5, x2 );
