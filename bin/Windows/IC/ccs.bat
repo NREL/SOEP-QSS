@@ -10,6 +10,6 @@ if exist %1.ii  set CxxSource=%1.ii
 if not (%CxxSource%)==() shift
 
 :Compile
-icl /nologo /Qstd=c++11 /Qcxx-features /Wall /Zs -D__builtin_huge_val()=HUGE_VAL -D__builtin_huge_valf()=HUGE_VALF -D__builtin_nan=nan -D__builtin_nanf=nanf -D__builtin_nans=nan -D__builtin_nansf=nanf /c %1 %2 %3 %4 %5 %6 %7 %8 %9 %CxxSource%
+icl /nologo /Qstd=c++11 /Qcxx-features /Wall /Zs /c %1 %2 %3 %4 %5 %6 %7 %8 %9 %CxxSource%
 
 set CxxSource=

@@ -3,11 +3,11 @@ rem QSS Windows Intel C++ Setup
 
 if not (%QSS%) == () goto Step2
 set QSS=%~dp0
-set QSS=%QSS:~0,-19%
+set QSS=%QSS:~0,-16%
 :Step2
 
 set PlatformOS=Windows
-set PlatformCompiler=Windows\Intel
+set PlatformCompiler=Windows\IC
 
 set Path=%Path%;%QSS%\bin\%PlatformCompiler%
 

@@ -2,7 +2,7 @@
 #
 # Language: GNU Make
 #
-# Platform: Windows/Intel/64/p
+# Platform: Windows/IC/64/p
 
 # Variables
 CXXFLAGS = /nologo /Qstd=c++11 /Qcxx-features /Wall /Qdiag-disable:177,809,869,1786,2259,3280,10382,11074,11075 /QxHOST /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DNDEBUG /Qansi-alias /O3 /fp:fast=2 /Qprec-div- /Qip /Z7

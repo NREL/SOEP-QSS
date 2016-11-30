@@ -2,11 +2,11 @@
 #
 # Language: GNU Make
 #
-# Platform: Windows/Intel/64/r
+# Platform: Windows/IC/64/d
 
 # Variables
-CXXFLAGS = /nologo /Qstd=c++11 /Qcxx-features /Wall /Qdiag-disable:177,809,869,1786,2259,3280,10382,11074,11075 /QxHOST /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DNDEBUG /Qansi-alias /O3 /fp:fast=2 /Qprec-div- /Qip
-CFLAGS = /nologo /Qstd=c99 /Wall /Wp64 /Qdiag-disable:177,869,1478,1684,1786,2259,2312,2557,3280,10382,11074,11075 /QxHOST /DWIN32_LEAN_AND_MEAN /DNDEBUG /Qansi-alias /O3 /fp:fast=2 /Qprec-div- /Qip
+CXXFLAGS = /nologo /Qstd=c++11 /Qcxx-features /Wall /Qdiag-disable:177,809,869,1786,2259,3280,10382,11074,11075 /QxHOST /DNOMINMAX /DWIN32_LEAN_AND_MEAN /fp:source /Qtrapuv /check:stack,uninit /Gs0 /GS /Qfp-stack-check /traceback /Od /Z7 /MTd
+CFLAGS = /nologo /Qstd=c99 /Wall /Wp64 /Qdiag-disable:177,869,1478,1684,1786,2259,2312,2557,3280,10382,11074,11075 /QxHOST /DWIN32_LEAN_AND_MEAN /fp:source /Qtrapuv /check:stack,uninit /Gs0 /GS /Qfp-stack-check /traceback /Od /Z7 /MTd
 # Disabled Warnings:
 #   177 Variable declared but never referenced
 #   869 Parameter never referenced
@@ -20,6 +20,6 @@ CFLAGS = /nologo /Qstd=c99 /Wall /Wp64 /Qdiag-disable:177,869,1478,1684,1786,225
 # 10382 /QxHOST remark
 # 11074 Inlining inhibited
 # 11075 Inlining inhibited
-LDFLAGS := /nologo /subsystem:CONSOLE /STACK:8388608
+LDFLAGS := /nologo /subsystem:CONSOLE /STACK:8388608 /DEBUG
 
 include $(QSS_bin)\..\GNUmakeinit.mk

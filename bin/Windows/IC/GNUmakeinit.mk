@@ -2,7 +2,7 @@
 #
 # Language: GNU Make
 #
-# Platform: Windows/Intel
+# Platform: Windows/IC
 
 # Extensions
 .SUFFIXES: # Clear default extensions
@@ -16,7 +16,6 @@ CXX := icl
 AR := lib
 LD := xilink
 MAKEDEPEND := makedep.py --inc=INCLUDE
-CXXFLAGS += -D__builtin_huge_val()=HUGE_VAL -D__builtin_huge_valf()=HUGE_VALF -D__builtin_nan=nan -D__builtin_nanf=nanf -D__builtin_nans=nan -D__builtin_nansf=nanf
 
 # Paths
 OBJ_PATH := .

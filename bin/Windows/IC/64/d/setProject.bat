@@ -1,11 +1,11 @@
 @echo off
-rem QSS Windows Intel C++ 64-Bit Release Setup
+rem QSS Windows Intel C++ 64-Bit Debug Setup
 
 set QSS_bin=%~dp0
 set QSS_bin=%QSS_bin:~0,-1%
-if (%QSS%) == () set QSS=%QSS_bin:~0,-23%
+if (%QSS%) == () set QSS=%QSS_bin:~0,-20%
 
-set PlatformFull=Windows\Intel\64\r
+set PlatformFull=Windows\IC\64\d
 
 set Path=%Path%;%QSS_bin%
 
