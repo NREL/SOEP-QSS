@@ -156,14 +156,14 @@ public: // Methods
 	void
 	add_observer( Variable & v )
 	{
-		observers_.push_back( &v );
+		if ( &v != this ) observers_.push_back( &v ); // Don't need to self-observe: Observers called at the end of self requantization
 	}
 
 	// Add Observer
 	void
 	add_observer( Variable * v )
 	{
-		observers_.push_back( v );
+		if ( v != this ) observers_.push_back( v ); // Don't need to self-observe: Observers called at the end of self requantization
 	}
 
 	// Shrink Observers Collection
