@@ -104,12 +104,12 @@ public: // Properties
 	double
 	x( Time const t ) const = 0;
 
-	// Quantized Value at Time tBeg
+	// Quantized Value at Time tQ
 	virtual
 	double
 	q() const = 0;
 
-	// Quantized First Derivative at Time tBeg
+	// Quantized First Derivative at Time tQ
 	virtual
 	double
 	q1() const
@@ -117,7 +117,7 @@ public: // Properties
 		return 0.0;
 	}
 
-	// Quantized Second Derivative at Time tBeg
+	// Quantized Second Derivative at Time tQ
 	virtual
 	double
 	q2() const
@@ -135,7 +135,7 @@ public: // Properties
 	double
 	q1( Time const t ) const
 	{
-		assert( ( tBeg <= t ) && ( t <= tEnd ) );
+		assert( ( tQ <= t ) && ( t <= tE ) );
 		(void)t; // Suppress unused parameter warning
 		return 0.0;
 	}
@@ -145,7 +145,7 @@ public: // Properties
 	double
 	q2( Time const t ) const
 	{
-		assert( ( tBeg <= t ) && ( t <= tEnd ) );
+		assert( ( tQ <= t ) && ( t <= tE ) );
 		(void)t; // Suppress unused parameter warning
 		return 0.0;
 	}
@@ -172,11 +172,6 @@ public: // Methods
 	{
 		observers_.shrink_to_fit();
 	}
-
-	// Finalize Derivative Function
-	virtual
-	void
-	finalize_der() = 0;
 
 	// Initialize Constant Term
 	virtual
@@ -205,41 +200,41 @@ public: // Methods
 	void
 	init_event() = 0;
 
-	// Advance Trigger to Time tEnd and Requantize
+	// Advance Trigger to Time tE and Requantize
 	virtual
 	void
 	advance() = 0;
 
-	// Advance Simultaneous Trigger to Time tEnd and Requantize: Step 0
+	// Advance Simultaneous Trigger to Time tE and Requantize: Step 0
 	virtual
 	void
 	advance0()
 	{}
 
-	// Advance Simultaneous Trigger to Time tEnd and Requantize: Step 1
+	// Advance Simultaneous Trigger to Time tE and Requantize: Step 1
 	virtual
 	void
 	advance1()
 	{}
 
-	// Advance Simultaneous Trigger to Time tEnd and Requantize: Step 2
+	// Advance Simultaneous Trigger to Time tE and Requantize: Step 2
 	virtual
 	void
 	advance2()
 	{}
 
-	// Advance Simultaneous Trigger to Time tEnd and Requantize: Step 3
+	// Advance Simultaneous Trigger to Time tE and Requantize: Step 3
 	virtual
 	void
 	advance3()
 	{}
 
-	// Advance Simultaneous Trigger to Time tEnd and Requantize: Step Observers
+	// Advance Simultaneous Trigger to Time tE and Requantize: Step Observers
 	void
 	advance_observers()
 	{
-		for ( Variable * observer : observers() ) { // Advance observers
-			observer->advance( tBeg );
+		for ( Variable * observer : observers() ) { // Advance (other) observers
+			observer->advance( tQ );
 		}
 	}
 
@@ -253,11 +248,11 @@ public: // Data
 	std::string name;
 	double aTol{ 1.0e-6 }; // Absolute tolerance
 	double rTol{ 1.0e-6 }; // Relative tolerance
-	double qTol{ 1.0e-6 }; // Current quantization tolerance
-	Time tBeg{ 0.0 }; // Quantized time range begin
-	Time tCon{ 0.0 }; // Continuous time range begin
-	Time tEnd{ infinity }; // Time range end: tBeg <= tCon <= tEnd
-	bool advanced{ false }; // Continuous rep advanced past quantized (tCon > tBeg)?
+	double qTol{ 1.0e-6 }; // Quantization tolerance
+	Time tQ{ 0.0 }; // Quantized time range begin
+	Time tC{ 0.0 }; // Continuous time range begin
+	Time tE{ infinity }; // Time range end: tQ <= tE and tC <= tE
+	bool self_observer{ false }; // Variable appears in its derivative?
 
 protected: // Data
 

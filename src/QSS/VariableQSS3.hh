@@ -58,27 +58,27 @@ public: // Properties
 	double
 	x( Time const t ) const
 	{
-		assert( ( tCon <= t ) && ( t <= tEnd ) );
-		Time const tDel( t - tCon );
+		assert( ( tC <= t ) && ( t <= tE ) );
+		Time const tDel( t - tC );
 		Time const tDel_sq( tDel * tDel );
 		return x0_ + ( x1_ * tDel ) + ( x2_ * tDel_sq ) + ( x3_ * ( tDel_sq * tDel ) );
 	}
 
-	// Quantized Value at Time tBeg
+	// Quantized Value at Time tQ
 	double
 	q() const
 	{
 		return q0_;
 	}
 
-	// Quantized First Derivative at Time tBeg
+	// Quantized First Derivative at Time tQ
 	double
 	q1() const
 	{
 		return q1_;
 	}
 
-	// Quantized Second Derivative at Time tBeg
+	// Quantized Second Derivative at Time tQ
 	double
 	q2() const
 	{
@@ -89,8 +89,8 @@ public: // Properties
 	double
 	q( Time const t ) const
 	{
-		assert( ( tBeg <= t ) && ( t <= tEnd ) );
-		Time const tDel( t - tBeg );
+		assert( ( tQ <= t ) && ( t <= tE ) );
+		Time const tDel( t - tQ );
 		return q0_ + ( q1_ * tDel ) + ( q2_ * ( tDel * tDel ) );
 	}
 
@@ -98,64 +98,50 @@ public: // Properties
 	double
 	q1( Time const t ) const
 	{
-		assert( ( tBeg <= t ) && ( t <= tEnd ) );
-		return q1_ + ( two * q2_ * ( t - tBeg ) );
+		assert( ( tQ <= t ) && ( t <= tE ) );
+		return q1_ + ( two * q2_ * ( t - tQ ) );
 	}
 
 	// Quantized Second Derivative at Time t
 	double
 	q2( Time const t ) const
 	{
-		assert( ( tBeg <= t ) && ( t <= tEnd ) );
+		assert( ( tQ <= t ) && ( t <= tE ) );
 		(void)t; // Suppress unused parameter warning
 		return two * q2_;
 	}
 
-	// Next End Time on Trigger Update
+	// Next End Time: Quantized and Continuous Aligned
 	Time
-	tEndTrigger() const
+	tEndAligned() const
 	{
-		return ( x3_ != 0.0 ? tBeg + std::cbrt( qTol / std::abs( x3_ ) ) : infinity );
+		assert( tQ == tC ); // Quantized and continuous reps should be rooted at same time
+		return ( x3_ != 0.0 ? tQ + std::cbrt( qTol / std::abs( x3_ ) ) : infinity );
 	}
 
-	// Next End Time on Observer Update
+	// Next End Time: Quantized and Continuous Unaligned
 	Time
-	tEndObserver() const
+	tEndUnaligned() const
 	{
-		if ( advanced ) {
-			double const tCB( tCon - tBeg );
-			double const d0( x0_ - ( q0_ + ( q1_ * tCB ) + ( q2_ * ( tCB * tCB ) ) ) );
-			double const d1( x1_ - ( q1_ + ( two * q2_ * tCB ) ) );
-			double const d2( x2_ - q2_ );
-			if ( ( x3_ >= 0.0 ) && ( d2 >= 0.0 ) && ( d1 >= 0.0 ) ) { // Only need to check +qTol
-				Time const tPosQ( min_root_cubic( x3_, d2, d1, d0 - qTol ) );
-				return ( tPosQ == infinity ? infinity : tCon + tPosQ );
-			} else if ( ( x3_ <= 0.0 ) && ( d2 <= 0.0 ) && ( d1 <= 0.0 ) ) { // Only need to check -qTol
-				Time const tNegQ( min_root_cubic( x3_, d2, d1, d0 + qTol ) );
-				return ( tNegQ == infinity ? infinity : tCon + tNegQ );
-			} else { // Check +qTol and -qTol
-				Time const tPosQ( min_root_cubic( x3_, d2, d1, d0 - qTol ) );
-				Time const tNegQ( min_root_cubic( x3_, d2, d1, d0 + qTol ) );
-				Time const tMinQ( std::min( tPosQ, tNegQ ) );
-				return ( tMinQ == infinity ? infinity : tCon + tMinQ );
-			}
-		} else {
-			assert( tBeg == tCon );
-			assert( q0_ == x0_ );
-			assert( q1_ == x1_ );
-			assert( q2_ == x2_ );
-			return ( x3_ != 0.0 ? tBeg + std::cbrt( qTol / std::abs( x3_ ) ) : infinity );
+		double const tCB( tC - tQ );
+		double const d0( x0_ - ( q0_ + ( q1_ * tCB ) + ( q2_ * ( tCB * tCB ) ) ) );
+		double const d1( x1_ - ( q1_ + ( two * q2_ * tCB ) ) );
+		double const d2( x2_ - q2_ );
+		if ( ( x3_ >= 0.0 ) && ( d2 >= 0.0 ) && ( d1 >= 0.0 ) ) { // Only need to check +qTol
+			Time const tPosQ( min_root_cubic( x3_, d2, d1, d0 - qTol ) );
+			return ( tPosQ == infinity ? infinity : tC + tPosQ );
+		} else if ( ( x3_ <= 0.0 ) && ( d2 <= 0.0 ) && ( d1 <= 0.0 ) ) { // Only need to check -qTol
+			Time const tNegQ( min_root_cubic( x3_, d2, d1, d0 + qTol ) );
+			return ( tNegQ == infinity ? infinity : tC + tNegQ );
+		} else { // Check +qTol and -qTol
+			Time const tPosQ( min_root_cubic( x3_, d2, d1, d0 - qTol ) );
+			Time const tNegQ( min_root_cubic( x3_, d2, d1, d0 + qTol ) );
+			Time const tMinQ( std::min( tPosQ, tNegQ ) );
+			return ( tMinQ == infinity ? infinity : tC + tMinQ );
 		}
 	}
 
 public: // Methods
-
-	// Finalize Derivative Function
-	void
-	finalize_der()
-	{
-		d_.finalize( this );
-	}
 
 	// Initialize Constant Term
 	VariableQSS3 &
@@ -170,6 +156,8 @@ public: // Methods
 	void
 	init1()
 	{
+		self_observer = d_.finalize( this );
+		shrink_observers(); // Optional
 		x1_ = q1_ = d_.q();
 	}
 
@@ -191,9 +179,9 @@ public: // Methods
 	void
 	init_event()
 	{
-		tEnd = tEndTrigger();
-		event( events.add( tEnd, this ) );
-		if ( diag ) std::cout << "! " << name << '(' << tBeg << ')' << " = " << q0_ << "+" << q1_ << "*t+" << q2_ << "*t^2 quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2+" << x3_ << "*t^3 internal   tEnd=" << tEnd << '\n';
+		tE = tEndAligned();
+		event( events.add( tE, this ) );
+		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q0_ << "+" << q1_ << "*t+" << q2_ << "*t^2 quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2+" << x3_ << "*t^3 internal   tE=" << tE << '\n';
 	}
 
 	// Set Current Tolerance
@@ -204,78 +192,85 @@ public: // Methods
 		assert( qTol > 0.0 );
 	}
 
-	// Advance Trigger to Time tEnd and Requantize
+	// Advance Trigger to Time tE and Requantize
 	void
 	advance()
 	{
-		Time const tDel( tEnd - tCon );
-		Time const tDel_sq( tDel * tDel );
-		x0_ = q0_ = x0_ + ( x1_ * tDel ) + ( x2_ * tDel_sq ) + ( x3_ * ( tDel_sq * tDel ) );
-		x1_ = q1_ = d_.q( tBeg = tCon = tEnd );
-		x2_ = q2_ = one_half * d_.q1( tBeg );
-		x3_ = one_sixth * d_.q2( tBeg );
+		Time const tDel( ( tQ = tE ) - tC );
+		q0_ = x0_ + ( ( x1_ + ( x2_ + ( x3_ * tDel ) ) * tDel ) * tDel );
+		q1_ = d_.q( tE );
+		q2_ = one_half * d_.q1( tE );
 		set_qTol();
-		advanced = false;
-		tEnd = tEndTrigger();
-		if ( diag ) std::cout << "! " << name << '(' << tBeg << ')' << " = " << q0_ << "+" << q1_ << "*t+" << q2_ << "*t^2 quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2+" << x3_ << "*t^3 internal   tEnd=" << tEnd << '\n';
-		event( events.shift( tEnd, event() ) );
-		for ( Variable * observer : observers() ) { // Advance observers
-			observer->advance( tBeg );
+		if ( self_observer ) {
+			x0_ = q0_;
+			x1_ = q1_;
+			x2_ = q2_;
+			x3_ = one_sixth * d_.q2( tC = tE );
+			tE = tEndAligned();
+		} else {
+			tE = tEndUnaligned();
+		}
+		event( events.shift( tE, event() ) );
+		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q0_ << "+" << q1_ << "*t+" << q2_ << "*t^2 quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2+" << x3_ << "*t^3 internal   tE=" << tE << '\n';
+		for ( Variable * observer : observers() ) { // Advance (other) observers
+			observer->advance( tQ );
 		}
 	}
 
-	// Advance Simultaneous Trigger to Time tEnd and Requantize: Step 0
+	// Advance Simultaneous Trigger to Time tE and Requantize: Step 0
 	void
 	advance0()
 	{
-		Time const tDel( tEnd - tCon );
-		Time const tDel_sq( tDel * tDel );
-		x0_ = q0_ = x0_ + ( x1_ * tDel ) + ( x2_ * tDel_sq ) + ( x3_ * ( tDel_sq * tDel ) );
+		Time const tDel( ( tQ = tE ) - tC );
+		q0_ = x0_ + ( ( x1_ + ( x2_ + ( x3_ * tDel ) ) * tDel ) * tDel );
 		set_qTol();
 	}
 
-	// Advance Simultaneous Trigger to Time tEnd and Requantize: Step 1
+	// Advance Simultaneous Trigger to Time tE and Requantize: Step 1
 	void
 	advance1()
 	{
-		x1_ = q1_ = d_.q( tBeg = tCon = tEnd );
+		q1_ = d_.q( tE );
 	}
 
-	// Advance Simultaneous Trigger to Time tEnd and Requantize: Step 2
+	// Advance Simultaneous Trigger to Time tE and Requantize: Step 2
 	void
 	advance2()
 	{
-		x2_ = q2_ = one_half * d_.q1( tBeg );
+		q2_ = one_half * d_.q1( tE );
 	}
 
-	// Advance Simultaneous Trigger to Time tEnd and Requantize: Step 3
+	// Advance Simultaneous Trigger to Time tE and Requantize: Step 3
 	void
 	advance3()
 	{
-		x3_ = one_sixth * d_.q2( tBeg );
-		advanced = false;
-		tEnd = tEndTrigger();
-		if ( diag ) std::cout << "= " << name << '(' << tBeg << ')' << " = " << q0_ << "+" << q1_ << "*t+" << q2_ << "*t^2 quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2+" << x3_ << "*t^3 internal   tEnd=" << tEnd << '\n';
-		event( events.shift( tEnd, event() ) );
+		if ( self_observer ) {
+			x0_ = q0_;
+			x1_ = q1_;
+			x2_ = q2_;
+			x3_ = one_sixth * d_.q2( tC = tE );
+			tE = tEndAligned();
+		} else {
+			tE = tEndUnaligned();
+		}
+		event( events.shift( tE, event() ) );
+		if ( diag ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q0_ << "+" << q1_ << "*t+" << q2_ << "*t^2 quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2+" << x3_ << "*t^3 internal   tE=" << tE << '\n';
 	}
 
 	// Advance Observer to Time t
 	void
 	advance( Time const t )
 	{
-		assert( ( tCon <= t ) && ( t <= tEnd ) );
-		if ( tCon < t ) { // Could observe multiple variables with simultaneous triggering
-			Time const tDel( t - tCon );
-			Time const tDel_sq( tDel * tDel );
-			x0_ = x0_ + ( x1_ * tDel ) + ( x2_ * tDel_sq ) + ( x3_ * ( tDel_sq * tDel ) );
+		assert( ( tC <= t ) && ( t <= tE ) );
+		if ( tC < t ) { // Could observe multiple variables with simultaneous triggering
+			Time const tDel( t - tC );
+			x0_ = x0_ + ( ( x1_ + ( x2_ + ( x3_ * tDel ) ) * tDel ) * tDel );
 			x1_ = d_.q( t );
 			x2_ = one_half * d_.q1( t );
-			x3_ = one_sixth * d_.q2( t );
-			tCon = t;
-			advanced = true;
-			tEnd = tEndObserver();
-			if ( diag ) std::cout << "  " << name << '(' << t << ')' << " = " << q0_ << "+" << q1_ << "*t+" << q2_ << "*t^2 quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2+" << x3_ << "*t^3 internal   tEnd=" << tEnd << '\n';
-			event( events.shift( tEnd, event() ) );
+			x3_ = one_sixth * d_.q2( tC = t );
+			tE = tEndUnaligned();
+			event( events.shift( tE, event() ) );
+			if ( diag ) std::cout << "  " << name << '(' << t << ')' << " = " << q0_ << "+" << q1_ << "*t+" << q2_ << "*t^2 quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2+" << x3_ << "*t^3 internal   tE=" << tE << '\n';
 		}
 	}
 

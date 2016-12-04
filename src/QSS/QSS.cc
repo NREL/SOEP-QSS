@@ -41,7 +41,7 @@ main()
 
 //	// Simple x, y, z
 //	Time const dto( 1.0e-3 ); // Sampling time step
-//	Time const tEnd( 5.0 ); // Simulation end time
+//	Time const tE( 5.0 ); // Simulation end time
 //	Time t( 0.0 ); // Simulation time
 //	Time to( t + dto ); // Sampling time
 //	QSS_Method const qss_max( QSS2 );
@@ -66,7 +66,7 @@ main()
 //	// Q      = 1
 //	// order  = 1
 //	Time const dto( 1.0e-3 ); // Sampling time step
-//	Time const tEnd( 10.0 ); // Simulation end time
+//	Time const tE( 10.0 ); // Simulation end time
 //	Time t( 0.0 ); // Simulation time
 //	Time to( t + dto ); // Sampling time
 //	QSS_Method const qss_max( QSS2 );
@@ -82,12 +82,12 @@ main()
 
 	// Achilles and the Tortoise
 	Time const dto( 1.0e-3 ); // Sampling time step
-	Time const tEnd( 10.0 ); // Simulation end time
+	Time const tE( 100.0 ); // Simulation end time
 	Time t( 0.0 ); // Simulation time
 	Time to( t + dto ); // Sampling time
 	QSS_Method const qss_max( QSS2 );
-	VariableQSS1< FunctionLTI > x1( "x1", 1.0, 0.0 );
-	VariableQSS1< FunctionLTI > x2( "x2", 1.0, 0.0 );
+	VariableQSS1< FunctionLTI > x1( "x1", 1.0E-6, 0.0 );
+	VariableQSS1< FunctionLTI > x2( "x2", 1.0E-6, 0.0 );
 	x1.init0( 0.0 );
 	x2.init0( 2.0 );
 	x1.d().add( -0.5, x1 ).add( 1.5, x2 );
@@ -98,7 +98,7 @@ main()
 
 //	// Achilles and the Tortoise: Using Custom Functions
 //	Time const dto( 1.0e-3 ); // Sampling time step
-//	Time const tEnd( 10.0 ); // Simulation end time
+//	Time const tE( 10.0 ); // Simulation end time
 //	Time t( 0.0 ); // Simulation time
 //	Time to( t + dto ); // Sampling time
 //	QSS_Method const qss_max( QSS2 );
@@ -114,7 +114,7 @@ main()
 
 //	// Nonlinear Example 1
 //	Time const dto( 1.0e-3 ); // Sampling time step
-//	Time const tEnd( 5.0 ); // Simulation end time
+//	Time const tE( 5.0 ); // Simulation end time
 //	Time t( 0.0 ); // Simulation time
 //	Time to( t + dto ); // Sampling time
 //	QSS_Method const qss_max( QSS3 );
@@ -124,7 +124,7 @@ main()
 //	vars.reserve( 1 );
 //	vars.push_back( &y );
 //	std::ofstream e_stream( "y_e.out" ); // Exact solution output
-//	while ( to <= tEnd * ( 1.0 + 1.0e-14 ) ) {
+//	while ( to <= tE * ( 1.0 + 1.0e-14 ) ) {
 //		e_stream << to << '\t' << y.d().e( to ) << '\n';
 //		to += dto;
 //	}
@@ -132,10 +132,6 @@ main()
 //	to = 0.0;
 
 	// Solver master logic
-	for ( auto var : vars ) {
-		var->finalize_der();
-		var->shrink_observers(); // Optional
-	}
 	for ( auto var : vars ) {
 		var->init1();
 	}
@@ -161,10 +157,10 @@ main()
 		x_streams.back() << std::setprecision( 16 ) << t << '\t' << var->x( t ) << '\n';
 	}
 	size_type n_vars( vars.size() );
-	while ( ( t <= tEnd ) || ( sampled && ( to <= tEnd ) ) ) {
+	while ( ( t <= tE ) || ( sampled && ( to <= tE ) ) ) {
 		t = events.top_time();
 		if ( sampled ) { // Sampled outputs
-			Time const tStop( std::min( t, tEnd ) );
+			Time const tStop( std::min( t, tE ) );
 			while ( to < tStop ) {
 				for ( size_type i = 0; i < n_vars; ++i ) {
 					if ( q_out ) q_streams[ i ] << to << '\t' << vars[ i ]->q( to ) << '\n';
@@ -173,12 +169,12 @@ main()
 				to += dto;
 			}
 		}
-		if ( t > tEnd ) break; // Don't requantize
+		if ( t > tE ) break; // Don't requantize
 		if ( events.simultaneous() ) {
-//			std::cout << "Simultaneous trigger event at t = " << t << std::endl;
+			std::cout << "Simultaneous trigger event at t = " << t << std::endl;
 			EventQueue< Variable >::Variables triggers( events.simultaneous_variables() ); // Chg to generator approach to avoid heap hit // Sort/ptn by QSS order to save unnec loops/calls below
 			for ( Variable * trigger : triggers ) {
-				assert( trigger->tEnd == t );
+				assert( trigger->tE == t );
 				trigger->advance0();
 			}
 			for ( Variable * trigger : triggers ) {
@@ -215,7 +211,7 @@ main()
 			}
 		} else {
 			Variable * trigger( events.top() );
-			assert( trigger->tEnd == t );
+			assert( trigger->tE == t );
 			trigger->advance();
 			if ( all_vars_out ) {
 				for ( size_type i = 0; i < n_vars; ++i ) {
@@ -233,11 +229,11 @@ main()
 			}
 		}
 	}
-	for ( size_type i = 0; i < n_vars; ++i ) { // Add tEnd outputs
+	for ( size_type i = 0; i < n_vars; ++i ) { // Add tE outputs
 		Variable const * var( vars[ i ] );
-		if ( var->tBeg < tEnd ) {
-			if ( q_out ) q_streams[ i ] << tEnd << '\t' << var->q( tEnd ) << '\n';
-			x_streams[ i ] << tEnd << '\t' << var->x( tEnd ) << '\n';
+		if ( var->tQ < tE ) {
+			if ( q_out ) q_streams[ i ] << tE << '\t' << var->q( tE ) << '\n';
+			x_streams[ i ] << tE << '\t' << var->x( tE ) << '\n';
 		}
 	}
 	for ( size_type i = 0; i < n_vars; ++i ) { // Close streams

@@ -28,20 +28,21 @@ public: // Methods
 	}
 
 	// Finalize Function Representation
-	void
+	bool
 	finalize( Variable * v )
 	{
 		assert( v != nullptr );
 
 		// Add variables as observer of owning variable
 		x1_->add_observer( v );
+		return false;
 	}
 
 	// Finalize Function Representation
-	void
+	bool
 	finalize( Variable & v )
 	{
-		finalize( &v );
+		return finalize( &v );
 	}
 
 	// Quantized Value at Initialization Time

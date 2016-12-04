@@ -79,7 +79,7 @@ public: // Methods
 	}
 
 	// Finalize Function Representation
-	void
+	bool
 	finalize( Variable * v )
 	{
 		assert( v != nullptr );
@@ -109,14 +109,19 @@ public: // Methods
 //		...
 
 		// Add variables as observer of owning variable
-		for ( Variable * x : x_ ) x->add_observer( v );
+		bool self_observer( false );
+		for ( Variable * x : x_ ) {
+			x->add_observer( v );
+			if ( x == v ) self_observer = true;
+		}
+		return self_observer;
 	}
 
 	// Finalize Function Representation
-	void
+	bool
 	finalize( Variable & v )
 	{
-		finalize( &v );
+		return finalize( &v );
 	}
 
 	// Quantized Value at Initialization Time

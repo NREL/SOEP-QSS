@@ -23,7 +23,7 @@ TEST( EventQueueTest, Basic )
 	vars.reserve( 10 ); // Prevent reallocation
 	EventQ events;
 	Time t( 0.0 );
-	Time const tEnd( 10.0 );
+	Time const tE( 10.0 );
 	for ( Variables::size_type i = 0; i < 10; ++i ) {
 		vars.emplace_back( V() );
 		events.add( Time( i ), &vars[ i ] );
