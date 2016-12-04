@@ -3,9 +3,13 @@
 
 // Linear Time-Invariant Function
 
+// Notes:
+// . This variant uses an array of variable+coefficient pairs that is probably slower wrt vectorization but should be tried for larger cases just to see
+
 // C++ Headers
 #include <cassert>
 //#include <numeric> // std::iota
+#include <utility>
 #include <vector>
 
 // Linear Time-Invariant Function
@@ -16,12 +20,10 @@ class FunctionLTI
 public: // Types
 
 	using Coefficient = double;
-	using Coefficients = std::vector< Coefficient >;
-
 	using Variable = V;
-	using Variables = typename V::Variables;
-
-	using size_type = Coefficients::size_type;
+	using Element = std::pair< Variable *, Coefficient >;
+	using Elements = std::vector< Element >;
+	using size_type = typename Elements::size_type;
 
 public: // Creation
 
@@ -30,15 +32,10 @@ public: // Creation
 	{}
 
 	// Constructor
-	FunctionLTI(
-	 Coefficients const & c,
-	 Variables const & x
-	) :
-	 c_( c ),
-	 x_( x )
-	{
-		assert( c_.size() == x_.size() );
-	}
+	explicit
+	FunctionLTI( Elements const & e ) :
+	 e_( e )
+	{}
 
 public: // Methods
 
@@ -53,56 +50,44 @@ public: // Methods
 	// Add a Coefficient + Variable
 	FunctionLTI &
 	add(
-	 Coefficient const c_i,
-	 Variable & x_i
+	 Coefficient const c,
+	 Variable & x
 	)
 	{
-		assert( c_.size() == x_.size() );
-		c_.push_back( c_i );
-		x_.push_back( &x_i );
-		assert( c_.size() == x_.size() );
+		e_.push_back( Element( &x, c ) );
 		return *this;
 	}
 
 	// Add a Variable + Coefficient
 	FunctionLTI &
 	add(
-	 Variable & x_i,
-	 Coefficient const c_i
+	 Variable & x,
+	 Coefficient const c
 	)
 	{
-		assert( c_.size() == x_.size() );
-		c_.push_back( c_i );
-		x_.push_back( &x_i );
-		assert( c_.size() == x_.size() );
+		e_.push_back( Element( &x, c ) );
 		return *this;
 	}
 
 	// Add a Coefficient + Variable
 	FunctionLTI &
 	add(
-	 Coefficient const c_i,
-	 Variable * x_i
+	 Coefficient const c,
+	 Variable * x
 	)
 	{
-		assert( c_.size() == x_.size() );
-		c_.push_back( c_i );
-		x_.push_back( x_i );
-		assert( c_.size() == x_.size() );
+		e_.push_back( Element( x, c ) );
 		return *this;
 	}
 
 	// Add a Variable + Coefficient
 	FunctionLTI &
 	add(
-	 Variable * x_i,
-	 Coefficient const c_i
+	 Variable * x,
+	 Coefficient const c
 	)
 	{
-		assert( c_.size() == x_.size() );
-		c_.push_back( c_i );
-		x_.push_back( x_i );
-		assert( c_.size() == x_.size() );
+		e_.push_back( Element( x, c ) );
 		return *this;
 	}
 
@@ -111,36 +96,31 @@ public: // Methods
 	finalize( Variable * v )
 	{
 		assert( v != nullptr );
-		assert( c_.size() == x_.size() );
-		size_type n( c_.size() );
+		size_type n( e_.size() );
 
 		// Sort elements by QSS method order (not max efficiency!)
-		Coefficients c;
-		c.reserve( n );
-		Variables x;
-		x.reserve( n );
+		Elements e;
+		e.reserve( n );
 		for ( int order = 1; order <= max_order; ++order ) {
-			iBeg[ order ] = c.size();
+			iBeg[ order ] = e.size();
 			for ( size_type i = 0; i < n; ++i ) {
-				if ( x_[ i ]->order() == order ) {
-					c.push_back( c_[ i ] );
-					x.push_back( x_[ i ] );
+				if ( e_[ i ].first->order() == order ) {
+					e.push_back( e_[ i ] );
 				}
 			}
 		}
-		c_.swap( c );
-		x_.swap( x );
+		e_.swap( e );
 // Consider doing an in-place permutation if this is a bottleneck
 //		std::vector< size_type > p( n ); // Permutation
 //		std::iota( p.begin(), p.end(), 0u );
-//		std::stable_sort( p.begin(), p.end(), [&]( size_type i, size_type j ){ return x_[ i ]->order() < x_[ j ]->order() } );
+//		std::stable_sort( p.begin(), p.end(), [&]( size_type i, size_type j ){ return e_[ i ].first->order() < e_[ j ].first->order() } );
 //		...
 
 		// Add variables as observer of owning variable
 		bool self_observer( false );
-		for ( Variable * x : x_ ) {
-			x->add_observer( v );
-			if ( x == v ) self_observer = true;
+		for ( Element & e : e_ ) {
+			e.first->add_observer( v );
+			if ( e.first == v ) self_observer = true;
 		}
 		return self_observer;
 	}
@@ -156,10 +136,9 @@ public: // Methods
 	double
 	q() const
 	{
-		assert( c_.size() == x_.size() );
 		double v( c0_ ); // Value
-		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
-			v += c_[ i ] * x_[ i ]->q();
+		for ( size_type i = 0, n = e_.size(); i < n; ++i ) {
+			v += e_[ i ].second * e_[ i ].first->q();
 		}
 		return v;
 	}
@@ -168,10 +147,9 @@ public: // Methods
 	double
 	q1() const
 	{
-		assert( c_.size() == x_.size() );
 		double s( 0.0 ); // Slope
-		for ( size_type i = iBeg[ 2 ], n = c_.size(); i < n; ++i ) {
-			s += c_[ i ] * x_[ i ]->q1();
+		for ( size_type i = iBeg[ 2 ], n = e_.size(); i < n; ++i ) {
+			s += e_[ i ].second * e_[ i ].first->q1();
 		}
 		return s;
 	}
@@ -180,10 +158,9 @@ public: // Methods
 	double
 	q2() const
 	{
-		assert( c_.size() == x_.size() );
 		double c( 0.0 ); // Curvature
-		for ( size_type i = iBeg[ 3 ], n = c_.size(); i < n; ++i ) {
-			c += c_[ i ] * x_[ i ]->q2();
+		for ( size_type i = iBeg[ 3 ], n = e_.size(); i < n; ++i ) {
+			c += e_[ i ].second * e_[ i ].first->q2();
 		}
 		return c;
 	}
@@ -192,10 +169,9 @@ public: // Methods
 	double
 	operator ()( double const t ) const
 	{
-		assert( c_.size() == x_.size() );
 		double v( c0_ ); // Value
-		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
-			v += c_[ i ] * x_[ i ]->x( t );
+		for ( size_type i = 0, n = e_.size(); i < n; ++i ) {
+			v += e_[ i ].second * e_[ i ].first->x( t );
 		}
 		return v;
 	}
@@ -204,10 +180,9 @@ public: // Methods
 	double
 	x( double const t ) const
 	{
-		assert( c_.size() == x_.size() );
 		double v( c0_ ); // Value
-		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
-			v += c_[ i ] * x_[ i ]->x( t );
+		for ( size_type i = 0, n = e_.size(); i < n; ++i ) {
+			v += e_[ i ].second * e_[ i ].first->x( t );
 		}
 		return v;
 	}
@@ -216,10 +191,9 @@ public: // Methods
 	double
 	q( double const t ) const
 	{
-		assert( c_.size() == x_.size() );
 		double v( c0_ ); // Value
-		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
-			v += c_[ i ] * x_[ i ]->q( t );
+		for ( size_type i = 0, n = e_.size(); i < n; ++i ) {
+			v += e_[ i ].second * e_[ i ].first->q( t );
 		}
 		return v;
 	}
@@ -228,10 +202,9 @@ public: // Methods
 	double
 	q1( double const t ) const
 	{
-		assert( c_.size() == x_.size() );
 		double s( 0.0 ); // Slope
-		for ( size_type i = iBeg[ 2 ], n = c_.size(); i < n; ++i ) {
-			s += c_[ i ] * x_[ i ]->q1( t );
+		for ( size_type i = iBeg[ 2 ], n = e_.size(); i < n; ++i ) {
+			s += e_[ i ].second * e_[ i ].first->q1( t );
 		}
 		return s;
 	}
@@ -240,10 +213,9 @@ public: // Methods
 	double
 	q2( double const t ) const
 	{
-		assert( c_.size() == x_.size() );
 		double c( 0.0 ); // Curvature
-		for ( size_type i = iBeg[ 3 ], n = c_.size(); i < n; ++i ) {
-			c += c_[ i ] * x_[ i ]->q2( t );
+		for ( size_type i = iBeg[ 3 ], n = e_.size(); i < n; ++i ) {
+			c += e_[ i ].second * e_[ i ].first->q2( t );
 		}
 		return c;
 	}
@@ -255,8 +227,7 @@ public: // Static Data
 private: // Data
 
 	Coefficient c0_{ 0.0 };
-	Coefficients c_;
-	Variables x_;
+	Elements e_;
 	size_type iBeg[ max_order + 1 ];
 
 };
