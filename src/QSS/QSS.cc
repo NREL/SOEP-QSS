@@ -82,12 +82,12 @@ main()
 
 	// Achilles and the Tortoise
 	Time const dto( 1.0e-3 ); // Sampling time step
-	Time const tE( 100.0 ); // Simulation end time
+	Time const tE( 10.0 ); // Simulation end time
 	Time t( 0.0 ); // Simulation time
 	Time to( t + dto ); // Sampling time
 	QSS_Method const qss_max( QSS2 );
-	VariableQSS1< FunctionLTI > x1( "x1", 1.0E-6, 0.0 );
-	VariableQSS1< FunctionLTI > x2( "x2", 1.0E-6, 0.0 );
+	VariableQSS1< FunctionLTI > x1( "x1", 1.0, 0.0 );
+	VariableQSS1< FunctionLTI > x2( "x2", 1.0, 0.0 );
 	x1.init0( 0.0 );
 	x2.init0( 2.0 );
 	x1.d().add( -0.5, x1 ).add( 1.5, x2 );
@@ -171,7 +171,7 @@ main()
 		}
 		if ( t > tE ) break; // Don't requantize
 		if ( events.simultaneous() ) {
-			std::cout << "Simultaneous trigger event at t = " << t << std::endl;
+			if ( diag ) std::cout << "Simultaneous trigger event at t = " << t << std::endl;
 			EventQueue< Variable >::Variables triggers( events.simultaneous_variables() ); // Chg to generator approach to avoid heap hit // Sort/ptn by QSS order to save unnec loops/calls below
 			for ( Variable * trigger : triggers ) {
 				assert( trigger->tE == t );
