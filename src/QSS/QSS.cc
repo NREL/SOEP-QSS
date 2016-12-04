@@ -38,13 +38,13 @@ main()
 	bool const sampled( false ); // Sampled outputs?
 	bool const all_vars_out( false ); // Output all variables at every requantization event?
 	bool const q_out( sampled || all_vars_out ); // Quantized output would differ from continous?
+	QSS_Method const qss_max( QSS3 ); // Handle all QSS orders
 
 //	// Simple x, y, z
 //	Time const dto( 1.0e-3 ); // Sampling time step
 //	Time const tE( 5.0 ); // Simulation end time
 //	Time t( 0.0 ); // Simulation time
 //	Time to( t + dto ); // Sampling time
-//	QSS_Method const qss_max( QSS2 );
 //	VariableQSS2< FunctionLTI > x( "x", 1.0, 0.0 );
 //	VariableQSS2< FunctionLTI > y( "y", 1.0, 0.0 );
 //	VariableQSS2< FunctionLTI > z( "z", 1.0, 0.0 );
@@ -69,7 +69,6 @@ main()
 //	Time const tE( 10.0 ); // Simulation end time
 //	Time t( 0.0 ); // Simulation time
 //	Time to( t + dto ); // Sampling time
-//	QSS_Method const qss_max( QSS2 );
 //	VariableQSS2< FunctionLTI > x1( "x1", 1.0, 0.0 );
 //	VariableQSS2< FunctionLTI > x2( "x2", 1.0, 0.0 );
 //	x1.init0( 1.0 );
@@ -85,7 +84,6 @@ main()
 	Time const tE( 10.0 ); // Simulation end time
 	Time t( 0.0 ); // Simulation time
 	Time to( t + dto ); // Sampling time
-	QSS_Method const qss_max( QSS2 );
 	VariableQSS1< FunctionLTI > x1( "x1", 1.0, 0.0 );
 	VariableQSS1< FunctionLTI > x2( "x2", 1.0, 0.0 );
 	x1.init0( 0.0 );
@@ -101,7 +99,6 @@ main()
 //	Time const tE( 10.0 ); // Simulation end time
 //	Time t( 0.0 ); // Simulation time
 //	Time to( t + dto ); // Sampling time
-//	QSS_Method const qss_max( QSS2 );
 //	VariableQSS2< Function_achilles1 > x1( "x1", 1.0, 0.0 );
 //	VariableQSS2< Function_achilles2 > x2( "x2", 1.0, 0.0 );
 //	x1.init0( 0.0 );
@@ -117,7 +114,6 @@ main()
 //	Time const tE( 5.0 ); // Simulation end time
 //	Time t( 0.0 ); // Simulation time
 //	Time to( t + dto ); // Sampling time
-//	QSS_Method const qss_max( QSS3 );
 //	VariableQSS3< Function_NonlinearEx1 > y( "y", 1.0e-3, 1.0e-3 );
 //	y.init0( 2.0 );
 //	y.d().var( y );

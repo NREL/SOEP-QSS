@@ -60,7 +60,7 @@ public: // Properties
 	{
 		assert( ( tC <= t ) && ( t <= tE ) );
 		Time const tDel( t - tC );
-		return x0_ + ( x1_ * tDel ) + ( x2_ * ( tDel * tDel ) );
+		return x0_ + ( ( x1_ + ( x2_ * tDel ) ) * tDel );
 	}
 
 	// Quantized Value at Time tQ
@@ -94,36 +94,38 @@ public: // Properties
 		return q1_;
 	}
 
-	// Next End Time: Quantized and Continuous Aligned
-	Time
-	tEndAligned() const
+	// Set End Time: Quantized and Continuous Aligned
+	void
+	set_tE_aligned()
 	{
-		assert( tQ == tC ); // Quantized and continuous reps should be rooted at same time
-		return ( x2_ != 0.0 ? tQ + std::sqrt( qTol / std::abs( x2_ ) ) : infinity );
+		assert( tC <= tQ ); // Quantized and continuous trajectories align at tQ
+		tE = ( x2_ != 0.0 ? tQ + std::sqrt( qTol / std::abs( x2_ ) ) : infinity );
 	}
 
-	// Next End Time: Quantized and Continuous Unaligned
-	Time
-	tEndUnaligned() const
+	// Set End Time: Quantized and Continuous Unaligned
+	void
+	set_tE_unaligned()
 	{
+		assert( tQ <= tC );
 		double const d0( x0_ - ( q0_ + ( q1_ * ( tC - tQ ) ) ) );
-		if ( x1_ - q1_ >= 0.0 ) {
-			Time const tPosQ( min_root_quadratic( x2_, x1_ - q1_, d0 - qTol ) );
+		double const d1( x1_ - q1_ );
+		if ( d1 >= 0.0 ) {
+			Time const tPosQ( min_root_quadratic( x2_, d1, d0 - qTol ) );
 			if ( x2_ >= 0.0 ) { // Only need to check +qTol
-				return ( tPosQ == infinity ? infinity : tC + tPosQ );
+				tE = ( tPosQ == infinity ? infinity : tC + tPosQ );
 			} else {
-				Time const tNegQ( min_root_quadratic( x2_, x1_ - q1_, d0 + qTol ) );
+				Time const tNegQ( min_root_quadratic( x2_, d1, d0 + qTol ) );
 				Time const tMinQ( std::min( tPosQ, tNegQ ) );
-				return ( tMinQ == infinity ? infinity : tC + tMinQ );
+				tE = ( tMinQ == infinity ? infinity : tC + tMinQ );
 			}
-		} else { // x1 - q1 < 0
-			Time const tNegQ( min_root_quadratic( x2_, x1_ - q1_, d0 + qTol ) );
+		} else { // d1 < 0
+			Time const tNegQ( min_root_quadratic( x2_, d1, d0 + qTol ) );
 			if ( x2_ <= 0.0 ) { // Only need to check -qTol
-				return ( tNegQ == infinity ? infinity : tC + tNegQ );
+				tE = ( tNegQ == infinity ? infinity : tC + tNegQ );
 			} else {
-				Time const tPosQ( min_root_quadratic( x2_, x1_ - q1_, d0 - qTol ) );
+				Time const tPosQ( min_root_quadratic( x2_, d1, d0 - qTol ) );
 				Time const tMinQ( std::min( tPosQ, tNegQ ) );
-				return ( tMinQ == infinity ? infinity : tC + tMinQ );
+				tE = ( tMinQ == infinity ? infinity : tC + tMinQ );
 			}
 		}
 	}
@@ -159,7 +161,7 @@ public: // Methods
 	void
 	init_event()
 	{
-		tE = tEndAligned();
+		set_tE_aligned();
 		event( events.add( tE, this ) );
 		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q0_ << "+" << q1_ << "*t quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2 internal   tE=" << tE << '\n';
 	}
@@ -184,10 +186,8 @@ public: // Methods
 			x0_ = q0_;
 			x1_ = q1_;
 			x2_ = one_half * d_.q1( tC = tE );
-			tE = tEndAligned();
-		} else {
-			tE = tEndUnaligned();
 		}
+		set_tE_aligned();
 		event( events.shift( tE, event() ) );
 		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q0_ << "+" << q1_ << "*t quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2 internal   tE=" << tE << '\n';
 		for ( Variable * observer : observers() ) { // Advance (other) observers
@@ -219,10 +219,8 @@ public: // Methods
 			x0_ = q0_;
 			x1_ = q1_;
 			x2_ = one_half * d_.q1( tC = tE );
-			tE = tEndAligned();
-		} else {
-			tE = tEndUnaligned();
 		}
+		set_tE_aligned();
 		event( events.shift( tE, event() ) );
 		if ( diag ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q0_ << "+" << q1_ << "*t quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2 internal   tE=" << tE << '\n';
 	}
@@ -237,7 +235,7 @@ public: // Methods
 			x0_ = x0_ + ( ( x1_ + ( x2_ * tDel ) ) * tDel );
 			x1_ = d_.q( t );
 			x2_ = one_half * d_.q1( tC = t );
-			tE = tEndUnaligned();
+			set_tE_unaligned();
 			event( events.shift( tE, event() ) );
 			if ( diag ) std::cout << "  " << name << '(' << t << ')' << " = " << q0_ << "+" << q1_ << "*t quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2 internal   tE=" << tE << '\n';
 		}

@@ -60,8 +60,7 @@ public: // Properties
 	{
 		assert( ( tC <= t ) && ( t <= tE ) );
 		Time const tDel( t - tC );
-		Time const tDel_sq( tDel * tDel );
-		return x0_ + ( x1_ * tDel ) + ( x2_ * tDel_sq ) + ( x3_ * ( tDel_sq * tDel ) );
+		return x0_ + ( ( x1_ + ( x2_ + ( x3_ * tDel ) ) * tDel ) * tDel );
 	}
 
 	// Quantized Value at Time tQ
@@ -91,7 +90,7 @@ public: // Properties
 	{
 		assert( ( tQ <= t ) && ( t <= tE ) );
 		Time const tDel( t - tQ );
-		return q0_ + ( q1_ * tDel ) + ( q2_ * ( tDel * tDel ) );
+		return q0_ + ( ( q1_ + ( q2_ * tDel ) ) * tDel );
 	}
 
 	// Quantized First Derivative at Time t
@@ -111,33 +110,34 @@ public: // Properties
 		return two * q2_;
 	}
 
-	// Next End Time: Quantized and Continuous Aligned
-	Time
-	tEndAligned() const
+	// Set End Time: Quantized and Continuous Aligned
+	void
+	set_tE_aligned()
 	{
-		assert( tQ == tC ); // Quantized and continuous reps should be rooted at same time
-		return ( x3_ != 0.0 ? tQ + std::cbrt( qTol / std::abs( x3_ ) ) : infinity );
+		assert( tC <= tQ ); // Quantized and continuous trajectories align at tQ
+		tE = ( x3_ != 0.0 ? tQ + std::cbrt( qTol / std::abs( x3_ ) ) : infinity );
 	}
 
-	// Next End Time: Quantized and Continuous Unaligned
-	Time
-	tEndUnaligned() const
+	// Set End Time: Quantized and Continuous Unaligned
+	void
+	set_tE_unaligned()
 	{
-		double const tCB( tC - tQ );
-		double const d0( x0_ - ( q0_ + ( q1_ * tCB ) + ( q2_ * ( tCB * tCB ) ) ) );
-		double const d1( x1_ - ( q1_ + ( two * q2_ * tCB ) ) );
+		assert( tQ <= tC );
+		double const tCQ( tC - tQ );
+		double const d0( x0_ - ( q0_ + ( q1_ + ( q2_ * tCQ ) ) * tCQ ) );
+		double const d1( x1_ - ( q1_ + ( two * q2_ * tCQ ) ) );
 		double const d2( x2_ - q2_ );
 		if ( ( x3_ >= 0.0 ) && ( d2 >= 0.0 ) && ( d1 >= 0.0 ) ) { // Only need to check +qTol
 			Time const tPosQ( min_root_cubic( x3_, d2, d1, d0 - qTol ) );
-			return ( tPosQ == infinity ? infinity : tC + tPosQ );
+			tE = ( tPosQ == infinity ? infinity : tC + tPosQ );
 		} else if ( ( x3_ <= 0.0 ) && ( d2 <= 0.0 ) && ( d1 <= 0.0 ) ) { // Only need to check -qTol
 			Time const tNegQ( min_root_cubic( x3_, d2, d1, d0 + qTol ) );
-			return ( tNegQ == infinity ? infinity : tC + tNegQ );
+			tE = ( tNegQ == infinity ? infinity : tC + tNegQ );
 		} else { // Check +qTol and -qTol
 			Time const tPosQ( min_root_cubic( x3_, d2, d1, d0 - qTol ) );
 			Time const tNegQ( min_root_cubic( x3_, d2, d1, d0 + qTol ) );
 			Time const tMinQ( std::min( tPosQ, tNegQ ) );
-			return ( tMinQ == infinity ? infinity : tC + tMinQ );
+			tE = ( tMinQ == infinity ? infinity : tC + tMinQ );
 		}
 	}
 
@@ -179,7 +179,7 @@ public: // Methods
 	void
 	init_event()
 	{
-		tE = tEndAligned();
+		set_tE_aligned();
 		event( events.add( tE, this ) );
 		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q0_ << "+" << q1_ << "*t+" << q2_ << "*t^2 quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2+" << x3_ << "*t^3 internal   tE=" << tE << '\n';
 	}
@@ -206,10 +206,8 @@ public: // Methods
 			x1_ = q1_;
 			x2_ = q2_;
 			x3_ = one_sixth * d_.q2( tC = tE );
-			tE = tEndAligned();
-		} else {
-			tE = tEndUnaligned();
 		}
+		set_tE_aligned();
 		event( events.shift( tE, event() ) );
 		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q0_ << "+" << q1_ << "*t+" << q2_ << "*t^2 quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2+" << x3_ << "*t^3 internal   tE=" << tE << '\n';
 		for ( Variable * observer : observers() ) { // Advance (other) observers
@@ -249,10 +247,8 @@ public: // Methods
 			x1_ = q1_;
 			x2_ = q2_;
 			x3_ = one_sixth * d_.q2( tC = tE );
-			tE = tEndAligned();
-		} else {
-			tE = tEndUnaligned();
 		}
+		set_tE_aligned();
 		event( events.shift( tE, event() ) );
 		if ( diag ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q0_ << "+" << q1_ << "*t+" << q2_ << "*t^2 quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2+" << x3_ << "*t^3 internal   tE=" << tE << '\n';
 	}
@@ -268,7 +264,7 @@ public: // Methods
 			x1_ = d_.q( t );
 			x2_ = one_half * d_.q1( t );
 			x3_ = one_sixth * d_.q2( tC = t );
-			tE = tEndUnaligned();
+			set_tE_unaligned();
 			event( events.shift( tE, event() ) );
 			if ( diag ) std::cout << "  " << name << '(' << t << ')' << " = " << q0_ << "+" << q1_ << "*t+" << q2_ << "*t^2 quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2+" << x3_ << "*t^3 internal   tE=" << tE << '\n';
 		}

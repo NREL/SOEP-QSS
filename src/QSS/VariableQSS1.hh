@@ -78,19 +78,20 @@ public: // Properties
 		return q0_;
 	}
 
-	// Next End Time: Quantized and Continuous Aligned
-	Time
-	tEndAligned() const
+	// Set End Time: Quantized and Continuous Aligned
+	void
+	set_tE_aligned()
 	{
-		assert( tQ == tC ); // Quantized and continuous reps should be rooted at same time
-		return ( x1_ != 0.0 ? tQ + ( qTol / std::abs( x1_ ) ) : infinity );
+		assert( tC <= tQ ); // Quantized and continuous trajectories align at tQ
+		tE = ( x1_ != 0.0 ? tQ + ( qTol / std::abs( x1_ ) ) : infinity );
 	}
 
-	// Next End Time: Quantized and Continuous Unaligned
-	Time
-	tEndUnaligned() const
+	// Set End Time: Quantized and Continuous Unaligned
+	void
+	set_tE_unaligned()
 	{
-		return
+		assert( tQ <= tC );
+		tE =
 		 ( x1_ > 0.0 ? tC + ( ( ( q0_ - x0_ ) + qTol ) / x1_ ) :
 		 ( x1_ < 0.0 ? tC + ( ( ( q0_ - x0_ ) - qTol ) / x1_ ) :
 		 infinity ) );
@@ -120,7 +121,7 @@ public: // Methods
 	void
 	init_event()
 	{
-		tE = tEndAligned();
+		set_tE_aligned();
 		event( events.add( tE, this ) );
 		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q0_ << " quantized, " << x0_ << "+" << x1_ << "*t internal   tE=" << tE << '\n';
 	}
@@ -142,10 +143,8 @@ public: // Methods
 		if ( self_observer ) {
 			x0_ = q0_;
 			x1_ = d_.q( tC = tE );
-			tE = tEndAligned();
-		} else {
-			tE = tEndUnaligned();
 		}
+		set_tE_aligned();
 		event( events.shift( tE, event() ) );
 		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q0_ << " quantized, " << x0_ << "+" << x1_ << "*t internal   tE=" << tE << '\n';
 		for ( Variable * observer : observers() ) { // Advance (other) observers
@@ -168,10 +167,8 @@ public: // Methods
 		if ( self_observer ) {
 			x0_ = q0_;
 			x1_ = d_.q( tC = tE );
-			tE = tEndAligned();
-		} else {
-			tE = tEndUnaligned();
 		}
+		set_tE_aligned();
 		event( events.shift( tE, event() ) );
 		if ( diag ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q0_ << " quantized, " << x0_ << "+" << x1_ << "*t internal   tE=" << tE << '\n';
 	}
@@ -184,7 +181,7 @@ public: // Methods
 		if ( tC < t ) { // Could observe multiple variables with simultaneous triggering
 			x0_ = x0_ + ( x1_ * ( t - tC ) );
 			x1_ = d_.q( tC = t );
-			tE = tEndUnaligned();
+			set_tE_unaligned();
 			event( events.shift( tE, event() ) );
 			if ( diag ) std::cout << "  " << name << '(' << t << ')' << " = " << q0_ << " quantized, " << x0_ << "+" << x1_ << "*t internal   tE=" << tE << '\n';
 		}

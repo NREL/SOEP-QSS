@@ -39,6 +39,24 @@ Notes:
 * Integration and quantization are handled internally to avoid the cost of calls to other objects and passing of data packets between them.
 * Holds the iterator of its entry in the event queue to save one _O_( log N ) lookup.
 * Supports mix of different QSS method variables in the same model.
+* Flags whether its derivative depends on its own value (self-observer) and uses that for efficiency:
+  * If not a self-observer the continuous representation trajectory doesn't change at requantization events.
+    While the continuous representation could be advanced to re-sync segment start times with the requantized representation some efficiency is gained by not doing so.
+    There are different precision impacts of each approach but with bulletproofing against small negative time steps due to finite precision there is probably no benefit to shifting the continuous representation when the trajectory doesn't change.
+* Handles self-observer continuous representation updates specially instead of as part of general observer updates for efficiency:
+  * Assigns continuous representation coefficients from the corresponding quantized representation during requantization instead of recomputing them.
+
+### LIQSS
+
+LIQSS as described in the literature is somewhat under-defined and inconsistent in some details. Some of the key issues and how they are addressed in this code are detailed below.
+
+#### Cyclic Dependency
+
+At startup and simultaneous requantization trigger events the LIQSS approach defined in the literature is inadequate because the quantized values depend on derivatives which, in turn, depend on other quantized values.
+When multiple variables' quantized values need to be set at the same time point there is, in general, a cyclic dependency among them. Approaches that
+* Single pass in arbitrary order: Leaves different representations of the same variable in the system and has a processing order dependency so results can be non-deterministic depending on how variables are held in containers.
+* Multiple passes hoping for a fixed point: May not find a consistent fixed point and is still potentially non-deterministic.
+* Use derivatives evaluated for the continuous, not quantized, representation at these events: Since the continous representation value is set first this allows a single pass, deterministic treatment. This is the approach used here.
 
 ### Event Queue
 
@@ -51,7 +69,7 @@ Notes:
 ### Function
 
 * A simple linear function is provided.
-* A sample nonlinear function is included.
+* Sample nonlinear functions are included.
 * We'll need a general purpose function approach for the JModelica-generated code: probably a function class that calls back to a provided function.
 
 ## Performance
