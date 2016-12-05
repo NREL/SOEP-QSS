@@ -21,7 +21,7 @@ extern double const one_ninth;
 extern double const pi;
 extern double const infinity;
 
-// Sign
+// Sign: Returns Passed Type
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
@@ -30,13 +30,49 @@ sign( T const x )
 	return ( std::signbit( x ) ? T( -1 ) : T( +1 ) );
 }
 
-// Sign
+// Sign: Returns Passed Type
 template< typename T, class = typename std::enable_if< ! std::is_arithmetic< T >::value >::type >
 inline
 T
 sign( T const & x )
 {
 	return ( std::signbit( x ) ? T( -1 ) : T( +1 ) );
+}
+
+// Signum: Returns Passed Type
+template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
+inline
+T
+sgn( T const x )
+{
+	return ( x < T( 0 ) ? T( -1 ) : ( x > T( 0 ) ? T( +1 ) : T( 0 ) ) );
+}
+
+// Signum: Returns Passed Type
+template< typename T, class = typename std::enable_if< ! std::is_arithmetic< T >::value >::type >
+inline
+T
+sgn( T const & x )
+{
+	return ( x < T( 0 ) ? T( -1 ) : ( x > T( 0 ) ? T( +1 ) : T( 0 ) ) );
+}
+
+// Signum: Returns int
+template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
+inline
+int
+signum( T const x )
+{
+	return ( x < T( 0 ) ? -1 : ( x > T( 0 ) ? +1 : 0 ) );
+}
+
+// Signum: Returns int
+template< typename T, class = typename std::enable_if< ! std::is_arithmetic< T >::value >::type >
+inline
+int
+signum( T const & x )
+{
+	return ( x < T( 0 ) ? -1 : ( x > T( 0 ) ? +1 : 0 ) );
 }
 
 // Square

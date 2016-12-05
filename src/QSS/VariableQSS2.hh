@@ -215,7 +215,7 @@ public: // Methods
 	void
 	advance2()
 	{
-		if ( self_observer ) {
+		{ // Only need to do this if observer of self or other simultaneously requantizing variables
 			x0_ = q0_;
 			x1_ = q1_;
 			x2_ = one_half * d_.q1( tC = tE );
