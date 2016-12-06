@@ -19,6 +19,7 @@ class Variable
 
 public: // Types
 
+	using Value = double;
 	using Time = double;
 	using Variables = std::vector< Variable * >;
 	using EventQ = EventQueue< Variable >;
@@ -29,8 +30,8 @@ protected: // Creation
 	explicit
 	Variable(
 	 std::string const & name,
-	 double const aTol = 1.0e-6,
-	 double const rTol = 1.0e-6
+	 Value const aTol = 1.0e-6,
+	 Value const rTol = 1.0e-6
 	) :
 	 name( name ),
 	 aTol( std::max( aTol, 0.0 ) ),
@@ -65,19 +66,95 @@ protected: // Assignment
 
 public: // Properties
 
-	// Event Queue Iterator
-	EventQ::iterator &
-	event()
+	// Order of QSS Method
+	virtual
+	int
+	order() const = 0;
+
+	// Continuous Value at Time tC
+	virtual
+	Value
+	x() const = 0;
+
+	// Continuous Value at Time tC
+	virtual
+	Value
+	x0() const = 0;
+
+	// Continuous Value at Time tC
+	virtual
+	Value &
+	x0() = 0;
+
+	// Continuous First Derivative at Time tC
+	virtual
+	Value
+	x1() const = 0;
+
+	// Continuous First Derivative at Time tC
+	virtual
+	Value &
+	x1() = 0;
+
+	// Continuous Value at Time t
+	virtual
+	Value
+	x( Time const t ) const = 0;
+
+	// Quantized Value at Time tQ
+	virtual
+	Value
+	q() const = 0;
+
+	// Quantized Value at Time tQ
+	virtual
+	Value
+	q0() const = 0;
+
+	// Quantized Value at Time tQ
+	virtual
+	Value &
+	q0() = 0;
+
+	// Quantized First Derivative at Time tQ
+	virtual
+	Value
+	q1() const
 	{
-		return event_;
+		return 0.0;
 	}
 
-	// Set Event Queue Iterator
-	void
-	event( EventQ::iterator const i )
+	// Quantized Second Derivative at Time tQ
+	virtual
+	Value
+	q2() const
 	{
-		event_ = i;
-		assert( event_->second == this );
+		return 0.0;
+	}
+
+	// Quantized Value at Time t
+	virtual
+	Value
+	q( Time const t ) const = 0;
+
+	// Quantized First Derivative at Time t
+	virtual
+	Value
+	q1( Time const t ) const
+	{
+		assert( ( tQ <= t ) && ( t <= tE ) );
+		(void)t; // Suppress unused parameter warning
+		return 0.0;
+	}
+
+	// Quantized Second Derivative at Time t
+	virtual
+	Value
+	q2( Time const t ) const
+	{
+		assert( ( tQ <= t ) && ( t <= tE ) );
+		(void)t; // Suppress unused parameter warning
+		return 0.0;
 	}
 
 	// Observers
@@ -94,60 +171,19 @@ public: // Properties
 		return observers_;
 	}
 
-	// Order of QSS Method
-	virtual
-	int
-	order() const = 0;
-
-	// Continuous Value at Time t
-	virtual
-	double
-	x( Time const t ) const = 0;
-
-	// Quantized Value at Time tQ
-	virtual
-	double
-	q() const = 0;
-
-	// Quantized First Derivative at Time tQ
-	virtual
-	double
-	q1() const
+	// Event Queue Iterator
+	EventQ::iterator &
+	event()
 	{
-		return 0.0;
+		return event_;
 	}
 
-	// Quantized Second Derivative at Time tQ
-	virtual
-	double
-	q2() const
+	// Set Event Queue Iterator
+	void
+	event( EventQ::iterator const i )
 	{
-		return 0.0;
-	}
-
-	// Quantized Value at Time t
-	virtual
-	double
-	q( Time const t ) const = 0;
-
-	// Quantized First Derivative at Time t
-	virtual
-	double
-	q1( Time const t ) const
-	{
-		assert( ( tQ <= t ) && ( t <= tE ) );
-		(void)t; // Suppress unused parameter warning
-		return 0.0;
-	}
-
-	// Quantized Second Derivative at Time t
-	virtual
-	double
-	q2( Time const t ) const
-	{
-		assert( ( tQ <= t ) && ( t <= tE ) );
-		(void)t; // Suppress unused parameter warning
-		return 0.0;
+		event_ = i;
+		assert( event_->second == this );
 	}
 
 public: // Methods
@@ -176,7 +212,7 @@ public: // Methods
 	// Initialize Constant Term
 	virtual
 	Variable &
-	init0( double const x ) = 0;
+	init0( Value const x ) = 0;
 
 	// Initialize Linear Coefficient
 	virtual
@@ -246,9 +282,9 @@ public: // Methods
 public: // Data
 
 	std::string name;
-	double aTol{ 1.0e-6 }; // Absolute tolerance
-	double rTol{ 1.0e-6 }; // Relative tolerance
-	double qTol{ 1.0e-6 }; // Quantization tolerance
+	Value aTol{ 1.0e-6 }; // Absolute tolerance
+	Value rTol{ 1.0e-6 }; // Relative tolerance
+	Value qTol{ 1.0e-6 }; // Quantization tolerance
 	Time tQ{ 0.0 }; // Quantized time range begin
 	Time tC{ 0.0 }; // Continuous time range begin
 	Time tE{ infinity }; // Time range end: tQ <= tE and tC <= tE

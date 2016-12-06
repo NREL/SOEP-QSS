@@ -14,6 +14,7 @@ class VariableQSS2 final : public Variable
 
 public: // Types
 
+	using Value = Variable::Value;
 	using Time = Variable::Time;
 	template< typename V > using Function = F< V >;
 	using Derivative = Function< Variable >;
@@ -25,13 +26,109 @@ public: // Creation
 	explicit
 	VariableQSS2(
 	 std::string const & name,
-	 double const aTol = 1.0e-6,
-	 double const rTol = 1.0e-6
+	 Value const aTol = 1.0e-6,
+	 Value const rTol = 1.0e-6
 	) :
 	 Variable( name, aTol, rTol )
 	{}
 
 public: // Properties
+
+	// Order of QSS Method
+	int
+	order() const
+	{
+		return 2;
+	}
+
+	// Continuous Value at Time tC
+	Value
+	x() const
+	{
+		return x0_;
+	}
+
+	// Continuous Value at Time tC
+	Value
+	x0() const
+	{
+		return x0_;
+	}
+
+	// Continuous Value at Time tC
+	Value &
+	x0()
+	{
+		return x0_;
+	}
+
+	// Continuous First Derivative at Time tC
+	Value
+	x1() const
+	{
+		return x1_;
+	}
+
+	// Continuous First Derivative at Time tC
+	Value &
+	x1()
+	{
+		return x1_;
+	}
+
+	// Continuous Value at Time t
+	Value
+	x( Time const t ) const
+	{
+		assert( ( tC <= t ) && ( t <= tE ) );
+		Time const tDel( t - tC );
+		return x0_ + ( ( x1_ + ( x2_ * tDel ) ) * tDel );
+	}
+
+	// Quantized Value at Time tQ
+	Value
+	q() const
+	{
+		return q0_;
+	}
+
+	// Quantized Value at Time tQ
+	Value
+	q0() const
+	{
+		return q0_;
+	}
+
+	// Quantized Value at Time tQ
+	Value &
+	q0()
+	{
+		return q0_;
+	}
+
+	// Quantized First Derivative at Time tQ
+	Value
+	q1() const
+	{
+		return q1_;
+	}
+
+	// Quantized Value at Time t
+	Value
+	q( Time const t ) const
+	{
+		assert( ( tQ <= t ) && ( t <= tE ) );
+		return q0_ + ( q1_ * ( t - tQ ) );
+	}
+
+	// Quantized First Derivative at Time t
+	Value
+	q1( Time const t ) const
+	{
+		assert( ( tQ <= t ) && ( t <= tE ) );
+		(void)t; // Suppress unused parameter warning
+		return q1_;
+	}
 
 	// Derivative Function
 	Derivative const &
@@ -47,94 +144,11 @@ public: // Properties
 		return d_;
 	}
 
-	// Order of QSS Method
-	int
-	order() const
-	{
-		return 2;
-	}
-
-	// Continuous Value at Time t
-	double
-	x( Time const t ) const
-	{
-		assert( ( tC <= t ) && ( t <= tE ) );
-		Time const tDel( t - tC );
-		return x0_ + ( ( x1_ + ( x2_ * tDel ) ) * tDel );
-	}
-
-	// Quantized Value at Time tQ
-	double
-	q() const
-	{
-		return q0_;
-	}
-
-	// Quantized First Derivative at Time tQ
-	double
-	q1() const
-	{
-		return q1_;
-	}
-
-	// Quantized Value at Time t
-	double
-	q( Time const t ) const
-	{
-		assert( ( tQ <= t ) && ( t <= tE ) );
-		return q0_ + ( q1_ * ( t - tQ ) );
-	}
-
-	// Quantized First Derivative at Time t
-	double
-	q1( Time const t ) const
-	{
-		assert( ( tQ <= t ) && ( t <= tE ) );
-		(void)t; // Suppress unused parameter warning
-		return q1_;
-	}
-
-	// Set End Time: Quantized and Continuous Aligned
-	void
-	set_tE_aligned()
-	{
-		assert( tC <= tQ ); // Quantized and continuous trajectories align at tQ
-		tE = ( x2_ != 0.0 ? tQ + std::sqrt( qTol / std::abs( x2_ ) ) : infinity );
-	}
-
-	// Set End Time: Quantized and Continuous Unaligned
-	void
-	set_tE_unaligned()
-	{
-		assert( tQ <= tC );
-		double const d0( x0_ - ( q0_ + ( q1_ * ( tC - tQ ) ) ) );
-		double const d1( x1_ - q1_ );
-		if ( d1 >= 0.0 ) {
-			Time const tPosQ( min_root_quadratic( x2_, d1, d0 - qTol ) );
-			if ( x2_ >= 0.0 ) { // Only need to check +qTol
-				tE = ( tPosQ == infinity ? infinity : tC + tPosQ );
-			} else {
-				Time const tNegQ( min_root_quadratic( x2_, d1, d0 + qTol ) );
-				Time const tMinQ( std::min( tPosQ, tNegQ ) );
-				tE = ( tMinQ == infinity ? infinity : tC + tMinQ );
-			}
-		} else { // d1 < 0
-			Time const tNegQ( min_root_quadratic( x2_, d1, d0 + qTol ) );
-			if ( x2_ <= 0.0 ) { // Only need to check -qTol
-				tE = ( tNegQ == infinity ? infinity : tC + tNegQ );
-			} else {
-				Time const tPosQ( min_root_quadratic( x2_, d1, d0 - qTol ) );
-				Time const tMinQ( std::min( tPosQ, tNegQ ) );
-				tE = ( tMinQ == infinity ? infinity : tC + tMinQ );
-			}
-		}
-	}
-
 public: // Methods
 
 	// Initialize Constant Term
 	VariableQSS2 &
-	init0( double const x )
+	init0( Value const x )
 	{
 		x0_ = q0_ = x;
 		set_qTol();
@@ -180,12 +194,13 @@ public: // Methods
 	{
 		Time const tDel( ( tQ = tE ) - tC );
 		q0_ = x0_ + ( ( x1_ + ( x2_ * tDel ) ) * tDel );
-		q1_ = d_.q( tE );
 		set_qTol();
 		if ( self_observer ) {
 			x0_ = q0_;
-			x1_ = q1_;
+			x1_ = q1_ = d_.q( tE );
 			x2_ = one_half * d_.q1( tC = tE );
+		} else {
+			q1_ = x1_ + ( 2.0 * x2_ * tDel );
 		}
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
@@ -241,11 +256,49 @@ public: // Methods
 		}
 	}
 
+private: // Methods
+
+	// Set End Time: Quantized and Continuous Aligned
+	void
+	set_tE_aligned()
+	{
+		assert( tC <= tQ ); // Quantized and continuous trajectories align at tQ
+		tE = ( x2_ != 0.0 ? tQ + std::sqrt( qTol / std::abs( x2_ ) ) : infinity );
+	}
+
+	// Set End Time: Quantized and Continuous Unaligned
+	void
+	set_tE_unaligned()
+	{
+		assert( tQ <= tC );
+		Value const d0( x0_ - ( q0_ + ( q1_ * ( tC - tQ ) ) ) );
+		Value const d1( x1_ - q1_ );
+		if ( d1 >= 0.0 ) {
+			Time const tPosQ( min_root_quadratic( x2_, d1, d0 - qTol ) );
+			if ( x2_ >= 0.0 ) { // Only need to check +qTol
+				tE = ( tPosQ == infinity ? infinity : tC + tPosQ );
+			} else {
+				Time const tNegQ( min_root_quadratic( x2_, d1, d0 + qTol ) );
+				Time const tMinQ( std::min( tPosQ, tNegQ ) );
+				tE = ( tMinQ == infinity ? infinity : tC + tMinQ );
+			}
+		} else { // d1 < 0
+			Time const tNegQ( min_root_quadratic( x2_, d1, d0 + qTol ) );
+			if ( x2_ <= 0.0 ) { // Only need to check -qTol
+				tE = ( tNegQ == infinity ? infinity : tC + tNegQ );
+			} else {
+				Time const tPosQ( min_root_quadratic( x2_, d1, d0 - qTol ) );
+				Time const tMinQ( std::min( tPosQ, tNegQ ) );
+				tE = ( tMinQ == infinity ? infinity : tC + tMinQ );
+			}
+		}
+	}
+
 private: // Data
 
+	Value x0_{ 0.0 }, x1_{ 0.0 }, x2_{ 0.0 }; // Continuous value coefficients for active time segment
+	Value q0_{ 0.0 }, q1_{ 0.0 }; // Quantized value coefficients for active time segment
 	Derivative d_; // Derivative function
-	double x0_{ 0.0 }, x1_{ 0.0 }, x2_{ 0.0 }; // Continuous value coefficients for active time segment
-	double q0_{ 0.0 }, q1_{ 0.0 }; // Quantized value coefficients for active time segment
 
 };
 

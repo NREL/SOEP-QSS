@@ -14,6 +14,7 @@ class VariableQSS1 final : public Variable
 
 public: // Types
 
+	using Value = Variable::Value;
 	using Time = Variable::Time;
 	template< typename V > using Function = F< V >;
 	using Derivative = Function< Variable >;
@@ -25,13 +26,93 @@ public: // Creation
 	explicit
 	VariableQSS1(
 	 std::string const & name,
-	 double const aTol = 1.0e-6,
-	 double const rTol = 1.0e-6
+	 Value const aTol = 1.0e-6,
+	 Value const rTol = 1.0e-6
 	) :
 	 Variable( name, aTol, rTol )
 	{}
 
 public: // Properties
+
+	// Order of QSS Method
+	int
+	order() const
+	{
+		return 1;
+	}
+
+	// Continuous Value at Time tC
+	Value
+	x() const
+	{
+		return x0_;
+	}
+
+	// Continuous Value at Time tC
+	Value
+	x0() const
+	{
+		return x0_;
+	}
+
+	// Continuous Value at Time tC
+	Value &
+	x0()
+	{
+		return x0_;
+	}
+
+	// Continuous First Derivative at Time tC
+	Value
+	x1() const
+	{
+		return x1_;
+	}
+
+	// Continuous First Derivative at Time tC
+	Value &
+	x1()
+	{
+		return x1_;
+	}
+
+	// Continuous Value at Time t
+	Value
+	x( Time const t ) const
+	{
+		assert( ( tC <= t ) && ( t <= tE ) );
+		return x0_ + ( x1_ * ( t - tC ) );
+	}
+
+	// Quantized Value at Time tQ
+	Value
+	q() const
+	{
+		return q0_;
+	}
+
+	// Quantized Value at Time tQ
+	Value
+	q0() const
+	{
+		return q0_;
+	}
+
+	// Quantized Value at Time tQ
+	Value &
+	q0()
+	{
+		return q0_;
+	}
+
+	// Quantized Value at Time t
+	Value
+	q( Time const t ) const
+	{
+		assert( ( tQ <= t ) && ( t <= tE ) );
+		(void)t; // Suppress unused parameter warning
+		return q0_;
+	}
 
 	// Derivative Function
 	Derivative const &
@@ -47,61 +128,11 @@ public: // Properties
 		return d_;
 	}
 
-	// Order of QSS Method
-	int
-	order() const
-	{
-		return 1;
-	}
-
-	// Continuous Value at Time t
-	double
-	x( Time const t ) const
-	{
-		assert( ( tC <= t ) && ( t <= tE ) );
-		return x0_ + ( x1_ * ( t - tC ) );
-	}
-
-	// Quantized Value at Time tQ
-	double
-	q() const
-	{
-		return q0_;
-	}
-
-	// Quantized Value at Time t
-	double
-	q( Time const t ) const
-	{
-		assert( ( tQ <= t ) && ( t <= tE ) );
-		(void)t; // Suppress unused parameter warning
-		return q0_;
-	}
-
-	// Set End Time: Quantized and Continuous Aligned
-	void
-	set_tE_aligned()
-	{
-		assert( tC <= tQ ); // Quantized and continuous trajectories align at tQ
-		tE = ( x1_ != 0.0 ? tQ + ( qTol / std::abs( x1_ ) ) : infinity );
-	}
-
-	// Set End Time: Quantized and Continuous Unaligned
-	void
-	set_tE_unaligned()
-	{
-		assert( tQ <= tC );
-		tE =
-		 ( x1_ > 0.0 ? tC + ( ( ( q0_ - x0_ ) + qTol ) / x1_ ) :
-		 ( x1_ < 0.0 ? tC + ( ( ( q0_ - x0_ ) - qTol ) / x1_ ) :
-		 infinity ) );
-	}
-
 public: // Methods
 
 	// Initialize Constant Term
 	VariableQSS1 &
-	init0( double const x )
+	init0( Value const x )
 	{
 		x0_ = q0_ = x;
 		set_qTol();
@@ -187,11 +218,32 @@ public: // Methods
 		}
 	}
 
+private: // Methods
+
+	// Set End Time: Quantized and Continuous Aligned
+	void
+	set_tE_aligned()
+	{
+		assert( tC <= tQ ); // Quantized and continuous trajectories align at tQ
+		tE = ( x1_ != 0.0 ? tQ + ( qTol / std::abs( x1_ ) ) : infinity );
+	}
+
+	// Set End Time: Quantized and Continuous Unaligned
+	void
+	set_tE_unaligned()
+	{
+		assert( tQ <= tC );
+		tE =
+		 ( x1_ > 0.0 ? tC + ( ( ( q0_ - x0_ ) + qTol ) / x1_ ) :
+		 ( x1_ < 0.0 ? tC + ( ( ( q0_ - x0_ ) - qTol ) / x1_ ) :
+		 infinity ) );
+	}
+
 private: // Data
 
+	Value x0_{ 0.0 }, x1_{ 0.0 }; // Continuous value coefficients for active time segment
+	Value q0_{ 0.0 }; // Quantized value for active time segment
 	Derivative d_; // Derivative function
-	double x0_{ 0.0 }, x1_{ 0.0 }; // Continuous value coefficients for active time segment
-	double q0_{ 0.0 }; // Quantized value for active time segment
 
 };
 
