@@ -41,35 +41,35 @@ public: // Properties
 		return 2;
 	}
 
-	// Continuous Value at Time tC
+	// Continuous Value at Time tX
 	Value
 	x() const
 	{
 		return x0_;
 	}
 
-	// Continuous Value at Time tC
+	// Continuous Value at Time tX
 	Value
 	x0() const
 	{
 		return x0_;
 	}
 
-	// Continuous Value at Time tC
+	// Continuous Value at Time tX
 	Value &
 	x0()
 	{
 		return x0_;
 	}
 
-	// Continuous First Derivative at Time tC
+	// Continuous First Derivative at Time tX
 	Value
 	x1() const
 	{
 		return x1_;
 	}
 
-	// Continuous First Derivative at Time tC
+	// Continuous First Derivative at Time tX
 	Value &
 	x1()
 	{
@@ -80,8 +80,8 @@ public: // Properties
 	Value
 	x( Time const t ) const
 	{
-		assert( ( tC <= t ) && ( t <= tE ) );
-		Time const tDel( t - tC );
+		assert( ( tX <= t ) && ( t <= tE ) );
+		Time const tDel( t - tX );
 		return x0_ + ( ( x1_ + ( x2_ * tDel ) ) * tDel );
 	}
 
@@ -192,13 +192,13 @@ public: // Methods
 	void
 	advance()
 	{
-		Time const tDel( ( tQ = tE ) - tC );
+		Time const tDel( ( tQ = tE ) - tX );
 		q0_ = x0_ + ( ( x1_ + ( x2_ * tDel ) ) * tDel );
 		set_qTol();
 		if ( self_observer ) {
 			x0_ = q0_;
 			x1_ = q1_ = d_.q( tE );
-			x2_ = one_half * d_.q1( tC = tE );
+			x2_ = one_half * d_.q1( tX = tE );
 		} else {
 			q1_ = x1_ + ( 2.0 * x2_ * tDel );
 		}
@@ -214,7 +214,7 @@ public: // Methods
 	void
 	advance0()
 	{
-		Time const tDel( ( tQ = tE ) - tC );
+		Time const tDel( ( tQ = tE ) - tX );
 		q0_ = x0_ + ( ( x1_ + ( x2_ * tDel ) ) * tDel );
 		set_qTol();
 	}
@@ -233,7 +233,7 @@ public: // Methods
 		{ // Only need to do this if observer of self or other simultaneously requantizing variables
 			x0_ = q0_;
 			x1_ = q1_;
-			x2_ = one_half * d_.q1( tC = tE );
+			x2_ = one_half * d_.q1( tX = tE );
 		}
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
@@ -244,12 +244,12 @@ public: // Methods
 	void
 	advance( Time const t )
 	{
-		assert( ( tC <= t ) && ( t <= tE ) );
-		if ( tC < t ) { // Could observe multiple variables with simultaneous triggering
-			Time const tDel( t - tC );
+		assert( ( tX <= t ) && ( t <= tE ) );
+		if ( tX < t ) { // Could observe multiple variables with simultaneous triggering
+			Time const tDel( t - tX );
 			x0_ = x0_ + ( ( x1_ + ( x2_ * tDel ) ) * tDel );
 			x1_ = d_.q( t );
-			x2_ = one_half * d_.q1( tC = t );
+			x2_ = one_half * d_.q1( tX = t );
 			set_tE_unaligned();
 			event( events.shift( tE, event() ) );
 			if ( diag ) std::cout << "  " << name << '(' << t << ')' << " = " << q0_ << "+" << q1_ << "*t quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2 internal   tE=" << tE << '\n';
@@ -262,7 +262,7 @@ private: // Methods
 	void
 	set_tE_aligned()
 	{
-		assert( tC <= tQ ); // Quantized and continuous trajectories align at tQ
+		assert( tX <= tQ );
 		tE = ( x2_ != 0.0 ? tQ + std::sqrt( qTol / std::abs( x2_ ) ) : infinity );
 	}
 
@@ -270,26 +270,26 @@ private: // Methods
 	void
 	set_tE_unaligned()
 	{
-		assert( tQ <= tC );
-		Value const d0( x0_ - ( q0_ + ( q1_ * ( tC - tQ ) ) ) );
+		assert( tQ <= tX );
+		Value const d0( x0_ - ( q0_ + ( q1_ * ( tX - tQ ) ) ) );
 		Value const d1( x1_ - q1_ );
 		if ( d1 >= 0.0 ) {
 			Time const tPosQ( min_root_quadratic( x2_, d1, d0 - qTol ) );
 			if ( x2_ >= 0.0 ) { // Only need to check +qTol
-				tE = ( tPosQ == infinity ? infinity : tC + tPosQ );
+				tE = ( tPosQ == infinity ? infinity : tX + tPosQ );
 			} else {
 				Time const tNegQ( min_root_quadratic( x2_, d1, d0 + qTol ) );
 				Time const tMinQ( std::min( tPosQ, tNegQ ) );
-				tE = ( tMinQ == infinity ? infinity : tC + tMinQ );
+				tE = ( tMinQ == infinity ? infinity : tX + tMinQ );
 			}
 		} else { // d1 < 0
 			Time const tNegQ( min_root_quadratic( x2_, d1, d0 + qTol ) );
 			if ( x2_ <= 0.0 ) { // Only need to check -qTol
-				tE = ( tNegQ == infinity ? infinity : tC + tNegQ );
+				tE = ( tNegQ == infinity ? infinity : tX + tNegQ );
 			} else {
 				Time const tPosQ( min_root_quadratic( x2_, d1, d0 - qTol ) );
 				Time const tMinQ( std::min( tPosQ, tNegQ ) );
-				tE = ( tMinQ == infinity ? infinity : tC + tMinQ );
+				tE = ( tMinQ == infinity ? infinity : tX + tMinQ );
 			}
 		}
 	}

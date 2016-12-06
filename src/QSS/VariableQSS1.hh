@@ -41,35 +41,35 @@ public: // Properties
 		return 1;
 	}
 
-	// Continuous Value at Time tC
+	// Continuous Value at Time tX
 	Value
 	x() const
 	{
 		return x0_;
 	}
 
-	// Continuous Value at Time tC
+	// Continuous Value at Time tX
 	Value
 	x0() const
 	{
 		return x0_;
 	}
 
-	// Continuous Value at Time tC
+	// Continuous Value at Time tX
 	Value &
 	x0()
 	{
 		return x0_;
 	}
 
-	// Continuous First Derivative at Time tC
+	// Continuous First Derivative at Time tX
 	Value
 	x1() const
 	{
 		return x1_;
 	}
 
-	// Continuous First Derivative at Time tC
+	// Continuous First Derivative at Time tX
 	Value &
 	x1()
 	{
@@ -80,8 +80,8 @@ public: // Properties
 	Value
 	x( Time const t ) const
 	{
-		assert( ( tC <= t ) && ( t <= tE ) );
-		return x0_ + ( x1_ * ( t - tC ) );
+		assert( ( tX <= t ) && ( t <= tE ) );
+		return x0_ + ( x1_ * ( t - tX ) );
 	}
 
 	// Quantized Value at Time tQ
@@ -169,11 +169,11 @@ public: // Methods
 	void
 	advance()
 	{
-		q0_ = x0_ + ( x1_ * ( ( tQ = tE ) - tC ) );
+		q0_ = x0_ + ( x1_ * ( ( tQ = tE ) - tX ) );
 		set_qTol();
 		if ( self_observer ) {
 			x0_ = q0_;
-			x1_ = d_.q( tC = tE );
+			x1_ = d_.q( tX = tE );
 		}
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
@@ -187,7 +187,7 @@ public: // Methods
 	void
 	advance0()
 	{
-		q0_ = x0_ + ( x1_ * ( ( tQ = tE ) - tC ) );
+		q0_ = x0_ + ( x1_ * ( ( tQ = tE ) - tX ) );
 		set_qTol();
 	}
 
@@ -197,7 +197,7 @@ public: // Methods
 	{
 		{ // Only need to do this if observer of self or other simultaneously requantizing variables
 			x0_ = q0_;
-			x1_ = d_.q( tC = tE );
+			x1_ = d_.q( tX = tE );
 		}
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
@@ -208,10 +208,10 @@ public: // Methods
 	void
 	advance( Time const t )
 	{
-		assert( ( tC <= t ) && ( t <= tE ) );
-		if ( tC < t ) { // Could observe multiple variables with simultaneous triggering
-			x0_ = x0_ + ( x1_ * ( t - tC ) );
-			x1_ = d_.q( tC = t );
+		assert( ( tX <= t ) && ( t <= tE ) );
+		if ( tX < t ) { // Could observe multiple variables with simultaneous triggering
+			x0_ = x0_ + ( x1_ * ( t - tX ) );
+			x1_ = d_.q( tX = t );
 			set_tE_unaligned();
 			event( events.shift( tE, event() ) );
 			if ( diag ) std::cout << "  " << name << '(' << t << ')' << " = " << q0_ << " quantized, " << x0_ << "+" << x1_ << "*t internal   tE=" << tE << '\n';
@@ -224,7 +224,7 @@ private: // Methods
 	void
 	set_tE_aligned()
 	{
-		assert( tC <= tQ ); // Quantized and continuous trajectories align at tQ
+		assert( tX <= tQ );
 		tE = ( x1_ != 0.0 ? tQ + ( qTol / std::abs( x1_ ) ) : infinity );
 	}
 
@@ -232,10 +232,10 @@ private: // Methods
 	void
 	set_tE_unaligned()
 	{
-		assert( tQ <= tC );
+		assert( tQ <= tX );
 		tE =
-		 ( x1_ > 0.0 ? tC + ( ( ( q0_ - x0_ ) + qTol ) / x1_ ) :
-		 ( x1_ < 0.0 ? tC + ( ( ( q0_ - x0_ ) - qTol ) / x1_ ) :
+		 ( x1_ > 0.0 ? tX + ( ( ( q0_ - x0_ ) + qTol ) / x1_ ) :
+		 ( x1_ < 0.0 ? tX + ( ( ( q0_ - x0_ ) - qTol ) / x1_ ) :
 		 infinity ) );
 	}
 

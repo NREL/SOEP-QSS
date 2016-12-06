@@ -41,35 +41,35 @@ public: // Properties
 		return 3;
 	}
 
-	// Continuous Value at Time tC
+	// Continuous Value at Time tX
 	Value
 	x() const
 	{
 		return x0_;
 	}
 
-	// Continuous Value at Time tC
+	// Continuous Value at Time tX
 	Value
 	x0() const
 	{
 		return x0_;
 	}
 
-	// Continuous Value at Time tC
+	// Continuous Value at Time tX
 	Value &
 	x0()
 	{
 		return x0_;
 	}
 
-	// Continuous First Derivative at Time tC
+	// Continuous First Derivative at Time tX
 	Value
 	x1() const
 	{
 		return x1_;
 	}
 
-	// Continuous First Derivative at Time tC
+	// Continuous First Derivative at Time tX
 	Value &
 	x1()
 	{
@@ -80,8 +80,8 @@ public: // Properties
 	Value
 	x( Time const t ) const
 	{
-		assert( ( tC <= t ) && ( t <= tE ) );
-		Time const tDel( t - tC );
+		assert( ( tX <= t ) && ( t <= tE ) );
+		Time const tDel( t - tX );
 		return x0_ + ( ( x1_ + ( x2_ + ( x3_ * tDel ) ) * tDel ) * tDel );
 	}
 
@@ -215,14 +215,14 @@ public: // Methods
 	void
 	advance()
 	{
-		Time const tDel( ( tQ = tE ) - tC );
+		Time const tDel( ( tQ = tE ) - tX );
 		q0_ = x0_ + ( ( x1_ + ( x2_ + ( x3_ * tDel ) ) * tDel ) * tDel );
 		set_qTol();
 		if ( self_observer ) {
 			x0_ = q0_;
 			x1_ = q1_ = d_.q( tE );
 			x2_ = q2_ = one_half * d_.q1( tE );
-			x3_ = one_sixth * d_.q2( tC = tE );
+			x3_ = one_sixth * d_.q2( tX = tE );
 		} else {
 			q1_ = x1_ + ( ( ( 2.0 * x2_ ) + ( 3.0 * x3_ * tDel ) ) * tDel );
 			q2_ = x2_ + ( 3.0 * x3_ * tDel );
@@ -239,7 +239,7 @@ public: // Methods
 	void
 	advance0()
 	{
-		Time const tDel( ( tQ = tE ) - tC );
+		Time const tDel( ( tQ = tE ) - tX );
 		q0_ = x0_ + ( ( x1_ + ( x2_ + ( x3_ * tDel ) ) * tDel ) * tDel );
 		set_qTol();
 	}
@@ -266,7 +266,7 @@ public: // Methods
 			x0_ = q0_;
 			x1_ = q1_;
 			x2_ = q2_;
-			x3_ = one_sixth * d_.q2( tC = tE );
+			x3_ = one_sixth * d_.q2( tX = tE );
 		}
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
@@ -277,13 +277,13 @@ public: // Methods
 	void
 	advance( Time const t )
 	{
-		assert( ( tC <= t ) && ( t <= tE ) );
-		if ( tC < t ) { // Could observe multiple variables with simultaneous triggering
-			Time const tDel( t - tC );
+		assert( ( tX <= t ) && ( t <= tE ) );
+		if ( tX < t ) { // Could observe multiple variables with simultaneous triggering
+			Time const tDel( t - tX );
 			x0_ = x0_ + ( ( x1_ + ( x2_ + ( x3_ * tDel ) ) * tDel ) * tDel );
 			x1_ = d_.q( t );
 			x2_ = one_half * d_.q1( t );
-			x3_ = one_sixth * d_.q2( tC = t );
+			x3_ = one_sixth * d_.q2( tX = t );
 			set_tE_unaligned();
 			event( events.shift( tE, event() ) );
 			if ( diag ) std::cout << "  " << name << '(' << t << ')' << " = " << q0_ << "+" << q1_ << "*t+" << q2_ << "*t^2 quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2+" << x3_ << "*t^3 internal   tE=" << tE << '\n';
@@ -296,7 +296,7 @@ private: // Methods
 	void
 	set_tE_aligned()
 	{
-		assert( tC <= tQ ); // Quantized and continuous trajectories align at tQ
+		assert( tX <= tQ );
 		tE = ( x3_ != 0.0 ? tQ + std::cbrt( qTol / std::abs( x3_ ) ) : infinity );
 	}
 
@@ -304,22 +304,22 @@ private: // Methods
 	void
 	set_tE_unaligned()
 	{
-		assert( tQ <= tC );
-		Time const tCQ( tC - tQ );
-		Value const d0( x0_ - ( q0_ + ( q1_ + ( q2_ * tCQ ) ) * tCQ ) );
-		Value const d1( x1_ - ( q1_ + ( two * q2_ * tCQ ) ) );
+		assert( tQ <= tX );
+		Time const tXQ( tX - tQ );
+		Value const d0( x0_ - ( q0_ + ( q1_ + ( q2_ * tXQ ) ) * tXQ ) );
+		Value const d1( x1_ - ( q1_ + ( two * q2_ * tXQ ) ) );
 		Value const d2( x2_ - q2_ );
 		if ( ( x3_ >= 0.0 ) && ( d2 >= 0.0 ) && ( d1 >= 0.0 ) ) { // Only need to check +qTol
 			Time const tPosQ( min_root_cubic( x3_, d2, d1, d0 - qTol ) );
-			tE = ( tPosQ == infinity ? infinity : tC + tPosQ );
+			tE = ( tPosQ == infinity ? infinity : tX + tPosQ );
 		} else if ( ( x3_ <= 0.0 ) && ( d2 <= 0.0 ) && ( d1 <= 0.0 ) ) { // Only need to check -qTol
 			Time const tNegQ( min_root_cubic( x3_, d2, d1, d0 + qTol ) );
-			tE = ( tNegQ == infinity ? infinity : tC + tNegQ );
+			tE = ( tNegQ == infinity ? infinity : tX + tNegQ );
 		} else { // Check +qTol and -qTol
 			Time const tPosQ( min_root_cubic( x3_, d2, d1, d0 - qTol ) );
 			Time const tNegQ( min_root_cubic( x3_, d2, d1, d0 + qTol ) );
 			Time const tMinQ( std::min( tPosQ, tNegQ ) );
-			tE = ( tMinQ == infinity ? infinity : tC + tMinQ );
+			tE = ( tMinQ == infinity ? infinity : tX + tMinQ );
 		}
 	}
 

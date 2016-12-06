@@ -71,27 +71,27 @@ public: // Properties
 	int
 	order() const = 0;
 
-	// Continuous Value at Time tC
+	// Continuous Value at Time tX
 	virtual
 	Value
 	x() const = 0;
 
-	// Continuous Value at Time tC
+	// Continuous Value at Time tX
 	virtual
 	Value
 	x0() const = 0;
 
-	// Continuous Value at Time tC
+	// Continuous Value at Time tX
 	virtual
 	Value &
 	x0() = 0;
 
-	// Continuous First Derivative at Time tC
+	// Continuous First Derivative at Time tX
 	virtual
 	Value
 	x1() const = 0;
 
-	// Continuous First Derivative at Time tC
+	// Continuous First Derivative at Time tX
 	virtual
 	Value &
 	x1() = 0;
@@ -286,8 +286,8 @@ public: // Data
 	Value rTol{ 1.0e-6 }; // Relative tolerance
 	Value qTol{ 1.0e-6 }; // Quantization tolerance
 	Time tQ{ 0.0 }; // Quantized time range begin
-	Time tC{ 0.0 }; // Continuous time range begin
-	Time tE{ infinity }; // Time range end: tQ <= tE and tC <= tE
+	Time tX{ 0.0 }; // Continuous time range begin
+	Time tE{ infinity }; // Time range end: tQ <= tE and tX <= tE
 	bool self_observer{ false }; // Variable appears in its derivative?
 
 protected: // Data
