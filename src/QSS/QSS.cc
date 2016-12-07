@@ -8,12 +8,14 @@
 #include <vector>
 
 // QSS Headers
+#include <QSS/FunctionLIQSSLTI.hh>
 #include <QSS/FunctionLTI.hh>
 #include <QSS/Function_achilles1.hh>
 #include <QSS/Function_achilles2.hh>
 #include <QSS/Function_NonlinearEx1.hh>
 #include <QSS/globals.hh>
 #include <QSS/math.hh>
+#include <QSS/VariableLIQSS1.hh>
 #include <QSS/VariableQSS1.hh>
 #include <QSS/VariableQSS2.hh>
 #include <QSS/VariableQSS3.hh>
@@ -79,20 +81,20 @@ main()
 //	vars.push_back( &x1 );
 //	vars.push_back( &x2 );
 
-	// Achilles and the Tortoise
-	Time const dto( 1.0e-3 ); // Sampling time step
-	Time const tE( 10.0 ); // Simulation end time
-	Time t( 0.0 ); // Simulation time
-	Time to( t + dto ); // Sampling time
-	VariableQSS1< FunctionLTI > x1( "x1", 1.0, 0.0 );
-	VariableQSS1< FunctionLTI > x2( "x2", 1.0, 0.0 );
-	x1.init0( 0.0 );
-	x2.init0( 2.0 );
-	x1.d().add( -0.5, x1 ).add( 1.5, x2 );
-	x2.d().add( -1.0, x1 );
-	vars.reserve( 2 );
-	vars.push_back( &x1 );
-	vars.push_back( &x2 );
+//	// Achilles and the Tortoise
+//	Time const dto( 1.0e-3 ); // Sampling time step
+//	Time const tE( 10.0 ); // Simulation end time
+//	Time t( 0.0 ); // Simulation time
+//	Time to( t + dto ); // Sampling time
+//	VariableQSS1< FunctionLTI > x1( "x1", 1.0, 0.0 );
+//	VariableQSS1< FunctionLTI > x2( "x2", 1.0, 0.0 );
+//	x1.init0( 0.0 );
+//	x2.init0( 2.0 );
+//	x1.d().add( -0.5, x1 ).add( 1.5, x2 );
+//	x2.d().add( -1.0, x1 );
+//	vars.reserve( 2 );
+//	vars.push_back( &x1 );
+//	vars.push_back( &x2 );
 
 //	// Achilles and the Tortoise: Using Custom Functions
 //	Time const dto( 1.0e-3 ); // Sampling time step
@@ -126,6 +128,23 @@ main()
 //	}
 //	e_stream.close();
 //	to = 0.0;
+
+	// Stiff System Literature Example
+	Time const dto( 1.0e-3 ); // Sampling time step
+	Time const tE( 500.0 ); // Simulation end time
+	Time t( 0.0 ); // Simulation time
+	Time to( t + dto ); // Sampling time
+//	VariableQSS1< FunctionLTI > x1( "x1", 1.0, 0.0 );
+//	VariableQSS1< FunctionLTI > x2( "x2", 1.0, 0.0 );
+	VariableLIQSS1< FunctionLIQSSLTI > x1( "x1", 1.0, 0.0 );
+	VariableLIQSS1< FunctionLIQSSLTI > x2( "x2", 1.0, 0.0 );
+	x1.init0( 0.0 );
+	x2.init0( 20.0 );
+	x1.d().add( 0.01, x2 );
+	x2.d().add( 2020.0 ).add( -100.0, x1 ).add( -100.0, x2 );
+	vars.reserve( 2 );
+	vars.push_back( &x1 );
+	vars.push_back( &x2 );
 
 	// Solver master logic
 	for ( auto var : vars ) {
