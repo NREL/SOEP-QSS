@@ -36,7 +36,7 @@ main()
 	enum QSS_Method { QSS1 = 1, QSS2, QSS3, QSS4 };
 
 	// Settings
-//	diag = true; // Enable for diagnostic output of requantization events
+	diag = false; // Enable for diagnostic output of requantization events
 	bool const sampled( false ); // Sampled outputs?
 	bool const all_vars_out( false ); // Output all variables at every requantization event?
 	bool const q_out( sampled || all_vars_out ); // Quantized output would differ from continous?
@@ -128,6 +128,17 @@ main()
 //	}
 //	e_stream.close();
 //	to = 0.0;
+
+//	// Exponential Decay Problem
+//	Time const dto( 1.0e-3 ); // Sampling time step
+//	Time const tE( 30.0 ); // Simulation end time
+//	Time t( 0.0 ); // Simulation time
+//	Time to( t + dto ); // Sampling time
+//	VariableQSS2< FunctionLTI > x1( "x1", 1.0e-4, 0.0 );
+//	x1.init0( 1.0 );
+//	x1.d().add( -1.0, x1 );
+//	vars.reserve( 1 );
+//	vars.push_back( &x1 );
 
 	// Stiff System Literature Example
 	Time const dto( 1.0e-3 ); // Sampling time step
