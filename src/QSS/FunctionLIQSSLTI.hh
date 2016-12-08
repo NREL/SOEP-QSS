@@ -49,6 +49,18 @@ public: // Creation
 
 public: // Properties
 
+	// Continuous Value at Initialization Time
+	Value
+	x() const
+	{
+		assert( c_.size() == x_.size() );
+		Value v( c0_ );
+		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
+			v += c_[ i ] * x_[ i ]->x();
+		}
+		return v;
+	}
+
 	// Quantized Value at Initialization Time
 	Value
 	q() const

@@ -148,7 +148,7 @@ public: // Methods
 		if ( self_observer ) {
 			d_.liqss1_x( tQ, qTol, q0_, x1_ ); // Continuous rep used to avoid cyclic dependency
 		} else {
-			x1_ = d_.x( tQ ); // Continuous rep used to avoid cyclic dependency
+			x1_ = d_.x(); // Continuous rep used to avoid cyclic dependency
 			int const ds( signum( x1_ ) );
 			switch ( ds ) {
 			case 0:
