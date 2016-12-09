@@ -84,6 +84,14 @@ public: // Properties
 		return x0_ + ( x1_ * ( t - tX ) );
 	}
 
+	// Continuous First Derivative at Time t
+	Value
+	x1( Time const t ) const
+	{
+		assert( ( tX <= t ) && ( t <= tE ) );
+		return x1_;
+	}
+
 	// Quantized Value at Time tQ
 	Value
 	q() const
@@ -139,27 +147,17 @@ public: // Methods
 		return *this;
 	}
 
-	// Initialize Linear Coefficient
+	// Initialize Linear Coefficient in LIQSS Variable
 	void
-	init1()
-	{
+	init1_LIQSS()
+	{ // Call before init1 since it alters q0_
 		self_observer = d_.finalize( this );
 		shrink_observers(); // Optional
 		if ( self_observer ) {
 			d_.liqss1_x( tQ, qTol, q0_, x1_ ); // Continuous rep used to avoid cyclic dependency
 		} else {
 			x1_ = d_.x(); // Continuous rep used to avoid cyclic dependency
-			int const ds( signum( x1_ ) );
-			switch ( ds ) {
-			case 0:
-				break;
-			case -1:
-				q0_ -= qTol;
-				break;
-			case +1:
-				q0_ += qTol;
-				break;
-			}
+			q0_ += signum( x1_ ) * qTol;
 		}
 	}
 
@@ -191,17 +189,7 @@ public: // Methods
 			d_.liqss1( tQ, qTol, q0_, x1_ );
 			tX = tE;
 		} else {
-			int const ds( signum( x1_ ) );
-			switch ( ds ) {
-			case 0:
-				break;
-			case -1:
-				q0_ -= qTol;
-				break;
-			case +1:
-				q0_ += qTol;
-				break;
-			}
+			q0_ += signum( x1_ ) * qTol;
 		}
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
@@ -215,19 +203,23 @@ public: // Methods
 	void
 	advance0()
 	{
-		qc_ = q0_ = x0_ + ( x1_ * ( ( tQ = tE ) - tX ) );
+		x0_ = qc_ = q0_ = x0_ + ( x1_ * ( ( tQ = tE ) - tX ) );
 		set_qTol();
+	}
+
+	// Advance Simultaneous Trigger in LIQSS Variable to Time tE and Requantize: Step 1
+	void
+	advance1_LIQSS()
+	{ // Call before advance1 since it alters q0_
+		//Note Could skip continuous rep update if not observer of self or other simultaneously requantizing variables
+		d_.liqss1_x( tQ, qTol, q0_, x1_ ); // Continuous rep used to avoid cyclic dependency
+		tX = tE;
 	}
 
 	// Advance Simultaneous Trigger to Time tE and Requantize: Step 1
 	void
 	advance1()
 	{
-		{ // Only need to do this if observer of self or other simultaneously requantizing variables
-			x0_ = qc_;
-			d_.liqss1_x( tQ, qTol, q0_, x1_ ); // Continuous rep used to avoid cyclic dependency
-			tX = tE;
-		}
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
 		if ( diag ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q0_ << " quantized, " << x0_ << "+" << x1_ << "*t internal   tE=" << tE << '\n';

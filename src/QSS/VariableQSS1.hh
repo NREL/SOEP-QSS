@@ -84,6 +84,14 @@ public: // Properties
 		return x0_ + ( x1_ * ( t - tX ) );
 	}
 
+	// Continuous First Derivative at Time t
+	Value
+	x1( Time const t ) const
+	{
+		assert( ( tX <= t ) && ( t <= tE ) );
+		return x1_;
+	}
+
 	// Quantized Value at Time tQ
 	Value
 	q() const
@@ -195,10 +203,9 @@ public: // Methods
 	void
 	advance1()
 	{
-		{ // Only need to do this if observer of self or other simultaneously requantizing variables
-			x0_ = q0_;
-			x1_ = d_.q( tX = tE );
-		}
+		//Note Could skip continuous rep update if not observer of self or other simultaneously requantizing variables
+		x0_ = q0_;
+		x1_ = d_.q( tX = tE );
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
 		if ( diag ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q0_ << " quantized, " << x0_ << "+" << x1_ << "*t internal   tE=" << tE << '\n';

@@ -16,6 +16,7 @@
 #include <QSS/globals.hh>
 #include <QSS/math.hh>
 #include <QSS/VariableLIQSS1.hh>
+#include <QSS/VariableLIQSS2.hh>
 #include <QSS/VariableQSS1.hh>
 #include <QSS/VariableQSS2.hh>
 #include <QSS/VariableQSS3.hh>
@@ -35,7 +36,7 @@ main()
 
 	enum QSS_Method { QSS1 = 1, QSS2, QSS3, QSS4 };
 
-	// Settings
+	// Controls
 	diag = false; // Enable for diagnostic output of requantization events
 	bool const sampled( false ); // Sampled outputs?
 	bool const all_vars_out( false ); // Output all variables at every requantization event?
@@ -147,8 +148,8 @@ main()
 	Time to( t + dto ); // Sampling time
 //	VariableQSS1< FunctionLTI > x1( "x1", 1.0, 0.0 );
 //	VariableQSS1< FunctionLTI > x2( "x2", 1.0, 0.0 );
-	VariableLIQSS1< FunctionLIQSSLTI > x1( "x1", 1.0, 0.0 );
-	VariableLIQSS1< FunctionLIQSSLTI > x2( "x2", 1.0, 0.0 );
+	VariableLIQSS2< FunctionLIQSSLTI > x1( "x1", 1.0e-4, 0.0 );
+	VariableLIQSS2< FunctionLIQSSLTI > x2( "x2", 1.0e-4, 0.0 );
 	x1.init0( 0.0 );
 	x2.init0( 20.0 );
 	x1.d().add( 0.01, x2 );
@@ -159,9 +160,15 @@ main()
 
 	// Solver master logic
 	for ( auto var : vars ) {
+		var->init1_LIQSS();
+	}
+	for ( auto var : vars ) {
 		var->init1();
 	}
 	if ( qss_max >= QSS2 ) {
+		for ( auto var : vars ) {
+			var->init2_LIQSS();
+		}
 		for ( auto var : vars ) {
 			var->init2();
 		}
@@ -204,9 +211,15 @@ main()
 				trigger->advance0();
 			}
 			for ( Variable * trigger : triggers ) {
+				trigger->advance1_LIQSS();
+			}
+			for ( Variable * trigger : triggers ) {
 				trigger->advance1();
 			}
 			if ( qss_max >= QSS2 ) {
+				for ( Variable * trigger : triggers ) {
+					trigger->advance2_LIQSS();
+				}
 				for ( Variable * trigger : triggers ) {
 					trigger->advance2();
 				}

@@ -1,15 +1,15 @@
-#ifndef QSS_VariableQSS2_hh_INCLUDED
-#define QSS_VariableQSS2_hh_INCLUDED
+#ifndef QSS_VariableLIQSS2_hh_INCLUDED
+#define QSS_VariableLIQSS2_hh_INCLUDED
 
-// QSS2 Variable
+// LIQSS2 Variable
 
 // QSS Headers
 #include <QSS/Variable.hh>
 #include <QSS/globals.hh>
 
-// QSS2 Variable
+// LIQSS2 Variable
 template< template< typename > typename F >
-class VariableQSS2 final : public Variable
+class VariableLIQSS2 final : public Variable
 {
 
 public: // Types
@@ -24,7 +24,7 @@ public: // Creation
 
 	// Constructor
 	explicit
-	VariableQSS2(
+	VariableLIQSS2(
 	 std::string const & name,
 	 Value const aTol = 1.0e-6,
 	 Value const rTol = 1.0e-6
@@ -155,10 +155,10 @@ public: // Properties
 public: // Methods
 
 	// Initialize Constant Term
-	VariableQSS2 &
+	VariableLIQSS2 &
 	init0( Value const x )
 	{
-		x0_ = q0_ = x;
+		x0_ = qc_ = q0_ = x;
 		set_qTol();
 		return *this;
 	}
@@ -169,14 +169,21 @@ public: // Methods
 	{
 		self_observer = d_.finalize( this );
 		shrink_observers(); // Optional
-		x1_ = q1_ = d_.q();
+		// For self-observer this is a first pass to set a reasonable x1_ = q1_ for init2 calls
+		// This avoids variable processing order dependency but not inconsistent rep usage
+		x1_ = q1_ = d_.x(); // Continuous rep used to avoid cyclic dependency
 	}
 
-	// Initialize Quadratic Coefficient
+	// Initialize Quadratic Coefficient in LIQSS Variable
 	void
-	init2()
+	init2_LIQSS()
 	{
-		x2_ = one_half * d_.q1();
+		if ( self_observer ) {
+			d_.liqss2_x( tQ, qTol, q0_, q1_, x1_, x2_ ); // Continuous rep used to avoid cyclic dependency
+		} else {
+			x2_ = one_half * d_.x1(); // Continuous rep used to avoid cyclic dependency
+			q0_ += signum( x2_ ) * qTol;
+		}
 	}
 
 	// Initialize Event in Queue
@@ -192,7 +199,7 @@ public: // Methods
 	void
 	set_qTol()
 	{
-		qTol = std::max( aTol, rTol * std::abs( q0_ ) );
+		qTol = std::max( aTol, rTol * std::abs( qc_ ) );
 		assert( qTol > 0.0 );
 	}
 
@@ -201,14 +208,15 @@ public: // Methods
 	advance()
 	{
 		Time const tDel( ( tQ = tE ) - tX );
-		q0_ = x0_ + ( ( x1_ + ( x2_ * tDel ) ) * tDel );
+		qc_ = q0_ = x0_ + ( ( x1_ + ( x2_ * tDel ) ) * tDel );
 		set_qTol();
 		if ( self_observer ) {
-			x0_ = q0_;
-			x1_ = q1_ = d_.q( tE );
-			x2_ = one_half * d_.q1( tX = tE );
+			x0_ = qc_;
+			d_.liqss2( tQ, qTol, q0_, q1_, x1_, x2_ );
+			tX = tE;
 		} else {
-			q1_ = x1_ + ( two * x2_ * tDel );
+			q0_ += signum( x2_ ) * qTol;
+			q1_ = x1_ + ( 2.0 * x2_ * tDel );
 		}
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
@@ -223,7 +231,7 @@ public: // Methods
 	advance0()
 	{
 		Time const tDel( ( tQ = tE ) - tX );
-		q0_ = x0_ + ( ( x1_ + ( x2_ * tDel ) ) * tDel );
+		x0_ = qc_ = q0_ = x0_ + ( ( x1_ + ( x2_ * tDel ) ) * tDel );
 		set_qTol();
 	}
 
@@ -231,17 +239,16 @@ public: // Methods
 	void
 	advance1()
 	{
-		q1_ = d_.q( tE );
+		//Note Could skip continuous rep update if not observer of self or other simultaneously requantizing variables
+		x1_ = q1_ = d_.x( tQ ); // Continuous rep used to avoid cyclic dependency: Neutral initialization
 	}
 
-	// Advance Simultaneous Trigger to Time tE and Requantize: Step 2
+	// Advance Simultaneous Trigger in LIQSS Variable to Time tE and Requantize: Step 2
 	void
-	advance2()
+	advance2_LIQSS()
 	{
-		//Note Could skip continuous rep update if not observer of self or other simultaneously requantizing variables
-		x0_ = q0_;
-		x1_ = q1_;
-		x2_ = one_half * d_.q1( tX = tE );
+		d_.liqss2_x( tQ, qTol, q0_, q1_, x1_, x2_ ); // Continuous rep used to avoid cyclic dependency
+		tX = tE;
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
 		if ( diag ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q0_ << "+" << q1_ << "*t quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2 internal   tE=" << tE << '\n';
@@ -278,7 +285,7 @@ private: // Methods
 	set_tE_unaligned()
 	{
 		assert( tQ <= tX );
-		Value const d0( x0_ - ( q0_ + ( q1_ * ( tX - tQ ) ) ) );
+		Value const d0( x0_ - ( qc_ + ( q1_ * ( tX - tQ ) ) ) );
 		Value const d1( x1_ - q1_ );
 		if ( d1 >= 0.0 ) {
 			Time const tPosQ( min_root_quadratic( x2_, d1, d0 - qTol ) );
@@ -304,7 +311,7 @@ private: // Methods
 private: // Data
 
 	Value x0_{ 0.0 }, x1_{ 0.0 }, x2_{ 0.0 }; // Continuous value coefficients for active time segment
-	Value q0_{ 0.0 }, q1_{ 0.0 }; // Quantized value coefficients for active time segment
+	Value qc_{ 0.0 }, q0_{ 0.0 }, q1_{ 0.0 }; // Quantized centered and actual value coefficients for active time segment
 	Derivative d_; // Derivative function
 
 };

@@ -85,6 +85,15 @@ public: // Properties
 		return x0_ + ( ( x1_ + ( x2_ + ( x3_ * tDel ) ) * tDel ) * tDel );
 	}
 
+	// Continuous First Derivative at Time t
+	Value
+	x1( Time const t ) const
+	{
+		assert( ( tX <= t ) && ( t <= tE ) );
+		Time const tDel( t - tX );
+		return x1_ + ( ( ( two * x2_ ) + ( three * x3_ * tDel ) ) * tDel );
+	}
+
 	// Quantized Value at Time tQ
 	Value
 	q() const
@@ -224,8 +233,8 @@ public: // Methods
 			x2_ = q2_ = one_half * d_.q1( tE );
 			x3_ = one_sixth * d_.q2( tX = tE );
 		} else {
-			q1_ = x1_ + ( ( ( 2.0 * x2_ ) + ( 3.0 * x3_ * tDel ) ) * tDel );
-			q2_ = x2_ + ( 3.0 * x3_ * tDel );
+			q1_ = x1_ + ( ( ( two * x2_ ) + ( three * x3_ * tDel ) ) * tDel );
+			q2_ = x2_ + ( three * x3_ * tDel );
 		}
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
@@ -262,12 +271,11 @@ public: // Methods
 	void
 	advance3()
 	{
-		{ // Only need to do this if observer of self or other simultaneously requantizing variables
-			x0_ = q0_;
-			x1_ = q1_;
-			x2_ = q2_;
-			x3_ = one_sixth * d_.q2( tX = tE );
-		}
+		//Note Could skip continuous rep update if not observer of self or other simultaneously requantizing variables
+		x0_ = q0_;
+		x1_ = q1_;
+		x2_ = q2_;
+		x3_ = one_sixth * d_.q2( tX = tE );
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
 		if ( diag ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q0_ << "+" << q1_ << "*t+" << q2_ << "*t^2 quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2+" << x3_ << "*t^3 internal   tE=" << tE << '\n';

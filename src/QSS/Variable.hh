@@ -101,6 +101,11 @@ public: // Properties
 	Value
 	x( Time const t ) const = 0;
 
+	// Continuous First Derivative at Time t
+	virtual
+	Value
+	x1( Time const t ) const = 0;
+
 	// Quantized Value at Time tQ
 	virtual
 	Value
@@ -214,10 +219,23 @@ public: // Methods
 	Variable &
 	init0( Value const x ) = 0;
 
+	// Initialize Linear Coefficient in LIQSS Variable
+	virtual
+	void
+	init1_LIQSS()
+	{}
+
 	// Initialize Linear Coefficient
 	virtual
 	void
-	init1() = 0;
+	init1()
+	{}
+
+	// Initialize Quadratic Coefficient in LIQSS Variable
+	virtual
+	void
+	init2_LIQSS()
+	{}
 
 	// Initialize Quadratic Coefficient
 	virtual
@@ -247,10 +265,22 @@ public: // Methods
 	advance0()
 	{}
 
+	// Advance Simultaneous Trigger in LIQSS Variable to Time tE and Requantize: Step 1
+	virtual
+	void
+	advance1_LIQSS()
+	{}
+
 	// Advance Simultaneous Trigger to Time tE and Requantize: Step 1
 	virtual
 	void
 	advance1()
+	{}
+
+	// Advance Simultaneous Trigger in LIQSS Variable to Time tE and Requantize: Step 2
+	virtual
+	void
+	advance2_LIQSS()
 	{}
 
 	// Advance Simultaneous Trigger to Time tE and Requantize: Step 2
