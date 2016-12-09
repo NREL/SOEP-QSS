@@ -5,7 +5,7 @@ This is a stand-alone QSS solver being developed for integration into JModelica 
 ## Status
 
 Currently the code has:
-* QSS1/2/3 and LIQSS1 solvers.
+* QSS1/2/3 and LIQSS1/2 solvers.
 * Linear derivative function support.
 * Nonlinear derivative function support/examples for QSS1/2/3.
 * A simple "baseline" event queue built on `std::multimap`.
@@ -75,10 +75,18 @@ LIQSS as described in the literature is somewhat under-defined and inconsistent 
 #### Cyclic Dependency
 
 At startup and simultaneous requantization trigger events the LIQSS approach defined in the literature is inadequate because the quantized values depend on derivatives which, in turn, depend on other quantized values.
-When multiple variables' quantized values need to be set at the same time point there is, in general, a cyclic dependency among them. Approaches that
+When multiple variables' quantized values need to be set at the same time point there is, in general, a cyclic dependency among them. Approaches that were considered:
 * Single pass in arbitrary order: Leaves different representations of the same variable in the system and has a processing order dependency so results can be non-deterministic depending on how variables are held in containers.
 * Multiple passes hoping for a fixed point: May not find a consistent fixed point and is still potentially non-deterministic.
 * Use derivatives evaluated for the continuous, not quantized, representation at these events: Since the continous representation value is set first this allows a single pass, deterministic treatment. This is the approach used here.
+
+Even when using the continuous representation in the LIQSS derivatives issues remain:
+* LIQSS1: The LIQSS1 variables need to be processed first in the first derivative processing pass since it alters their quantized value terms.
+* LIQSS2: Because the second derivative pass alters their quantized value and slope terms there is no way to avoid the potential for cyclic dependencies.
+  The impact is controlled by setting the neutral (centered) values and first derivatives in those passes but this still allows other variable derivatives to be using these non-final values.
+  The exposure is reduced somewhat by processing the LIQSS2 variables first in the second derivative pass.
+  No ideal solution has been found for this LIQSS2+ limitation.
+  It is possible that when LIQSS2+ variables are present simultaneous triggering would be better handled as a sequence of separate trigger events at very closely spaced time steps: this is a good research topic.
 
 ### Event Queue
 
