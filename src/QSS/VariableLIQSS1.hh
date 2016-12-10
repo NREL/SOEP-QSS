@@ -55,23 +55,9 @@ public: // Properties
 		return x0_;
 	}
 
-	// Continuous Value at Time tX
-	Value &
-	x0()
-	{
-		return x0_;
-	}
-
 	// Continuous First Derivative at Time tX
 	Value
 	x1() const
-	{
-		return x1_;
-	}
-
-	// Continuous First Derivative at Time tX
-	Value &
-	x1()
 	{
 		return x1_;
 	}
@@ -102,13 +88,6 @@ public: // Properties
 	// Quantized Value at Time tQ
 	Value
 	q0() const
-	{
-		return q0_;
-	}
-
-	// Quantized Value at Time tQ
-	Value &
-	q0()
 	{
 		return q0_;
 	}
@@ -211,7 +190,6 @@ public: // Methods
 	void
 	advance1_LIQSS()
 	{ // Call before advance1 since it alters q0_
-		//Note Could skip continuous rep update if not observer of self or other simultaneously requantizing variables
 		d_.liqss1_x( tQ, qTol, q0_, x1_ ); // Continuous rep used to avoid cyclic dependency
 		tX = tE;
 	}

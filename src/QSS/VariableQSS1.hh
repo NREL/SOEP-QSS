@@ -55,23 +55,9 @@ public: // Properties
 		return x0_;
 	}
 
-	// Continuous Value at Time tX
-	Value &
-	x0()
-	{
-		return x0_;
-	}
-
 	// Continuous First Derivative at Time tX
 	Value
 	x1() const
-	{
-		return x1_;
-	}
-
-	// Continuous First Derivative at Time tX
-	Value &
-	x1()
 	{
 		return x1_;
 	}
@@ -102,13 +88,6 @@ public: // Properties
 	// Quantized Value at Time tQ
 	Value
 	q0() const
-	{
-		return q0_;
-	}
-
-	// Quantized Value at Time tQ
-	Value &
-	q0()
 	{
 		return q0_;
 	}
@@ -195,7 +174,7 @@ public: // Methods
 	void
 	advance0()
 	{
-		q0_ = x0_ + ( x1_ * ( ( tQ = tE ) - tX ) );
+		x0_ = q0_ = x0_ + ( x1_ * ( ( tQ = tE ) - tX ) );
 		set_qTol();
 	}
 
@@ -203,8 +182,6 @@ public: // Methods
 	void
 	advance1()
 	{
-		//Note Could skip continuous rep update if not observer of self or other simultaneously requantizing variables
-		x0_ = q0_;
 		x1_ = d_.q( tX = tE );
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );

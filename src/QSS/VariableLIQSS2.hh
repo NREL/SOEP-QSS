@@ -55,13 +55,6 @@ public: // Properties
 		return x0_;
 	}
 
-	// Continuous Value at Time tX
-	Value &
-	x0()
-	{
-		return x0_;
-	}
-
 	// Continuous First Derivative at Time tX
 	Value
 	x1() const
@@ -69,11 +62,11 @@ public: // Properties
 		return x1_;
 	}
 
-	// Continuous First Derivative at Time tX
-	Value &
-	x1()
+	// Continuous Second Derivative at Time tX
+	Value
+	x2() const
 	{
-		return x1_;
+		return x2_;
 	}
 
 	// Continuous Value at Time t
@@ -103,13 +96,6 @@ public: // Properties
 	// Quantized Value at Time tQ
 	Value
 	q0() const
-	{
-		return q0_;
-	}
-
-	// Quantized Value at Time tQ
-	Value &
-	q0()
 	{
 		return q0_;
 	}
@@ -171,17 +157,17 @@ public: // Methods
 		shrink_observers(); // Optional
 		// For self-observer this is a first pass to set a reasonable x1_ = q1_ for init2 calls
 		// This avoids variable processing order dependency but not inconsistent rep usage
-		x1_ = q1_ = d_.x(); // Continuous rep used to avoid cyclic dependency
+		x1_ = q1_ = d_.x(); // Continuous rep used to reduce impact of cyclic dependency
 	}
 
 	// Initialize Quadratic Coefficient in LIQSS Variable
 	void
 	init2_LIQSS()
-	{
+	{ // Call before init2 since it alters q0_
 		if ( self_observer ) {
-			d_.liqss2_x( tQ, qTol, q0_, q1_, x1_, x2_ ); // Continuous rep used to avoid cyclic dependency
+			d_.liqss2_x( tQ, qTol, q0_, q1_, x1_, x2_ ); // Continuous rep used to reduce impact of cyclic dependency
 		} else {
-			x2_ = one_half * d_.x1(); // Continuous rep used to avoid cyclic dependency
+			x2_ = one_half * d_.x1(); // Continuous rep used to reduce impact of cyclic dependency
 			q0_ += signum( x2_ ) * qTol;
 		}
 	}
@@ -239,16 +225,21 @@ public: // Methods
 	void
 	advance1()
 	{
-		//Note Could skip continuous rep update if not observer of self or other simultaneously requantizing variables
-		x1_ = q1_ = d_.x( tQ ); // Continuous rep used to avoid cyclic dependency: Neutral initialization
+		x1_ = q1_ = d_.x( tQ ); // Continuous rep used to reduce impact of cyclic dependency: Neutral initialization
 	}
 
 	// Advance Simultaneous Trigger in LIQSS Variable to Time tE and Requantize: Step 2
 	void
 	advance2_LIQSS()
-	{
-		d_.liqss2_x( tQ, qTol, q0_, q1_, x1_, x2_ ); // Continuous rep used to avoid cyclic dependency
+	{ // Call before advance2 since it alters q0_
+		d_.liqss2_x( tQ, qTol, q0_, q1_, x1_, x2_ ); // Continuous rep used to reduce impact of cyclic dependency
 		tX = tE;
+	}
+
+	// Advance Simultaneous Trigger to Time tE and Requantize: Step 2
+	void
+	advance2()
+	{
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
 		if ( diag ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q0_ << "+" << q1_ << "*t quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2 internal   tE=" << tE << '\n';

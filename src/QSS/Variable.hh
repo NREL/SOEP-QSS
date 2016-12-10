@@ -81,20 +81,10 @@ public: // Properties
 	Value
 	x0() const = 0;
 
-	// Continuous Value at Time tX
-	virtual
-	Value &
-	x0() = 0;
-
 	// Continuous First Derivative at Time tX
 	virtual
 	Value
 	x1() const = 0;
-
-	// Continuous First Derivative at Time tX
-	virtual
-	Value &
-	x1() = 0;
 
 	// Continuous Value at Time t
 	virtual
@@ -115,11 +105,6 @@ public: // Properties
 	virtual
 	Value
 	q0() const = 0;
-
-	// Quantized Value at Time tQ
-	virtual
-	Value &
-	q0() = 0;
 
 	// Quantized First Derivative at Time tQ
 	virtual

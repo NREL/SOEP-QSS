@@ -97,6 +97,29 @@ main()
 //	vars.push_back( &x1 );
 //	vars.push_back( &x2 );
 
+//	// Achilles and the Tortoise: Symmetric for Simultaneous Triggering
+//	Time const dto( 1.0e-3 ); // Sampling time step
+//	Time const tE( 10.0 ); // Simulation end time
+//	Time t( 0.0 ); // Simulation time
+//	Time to( t + dto ); // Sampling time
+//	VariableQSS1< FunctionLTI > x1( "x1", 1.0e-6, 0.0 );
+//	VariableQSS1< FunctionLTI > x2( "x2", 1.0e-6, 0.0 );
+//	x1.init0( 0.0 );
+//	x2.init0( 2.0 );
+//	x1.d().add( -0.5, x1 ).add( 1.5, x2 );
+//	x2.d().add( -1.0, x1 );
+//	VariableQSS1< FunctionLTI > y1( "y1", 1.0e-6, 0.0 );
+//	VariableQSS1< FunctionLTI > y2( "y2", 1.0e-6, 0.0 );
+//	y1.init0( 0.0 );
+//	y2.init0( 2.0 );
+//	y1.d().add( -0.5, y1 ).add( 1.5, y2 );
+//	y2.d().add( -1.0, y1 );
+//	vars.reserve( 4 );
+//	vars.push_back( &x1 );
+//	vars.push_back( &x2 );
+//	vars.push_back( &y1 );
+//	vars.push_back( &y2 );
+
 //	// Achilles and the Tortoise: Using Custom Functions
 //	Time const dto( 1.0e-3 ); // Sampling time step
 //	Time const tE( 10.0 ); // Simulation end time

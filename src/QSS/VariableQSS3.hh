@@ -55,23 +55,9 @@ public: // Properties
 		return x0_;
 	}
 
-	// Continuous Value at Time tX
-	Value &
-	x0()
-	{
-		return x0_;
-	}
-
 	// Continuous First Derivative at Time tX
 	Value
 	x1() const
-	{
-		return x1_;
-	}
-
-	// Continuous First Derivative at Time tX
-	Value &
-	x1()
 	{
 		return x1_;
 	}
@@ -104,13 +90,6 @@ public: // Properties
 	// Quantized Value at Time tQ
 	Value
 	q0() const
-	{
-		return q0_;
-	}
-
-	// Quantized Value at Time tQ
-	Value &
-	q0()
 	{
 		return q0_;
 	}
@@ -249,7 +228,7 @@ public: // Methods
 	advance0()
 	{
 		Time const tDel( ( tQ = tE ) - tX );
-		q0_ = x0_ + ( ( x1_ + ( x2_ + ( x3_ * tDel ) ) * tDel ) * tDel );
+		x0_ = q0_ = x0_ + ( ( x1_ + ( x2_ + ( x3_ * tDel ) ) * tDel ) * tDel );
 		set_qTol();
 	}
 
@@ -257,24 +236,20 @@ public: // Methods
 	void
 	advance1()
 	{
-		q1_ = d_.q( tE );
+		x1_ = q1_ = d_.q( tE );
 	}
 
 	// Advance Simultaneous Trigger to Time tE and Requantize: Step 2
 	void
 	advance2()
 	{
-		q2_ = one_half * d_.q1( tE );
+		x2_ = q2_ = one_half * d_.q1( tE );
 	}
 
 	// Advance Simultaneous Trigger to Time tE and Requantize: Step 3
 	void
 	advance3()
 	{
-		//Note Could skip continuous rep update if not observer of self or other simultaneously requantizing variables
-		x0_ = q0_;
-		x1_ = q1_;
-		x2_ = q2_;
 		x3_ = one_sixth * d_.q2( tX = tE );
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );

@@ -110,6 +110,15 @@ Profiling will be used to identify bottlenecks in performance and in scalability
 Performance tuning and experimentation with alternative implementation designs are anticipated.
 Specifically, evaluation of alternative event queue designs is likely to be worthwhile, especially once parallel processing is added.
 
+### Performance Findings
+
+Performance findings and observations:
+* Simultaneous requantization triggering:
+  * Could skip continuous rep update if a variable is not an observer of any of the requantizing variables.
+    This would save assignments but more importantly evaluation of the highest derivative.
+    There is some overhead in determining whether a variable qualifies.
+    Testing so far doesn't show a significant benefit for this optimization but it should be reevaluated with real-world cases where simultaneous triggering is common.
+
 ## Testing
 
 * Case runs are being compared with results from [Qss Solver](https://sourceforge.net/projects/qssengine/) and [Ptolemy](http://ptolemy.eecs.berkeley.edu/) for now.

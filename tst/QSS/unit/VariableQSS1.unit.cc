@@ -24,13 +24,13 @@ TEST( VariableQSS1Test, Basic )
 	EXPECT_DOUBLE_EQ( 2.5 + 17.0e-7, x1.x( 1.0e-7 ) );
 	EXPECT_EQ( 0.0, x1.tQ );
 	EXPECT_DOUBLE_EQ( std::max( x1.aTol, x1.rTol * 2.5 ) / 17.0, x1.tE );
-	double const x1_tEnd( x1.tE );
+	double const x1_tE( x1.tE );
 	x1.advance();
-	EXPECT_EQ( x1_tEnd, x1.tQ );
+	EXPECT_EQ( x1_tE, x1.tQ );
 
 	VariableQSS1< FunctionLTI > x2( "x2", 1.0e-3, 1.0e-4 );
 	x2.init0( 2.5 );
-	x2.d().add( 12.0 ).add( 2.0, x2 ).finalize( x2 );
+	x2.d().add( 12.0 ).add( 2.0, x2 );
 	x2.init1();
 	x2.init_event();
 	EXPECT_EQ( 1.0e-3, x2.aTol );
