@@ -6,7 +6,6 @@
 // QSS Headers
 #include <QSS/Variable.hh>
 #include <QSS/globals.hh>
-#include <QSS/math.hh>
 
 // LIQSS1 Variable
 template< template< typename > typename F >

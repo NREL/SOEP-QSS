@@ -5,6 +5,7 @@
 
 // QSS Headers
 #include <QSS/EventQueue.hh>
+#include <QSS/math.hh>
 
 // C++ Headers
 #include <algorithm>
