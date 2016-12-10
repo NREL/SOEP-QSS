@@ -305,6 +305,7 @@ public: // Methods
 					x.push_back( x_[ i ] );
 					if ( x_[ i ] == v ) {
 						cv_ = c_[ i ];
+						cv_inv_ = ( cv_ != 0.0 ? 1.0 / cv_ : infinity );
 					} else {
 						co_.push_back( c_[ i ] );
 						xo_.push_back( x_[ i ] );
@@ -366,7 +367,7 @@ public: // Methods
 			q0 += qTol;
 			x1 = du;
 		} else { // Flat trajectory
-			q0 = std::min( std::max( -( db / cv_ ), q0 - qTol ), q0 + qTol ); // cv_ != 0 since dls != dus // Clipped in case of roundoff
+			q0 = std::min( std::max( -( db * cv_inv_ ), q0 - qTol ), q0 + qTol ); // cv_ != 0 since dls != dus // Clipped in case of roundoff
 			x1 = 0.0;
 		}
 	}
@@ -397,7 +398,7 @@ public: // Methods
 			q0 += qTol;
 			x1 = du;
 		} else { // Flat trajectory
-			q0 = std::min( std::max( -( db / cv_ ), q0 - qTol ), q0 + qTol ); // cv_ != 0 since dls != dus // Clipped in case of roundoff
+			q0 = std::min( std::max( -( db * cv_inv_ ), q0 - qTol ), q0 + qTol ); // cv_ != 0 since dls != dus // Clipped in case of roundoff
 			x1 = 0.0;
 		}
 	}
@@ -441,8 +442,8 @@ public: // Methods
 			x1 = q1 = du;
 			x2 = one_half * d2u;
 		} else { // Straight trajectory
-			x1 = q1 = -( d2o / cv_ );
-			q0 = std::min( std::max( ( q1 - db ) / cv_, q0 - qTol ), q0 + qTol ); // cv_ != 0 since dls != dus // Clipped in case of roundoff
+			x1 = q1 = -( d2o * cv_inv_ );
+			q0 = std::min( std::max( ( q1 - db ) * cv_inv_, q0 - qTol ), q0 + qTol ); // cv_ != 0 since dls != dus // Clipped in case of roundoff
 			x2 = 0.0;
 		}
 	}
@@ -486,8 +487,8 @@ public: // Methods
 			x1 = q1 = du;
 			x2 = one_half * d2u;
 		} else { // Straight trajectory
-			x1 = q1 = -( d2o / cv_ );
-			q0 = std::min( std::max( ( q1 - db ) / cv_, q0 - qTol ), q0 + qTol ); // cv_ != 0 since dls != dus // Clipped in case of roundoff
+			x1 = q1 = -( d2o * cv_inv_ );
+			q0 = std::min( std::max( ( q1 - db ) * cv_inv_, q0 - qTol ), q0 + qTol ); // cv_ != 0 since dls != dus // Clipped in case of roundoff
 			x2 = 0.0;
 		}
 	}
@@ -504,6 +505,7 @@ private: // Data
 	Coefficients c_; // Coefficients
 	Variables x_; // Variables
 	Coefficient cv_{ 0.0 }; // Coefficient of self Variable
+	Coefficient cv_inv_{ 0.0 }; // Inverse of coefficient of self Variable
 	Variable * xv_{ nullptr }; // Self Variable
 	Coefficients co_; // Coefficients for Variables other than self Variable
 	Variables xo_; // Variables other than self Variable

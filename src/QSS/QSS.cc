@@ -37,10 +37,11 @@ main()
 	enum QSS_Method { QSS1 = 1, QSS2, QSS3, QSS4 };
 
 	// Controls
-	diag = false; // Enable for diagnostic output of requantization events
+	inflection_steps = false; // Add requantization steps at inflection points?
+	diag = false; // Enable for diagnostic output of requantization events?
 	bool const sampled( false ); // Sampled outputs?
 	bool const all_vars_out( false ); // Output all variables at every requantization event?
-	bool const q_out( sampled || all_vars_out ); // Quantized output would differ from continous?
+	bool const q_out( sampled || all_vars_out ); // Quantized output would differ from continuous?
 	QSS_Method const qss_max( QSS3 ); // Handle all QSS orders
 
 //	// Simple x, y, z
@@ -153,7 +154,7 @@ main()
 //	e_stream.close();
 //	to = 0.0;
 
-//	// Exponential Decay Problem
+//	// Exponential Decay Example
 //	Time const dto( 1.0e-3 ); // Sampling time step
 //	Time const tE( 30.0 ); // Simulation end time
 //	Time t( 0.0 ); // Simulation time
@@ -166,7 +167,7 @@ main()
 
 	// Stiff System Literature Example
 	Time const dto( 1.0e-3 ); // Sampling time step
-	Time const tE( 700.0 ); // Simulation end time
+	Time const tE( 500.0 ); // Simulation end time
 	Time t( 0.0 ); // Simulation time
 	Time to( t + dto ); // Sampling time
 //	VariableQSS2< FunctionLTI > x1( "x1", 1.0, 0.0 );

@@ -6,6 +6,7 @@
 // QSS Headers
 #include <QSS/Variable.hh>
 #include <QSS/globals.hh>
+#include <QSS/math.hh>
 
 // LIQSS2 Variable
 template< template< typename > typename F >
@@ -269,6 +270,9 @@ private: // Methods
 	{
 		assert( tX <= tQ );
 		tE = ( x2_ != 0.0 ? tQ + std::sqrt( qTol / std::abs( x2_ ) ) : infinity );
+		if ( ( inflection_steps ) && ( x2_ != 0.0 ) && ( signum( x1_ ) != signum( x2_ ) ) ) {
+			tE = std::min( tE, tQ - ( x1_ / ( two * x2_ ) ) );
+		}
 	}
 
 	// Set End Time: Quantized and Continuous Unaligned
@@ -296,6 +300,9 @@ private: // Methods
 				Time const tMinQ( std::min( tPosQ, tNegQ ) );
 				tE = ( tMinQ == infinity ? infinity : tX + tMinQ );
 			}
+		}
+		if ( ( inflection_steps ) && ( x2_ != 0.0 ) && ( signum( x1_ ) != signum( x2_ ) ) && ( signum( x1_ ) == signum( q1_ ) ) ) {
+			tE = std::min( tE, tX - ( x1_ / ( two * x2_ ) ) );
 		}
 	}
 

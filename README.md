@@ -68,6 +68,24 @@ Notes:
 * Handles self-observer continuous representation updates specially instead of as part of general observer updates for efficiency:
   * Assigns continuous representation coefficients from the corresponding quantized representation during requantization instead of recomputing them.
 
+### Time Steps
+
+#### Inflection Points
+
+QSS methods can have trouble converging tightly on asymptotic values such as tails of exponential decay functions.
+This can be caused by the continuous representation reversing course and moving away from the quantized representation before the next quantum-based requantization event.
+An option to add inflection point requantization time steps has been built in to this package for QSS methods of order 2 and above to address this limitation.
+This will move up the next requantization time to the time when the continuous representation's next to highest derivative will pass through zero if the sign of that derivative in the quantized and continuous representations is the same at the start of the continuous representation time segment.
+(If the signs differ at the segment start then an inflection point would only improve the fit of the continuous and quantized representations, so we leave this case alone and let the normal quantization limits control the next time step.)
+So for (LI)QSS2 this finds the time where the slope is zero, and for QSS3 this finds the time when the second derivative is zero.
+If this time is positive and less than the computed quantum-based next requantization time then it is used as the next requantization time.
+In testing so far this has proven very effective in improving convergence at a modest cost of a few extra time steps but this should be evaluated in real-world cases.
+
+Note that this differs from the literature.
+In some papers by the original QSS authors there is an additional time step recommended at the point when the QSS order derivative is zero.
+As noted by David Lorenzetti this is confusing because the Nth derivative of the continuous representation in a QSS order N method is a constant.
+Nevertheless, there may be some room for alternative approaches to improving QSS convergence.
+
 ### LIQSS
 
 LIQSS as described in the literature is somewhat under-defined and inconsistent in some details. Some of the key issues and how they are addressed in this code are detailed below.

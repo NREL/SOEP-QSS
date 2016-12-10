@@ -6,6 +6,7 @@
 // QSS Headers
 #include <QSS/Variable.hh>
 #include <QSS/globals.hh>
+#include <QSS/math.hh>
 
 // QSS3 Variable
 template< template< typename > typename F >
@@ -281,6 +282,9 @@ private: // Methods
 	{
 		assert( tX <= tQ );
 		tE = ( x3_ != 0.0 ? tQ + std::cbrt( qTol / std::abs( x3_ ) ) : infinity );
+		if ( ( inflection_steps ) && ( x3_ != 0.0 ) && ( signum( x2_ ) != signum( x3_ ) ) ) {
+			tE = std::min( tE, tQ - ( x2_ / ( three * x3_ ) ) );
+		}
 	}
 
 	// Set End Time: Quantized and Continuous Unaligned
@@ -303,6 +307,9 @@ private: // Methods
 			Time const tNegQ( min_root_cubic( x3_, d2, d1, d0 + qTol ) );
 			Time const tMinQ( std::min( tPosQ, tNegQ ) );
 			tE = ( tMinQ == infinity ? infinity : tX + tMinQ );
+		}
+		if ( ( inflection_steps ) && ( x3_ != 0.0 ) && ( signum( x2_ ) != signum( x3_ ) ) && ( signum( x2_ ) == signum( q2_ ) ) ) {
+			tE = std::min( tE, tQ - ( x2_ / ( three * x3_ ) ) );
 		}
 	}
 

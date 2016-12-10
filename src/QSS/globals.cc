@@ -4,4 +4,5 @@
 
 // QSS Globals
 EventQueue< Variable > events;
+bool inflection_steps( false ); // Inflection point quantization time steps?
 bool diag( false ); // Diagnostic output?
