@@ -1,5 +1,5 @@
-#ifndef QSS_FunctionLIQSSLTI_hh_INCLUDED
-#define QSS_FunctionLIQSSLTI_hh_INCLUDED
+#ifndef QSS_FunctionLTI_LIQSS_hh_INCLUDED
+#define QSS_FunctionLTI_LIQSS_hh_INCLUDED
 
 // Linear Time-Invariant Function
 
@@ -14,12 +14,10 @@
 
 // Linear Time-Invariant Function
 template< typename V > // Template to avoid cyclic inclusion with Variable
-class FunctionLIQSSLTI
+class FunctionLTI_LIQSS
 {
 
 public: // Types
-
-	using Value = double;
 
 	using Coefficient = double;
 	using Coefficients = std::vector< Coefficient >;
@@ -27,17 +25,20 @@ public: // Types
 	using Variable = V;
 	using Variables = typename V::Variables;
 
+	using Value = typename Variable::Value;
 	using Time = typename Variable::Time;
+	using AdvanceSpecsLIQSS1 = typename Variable::AdvanceSpecsLIQSS1;
+	using AdvanceSpecsLIQSS2 = typename Variable::AdvanceSpecsLIQSS2;
 	using size_type = Coefficients::size_type;
 
 public: // Creation
 
 	// Default Constructor
-	FunctionLIQSSLTI()
+	FunctionLTI_LIQSS()
 	{}
 
 	// Constructor
-	FunctionLIQSSLTI(
+	FunctionLTI_LIQSS(
 	 Coefficients const & c,
 	 Variables const & x
 	) :
@@ -169,58 +170,116 @@ public: // Properties
 		return c;
 	}
 
-	// Continuous Value at Time t of Contribution from Non-Self Variables
-	Value
-	xo( Time const t ) const
+	// Quantized Values at Time t and at Variable +/- Delta
+	AdvanceSpecsLIQSS1
+	qlu( Time const t, Value const del ) const
 	{
 		assert( co_.size() == xo_.size() );
-		Value v( c0_ );
-		for ( size_type i = 0, n = co_.size(); i < n; ++i ) {
-			v += co_[ i ] * xo_[ i ]->x( t );
-		}
-		return v;
-	}
 
-	// Continuous First Derivative at Time t of Contribution from Non-Self Variables
-	Value
-	x1o( Time const t ) const
-	{
-		assert( co_.size() == xo_.size() );
-		Value s( 0.0 );
-		for ( size_type i = ioBeg[ 2 ], n = co_.size(); i < n; ++i ) {
-			s += co_[ i ] * xo_[ i ]->x1( t );
-		}
-		return s;
-	}
-
-	// Quantized Value at Time t of Contribution from Non-Self Variables
-	Value
-	qo( Time const t ) const
-	{
-		assert( co_.size() == xo_.size() );
+		// Value at +/- del
 		Value v( c0_ );
 		for ( size_type i = 0, n = co_.size(); i < n; ++i ) {
 			v += co_[ i ] * xo_[ i ]->q( t );
 		}
-		return v;
+		Value const vc( v + ( cv_ * xv_->q( t ) ) );
+		Value const cv_del( cv_ * del );
+		Value const vl( vc - cv_del );
+		Value const vu( vc + cv_del );
+
+		// Zero point
+		Value const z( signum( vl ) != signum( vu ) ? -( v * cv_inv_ ) : 0.0 );
+
+		return AdvanceSpecsLIQSS1{ vl, vu, z };
 	}
 
-	// Quantized First Derivative at Time t of Contribution from Non-Self Variables
-	Value
-	q1o( Time const t ) const
+	// Continuous Values at Time t and at Variable +/- Delta
+	AdvanceSpecsLIQSS1
+	xlu( Time const t, Value const del ) const
 	{
 		assert( co_.size() == xo_.size() );
+
+		// Value at +/- del
+		Value v( c0_ );
+		for ( size_type i = 0, n = co_.size(); i < n; ++i ) {
+			v += co_[ i ] * xo_[ i ]->x( t );
+		}
+		Value const vc( v + ( cv_ * xv_->x( t ) ) );
+		Value const cv_del( cv_ * del );
+		Value const vl( vc - cv_del );
+		Value const vu( vc + cv_del );
+
+		// Zero point
+		Value const z( signum( vl ) != signum( vu ) ? -( v * cv_inv_ ) : 0.0 );
+
+		return AdvanceSpecsLIQSS1{ vl, vu, z };
+	}
+
+	// Quantized Values and Derivatives at Time t and at Variable +/- Delta
+	AdvanceSpecsLIQSS2
+	qlu2( Time const t, Value const del ) const
+	{
+		assert( co_.size() == xo_.size() );
+
+		// Value at +/- del
+		Value v( c0_ );
+		for ( size_type i = 0, n = co_.size(); i < n; ++i ) {
+			v += co_[ i ] * xo_[ i ]->q( t );
+		}
+		Value const vc( v + ( cv_ * xv_->q( t ) ) );
+		Value const cv_del( cv_ * del );
+		Value const vl( vc - cv_del );
+		Value const vu( vc + cv_del );
+
+		// Derivative at +/- del
 		Value s( 0.0 );
 		for ( size_type i = ioBeg[ 2 ], n = co_.size(); i < n; ++i ) {
 			s += co_[ i ] * xo_[ i ]->q1( t );
 		}
-		return s;
+		Value const sl( s + ( cv_ * vl ) );
+		Value const su( s + ( cv_ * vu ) );
+
+		// Zero point
+		Value const z1( -( s * cv_inv_ ) );
+		Value const z2( signum( sl ) != signum( su ) ? ( z1 - v ) * cv_inv_ : 0.0 );
+
+		return AdvanceSpecsLIQSS2{ vl, vu, z1, sl, su, z2 };
+	}
+
+	// Continuous Values and Derivatives at Time t and at Variable +/- Delta
+	AdvanceSpecsLIQSS2
+	xlu2( Time const t, Value const del ) const
+	{
+		assert( co_.size() == xo_.size() );
+
+		// Value at +/- del
+		Value v( c0_ );
+		for ( size_type i = 0, n = co_.size(); i < n; ++i ) {
+			v += co_[ i ] * xo_[ i ]->x( t );
+		}
+		Value const vc( v + ( cv_ * xv_->x( t ) ) );
+		Value const cv_del( cv_ * del );
+		Value const vl( vc - cv_del );
+		Value const vu( vc + cv_del );
+
+		// Derivative at +/- del
+		Value s( 0.0 );
+		for ( size_type i = ioBeg[ 2 ], n = co_.size(); i < n; ++i ) {
+			s += co_[ i ] * xo_[ i ]->x1( t );
+		}
+		Value const sl( s + ( cv_ * vl ) );
+		Value const su( s + ( cv_ * vu ) );
+
+		// Zero point
+		Value const z1( -( s * cv_inv_ ) );
+		Value const z2( signum( sl ) != signum( su ) ? ( z1 - v ) * cv_inv_ : 0.0 );
+
+		return AdvanceSpecsLIQSS2{ vl, vu, z1, sl, su, z2 };
 	}
 
 public: // Methods
 
 	// Add Constant
-	FunctionLIQSSLTI &
+	FunctionLTI_LIQSS &
 	add( Coefficient const c0 )
 	{
 		c0_ = c0;
@@ -228,7 +287,7 @@ public: // Methods
 	}
 
 	// Add a Coefficient + Variable
-	FunctionLIQSSLTI &
+	FunctionLTI_LIQSS &
 	add(
 	 Coefficient const c_i,
 	 Variable & x_i
@@ -242,7 +301,7 @@ public: // Methods
 	}
 
 	// Add a Variable + Coefficient
-	FunctionLIQSSLTI &
+	FunctionLTI_LIQSS &
 	add(
 	 Variable & x_i,
 	 Coefficient const c_i
@@ -256,7 +315,7 @@ public: // Methods
 	}
 
 	// Add a Coefficient + Variable
-	FunctionLIQSSLTI &
+	FunctionLTI_LIQSS &
 	add(
 	 Coefficient const c_i,
 	 Variable * x_i
@@ -270,7 +329,7 @@ public: // Methods
 	}
 
 	// Add a Variable + Coefficient
-	FunctionLIQSSLTI &
+	FunctionLTI_LIQSS &
 	add(
 	 Variable * x_i,
 	 Coefficient const c_i
@@ -339,158 +398,6 @@ public: // Methods
 	finalize( Variable & v )
 	{
 		return finalize( &v );
-	}
-
-	// LIQSS1 Self-Observer Requantization
-	void
-	liqss1(
-	 Time const t,
-	 Value const qTol,
-	 Value & q0,
-	 Value & x1
-	)
-	{
-		assert( qTol > 0.0 );
-		assert( xv_ != nullptr );
-		assert( xv_->self_observer );
-		Value const db( qo( t ) ); // Quantized rep used for single trigger
-		Value const dc( db + ( cv_ * q0 ) );
-		Value const cv_qTol( cv_ * qTol );
-		Value const dl( dc - cv_qTol );
-		Value const du( dc + cv_qTol );
-		int const dls( signum( dl ) );
-		int const dus( signum( du ) );
-		if ( ( dls == -1 ) && ( dus == -1 ) ) { // Downward trajectory
-			q0 -= qTol;
-			x1 = dl;
-		} else if ( ( dls == +1 ) && ( dus == +1 ) ) { // Upward trajectory
-			q0 += qTol;
-			x1 = du;
-		} else { // Flat trajectory
-			q0 = std::min( std::max( -( db * cv_inv_ ), q0 - qTol ), q0 + qTol ); // cv_ != 0 since dls != dus // Clipped in case of roundoff
-			x1 = 0.0;
-		}
-	}
-
-	// LIQSS1 Self-Observer Requantization: Continuous Representation
-	void
-	liqss1_x(
-	 Time const t,
-	 Value const qTol,
-	 Value & q0,
-	 Value & x1
-	)
-	{
-		assert( qTol > 0.0 );
-		assert( xv_ != nullptr );
-		assert( xv_->self_observer );
-		Value const db( xo( t ) ); // Continuous rep used to avoid cyclic dependency
-		Value const dc( db + ( cv_ * q0 ) );
-		Value const cv_qTol( cv_ * qTol );
-		Value const dl( dc - cv_qTol );
-		Value const du( dc + cv_qTol );
-		int const dls( signum( dl ) );
-		int const dus( signum( du ) );
-		if ( ( dls == -1 ) && ( dus == -1 ) ) { // Downward trajectory
-			q0 -= qTol;
-			x1 = dl;
-		} else if ( ( dls == +1 ) && ( dus == +1 ) ) { // Upward trajectory
-			q0 += qTol;
-			x1 = du;
-		} else { // Flat trajectory
-			q0 = std::min( std::max( -( db * cv_inv_ ), q0 - qTol ), q0 + qTol ); // cv_ != 0 since dls != dus // Clipped in case of roundoff
-			x1 = 0.0;
-		}
-	}
-
-	// LIQSS2 Self-Observer Requantization
-	void
-	liqss2(
-	 Time const t,
-	 Value const qTol,
-	 Value & q0,
-	 Value & q1,
-	 Value & x1,
-	 Value & x2
-	)
-	{
-		assert( qTol > 0.0 );
-		assert( xv_ != nullptr );
-		assert( xv_->self_observer );
-
-		// Function (derivative) value at +/-Q
-		Value const db( qo( t ) ); // Quantized rep used for single trigger
-		Value const dc( db + ( cv_ * q0 ) );
-		Value const cv_qTol( cv_ * qTol );
-		Value const dl( dc - cv_qTol );
-		Value const du( dc + cv_qTol );
-
-		// Function (second) derivative at +/-Q
-		Value const d2o( q1o( t ) ); // Quantized rep used for single trigger
-		Value const d2l( ( cv_ * dl ) + d2o );
-		Value const d2u( ( cv_ * du ) + d2o );
-
-		// Set coefficients based on second derivative signs
-		int const dls( signum( d2l ) );
-		int const dus( signum( d2u ) );
-		if ( ( dls == -1 ) && ( dus == -1 ) ) { // Downward curving trajectory
-			q0 -= qTol;
-			x1 = q1 = dl;
-			x2 = one_half * d2l;
-		} else if ( ( dls == +1 ) && ( dus == +1 ) ) { // Upward curving trajectory
-			q0 += qTol;
-			x1 = q1 = du;
-			x2 = one_half * d2u;
-		} else { // Straight trajectory
-			x1 = q1 = -( d2o * cv_inv_ );
-			q0 = std::min( std::max( ( q1 - db ) * cv_inv_, q0 - qTol ), q0 + qTol ); // cv_ != 0 since dls != dus // Clipped in case of roundoff
-			x2 = 0.0;
-		}
-	}
-
-	// LIQSS2 Self-Observer Requantization
-	void
-	liqss2_x(
-	 Time const t,
-	 Value const qTol,
-	 Value & q0,
-	 Value & q1,
-	 Value & x1,
-	 Value & x2
-	)
-	{
-		assert( qTol > 0.0 );
-		assert( xv_ != nullptr );
-		assert( xv_->self_observer );
-
-		// Function (derivative) value at +/-Q
-		Value const db( xo( t ) ); // Continuous rep used to avoid cyclic dependency
-		Value const dc( db + ( cv_ * q0 ) );
-		Value const cv_qTol( cv_ * qTol );
-		Value const dl( dc - cv_qTol );
-		Value const du( dc + cv_qTol );
-
-		// Function (second) derivative at +/-Q
-		Value const d2o( x1o( t ) ); // Continuous rep used to avoid cyclic dependency
-		Value const d2l( ( cv_ * dl ) + d2o );
-		Value const d2u( ( cv_ * du ) + d2o );
-
-		// Set coefficients based on second derivative signs
-		int const dls( signum( d2l ) );
-		int const dus( signum( d2u ) );
-		if ( ( dls == -1 ) && ( dus == -1 ) ) { // Downward curving trajectory
-			q0 -= qTol;
-			x1 = q1 = dl;
-			x2 = one_half * d2l;
-		} else if ( ( dls == +1 ) && ( dus == +1 ) ) { // Upward curving trajectory
-			q0 += qTol;
-			x1 = q1 = du;
-			x2 = one_half * d2u;
-		} else { // Straight trajectory
-			x1 = q1 = -( d2o * cv_inv_ );
-			q0 = std::min( std::max( ( q1 - db ) * cv_inv_, q0 - qTol ), q0 + qTol ); // cv_ != 0 since dls != dus // Clipped in case of roundoff
-			x2 = 0.0;
-		}
 	}
 
 public: // Static Data

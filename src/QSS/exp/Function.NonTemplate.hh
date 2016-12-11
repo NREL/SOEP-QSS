@@ -21,6 +21,9 @@ public: // Types
 
 	using Variables = Variable::Variables;
 
+	using Value = Variable::Value;
+	using Time = typename Variable::Time;
+
 public: // Creation
 
 	// Default Constructor
@@ -103,11 +106,11 @@ public: // Methods
 	}
 
 	// Continuous Value at Time t
-	double
-	operator ()( double const t ) const
+	Value
+	operator ()( Time const t ) const
 	{
 		assert( c_.size() == x_.size() );
-		double v( c0_ ); // Value
+		Value v( c0_ ); // Value
 		for ( Coefficients::size_type i = 0, n = c_.size(); i < n; ++i ) {
 			v += c_[ i ] * x_[ i ]->x( t );
 		}
@@ -115,11 +118,11 @@ public: // Methods
 	}
 
 	// Continuous Value at Time t
-	double
-	x( double const t ) const
+	Value
+	x( Time const t ) const
 	{
 		assert( c_.size() == x_.size() );
-		double v( c0_ ); // Value
+		Value v( c0_ ); // Value
 		for ( Coefficients::size_type i = 0, n = c_.size(); i < n; ++i ) {
 			v += c_[ i ] * x_[ i ]->x( t );
 		}
@@ -127,11 +130,11 @@ public: // Methods
 	}
 
 	// Quantized Value at Time t
-	double
-	q( double const t ) const
+	Value
+	q( Time const t ) const
 	{
 		assert( c_.size() == x_.size() );
-		double v( c0_ ); // Value
+		Value v( c0_ ); // Value
 		for ( Coefficients::size_type i = 0, n = c_.size(); i < n; ++i ) {
 			v += c_[ i ] * x_[ i ]->q( t );
 		}

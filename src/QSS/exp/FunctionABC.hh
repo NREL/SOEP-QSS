@@ -1,10 +1,15 @@
 #ifndef QSS_FunctionABC_hh_INCLUDED
 #define QSS_FunctionABC_hh_INCLUDED
 
+// QSS Function Abstract Base Class
+
 class Function
 {
 
 public: // Types
+
+	using Value = double;
+	using Time = double;
 
 protected: // Creation
 
@@ -35,8 +40,8 @@ public: // Methods
 
 	// Value at Time t
 	virtual
-	double
-	operator ()( double const t ) const = 0;
+	Value
+	operator ()( Time const t ) const = 0;
 
 };
 

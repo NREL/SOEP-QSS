@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 
 // QSS Headers
-#include <QSS/FunctionLIQSSLTI.hh>
+#include <QSS/FunctionLTI_LIQSS.hh>
 #include <QSS/VariableLIQSS1.hh>
 
 // C++ Headers
@@ -12,7 +12,7 @@
 
 TEST( VariableLIQSS1Test, Basic )
 {
-	VariableLIQSS1< FunctionLIQSSLTI > x1( "x1" );
+	VariableLIQSS1< FunctionLTI_LIQSS > x1( "x1" );
 	x1.init0( 2.5 );
 	x1.d().add( 12.0 ).add( 2.0, x1 );
 	x1.init1_LIQSS();
@@ -28,7 +28,7 @@ TEST( VariableLIQSS1Test, Basic )
 	x1.advance();
 	EXPECT_EQ( x1_tE, x1.tQ );
 
-	VariableLIQSS1< FunctionLIQSSLTI > x2( "x2", 1.0e-3, 1.0e-4 );
+	VariableLIQSS1< FunctionLTI_LIQSS > x2( "x2", 1.0e-3, 1.0e-4 );
 	x2.init0( 2.5 );
 	x2.d().add( 12.0 ).add( 2.0, x2 );
 	x2.init1_LIQSS();

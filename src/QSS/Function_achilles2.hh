@@ -18,6 +18,67 @@ public: // Types
 
 	using Variable = V;
 
+	using Value = typename Variable::Value;
+	using Time = typename Variable::Time;
+
+public: // Properties
+
+	// Quantized Value at Initialization Time
+	Value
+	q() const
+	{
+		return ( c1_ * x1_->q() );
+	}
+
+	// Quantized First Derivative at Initialization Time
+	Value
+	q1() const
+	{
+		return ( c1_ * x1_->q1() );
+	}
+
+	// Quantized Second Derivative at Initialization Time
+	Value
+	q2() const
+	{
+		return ( c1_ * x1_->q2() );
+	}
+
+	// Continuous Value at Time t
+	Value
+	operator ()( Time const t ) const
+	{
+		return ( c1_ * x1_->x( t ) );
+	}
+
+	// Continuous Value at Time t
+	Value
+	x( Time const t ) const
+	{
+		return ( c1_ * x1_->x( t ) );
+	}
+
+	// Quantized Value at Time t
+	Value
+	q( Time const t ) const
+	{
+		return ( c1_ * x1_->q( t ) );
+	}
+
+	// Quantized First Derivative at Time t
+	Value
+	q1( Time const t ) const
+	{
+		return ( c1_ * x1_->q1( t ) );
+	}
+
+	// Quantized Second Derivative at Time t
+	Value
+	q2( Time const t ) const
+	{
+		return ( c1_ * x1_->q2( t ) );
+	}
+
 public: // Methods
 
 	// Set Variables
@@ -43,62 +104,6 @@ public: // Methods
 	finalize( Variable & v )
 	{
 		return finalize( &v );
-	}
-
-	// Quantized Value at Initialization Time
-	double
-	q() const
-	{
-		return ( c1_ * x1_->q() );
-	}
-
-	// Quantized First Derivative at Initialization Time
-	double
-	q1() const
-	{
-		return ( c1_ * x1_->q1() );
-	}
-
-	// Quantized Second Derivative at Initialization Time
-	double
-	q2() const
-	{
-		return ( c1_ * x1_->q2() );
-	}
-
-	// Continuous Value at Time t
-	double
-	operator ()( double const t ) const
-	{
-		return ( c1_ * x1_->x( t ) );
-	}
-
-	// Continuous Value at Time t
-	double
-	x( double const t ) const
-	{
-		return ( c1_ * x1_->x( t ) );
-	}
-
-	// Quantized Value at Time t
-	double
-	q( double const t ) const
-	{
-		return ( c1_ * x1_->q( t ) );
-	}
-
-	// Quantized First Derivative at Time t
-	double
-	q1( double const t ) const
-	{
-		return ( c1_ * x1_->q1( t ) );
-	}
-
-	// Quantized Second Derivative at Time t
-	double
-	q2( double const t ) const
-	{
-		return ( c1_ * x1_->q2( t ) );
 	}
 
 private: // Data

@@ -24,6 +24,23 @@ public: // Types
 	using Variables = std::vector< Variable * >;
 	using EventQ = EventQueue< Variable >;
 
+	struct AdvanceSpecsLIQSS1
+	{
+		Value l;
+		Value u;
+		Value z;
+	};
+
+	struct AdvanceSpecsLIQSS2
+	{
+		Value l1;
+		Value u1;
+		Value z1;
+		Value l2;
+		Value u2;
+		Value z2;
+	};
+
 protected: // Creation
 
 	// Constructor

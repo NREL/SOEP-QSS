@@ -133,7 +133,7 @@ public: // Methods
 		self_observer = d_.finalize( this );
 		shrink_observers(); // Optional
 		if ( self_observer ) {
-			d_.liqss1_x( tQ, qTol, q0_, x1_ ); // Continuous rep used to avoid cyclic dependency
+			advance_x(); // Continuous rep used to avoid cyclic dependency
 		} else {
 			x1_ = d_.x(); // Continuous rep used to avoid cyclic dependency
 			q0_ += signum( x1_ ) * qTol;
@@ -165,7 +165,7 @@ public: // Methods
 		set_qTol();
 		if ( self_observer ) {
 			x0_ = qc_;
-			d_.liqss1( tQ, qTol, q0_, x1_ );
+			advance_q();
 			tX = tE;
 		} else {
 			q0_ += signum( x1_ ) * qTol;
@@ -190,7 +190,7 @@ public: // Methods
 	void
 	advance1_LIQSS()
 	{ // Call before advance1 since it alters q0_
-		d_.liqss1_x( tQ, qTol, q0_, x1_ ); // Continuous rep used to avoid cyclic dependency
+		advance_x(); // Continuous rep used to avoid cyclic dependency
 		tX = tE;
 	}
 
@@ -236,6 +236,44 @@ private: // Methods
 		 ( x1_ > 0.0 ? tX + ( ( ( qc_ - x0_ ) + qTol ) / x1_ ) :
 		 ( x1_ < 0.0 ? tX + ( ( ( qc_ - x0_ ) - qTol ) / x1_ ) :
 		 infinity ) );
+	}
+
+	// Advance Self-Observing Trigger using Quantized Derivative
+	void
+	advance_LIQSS( AdvanceSpecsLIQSS1 const & specs ) //Do Performance test pass-by-value
+	{
+		assert( qTol > 0.0 );
+		assert( self_observer );
+
+		// Set coefficients based on derivative signs
+		int const dls( signum( specs.l ) );
+		int const dus( signum( specs.u ) );
+		if ( ( dls == -1 ) && ( dus == -1 ) ) { // Downward trajectory
+			q0_ -= qTol;
+			x1_ = specs.l;
+		} else if ( ( dls == +1 ) && ( dus == +1 ) ) { // Upward trajectory
+			q0_ += qTol;
+			x1_ = specs.u;
+		} else { // Flat trajectory
+			q0_ = std::min( std::max( specs.z, q0_ - qTol ), q0_ + qTol ); // Clipped in case of roundoff
+			x1_ = 0.0;
+		}
+	}
+
+	// Advance Self-Observing Trigger using Quantized Derivative
+	void
+	advance_q()
+	{
+		assert( ( tQ == tE ) || ( tQ == 0.0 ) ); // Precondition: tQ set to trigger time
+		advance_LIQSS( d_.qlu( tQ, qTol ) ); // Quantized rep used for single trigger
+	}
+
+	// Advance Self-Observing Trigger using Continuous Derivative
+	void
+	advance_x()
+	{
+		assert( ( tQ == tE ) || ( tQ == 0.0 ) ); // Precondition: tQ set to trigger time
+		advance_LIQSS( d_.xlu( tQ, qTol ) ); // Continuous rep used for simultaneous triggers
 	}
 
 private: // Data

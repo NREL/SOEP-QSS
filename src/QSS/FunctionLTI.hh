@@ -15,14 +15,13 @@ class FunctionLTI
 
 public: // Types
 
-	using Value = double;
-
 	using Coefficient = double;
 	using Coefficients = std::vector< Coefficient >;
 
 	using Variable = V;
 	using Variables = typename V::Variables;
 
+	using Value = typename Variable::Value;
 	using Time = typename Variable::Time;
 	using size_type = Coefficients::size_type;
 

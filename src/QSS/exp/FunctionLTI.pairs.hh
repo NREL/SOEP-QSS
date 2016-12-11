@@ -20,9 +20,14 @@ class FunctionLTI
 public: // Types
 
 	using Coefficient = double;
+
 	using Variable = V;
+
 	using Element = std::pair< Variable *, Coefficient >;
 	using Elements = std::vector< Element >;
+
+	using Value = typename Variable::Value;
+	using Time = typename Variable::Time;
 	using size_type = typename Elements::size_type;
 
 public: // Creation
@@ -133,10 +138,10 @@ public: // Methods
 	}
 
 	// Quantized Value at Initialization Time
-	double
+	Value
 	q() const
 	{
-		double v( c0_ ); // Value
+		Value v( c0_ ); // Value
 		for ( size_type i = 0, n = e_.size(); i < n; ++i ) {
 			v += e_[ i ].second * e_[ i ].first->q();
 		}
@@ -144,10 +149,10 @@ public: // Methods
 	}
 
 	// Quantized First Derivative at Initialization Time
-	double
+	Value
 	q1() const
 	{
-		double s( 0.0 ); // Slope
+		Value s( 0.0 ); // Slope
 		for ( size_type i = iBeg[ 2 ], n = e_.size(); i < n; ++i ) {
 			s += e_[ i ].second * e_[ i ].first->q1();
 		}
@@ -155,10 +160,10 @@ public: // Methods
 	}
 
 	// Quantized Second Derivative at Initialization Time
-	double
+	Value
 	q2() const
 	{
-		double c( 0.0 ); // Curvature
+		Value c( 0.0 ); // Curvature
 		for ( size_type i = iBeg[ 3 ], n = e_.size(); i < n; ++i ) {
 			c += e_[ i ].second * e_[ i ].first->q2();
 		}
@@ -166,10 +171,10 @@ public: // Methods
 	}
 
 	// Continuous Value at Time t
-	double
-	operator ()( double const t ) const
+	Value
+	operator ()( Time const t ) const
 	{
-		double v( c0_ ); // Value
+		Value v( c0_ ); // Value
 		for ( size_type i = 0, n = e_.size(); i < n; ++i ) {
 			v += e_[ i ].second * e_[ i ].first->x( t );
 		}
@@ -177,10 +182,10 @@ public: // Methods
 	}
 
 	// Continuous Value at Time t
-	double
-	x( double const t ) const
+	Value
+	x( Time const t ) const
 	{
-		double v( c0_ ); // Value
+		Value v( c0_ ); // Value
 		for ( size_type i = 0, n = e_.size(); i < n; ++i ) {
 			v += e_[ i ].second * e_[ i ].first->x( t );
 		}
@@ -188,10 +193,10 @@ public: // Methods
 	}
 
 	// Quantized Value at Time t
-	double
-	q( double const t ) const
+	Value
+	q( Time const t ) const
 	{
-		double v( c0_ ); // Value
+		Value v( c0_ ); // Value
 		for ( size_type i = 0, n = e_.size(); i < n; ++i ) {
 			v += e_[ i ].second * e_[ i ].first->q( t );
 		}
@@ -199,10 +204,10 @@ public: // Methods
 	}
 
 	// Quantized First Derivative at Time t
-	double
-	q1( double const t ) const
+	Value
+	q1( Time const t ) const
 	{
-		double s( 0.0 ); // Slope
+		Value s( 0.0 ); // Slope
 		for ( size_type i = iBeg[ 2 ], n = e_.size(); i < n; ++i ) {
 			s += e_[ i ].second * e_[ i ].first->q1( t );
 		}
@@ -210,10 +215,10 @@ public: // Methods
 	}
 
 	// Quantized Second Derivative at Time t
-	double
-	q2( double const t ) const
+	Value
+	q2( Time const t ) const
 	{
-		double c( 0.0 ); // Curvature
+		Value c( 0.0 ); // Curvature
 		for ( size_type i = iBeg[ 3 ], n = e_.size(); i < n; ++i ) {
 			c += e_[ i ].second * e_[ i ].first->q2( t );
 		}
