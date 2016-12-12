@@ -20,13 +20,11 @@ Notes:
 ## Plan
 
 Planned development in anticipated sequence order are:
-* LIQSS2/3 with nonlinear function support/example for LIQSS solvers.
 * FMI interface.
 * Numeric differentiation option to emulate the JModelica environment.
 * Discrete-valued variables (zero-crossing functions).
 * Vector-valued variables.
 * Numerical bulletproofing:
-  * (LI)QSS2+ solver requantization at highest derivative sign change events.
   * Non-positive time steps or wrong root returned from root solvers
 * Extended precision time handling for large time span simulation
 * Higher performance event queue
