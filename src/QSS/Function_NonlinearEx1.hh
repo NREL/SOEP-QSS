@@ -3,6 +3,7 @@
 
 // Derivative Function for Nonlinear Example 1
 // Problem:  y'( t ) = ( 1 + 2 t ) / ( y + 2 ), y( 0 ) = 2
+//           y''( t ) = ( 2 / ( y + 2 ) ) - ( ( 1 + 2 t )^2 / ( y + 2 )^3 )
 // Solution: y = sqrt( 2 t^2 + 2 t + 16 ) - 2
 
 // QSS Headers
