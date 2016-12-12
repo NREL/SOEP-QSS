@@ -34,15 +34,13 @@ main()
 	using size_type = Variable::Variables::size_type;
 	using Time = double;
 
-	enum QSS_Method { QSS1 = 1, QSS2, QSS3, QSS4 };
-
 	// Controls
-	inflection_steps = false; // Add requantization steps at inflection points?
 	diag = false; // Enable for diagnostic output of requantization events?
+	inflection_steps = true; // Add requantization steps at inflection points?
 	bool const sampled( true ); // Sampled outputs?
 	bool const all_vars_out( false ); // Output all variables at every requantization event?
 	bool const q_out( sampled || all_vars_out ); // Quantized output would differ from continuous?
-	QSS_Method const qss_max( QSS3 ); // Handle all QSS orders
+	int const QSS_order_max( 3 ); // Handle all QSS orders
 
 //	// Simple x, y, z
 //	Time const dto( 1.0e-3 ); // Sampling time step
@@ -190,14 +188,14 @@ main()
 	for ( auto var : vars ) {
 		var->init1();
 	}
-	if ( qss_max >= QSS2 ) {
+	if ( QSS_order_max >= 2 ) {
 		for ( auto var : vars ) {
 			var->init2_LIQSS();
 		}
 		for ( auto var : vars ) {
 			var->init2();
 		}
-		if ( qss_max >= QSS3 ) {
+		if ( QSS_order_max >= 3 ) {
 			for ( auto var : vars ) {
 				var->init3();
 			}
@@ -241,14 +239,14 @@ main()
 			for ( Variable * trigger : triggers ) {
 				trigger->advance1();
 			}
-			if ( qss_max >= QSS2 ) {
+			if ( QSS_order_max >= 2 ) {
 				for ( Variable * trigger : triggers ) {
 					trigger->advance2_LIQSS();
 				}
 				for ( Variable * trigger : triggers ) {
 					trigger->advance2();
 				}
-				if ( qss_max >= QSS3 ) {
+				if ( QSS_order_max >= 3 ) {
 					for ( Variable * trigger : triggers ) {
 						trigger->advance3();
 					}

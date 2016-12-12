@@ -3,6 +3,6 @@
 #include <QSS/EventQueue.hh>
 
 // QSS Globals
-EventQueue< Variable > events;
-bool inflection_steps( false ); // Inflection point quantization time steps?
 bool diag( false ); // Diagnostic output?
+bool inflection_steps( false ); // Inflection point quantization time steps?
+EventQueue< Variable > events;
