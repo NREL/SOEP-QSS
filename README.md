@@ -6,8 +6,7 @@ This is a stand-alone QSS solver being developed for integration into JModelica 
 
 Currently the code has:
 * QSS1/2/3 and LIQSS1/2 solvers.
-* Linear derivative function support.
-* Nonlinear derivative function support/examples for QSS1/2/3.
+* Linear and nonlinear derivative function support.
 * A simple "baseline" event queue built on `std::multimap`.
 * Simultaneous requantization event support.
 * A master algorithm with sampling and diagnostic output controls.
@@ -20,13 +19,11 @@ Notes:
 ## Plan
 
 Planned development in anticipated sequence order are:
-* LIQSS2/3 with nonlinear function support/example for LIQSS solvers.
 * FMI interface.
 * Numeric differentiation option to emulate the JModelica environment.
 * Discrete-valued variables (zero-crossing functions).
 * Vector-valued variables.
 * Numerical bulletproofing:
-  * (LI)QSS2+ solver requantization at highest derivative sign change events.
   * Non-positive time steps or wrong root returned from root solvers
 * Extended precision time handling for large time span simulation
 * Higher performance event queue
