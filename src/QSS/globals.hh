@@ -8,6 +8,7 @@ class Variable;
 // QSS Globals
 extern bool diag; // Diagnostic output?
 extern bool inflection_steps; // Inflection point quantization time steps?
+extern double dtnd; // Numeric differentiation default time step
 extern EventQueue< Variable > events;
 
 #endif

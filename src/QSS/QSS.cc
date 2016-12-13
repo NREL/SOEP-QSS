@@ -36,8 +36,8 @@ main()
 
 	// Controls
 	diag = false; // Enable for diagnostic output of requantization events?
-	inflection_steps = true; // Add requantization steps at inflection points?
-	bool const sampled( true ); // Sampled outputs?
+	inflection_steps = false; // Add requantization steps at inflection points?
+	bool const sampled( false ); // Sampled outputs?
 	bool const all_vars_out( false ); // Output all variables at every requantization event?
 	bool const q_out( sampled || all_vars_out ); // Quantized output would differ from continuous?
 	int const QSS_order_max( 3 ); // Handle all QSS orders

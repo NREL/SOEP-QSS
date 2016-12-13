@@ -44,6 +44,30 @@ public: // Creation
 
 public: // Properties
 
+	// Continuous Value at Initialization Time
+	Value
+	x() const
+	{
+		assert( c_.size() == x_.size() );
+		Value v( c0_ );
+		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
+			v += c_[ i ] * x_[ i ]->x();
+		}
+		return v;
+	}
+
+	// Continuous First Derivative at Initialization Time
+	Value
+	x1() const
+	{
+		assert( c_.size() == x_.size() );
+		Value s( 0.0 );
+		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
+			s += c_[ i ] * x_[ i ]->x1();
+		}
+		return s;
+	}
+
 	// Quantized Value at Initialization Time
 	Value
 	q() const

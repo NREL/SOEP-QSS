@@ -96,7 +96,7 @@ public: // Properties
 	Value
 	q( Time const t ) const
 	{
-		assert( ( tQ <= t ) && ( t <= tE ) );
+		assert( tQ <= t ); // Numeric differentiation can call for t > tE
 		(void)t; // Suppress unused parameter warning
 		return q0_;
 	}
@@ -118,12 +118,11 @@ public: // Properties
 public: // Methods
 
 	// Initialize Constant Term
-	VariableLIQSS1 &
+	void
 	init0( Value const x )
 	{
 		x0_ = qc_ = q0_ = x;
 		set_qTol();
-		return *this;
 	}
 
 	// Initialize Linear Coefficient in LIQSS Variable

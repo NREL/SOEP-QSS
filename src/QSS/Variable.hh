@@ -218,7 +218,7 @@ public: // Methods
 
 	// Initialize Constant Term
 	virtual
-	Variable &
+	void
 	init0( Value const x ) = 0;
 
 	// Initialize Linear Coefficient in LIQSS Variable

@@ -111,7 +111,7 @@ public: // Properties
 	Value
 	q( Time const t ) const
 	{
-		assert( ( tQ <= t ) && ( t <= tE ) );
+		assert( tQ <= t ); // Numeric differentiation can call for t > tE
 		return q0_ + ( q1_ * ( t - tQ ) );
 	}
 
@@ -141,12 +141,11 @@ public: // Properties
 public: // Methods
 
 	// Initialize Constant Term
-	VariableLIQSS2 &
+	void
 	init0( Value const x )
 	{
 		x0_ = qc_ = q0_ = x;
 		set_qTol();
-		return *this;
 	}
 
 	// Initialize Linear Coefficient
@@ -270,7 +269,8 @@ private: // Methods
 		assert( tX <= tQ );
 		tE = ( x2_ != 0.0 ? tQ + std::sqrt( qTol / std::abs( x2_ ) ) : infinity );
 		if ( ( inflection_steps ) && ( x2_ != 0.0 ) && ( signum( x1_ ) != signum( x2_ ) ) ) {
-			tE = std::min( tE, tQ - ( x1_ / ( two * x2_ ) ) );
+			Time const tI( tX - ( x1_ / ( two * x2_ ) ) );
+			if ( tQ < tI ) tE = std::min( tE, tI );
 		}
 	}
 
@@ -301,7 +301,8 @@ private: // Methods
 			}
 		}
 		if ( ( inflection_steps ) && ( x2_ != 0.0 ) && ( signum( x1_ ) != signum( x2_ ) ) && ( signum( x1_ ) == signum( q1_ ) ) ) {
-			tE = std::min( tE, tX - ( x1_ / ( two * x2_ ) ) );
+			Time const tI( tX - ( x1_ / ( two * x2_ ) ) );
+			if ( tX < tI ) tE = std::min( tE, tI );
 		}
 	}
 

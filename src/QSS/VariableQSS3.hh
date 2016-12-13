@@ -112,7 +112,7 @@ public: // Properties
 	Value
 	q( Time const t ) const
 	{
-		assert( ( tQ <= t ) && ( t <= tE ) );
+		assert( tQ <= t ); // Numeric differentiation can call for t > tE
 		Time const tDel( t - tQ );
 		return q0_ + ( ( q1_ + ( q2_ * tDel ) ) * tDel );
 	}
@@ -151,12 +151,11 @@ public: // Properties
 public: // Methods
 
 	// Initialize Constant Term
-	VariableQSS3 &
+	void
 	init0( Value const x )
 	{
 		x0_ = q0_ = x;
 		set_qTol();
-		return *this;
 	}
 
 	// Initialize Linear Coefficient
@@ -282,7 +281,8 @@ private: // Methods
 		assert( tX <= tQ );
 		tE = ( x3_ != 0.0 ? tQ + std::cbrt( qTol / std::abs( x3_ ) ) : infinity );
 		if ( ( inflection_steps ) && ( x3_ != 0.0 ) && ( signum( x2_ ) != signum( x3_ ) ) ) {
-			tE = std::min( tE, tQ - ( x2_ / ( three * x3_ ) ) );
+			Time const tI( tX - ( x2_ / ( three * x3_ ) ) );
+			if ( tQ < tI ) tE = std::min( tE, tI );
 		}
 	}
 
@@ -308,7 +308,8 @@ private: // Methods
 			tE = ( tMinQ == infinity ? infinity : tX + tMinQ );
 		}
 		if ( ( inflection_steps ) && ( x3_ != 0.0 ) && ( signum( x2_ ) != signum( x3_ ) ) && ( signum( x2_ ) == signum( q2_ ) ) ) {
-			tE = std::min( tE, tQ - ( x2_ / ( three * x3_ ) ) );
+			Time const tI( tX - ( x2_ / ( three * x3_ ) ) );
+			if ( tX < tI ) tE = std::min( tE, tI );
 		}
 	}
 

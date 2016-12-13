@@ -23,6 +23,20 @@ public: // Types
 
 public: // Properties
 
+	// Continuous Value at Initialization Time
+	Value
+	x() const
+	{
+		return ( c1_ * x1_->x() ) + ( c2_ * x2_->x() );
+	}
+
+	// Continuous First Derivative at Initialization Time
+	Value
+	x1() const
+	{
+		return ( c1_ * x1_->x1() ) + ( c2_ * x2_->x1() );
+	}
+
 	// Quantized Value at Initialization Time
 	Value
 	q() const
