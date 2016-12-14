@@ -41,27 +41,6 @@ public: // Properties
 		return 1;
 	}
 
-	// Continuous Value at Time tX
-	Value
-	x() const
-	{
-		return x0_;
-	}
-
-	// Continuous Value at Time tX
-	Value
-	x0() const
-	{
-		return x0_;
-	}
-
-	// Continuous First Derivative at Time tX
-	Value
-	x1() const
-	{
-		return x1_;
-	}
-
 	// Continuous Value at Time t
 	Value
 	x( Time const t ) const
@@ -78,25 +57,19 @@ public: // Properties
 		return x1_;
 	}
 
-	// Quantized Value at Time tQ
-	Value
-	q() const
-	{
-		return q0_;
-	}
-
-	// Quantized Value at Time tQ
-	Value
-	q0() const
-	{
-		return q0_;
-	}
-
 	// Quantized Value at Time t
 	Value
 	q( Time const t ) const
 	{
-		assert( tQ <= t ); // Numeric differentiation can call for t > tE
+		assert( ( tQ <= t ) && ( t <= tE ) );
+		(void)t; // Suppress unused parameter warning
+		return q0_;
+	}
+
+	// Quantized Value at Time t: Allow t Outside of [tQ,tE] for Numeric Differenentiation
+	Value
+	qn( Time const t ) const
+	{
 		(void)t; // Suppress unused parameter warning
 		return q0_;
 	}
@@ -134,7 +107,7 @@ public: // Methods
 		if ( self_observer ) {
 			advance_x(); // Continuous rep used to avoid cyclic dependency
 		} else {
-			x1_ = d_.x(); // Continuous rep used to avoid cyclic dependency
+			x1_ = d_.x( tQ ); // Continuous rep used to avoid cyclic dependency
 			q0_ += signum( x1_ ) * qTol;
 		}
 	}
@@ -189,8 +162,13 @@ public: // Methods
 	void
 	advance1_LIQSS()
 	{ // Call before advance1 since it alters q0_
-		advance_x(); // Continuous rep used to avoid cyclic dependency
-		tX = tE;
+		if ( self_observer ) {
+			advance_x(); // Continuous rep used to avoid cyclic dependency
+			tX = tE;
+		} else {
+			x1_ = d_.x( tX = tE ); // Continuous rep used to avoid cyclic dependency
+			q0_ += signum( x1_ ) * qTol;
+		}
 	}
 
 	// Advance Simultaneous Trigger to Time tE and Requantize: Step 1

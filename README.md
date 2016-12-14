@@ -7,6 +7,7 @@ This is a stand-alone QSS solver being developed for integration into JModelica 
 Currently the code has:
 * QSS1/2/3 and LIQSS1/2 solvers.
 * Linear and nonlinear derivative function support.
+* Numeric differentiation option.
 * A simple "baseline" event queue built on `std::multimap`.
 * Simultaneous requantization event support.
 * A master algorithm with sampling and diagnostic output controls.
@@ -20,7 +21,6 @@ Notes:
 
 Planned development in anticipated sequence order are:
 * FMI interface.
-* Numeric differentiation option to emulate the JModelica environment.
 * Discrete-valued variables (zero-crossing functions).
 * Vector-valued variables.
 * Numerical bulletproofing:
@@ -38,13 +38,13 @@ Planned development in anticipated sequence order are:
 
 ## Design
 
-Design concepts are just emerging during these early experiments.
+The design concepts are still emerging.
 The basic constituents of a fast QSS solver seem to be:
 * Variables for each QSS method (QSS1/2/3, LIQSS1/2/3, ...).
-* Event queue to find the next "trigger" variable to advance to its requantization time.
-* Linear and nonlinear derivative function support.
-* Continuous and discrete valued variables.
+* Functions for derivative representation: linear and nonlinear.
 * Input functions.
+* Event queue to find the next "trigger" variable to advance to its requantization time.
+* Continuous and discrete valued variables.
 * Algebraic relationships between variables.
 
 Notes:
@@ -116,6 +116,25 @@ Even when using the continuous representation in the LIQSS derivatives issues re
 * Linear functions are provided for QSS and LIQSS solvers.
 * Sample nonlinear functions are included.
 * We'll need a general purpose function approach for the JModelica-generated code: probably a function class that calls back to a provided function.
+
+## Implementation
+
+### Numeric Differentiatation
+
+Higher derivatives are needed for QSS2+ methods.
+These are available analytically for linear functions and we provide them for the nonlinear function examples.
+But in general higher derivatives may not be provided by the model description or via automatic differentiation or may not be available across an FMU interface so we may need some support for numeric differentiation.
+A numeric differentiation variant of the linear function class was built to allow closer emulation of an environment where higher derivatives were not available analytically.
+A simple and fast approach suffices for this purpose:
+* QSS2 does 2-point forward difference differentiation to allow reuse of one derivative evaulation.
+* QSS3 does 2 and 3-point centered difference differentiation to allow reuse of derivative evaluations.
+
+A mechanism to specify a per-Variable differentiation time step is provided with defaulting to a global differentiation time step.
+
+At startup and requantization events QSS3 with numeric differentiation has a cyclic dependency problem because the derivative function evaluations at time step offsets used to compute the higher derivatives are both used to set the q2 coefficient of the quantized representation but also depend on q2.
+The QSS literature does not offer a robust solution and none is implementated at this point.
+An iterative approach could be used to find a fixed point solution for a stable q2 value but this would require a number of additional derivative evaluations.
+The impact of this flaw will vary across models and could be severe in some situations so it should be addressed if numeric differentiation will be used in the production JModelica+QSS system.
 
 ## Performance
 

@@ -42,6 +42,91 @@ public: // Creation
 	 e_( e )
 	{}
 
+public: // Properties
+
+	// Continuous Value at Time t
+	Value
+	operator ()( Time const t ) const
+	{
+		Value v( c0_ );
+		for ( size_type i = 0, n = e_.size(); i < n; ++i ) {
+			v += e_[ i ].second * e_[ i ].first->x( t );
+		}
+		return v;
+	}
+
+	// Continuous Value at Time t
+	Value
+	x( Time const t ) const
+	{
+		Value v( c0_ );
+		for ( size_type i = 0, n = e_.size(); i < n; ++i ) {
+			v += e_[ i ].second * e_[ i ].first->x( t );
+		}
+		return v;
+	}
+
+	// Quantized Value at Time t
+	Value
+	q( Time const t ) const
+	{
+		Value v( c0_ );
+		for ( size_type i = 0, n = e_.size(); i < n; ++i ) {
+			v += e_[ i ].second * e_[ i ].first->q( t );
+		}
+		return v;
+	}
+
+	// Quantized First Derivative at Time t
+	Value
+	q1( Time const t ) const
+	{
+		Value s( 0.0 );
+		for ( size_type i = iBeg[ 2 ], n = e_.size(); i < n; ++i ) {
+			s += e_[ i ].second * e_[ i ].first->q1( t );
+		}
+		return s;
+	}
+
+	// Quantized Second Derivative at Time t
+	Value
+	q2( Time const t ) const
+	{
+		Value c( 0.0 );
+		for ( size_type i = iBeg[ 3 ], n = e_.size(); i < n; ++i ) {
+			c += e_[ i ].second * e_[ i ].first->q2( t );
+		}
+		return c;
+	}
+
+	// Quantized Forward-Difference Sequential Value at Time t
+	Value
+	qs( Time const t ) const
+	{
+		return q( t );
+	}
+
+	// Quantized Forward-Difference Sequential First Derivative at Time t
+	Value
+	qf1( Time const t ) const
+	{
+		return q1( t );
+	}
+
+	// Quantized Centered-Difference Sequential First Derivative at Time t
+	Value
+	qc1( Time const t ) const
+	{
+		return q1( t );
+	}
+
+	// Quantized Centered-Difference Sequential Second Derivative at Time t
+	Value
+	qc2( Time const t ) const
+	{
+		return q2( t );
+	}
+
 public: // Methods
 
 	// Add Constant
@@ -137,103 +222,15 @@ public: // Methods
 		return finalize( &v );
 	}
 
-	// Quantized Value at Initialization Time
-	Value
-	q() const
-	{
-		Value v( c0_ ); // Value
-		for ( size_type i = 0, n = e_.size(); i < n; ++i ) {
-			v += e_[ i ].second * e_[ i ].first->q();
-		}
-		return v;
-	}
-
-	// Quantized First Derivative at Initialization Time
-	Value
-	q1() const
-	{
-		Value s( 0.0 ); // Slope
-		for ( size_type i = iBeg[ 2 ], n = e_.size(); i < n; ++i ) {
-			s += e_[ i ].second * e_[ i ].first->q1();
-		}
-		return s;
-	}
-
-	// Quantized Second Derivative at Initialization Time
-	Value
-	q2() const
-	{
-		Value c( 0.0 ); // Curvature
-		for ( size_type i = iBeg[ 3 ], n = e_.size(); i < n; ++i ) {
-			c += e_[ i ].second * e_[ i ].first->q2();
-		}
-		return c;
-	}
-
-	// Continuous Value at Time t
-	Value
-	operator ()( Time const t ) const
-	{
-		Value v( c0_ ); // Value
-		for ( size_type i = 0, n = e_.size(); i < n; ++i ) {
-			v += e_[ i ].second * e_[ i ].first->x( t );
-		}
-		return v;
-	}
-
-	// Continuous Value at Time t
-	Value
-	x( Time const t ) const
-	{
-		Value v( c0_ ); // Value
-		for ( size_type i = 0, n = e_.size(); i < n; ++i ) {
-			v += e_[ i ].second * e_[ i ].first->x( t );
-		}
-		return v;
-	}
-
-	// Quantized Value at Time t
-	Value
-	q( Time const t ) const
-	{
-		Value v( c0_ ); // Value
-		for ( size_type i = 0, n = e_.size(); i < n; ++i ) {
-			v += e_[ i ].second * e_[ i ].first->q( t );
-		}
-		return v;
-	}
-
-	// Quantized First Derivative at Time t
-	Value
-	q1( Time const t ) const
-	{
-		Value s( 0.0 ); // Slope
-		for ( size_type i = iBeg[ 2 ], n = e_.size(); i < n; ++i ) {
-			s += e_[ i ].second * e_[ i ].first->q1( t );
-		}
-		return s;
-	}
-
-	// Quantized Second Derivative at Time t
-	Value
-	q2( Time const t ) const
-	{
-		Value c( 0.0 ); // Curvature
-		for ( size_type i = iBeg[ 3 ], n = e_.size(); i < n; ++i ) {
-			c += e_[ i ].second * e_[ i ].first->q2( t );
-		}
-		return c;
-	}
-
 public: // Static Data
 
 	static int const max_order = 3; // Max QSS order supported
 
 private: // Data
 
-	Coefficient c0_{ 0.0 };
-	Elements e_;
-	size_type iBeg[ max_order + 1 ];
+	size_type iBeg[ max_order + 1 ]; // Index of first Variable of each QSS order
+	Coefficient c0_{ 0.0 }; // Constant term
+	Elements e_; // Elements
 
 };
 

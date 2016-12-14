@@ -88,21 +88,6 @@ public: // Properties
 	int
 	order() const = 0;
 
-	// Continuous Value at Time tX
-	virtual
-	Value
-	x() const = 0;
-
-	// Continuous Value at Time tX
-	virtual
-	Value
-	x0() const = 0;
-
-	// Continuous First Derivative at Time tX
-	virtual
-	Value
-	x1() const = 0;
-
 	// Continuous Value at Time t
 	virtual
 	Value
@@ -113,36 +98,15 @@ public: // Properties
 	Value
 	x1( Time const t ) const = 0;
 
-	// Quantized Value at Time tQ
-	virtual
-	Value
-	q() const = 0;
-
-	// Quantized Value at Time tQ
-	virtual
-	Value
-	q0() const = 0;
-
-	// Quantized First Derivative at Time tQ
-	virtual
-	Value
-	q1() const
-	{
-		return 0.0;
-	}
-
-	// Quantized Second Derivative at Time tQ
-	virtual
-	Value
-	q2() const
-	{
-		return 0.0;
-	}
-
 	// Quantized Value at Time t
 	virtual
 	Value
 	q( Time const t ) const = 0;
+
+	// Quantized Value at Time t: Allow t Outside of [tQ,tE] for Numeric Differenentiation
+	virtual
+	Value
+	qn( Time const t ) const = 0;
 
 	// Quantized First Derivative at Time t
 	virtual

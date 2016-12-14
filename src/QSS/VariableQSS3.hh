@@ -41,27 +41,6 @@ public: // Properties
 		return 3;
 	}
 
-	// Continuous Value at Time tX
-	Value
-	x() const
-	{
-		return x0_;
-	}
-
-	// Continuous Value at Time tX
-	Value
-	x0() const
-	{
-		return x0_;
-	}
-
-	// Continuous First Derivative at Time tX
-	Value
-	x1() const
-	{
-		return x1_;
-	}
-
 	// Continuous Value at Time t
 	Value
 	x( Time const t ) const
@@ -80,39 +59,19 @@ public: // Properties
 		return x1_ + ( ( ( two * x2_ ) + ( three * x3_ * tDel ) ) * tDel );
 	}
 
-	// Quantized Value at Time tQ
-	Value
-	q() const
-	{
-		return q0_;
-	}
-
-	// Quantized Value at Time tQ
-	Value
-	q0() const
-	{
-		return q0_;
-	}
-
-	// Quantized First Derivative at Time tQ
-	Value
-	q1() const
-	{
-		return q1_;
-	}
-
-	// Quantized Second Derivative at Time tQ
-	Value
-	q2() const
-	{
-		return two * q2_;
-	}
-
 	// Quantized Value at Time t
 	Value
 	q( Time const t ) const
 	{
-		assert( tQ <= t ); // Numeric differentiation can call for t > tE
+		assert( ( tQ <= t ) && ( t <= tE ) );
+		Time const tDel( t - tQ );
+		return q0_ + ( ( q1_ + ( q2_ * tDel ) ) * tDel );
+	}
+
+	// Quantized Value at Time t: Allow t Outside of [tQ,tE] for Numeric Differenentiation
+	Value
+	qn( Time const t ) const
+	{
 		Time const tDel( t - tQ );
 		return q0_ + ( ( q1_ + ( q2_ * tDel ) ) * tDel );
 	}
@@ -164,21 +123,21 @@ public: // Methods
 	{
 		self_observer = d_.finalize( this );
 		shrink_observers(); // Optional
-		x1_ = q1_ = d_.q();
+		x1_ = q1_ = d_.q( tQ );
 	}
 
 	// Initialize Quadratic Coefficient
 	void
 	init2()
 	{
-		x2_ = q2_ = one_half * d_.q1();
+		x2_ = q2_ = one_half * d_.q1( tQ );
 	}
 
 	// Initialize Cubic Coefficient
 	void
 	init3()
 	{
-		x3_ = one_sixth * d_.q2();
+		x3_ = one_sixth * d_.q2( tQ );
 	}
 
 	// Initialize Event in Queue
@@ -207,9 +166,9 @@ public: // Methods
 		set_qTol();
 		if ( self_observer ) {
 			x0_ = q0_;
-			x1_ = q1_ = d_.q( tE );
-			x2_ = q2_ = one_half * d_.q1( tE );
-			x3_ = one_sixth * d_.q2( tX = tE );
+			x1_ = q1_ = d_.qs( tE );
+			x2_ = q2_ = one_half * d_.qc1( tE );
+			x3_ = one_sixth * d_.qc2( tX = tE );
 		} else {
 			q1_ = x1_ + ( ( ( two * x2_ ) + ( three * x3_ * tDel ) ) * tDel );
 			q2_ = x2_ + ( three * x3_ * tDel );
@@ -235,21 +194,21 @@ public: // Methods
 	void
 	advance1()
 	{
-		x1_ = q1_ = d_.q( tE );
+		x1_ = q1_ = d_.qs( tE );
 	}
 
 	// Advance Simultaneous Trigger to Time tE and Requantize: Step 2
 	void
 	advance2()
 	{
-		x2_ = q2_ = one_half * d_.q1( tE );
+		x2_ = q2_ = one_half * d_.qc1( tE );
 	}
 
 	// Advance Simultaneous Trigger to Time tE and Requantize: Step 3
 	void
 	advance3()
 	{
-		x3_ = one_sixth * d_.q2( tX = tE );
+		x3_ = one_sixth * d_.qc2( tX = tE );
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
 		if ( diag ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q0_ << "+" << q1_ << "*t+" << q2_ << "*t^2 quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2+" << x3_ << "*t^3 internal   tE=" << tE << '\n';
@@ -263,9 +222,9 @@ public: // Methods
 		if ( tX < t ) { // Could observe multiple variables with simultaneous triggering
 			Time const tDel( t - tX );
 			x0_ = x0_ + ( ( x1_ + ( x2_ + ( x3_ * tDel ) ) * tDel ) * tDel );
-			x1_ = d_.q( t );
-			x2_ = one_half * d_.q1( t );
-			x3_ = one_sixth * d_.q2( tX = t );
+			x1_ = d_.qs( t );
+			x2_ = one_half * d_.qc1( t );
+			x3_ = one_sixth * d_.qc2( tX = t );
 			set_tE_unaligned();
 			event( events.shift( tE, event() ) );
 			if ( diag ) std::cout << "  " << name << '(' << t << ')' << " = " << q0_ << "+" << q1_ << "*t+" << q2_ << "*t^2 quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2+" << x3_ << "*t^3 internal   tE=" << tE << '\n';

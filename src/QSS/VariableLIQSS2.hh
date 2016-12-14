@@ -41,34 +41,6 @@ public: // Properties
 		return 2;
 	}
 
-	// Continuous Value at Time tX
-	Value
-	x() const
-	{
-		return x0_;
-	}
-
-	// Continuous Value at Time tX
-	Value
-	x0() const
-	{
-		return x0_;
-	}
-
-	// Continuous First Derivative at Time tX
-	Value
-	x1() const
-	{
-		return x1_;
-	}
-
-	// Continuous Second Derivative at Time tX
-	Value
-	x2() const
-	{
-		return x2_;
-	}
-
 	// Continuous Value at Time t
 	Value
 	x( Time const t ) const
@@ -86,32 +58,18 @@ public: // Properties
 		return x1_ + ( two * x2_ * ( t - tX ) );
 	}
 
-	// Quantized Value at Time tQ
-	Value
-	q() const
-	{
-		return q0_;
-	}
-
-	// Quantized Value at Time tQ
-	Value
-	q0() const
-	{
-		return q0_;
-	}
-
-	// Quantized First Derivative at Time tQ
-	Value
-	q1() const
-	{
-		return q1_;
-	}
-
 	// Quantized Value at Time t
 	Value
 	q( Time const t ) const
 	{
-		assert( tQ <= t ); // Numeric differentiation can call for t > tE
+		assert( ( tQ <= t ) && ( t <= tE ) );
+		return q0_ + ( q1_ * ( t - tQ ) );
+	}
+
+	// Quantized Value at Time t: Allow t Outside of [tQ,tE] for Numeric Differenentiation
+	Value
+	qn( Time const t ) const
+	{
 		return q0_ + ( q1_ * ( t - tQ ) );
 	}
 
@@ -156,7 +114,7 @@ public: // Methods
 		shrink_observers(); // Optional
 		// For self-observer this is a first pass to set a reasonable x1_ = q1_ for init2 calls
 		// This avoids variable processing order dependency but not inconsistent rep usage
-		x1_ = q1_ = d_.x(); // Continuous rep used to reduce impact of cyclic dependency
+		x1_ = q1_ = d_.x( tQ ); // Continuous rep used to reduce impact of cyclic dependency
 	}
 
 	// Initialize Quadratic Coefficient in LIQSS Variable
@@ -166,7 +124,7 @@ public: // Methods
 		if ( self_observer ) {
 			advance_x(); // Continuous rep used to reduce impact of cyclic dependency
 		} else {
-			x2_ = one_half * d_.x1(); // Continuous rep used to reduce impact of cyclic dependency
+			x2_ = one_half * d_.x1( tQ ); // Continuous rep used to reduce impact of cyclic dependency
 			q0_ += signum( x2_ ) * qTol;
 		}
 	}
@@ -201,7 +159,7 @@ public: // Methods
 			tX = tE;
 		} else {
 			q0_ += signum( x2_ ) * qTol;
-			q1_ = x1_ + ( 2.0 * x2_ * tDel );
+			q1_ = x1_ + ( two * x2_ * tDel );
 		}
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
@@ -231,8 +189,13 @@ public: // Methods
 	void
 	advance2_LIQSS()
 	{ // Call before advance2 since it alters q0_
-		advance_x(); // Continuous rep used to reduce impact of cyclic dependency
-		tX = tE;
+		if ( self_observer ) {
+			advance_x(); // Continuous rep used to reduce impact of cyclic dependency
+			tX = tE;
+		} else {
+			x2_ = one_half * d_.x1( tX = tE ); // Continuous rep used to reduce impact of cyclic dependency
+			q0_ += signum( x2_ ) * qTol;
+		}
 	}
 
 	// Advance Simultaneous Trigger to Time tE and Requantize: Step 2
@@ -252,8 +215,8 @@ public: // Methods
 		if ( tX < t ) { // Could observe multiple variables with simultaneous triggering
 			Time const tDel( t - tX );
 			x0_ = x0_ + ( ( x1_ + ( x2_ * tDel ) ) * tDel );
-			x1_ = d_.q( t );
-			x2_ = one_half * d_.q1( tX = t );
+			x1_ = d_.qs( t );
+			x2_ = one_half * d_.qf1( tX = t );
 			set_tE_unaligned();
 			event( events.shift( tE, event() ) );
 			if ( diag ) std::cout << "  " << name << '(' << t << ')' << " = " << q0_ << "+" << q1_ << "*t quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2 internal   tE=" << tE << '\n';

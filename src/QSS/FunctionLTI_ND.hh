@@ -1,7 +1,10 @@
-#ifndef QSS_FunctionLTI_hh_INCLUDED
-#define QSS_FunctionLTI_hh_INCLUDED
+#ifndef QSS_FunctionLTI_ND_hh_INCLUDED
+#define QSS_FunctionLTI_ND_hh_INCLUDED
 
-// Linear Time-Invariant Function
+// Linear Time-Invariant Function using Numeric Differentiation
+
+// QSS Headers
+#include <QSS/globals.hh>
 
 // C++ Headers
 #include <cassert>
@@ -10,7 +13,7 @@
 
 // Linear Time-Invariant Function
 template< typename V > // Template to avoid cyclic inclusion with Variable
-class FunctionLTI
+class FunctionLTI_ND
 {
 
 public: // Types
@@ -28,11 +31,11 @@ public: // Types
 public: // Creation
 
 	// Default Constructor
-	FunctionLTI()
+	FunctionLTI_ND()
 	{}
 
 	// Constructor
-	FunctionLTI(
+	FunctionLTI_ND(
 	 Coefficients const & c,
 	 Variables const & x
 	) :
@@ -84,58 +87,78 @@ public: // Properties
 	Value
 	q1( Time const t ) const
 	{
-		assert( c_.size() == x_.size() );
-		Value s( 0.0 );
-		for ( size_type i = iBeg[ 2 ], n = c_.size(); i < n; ++i ) {
-			s += c_[ i ] * x_[ i ]->q1( t );
-		}
-		return s;
+		return dtn_inv_2_ * ( qn( t + dtn_ ) - qn( t - dtn_ ) );
 	}
 
 	// Quantized Second Derivative at Time t
 	Value
 	q2( Time const t ) const
 	{
+		return dtn_inv_sq_ * ( qn( t + dtn_ ) - ( 2.0 * qn( t ) ) + qn( t - dtn_ ) );
+	}
+
+	// Quantized Differentiation Value at Time t
+	Value
+	qn( Time const t ) const
+	{
 		assert( c_.size() == x_.size() );
-		Value c( 0.0 );
-		for ( size_type i = iBeg[ 3 ], n = c_.size(); i < n; ++i ) {
-			c += c_[ i ] * x_[ i ]->q2( t );
+		Value v( c0_ );
+		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
+			v += c_[ i ] * x_[ i ]->qn( t );
 		}
-		return c;
+		return v;
 	}
 
 	// Quantized Forward-Difference Sequential Value at Time t
 	Value
 	qs( Time const t ) const
 	{
-		return q( t );
+		return q_t_ = qn( t );
 	}
 
 	// Quantized Forward-Difference Sequential First Derivative at Time t
 	Value
 	qf1( Time const t ) const
 	{
-		return q1( t );
+		return dtn_inv_ * ( qn( t + dtn_ ) - q_t_ );
 	}
 
 	// Quantized Centered-Difference Sequential First Derivative at Time t
 	Value
 	qc1( Time const t ) const
 	{
-		return q1( t );
+		return dtn_inv_2_ * ( ( q_p_ = qn( t + dtn_ ) ) - ( q_m_ = qn( t - dtn_ ) ) );
 	}
 
 	// Quantized Centered-Difference Sequential Second Derivative at Time t
 	Value
 	qc2( Time const t ) const
 	{
-		return q2( t );
+		return dtn_inv_sq_ * ( q_p_ - ( 2.0 * q_t_ ) + q_m_ );
+	}
+
+	// Differentiation Time Step
+	Time
+	dtn() const
+	{
+		return dtn_;
+	}
+
+	// Set Differentiation Time Step
+	void
+	dtn( Time const dtn )
+	{
+		assert( dtn > 0.0 );
+		dtn_ = dtn;
+		dtn_inv_ = 1.0 / dtn_;
+		dtn_inv_2_ = 0.5 / dtn_;
+		dtn_inv_sq_ = dtn_inv_ * dtn_inv_;
 	}
 
 public: // Methods
 
 	// Add Constant
-	FunctionLTI &
+	FunctionLTI_ND &
 	add( Coefficient const c0 )
 	{
 		c0_ = c0;
@@ -143,7 +166,7 @@ public: // Methods
 	}
 
 	// Add a Coefficient + Variable
-	FunctionLTI &
+	FunctionLTI_ND &
 	add(
 	 Coefficient const c,
 	 Variable & x
@@ -157,7 +180,7 @@ public: // Methods
 	}
 
 	// Add a Variable + Coefficient
-	FunctionLTI &
+	FunctionLTI_ND &
 	add(
 	 Variable & x,
 	 Coefficient const c
@@ -171,7 +194,7 @@ public: // Methods
 	}
 
 	// Add a Coefficient + Variable
-	FunctionLTI &
+	FunctionLTI_ND &
 	add(
 	 Coefficient const c,
 	 Variable * x
@@ -185,7 +208,7 @@ public: // Methods
 	}
 
 	// Add a Variable + Coefficient
-	FunctionLTI &
+	FunctionLTI_ND &
 	add(
 	 Variable * x,
 	 Coefficient const c
@@ -257,6 +280,13 @@ private: // Data
 	Coefficient c0_{ 0.0 }; // Constant term
 	Coefficients c_; // Coefficients
 	Variables x_; // Variables
+	mutable Value q_t_; // Last q(t) computed
+	mutable Value q_p_; // Last q(t+dtn) computed
+	mutable Value q_m_; // Last q(t-dtn) computed
+	Time dtn_{ dtnd }; // Differentiation time step
+	Time dtn_inv_{ 1.0 / dtnd }; // Differentiation time step inverse
+	Time dtn_inv_2_{ 0.5 / dtnd }; // Differentiation time step half inverse
+	Time dtn_inv_sq_{ 1.0 / ( dtnd * dtnd ) }; // Differentiation time step inverse squared
 
 };
 

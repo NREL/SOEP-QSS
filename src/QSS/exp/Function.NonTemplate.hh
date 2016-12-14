@@ -70,13 +70,13 @@ public: // Methods
 	// Add a Coefficient + Variable
 	Function &
 	add(
-	 Coefficient const c_i,
-	 Variable & x_i
+	 Coefficient const c,
+	 Variable & x
 	)
 	{
 		assert( c_.size() == x_.size() );
-		c_.push_back( c_i );
-		x_.push_back( &x_i );
+		c_.push_back( c );
+		x_.push_back( &x );
 		assert( c_.size() == x_.size() );
 		return *this;
 	}
@@ -84,13 +84,13 @@ public: // Methods
 	// Add a Coefficient + Variable
 	Function &
 	add(
-	 Coefficient const c_i,
-	 Variable * x_i
+	 Coefficient const c,
+	 Variable * x
 	)
 	{
 		assert( c_.size() == x_.size() );
-		c_.push_back( c_i );
-		x_.push_back( x_i );
+		c_.push_back( c );
+		x_.push_back( x );
 		assert( c_.size() == x_.size() );
 		return *this;
 	}

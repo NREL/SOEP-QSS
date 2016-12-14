@@ -50,66 +50,6 @@ public: // Creation
 
 public: // Properties
 
-	// Continuous Value at Initialization Time
-	Value
-	x() const
-	{
-		assert( c_.size() == x_.size() );
-		Value v( c0_ );
-		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
-			v += c_[ i ] * x_[ i ]->x();
-		}
-		return v;
-	}
-
-	// Continuous First Derivative at Initialization Time
-	Value
-	x1() const
-	{
-		assert( c_.size() == x_.size() );
-		Value s( 0.0 );
-		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
-			s += c_[ i ] * x_[ i ]->x1();
-		}
-		return s;
-	}
-
-	// Quantized Value at Initialization Time
-	Value
-	q() const
-	{
-		assert( c_.size() == x_.size() );
-		Value v( c0_ );
-		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
-			v += c_[ i ] * x_[ i ]->q();
-		}
-		return v;
-	}
-
-	// Quantized First Derivative at Initialization Time
-	Value
-	q1() const
-	{
-		assert( c_.size() == x_.size() );
-		Value s( 0.0 );
-		for ( size_type i = iBeg[ 2 ], n = c_.size(); i < n; ++i ) {
-			s += c_[ i ] * x_[ i ]->q1();
-		}
-		return s;
-	}
-
-	// Quantized Second Derivative at Initialization Time
-	Value
-	q2() const
-	{
-		assert( c_.size() == x_.size() );
-		Value c( 0.0 );
-		for ( size_type i = iBeg[ 3 ], n = c_.size(); i < n; ++i ) {
-			c += c_[ i ] * x_[ i ]->q2();
-		}
-		return c;
-	}
-
 	// Continuous Value at Time t
 	Value
 	operator ()( Time const t ) const
@@ -132,6 +72,18 @@ public: // Properties
 			v += c_[ i ] * x_[ i ]->x( t );
 		}
 		return v;
+	}
+
+	// Continuous First Derivative at Time t
+	Value
+	x1( Time const t ) const
+	{
+		assert( c_.size() == x_.size() );
+		Value s( 0.0 );
+		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
+			s += c_[ i ] * x_[ i ]->x1( t );
+		}
+		return s;
 	}
 
 	// Quantized Value at Time t
@@ -168,6 +120,34 @@ public: // Properties
 			c += c_[ i ] * x_[ i ]->q2( t );
 		}
 		return c;
+	}
+
+	// Quantized Forward-Difference Sequential Value at Time t
+	Value
+	qs( Time const t ) const
+	{
+		return q( t );
+	}
+
+	// Quantized Forward-Difference Sequential First Derivative at Time t
+	Value
+	qf1( Time const t ) const
+	{
+		return q1( t );
+	}
+
+	// Quantized Centered-Difference Sequential First Derivative at Time t
+	Value
+	qc1( Time const t ) const
+	{
+		return q1( t );
+	}
+
+	// Quantized Centered-Difference Sequential Second Derivative at Time t
+	Value
+	qc2( Time const t ) const
+	{
+		return q2( t );
 	}
 
 	// Quantized Values at Time t and at Variable +/- Delta
@@ -289,13 +269,13 @@ public: // Methods
 	// Add a Coefficient + Variable
 	FunctionLTI_LIQSS &
 	add(
-	 Coefficient const c_i,
-	 Variable & x_i
+	 Coefficient const c,
+	 Variable & x
 	)
 	{
 		assert( c_.size() == x_.size() );
-		c_.push_back( c_i );
-		x_.push_back( &x_i );
+		c_.push_back( c );
+		x_.push_back( &x );
 		assert( c_.size() == x_.size() );
 		return *this;
 	}
@@ -303,13 +283,13 @@ public: // Methods
 	// Add a Variable + Coefficient
 	FunctionLTI_LIQSS &
 	add(
-	 Variable & x_i,
-	 Coefficient const c_i
+	 Variable & x,
+	 Coefficient const c
 	)
 	{
 		assert( c_.size() == x_.size() );
-		c_.push_back( c_i );
-		x_.push_back( &x_i );
+		c_.push_back( c );
+		x_.push_back( &x );
 		assert( c_.size() == x_.size() );
 		return *this;
 	}
@@ -317,13 +297,13 @@ public: // Methods
 	// Add a Coefficient + Variable
 	FunctionLTI_LIQSS &
 	add(
-	 Coefficient const c_i,
-	 Variable * x_i
+	 Coefficient const c,
+	 Variable * x
 	)
 	{
 		assert( c_.size() == x_.size() );
-		c_.push_back( c_i );
-		x_.push_back( x_i );
+		c_.push_back( c );
+		x_.push_back( x );
 		assert( c_.size() == x_.size() );
 		return *this;
 	}
@@ -331,13 +311,13 @@ public: // Methods
 	// Add a Variable + Coefficient
 	FunctionLTI_LIQSS &
 	add(
-	 Variable * x_i,
-	 Coefficient const c_i
+	 Variable * x,
+	 Coefficient const c
 	)
 	{
 		assert( c_.size() == x_.size() );
-		c_.push_back( c_i );
-		x_.push_back( x_i );
+		c_.push_back( c );
+		x_.push_back( x );
 		assert( c_.size() == x_.size() );
 		return *this;
 	}

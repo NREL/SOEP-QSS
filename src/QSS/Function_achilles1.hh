@@ -23,41 +23,6 @@ public: // Types
 
 public: // Properties
 
-	// Continuous Value at Initialization Time
-	Value
-	x() const
-	{
-		return ( c1_ * x1_->x() ) + ( c2_ * x2_->x() );
-	}
-
-	// Continuous First Derivative at Initialization Time
-	Value
-	x1() const
-	{
-		return ( c1_ * x1_->x1() ) + ( c2_ * x2_->x1() );
-	}
-
-	// Quantized Value at Initialization Time
-	Value
-	q() const
-	{
-		return ( c1_ * x1_->q() ) + ( c2_ * x2_->q() );
-	}
-
-	// Quantized First Derivative at Initialization Time
-	Value
-	q1() const
-	{
-		return ( c1_ * x1_->q1() ) + ( c2_ * x2_->q1() );
-	}
-
-	// Quantized Second Derivative at Initialization Time
-	Value
-	q2() const
-	{
-		return ( c1_ * x1_->q2() ) + ( c2_ * x2_->q2() );
-	}
-
 	// Continuous Value at Time t
 	Value
 	operator ()( Time const t ) const
@@ -91,6 +56,34 @@ public: // Properties
 	q2( Time const t ) const
 	{
 		return ( c1_ * x1_->q2( t ) ) + ( c2_ * x2_->q2( t ) );
+	}
+
+	// Quantized Forward-Difference Sequential Value at Time t
+	Value
+	qs( Time const t ) const
+	{
+		return q( t );
+	}
+
+	// Quantized Forward-Difference Sequential First Derivative at Time t
+	Value
+	qf1( Time const t ) const
+	{
+		return q1( t );
+	}
+
+	// Quantized Centered-Difference Sequential First Derivative at Time t
+	Value
+	qc1( Time const t ) const
+	{
+		return q1( t );
+	}
+
+	// Quantized Centered-Difference Sequential Second Derivative at Time t
+	Value
+	qc2( Time const t ) const
+	{
+		return q2( t );
 	}
 
 public: // Methods

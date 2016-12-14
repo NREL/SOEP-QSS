@@ -10,6 +10,7 @@
 // QSS Headers
 #include <QSS/FunctionLTI.hh>
 #include <QSS/FunctionLTI_LIQSS.hh>
+#include <QSS/FunctionLTI_ND.hh>
 #include <QSS/Function_achilles1.hh>
 #include <QSS/Function_achilles2.hh>
 #include <QSS/Function_NonlinearEx1.hh>
@@ -86,8 +87,10 @@ main()
 //	Time const tE( 10.0 ); // Simulation end time
 //	Time t( 0.0 ); // Simulation time
 //	Time to( t + dto ); // Sampling time
-//	VariableQSS1< FunctionLTI > x1( "x1", 1.0, 0.0 );
-//	VariableQSS1< FunctionLTI > x2( "x2", 1.0, 0.0 );
+//	VariableQSS3< FunctionLTI > x1( "x1", 1.0, 0.0 );
+//	VariableQSS3< FunctionLTI > x2( "x2", 1.0, 0.0 );
+////	VariableLIQSS2< FunctionLTI_LIQSS > x1( "x1", 1.0e-4, 0.0 );
+////	VariableLIQSS2< FunctionLTI_LIQSS > x2( "x2", 1.0e-4, 0.0 );
 //	x1.init0( 0.0 );
 //	x2.init0( 2.0 );
 //	x1.d().add( -0.5, x1 ).add( 1.5, x2 );
@@ -134,24 +137,24 @@ main()
 //	vars.push_back( &x1 );
 //	vars.push_back( &x2 );
 
-	// Nonlinear Example 1
-	Time const dto( 1.0e-3 ); // Sampling time step
-	Time const tE( 5.0 ); // Simulation end time
-	Time t( 0.0 ); // Simulation time
-	Time to( t + dto ); // Sampling time
-	VariableQSS2< Function_NonlinearEx1 > y( "y", 1.0e-3, 1.0e-3 );
-//	VariableLIQSS2< Function_NonlinearEx1 > y( "y", 1.0e-3, 1.0e-3 );
-	y.init0( 2.0 );
-	y.d().var( y );
-	vars.reserve( 1 );
-	vars.push_back( &y );
-	std::ofstream e_stream( "y_e.out" ); // Exact solution output
-	while ( to <= tE * ( 1.0 + 1.0e-14 ) ) {
-		e_stream << to << '\t' << y.d().e( to ) << '\n';
-		to += dto;
-	}
-	e_stream.close();
-	to = 0.0;
+//	// Nonlinear Example 1
+//	Time const dto( 1.0e-3 ); // Sampling time step
+//	Time const tE( 5.0 ); // Simulation end time
+//	Time t( 0.0 ); // Simulation time
+//	Time to( t + dto ); // Sampling time
+//	VariableQSS2< Function_NonlinearEx1 > y( "y", 1.0e-3, 1.0e-3 );
+////	VariableLIQSS1< Function_NonlinearEx1 > y( "y", 1.0e-3, 1.0e-3 );
+//	y.init0( 2.0 );
+//	y.d().var( y );
+//	vars.reserve( 1 );
+//	vars.push_back( &y );
+//	std::ofstream e_stream( "y_e.out" ); // Exact solution output
+//	while ( to <= tE * ( 1.0 + 1.0e-14 ) ) {
+//		e_stream << to << '\t' << y.d().e( to ) << '\n';
+//		to += dto;
+//	}
+//	e_stream.close();
+//	to = 0.0;
 
 //	// Exponential Decay Example
 //	Time const dto( 1.0e-3 ); // Sampling time step
@@ -164,22 +167,23 @@ main()
 //	vars.reserve( 1 );
 //	vars.push_back( &x1 );
 
-//	// Stiff System Literature Example
-//	Time const dto( 1.0e-3 ); // Sampling time step
-//	Time const tE( 500.0 ); // Simulation end time
-//	Time t( 0.0 ); // Simulation time
-//	Time to( t + dto ); // Sampling time
-////	VariableQSS2< FunctionLTI > x1( "x1", 1.0, 0.0 );
-////	VariableQSS2< FunctionLTI > x2( "x2", 1.0, 0.0 );
-//	VariableLIQSS2< FunctionLTI_LIQSS > x1( "x1", 1.0, 0.0 );
-//	VariableLIQSS2< FunctionLTI_LIQSS > x2( "x2", 1.0, 0.0 );
-//	x1.init0( 0.0 );
-//	x2.init0( 20.0 );
-//	x1.d().add( 0.01, x2 );
-//	x2.d().add( 2020.0 ).add( -100.0, x1 ).add( -100.0, x2 );
-//	vars.reserve( 2 );
-//	vars.push_back( &x1 );
-//	vars.push_back( &x2 );
+	// Stiff System Literature Example
+//	inflection_steps = true; // Improves results for large tolerances
+	Time const dto( 1.0e-3 ); // Sampling time step
+	Time const tE( 600.0 ); // Simulation end time
+	Time t( 0.0 ); // Simulation time
+	Time to( t + dto ); // Sampling time
+//	VariableQSS2< FunctionLTI > x1( "x1", 1.0e-4, 0.0 );
+//	VariableQSS2< FunctionLTI > x2( "x2", 1.0e-4, 0.0 );
+	VariableLIQSS2< FunctionLTI_LIQSS > x1( "x1", 1.0e-4, 0.0 );
+	VariableLIQSS2< FunctionLTI_LIQSS > x2( "x2", 1.0e-4, 0.0 );
+	x1.init0( 0.0 );
+	x2.init0( 20.0 );
+	x1.d().add( 0.01, x2 );
+	x2.d().add( 2020.0 ).add( -100.0, x1 ).add( -100.0, x2 );
+	vars.reserve( 2 );
+	vars.push_back( &x1 );
+	vars.push_back( &x2 );
 
 	// Solver master logic
 	for ( auto var : vars ) {
