@@ -14,6 +14,7 @@
 #include <QSS/Function_achilles1.hh>
 #include <QSS/Function_achilles2.hh>
 #include <QSS/Function_NonlinearEx1.hh>
+#include <QSS/Function_NonlinearEx1_ND.hh>
 #include <QSS/globals.hh>
 #include <QSS/math.hh>
 #include <QSS/VariableLIQSS1.hh>
@@ -143,7 +144,9 @@ main()
 //	Time t( 0.0 ); // Simulation time
 //	Time to( t + dto ); // Sampling time
 //	VariableQSS2< Function_NonlinearEx1 > y( "y", 1.0e-3, 1.0e-3 );
-////	VariableLIQSS1< Function_NonlinearEx1 > y( "y", 1.0e-3, 1.0e-3 );
+////	VariableQSS2< Function_NonlinearEx1_ND > y( "y", 1.0e-3, 1.0e-3 );
+////	VariableLIQSS2< Function_NonlinearEx1 > y( "y", 1.0e-3, 1.0e-3 );
+////	VariableLIQSS2< Function_NonlinearEx1_ND > y( "y", 1.0e-3, 1.0e-3 );
 //	y.init0( 2.0 );
 //	y.d().var( y );
 //	vars.reserve( 1 );

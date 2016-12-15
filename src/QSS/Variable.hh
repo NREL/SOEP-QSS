@@ -93,6 +93,11 @@ public: // Properties
 	Value
 	x( Time const t ) const = 0;
 
+	// Continuous Numeric Differenentiation Value at Time t: Allow t Outside of [tX,tE]
+	virtual
+	Value
+	xn( Time const t ) const = 0;
+
 	// Continuous First Derivative at Time t
 	virtual
 	Value
@@ -117,7 +122,7 @@ public: // Properties
 	Value
 	q( Time const t ) const = 0;
 
-	// Quantized Value at Time t: Allow t Outside of [tQ,tE] for Numeric Differenentiation
+	// Quantized Numeric Differenentiation Value at Time t: Allow t Outside of [tQ,tE]
 	virtual
 	Value
 	qn( Time const t ) const = 0;

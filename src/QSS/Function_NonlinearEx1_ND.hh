@@ -1,12 +1,13 @@
-#ifndef QSS_Function_NonlinearEx1_hh_INCLUDED
-#define QSS_Function_NonlinearEx1_hh_INCLUDED
+#ifndef QSS_Function_NonlinearEx1_ND_hh_INCLUDED
+#define QSS_Function_NonlinearEx1_ND_hh_INCLUDED
 
-// Derivative Function for Nonlinear Example 1
+// Derivative Function for Nonlinear Example 1: Numeric Differentiation
 // Problem:  y'( t ) = ( 1 + 2 t ) / ( y + 2 ), y( 0 ) = 2
 // Solution: y = sqrt( 2 t^2 + 2 t + 16 ) - 2
 // Note:     y''( t ) = ( 2 / ( y + 2 ) ) - ( ( 1 + 2 t )^2 / ( y + 2 )^3 )
 
 // QSS Headers
+#include <QSS/globals.hh>
 #include <QSS/math.hh>
 
 // C++ Headers
@@ -16,7 +17,7 @@
 
 // Linear Time-Invariant Function
 template< typename V > // Template to avoid cyclic inclusion with Variable
-class Function_NonlinearEx1
+class Function_NonlinearEx1_ND
 {
 
 public: // Types
@@ -46,12 +47,18 @@ public: // Properties
 		return ( 1.0 + ( 2.0 * t ) ) / ( y_->x( t ) + 2.0 );
 	}
 
+	// Continuous Differentiation Value at Time t
+	Value
+	xn( Time const t ) const
+	{
+		return ( 1.0 + ( 2.0 * t ) ) / ( y_->xn( t ) + 2.0 );
+	}
+
 	// Continuous First Derivative at Time t
 	Value
 	x1( Time const t ) const
 	{
-		Value const v( y_->x( t ) + 2.0 );
-		return ( ( 2.0 * v ) - ( y_->x1( t ) * ( 1.0 + ( 2.0 * t ) ) ) ) / square( v );
+		return dtn_inv_2_ * ( xn( t + dtn_ ) - xn( t - dtn_ ) );
 	}
 
 	// Quantized Value at Time t
@@ -61,49 +68,71 @@ public: // Properties
 		return ( 1.0 + ( 2.0 * t ) ) / ( y_->q( t ) + 2.0 );
 	}
 
+	// Quantized Numeric Differentiation Value at Time t
+	Value
+	qn( Time const t ) const
+	{
+		return ( 1.0 + ( 2.0 * t ) ) / ( y_->qn( t ) + 2.0 );
+	}
+
 	// Quantized First Derivative at Time t
 	Value
 	q1( Time const t ) const
 	{
-		Value const v( y_->q( t ) + 2.0 );
-		return ( ( 2.0 * v ) - ( y_->q1( t ) * ( 1.0 + ( 2.0 * t ) ) ) ) / square( v );
+		return dtn_inv_2_ * ( qn( t + dtn_ ) - qn( t - dtn_ ) );
 	}
 
 	// Quantized Second Derivative at Time t
 	Value
 	q2( Time const t ) const
 	{
-		Value const v( y_->q( t ) + 2.0 );
-		Value const w( 1.0 + 2.0 * t );
-		return ( ( 2.0 * square( y_->q1( t ) ) * w ) - ( v * ( ( y_->q2( t ) * w ) + ( 4.0 * y_->q1( t ) ) ) ) ) / cube( v );
+		return dtn_inv_sq_ * ( qn( t + dtn_ ) - ( 2.0 * qn( t ) ) + qn( t - dtn_ ) );
 	}
 
 	// Quantized Forward-Difference Sequential Value at Time t
 	Value
 	qs( Time const t ) const
 	{
-		return q( t );
+		return q_t_ = qn( t );
 	}
 
 	// Quantized Forward-Difference Sequential First Derivative at Time t
 	Value
 	qf1( Time const t ) const
 	{
-		return q1( t );
+		return dtn_inv_ * ( qn( t + dtn_ ) - q_t_ );
 	}
 
 	// Quantized Centered-Difference Sequential First Derivative at Time t
 	Value
 	qc1( Time const t ) const
 	{
-		return q1( t );
+		return dtn_inv_2_ * ( ( q_p_ = qn( t + dtn_ ) ) - ( q_m_ = qn( t - dtn_ ) ) );
 	}
 
 	// Quantized Centered-Difference Sequential Second Derivative at Time t
 	Value
 	qc2( Time const t ) const
 	{
-		return q2( t );
+		return dtn_inv_sq_ * ( q_p_ - ( 2.0 * q_t_ ) + q_m_ );
+	}
+
+	// Differentiation Time Step
+	Time
+	dtn() const
+	{
+		return dtn_;
+	}
+
+	// Set Differentiation Time Step
+	void
+	dtn( Time const dtn )
+	{
+		assert( dtn > 0.0 );
+		dtn_ = dtn;
+		dtn_inv_ = 1.0 / dtn_;
+		dtn_inv_2_ = 0.5 / dtn_;
+		dtn_inv_sq_ = dtn_inv_ * dtn_inv_;
 	}
 
 	// Quantized Values at Time t and at Variable +/- Delta
@@ -149,9 +178,12 @@ public: // Properties
 		Value const vu( num / ( y2 + del ) );
 
 		// Derivative at +/- del
-		Value const ts( square( 1.0 + ( 2.0 * t ) ) );
-		Value const sl( derivative( ts, y2 - del ) );
-		Value const su( derivative( ts, y2 + del ) );
+		Time const tm( t - dtn_ );
+		Time const tp( t + dtn_ );
+		Value const y2m( y_->qn( tm ) + 2.0 );
+		Value const y2p( y_->qn( tp ) + 2.0 );
+		Value const sl( dtn_inv_2_ * ( ndv( tp, y2p, -del ) - ndv( tm, y2m, -del ) ) );
+		Value const su( dtn_inv_2_ * ( ndv( tp, y2p, +del ) - ndv( tm, y2m, +del ) ) );
 
 		// Zero point: No solution points have zero function derivative
 		assert( signum( sl ) == signum( su ) );
@@ -173,9 +205,12 @@ public: // Properties
 		Value const vu( num / ( y2 + del ) );
 
 		// Derivative at +/- del
-		Value const ts( square( 1.0 + ( 2.0 * t ) ) );
-		Value const sl( derivative( ts, y2 - del ) );
-		Value const su( derivative( ts, y2 + del ) );
+		Time const tm( t - dtn_ );
+		Time const tp( t + dtn_ );
+		Value const y2m( y_->xn( tm ) + 2.0 );
+		Value const y2p( y_->xn( tp ) + 2.0 );
+		Value const sl( dtn_inv_2_ * ( ndv( tp, y2p, -del ) - ndv( tm, y2m, -del ) ) );
+		Value const su( dtn_inv_2_ * ( ndv( tp, y2p, +del ) - ndv( tm, y2m, +del ) ) );
 
 		// Zero point: No solution points have zero function derivative
 		assert( signum( sl ) == signum( su ) );
@@ -222,17 +257,24 @@ public: // Methods
 
 private: // Static Methods
 
-	// Derivative at Time t Given ( 1 + 2*t )^2 and y+2
+	// Numeric Differentiation Value at Time t Given y+2 and y Delta
 	static
 	Value
-	derivative( Time const ts, Value const y2 )
+	ndv( Time const t, Value const y2, Value const del )
 	{
-		return ( 2.0 / y2 ) - ( ts / cube( y2 ) );
+		return ( 1.0 + ( 2.0 * t ) ) / ( y2 + del );
 	}
 
 private: // Data
 
 	Variable * y_{ nullptr };
+	mutable Value q_t_; // Last q(t) computed
+	mutable Value q_p_; // Last q(t+dtn) computed
+	mutable Value q_m_; // Last q(t-dtn) computed
+	Time dtn_{ dtnd }; // Differentiation time step
+	Time dtn_inv_{ 1.0 / dtnd }; // Differentiation time step inverse
+	Time dtn_inv_2_{ 0.5 / dtnd }; // Differentiation time step half inverse
+	Time dtn_inv_sq_{ 1.0 / ( dtnd * dtnd ) }; // Differentiation time step inverse squared
 
 };
 

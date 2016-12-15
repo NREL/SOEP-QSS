@@ -83,6 +83,18 @@ public: // Properties
 		return v;
 	}
 
+	// Quantized Numeric Differentiation Value at Time t
+	Value
+	qn( Time const t ) const
+	{
+		assert( c_.size() == x_.size() );
+		Value v( c0_ );
+		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
+			v += c_[ i ] * x_[ i ]->qn( t );
+		}
+		return v;
+	}
+
 	// Quantized First Derivative at Time t
 	Value
 	q1( Time const t ) const
@@ -95,18 +107,6 @@ public: // Properties
 	q2( Time const t ) const
 	{
 		return dtn_inv_sq_ * ( qn( t + dtn_ ) - ( 2.0 * qn( t ) ) + qn( t - dtn_ ) );
-	}
-
-	// Quantized Differentiation Value at Time t
-	Value
-	qn( Time const t ) const
-	{
-		assert( c_.size() == x_.size() );
-		Value v( c0_ );
-		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
-			v += c_[ i ] * x_[ i ]->qn( t );
-		}
-		return v;
 	}
 
 	// Quantized Forward-Difference Sequential Value at Time t

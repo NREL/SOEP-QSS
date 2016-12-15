@@ -50,6 +50,14 @@ public: // Properties
 		return x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 	}
 
+	// Continuous Numeric Differenentiation Value at Time t: Allow t Outside of [tX,tE]
+	Value
+	xn( Time const t ) const
+	{
+		Time const tDel( t - tX );
+		return x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+	}
+
 	// Continuous First Derivative at Time t
 	Value
 	x1( Time const t ) const
@@ -74,7 +82,7 @@ public: // Properties
 		return q_0_ + ( q_1_ * ( t - tQ ) );
 	}
 
-	// Quantized Value at Time t: Allow t Outside of [tQ,tE] for Numeric Differenentiation
+	// Quantized Numeric Differenentiation Value at Time t: Allow t Outside of [tQ,tE]
 	Value
 	qn( Time const t ) const
 	{
