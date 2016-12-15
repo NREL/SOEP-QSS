@@ -47,7 +47,7 @@ public: // Properties
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		Time const tDel( t - tX );
-		return x0_ + ( ( x1_ + ( x2_ * tDel ) ) * tDel );
+		return x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 	}
 
 	// Continuous First Derivative at Time t
@@ -55,7 +55,15 @@ public: // Properties
 	x1( Time const t ) const
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		return x1_ + ( two * x2_ * ( t - tX ) );
+		return x_1_ + ( two * x_2_ * ( t - tX ) );
+	}
+
+	// Continuous Second Derivative at Time t
+	Value
+	x2( Time const t ) const
+	{
+		assert( ( tX <= t ) && ( t <= tE ) );
+		return two * x_2_;
 	}
 
 	// Quantized Value at Time t
@@ -63,14 +71,14 @@ public: // Properties
 	q( Time const t ) const
 	{
 		assert( ( tQ <= t ) && ( t <= tE ) );
-		return q0_ + ( q1_ * ( t - tQ ) );
+		return q_0_ + ( q_1_ * ( t - tQ ) );
 	}
 
 	// Quantized Value at Time t: Allow t Outside of [tQ,tE] for Numeric Differenentiation
 	Value
 	qn( Time const t ) const
 	{
-		return q0_ + ( q1_ * ( t - tQ ) );
+		return q_0_ + ( q_1_ * ( t - tQ ) );
 	}
 
 	// Quantized First Derivative at Time t
@@ -79,7 +87,7 @@ public: // Properties
 	{
 		assert( ( tQ <= t ) && ( t <= tE ) );
 		(void)t; // Suppress unused parameter warning
-		return q1_;
+		return q_1_;
 	}
 
 	// Derivative Function
@@ -102,7 +110,7 @@ public: // Methods
 	void
 	init0( Value const x )
 	{
-		x0_ = q0_ = x;
+		x_0_ = q_0_ = x;
 		set_qTol();
 	}
 
@@ -112,14 +120,14 @@ public: // Methods
 	{
 		self_observer = d_.finalize( this );
 		shrink_observers(); // Optional
-		x1_ = q1_ = d_.q( tQ );
+		x_1_ = q_1_ = d_.q( tQ );
 	}
 
 	// Initialize Quadratic Coefficient
 	void
 	init2()
 	{
-		x2_ = one_half * d_.q1( tQ );
+		x_2_ = one_half * d_.q1( tQ );
 	}
 
 	// Initialize Event in Queue
@@ -128,14 +136,14 @@ public: // Methods
 	{
 		set_tE_aligned();
 		event( events.add( tE, this ) );
-		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q0_ << "+" << q1_ << "*t quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2 internal   tE=" << tE << '\n';
+		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';
 	}
 
 	// Set Current Tolerance
 	void
 	set_qTol()
 	{
-		qTol = std::max( aTol, rTol * std::abs( q0_ ) );
+		qTol = std::max( aTol, rTol * std::abs( q_0_ ) );
 		assert( qTol > 0.0 );
 	}
 
@@ -144,18 +152,18 @@ public: // Methods
 	advance()
 	{
 		Time const tDel( ( tQ = tE ) - tX );
-		q0_ = x0_ + ( ( x1_ + ( x2_ * tDel ) ) * tDel );
+		q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 		set_qTol();
 		if ( self_observer ) {
-			x0_ = q0_;
-			x1_ = q1_ = d_.qs( tE );
-			x2_ = one_half * d_.qf1( tX = tE );
+			x_0_ = q_0_;
+			x_1_ = q_1_ = d_.qs( tE );
+			x_2_ = one_half * d_.qf1( tX = tE );
 		} else {
-			q1_ = x1_ + ( two * x2_ * tDel );
+			q_1_ = x_1_ + ( two * x_2_ * tDel );
 		}
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
-		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q0_ << "+" << q1_ << "*t quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2 internal   tE=" << tE << '\n';
+		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';
 		for ( Variable * observer : observers() ) { // Advance (other) observers
 			observer->advance( tQ );
 		}
@@ -166,7 +174,7 @@ public: // Methods
 	advance0()
 	{
 		Time const tDel( ( tQ = tE ) - tX );
-		x0_ = q0_ = x0_ + ( ( x1_ + ( x2_ * tDel ) ) * tDel );
+		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 		set_qTol();
 	}
 
@@ -174,17 +182,17 @@ public: // Methods
 	void
 	advance1()
 	{
-		x1_ = q1_ = d_.qs( tE );
+		x_1_ = q_1_ = d_.qs( tE );
 	}
 
 	// Advance Simultaneous Trigger to Time tE and Requantize: Step 2
 	void
 	advance2()
 	{
-		x2_ = one_half * d_.qf1( tX = tE );
+		x_2_ = one_half * d_.qf1( tX = tE );
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
-		if ( diag ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q0_ << "+" << q1_ << "*t quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2 internal   tE=" << tE << '\n';
+		if ( diag ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';
 	}
 
 	// Advance Observer to Time t
@@ -194,12 +202,12 @@ public: // Methods
 		assert( ( tX <= t ) && ( t <= tE ) );
 		if ( tX < t ) { // Could observe multiple variables with simultaneous triggering
 			Time const tDel( t - tX );
-			x0_ = x0_ + ( ( x1_ + ( x2_ * tDel ) ) * tDel );
-			x1_ = d_.qs( t );
-			x2_ = one_half * d_.qf1( tX = t );
+			x_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+			x_1_ = d_.qs( t );
+			x_2_ = one_half * d_.qf1( tX = t );
 			set_tE_unaligned();
 			event( events.shift( tE, event() ) );
-			if ( diag ) std::cout << "  " << name << '(' << t << ')' << " = " << q0_ << "+" << q1_ << "*t quantized, " << x0_ << "+" << x1_ << "*t+" << x2_ << "*t^2 internal   tE=" << tE << '\n';
+			if ( diag ) std::cout << "  " << name << '(' << t << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';
 		}
 	}
 
@@ -210,9 +218,9 @@ private: // Methods
 	set_tE_aligned()
 	{
 		assert( tX <= tQ );
-		tE = ( x2_ != 0.0 ? tQ + std::sqrt( qTol / std::abs( x2_ ) ) : infinity );
-		if ( ( inflection_steps ) && ( x2_ != 0.0 ) && ( signum( x1_ ) != signum( x2_ ) ) ) {
-			Time const tI( tX - ( x1_ / ( two * x2_ ) ) );
+		tE = ( x_2_ != 0.0 ? tQ + std::sqrt( qTol / std::abs( x_2_ ) ) : infinity );
+		if ( ( inflection_steps ) && ( x_2_ != 0.0 ) && ( signum( x_1_ ) != signum( x_2_ ) ) ) {
+			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
 			if ( tQ < tI ) tE = std::min( tE, tI );
 		}
 	}
@@ -222,37 +230,37 @@ private: // Methods
 	set_tE_unaligned()
 	{
 		assert( tQ <= tX );
-		Value const d0( x0_ - ( q0_ + ( q1_ * ( tX - tQ ) ) ) );
-		Value const d1( x1_ - q1_ );
+		Value const d0( x_0_ - ( q_0_ + ( q_1_ * ( tX - tQ ) ) ) );
+		Value const d1( x_1_ - q_1_ );
 		if ( d1 >= 0.0 ) {
-			Time const tPosQ( min_root_quadratic( x2_, d1, d0 - qTol ) );
-			if ( x2_ >= 0.0 ) { // Only need to check +qTol
+			Time const tPosQ( min_root_quadratic( x_2_, d1, d0 - qTol ) );
+			if ( x_2_ >= 0.0 ) { // Only need to check +qTol
 				tE = ( tPosQ == infinity ? infinity : tX + tPosQ );
 			} else {
-				Time const tNegQ( min_root_quadratic( x2_, d1, d0 + qTol ) );
+				Time const tNegQ( min_root_quadratic( x_2_, d1, d0 + qTol ) );
 				Time const tMinQ( std::min( tPosQ, tNegQ ) );
 				tE = ( tMinQ == infinity ? infinity : tX + tMinQ );
 			}
 		} else { // d1 < 0
-			Time const tNegQ( min_root_quadratic( x2_, d1, d0 + qTol ) );
-			if ( x2_ <= 0.0 ) { // Only need to check -qTol
+			Time const tNegQ( min_root_quadratic( x_2_, d1, d0 + qTol ) );
+			if ( x_2_ <= 0.0 ) { // Only need to check -qTol
 				tE = ( tNegQ == infinity ? infinity : tX + tNegQ );
 			} else {
-				Time const tPosQ( min_root_quadratic( x2_, d1, d0 - qTol ) );
+				Time const tPosQ( min_root_quadratic( x_2_, d1, d0 - qTol ) );
 				Time const tMinQ( std::min( tPosQ, tNegQ ) );
 				tE = ( tMinQ == infinity ? infinity : tX + tMinQ );
 			}
 		}
-		if ( ( inflection_steps ) && ( x2_ != 0.0 ) && ( signum( x1_ ) != signum( x2_ ) ) && ( signum( x1_ ) == signum( q1_ ) ) ) {
-			Time const tI( tX - ( x1_ / ( two * x2_ ) ) );
+		if ( ( inflection_steps ) && ( x_2_ != 0.0 ) && ( signum( x_1_ ) != signum( x_2_ ) ) && ( signum( x_1_ ) == signum( q_1_ ) ) ) {
+			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
 			if ( tX < tI ) tE = std::min( tE, tI );
 		}
 	}
 
 private: // Data
 
-	Value x0_{ 0.0 }, x1_{ 0.0 }, x2_{ 0.0 }; // Continuous value coefficients for active time segment
-	Value q0_{ 0.0 }, q1_{ 0.0 }; // Quantized value coefficients for active time segment
+	Value x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous rep coefficients
+	Value q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized rep coefficients
 	Derivative d_; // Derivative function
 
 };

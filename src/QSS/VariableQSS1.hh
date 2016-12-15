@@ -46,7 +46,7 @@ public: // Properties
 	x( Time const t ) const
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		return x0_ + ( x1_ * ( t - tX ) );
+		return x_0_ + ( x_1_ * ( t - tX ) );
 	}
 
 	// Continuous First Derivative at Time t
@@ -54,7 +54,7 @@ public: // Properties
 	x1( Time const t ) const
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		return x1_;
+		return x_1_;
 	}
 
 	// Quantized Value at Time t
@@ -63,7 +63,7 @@ public: // Properties
 	{
 		assert( ( tQ <= t ) && ( t <= tE ) );
 		(void)t; // Suppress unused parameter warning
-		return q0_;
+		return q_0_;
 	}
 
 	// Quantized Value at Time t: Allow t Outside of [tQ,tE] for Numeric Differenentiation
@@ -71,7 +71,7 @@ public: // Properties
 	qn( Time const t ) const
 	{
 		(void)t; // Suppress unused parameter warning
-		return q0_;
+		return q_0_;
 	}
 
 	// Derivative Function
@@ -94,7 +94,7 @@ public: // Methods
 	void
 	init0( Value const x )
 	{
-		x0_ = q0_ = x;
+		x_0_ = q_0_ = x;
 		set_qTol();
 	}
 
@@ -104,7 +104,7 @@ public: // Methods
 	{
 		self_observer = d_.finalize( this );
 		shrink_observers(); // Optional
-		x1_ = d_.q( tQ );
+		x_1_ = d_.q( tQ );
 	}
 
 	// Initialize Event in Queue
@@ -113,14 +113,14 @@ public: // Methods
 	{
 		set_tE_aligned();
 		event( events.add( tE, this ) );
-		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q0_ << " quantized, " << x0_ << "+" << x1_ << "*t internal   tE=" << tE << '\n';
+		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 	}
 
 	// Set Current Tolerance
 	void
 	set_qTol()
 	{
-		qTol = std::max( aTol, rTol * std::abs( q0_ ) );
+		qTol = std::max( aTol, rTol * std::abs( q_0_ ) );
 		assert( qTol > 0.0 );
 	}
 
@@ -128,15 +128,15 @@ public: // Methods
 	void
 	advance()
 	{
-		q0_ = x0_ + ( x1_ * ( ( tQ = tE ) - tX ) );
+		q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
 		set_qTol();
 		if ( self_observer ) {
-			x0_ = q0_;
-			x1_ = d_.q( tX = tE );
+			x_0_ = q_0_;
+			x_1_ = d_.q( tX = tE );
 		}
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
-		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q0_ << " quantized, " << x0_ << "+" << x1_ << "*t internal   tE=" << tE << '\n';
+		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 		for ( Variable * observer : observers() ) { // Advance (other) observers
 			observer->advance( tQ );
 		}
@@ -146,7 +146,7 @@ public: // Methods
 	void
 	advance0()
 	{
-		x0_ = q0_ = x0_ + ( x1_ * ( ( tQ = tE ) - tX ) );
+		x_0_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
 		set_qTol();
 	}
 
@@ -154,10 +154,10 @@ public: // Methods
 	void
 	advance1()
 	{
-		x1_ = d_.q( tX = tE );
+		x_1_ = d_.q( tX = tE );
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
-		if ( diag ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q0_ << " quantized, " << x0_ << "+" << x1_ << "*t internal   tE=" << tE << '\n';
+		if ( diag ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 	}
 
 	// Advance Observer to Time t
@@ -166,11 +166,11 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		if ( tX < t ) { // Could observe multiple variables with simultaneous triggering
-			x0_ = x0_ + ( x1_ * ( t - tX ) );
-			x1_ = d_.q( tX = t );
+			x_0_ = x_0_ + ( x_1_ * ( t - tX ) );
+			x_1_ = d_.q( tX = t );
 			set_tE_unaligned();
 			event( events.shift( tE, event() ) );
-			if ( diag ) std::cout << "  " << name << '(' << t << ')' << " = " << q0_ << " quantized, " << x0_ << "+" << x1_ << "*t internal   tE=" << tE << '\n';
+			if ( diag ) std::cout << "  " << name << '(' << t << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 		}
 	}
 
@@ -181,7 +181,7 @@ private: // Methods
 	set_tE_aligned()
 	{
 		assert( tX <= tQ );
-		tE = ( x1_ != 0.0 ? tQ + ( qTol / std::abs( x1_ ) ) : infinity );
+		tE = ( x_1_ != 0.0 ? tQ + ( qTol / std::abs( x_1_ ) ) : infinity );
 	}
 
 	// Set End Time: Quantized and Continuous Unaligned
@@ -190,15 +190,15 @@ private: // Methods
 	{
 		assert( tQ <= tX );
 		tE =
-		 ( x1_ > 0.0 ? tX + ( ( ( q0_ - x0_ ) + qTol ) / x1_ ) :
-		 ( x1_ < 0.0 ? tX + ( ( ( q0_ - x0_ ) - qTol ) / x1_ ) :
+		 ( x_1_ > 0.0 ? tX + ( ( ( q_0_ - x_0_ ) + qTol ) / x_1_ ) :
+		 ( x_1_ < 0.0 ? tX + ( ( ( q_0_ - x_0_ ) - qTol ) / x_1_ ) :
 		 infinity ) );
 	}
 
 private: // Data
 
-	Value x0_{ 0.0 }, x1_{ 0.0 }; // Continuous value coefficients for active time segment
-	Value q0_{ 0.0 }; // Quantized value for active time segment
+	Value x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
+	Value q_0_{ 0.0 }; // Quantized rep coefficients
 	Derivative d_; // Derivative function
 
 };

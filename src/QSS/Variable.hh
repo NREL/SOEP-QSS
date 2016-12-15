@@ -98,6 +98,20 @@ public: // Properties
 	Value
 	x1( Time const t ) const = 0;
 
+	// Continuous Second Derivative at Time t
+	Value
+	x2( Time const t ) const
+	{
+		return 0.0;
+	}
+
+	// Continuous Third Derivative at Time t
+	Value
+	x3( Time const t ) const
+	{
+		return 0.0;
+	}
+
 	// Quantized Value at Time t
 	virtual
 	Value

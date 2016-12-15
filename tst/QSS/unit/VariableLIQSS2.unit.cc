@@ -49,6 +49,7 @@ TEST( VariableLIQSS2Test, Basic )
 	EXPECT_EQ( 1.0, x2.tX );
 	EXPECT_DOUBLE_EQ( 36.504, x2.x( x2.tX ) );
 	EXPECT_DOUBLE_EQ( 51.006, x2.x1( x2.tX ) );
+	EXPECT_DOUBLE_EQ( 34.004, x2.x2( x2.tX ) );
 
 	EXPECT_EQ( 2U, events.size() );
 	events.clear();

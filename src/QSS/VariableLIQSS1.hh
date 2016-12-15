@@ -46,7 +46,7 @@ public: // Properties
 	x( Time const t ) const
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		return x0_ + ( x1_ * ( t - tX ) );
+		return x_0_ + ( x_1_ * ( t - tX ) );
 	}
 
 	// Continuous First Derivative at Time t
@@ -54,7 +54,7 @@ public: // Properties
 	x1( Time const t ) const
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		return x1_;
+		return x_1_;
 	}
 
 	// Quantized Value at Time t
@@ -63,7 +63,7 @@ public: // Properties
 	{
 		assert( ( tQ <= t ) && ( t <= tE ) );
 		(void)t; // Suppress unused parameter warning
-		return q0_;
+		return q_0_;
 	}
 
 	// Quantized Value at Time t: Allow t Outside of [tQ,tE] for Numeric Differenentiation
@@ -71,7 +71,7 @@ public: // Properties
 	qn( Time const t ) const
 	{
 		(void)t; // Suppress unused parameter warning
-		return q0_;
+		return q_0_;
 	}
 
 	// Derivative Function
@@ -94,21 +94,21 @@ public: // Methods
 	void
 	init0( Value const x )
 	{
-		x0_ = qc_ = q0_ = x;
+		x_0_ = qc_ = q_0_ = x;
 		set_qTol();
 	}
 
 	// Initialize Linear Coefficient in LIQSS Variable
 	void
 	init1_LIQSS()
-	{ // Call before init1 since it alters q0_
+	{ // Call before init1 since it alters q_0_
 		self_observer = d_.finalize( this );
 		shrink_observers(); // Optional
 		if ( self_observer ) {
 			advance_x(); // Continuous rep used to avoid cyclic dependency
 		} else {
-			x1_ = d_.x( tQ ); // Continuous rep used to avoid cyclic dependency
-			q0_ += signum( x1_ ) * qTol;
+			x_1_ = d_.x( tQ ); // Continuous rep used to avoid cyclic dependency
+			q_0_ += signum( x_1_ ) * qTol;
 		}
 	}
 
@@ -118,7 +118,7 @@ public: // Methods
 	{
 		set_tE_aligned();
 		event( events.add( tE, this ) );
-		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q0_ << " quantized, " << x0_ << "+" << x1_ << "*t internal   tE=" << tE << '\n';
+		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 	}
 
 	// Set Current Tolerance
@@ -133,18 +133,18 @@ public: // Methods
 	void
 	advance()
 	{
-		qc_ = q0_ = x0_ + ( x1_ * ( ( tQ = tE ) - tX ) );
+		qc_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
 		set_qTol();
 		if ( self_observer ) {
-			x0_ = qc_;
+			x_0_ = qc_;
 			advance_q();
 			tX = tE;
 		} else {
-			q0_ += signum( x1_ ) * qTol;
+			q_0_ += signum( x_1_ ) * qTol;
 		}
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
-		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q0_ << " quantized, " << x0_ << "+" << x1_ << "*t internal   tE=" << tE << '\n';
+		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 		for ( Variable * observer : observers() ) { // Advance (other) observers
 			observer->advance( tQ );
 		}
@@ -154,20 +154,20 @@ public: // Methods
 	void
 	advance0()
 	{
-		x0_ = qc_ = q0_ = x0_ + ( x1_ * ( ( tQ = tE ) - tX ) );
+		x_0_ = qc_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
 		set_qTol();
 	}
 
 	// Advance Simultaneous Trigger in LIQSS Variable to Time tE and Requantize: Step 1
 	void
 	advance1_LIQSS()
-	{ // Call before advance1 since it alters q0_
+	{ // Call before advance1 since it alters q_0_
 		if ( self_observer ) {
 			advance_x(); // Continuous rep used to avoid cyclic dependency
 			tX = tE;
 		} else {
-			x1_ = d_.x( tX = tE ); // Continuous rep used to avoid cyclic dependency
-			q0_ += signum( x1_ ) * qTol;
+			x_1_ = d_.x( tX = tE ); // Continuous rep used to avoid cyclic dependency
+			q_0_ += signum( x_1_ ) * qTol;
 		}
 	}
 
@@ -177,7 +177,7 @@ public: // Methods
 	{
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
-		if ( diag ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q0_ << " quantized, " << x0_ << "+" << x1_ << "*t internal   tE=" << tE << '\n';
+		if ( diag ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 	}
 
 	// Advance Observer to Time t
@@ -186,11 +186,11 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		if ( tX < t ) { // Could observe multiple variables with simultaneous triggering
-			x0_ = x0_ + ( x1_ * ( t - tX ) );
-			x1_ = d_.q( tX = t );
+			x_0_ = x_0_ + ( x_1_ * ( t - tX ) );
+			x_1_ = d_.q( tX = t );
 			set_tE_unaligned();
 			event( events.shift( tE, event() ) );
-			if ( diag ) std::cout << "  " << name << '(' << t << ')' << " = " << q0_ << " quantized, " << x0_ << "+" << x1_ << "*t internal   tE=" << tE << '\n';
+			if ( diag ) std::cout << "  " << name << '(' << t << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 		}
 	}
 
@@ -201,7 +201,7 @@ private: // Methods
 	set_tE_aligned()
 	{
 		assert( tX <= tQ );
-		tE = ( x1_ != 0.0 ? tQ + ( qTol / std::abs( x1_ ) ) : infinity );
+		tE = ( x_1_ != 0.0 ? tQ + ( qTol / std::abs( x_1_ ) ) : infinity );
 	}
 
 	// Set End Time: Quantized and Continuous Unaligned
@@ -210,8 +210,8 @@ private: // Methods
 	{
 		assert( tQ <= tX );
 		tE =
-		 ( x1_ > 0.0 ? tX + ( ( ( qc_ - x0_ ) + qTol ) / x1_ ) :
-		 ( x1_ < 0.0 ? tX + ( ( ( qc_ - x0_ ) - qTol ) / x1_ ) :
+		 ( x_1_ > 0.0 ? tX + ( ( ( qc_ - x_0_ ) + qTol ) / x_1_ ) :
+		 ( x_1_ < 0.0 ? tX + ( ( ( qc_ - x_0_ ) - qTol ) / x_1_ ) :
 		 infinity ) );
 	}
 
@@ -226,14 +226,14 @@ private: // Methods
 		int const dls( signum( specs.l ) );
 		int const dus( signum( specs.u ) );
 		if ( ( dls == -1 ) && ( dus == -1 ) ) { // Downward trajectory
-			q0_ -= qTol;
-			x1_ = specs.l;
+			q_0_ -= qTol;
+			x_1_ = specs.l;
 		} else if ( ( dls == +1 ) && ( dus == +1 ) ) { // Upward trajectory
-			q0_ += qTol;
-			x1_ = specs.u;
+			q_0_ += qTol;
+			x_1_ = specs.u;
 		} else { // Flat trajectory
-			q0_ = std::min( std::max( specs.z, q0_ - qTol ), q0_ + qTol ); // Clipped in case of roundoff
-			x1_ = 0.0;
+			q_0_ = std::min( std::max( specs.z, q_0_ - qTol ), q_0_ + qTol ); // Clipped in case of roundoff
+			x_1_ = 0.0;
 		}
 	}
 
@@ -255,8 +255,8 @@ private: // Methods
 
 private: // Data
 
-	Value x0_{ 0.0 }, x1_{ 0.0 }; // Continuous value coefficients for active time segment
-	Value qc_{ 0.0 }, q0_{ 0.0 }; // Quantized centered and actual value for active time segment
+	Value x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
+	Value qc_{ 0.0 }, q_0_{ 0.0 }; // Quantized rep coefficients
 	Derivative d_; // Derivative function
 
 };
