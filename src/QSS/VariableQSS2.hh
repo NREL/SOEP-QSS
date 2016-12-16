@@ -138,14 +138,14 @@ public: // Methods
 	{
 		self_observer = d_.finalize( this );
 		shrink_observers(); // Optional
-		x_1_ = q_1_ = d_.q( tQ );
+		x_1_ = q_1_ = d_.qs( tQ );
 	}
 
 	// Initialize Quadratic Coefficient
 	void
 	init2()
 	{
-		x_2_ = one_half * d_.q1( tQ );
+		x_2_ = one_half * d_.qf1( tQ );
 	}
 
 	// Initialize Event in Queue

@@ -127,7 +127,7 @@ public: // Methods
 	void
 	init0()
 	{
-		x_0_ = q_0_ = f_( tQ );
+		x_0_ = q_0_ = f_.vs( tQ );
 		set_qTol();
 	}
 
@@ -136,14 +136,14 @@ public: // Methods
 	init1()
 	{
 		shrink_observers(); // Optional
-		x_1_ = q_1_ = f_.d1( tQ );
+		x_1_ = q_1_ = f_.dc1( tQ );
 	}
 
 	// Initialize Quadratic Coefficient
 	void
 	init2()
 	{
-		x_2_ = one_half * f_.d2( tQ );
+		x_2_ = one_half * f_.dc2( tQ );
 	}
 
 	// Initialize Event in Queue

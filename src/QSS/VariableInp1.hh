@@ -109,7 +109,7 @@ public: // Methods
 	void
 	init0()
 	{
-		x_0_ = q_0_ = f_( tQ );
+		x_0_ = q_0_ = f_.vs( tQ );
 		set_qTol();
 	}
 
@@ -118,7 +118,7 @@ public: // Methods
 	init1()
 	{
 		shrink_observers(); // Optional
-		x_1_ = f_.d1( tQ );
+		x_1_ = f_.df1( tQ );
 	}
 
 	// Initialize Event in Queue
