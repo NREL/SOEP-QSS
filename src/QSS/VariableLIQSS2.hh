@@ -34,7 +34,7 @@ public: // Creation
 
 public: // Properties
 
-	// Order of QSS Method
+	// Order of Method
 	int
 	order() const
 	{
@@ -114,7 +114,7 @@ public: // Properties
 
 public: // Methods
 
-	// Initialize Constant Term
+	// Initialize Constant Term to Given Value
 	void
 	init0( Value const x )
 	{
@@ -180,9 +180,7 @@ public: // Methods
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
 		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';
-		for ( Variable * observer : observers() ) { // Advance (other) observers
-			observer->advance( tQ );
-		}
+		advance_observers();
 	}
 
 	// Advance Simultaneous Trigger to Time tE and Requantize: Step 0
@@ -192,13 +190,14 @@ public: // Methods
 		Time const tDel( ( tQ = tE ) - tX );
 		x_0_ = qc_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 		set_qTol();
+		tX = tE;
 	}
 
 	// Advance Simultaneous Trigger to Time tE and Requantize: Step 1
 	void
 	advance1()
 	{
-		x_1_ = q_1_ = d_.x( tQ ); // Continuous rep used to reduce impact of cyclic dependency: Neutral initialization
+		x_1_ = q_1_ = d_.x( tE ); // Continuous rep used to reduce impact of cyclic dependency: Neutral initialization
 	}
 
 	// Advance Simultaneous Trigger in LIQSS Variable to Time tE and Requantize: Step 2
@@ -207,9 +206,8 @@ public: // Methods
 	{ // Call before advance2 since it alters q_0_
 		if ( self_observer ) {
 			advance_x(); // Continuous rep used to reduce impact of cyclic dependency
-			tX = tE;
 		} else {
-			x_2_ = one_half * d_.x1( tX = tE ); // Continuous rep used to reduce impact of cyclic dependency
+			x_2_ = one_half * d_.x1( tE ); // Continuous rep used to reduce impact of cyclic dependency
 			q_0_ += signum( x_2_ ) * qTol;
 		}
 	}
@@ -247,6 +245,7 @@ private: // Methods
 	{
 		assert( tX <= tQ );
 		tE = ( x_2_ != 0.0 ? tQ + std::sqrt( qTol / std::abs( x_2_ ) ) : infinity );
+		if ( dt_max != infinity ) tE = std::min( tE, tQ + dt_max );
 		if ( ( inflection_steps ) && ( x_2_ != 0.0 ) && ( signum( x_1_ ) != signum( x_2_ ) ) ) {
 			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
 			if ( tQ < tI ) tE = std::min( tE, tI );
@@ -279,6 +278,7 @@ private: // Methods
 				tE = ( tMinQ == infinity ? infinity : tX + tMinQ );
 			}
 		}
+		if ( dt_max != infinity ) tE = std::min( tE, tX + dt_max );
 		if ( ( inflection_steps ) && ( x_2_ != 0.0 ) && ( signum( x_1_ ) != signum( x_2_ ) ) && ( signum( x_1_ ) == signum( q_1_ ) ) ) {
 			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
 			if ( tX < tI ) tE = std::min( tE, tI );

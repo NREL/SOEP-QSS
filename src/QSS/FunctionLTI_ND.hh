@@ -109,7 +109,7 @@ public: // Properties
 		return dtn_inv_sq_ * ( qn( t + dtn_ ) - ( 2.0 * qn( t ) ) + qn( t - dtn_ ) );
 	}
 
-	// Quantized Forward-Difference Sequential Value at Time t
+	// Quantized Sequential Value at Time t
 	Value
 	qs( Time const t ) const
 	{
@@ -162,6 +162,28 @@ public: // Methods
 	add( Coefficient const c0 )
 	{
 		c0_ = c0;
+		return *this;
+	}
+
+	// Add a Variable
+	FunctionLTI_ND &
+	add( Variable * x )
+	{
+		assert( c_.size() == x_.size() );
+		c_.push_back( 1.0 );
+		x_.push_back( x );
+		assert( c_.size() == x_.size() );
+		return *this;
+	}
+
+	// Add a Coefficient + Variable
+	FunctionLTI_ND &
+	add( Variable & x )
+	{
+		assert( c_.size() == x_.size() );
+		c_.push_back( 1.0 );
+		x_.push_back( &x );
+		assert( c_.size() == x_.size() );
 		return *this;
 	}
 
@@ -251,7 +273,7 @@ public: // Methods
 //		std::stable_sort( p.begin(), p.end(), [&]( size_type i, size_type j ){ return x_[ i ]->order() < x_[ j ]->order() } );
 //		...
 
-		// Add variables as observer of owning variable
+		// Add variables as observees of self variable
 		bool self_observer( false );
 		for ( Variable * x : x_ ) {
 			if ( x == v ) {

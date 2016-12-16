@@ -13,7 +13,6 @@
 // C++ Headers
 #include <cassert>
 #include <cmath>
-#include <vector>
 
 // Linear Time-Invariant Function
 template< typename V > // Template to avoid cyclic inclusion with Variable
@@ -89,7 +88,7 @@ public: // Properties
 		return dtn_inv_sq_ * ( qn( t + dtn_ ) - ( 2.0 * qn( t ) ) + qn( t - dtn_ ) );
 	}
 
-	// Quantized Forward-Difference Sequential Value at Time t
+	// Quantized Sequential Value at Time t
 	Value
 	qs( Time const t ) const
 	{
@@ -230,7 +229,7 @@ public: // Properties
 
 public: // Methods
 
-	// Set Variables
+	// Set Variable
 	void
 	var( Variable & y )
 	{
@@ -242,10 +241,8 @@ public: // Methods
 	finalize( Variable * v )
 	{
 		assert( v != nullptr );
-
-		// Add variables as observer of owning variable
-		y_->add_observer( v );
-		return true;
+		assert( v == y_ );
+		return true; // Self-observer
 	}
 
 	// Finalize Function Representation

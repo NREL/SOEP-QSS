@@ -1,30 +1,29 @@
-#ifndef QSS_VariableQSS3_hh_INCLUDED
-#define QSS_VariableQSS3_hh_INCLUDED
+#ifndef QSS_VariableInp3_hh_INCLUDED
+#define QSS_VariableInp3_hh_INCLUDED
 
-// QSS3 Variable
+// QSS Input Variable with Quantization Order 3
 
 // QSS Headers
 #include <QSS/Variable.hh>
 #include <QSS/globals.hh>
 
-// QSS3 Variable
+// QSS Input Variable with Quantization Order 3
 template< template< typename > typename F >
-class VariableQSS3 final : public Variable
+class VariableInp3 final : public Variable
 {
 
 public: // Types
 
 	using Value = Variable::Value;
 	using Time = Variable::Time;
-	template< typename V > using Function = F< V >;
-	using Derivative = Function< Variable >;
-	using Coefficient = typename Derivative::Coefficient;
+	using Function = F< Variable >;
+	using Coefficient = typename Function::Coefficient;
 
 public: // Creation
 
 	// Constructor
 	explicit
-	VariableQSS3(
+	VariableInp3(
 	 std::string const & name,
 	 Value const aTol = 1.0e-6,
 	 Value const rTol = 1.0e-6
@@ -117,27 +116,27 @@ public: // Properties
 		return two * q_2_;
 	}
 
-	// Derivative Function
-	Derivative const &
-	d() const
+	// Function
+	Function const &
+	f() const
 	{
-		return d_;
+		return f_;
 	}
 
-	// Derivative Function
-	Derivative &
-	d()
+	// Function
+	Function &
+	f()
 	{
-		return d_;
+		return f_;
 	}
 
 public: // Methods
 
-	// Initialize Constant Term to Given Value
+	// Initialize Constant Term
 	void
-	init0( Value const x )
+	init0()
 	{
-		x_0_ = q_0_ = x;
+		x_0_ = q_0_ = f_( tQ );
 		set_qTol();
 	}
 
@@ -145,30 +144,29 @@ public: // Methods
 	void
 	init1()
 	{
-		self_observer = d_.finalize( this );
 		shrink_observers(); // Optional
-		x_1_ = q_1_ = d_.q( tQ );
+		x_1_ = q_1_ = f_.d1( tQ );
 	}
 
 	// Initialize Quadratic Coefficient
 	void
 	init2()
 	{
-		x_2_ = q_2_ = one_half * d_.q1( tQ );
+		x_2_ = q_2_ = one_half * f_.d2( tQ );
 	}
 
 	// Initialize Cubic Coefficient
 	void
 	init3()
 	{
-		x_3_ = one_sixth * d_.q2( tQ );
+		x_3_ = one_sixth * f_.d3( tQ );
 	}
 
 	// Initialize Event in Queue
 	void
 	init_event()
 	{
-		set_tE_aligned();
+		set_tE();
 		event( events.add( tE, this ) );
 		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t+" << q_2_ << "*t^2 quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2+" << x_3_ << "*t^3 internal   tE=" << tE << '\n';
 	}
@@ -185,19 +183,12 @@ public: // Methods
 	void
 	advance()
 	{
-		Time const tDel( ( tQ = tE ) - tX );
-		q_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
+		x_0_ = q_0_ = f_.vs( tX = tQ = tE );
 		set_qTol();
-		if ( self_observer ) {
-			x_0_ = q_0_;
-			x_1_ = q_1_ = d_.qs( tE );
-			x_2_ = q_2_ = one_half * d_.qc1( tE );
-			x_3_ = one_sixth * d_.qc2( tX = tE );
-		} else {
-			q_1_ = x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_ * tDel ) ) * tDel );
-			q_2_ = x_2_ + ( three * x_3_ * tDel );
-		}
-		set_tE_aligned();
+		x_1_ = q_1_ = f_.dc1( tE );
+		x_2_ = q_2_ = one_half * f_.dc2( tE );
+		x_3_ = one_sixth * f_.dc3( tX = tE );
+		set_tE();
 		event( events.shift( tE, event() ) );
 		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t+" << q_2_ << "*t^2 quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2+" << x_3_ << "*t^3 internal   tE=" << tE << '\n';
 		advance_observers();
@@ -207,58 +198,39 @@ public: // Methods
 	void
 	advance0()
 	{
-		Time const tDel( ( tQ = tE ) - tX );
-		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
+		x_0_ = q_0_ = f_.vs( tX = tQ = tE );
 		set_qTol();
-		tX = tE;
 	}
 
 	// Advance Simultaneous Trigger to Time tE and Requantize: Step 1
 	void
 	advance1()
 	{
-		x_1_ = q_1_ = d_.qs( tE );
+		x_1_ = q_1_ = f_.dc1( tE );
 	}
 
 	// Advance Simultaneous Trigger to Time tE and Requantize: Step 2
 	void
 	advance2()
 	{
-		x_2_ = q_2_ = one_half * d_.qc1( tE );
+		x_2_ = q_2_ = one_half * f_.dc2( tE );
 	}
 
 	// Advance Simultaneous Trigger to Time tE and Requantize: Step 3
 	void
 	advance3()
 	{
-		x_3_ = one_sixth * d_.qc2( tE );
-		set_tE_aligned();
+		x_3_ = one_sixth * f_.dc3( tE );
+		set_tE();
 		event( events.shift( tE, event() ) );
 		if ( diag ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t+" << q_2_ << "*t^2 quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2+" << x_3_ << "*t^3 internal   tE=" << tE << '\n';
-	}
-
-	// Advance Observer to Time t
-	void
-	advance( Time const t )
-	{
-		assert( ( tX <= t ) && ( t <= tE ) );
-		if ( tX < t ) { // Could observe multiple variables with simultaneous triggering
-			Time const tDel( t - tX );
-			x_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
-			x_1_ = d_.qs( t );
-			x_2_ = one_half * d_.qc1( t );
-			x_3_ = one_sixth * d_.qc2( tX = t );
-			set_tE_unaligned();
-			event( events.shift( tE, event() ) );
-			if ( diag ) std::cout << "  " << name << '(' << t << ')' << " = " << q_0_ << "+" << q_1_ << "*t+" << q_2_ << "*t^2 quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2+" << x_3_ << "*t^3 internal   tE=" << tE << '\n';
-		}
 	}
 
 private: // Methods
 
 	// Set End Time: Quantized and Continuous Aligned
 	void
-	set_tE_aligned()
+	set_tE()
 	{
 		assert( tX <= tQ );
 		tE = ( x_3_ != 0.0 ? tQ + std::cbrt( qTol / std::abs( x_3_ ) ) : infinity );
@@ -269,39 +241,11 @@ private: // Methods
 		}
 	}
 
-	// Set End Time: Quantized and Continuous Unaligned
-	void
-	set_tE_unaligned()
-	{
-		assert( tQ <= tX );
-		Time const tXQ( tX - tQ );
-		Value const d0( x_0_ - ( q_0_ + ( q_1_ + ( q_2_ * tXQ ) ) * tXQ ) );
-		Value const d1( x_1_ - ( q_1_ + ( two * q_2_ * tXQ ) ) );
-		Value const d2( x_2_ - q_2_ );
-		if ( ( x_3_ >= 0.0 ) && ( d2 >= 0.0 ) && ( d1 >= 0.0 ) ) { // Only need to check +qTol
-			Time const tPosQ( min_root_cubic( x_3_, d2, d1, d0 - qTol ) );
-			tE = ( tPosQ == infinity ? infinity : tX + tPosQ );
-		} else if ( ( x_3_ <= 0.0 ) && ( d2 <= 0.0 ) && ( d1 <= 0.0 ) ) { // Only need to check -qTol
-			Time const tNegQ( min_root_cubic( x_3_, d2, d1, d0 + qTol ) );
-			tE = ( tNegQ == infinity ? infinity : tX + tNegQ );
-		} else { // Check +qTol and -qTol
-			Time const tPosQ( min_root_cubic( x_3_, d2, d1, d0 - qTol ) );
-			Time const tNegQ( min_root_cubic( x_3_, d2, d1, d0 + qTol ) );
-			Time const tMinQ( std::min( tPosQ, tNegQ ) );
-			tE = ( tMinQ == infinity ? infinity : tX + tMinQ );
-		}
-		if ( dt_max != infinity ) tE = std::min( tE, tX + dt_max );
-		if ( ( inflection_steps ) && ( x_3_ != 0.0 ) && ( signum( x_2_ ) != signum( x_3_ ) ) && ( signum( x_2_ ) == signum( q_2_ ) ) ) {
-			Time const tI( tX - ( x_2_ / ( three * x_3_ ) ) );
-			if ( tX < tI ) tE = std::min( tE, tI );
-		}
-	}
-
 private: // Data
 
 	Value x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Continuous rep coefficients
 	Value q_0_{ 0.0 }, q_1_{ 0.0 }, q_2_{ 0.0 }; // Quantized rep coefficients
-	Derivative d_; // Derivative function
+	Function f_; // Value function
 
 };
 

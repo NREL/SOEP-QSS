@@ -1,30 +1,29 @@
-#ifndef QSS_VariableQSS1_hh_INCLUDED
-#define QSS_VariableQSS1_hh_INCLUDED
+#ifndef QSS_VariableInp1_hh_INCLUDED
+#define QSS_VariableInp1_hh_INCLUDED
 
-// QSS1 Variable
+// QSS Input Variable with Quantization Order 1
 
 // QSS Headers
 #include <QSS/Variable.hh>
 #include <QSS/globals.hh>
 
-// QSS1 Variable
+// QSS Input Variable with Quantization Order 1
 template< template< typename > typename F >
-class VariableQSS1 final : public Variable
+class VariableInp1 final : public Variable
 {
 
 public: // Types
 
 	using Value = Variable::Value;
 	using Time = Variable::Time;
-	template< typename V > using Function = F< V >;
-	using Derivative = Function< Variable >;
-	using Coefficient = typename Derivative::Coefficient;
+	using Function = F< Variable >;
+	using Coefficient = typename Function::Coefficient;
 
 public: // Creation
 
 	// Constructor
 	explicit
-	VariableQSS1(
+	VariableInp1(
 	 std::string const & name,
 	 Value const aTol = 1.0e-6,
 	 Value const rTol = 1.0e-6
@@ -81,27 +80,27 @@ public: // Properties
 		return q_0_;
 	}
 
-	// Derivative Function
-	Derivative const &
-	d() const
+	// Function
+	Function const &
+	f() const
 	{
-		return d_;
+		return f_;
 	}
 
-	// Derivative Function
-	Derivative &
-	d()
+	// Function
+	Function &
+	f()
 	{
-		return d_;
+		return f_;
 	}
 
 public: // Methods
 
-	// Initialize Constant Term to Given Value
+	// Initialize Constant Term
 	void
-	init0( Value const x )
+	init0()
 	{
-		x_0_ = q_0_ = x;
+		x_0_ = q_0_ = f_( tQ );
 		set_qTol();
 	}
 
@@ -109,16 +108,15 @@ public: // Methods
 	void
 	init1()
 	{
-		self_observer = d_.finalize( this );
 		shrink_observers(); // Optional
-		x_1_ = d_.q( tQ );
+		x_1_ = f_.d1( tQ );
 	}
 
 	// Initialize Event in Queue
 	void
 	init_event()
 	{
-		set_tE_aligned();
+		set_tE();
 		event( events.add( tE, this ) );
 		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 	}
@@ -135,13 +133,10 @@ public: // Methods
 	void
 	advance()
 	{
-		q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
+		x_0_ = q_0_ = f_.vs( tX = tQ = tE );
 		set_qTol();
-		if ( self_observer ) {
-			x_0_ = q_0_;
-			x_1_ = d_.q( tX = tE );
-		}
-		set_tE_aligned();
+		x_1_ = f_.df1( tE );
+		set_tE();
 		event( events.shift( tE, event() ) );
 		if ( diag ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 		advance_observers();
@@ -151,63 +146,36 @@ public: // Methods
 	void
 	advance0()
 	{
-		x_0_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
+		x_0_ = q_0_ = f_.vs( tX = tQ = tE );
 		set_qTol();
-		tX = tE;
 	}
 
 	// Advance Simultaneous Trigger to Time tE and Requantize: Step 1
 	void
 	advance1()
 	{
-		x_1_ = d_.q( tE );
-		set_tE_aligned();
+		x_1_ = f_.df1( tE );
+		set_tE();
 		event( events.shift( tE, event() ) );
 		if ( diag ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
-	}
-
-	// Advance Observer to Time t
-	void
-	advance( Time const t )
-	{
-		assert( ( tX <= t ) && ( t <= tE ) );
-		if ( tX < t ) { // Could observe multiple variables with simultaneous triggering
-			x_0_ = x_0_ + ( x_1_ * ( t - tX ) );
-			x_1_ = d_.q( tX = t );
-			set_tE_unaligned();
-			event( events.shift( tE, event() ) );
-			if ( diag ) std::cout << "  " << name << '(' << t << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
-		}
 	}
 
 private: // Methods
 
 	// Set End Time: Quantized and Continuous Aligned
 	void
-	set_tE_aligned()
+	set_tE()
 	{
 		assert( tX <= tQ );
 		tE = ( x_1_ != 0.0 ? tQ + ( qTol / std::abs( x_1_ ) ) : infinity );
 		if ( dt_max != infinity ) tE = std::min( tE, tQ + dt_max );
 	}
 
-	// Set End Time: Quantized and Continuous Unaligned
-	void
-	set_tE_unaligned()
-	{
-		assert( tQ <= tX );
-		tE =
-		 ( x_1_ > 0.0 ? tX + ( ( ( q_0_ - x_0_ ) + qTol ) / x_1_ ) :
-		 ( x_1_ < 0.0 ? tX + ( ( ( q_0_ - x_0_ ) - qTol ) / x_1_ ) :
-		 infinity ) );
-		if ( dt_max != infinity ) tE = std::min( tE, tX + dt_max );
-	}
-
 private: // Data
 
 	Value x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
 	Value q_0_{ 0.0 }; // Quantized rep coefficients
-	Derivative d_; // Derivative function
+	Function f_; // Value function
 
 };
 

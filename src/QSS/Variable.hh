@@ -83,7 +83,7 @@ protected: // Assignment
 
 public: // Properties
 
-	// Order of QSS Method
+	// Order of Method
 	virtual
 	int
 	order() const = 0;
@@ -178,6 +178,14 @@ public: // Properties
 
 public: // Methods
 
+	// Set Max Time Step
+	void
+	set_dt_max( Time const dt )
+	{
+		assert( dt > 0.0 );
+		dt_max = dt;
+	}
+
 	// Add Observer
 	void
 	add_observer( Variable & v )
@@ -199,10 +207,17 @@ public: // Methods
 		observers_.shrink_to_fit();
 	}
 
-	// Initialize Constant Term
+	// Initialize Constant Term in Input Variable
 	virtual
 	void
-	init0( Value const x ) = 0;
+	init0()
+	{}
+
+	// Initialize Constant Term to Given Value
+	virtual
+	void
+	init0( Value const x )
+	{}
 
 	// Initialize Linear Coefficient in LIQSS Variable
 	virtual
@@ -280,11 +295,11 @@ public: // Methods
 	advance3()
 	{}
 
-	// Advance Simultaneous Trigger to Time tE and Requantize: Step Observers
+	// Advance non-Self Observers to New Time tQ
 	void
 	advance_observers()
 	{
-		for ( Variable * observer : observers() ) { // Advance (other) observers
+		for ( Variable * observer : observers() ) {
 			observer->advance( tQ );
 		}
 	}
@@ -292,7 +307,8 @@ public: // Methods
 	// Advance Observer to Time t
 	virtual
 	void
-	advance( Time const t ) = 0;
+	advance( Time const t )
+	{}
 
 public: // Data
 
@@ -303,6 +319,7 @@ public: // Data
 	Time tQ{ 0.0 }; // Quantized time range begin
 	Time tX{ 0.0 }; // Continuous time range begin
 	Time tE{ infinity }; // Time range end: tQ <= tE and tX <= tE
+	Time dt_max{ infinity }; // Time step max
 	bool self_observer{ false }; // Variable appears in its derivative?
 
 protected: // Data
