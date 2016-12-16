@@ -11,6 +11,7 @@
 double const two( 2.0 );
 double const three( 3.0 );
 double const four( 4.0 );
+double const six( 6.0 );
 double const one_half( 0.5 );
 double const one_third( 1.0 / 3.0 );
 double const one_fourth( 0.25 );

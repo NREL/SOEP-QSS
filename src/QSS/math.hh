@@ -13,6 +13,7 @@
 extern double const two;
 extern double const three;
 extern double const four;
+extern double const six;
 extern double const one_half;
 extern double const one_third;
 extern double const one_fourth;
