@@ -207,6 +207,18 @@ public: // Methods
 		observers_.shrink_to_fit();
 	}
 
+	// Initialize Input Variable
+	virtual
+	void
+	init()
+	{}
+
+	// Initialize QSS Variable
+	virtual
+	void
+	init( Value const x )
+	{}
+
 	// Initialize Constant Term in Input Variable
 	virtual
 	void

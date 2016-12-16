@@ -97,6 +97,15 @@ public: // Properties
 
 public: // Methods
 
+	// Initialize QSS Variable
+	void
+	init( Value const x )
+	{
+		init0( x );
+		init1_LIQSS();
+		init_event();
+	}
+
 	// Initialize Constant Term to Given Value
 	void
 	init0( Value const x )

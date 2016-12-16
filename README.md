@@ -171,6 +171,11 @@ Performance findings and observations:
     There is some overhead in determining whether a variable qualifies.
     Testing so far doesn't show a significant benefit for this optimization but it should be reevaluated with real-world cases where simultaneous triggering is common.
 
+### Performance Notes
+
+* The Variable hierarchy (and thus its virtual calls) can be eliminated by the use of variadic templates and tuples in the Function classes.
+  This is probably a worthwhile refactor but should wait for the performance test suite so we can gauge its benefit.
+
 ## Testing
 
 * Case runs are being compared with results from [Qss Solver](https://sourceforge.net/projects/qssengine/) and [Ptolemy](http://ptolemy.eecs.berkeley.edu/) for now.

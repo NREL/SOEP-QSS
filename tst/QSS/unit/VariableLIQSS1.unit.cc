@@ -13,10 +13,8 @@
 TEST( VariableLIQSS1Test, Basic )
 {
 	VariableLIQSS1< FunctionLTI_LIQSS > x1( "x1" );
-	x1.init0( 2.5 );
 	x1.d().add( 12.0 ).add( 2.0, x1 );
-	x1.init1_LIQSS();
-	x1.init_event();
+	x1.init( 2.5 );
 	EXPECT_EQ( 1.0e-6, x1.aTol );
 	EXPECT_EQ( 1.0e-6, x1.rTol );
 	EXPECT_DOUBLE_EQ( 2.5 + 2.5e-6, x1.q( 1.0e-7 ) );
@@ -29,10 +27,8 @@ TEST( VariableLIQSS1Test, Basic )
 	EXPECT_EQ( x1_tE, x1.tQ );
 
 	VariableLIQSS1< FunctionLTI_LIQSS > x2( "x2", 1.0e-3, 1.0e-4 );
-	x2.init0( 2.5 );
 	x2.d().add( 12.0 ).add( 2.0, x2 );
-	x2.init1_LIQSS();
-	x2.init_event();
+	x2.init( 2.5 );
 	EXPECT_EQ( 1.0e-3, x2.aTol );
 	EXPECT_EQ( 1.0e-4, x2.rTol );
 	EXPECT_EQ( 0.0, x2.tQ );

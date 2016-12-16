@@ -16,11 +16,7 @@ TEST( VariableInp3Test, Basic )
 	VariableInp3< Function_sin > u1( "u1" );
 	u1.set_dt_max( 1.0 );
 	u1.f().c( 0.05 ).s( 0.5 );
-	u1.init0();
-	u1.init1();
-	u1.init2();
-	u1.init3();
-	u1.init_event();
+	u1.init();
 	EXPECT_EQ( 1.0e-6, u1.aTol );
 	EXPECT_EQ( 1.0e-6, u1.rTol );
 	EXPECT_EQ( 0.0, u1.f()( 0.0 ) );

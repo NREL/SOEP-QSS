@@ -132,6 +132,17 @@ public: // Properties
 
 public: // Methods
 
+	// Initialize Input Variable
+	void
+	init()
+	{
+		init0();
+		init1();
+		init2();
+		init3();
+		init_event();
+	}
+
 	// Initialize Constant Term
 	void
 	init0()
