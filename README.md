@@ -7,7 +7,8 @@ This is a stand-alone QSS solver being developed for integration into JModelica 
 Currently the code has:
 * QSS1/2/3 and LIQSS1/2 solvers.
 * Linear and nonlinear derivative function support.
-* Numeric differentiation option.
+* Input variables/functions.
+* Numeric differentiation support.
 * A simple "baseline" event queue built on `std::multimap`.
 * Simultaneous requantization event support.
 * A master algorithm with sampling and diagnostic output controls.
@@ -24,10 +25,10 @@ Planned development in anticipated sequence order are:
 * Discrete-valued variables (zero-crossing functions).
 * Vector-valued variables.
 * Numerical bulletproofing:
-  * Non-positive time steps or wrong root returned from root solvers
-* Extended precision time handling for large time span simulation
-* Higher performance event queue
-* Parallelization and vectorization
+  * Non-positive time steps or wrong root returned from root solvers.
+* Extended precision time handling for large time span simulation.
+* Higher performance event queue.
+* Parallelization and vectorization.
 
 ## Goals
 
@@ -42,10 +43,10 @@ The design concepts are still emerging.
 The basic constituents of a fast QSS solver seem to be:
 * Variables for each QSS method (QSS1/2/3, LIQSS1/2/3, ...).
 * Functions for derivative representation: linear and nonlinear.
-* Input functions.
+* Input variables/functions.
 * Event queue to find the next "trigger" variable to advance to its requantization time.
 * Continuous and discrete valued variables.
-* Algebraic relationships between variables.
+* Algebraic relationships between variables including handling of algebraic loops.
 
 Notes:
 * For efficiency variables handle their own integration and quantization operations so we don't consider those as separate entities.
@@ -64,6 +65,7 @@ Notes:
     There are different precision impacts of each approach but with bulletproofing against small negative time steps due to finite precision there is probably no benefit to shifting the continuous representation when the trajectory doesn't change.
 * Handles self-observer continuous representation updates specially instead of as part of general observer updates for efficiency:
   * Assigns continuous representation coefficients from the corresponding quantized representation during requantization instead of recomputing them.
+* Input variable classes fit under the Variable hierarchy so that they can be processed along with QSS state variables.
 
 ### Time Steps
 
@@ -82,6 +84,19 @@ Note that this differs from the literature.
 In some papers by the original QSS authors there is an additional time step recommended at the point when the QSS order derivative is zero.
 As noted by David Lorenzetti this is confusing because the Nth derivative of the continuous representation in a QSS order N method is a constant.
 Nevertheless, there may be some room for alternative approaches to improving QSS convergence.
+
+#### Deactivation
+
+The QSS time stepping logic looks at the magnitude of the highest order continuous representation derivative to set the next trigger time based on when the quantized and continuous representations will diverge by the selected quantum threshold.
+This does not always give a good indication of the divergence of the quantized representation from the actual/analytical value of QSS (ODE) state variables or input variables.
+A trivial example is f(t) = t<sup>n</sup> where the value and all derivatives other than the n<sup>th</sup> are zero, so only an n<sup>th</sup> order method will avoid setting the next trigger time to infinity.
+For a QSS variable that is "isolated" (does not appear in many or any other variable's derivatives) or any input variable an artificially large time step causes the variable to "deactivate", becoming stuck in a fixed quantized and continuous representation.
+
+This appears to be a fairly serious flaw in the QSS approach.
+An elegant, robust and efficient solution to this is not yet obvious.
+As a backstop solution a max time step field was added to the implementation and its use is strongly suggested for input and isolated QSS variables.
+In a production implementation it would probably make sense for each function class to provide an API to set a max time step that makes sense for that function.
+Finding a better, more automated solution would be a worthwhile investigation.
 
 ### LIQSS
 
@@ -114,7 +129,9 @@ Even when using the continuous representation in the LIQSS derivatives issues re
 ### Function
 
 * Linear functions are provided for QSS and LIQSS solvers.
+* A numeric differentiating linear function is provided for QSS solvers.
 * Sample nonlinear functions are included.
+* Sample input variable functions with analytical and numeric derivatives are included.
 * We'll need a general purpose function approach for the JModelica-generated code: probably a function class that calls back to a provided function.
 
 ## Implementation
@@ -123,11 +140,12 @@ Even when using the continuous representation in the LIQSS derivatives issues re
 
 Higher derivatives are needed for QSS2+ methods.
 These are available analytically for linear functions and we provide them for the nonlinear function examples.
-But in general higher derivatives may not be provided by the model description or via automatic differentiation or may not be available across an FMU interface so we may need some support for numeric differentiation.
-A numeric differentiation variant of the linear function class was built to allow closer emulation of an environment where higher derivatives were not available analytically.
+In general analytical higher derivatives may not be provided by the model description or via automatic differentiation or may not be available across an FMU interface so we need some support for numeric differentiation.
+Numeric differentiation variants of some of the function classes were built to allow emulation of an environment where analytical higher derivatives are not available.
 A simple and fast approach suffices for this purpose:
 * QSS2 does 2-point forward difference differentiation to allow reuse of one derivative evaulation.
 * QSS3 does 2 and 3-point centered difference differentiation to allow reuse of derivative evaluations.
+* Input variables of orders 2 and 3 are handled analogously to the corresponding QSS variable.
 
 A mechanism to specify a per-Variable differentiation time step is provided with defaulting to a global differentiation time step.
 

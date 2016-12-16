@@ -16,6 +16,7 @@
 #include <QSS/Function_NonlinearEx1.hh>
 #include <QSS/Function_NonlinearEx1_ND.hh>
 #include <QSS/Function_sin.hh>
+#include <QSS/Function_sin_ND.hh>
 #include <QSS/globals.hh>
 #include <QSS/math.hh>
 #include <QSS/VariableInp1.hh>
@@ -186,9 +187,8 @@ main()
 	Time t( 0.0 ); // Simulation time
 	Time to( t + dto ); // Sampling time
 	VariableQSS2< FunctionLTI > x1( "x1", 1.0e-4, 0.0 );
-//	VariableInp1< Function_sin > u1( "u1", 1.0e-4, 0.0 );
-//	VariableInp2< Function_sin > u1( "u1", 1.0e-4, 0.0 );
-	VariableInp3< Function_sin > u1( "u1", 1.0e-4, 0.0 );
+	VariableInp2< Function_sin > u1( "u1", 1.0e-4, 0.0 );
+//	VariableInp2< Function_sin_ND > u1( "u1", 1.0e-4, 0.0 );
 	u1.set_dt_max( 0.1 );
 	u1.f().c( 0.05 ).s( 0.5 );
 	x1.init0( 1.0 );

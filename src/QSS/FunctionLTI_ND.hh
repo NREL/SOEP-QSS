@@ -1,7 +1,7 @@
 #ifndef QSS_FunctionLTI_ND_hh_INCLUDED
 #define QSS_FunctionLTI_ND_hh_INCLUDED
 
-// Linear Time-Invariant Function using Numeric Differentiation
+// Linear Time-Invariant Function Using Numeric Differentiation
 
 // QSS Headers
 #include <QSS/globals.hh>
@@ -11,7 +11,7 @@
 //#include <numeric> // std::iota
 #include <vector>
 
-// Linear Time-Invariant Function
+// Linear Time-Invariant Function Using Numeric Differentiation
 template< typename V > // Template to avoid cyclic inclusion with Variable
 class FunctionLTI_ND
 {
@@ -142,17 +142,6 @@ public: // Properties
 	dtn() const
 	{
 		return dtn_;
-	}
-
-	// Set Differentiation Time Step
-	void
-	dtn( Time const dtn )
-	{
-		assert( dtn > 0.0 );
-		dtn_ = dtn;
-		dtn_inv_ = 1.0 / dtn_;
-		dtn_inv_2_ = 0.5 / dtn_;
-		dtn_inv_sq_ = dtn_inv_ * dtn_inv_;
 	}
 
 public: // Methods
@@ -290,6 +279,17 @@ public: // Methods
 	finalize( Variable & v )
 	{
 		return finalize( &v );
+	}
+
+	// Set Differentiation Time Step
+	void
+	dtn( Time const dtn )
+	{
+		assert( dtn > 0.0 );
+		dtn_ = dtn;
+		dtn_inv_ = 1.0 / dtn_;
+		dtn_inv_2_ = 0.5 / dtn_;
+		dtn_inv_sq_ = dtn_inv_ * dtn_inv_;
 	}
 
 public: // Static Data

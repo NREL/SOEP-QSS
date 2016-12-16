@@ -123,17 +123,6 @@ public: // Properties
 		return dtn_;
 	}
 
-	// Set Differentiation Time Step
-	void
-	dtn( Time const dtn )
-	{
-		assert( dtn > 0.0 );
-		dtn_ = dtn;
-		dtn_inv_ = 1.0 / dtn_;
-		dtn_inv_2_ = 0.5 / dtn_;
-		dtn_inv_sq_ = dtn_inv_ * dtn_inv_;
-	}
-
 	// Quantized Values at Time t and at Variable +/- Delta
 	AdvanceSpecsLIQSS1
 	qlu( Time const t, Value const del ) const
@@ -250,6 +239,17 @@ public: // Methods
 	finalize( Variable & v )
 	{
 		return finalize( &v );
+	}
+
+	// Set Differentiation Time Step
+	void
+	dtn( Time const dtn )
+	{
+		assert( dtn > 0.0 );
+		dtn_ = dtn;
+		dtn_inv_ = 1.0 / dtn_;
+		dtn_inv_2_ = 0.5 / dtn_;
+		dtn_inv_sq_ = dtn_inv_ * dtn_inv_;
 	}
 
 private: // Static Methods
