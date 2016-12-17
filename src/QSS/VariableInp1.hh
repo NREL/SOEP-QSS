@@ -176,8 +176,10 @@ private: // Methods
 	set_tE()
 	{
 		assert( tX <= tQ );
+		assert( dt_min <= dt_max );
 		tE = ( x_1_ != 0.0 ? tQ + ( qTol / std::abs( x_1_ ) ) : infinity );
 		if ( dt_max != infinity ) tE = std::min( tE, tQ + dt_max );
+		tE = std::max( tE, tQ + dt_min );
 	}
 
 private: // Data

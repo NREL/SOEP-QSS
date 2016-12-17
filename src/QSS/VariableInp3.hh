@@ -244,8 +244,10 @@ private: // Methods
 	set_tE()
 	{
 		assert( tX <= tQ );
+		assert( dt_min <= dt_max );
 		tE = ( x_3_ != 0.0 ? tQ + std::cbrt( qTol / std::abs( x_3_ ) ) : infinity );
 		if ( dt_max != infinity ) tE = std::min( tE, tQ + dt_max );
+		tE = std::max( tE, tQ + dt_min );
 		if ( ( inflection_steps ) && ( x_3_ != 0.0 ) && ( signum( x_2_ ) != signum( x_3_ ) ) ) {
 			Time const tI( tX - ( x_2_ / ( three * x_3_ ) ) );
 			if ( tQ < tI ) tE = std::min( tE, tI );

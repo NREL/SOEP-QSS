@@ -180,6 +180,14 @@ public: // Methods
 
 	// Set Max Time Step
 	void
+	set_dt_min( Time const dt )
+	{
+		assert( dt >= 0.0 );
+		dt_min = dt;
+	}
+
+	// Set Max Time Step
+	void
 	set_dt_max( Time const dt )
 	{
 		assert( dt > 0.0 );
@@ -331,6 +339,7 @@ public: // Data
 	Time tQ{ 0.0 }; // Quantized time range begin
 	Time tX{ 0.0 }; // Continuous time range begin
 	Time tE{ infinity }; // Time range end: tQ <= tE and tX <= tE
+	Time dt_min{ 0.0 }; // Time step min
 	Time dt_max{ infinity }; // Time step max
 	bool self_observer{ false }; // Variable appears in its derivative?
 
