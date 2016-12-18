@@ -10,11 +10,78 @@
 #include <algorithm>
 #include <cmath>
 
+TEST( MathTest, Sign )
+{
+	EXPECT_EQ( 1.0, sign( 3.0 ) );
+	EXPECT_EQ( -1.0, sign( -5.0 ) );
+	EXPECT_EQ( 1.0, sign( 0.0 ) );
+	EXPECT_EQ( -1.0, sign( -0.0 ) );
+}
+
+TEST( MathTest, Sgn )
+{
+	EXPECT_EQ( 1.0, sgn( 3.0 ) );
+	EXPECT_EQ( -1.0, sgn( -5.0 ) );
+	EXPECT_EQ( 0.0, sgn( 0.0 ) );
+	EXPECT_EQ( 0.0, sgn( -0.0 ) );
+	EXPECT_EQ( 1, sgn( 3 ) );
+	EXPECT_EQ( -1, sgn( -5 ) );
+	EXPECT_EQ( 0, sgn( 0 ) );
+	EXPECT_EQ( 0, sgn( -0 ) );
+}
+
+TEST( MathTest, Signum )
+{
+	EXPECT_EQ( 1, sgn( 3.0 ) );
+	EXPECT_EQ( -1, sgn( -5.0 ) );
+	EXPECT_EQ( 0, sgn( 0.0 ) );
+	EXPECT_EQ( 0, sgn( -0.0 ) );
+	EXPECT_EQ( 1, sgn( 3 ) );
+	EXPECT_EQ( -1, sgn( -5 ) );
+	EXPECT_EQ( 0, sgn( 0 ) );
+	EXPECT_EQ( 0, sgn( -0 ) );
+}
+
+TEST( MathTest, Square )
+{
+	EXPECT_EQ( 9.0, square( 3.0 ) );
+	EXPECT_EQ( 4, square( 2 ) );
+}
+
+TEST( MathTest, Cube )
+{
+	EXPECT_EQ( 27.0, cube( 3.0 ) );
+	EXPECT_EQ( 8, cube( 2 ) );
+}
+
 TEST( MathTest, MinRootQuadratic )
 {
 	EXPECT_DOUBLE_EQ( 2.3228756555322954, min_root_quadratic( -4.0, 8.0, 3.0 ) );
 	EXPECT_DOUBLE_EQ( 2.8708286933869704, min_root_quadratic( -2.0, 4.0, 5.0 ) );
 	EXPECT_DOUBLE_EQ( 5.9221443851123805, min_root_quadratic( -2.0, 11.0, 5.0 ) );
+}
+
+TEST( MathTest, MinRootQuadraticLower )
+{
+	EXPECT_DOUBLE_EQ( 0.32287565553229536, min_root_quadratic_lower( -4.0, -8.0, 3.0 ) );
+	EXPECT_DOUBLE_EQ( 0.87082869338697070, min_root_quadratic_lower( -2.0, -4.0, 5.0 ) );
+	EXPECT_DOUBLE_EQ( 0.42214438511238006, min_root_quadratic_lower( -2.0, -11.0, 5.0 ) );
+	EXPECT_DOUBLE_EQ( 0.0, min_root_quadratic_lower( -2.0, -11.0, -0.001 ) );
+}
+
+TEST( MathTest, MinRootQuadraticUpper )
+{
+	EXPECT_DOUBLE_EQ( 0.32287565553229536, min_root_quadratic_upper( 4.0, 8.0, -3.0 ) );
+	EXPECT_DOUBLE_EQ( 0.87082869338697070, min_root_quadratic_upper( 2.0, 4.0, -5.0 ) );
+	EXPECT_DOUBLE_EQ( 0.42214438511238006, min_root_quadratic_upper( 2.0, 11.0, -5.0 ) );
+	EXPECT_DOUBLE_EQ( 0.0, min_root_quadratic_upper( 2.0, 11.0, 0.001 ) );
+}
+
+TEST( MathTest, MinRootQuadraticBoth )
+{
+	EXPECT_DOUBLE_EQ( 0.5, min_root_quadratic_both( -4.0, 8.0, 3.0, -3.0 ) );
+	EXPECT_DOUBLE_EQ( 0.8708286933869707, min_root_quadratic_both( 2.0, 4.0, 5.0, -5.0 ) );
+	EXPECT_DOUBLE_EQ( 0.5, min_root_quadratic_both( -2.0, 11.0, 5.0, -5.0 ) );
 }
 
 TEST( MathTest, MinRootCubic )

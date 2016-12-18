@@ -110,7 +110,7 @@ public: // Methods
 	void
 	init0( Value const x )
 	{
-		x_0_ = qc_ = q_0_ = x;
+		x_0_ = q_c_ = q_0_ = x;
 		set_qTol();
 	}
 
@@ -141,7 +141,7 @@ public: // Methods
 	void
 	set_qTol()
 	{
-		qTol = std::max( aTol, rTol * std::abs( qc_ ) );
+		qTol = std::max( aTol, rTol * std::abs( q_c_ ) );
 		assert( qTol > 0.0 );
 	}
 
@@ -149,10 +149,10 @@ public: // Methods
 	void
 	advance()
 	{
-		qc_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
+		q_c_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
 		set_qTol();
 		if ( self_observer ) {
-			x_0_ = qc_;
+			x_0_ = q_c_;
 			advance_q();
 			tX = tE;
 		} else {
@@ -168,7 +168,7 @@ public: // Methods
 	void
 	advance0()
 	{
-		x_0_ = qc_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
+		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
 		set_qTol();
 		tX = tE;
 	}
@@ -228,8 +228,8 @@ private: // Methods
 		assert( tQ <= tX );
 		assert( dt_min <= dt_max );
 		tE =
-		 ( x_1_ > 0.0 ? tX + ( ( ( qc_ - x_0_ ) + qTol ) / x_1_ ) :
-		 ( x_1_ < 0.0 ? tX + ( ( ( qc_ - x_0_ ) - qTol ) / x_1_ ) :
+		 ( x_1_ > 0.0 ? tX + ( ( q_c_ + qTol - x_0_ ) / x_1_ ) :
+		 ( x_1_ < 0.0 ? tX + ( ( q_c_ - qTol - x_0_ ) / x_1_ ) :
 		 infinity ) );
 		if ( dt_max != infinity ) tE = std::min( tE, tX + dt_max );
 		tE = std::max( tE, tX ); // Numeric bulletproofing
@@ -276,7 +276,7 @@ private: // Methods
 private: // Data
 
 	Value x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
-	Value qc_{ 0.0 }, q_0_{ 0.0 }; // Quantized rep coefficients
+	Value q_c_{ 0.0 }, q_0_{ 0.0 }; // Quantized rep coefficients
 	Derivative d_; // Derivative function
 
 };

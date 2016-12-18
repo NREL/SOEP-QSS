@@ -253,26 +253,15 @@ private: // Methods
 		assert( dt_min <= dt_max );
 		Value const d0( x_0_ - ( q_0_ + ( q_1_ * ( tX - tQ ) ) ) );
 		Value const d1( x_1_ - q_1_ );
-		if ( d1 >= 0.0 ) {
-			Time const tPosQ( min_root_quadratic( x_2_, d1, d0 - qTol ) );
-			if ( x_2_ >= 0.0 ) { // Only need to check +qTol
-				tE = ( tPosQ == infinity ? infinity : tX + tPosQ );
-			} else {
-				Time const tNegQ( min_root_quadratic( x_2_, d1, d0 + qTol ) );
-				Time const tMinQ( std::min( tPosQ, tNegQ ) );
-				tE = ( tMinQ == infinity ? infinity : tX + tMinQ );
-			}
-		} else { // d1 < 0
-			Time const tNegQ( min_root_quadratic( x_2_, d1, d0 + qTol ) );
-			if ( x_2_ <= 0.0 ) { // Only need to check -qTol
-				tE = ( tNegQ == infinity ? infinity : tX + tNegQ );
-			} else {
-				Time const tPosQ( min_root_quadratic( x_2_, d1, d0 - qTol ) );
-				Time const tMinQ( std::min( tPosQ, tNegQ ) );
-				tE = ( tMinQ == infinity ? infinity : tX + tMinQ );
-			}
+		Time dtX;
+		if ( ( d1 >= 0.0 ) && ( x_2_ >= 0.0 ) ) { // Upper boundary crossing
+			dtX = min_root_quadratic_upper( x_2_, d1, d0 - qTol );
+		} else if ( ( d1 <= 0.0 ) && ( x_2_ <= 0.0 ) ) { // Lower boundary crossing
+			dtX = min_root_quadratic_lower( x_2_, d1, d0 + qTol );
+		} else { // Both boundaries can have crossings
+			dtX = min_root_quadratic_both( x_2_, d1, d0 + qTol, d0 - qTol );
 		}
-		if ( dt_max != infinity ) tE = std::min( tE, tX + dt_max );
+		tE = ( dtX == infinity ? infinity : tX + std::min( dtX, dt_max ) );
 		if ( ( inflection_steps ) && ( x_2_ != 0.0 ) && ( signum( x_1_ ) != signum( x_2_ ) ) && ( signum( x_1_ ) == signum( q_1_ ) ) ) {
 			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
 			if ( tX < tI ) tE = std::min( tE, tI );

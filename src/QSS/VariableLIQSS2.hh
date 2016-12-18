@@ -128,7 +128,7 @@ public: // Methods
 	void
 	init0( Value const x )
 	{
-		x_0_ = qc_ = q_0_ = x;
+		x_0_ = q_c_ = q_0_ = x;
 		set_qTol();
 	}
 
@@ -168,7 +168,7 @@ public: // Methods
 	void
 	set_qTol()
 	{
-		qTol = std::max( aTol, rTol * std::abs( qc_ ) );
+		qTol = std::max( aTol, rTol * std::abs( q_c_ ) );
 		assert( qTol > 0.0 );
 	}
 
@@ -177,10 +177,10 @@ public: // Methods
 	advance()
 	{
 		Time const tDel( ( tQ = tE ) - tX );
-		qc_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		q_c_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 		set_qTol();
 		if ( self_observer ) {
-			x_0_ = qc_;
+			x_0_ = q_c_;
 			advance_q();
 			tX = tE;
 		} else {
@@ -198,7 +198,7 @@ public: // Methods
 	advance0()
 	{
 		Time const tDel( ( tQ = tE ) - tX );
-		x_0_ = qc_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		x_0_ = q_c_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 		set_qTol();
 		tX = tE;
 	}
@@ -270,28 +270,17 @@ private: // Methods
 	{
 		assert( tQ <= tX );
 		assert( dt_min <= dt_max );
-		Value const d0( x_0_ - ( qc_ + ( q_1_ * ( tX - tQ ) ) ) );
+		Value const d0( x_0_ - ( q_c_ + ( q_1_ * ( tX - tQ ) ) ) );
 		Value const d1( x_1_ - q_1_ );
-		if ( d1 >= 0.0 ) {
-			Time const tPosQ( min_root_quadratic( x_2_, d1, d0 - qTol ) );
-			if ( x_2_ >= 0.0 ) { // Only need to check +qTol
-				tE = ( tPosQ == infinity ? infinity : tX + tPosQ );
-			} else {
-				Time const tNegQ( min_root_quadratic( x_2_, d1, d0 + qTol ) );
-				Time const tMinQ( std::min( tPosQ, tNegQ ) );
-				tE = ( tMinQ == infinity ? infinity : tX + tMinQ );
-			}
-		} else { // d1 < 0
-			Time const tNegQ( min_root_quadratic( x_2_, d1, d0 + qTol ) );
-			if ( x_2_ <= 0.0 ) { // Only need to check -qTol
-				tE = ( tNegQ == infinity ? infinity : tX + tNegQ );
-			} else {
-				Time const tPosQ( min_root_quadratic( x_2_, d1, d0 - qTol ) );
-				Time const tMinQ( std::min( tPosQ, tNegQ ) );
-				tE = ( tMinQ == infinity ? infinity : tX + tMinQ );
-			}
+		Time dtX;
+		if ( ( d1 >= 0.0 ) && ( x_2_ >= 0.0 ) ) { // Upper boundary crossing
+			dtX = min_root_quadratic_upper( x_2_, d1, d0 - qTol );
+		} else if ( ( d1 <= 0.0 ) && ( x_2_ <= 0.0 ) ) { // Lower boundary crossing
+			dtX = min_root_quadratic_lower( x_2_, d1, d0 + qTol );
+		} else { // Both boundaries can have crossings
+			dtX = min_root_quadratic_both( x_2_, d1, d0 + qTol, d0 - qTol );
 		}
-		if ( dt_max != infinity ) tE = std::min( tE, tX + dt_max );
+		tE = ( dtX == infinity ? infinity : tX + std::min( dtX, dt_max ) );
 		if ( ( inflection_steps ) && ( x_2_ != 0.0 ) && ( signum( x_1_ ) != signum( x_2_ ) ) && ( signum( x_1_ ) == signum( q_1_ ) ) ) {
 			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
 			if ( tX < tI ) tE = std::min( tE, tI );
@@ -342,7 +331,7 @@ private: // Methods
 private: // Data
 
 	Value x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous rep coefficients
-	Value qc_{ 0.0 }, q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized rep coefficients
+	Value q_c_{ 0.0 }, q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized rep coefficients
 	Derivative d_; // Derivative function
 
 };

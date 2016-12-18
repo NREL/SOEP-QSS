@@ -8,6 +8,7 @@
 #include <limits>
 
 // Globals
+double const zero( 0.0 );
 double const two( 2.0 );
 double const three( 3.0 );
 double const four( 4.0 );

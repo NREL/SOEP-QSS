@@ -209,8 +209,8 @@ private: // Methods
 		assert( tQ <= tX );
 		assert( dt_min <= dt_max );
 		tE =
-		 ( x_1_ > 0.0 ? tX + ( ( ( q_0_ - x_0_ ) + qTol ) / x_1_ ) :
-		 ( x_1_ < 0.0 ? tX + ( ( ( q_0_ - x_0_ ) - qTol ) / x_1_ ) :
+		 ( x_1_ > 0.0 ? tX + ( ( q_0_ + qTol - x_0_ ) / x_1_ ) :
+		 ( x_1_ < 0.0 ? tX + ( ( q_0_ - qTol - x_0_ ) / x_1_ ) :
 		 infinity ) );
 		if ( dt_max != infinity ) tE = std::min( tE, tX + dt_max );
 		tE = std::max( tE, tX ); // Numeric bulletproofing
