@@ -54,13 +54,6 @@ TEST( MathTest, Cube )
 	EXPECT_EQ( 8, cube( 2 ) );
 }
 
-TEST( MathTest, MinRootQuadratic )
-{
-	EXPECT_DOUBLE_EQ( 2.3228756555322954, min_root_quadratic( -4.0, 8.0, 3.0 ) );
-	EXPECT_DOUBLE_EQ( 2.8708286933869704, min_root_quadratic( -2.0, 4.0, 5.0 ) );
-	EXPECT_DOUBLE_EQ( 5.9221443851123805, min_root_quadratic( -2.0, 11.0, 5.0 ) );
-}
-
 TEST( MathTest, MinRootQuadraticLower )
 {
 	EXPECT_DOUBLE_EQ( 0.32287565553229536, min_root_quadratic_lower( -4.0, -8.0, 3.0 ) );
@@ -86,8 +79,12 @@ TEST( MathTest, MinRootQuadraticBoth )
 
 TEST( MathTest, MinRootCubic )
 {
-	EXPECT_DOUBLE_EQ( 1.359787450380789, min_root_cubic( -2.0, 3.0, -7.0, 9.0 ) );
-	EXPECT_DOUBLE_EQ( 1.4175965758288351, min_root_cubic( -2.0, 4.0, -8.0, 9.0 ) );
-	EXPECT_DOUBLE_EQ( 0.29037158997385715, min_root_cubic( -9.0, 3.0, -7.0, 2.0 ) );
-	EXPECT_DOUBLE_EQ( 1.060647778684131, min_root_cubic( -9.0, 3.0, 6.0, 1.0 ) );
+	EXPECT_DOUBLE_EQ( 1.359787450380789, min_root_cubic_both( -2.0, 3.0, -7.0, 9.0, 9.0 ) );
+	EXPECT_DOUBLE_EQ( 1.4175965758288351, min_root_cubic_both( -2.0, 4.0, -8.0, 9.0, 9.0 ) );
+	EXPECT_DOUBLE_EQ( 0.29037158997385715, min_root_cubic_both( -9.0, 3.0, -7.0, 2.0, 2.0 ) );
+	EXPECT_DOUBLE_EQ( 1.060647778684131, min_root_cubic_both( -9.0, 3.0, 6.0, 1.0, 1.0 ) );
+	EXPECT_FLOAT_EQ( 0.7073498763104409, min_root_cubic_lower( -2.25, -6.5, -7.0, 9.0 ) ); // Double is too tight
+	EXPECT_DOUBLE_EQ( 0.0, min_root_cubic_lower( -2.25, -6.5, -7.0, -0.01 ) ); // d < 0 => Precision loss
+	EXPECT_FLOAT_EQ( 0.7073498763104409, min_root_cubic_upper( 2.25, 6.5, 7.0, -9.0 ) ); // Double is too tight
+	EXPECT_DOUBLE_EQ( 0.0, min_root_cubic_upper( 2.25, 6.5, 7.0, 0.01 ) ); // d > 0 => Precision loss
 }

@@ -93,10 +93,12 @@ main()
 	Time const tE( 10.0 ); // Simulation end time
 	Time t( 0.0 ); // Simulation time
 	Time to( t + dto ); // Sampling time
-//	VariableQSS2< FunctionLTI > x1( "x1", 1.0, 0.0 );
-//	VariableQSS2< FunctionLTI > x2( "x2", 1.0, 0.0 );
-	VariableQSS2< FunctionLTI > x1( "x1", 1.0e-4, 0.0 );
-	VariableQSS2< FunctionLTI > x2( "x2", 1.0e-4, 0.0 );
+	VariableQSS2< FunctionLTI > x1( "x1", 1.0, 0.0 );
+	VariableQSS2< FunctionLTI > x2( "x2", 1.0, 0.0 );
+//	VariableQSS2< FunctionLTI > x1( "x1", 1.0e-4, 0.0 );
+//	VariableQSS2< FunctionLTI > x2( "x2", 1.0e-4, 0.0 );
+//	VariableQSS3< FunctionLTI > x1( "x1", 1.0e-4, 0.0 );
+//	VariableQSS3< FunctionLTI > x2( "x2", 1.0e-4, 0.0 );
 //	VariableLIQSS2< FunctionLTI_LIQSS > x1( "x1", 1.0e-4, 0.0 );
 //	VariableLIQSS2< FunctionLTI_LIQSS > x2( "x2", 1.0e-4, 0.0 );
 	x1.init0( 0.0 );
