@@ -154,6 +154,17 @@ The QSS literature does not offer a robust solution and none is implementated at
 An iterative approach could be used to find a fixed point solution for a stable q2 value but this would require a number of additional derivative evaluations.
 The impact of this flaw will vary across models and could be severe in some situations so it should be addressed if numeric differentiation will be used in the production JModelica+QSS system.
 
+### Numeric Bulletproofing
+
+The time advance functions solve for the roots of polynomials of the QSS method order to see where the continuous representation next crosses the quantized representation +/-Q boundaries.
+The naive approach is to just pick the smallest positive root that the root solver finds, but with finite precision computations it is possible for this to select the "wrong" root that allows the continuous representation trajectory to fall outside the quantum band.
+To protect against this we take a few steps:
+* Roots that cross the boundary in the wrong direction (moving from outside to inside) are culled out.
+  The crossing direction tests have some computational cost: in the unlikely event that this is significant a "fast and dangerous" mode could be provided that omits them.
+* When a numeric precision loss causes a bad solution we exploit knowledge of the actual behavior to produce a zero time step rather than an infinite step.
+* When the polynomial coefficients indicate which boundary must be hit first we save time by only root solving on that boundary and we exploit the known coefficient signs.
+* When the polynomial coefficients don't clearly show which boundary will be hit first we process the boundaries together to exploit knowledge that at least one of them should have a positive root with the correct, outward crossing direction.
+
 ## Performance
 
 Once the code capabilities are sufficient and larger models are built some performance assessments will be carried out.
