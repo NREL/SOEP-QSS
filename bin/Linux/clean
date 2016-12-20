@@ -1,2 +1,5 @@
 #!/bin/bash
-rm -f *.d *.o *.exe *.a *.so
+for ext in d o exe a so
+do
+  find . -name "*.$ext" | xargs rm -f
+done
