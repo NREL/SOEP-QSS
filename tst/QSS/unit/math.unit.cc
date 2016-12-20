@@ -83,8 +83,8 @@ TEST( MathTest, MinRootCubic )
 	EXPECT_DOUBLE_EQ( 1.4175965758288351, min_root_cubic_both( -2.0, 4.0, -8.0, 9.0, 9.0 ) );
 	EXPECT_DOUBLE_EQ( 0.29037158997385715, min_root_cubic_both( -9.0, 3.0, -7.0, 2.0, 2.0 ) );
 	EXPECT_DOUBLE_EQ( 1.060647778684131, min_root_cubic_both( -9.0, 3.0, 6.0, 1.0, 1.0 ) );
-	EXPECT_FLOAT_EQ( 0.7073498763104409, min_root_cubic_lower( -2.25, -6.5, -7.0, 9.0 ) ); // Double is too tight
+	EXPECT_NEAR( 0.7073498763104409, min_root_cubic_lower( -2.25, -6.5, -7.0, 9.0 ), 1.0e-14 );
 	EXPECT_DOUBLE_EQ( 0.0, min_root_cubic_lower( -2.25, -6.5, -7.0, -0.01 ) ); // d < 0 => Precision loss
-	EXPECT_FLOAT_EQ( 0.7073498763104409, min_root_cubic_upper( 2.25, 6.5, 7.0, -9.0 ) ); // Double is too tight
+	EXPECT_NEAR( 0.7073498763104409, min_root_cubic_upper( 2.25, 6.5, 7.0, -9.0 ), 1.0e-14 );
 	EXPECT_DOUBLE_EQ( 0.0, min_root_cubic_upper( 2.25, 6.5, 7.0, 0.01 ) ); // d > 0 => Precision loss
 }
