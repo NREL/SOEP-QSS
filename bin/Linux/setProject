@@ -6,5 +6,3 @@ if [ -z "$QSS" ]; then
 fi
 
 export PATH=$PATH:$QSS/bin/Linux:$QSS/bin
-
-source $QSS/bin/Linux/setGTest

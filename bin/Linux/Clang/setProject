@@ -12,4 +12,6 @@ export PATH=$PATH:$QSS/bin/$PlatformCompiler
 
 export CPATH=.:$QSS/src:$CPATH
 
+#source $QSS/bin/Linux/Clang/setGTest
+
 source $QSS/bin/Linux/setProject

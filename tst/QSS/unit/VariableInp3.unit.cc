@@ -32,7 +32,7 @@ TEST( VariableInp3Test, Basic )
 	EXPECT_DOUBLE_EQ( 0.025, u1.qn( 1.0 ) );
 	EXPECT_DOUBLE_EQ( 0.025, u1.q1( 0.0 ) );
 	EXPECT_EQ( 0.0, u1.tQ );
-	EXPECT_EQ( std::cbrt( 6.0e-6 / 0.00625 ), u1.tE );
+	EXPECT_DOUBLE_EQ( std::cbrt( 6.0e-6 / 0.00625 ), u1.tE );
 	double const u1_tE( u1.tE );
 	u1.advance();
 	EXPECT_EQ( u1_tE, u1.tQ );
