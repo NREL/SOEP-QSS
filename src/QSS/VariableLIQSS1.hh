@@ -8,7 +8,7 @@
 #include <QSS/globals.hh>
 
 // LIQSS1 Variable
-template< template< typename > typename F >
+template< template< typename > class F >
 class VariableLIQSS1 final : public Variable
 {
 

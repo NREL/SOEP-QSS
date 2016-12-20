@@ -8,7 +8,7 @@
 #include <QSS/globals.hh>
 
 // QSS Input Variable with Quantization Order 2
-template< template< typename > typename F >
+template< template< typename > class F >
 class VariableInp2 final : public Variable
 {
 

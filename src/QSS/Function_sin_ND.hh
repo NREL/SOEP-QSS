@@ -161,7 +161,7 @@ public: // Methods
 		dtn_inv_ = 1.0 / dtn_;
 		dtn_inv_2_ = 0.5 / dtn_;
 		dtn_inv_sq_ = dtn_inv_ * dtn_inv_;
-		dtn_inv_cb_2_ = 0.5 * ( dtn_inv_ * dtn_inv_ * dt_inv_ );
+		dtn_inv_cb_2_ = 0.5 * ( dtn_inv_ * dtn_inv_ * dtn_inv_ );
 	}
 
 public: // Static Data

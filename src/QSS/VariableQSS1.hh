@@ -8,7 +8,7 @@
 #include <QSS/globals.hh>
 
 // QSS1 Variable
-template< template< typename > typename F >
+template< template< typename > class F >
 class VariableQSS1 final : public Variable
 {
 
