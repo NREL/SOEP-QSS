@@ -11,12 +11,13 @@ Currently the code has:
 * Numeric differentiation support.
 * A simple "baseline" event queue built on `std::multimap`.
 * Simultaneous requantization event support.
+* Numeric bulletproofing of root solvers
 * A master algorithm with sampling and diagnostic output controls.
 * A few simple test cases.
 
 Notes:
 * No Modelica input file processing is supported: test cases are hard-coded.
-* Input functions, algebraic relationship, and discrete variables will be added soon.
+* Input functions, algebraic relationships/loops, and discrete variables support will be added soon.
 
 ## Plan
 
@@ -24,8 +25,6 @@ Planned development in anticipated sequence order are:
 * FMI interface.
 * Discrete-valued variables (zero-crossing functions).
 * Vector-valued variables.
-* Numerical bulletproofing:
-  * Non-positive time steps or wrong root returned from root solvers.
 * Extended precision time handling for large time span simulation.
 * Higher performance event queue.
 * Parallelization and vectorization.
