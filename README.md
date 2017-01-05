@@ -206,11 +206,11 @@ To build the QSS prototype on Linux:
 * `cd <path_to_repository>`
 * `source bin/Linux/GCC/64/r/setProject` for release builds or `source bin/Linux/GCC/64/d/setProject` for debug builds
 * `cd src/QSS`
-* `mak -j8` to build the demo from the QSS.cc main (adjust -j value for the number of parallel compiles like make)
+* `mak` to build the demo from the QSS.cc main (add a -j*N* make argument to override the number of parallel compile jobs)
 * `./QSS` to run the demo
 
 To run the unit tests on Linux:
-* The unit tests are in the `tst/QSS/unit` directory and can be built and run with a command like `mak -j8 run`.
+* The unit tests are in the `tst/QSS/unit` directory and can be built and run with the command `mak run`.
 * The unit tests use googletest. The `setGTest` scripts under `\bin\Windows` set up the necessary environment variables to find googletest: put a custom version of `setGTest` earlier in your `PATH` to adapt it to your system.
 
 ### Windows
@@ -219,9 +219,9 @@ To build the QSS prototype on Windows:
 * `cd <path_to_repository>`
 * `bin\Windows\VC\64\r\setProject` for VC++ release builds or `bin\Windows\VC\64\d\setProject` for VC++ debug builds (or similarly for GCC or IC for Intel C++)
 * `cd src\QSS`
-* `mak -j8` to build the demo from the QSS.cc main (adjust -j value for the number of parallel compiles like make)
+* `mak` to build the demo from the QSS.cc main (add a -j*N* make argument to override the number of parallel compile jobs)
 * `QSS` to run the demo
 
 To run the unit tests on Windows:
-* The unit tests are in the `tst\QSS\unit` directory and can be built and run with a command like `mak -j8 run`.
+* The unit tests are in the `tst\QSS\unit` directory and can be built and run with the command `mak run`.
 * The unit tests use googletest. The `setGTest.bat` scripts under `\bin\Windows` set up the necessary environment variables to find googletest: put a custom version of `setGTest.bat` earlier in your `PATH` to adapt it to your system.
