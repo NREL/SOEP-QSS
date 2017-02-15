@@ -22,7 +22,7 @@ DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .obj,$(basename $(SRC)))
 APP_OBJ := $(filter-out $(QSS)/src/QSS/$(PlatformFull)/QSS.obj,$(wildcard $(QSS)/src/QSS/$(PlatformFull)/*.obj))
 EXE := $(BIN_PATH)\$(TAR).unit.exe
-PATH_LIBS := $(BIN_PATH)\$(TAR).lib
+PATH_LIBS := $(BIN_PATH)\lib$(TAR).lib
 LINK_LIBS :=
 CXXFLAGS += /D_VARIADIC_MAX=10 /Qdiag-disable:1684 # 1684 fires on gtest code
 

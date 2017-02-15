@@ -47,7 +47,7 @@ vpath %.so  $(BIN_PATH)
 	@$(MAKEDEPEND) $<
 	$(C) $(CFLAGS) $(PGO) -c -o $@ $<
 
-%.lib : %.o
+%.a : %.o
 	$(AR) $(ARFLAGS) $@ $?
 
 # Directives

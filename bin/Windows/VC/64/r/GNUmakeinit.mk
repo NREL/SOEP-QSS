@@ -5,8 +5,8 @@
 # Platform: Windows/VC/64/r
 
 # Variables
-CXXFLAGS = /nologo /EHsc /W3 /wd4068 /wd4101 /wd4102 /wd4244 /wd4258 /wd4355 /wd4996 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /TP /arch:AVX2 /DNDEBUG /O2 /Qpar /GS-
-CFLAGS = /nologo /W3 /wd4244 /wd4996 /DWIN32_LEAN_AND_MEAN /TC /arch:AVX2 /DNDEBUG /O2 /GS-
+CXXFLAGS = /nologo /EHsc /W3 /wd4068 /wd4244 /wd4996 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /TP /arch:AVX2 /DNDEBUG /O2 /Qpar /GS- /MD
+CFLAGS = /nologo /W3 /wd4068 /wd4244 /wd4996 /DWIN32_LEAN_AND_MEAN /TC /arch:AVX2 /DNDEBUG /O2 /GS- /MD
 # Disabled Warnings:
 #  4068 Unknown pragma
 #  4101 Unreferenced local variable
@@ -15,7 +15,8 @@ CFLAGS = /nologo /W3 /wd4244 /wd4996 /DWIN32_LEAN_AND_MEAN /TC /arch:AVX2 /DNDEB
 #  4258 Definition from the loop is ignored
 #  4355 Passing this pointer in class initializer (object is incomplete so bases/members can only use this in limited ways)
 #  4996 Deprecated functions (/D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS)
-# /D_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1 /D_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1 enables secure template overloads
+# Notes:
+#  /D_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1 /D_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1 enables secure template overloads
 LDFLAGS := /nologo /F8388608
 LINKFLAGS := /link /LIBPATH:$(QSS_bin)
 

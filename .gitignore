@@ -28,5 +28,8 @@
 .idea
 .se
 
+*.fmu
+modelDescription.xml
+
 bin/Linux/**/QSS*
 bin/Linux/**/*.unit

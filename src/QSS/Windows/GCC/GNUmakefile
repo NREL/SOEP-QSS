@@ -18,8 +18,8 @@ TAR := QSS
 SRC := $(filter-out %.in.cc,$(notdir $(wildcard $(SRC_PATH)/*.cc)))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .o,$(basename $(SRC)))
-SLB := $(BIN_PATH)/lib$(TAR).a
-EXE := $(BIN_PATH)/$(TAR).exe
+SLB := $(BIN_PATH)\lib$(TAR).a
+EXE := $(BIN_PATH)\$(TAR).exe
 
 # Rules
 
@@ -57,10 +57,6 @@ $(SLB) : $(filter-out QSS.o,$(OBJ))
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.o)) # Prune obs objs
 	$(AR) $(ARFLAGS) $@ $?
-
-# Executable from libraries
-#$(EXE) : QSS.o $(SLB)
-#	$(CXX) $(LDFLAGS) -o $@ $^
 
 # Executable from objects
 $(EXE) : $(OBJ)

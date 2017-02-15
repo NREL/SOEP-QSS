@@ -9,7 +9,4 @@ set QSS=%QSS:~0,-13%
 set Path=%Path%;%QSS%\bin\Windows;%QSS%\bin
 
 rem ObjexxPlot Setup
-set ObjexxPlot_bin=C:\Projects\ObjexxPlot\dev\dev\bin\Windows\VC\64\r
-set Path=%Path%;%ObjexxPlot_bin%
-call %ObjexxPlot_bin%\..\..\setQt.bat
-call %ObjexxPlot_bin%\..\..\setQwt.bat
+set Path=%Path%;C:\Projects\ObjexxPlot\dev\dev\bin\Windows\VC\64\r

@@ -2,7 +2,7 @@
 #
 # Language: GNU Make
 #
-# Platform: Windows/Intel
+# Platform: Windows/IC
 
 # Paths
 PKG_PATH := $(QSS)\src\QSS
@@ -18,7 +18,7 @@ TAR := QSS
 SRC := $(filter-out %.in.cc,$(notdir $(wildcard $(SRC_PATH)/*.cc)))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .obj,$(basename $(SRC)))
-SLB := $(BIN_PATH)\$(TAR).lib
+SLB := $(BIN_PATH)\lib$(TAR).lib
 EXE := $(BIN_PATH)\$(TAR).exe
 
 # Rules
@@ -50,7 +50,7 @@ clear :
 
 .PHONY : clean
 clean :
-	-rm -f *.d *.obj $(subst \,/,$(SLB)) $(subst \,/,$(EXE))
+	-rm -f *.d *.obj $(subst \,/,$(SLB)) $(subst \,/,$(EXE)) $(subst \,/,$(BIN_PATH))/$(TAR).ilk $(subst \,/,$(BIN_PATH))/$(TAR).pdb
 
 # Library from objects
 $(SLB) : $(filter-out QSS.obj,$(OBJ))
@@ -58,15 +58,12 @@ $(SLB) : $(filter-out QSS.obj,$(OBJ))
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.obj)) # Prune obs objs
 	$(AR) $(ARFLAGS) /out:$@ $?
 
-# Executable from libraries
-#$(EXE) : QSS.obj $(SLB)
-#	$(LD) $(LDFLAGS) /out:$@ $^
-
 # Executable from objects
 $(EXE) : $(OBJ)
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.obj)) # Prune obs objs
 	$(LD) $(LDFLAGS) /out:$@ $^
+	rm -f $(subst \,/,$(BIN_PATH))/$(TAR).exp $(subst \,/,$(BIN_PATH))/$(TAR).lib
 
 # Dependencies
 -include $(DEP)
