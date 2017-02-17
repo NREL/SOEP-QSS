@@ -43,8 +43,8 @@ main()
 
 	// Controls
 	diag = false; // Enable for diagnostic output of requantization events?
-	inflection_steps = false; // Add requantization steps at inflection points?
-	bool const sampled( false ); // Sampled outputs?
+	inflection_steps = true; // Add requantization steps at inflection points?
+	bool const sampled( true ); // Sampled outputs?
 	bool const all_vars_out( false ); // Output all variables at every requantization event?
 	bool const q_out( sampled || all_vars_out ); // Quantized output would differ from continuous?
 	int const QSS_order_max( 3 ); // Handle all QSS orders
@@ -88,26 +88,26 @@ main()
 //	vars.push_back( &x1 );
 //	vars.push_back( &x2 );
 
-	// Achilles and the Tortoise
-	Time const dto( 1.0e-3 ); // Sampling time step
-	Time const tE( 10.0 ); // Simulation end time
-	Time t( 0.0 ); // Simulation time
-	Time to( t + dto ); // Sampling time
-	VariableQSS2< FunctionLTI > x1( "x1", 1.0, 0.0 );
-	VariableQSS2< FunctionLTI > x2( "x2", 1.0, 0.0 );
-//	VariableQSS2< FunctionLTI > x1( "x1", 1.0e-4, 0.0 );
-//	VariableQSS2< FunctionLTI > x2( "x2", 1.0e-4, 0.0 );
-//	VariableQSS3< FunctionLTI > x1( "x1", 1.0e-4, 0.0 );
-//	VariableQSS3< FunctionLTI > x2( "x2", 1.0e-4, 0.0 );
-//	VariableLIQSS2< FunctionLTI_LIQSS > x1( "x1", 1.0e-4, 0.0 );
-//	VariableLIQSS2< FunctionLTI_LIQSS > x2( "x2", 1.0e-4, 0.0 );
-	x1.init0( 0.0 );
-	x2.init0( 2.0 );
-	x1.d().add( -0.5, x1 ).add( 1.5, x2 );
-	x2.d().add( -1.0, x1 );
-	vars.reserve( 2 );
-	vars.push_back( &x1 );
-	vars.push_back( &x2 );
+//	// Achilles and the Tortoise
+//	Time const dto( 1.0e-3 ); // Sampling time step
+//	Time const tE( 10.0 ); // Simulation end time
+//	Time t( 0.0 ); // Simulation time
+//	Time to( t + dto ); // Sampling time
+//	VariableQSS2< FunctionLTI > x1( "x1", 1.0, 0.0 );
+//	VariableQSS2< FunctionLTI > x2( "x2", 1.0, 0.0 );
+////	VariableQSS2< FunctionLTI > x1( "x1", 1.0e-4, 0.0 );
+////	VariableQSS2< FunctionLTI > x2( "x2", 1.0e-4, 0.0 );
+////	VariableQSS3< FunctionLTI > x1( "x1", 1.0e-4, 0.0 );
+////	VariableQSS3< FunctionLTI > x2( "x2", 1.0e-4, 0.0 );
+////	VariableLIQSS2< FunctionLTI_LIQSS > x1( "x1", 1.0e-4, 0.0 );
+////	VariableLIQSS2< FunctionLTI_LIQSS > x2( "x2", 1.0e-4, 0.0 );
+//	x1.init0( 0.0 );
+//	x2.init0( 2.0 );
+//	x1.d().add( -0.5, x1 ).add( 1.5, x2 );
+//	x2.d().add( -1.0, x1 );
+//	vars.reserve( 2 );
+//	vars.push_back( &x1 );
+//	vars.push_back( &x2 );
 
 //	// Achilles and the Tortoise: Symmetric for Simultaneous Triggering
 //	Time const dto( 1.0e-3 ); // Sampling time step
@@ -172,16 +172,16 @@ main()
 //	e_stream.close();
 //	to = 0.0;
 
-//	// Exponential Decay Example
-//	Time const dto( 1.0e-3 ); // Sampling time step
-//	Time const tE( 30.0 ); // Simulation end time
-//	Time t( 0.0 ); // Simulation time
-//	Time to( t + dto ); // Sampling time
-//	VariableQSS2< FunctionLTI > x1( "x1", 1.0e-4, 0.0 );
-//	x1.init0( 1.0 );
-//	x1.d().add( -1.0, x1 );
-//	vars.reserve( 1 );
-//	vars.push_back( &x1 );
+	// Exponential Decay Example
+	Time const dto( 1.0e-3 ); // Sampling time step
+	Time const tE( 10.0 ); // Simulation end time
+	Time t( 0.0 ); // Simulation time
+	Time to( t + dto ); // Sampling time
+	VariableQSS2< FunctionLTI > x1( "x1", 1.0e-4, 0.0 );
+	x1.init0( 1.0 );
+	x1.d().add( -1.0, x1 );
+	vars.reserve( 1 );
+	vars.push_back( &x1 );
 
 //	// Exponential Decay with Sine Input Example
 //	Time const dto( 1.0e-3 ); // Sampling time step

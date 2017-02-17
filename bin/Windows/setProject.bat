@@ -9,4 +9,4 @@ set QSS=%QSS:~0,-13%
 set Path=%Path%;%QSS%\bin\Windows;%QSS%\bin
 
 rem ObjexxPlot Setup
-set Path=%Path%;C:\Projects\ObjexxPlot\dev\dev\bin\Windows\VC\64\r
+set Path=%Path%;C:\Projects\ObjexxSISAME\dev\pkg\bin
