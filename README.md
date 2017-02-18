@@ -11,7 +11,7 @@ Currently the code has:
 * Numeric differentiation support.
 * A simple "baseline" event queue built on `std::multimap`.
 * Simultaneous requantization event support.
-* Numeric bulletproofing of root solvers
+* Numeric bulletproofing of root solvers.
 * A master algorithm with sampling and diagnostic output controls.
 * A few simple test cases.
 
@@ -25,7 +25,6 @@ Planned development in anticipated sequence order are:
 * FMI interface.
 * Discrete-valued variables (zero-crossing functions).
 * Algebraic relationship/loop support.
-* Vector-valued variables.
 * Extended precision time handling for large time span simulation.
 * Higher performance event queue.
 * Parallelization and vectorization.
@@ -33,6 +32,7 @@ Planned development in anticipated sequence order are:
 ## Goals
 
 * High-performance QSS solver.
+* Modular, object-oriented code.
 * API suitable for JModelica integration.
 * Support a mix of different QSS solvers.
 * Support traditional discrete-time solvers.
@@ -43,8 +43,8 @@ The design concepts are still emerging.
 The basic constituents of a fast QSS solver seem to be:
 * Variables for each QSS method (QSS1/2/3, LIQSS1/2/3, ...).
 * Functions for derivative representation: linear and nonlinear.
+* Event queue to find the next "trigger" variable to advance.
 * Input variables/functions.
-* Event queue to find the next "trigger" variable to advance to its requantization time.
 * Continuous and discrete valued variables.
 * Algebraic relationships between variables including handling of algebraic loops.
 
