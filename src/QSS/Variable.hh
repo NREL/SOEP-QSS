@@ -104,6 +104,7 @@ public: // Properties
 	x1( Time const t ) const = 0;
 
 	// Continuous Second Derivative at Time t
+	virtual
 	Value
 	x2( Time const t ) const
 	{
@@ -111,6 +112,7 @@ public: // Properties
 	}
 
 	// Continuous Third Derivative at Time t
+	virtual
 	Value
 	x3( Time const t ) const
 	{
