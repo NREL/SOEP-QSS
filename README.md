@@ -17,13 +17,14 @@ Currently the code has:
 
 Notes:
 * No Modelica input file processing is supported: test cases are hard-coded.
-* Input functions, algebraic relationships/loops, and discrete variables support will be added soon.
+* Discrete variables and algebraic relationships/loops will be added soon.
 
 ## Plan
 
 Planned development in anticipated sequence order are:
 * FMI interface.
 * Discrete-valued variables (zero-crossing functions).
+* Algebraic relationship/loop support.
 * Vector-valued variables.
 * Extended precision time handling for large time span simulation.
 * Higher performance event queue.
