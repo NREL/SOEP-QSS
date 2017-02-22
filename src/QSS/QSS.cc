@@ -46,7 +46,8 @@ main()
 	inflection_steps = false; // Add requantization steps at inflection points?
 	bool const sampled( false ); // Sampled outputs?
 	bool const all_vars_out( false ); // Output all variables at every requantization event?
-	bool const q_out( sampled || all_vars_out ); // Quantized output would differ from continuous?
+	bool const q_out( false ); // Quantized output?
+	bool const x_out( false ); // Continuous event output?
 	int const QSS_order_max( 3 ); // Handle all QSS orders
 
 //	// Simple x, y, z
@@ -300,11 +301,11 @@ main()
 						q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
 						x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
 					}
-				} else {
+				} else if ( q_out || x_out ) {
 					for ( size_type i = 0; i < n_vars; ++i ) { // Give Variable access to its stream to avoid this loop
 						if ( trigger == vars[ i ] ) {
 							if ( q_out ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
-							x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
+							if ( x_out ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
 							break;
 						}
 					}
@@ -319,26 +320,26 @@ main()
 					q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
 					x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
 				}
-			} else {
+			} else if ( q_out || x_out ) {
 				for ( size_type i = 0; i < n_vars; ++i ) { // Give Variable access to its stream to avoid this loop
 					if ( trigger == vars[ i ] ) {
 						if ( q_out ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
-						x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
+						if ( x_out ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
 						break;
 					}
 				}
 			}
 		}
 	}
-	for ( size_type i = 0; i < n_vars; ++i ) { // Add tE outputs
+	for ( size_type i = 0; i < n_vars; ++i ) { // Add tE outputs and close streams
 		Variable const * var( vars[ i ] );
 		if ( var->tQ < tE ) {
-			if ( q_out ) q_streams[ i ] << tE << '\t' << var->q( tE ) << '\n';
+			if ( q_out ) {
+				q_streams[ i ] << tE << '\t' << var->q( tE ) << '\n';
+				q_streams[ i ].close();
+			}
 			x_streams[ i ] << tE << '\t' << var->x( tE ) << '\n';
+			x_streams[ i ].close();
 		}
-	}
-	for ( size_type i = 0; i < n_vars; ++i ) { // Close streams
-		if ( q_out ) q_streams[ i ].close();
-		x_streams[ i ].close();
 	}
 }
