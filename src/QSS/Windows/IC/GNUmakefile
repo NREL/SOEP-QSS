@@ -62,7 +62,7 @@ $(SLB) : $(filter-out QSS.obj,$(OBJ))
 $(EXE) : $(OBJ)
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.obj)) # Prune obs objs
-	$(LD) $(LDFLAGS) /out:$@ $^
+	$(LD) $(LDFLAGS) /out:$@ $^ $(FMIL_HOME)\lib\fmilib.lib
 	rm -f $(subst \,/,$(BIN_PATH))/$(TAR).exp $(subst \,/,$(BIN_PATH))/$(TAR).lib
 
 # Dependencies

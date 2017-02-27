@@ -5,8 +5,8 @@
 # Platform: Windows/VC/64/r
 
 # Variables
-CXXFLAGS = /nologo /EHsc /W3 /wd4068 /wd4244 /wd4996 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /TP /arch:AVX2 /Od /MD
-CFLAGS = /nologo /W3 /wd4068 /wd4244 /wd4996 /DWIN32_LEAN_AND_MEAN /TC /arch:AVX2 /Od /MD
+CXXFLAGS = /nologo /EHsc /W3 /wd4068 /wd4244 /wd4996 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DWIN32 /DFMILIB_STATIC_LIB_ONLY /TP /arch:AVX2 /Od /MD
+CFLAGS = /nologo /W3 /wd4068 /wd4244 /wd4996 /DWIN32_LEAN_AND_MEAN /DWIN32 /DFMILIB_STATIC_LIB_ONLY /TC /arch:AVX2 /Od /MD
 # Disabled Warnings:
 #  4068 Unknown pragma
 #  4101 Unreferenced local variable

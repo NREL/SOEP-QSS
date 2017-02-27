@@ -14,6 +14,7 @@
 *.optrpt
 *.orig
 *.pdb
+*.png
 *.pyc
 *.res
 *.so
@@ -28,8 +29,13 @@
 .idea
 .se
 
+*.asc
+*.csv
 *.fmu
-modelDescription.xml
+*.mo
+*.xml
+perf.data
+src/QSS/Room/*
 
 bin/Linux/**/QSS*
 bin/Linux/**/*.unit

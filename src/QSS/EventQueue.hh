@@ -3,6 +3,12 @@
 
 // QSS Event Queue Based on std::multimap
 //
+// Project: QSS Solver
+//
+// Developed by Objexx Engineering, Inc. (http://objexx.com)
+// under contract to the National Renewable Energy Laboratory
+// of the U.S. Department of Energy
+
 // This is a simple baseline event queue that is non-optimal for sequential and concurrent access
 // Will need to put mutex locks around modifying operations for concurrent use
 // Should explore concurrent-friendly priority queues once we have large scale cases to test with

@@ -60,13 +60,13 @@ $(SLB) : $(filter-out QSS.o,$(OBJ))
 
 # Executable from libraries
 $(EXE) : QSS.o $(SLB)
-	$(CXX) $(LDFLAGS) $(PGO) -o $@ $^ -ldl
+	$(CXX) $(LDFLAGS) $(PGO) -o $@ $^ -L$(FMIL_HOME)/lib -lfmilib -ldl
 
 # Executable from objects
 #$(EXE) : $(OBJ)
 #	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 #	@-rm -f $(filter-out $(OBJ),$(wildcard *.o)) # Prune obs objs
-#	$(CXX) $(LDFLAGS) $(PGO) -o $@ $^ -ldl
+#	$(CXX) $(LDFLAGS) $(PGO) -o $@ $^ -L$(FMIL_HOME)/lib -lfmilib -ldl
 
 # Dependencies
 -include $(DEP)

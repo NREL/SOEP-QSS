@@ -2,6 +2,12 @@
 #define QSS_Function_achilles2_hh_INCLUDED
 
 // Function for Achilles and the Tortoise Derivative Variable 2
+//
+// Project: QSS Solver
+//
+// Developed by Objexx Engineering, Inc. (http://objexx.com)
+// under contract to the National Renewable Energy Laboratory
+// of the U.S. Department of Energy
 
 // C++ Headers
 #include <cassert>
@@ -17,8 +23,8 @@ public: // Types
 
 	using Variable = V;
 
-	using Value = typename Variable::Value;
 	using Time = typename Variable::Time;
+	using Value = typename Variable::Value;
 
 public: // Properties
 
@@ -34,6 +40,13 @@ public: // Properties
 	x( Time const t ) const
 	{
 		return c1_ * x1_->x( t );
+	}
+
+	// Continuous First Derivative at Time t
+	Value
+	x1( Time const t ) const
+	{
+		return c1_ * x1_->x1( t );
 	}
 
 	// Quantized Value at Time t
@@ -92,6 +105,13 @@ public: // Methods
 	var( Variable & x1 )
 	{
 		x1_ = &x1;
+	}
+
+	// Set Variables
+	void
+	var( Variable * x1 )
+	{
+		x1_ = x1;
 	}
 
 	// Finalize Function Representation

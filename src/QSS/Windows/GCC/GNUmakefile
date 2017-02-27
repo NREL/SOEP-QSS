@@ -62,7 +62,7 @@ $(SLB) : $(filter-out QSS.o,$(OBJ))
 $(EXE) : $(OBJ)
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.o)) # Prune obs objs
-	$(CXX) $(LDFLAGS) -o $@ $^
+	$(CXX) $(LDFLAGS) -o $@ $^ $(FMIL_HOME)\lib\fmilib.lib
 
 # Dependencies
 -include $(DEP)

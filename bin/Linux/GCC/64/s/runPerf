@@ -1,0 +1,4 @@
+#!/bin/bash
+#export PROFILEFREQUENCY=1000 # Default is 100  -F option does the same thing I think
+perf record -F 1000 -g -- ${QSS_bin}/QSS $*
+perf report -g

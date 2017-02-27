@@ -1,4 +1,4 @@
-# QSS Solver Prototype/Experimental Code
+# QSS Solver Prototype/Experimental Code with FMU Support
 
 This is a stand-alone QSS solver being developed for integration into JModelica as part of the "Spawn of EnergyPlus" project.
 
@@ -13,16 +13,15 @@ Currently the code has:
 * Simultaneous requantization event support.
 * Numeric bulletproofing of root solvers.
 * A master algorithm with sampling and diagnostic output controls.
-* A few simple test cases.
+* A few simple hard-coded test cases.
+* Initial FMU demo support.
 
 Notes:
-* No Modelica input file processing is supported: test cases are hard-coded.
-* Discrete variables and algebraic relationships/loops will be added soon.
+* No Modelica input file processing is supported: test cases are hard-coded or loaded from FMUs.
 
 ## Plan
 
 Planned development in anticipated sequence order are:
-* FMI interface.
 * Discrete-valued variables (zero-crossing functions).
 * Algebraic relationship/loop support.
 * Extended precision time handling for large time span simulation.
@@ -34,6 +33,8 @@ Planned development in anticipated sequence order are:
 * High-performance QSS solver.
 * Modular, object-oriented code.
 * API suitable for JModelica integration.
+* Define FMI extensions for efficient QSS support.
+* FMU support.
 * Support a mix of different QSS solvers.
 * Support traditional discrete-time solvers.
 
@@ -66,6 +67,7 @@ Notes:
 * Handles self-observer continuous representation updates specially instead of as part of general observer updates for efficiency:
   * Assigns continuous representation coefficients from the corresponding quantized representation during requantization instead of recomputing them.
 * Input variable classes fit under the Variable hierarchy so that they can be processed along with QSS state variables.
+* FMU variables that work through the FMI 2.0 API to get derivatives.
 
 ### Time Steps
 
@@ -134,6 +136,14 @@ Even when using the continuous representation in the LIQSS derivatives issues re
 * Sample input variable functions with analytical and numeric derivatives are included.
 * We'll need a general purpose function approach for the JModelica-generated code: probably a function class that calls back to a provided function.
 
+## FMU Support
+
+Models defined by FMUs following the FMI 2.0 API can be run by this QSS solver.
+This is currently an initial/demonstration capability that cannot yet handle discrete variables, unit conversions (pure SI models are OK), or algebraic relationships.
+Some simple test model FMUs and a 50-variable room air thermal model have been simulated successfully.
+The FMU support is also performance-limited by the FMI 2.0 API, which requires expensive get-all-derivatives calls where QSS needs individual derivatives.
+Performance is also poor due to only having QSS1 support so far: QSS2 support is under development but will use numeric differentiation because the FMI 2.0 API doesn't provide higher derivatives, which will also hurt performance.
+
 ## Implementation
 
 ### Numeric Differentiatation
@@ -184,23 +194,24 @@ Performance findings and observations:
 
 ### Performance Notes
 
-* The Variable hierarchy (and thus its virtual calls) can be eliminated by the use of variadic templates and tuples in the Function classes.
-  This is probably a worthwhile refactor but should wait for the performance test suite so we can gauge its benefit.
+* Variable hierarchy virtual calls can be reduced via some refactoring.
+* FMU performance is currently severely hobbled by the FMI 2.0 API that is not ill-suited to QSS simulation and by the restriction to QSS1 solvers.
+  QSS2 solvers will help but will also be performance-limited by the need for numeric differentiation until higher derivatives become available via FMI extensions.
 
 ## Testing
 
 * Case runs are being compared with results from [Qss Solver](https://sourceforge.net/projects/qssengine/) and [Ptolemy](http://ptolemy.eecs.berkeley.edu/) for now.
 * Unit tests are included and will be extended for wider coverage as the code progresses.
 
-## Running
+## Building
 
-The QSS solver code can be built to run test cases and unit tests.
-Edit QSS.cc to enable or add example cases.
-The options near the top control whether uniform sampled time step outputs are generated, the time step size for that, and whether outputs occur for all variables when any variable requantizes.
-There is also an option to enable diagnostic output, which includes a line for each update event.
 Instructions for building on different platforms follows.
 
 ### Linux
+
+Preparation:
+* Copy `bin/Linux/<compiler>/setFMIL` to a directory in your PATH and adapt it to the location of you FMI Library installation.
+* The unit tests use googletest. The `setGTest` scripts under `\bin\Windows` set up the necessary environment variables to find googletest: put a custom version of `setGTest` in your `PATH` to adapt it to your system.
 
 To build the QSS prototype on Linux:
 * `cd <path_to_repository>`
@@ -211,9 +222,12 @@ To build the QSS prototype on Linux:
 
 To run the unit tests on Linux:
 * The unit tests are in the `tst/QSS/unit` directory and can be built and run with the command `mak run`.
-* The unit tests use googletest. The `setGTest` scripts under `\bin\Windows` set up the necessary environment variables to find googletest: put a custom version of `setGTest` earlier in your `PATH` to adapt it to your system.
 
 ### Windows
+
+Preparation:
+* Copy `bin\Windows\<compiler>\setFMIL.bat` to a directory in your PATH and adapt it to the location of you FMI Library installation.
+* The unit tests use googletest. The `setGTest.bat` scripts under `\bin\Windows` set up the necessary environment variables to find googletest: put a custom version of `setGTest.bat` in your `PATH` to adapt it to your system.
 
 To build the QSS prototype on Windows:
 * `cd <path_to_repository>`
@@ -224,4 +238,20 @@ To build the QSS prototype on Windows:
 
 To run the unit tests on Windows:
 * The unit tests are in the `tst\QSS\unit` directory and can be built and run with the command `mak run`.
-* The unit tests use googletest. The `setGTest.bat` scripts under `\bin\Windows` set up the necessary environment variables to find googletest: put a custom version of `setGTest.bat` earlier in your `PATH` to adapt it to your system.
+
+## Running
+
+The QSS solver code can run both hard-coded and FMU test cases.
+
+There are options to select the QSS method, set quantization tolerances, output and differentiation time steps, and output selection controls.
+* Relative tolerance is taken from the FMU if available by default but can be overridden with a command line option.
+* QSS variable continuous and/or quantized trajectory values can be output at their requantization events.
+* QSS variable continuous and/or quantized trajectory output at a regular sampling time step interval can be enabled.
+* FMU outputs can be generated for FMU model runs.
+* Diagnostic output can be enabled, which includes a line for each quantization-related variable update.
+
+Run `QSS --help` to see the command line usage.
+
+Edit QSS.cc to enable or add hard-coded examples.
+
+You will need a build of the latest [FMI Library](http://www.jmodelica.org/FMILibrary).

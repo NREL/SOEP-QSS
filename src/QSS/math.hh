@@ -2,6 +2,12 @@
 #define QSS_math_hh_INCLUDED
 
 // QSS Solver Math Functions
+//
+// Project: QSS Solver
+//
+// Developed by Objexx Engineering, Inc. (http://objexx.com)
+// under contract to the National Renewable Energy Laboratory
+// of the U.S. Department of Energy
 
 // C++ Headers
 #include <algorithm>

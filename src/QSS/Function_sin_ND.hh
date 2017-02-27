@@ -2,27 +2,29 @@
 #define QSS_Function_sin_ND_hh_INCLUDED
 
 // Sine Function Using Numeric Differentiation
+//
+// Project: QSS Solver
+//
+// Developed by Objexx Engineering, Inc. (http://objexx.com)
+// under contract to the National Renewable Energy Laboratory
+// of the U.S. Department of Energy
 
 // QSS Headers
-#include <QSS/globals.hh>
+#include <QSS/options.hh>
 
 // C++ Headers
 #include <cassert>
 #include <cmath>
 
-// Sine Function
-template< typename V > // Template to avoid cyclic inclusion with Variable
+// Sine Function Using Numeric Differentiation
 class Function_sin_ND
 {
 
 public: // Types
 
+	using Time = double;
+	using Value = double;
 	using Coefficient = double;
-
-	using Variable = V;
-
-	using Value = typename Variable::Value;
-	using Time = typename Variable::Time;
 
 public: // Creation
 
@@ -175,12 +177,12 @@ private: // Data
 	mutable Value v_t_; // Last v(t) computed
 	mutable Value v_p_; // Last v(t+dtn) computed
 	mutable Value v_m_; // Last v(t-dtn) computed
-	Time dtn_{ dtnd }; // Differentiation time step
-	Time dtn_2_{ 2 * dtnd }; // Differentiation time step doubled
-	Time dtn_inv_{ 1.0 / dtnd }; // Differentiation time step inverse
-	Time dtn_inv_2_{ 0.5 / dtnd }; // Differentiation time step half inverse
-	Time dtn_inv_sq_{ 1.0 / ( dtnd * dtnd ) }; // Differentiation time step inverse squared
-	Time dtn_inv_cb_2_{ 0.5 / ( dtnd * dtnd * dtnd ) }; // Differentiation time step inverse squared
+	Time dtn_{ options::dtND }; // Differentiation time step
+	Time dtn_2_{ 2 * options::dtND }; // Differentiation time step doubled
+	Time dtn_inv_{ 1.0 / options::dtND }; // Differentiation time step inverse
+	Time dtn_inv_2_{ 0.5 / options::dtND }; // Differentiation time step half inverse
+	Time dtn_inv_sq_{ 1.0 / ( options::dtND * options::dtND ) }; // Differentiation time step inverse squared
+	Time dtn_inv_cb_2_{ 0.5 / ( options::dtND * options::dtND * options::dtND ) }; // Differentiation time step half inverse cubed
 
 };
 

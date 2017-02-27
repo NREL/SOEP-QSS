@@ -2,14 +2,24 @@
 #define QSS_Variable_hh_INCLUDED
 
 // QSS Variable Abstract Base Class
+//
+// Project: QSS Solver
+//
+// Developed by Objexx Engineering, Inc. (http://objexx.com)
+// under contract to the National Renewable Energy Laboratory
+// of the U.S. Department of Energy
 
 // QSS Headers
 #include <QSS/EventQueue.hh>
+#include <QSS/globals.hh>
 #include <QSS/math.hh>
+#include <QSS/options.hh>
 
 // C++ Headers
 #include <algorithm>
 #include <cassert>
+#include <iostream>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -19,19 +29,19 @@ class Variable
 
 public: // Types
 
-	using Value = double;
 	using Time = double;
+	using Value = double;
 	using Variables = std::vector< Variable * >;
 	using EventQ = EventQueue< Variable >;
 
-	struct AdvanceSpecsLIQSS1
+	struct AdvanceSpecs_LIQSS1
 	{
 		Value l;
 		Value u;
 		Value z;
 	};
 
-	struct AdvanceSpecsLIQSS2
+	struct AdvanceSpecs_LIQSS2
 	{
 		Value l1;
 		Value u1;
@@ -47,16 +57,15 @@ protected: // Creation
 	explicit
 	Variable(
 	 std::string const & name,
+	 Value const rTol = 1.0e-4,
 	 Value const aTol = 1.0e-6,
-	 Value const rTol = 1.0e-6
+	 Value const xIni = 0.0
 	) :
 	 name( name ),
-	 aTol( std::max( aTol, 0.0 ) ),
-	 rTol( std::max( rTol, 0.0 ) )
-	{
-		assert( aTol > 0.0 ); // Prevent infinite loop if value is zero
-		assert( rTol >= 0.0 );
-	}
+	 rTol( std::max( rTol, 0.0 ) ),
+	 aTol( std::max( aTol, std::numeric_limits< Value >::min() ) ),
+	 xIni( xIni )
+	{}
 
 	// Copy Constructor
 	Variable( Variable const & ) = default;
@@ -106,7 +115,7 @@ public: // Properties
 	// Continuous Second Derivative at Time t
 	virtual
 	Value
-	x2( Time const t ) const
+	x2( Time const ) const
 	{
 		return 0.0;
 	}
@@ -114,7 +123,7 @@ public: // Properties
 	// Continuous Third Derivative at Time t
 	virtual
 	Value
-	x3( Time const t ) const
+	x3( Time const ) const
 	{
 		return 0.0;
 	}
@@ -226,7 +235,7 @@ public: // Methods
 	// Initialize QSS Variable
 	virtual
 	void
-	init( Value const x )
+	init( Value const )
 	{}
 
 	// Initialize Constant Term in Input Variable
@@ -238,7 +247,7 @@ public: // Methods
 	// Initialize Constant Term to Given Value
 	virtual
 	void
-	init0( Value const x )
+	init0( Value const )
 	{}
 
 	// Initialize Linear Coefficient in LIQSS Variable
@@ -251,6 +260,12 @@ public: // Methods
 	virtual
 	void
 	init1()
+	{}
+
+	// Initialize Linear Coefficient for FMU
+	virtual
+	void
+	init1_fmu()
 	{}
 
 	// Initialize Quadratic Coefficient in LIQSS Variable
@@ -287,6 +302,12 @@ public: // Methods
 	advance0()
 	{}
 
+	// Advance Simultaneous Trigger to Time tE and Requantize: Step FMU
+	virtual
+	void
+	advance_fmu()
+	{}
+
 	// Advance Simultaneous Trigger in LIQSS Variable to Time tE and Requantize: Step 1
 	virtual
 	void
@@ -321,23 +342,36 @@ public: // Methods
 	void
 	advance_observers()
 	{
-		for ( Variable * observer : observers() ) {
+		for ( Variable * observer : observers_ ) {
 			observer->advance( tQ );
 		}
 	}
 
+	// Set All Observee FMU Variable to Quantized Value at Time t
+	virtual
+	void
+	fmu_set_observees_q( Time const ) const
+	{}
+
+	// Set All Observee FMU Variables to Quantized Value at Time t > tX
+	virtual
+	void
+	fmu_set_observees_q_tX( Time const ) const
+	{}
+
 	// Advance Observer to Time t
 	virtual
 	void
-	advance( Time const t )
+	advance( Time const )
 	{}
 
 public: // Data
 
 	std::string name;
+	Value rTol{ 1.0e-4 }; // Relative tolerance
 	Value aTol{ 1.0e-6 }; // Absolute tolerance
-	Value rTol{ 1.0e-6 }; // Relative tolerance
 	Value qTol{ 1.0e-6 }; // Quantization tolerance
+	Value xIni{ 0.0 }; // Initial value
 	Time tQ{ 0.0 }; // Quantized time range begin
 	Time tX{ 0.0 }; // Continuous time range begin
 	Time tE{ infinity }; // Time range end: tQ <= tE and tX <= tE

@@ -2,24 +2,26 @@
 #define QSS_Function_sin_hh_INCLUDED
 
 // Sine Function
+//
+// Project: QSS Solver
+//
+// Developed by Objexx Engineering, Inc. (http://objexx.com)
+// under contract to the National Renewable Energy Laboratory
+// of the U.S. Department of Energy
 
 // C++ Headers
 #include <cassert>
 #include <cmath>
 
 // Sine Function
-template< typename V > // Template to avoid cyclic inclusion with Variable
 class Function_sin
 {
 
 public: // Types
 
+	using Time = double;
+	using Value = double;
 	using Coefficient = double;
-
-	using Variable = V;
-
-	using Value = typename Variable::Value;
-	using Time = typename Variable::Time;
 
 public: // Creation
 
