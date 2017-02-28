@@ -5,8 +5,8 @@
 # Platform: Windows/IC/64/r
 
 # Variables
-CXXFLAGS = /nologo /Qstd=c++11 /Qcxx-features /Wall /Qdiag-disable:177,809,869,1786,2259,3280,10382,11074,11075 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DNDEBUG /Qansi-alias /QxHOST /O3 /fp:fast=2 /Qprec-div- /Qip
-CFLAGS = /nologo /Qstd=c99 /Wall /Wp64 /Qdiag-disable:177,869,1478,1684,1786,2259,2312,2557,3280,10382,11074,11075 /DWIN32_LEAN_AND_MEAN /DNDEBUG /Qansi-alias /QxHOST /O3 /fp:fast=2 /Qprec-div- /Qip
+CXXFLAGS := /nologo /Qstd=c++11 /Qcxx-features /Wall /Qdiag-disable:177,809,869,1786,2259,3280,10382,11074,11075 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DNDEBUG /Qansi-alias /QxHOST /O3 /fp:fast=2 /Qprec-div- /Qip
+CFLAGS := /nologo /Qstd=c99 /Wall /Wp64 /Qdiag-disable:177,869,1478,1684,1786,2259,2312,2557,3280,10382,11074,11075 /DWIN32_LEAN_AND_MEAN /DNDEBUG /Qansi-alias /QxHOST /O3 /fp:fast=2 /Qprec-div- /Qip
 # Disabled Warnings:
 #   177 Variable declared but never referenced
 #   869 Parameter never referenced
