@@ -13,8 +13,6 @@ set Path=%Path%;%QSS%\bin\%PlatformBits%
 call %~dp0..\..\setProgramFiles32.bat
 call setPython.64.bat
 call setVC.64.bat
-
 call setGTest.bat
-set Path=%Path%;%GTEST_BIN%
 
 %~dp0..\setProject.bat
