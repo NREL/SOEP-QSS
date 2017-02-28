@@ -10,8 +10,9 @@ set PlatformBits=Windows\IC\64
 
 set Path=%Path%;%QSS%\bin\%PlatformBits%
 
-call setIntel.64.bat
-
+call setPython.64.bat
+call setIC.64.bat
 call setGTest.bat
+set Path=%Path%;%GTEST_BIN%
 
 %~dp0..\setProject.bat

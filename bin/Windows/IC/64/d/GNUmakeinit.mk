@@ -5,8 +5,8 @@
 # Platform: Windows/IC/64/d
 
 # Variables
-CXXFLAGS = /nologo /Qstd=c++11 /Qcxx-features /Wall /Qdiag-disable:177,809,869,1786,2259,3280,10382,11074,11075 /QxHOST /DNOMINMAX /DWIN32_LEAN_AND_MEAN /fp:source /Qtrapuv /check:stack,uninit /Gs0 /GS /Qfp-stack-check /traceback /Od /Z7 /MTd
-CFLAGS = /nologo /Qstd=c99 /Wall /Wp64 /Qdiag-disable:177,869,1478,1684,1786,2259,2312,2557,3280,10382,11074,11075 /QxHOST /DWIN32_LEAN_AND_MEAN /fp:source /Qtrapuv /check:stack,uninit /Gs0 /GS /Qfp-stack-check /traceback /Od /Z7 /MTd
+CXXFLAGS = /nologo /Qstd=c++11 /Qcxx-features /Wall /Qdiag-disable:177,809,869,1786,2259,3280,10382,11074,11075 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /fp:source /Qtrapuv /check:stack,uninit /Gs0 /GS /Qfp-stack-check /traceback /Od /Z7 /MTd
+CFLAGS = /nologo /Qstd=c99 /Wall /Wp64 /Qdiag-disable:177,869,1478,1684,1786,2259,2312,2557,3280,10382,11074,11075 /DWIN32_LEAN_AND_MEAN /fp:source /Qtrapuv /check:stack,uninit /Gs0 /GS /Qfp-stack-check /traceback /Od /Z7 /MTd
 # Disabled Warnings:
 #   177 Variable declared but never referenced
 #   869 Parameter never referenced
@@ -18,8 +18,9 @@ CFLAGS = /nologo /Qstd=c99 /Wall /Wp64 /Qdiag-disable:177,869,1478,1684,1786,225
 #  2557 Comparison between signed and unsigned operands
 #  3280 Declaration hides variable
 # 10382 /QxHOST remark
-# 11074 Inlining inhibited
-# 11075 Inlining inhibited
+# 11074 Inlining inhibited by size limit
+# 11075 Inlining report message
 LDFLAGS := /nologo /subsystem:CONSOLE /STACK:8388608 /DEBUG
+LINKFLAGS := /link /LIBPATH:$(QSS_bin) /DEBUG
 
 include $(QSS_bin)\..\GNUmakeinit.mk

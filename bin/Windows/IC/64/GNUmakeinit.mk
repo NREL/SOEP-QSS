@@ -2,7 +2,7 @@
 #
 # Language: GNU Make
 #
-# Platform: Windows/Intel/64
+# Platform: Windows/IC/64
 
 # Flags
 LDFLAGS += /MACHINE:X64

@@ -10,6 +10,6 @@ if exist %1.ii  set CxxSource=%1.ii
 if not (%CxxSource%)==() shift
 
 :Compile
-cl /nologo /EHsc /GR /TP /W3 /wd4258 /wd4355 /wd4996 /DVC_EXTRALEAN /DWIN32_LEAN_AND_MEAN /DNOMINMAX /D_CRT_SECURE_NO_DEPRECATE /D_SCL_SECURE_NO_DEPRECATE /D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES /Zs /c %1 %2 %3 %4 %5 %6 %7 %8 %9 %CxxSource%
+cl /nologo /TP /EHsc /GR /W3 /wd4258 /wd4355 /wd4996 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /Zs /c %1 %2 %3 %4 %5 %6 %7 %8 %9 %CxxSource%
 
 set CxxSource=

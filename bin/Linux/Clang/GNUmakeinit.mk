@@ -35,6 +35,15 @@ vpath %.so  $(BIN_PATH)
 
 # Implicit Rules
 
+%.d : %.cc
+	@$(MAKEDEPEND) $<
+
+%.d : %.cpp
+	@$(MAKEDEPEND) $<
+
+%.d : %.c
+	@$(MAKEDEPEND) $<
+
 %.o : %.cc
 	@$(MAKEDEPEND) $<
 	$(CXX) $(CXXFLAGS) $(PGO) -c -o $@ $<

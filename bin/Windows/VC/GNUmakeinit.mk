@@ -37,6 +37,15 @@ vpath %.dll $(BIN_PATH)
 
 # Implicit Rules
 
+%.d : %.cc
+	@$(MAKEDEPEND) $<
+
+%.d : %.cpp
+	@$(MAKEDEPEND) $<
+
+%.d : %.c
+	@$(MAKEDEPEND) $<
+
 %.obj : %.cc
 	@$(MAKEDEPEND) $<
 	$(CXX) $(CXXFLAGS) /c $(subst /,\,$<)

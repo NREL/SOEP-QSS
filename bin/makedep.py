@@ -4,7 +4,7 @@
 #
 # Version: 1.0.0
 #
-# Copyright (c) 2015 Objexx Engineering, Inc. All Rights Reserved.
+# Copyright (c) 2000-2017 Objexx Engineering, Inc. All Rights Reserved.
 
 # Notes:
 # . Dependency files for use with GNU make
@@ -84,13 +84,13 @@ def C_deps( fname, fdeps = None, par_dir = None, quoted = False, add = True ):
                 for dir in par_dir:
                     tname = os.path.join( dir, fname )
                     if os.path.isfile( tname ):
-                        gname = tname
+                        if not ' ' in tname: gname = tname # Skip dependencies in paths with spaces for GNU Make compatibility
                         break
             if not gname: # Use include search path
                 for dir in C_path:
                     tname = os.path.join( dir, fname )
                     if os.path.isfile( tname ):
-                        gname = tname
+                        if not ' ' in tname: gname = tname # Skip dependencies in paths with spaces for GNU Make compatibility
                         break
         if gname is None: gname = fname
         dfile = open( gname, 'rU' )

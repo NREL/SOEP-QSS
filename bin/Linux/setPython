@@ -1,0 +1,39 @@
+#!/bin/bash
+# Python Development Setup
+
+# Put a custom version first in your PATH to adapt to your system
+
+# System Python setup
+if [ -d "/usr/local/lib64/python2.7" ]; then
+    export PYTHON_DIR=/usr/local/lib64/python2.7
+    export PYTHON_INC=/usr/local/include/python2.7
+elif [ -d "/usr/local/lib/python2.7" ]; then
+    export PYTHON_DIR=/usr/local/lib/python2.7
+    export PYTHON_INC=/usr/local/include/python2.7
+elif [ -d "/usr/lib64/python2.7" ]; then
+    export PYTHON_DIR=/usr/lib64/python2.7
+    export PYTHON_INC=/usr/include/python2.7
+elif [ -d "/usr/lib/python2.7" ]; then
+    export PYTHON_DIR=/usr/lib/python2.7
+    export PYTHON_INC=/usr/include/python2.7
+else
+    echo Python not found!
+fi
+
+# Custom Python setup
+#export PYTHON_DIR=/opt/python
+#export PYTHON_INC=${PYTHON_DIR}/inc
+#export PATH=${PYTHON_DIR}/bin:${PATH}
+#export LD_LIBRARY_PATH=${PYTHON_DIR}/lib:${LD_LIBRARY_PATH}
+
+# Anaconda Python setup
+#export PYTHON_DIR=/opt/anaconda2
+#export PYTHON_INC=${PYTHON_DIR}/include/python2.7
+#export PATH=${PYTHON_DIR}/bin:${PATH}
+#export LD_LIBRARY_PATH=${PYTHON_DIR}/lib:${LD_LIBRARY_PATH}
+
+# Universal setup
+export PYTHON_LIB=python2.7
+export PYTHON_LIB_DIR=${PYTHON_DIR}/config
+export PYTHON_NUMPY_INC=${PYTHON_DIR}/site-packages/numpy/core/include
+export PYTHONDONTWRITEBYTECODE=x
