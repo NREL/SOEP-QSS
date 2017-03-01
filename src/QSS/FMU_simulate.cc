@@ -14,9 +14,6 @@
 #include <QSS/math.hh>
 #include <QSS/options.hh>
 #include <QSS/Variable_FMU_QSS1.hh>
-//#include <QSS/Variable_Inp1.hh>
-//#include <QSS/Variable_Inp2.hh>
-//#include <QSS/Variable_Inp3.hh>
 
 // C++ Headers
 #include <algorithm>
@@ -50,6 +47,7 @@ simulate()
 	using Variable_QSS = Variable_FMU_QSS1; // Default QSS variable type to use for FMU variables (later XML annotation can override)
 	using FMU_Vars = std::unordered_map< fmi2_import_real_variable_t *, FMU_Variable >; // Map from FMU variables to FMU_Variable objects
 	using FMU_Idxs = std::unordered_map< size_type, Variable_QSS * >; // Map from FMU variable indexes to QSS Variables
+	using QSS_Vars = std::unordered_map< Variable *, size_type >; // Map from QSS variables to their indexes
 
 	// I/o setup
 	std::cout << std::setprecision( 16 );
@@ -266,6 +264,7 @@ simulate()
 	FMU_Vars fmu_ders; // FMU variable to derivative map
 	FMU_Vars fmu_dvrs; // FMU derivative to variable map
 	FMU_Idxs fmu_idxs;
+	QSS_Vars qss_vars; // Map from QSS variables to their indexes
 	fmi2_import_variable_list_t * der_list( fmi2_import_get_derivatives_list( fmu ) );
 	size_type const n_ders( fmi2_import_get_variable_list_size( der_list ) );
 	std::cout << "\nNum FMU Derivatives: " << n_ders << std::endl;
@@ -303,6 +302,7 @@ simulate()
 					}
 				}
 				Variable_QSS * qss_var( new Variable_QSS( fmi2_import_get_variable_name( fmu_var.var ), options::rTol, options::aTol, states_initial, fmu_var, fmu_der ) ); // Create QSS variable
+				qss_vars[ qss_var ] = ics - 1;
 				vars.push_back( qss_var ); // Add to QSS variables
 				if ( fmi2_import_get_causality( fmu_var.var ) == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
 					outs.push_back( qss_var );
@@ -535,13 +535,9 @@ simulate()
 								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
 							}
 						} else { // Trigger variable output
-							for ( size_type i = 0; i < n_vars; ++i ) { // Give Variable access to its stream to avoid this loop
-								if ( trigger == vars[ i ] ) {
-									if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-									if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
-									break;
-								}
-							}
+							size_type const i( qss_vars[ trigger ] );
+							if ( options::output::x ) x_streams[ i ] << t << '\t' << trigger->x( t ) << '\n';
+							if ( options::output::q ) q_streams[ i ] << t << '\t' << trigger->q( t ) << '\n';
 						}
 					}
 				}
@@ -556,13 +552,9 @@ simulate()
 							if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
 						}
 					} else { // Trigger variable output
-						for ( size_type i = 0; i < n_vars; ++i ) { // Give Variable access to its stream to avoid this loop
-							if ( trigger == vars[ i ] ) {
-								if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
-								break;
-							}
-						}
+						size_type const i( qss_vars[ trigger ] );
+						if ( options::output::x ) x_streams[ i ] << t << '\t' << trigger->x( t ) << '\n';
+						if ( options::output::q ) q_streams[ i ] << t << '\t' << trigger->q( t ) << '\n';
 					}
 				}
 			}

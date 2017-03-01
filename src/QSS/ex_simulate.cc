@@ -30,6 +30,7 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <unordered_map>
 #include <vector>
 
 namespace ex {
@@ -42,6 +43,7 @@ simulate()
 	using Variables = Variable::Variables;
 	using size_type = Variables::size_type;
 	using Time = Variable::Time;
+	using QSS_Vars = std::unordered_map< Variable *, size_type >; // Map from QSS variables to their indexes
 
 	// I/o setup
 	std::cout << std::setprecision( 16 );
@@ -87,6 +89,12 @@ simulate()
 		ex::xy( vars );
 	} else if ( options::model== "xyz" ) {
 		ex::xyz( vars );
+	}
+
+	// Variable-index map setup
+	QSS_Vars qss_vars;
+	for ( size_type i = 0, e = vars.size(); i < e; ++i ) {
+		qss_vars[ vars[ i ] ] = i;
 	}
 
 	// Solver master logic
@@ -182,13 +190,9 @@ simulate()
 								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
 							}
 						} else { // Trigger variable output
-							for ( size_type i = 0; i < n_vars; ++i ) { // Give Variable access tOut its stream tOut avoid this loop
-								if ( trigger == vars[ i ] ) {
-									if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-									if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
-									break;
-								}
-							}
+							size_type const i( qss_vars[ trigger ] );
+							if ( options::output::x ) x_streams[ i ] << t << '\t' << trigger->x( t ) << '\n';
+							if ( options::output::q ) q_streams[ i ] << t << '\t' << trigger->q( t ) << '\n';
 						}
 					}
 				}
@@ -203,13 +207,9 @@ simulate()
 							if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
 						}
 					} else { // Trigger variable output
-						for ( size_type i = 0; i < n_vars; ++i ) { // Give Variable access tOut its stream tOut avoid this loop
-							if ( trigger == vars[ i ] ) {
-								if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
-								break;
-							}
-						}
+						size_type const i( qss_vars[ trigger ] );
+						if ( options::output::x ) x_streams[ i ] << t << '\t' << trigger->x( t ) << '\n';
+						if ( options::output::q ) q_streams[ i ] << t << '\t' << trigger->q( t ) << '\n';
 					}
 				}
 			}
