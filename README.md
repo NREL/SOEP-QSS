@@ -14,7 +14,7 @@ Currently the code has:
 * Numeric bulletproofing of root solvers.
 * A master algorithm with sampling and diagnostic output controls.
 * A few simple hard-coded test cases.
-* Initial FMU demo support.
+* Initial FMU demo support for QSS1 and QSS2.
 
 Notes:
 * No Modelica input file processing is supported: test cases are hard-coded or loaded from FMUs.
@@ -22,6 +22,7 @@ Notes:
 ## Plan
 
 Planned development in anticipated sequence order are:
+* FMU support: unit conversions, LIQSS1/2, QSS3, Modelica annotations, higher derivatives, ...
 * Discrete-valued variables (zero-crossing functions).
 * Algebraic relationship/loop support.
 * Extended precision time handling for large time span simulation.
@@ -138,11 +139,15 @@ Even when using the continuous representation in the LIQSS derivatives issues re
 
 ## FMU Support
 
-Models defined by FMUs following the FMI 2.0 API can be run by this QSS solver.
+Models defined by FMUs following the FMI 2.0 API can be run by this QSS solver using QSS1 or QSS2 solvers.
 This is currently an initial/demonstration capability that cannot yet handle discrete variables, unit conversions (pure SI models are OK), or algebraic relationships.
 Some simple test model FMUs and a 50-variable room air thermal model have been simulated successfully.
-The FMU support is also performance-limited by the FMI 2.0 API, which requires expensive get-all-derivatives calls where QSS needs individual derivatives.
-Performance is also poor due to only having QSS1 support so far: QSS2 support is under development but will use numeric differentiation because the FMI 2.0 API doesn't provide higher derivatives, which will also hurt performance.
+
+Notes:
+* Mixing QSS1 and QSS2 variables in an FMU simulation is not yet supported.
+* QSS3 and LIQSS1/2 solvers are planned when they become more practical when the FMI 2.0 API extensions are implemented in the FMI Library.
+* The FMU support is performance-limited by the FMI 2.0 API, which requires expensive get-all-derivatives calls where QSS needs individual derivatives.
+* QSS2 performance is limited by the use of numeric differentiation: the FMI ME 2.0 API doesn't provide higher derivatives but they may become avaialble via FMI extensions.
 
 ## Implementation
 
