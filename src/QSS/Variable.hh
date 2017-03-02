@@ -302,10 +302,10 @@ public: // Methods
 	advance0()
 	{}
 
-	// Advance Simultaneous Trigger to Time tE and Requantize: Step FMU
+	// Advance Simultaneous Trigger to Time tE and Requantize: Step 1.FMU
 	virtual
 	void
-	advance_fmu()
+	advance1_fmu()
 	{}
 
 	// Advance Simultaneous Trigger in LIQSS Variable to Time tE and Requantize: Step 1
@@ -318,6 +318,12 @@ public: // Methods
 	virtual
 	void
 	advance1()
+	{}
+
+	// Advance Simultaneous Trigger to Time tE and Requantize: Step 2.FMU
+	virtual
+	void
+	advance2_fmu( Time const )
 	{}
 
 	// Advance Simultaneous Trigger in LIQSS Variable to Time tE and Requantize: Step 2
@@ -347,10 +353,37 @@ public: // Methods
 		}
 	}
 
+	// Advance non-Self Observers to Time t: Stage 2
+	void
+	advance_observers_2( Time const t )
+	{
+		for ( Variable * observer : observers_ ) {
+			observer->advance_2( t, tQ );
+		}
+	}
+
+	// Advance Observer to Time t
+	virtual
+	void
+	advance( Time const )
+	{}
+
+	// Advance Observer to Time t
+	virtual
+	void
+	advance_2( Time const, Time const )
+	{}
+
 	// Set All Observee FMU Variable to Quantized Value at Time t
 	virtual
 	void
 	fmu_set_observees_q( Time const ) const
+	{}
+
+	// Set All Observee FMU Variable to Quantized Numeric Differentiation Value at Time t
+	virtual
+	void
+	fmu_set_observees_qn( Time const ) const
 	{}
 
 	// Set All Observee FMU Variables to Quantized Value at Time t > tX
@@ -359,10 +392,10 @@ public: // Methods
 	fmu_set_observees_q_tX( Time const ) const
 	{}
 
-	// Advance Observer to Time t
+	// Set All Observee FMU Variables to Quantized Numeric Differentiation Value at Time t > tX
 	virtual
 	void
-	advance( Time const )
+	fmu_set_observees_qn_tX( Time const, Time const ) const
 	{}
 
 public: // Data

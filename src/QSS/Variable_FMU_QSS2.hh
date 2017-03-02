@@ -140,14 +140,15 @@ public: // Methods
 	void
 	init1_fmu()
 	{
-		x_1_ = q_1_ = FMU::get_derivative( der.ics );
+		x_1_ = q_1_ = FMU::get_real( der.ref ); //! This causes solution difference!!!!!!!!!!!!!!
 	}
 
 	// Initialize Quadratic Coefficient
 	void
 	init2()
 	{
-//		x_2_ = one_half * FMU::get_derivative2( der.ics ); //Do Add 2nd derivative
+//		x_2_ = one_half * FMU::get_derivative2( der.ics ); //API When 2nd derivative is available (instead of ND code)
+		x_2_ = options::one_half_over_dtND * ( FMU::get_real( der.ref ) - x_1_ ); // Forward Euler
 	}
 
 	// Initialize Event in Queue
@@ -180,17 +181,26 @@ public: // Methods
 		} else {
 			q_1_ = x_1_ + ( two * x_2_ * tDel );
 		}
-		fmu_set_observers_observees_q();
-		FMU::get_derivatives(); //API Eliminate need for this with FMI per-variable get_derivative call
+		fmu_set_observers_observees_q( tE );
 		if ( self_observer ) {
 			tX = tE;
-			x_1_ = q_1_ = FMU::get_derivative( der.ics );
-//			x_2_ = one_half * FMU::get_derivative2( der.ics ); //Do
+			x_1_ = q_1_ = FMU::get_real( der.ref );
+//			x_2_ = one_half * FMU::get_derivative2( der.ics ); //API When 2nd derivative is available (instead of ND code)
+		}
+		advance_observers();
+		Time const t( tE + options::dtND ); // Advance time to t + delta for numeric differentiation
+		FMU::set_time( t );
+		if ( self_observer ) {
+			fmu_set_observees_qn( t );
+		}
+		fmu_set_observers_observees_qn( t, tE );
+		if ( self_observer ) {
+			x_2_ = options::one_half_over_dtND * ( FMU::get_real( der.ref ) - x_1_ ); // Forward Euler
 		}
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';
-		advance_observers();
+		advance_observers_2( t );
 	}
 
 	// Advance Simultaneous Trigger to Time tE and Requantize: Step 0
@@ -202,12 +212,12 @@ public: // Methods
 		set_qTol();
 	}
 
-	// Advance Simultaneous Trigger to Time tE and Requantize: Step FMU
+	// Advance Simultaneous Trigger to Time tE and Requantize: Step 1.FMU
 	void
-	advance_fmu()
+	advance1_fmu()
 	{
 		fmu_set_observees_q( tE );
-		fmu_set_observers_observees_q();
+		fmu_set_observers_observees_q( tE );
 	}
 
 	// Advance Simultaneous Trigger to Time tE and Requantize: Step 1
@@ -215,20 +225,29 @@ public: // Methods
 	advance1()
 	{
 		tX = tE;
-		x_1_ = q_1_ = FMU::get_derivative( der.ics );
+		x_1_ = q_1_ = FMU::get_real( der.ref );
+	}
+
+	// Advance Simultaneous Trigger to Time tE and Requantize: Step 2.FMU
+	void
+	advance2_fmu( Time const t )
+	{
+		fmu_set_observees_qn( t );
+		fmu_set_observers_observees_qn( t, tE );
 	}
 
 	// Advance Simultaneous Trigger to Time tE and Requantize: Step 2
 	void
 	advance2()
 	{
-//		x_2_ = one_half * FMU::get_derivative2( der.ics ); //Do
+//		x_2_ = one_half * FMU::get_derivative2( der.ics ); //API When 2nd derivative is available (instead of ND code)
+		x_2_ = options::one_half_over_dtND * ( FMU::get_real( der.ref ) - x_1_ ); // Forward Euler
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';
 	}
 
-	// Advance Observer to Time t
+	// Advance Observer to Time t: Step 1
 	void
 	advance( Time const t )
 	{
@@ -236,8 +255,21 @@ public: // Methods
 		if ( tX < t ) { // Could observe multiple variables with simultaneous triggering
 			Time const tDel( t - tX );
 			x_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
-			x_1_ = FMU::get_derivative( der.ics );
-//			x_2_ = one_half * FMU::get_derivative2( der.ics ); //Do
+			x_1_ = FMU::get_real( der.ref );
+//			x_2_ = one_half * FMU::get_derivative2( der.ics ); //API When 2nd derivative is available (instead of ND code)
+//			tX = t;
+//			set_tE_unaligned();
+//			event( events.shift( tE, event() ) );
+//			if ( options::output::d ) std::cout << "  " << name << '(' << t << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';
+		}
+	}
+
+	// Advance Observer to Time t: Stage 2
+	void
+	advance_2( Time const t, Time const t_check )
+	{
+		if ( tX < t_check ) { // Could observe multiple variables with simultaneous triggering
+			x_2_ = options::one_half_over_dtND * ( FMU::get_real( der.ref ) - x_1_ ); // Forward Euler
 			tX = t;
 			set_tE_unaligned();
 			event( events.shift( tE, event() ) );

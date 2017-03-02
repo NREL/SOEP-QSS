@@ -14,6 +14,7 @@
 #include <QSS/math.hh>
 #include <QSS/options.hh>
 #include <QSS/Variable_FMU_QSS1.hh>
+#include <QSS/Variable_FMU_QSS2.hh>
 
 // C++ Headers
 #include <algorithm>
@@ -44,9 +45,8 @@ simulate()
 	using size_type = std::size_t;
 	using Time = Variable::Time;
 	using Value = Variable::Value;
-	using Variable_QSS = Variable_FMU_QSS1; // Default QSS variable type to use for FMU variables (later XML annotation can override)
 	using FMU_Vars = std::unordered_map< fmi2_import_real_variable_t *, FMU_Variable >; // Map from FMU variables to FMU_Variable objects
-	using FMU_Idxs = std::unordered_map< size_type, Variable_QSS * >; // Map from FMU variable indexes to QSS Variables
+	using FMU_Idxs = std::unordered_map< size_type, Variable_FMU * >; // Map from FMU variable indexes to QSS Variables
 	using QSS_Vars = std::unordered_map< Variable *, size_type >; // Map from QSS variables to their indexes
 
 	// I/o setup
@@ -57,7 +57,7 @@ simulate()
 	std::vector< std::ofstream > f_streams; // FMU output streams
 
 	// Controls
-	int const QSS_order_max( 3 ); // Highest QSS order in use or 3 to handle all supported orders
+	int const QSS_order_max( options::qss_order ); // Highest QSS order in use or 3 to handle all supported orders
 
 	// FMI Library setup /////
 
@@ -301,7 +301,15 @@ simulate()
 						std::cerr << "         Using initial value from fmi2GetContinuousStates()" << std::endl;
 					}
 				}
-				Variable_QSS * qss_var( new Variable_QSS( fmi2_import_get_variable_name( fmu_var.var ), options::rTol, options::aTol, states_initial, fmu_var, fmu_der ) ); // Create QSS variable
+				Variable_FMU * qss_var( nullptr );
+				if ( options::qss == options::QSS::QSS1 ) {
+					qss_var = new Variable_FMU_QSS1( fmi2_import_get_variable_name( fmu_var.var ), options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
+				} else if ( options::qss == options::QSS::QSS2 ) {
+					qss_var = new Variable_FMU_QSS2( fmi2_import_get_variable_name( fmu_var.var ), options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
+				} else {
+					std::cerr << "Error: Specified QSS method is not yet supported for FMUs" << std::endl;
+					std::exit( EXIT_FAILURE );
+				}
 				qss_vars[ qss_var ] = ics - 1;
 				vars.push_back( qss_var ); // Add to QSS variables
 				if ( fmi2_import_get_causality( fmu_var.var ) == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
@@ -354,7 +362,7 @@ simulate()
 			fmi2_import_real_variable_t * der_real( fmi2_import_get_variable_as_real( der ) );
 			size_type const idx( fmu_dvrs[ der_real ].idx );
 			std::cout << " Var Index: " << idx << std::endl;
-			Variable_QSS * var( fmu_idxs[ idx ] );
+			Variable_FMU * var( fmu_idxs[ idx ] );
 			std::cout << " QSS Variable: " << var->name << std::endl;
 			for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
 				size_type const dep_idx( dependency[ j ] );
@@ -379,7 +387,7 @@ simulate()
 				}
 				auto idep( fmu_idxs.find( dep_idx ) ); //Do Add support for input variable dependents
 				if ( idep != fmu_idxs.end() ) {
-					Variable_QSS * dep( idep->second );
+					Variable_FMU * dep( idep->second );
 					std::cout << "  QSS var: " << dep->name << " has observer " << var->name << std::endl;
 					if ( dep == var ) {
 						var->self_observer = true;
@@ -405,11 +413,14 @@ simulate()
 	for ( auto var : vars ) {
 		var->init1();
 	}
-	FMU::get_derivatives();
 	for ( auto var : vars ) {
 		var->init1_fmu();
 	}
 	if ( QSS_order_max >= 2 ) {
+		fmi2_import_set_time( fmu, t = t0 + options::dtND ); //API Numeric differentiation (until higher derivatives available)
+		for ( auto var : vars ) {
+			var->fmu_set_qn( t );
+		}
 		for ( auto var : vars ) {
 			var->init2_LIQSS();
 		}
@@ -421,6 +432,7 @@ simulate()
 				var->init3();
 			}
 		}
+		fmi2_import_set_time( fmu, t = t0 ); // Probably don't need this
 	}
 	for ( auto var : vars ) {
 		var->init_event();
@@ -496,36 +508,44 @@ simulate()
 			fmi2_import_set_time( fmu, t );
 			if ( events.simultaneous() ) { // Simultaneous trigger
 				if ( options::output::d ) std::cout << "Simultaneous trigger event at t = " << t << std::endl;
-				EventQueue< Variable >::Variables triggers( events.simultaneous_variables() ); // Chg to generator approach to avoid heap hit // Sort/ptn by QSS order to save unnec loops/calls below
+				EventQueue< Variable >::Variables triggers( events.simultaneous_variables() ); // Chg to generator approach to avoid heap hit
 				for ( Variable * trigger : triggers ) {
 					assert( trigger->tE == t );
 					trigger->advance0();
 				}
 				for ( Variable * trigger : triggers ) {
-					trigger->advance_fmu();
+					trigger->advance1_fmu();
 				}
-				FMU::get_derivatives();
 				for ( Variable * trigger : triggers ) {
 					trigger->advance1_LIQSS();
 				}
 				for ( Variable * trigger : triggers ) {
 					trigger->advance1();
 				}
+				for ( Variable * trigger : triggers ) {
+					trigger->advance_observers();
+				}
 				if ( QSS_order_max >= 2 ) {
+					Time const tQ( t );
+					fmi2_import_set_time( fmu, t += options::dtND ); //API Numeric differentiation
+					for ( Variable * trigger : triggers ) {
+						trigger->advance2_fmu( t );
+					}
 					for ( Variable * trigger : triggers ) {
 						trigger->advance2_LIQSS();
 					}
 					for ( Variable * trigger : triggers ) {
 						trigger->advance2();
 					}
+					for ( Variable * trigger : triggers ) {
+						trigger->advance_observers_2( t );
+					}
 					if ( QSS_order_max >= 3 ) {
 						for ( Variable * trigger : triggers ) {
 							trigger->advance3();
 						}
 					}
-				}
-				for ( Variable * trigger : triggers ) {
-					trigger->advance_observers();
+					t = tQ;
 				}
 				if ( doROut ) { // Requantization output
 					for ( Variable * trigger : triggers ) {

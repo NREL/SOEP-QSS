@@ -18,12 +18,22 @@
 
 namespace FMU {
 
+using Time = double;
 using Value = double;
 
 // Globals
 extern fmi2_import_t * fmu; // FMU instance
 extern std::size_t n_ders; // Number of derivatives
 extern fmi2_real_t * derivatives; // Derivatives
+
+// Set FMU Time
+inline
+void
+set_time( Time const t )
+{
+	assert( fmu != nullptr );
+	fmi2_import_set_time( fmu, t ); //Do Check status returned
+}
 
 // Initialize Derivatives Array Size
 inline

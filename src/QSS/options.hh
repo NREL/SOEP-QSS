@@ -25,12 +25,14 @@ enum class QSS {
 };
 
 extern QSS qss; // QSS method: (LI)QSS1|2|3  [QSS2]
+extern int qss_order; // QSS method order  [computed]
 extern bool inflection; // Requantize at inflections?  [F]
 extern double rTol; // Relative tolerance  [1e-4|FMU]
 extern double aTol; // Absolute tolerance  [1e-6]
 extern bool rTol_set; // Relative tolerance set?
 extern double dtOut; // Sampled & FMU output time step (s)  [1e-3]
 extern double dtND; // Numeric differentiation time step (s)  [1e-6]
+extern double one_half_over_dtND; // 0.5 / dtND  [computed]
 extern double tEnd; // End time (s)  [1|FMU]
 extern bool tEnd_set; // End time set?
 extern std::string out; // Outputs: r, a, s, x, q, f  [rx]

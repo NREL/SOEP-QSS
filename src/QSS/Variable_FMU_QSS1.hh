@@ -122,7 +122,7 @@ public: // Methods
 	void
 	init1_fmu()
 	{
-		x_1_ = FMU::get_derivative( der.ics );
+		x_1_ = FMU::get_real( der.ref );
 	}
 
 	// Initialize Event in Queue
@@ -152,11 +152,10 @@ public: // Methods
 			x_0_ = q_0_;
 			fmu_set_observees_q( tE );
 		}
-		fmu_set_observers_observees_q();
-		FMU::get_derivatives(); //API Eliminate need for this with FMI per-variable get_derivative call
+		fmu_set_observers_observees_q( tE );
 		if ( self_observer ) {
 			tX = tE;
-			x_1_ = FMU::get_derivative( der.ics );
+			x_1_ = FMU::get_real( der.ref );
 		}
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
@@ -172,12 +171,12 @@ public: // Methods
 		set_qTol();
 	}
 
-	// Advance Simultaneous Trigger to Time tE and Requantize: Step FMU
+	// Advance Simultaneous Trigger to Time tE and Requantize: Step 1.FMU
 	void
-	advance_fmu()
+	advance1_fmu()
 	{
 		fmu_set_observees_q( tE );
-		fmu_set_observers_observees_q();
+		fmu_set_observers_observees_q( tE );
 	}
 
 	// Advance Simultaneous Trigger to Time tE and Requantize: Step 1
@@ -185,7 +184,7 @@ public: // Methods
 	advance1()
 	{
 		tX = tE;
-		x_1_ = FMU::get_derivative( der.ics );
+		x_1_ = FMU::get_real( der.ref );
 		set_tE_aligned();
 		event( events.shift( tE, event() ) );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
@@ -198,7 +197,7 @@ public: // Methods
 		assert( ( tX <= t ) && ( t <= tE ) );
 		if ( tX < t ) { // Could observe multiple variables with simultaneous triggering
 			x_0_ = x_0_ + ( x_1_ * ( t - tX ) );
-			x_1_ = FMU::get_derivative( der.ics );
+			x_1_ = FMU::get_real( der.ref );
 			tX = t;
 			set_tE_unaligned();
 			event( events.shift( tE, event() ) );

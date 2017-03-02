@@ -105,12 +105,21 @@ public: // Methods
 		observees_.shrink_to_fit();
 	}
 
-	// Set All Observer's Observee FMU Variables to Quantized Value at Time tQ
+	// Set All Observer's Observee FMU Variables to Quantized Value at Time t
 	void
-	fmu_set_observers_observees_q() const
+	fmu_set_observers_observees_q( Time const t ) const
 	{
 		for ( Variable const * observer : observers_ ) {
-			observer->fmu_set_observees_q_tX( tQ ); //Do Elim virtual call
+			observer->fmu_set_observees_q_tX( t ); //Do Elim virtual call
+		}
+	}
+
+	// Set All Observer's Observee FMU Variables to Quantized Numeric Differentiation Value at Time t
+	void
+	fmu_set_observers_observees_qn( Time const t, Time const t_check ) const
+	{
+		for ( Variable const * observer : observers_ ) {
+			observer->fmu_set_observees_qn_tX( t, t_check ); //Do Elim virtual call
 		}
 	}
 
@@ -130,6 +139,13 @@ public: // Methods
 		FMU::set_real( var.ref, q( t ) );
 	}
 
+	// Set FMU Variable to Quantized Numeric Differentiation Value at Time t
+	void
+	fmu_set_qn( Time const t ) const
+	{
+		FMU::set_real( var.ref, qn( t ) );
+	}
+
 	// Set All Observee FMU Variables to Quantized Value at Time t
 	void
 	fmu_set_observees_q( Time const t ) const
@@ -138,6 +154,16 @@ public: // Methods
 		fmu_set_q( t ); // Set self state also
 		for ( auto observee : observees_ ) {
 			observee->fmu_set_q( t );
+		}
+	}
+
+	// Set All Observee FMU Variables to Quantized Numeric Differentiation Value at Time t
+	void
+	fmu_set_observees_qn( Time const t ) const
+	{
+		fmu_set_qn( t ); // Set self state also
+		for ( auto observee : observees_ ) {
+			observee->fmu_set_qn( t );
 		}
 	}
 
@@ -150,6 +176,18 @@ public: // Methods
 			fmu_set_q( t ); // Set self state also
 			for ( auto observee : observees_ ) {
 				observee->fmu_set_q( t );
+			}
+		}
+	}
+
+	// Set All Observee FMU Variables to Quantized Numeric Differentiation Value at Time t > tX
+	void
+	fmu_set_observees_qn_tX( Time const t, Time const t_check ) const
+	{
+		if ( tX < t_check ) {
+			fmu_set_qn( t ); // Set self state also
+			for ( auto observee : observees_ ) {
+				observee->fmu_set_qn( t );
 			}
 		}
 	}
