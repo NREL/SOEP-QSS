@@ -55,20 +55,22 @@ def main():
     src_path = os.path.dirname( arg.source )
     src_name = os.path.basename( arg.source )
     src_base, src_ext = os.path.splitext( src_name )
+    dep_name = src_base + '.d'
+    obj_name = src_base + '.' + arg.ext
     if src_ext: src_ext = src_ext[ 1: ]
     if not ( src_base and src_ext and C_ext.match( src_ext ) ):
         raise ValueError, 'Not a recognized C/C++ file name extension: ' + str( src_ext )
 
     # Build dependencies
-    tar = src_base + '.' + arg.ext + ' ' + src_base + '.d'
-    dep = [ src_base + '.' + src_ext ]
+    tar = obj_name + ' ' + dep_name
+    dep = [ src_name ]
     dep_list = list( C_deps( os.path.abspath( arg.source ), add = False ) )
     dep_list.sort()
     dep.extend( dep_list )
     dep_str = ' '.join( dep )
 
     # Write dependency file
-    dep_file = open( src_base + '.d', 'wb' )
+    dep_file = open( dep_name, 'wb' )
     dep_file.write( tar + ' : ' + dep_str + '\n' )
     dep_file.write( dep_str + ' :\n' )
     dep_file.close()

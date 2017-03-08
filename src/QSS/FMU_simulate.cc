@@ -471,7 +471,6 @@ simulate()
 		if ( doSOut ) { // Sampled and/or FMU outputs
 			Time const tStop( std::min( t, tE ) );
 			while ( tOut < tStop ) {
-				//std::cout << "Output time: " << tOut << std::endl;/////////////////////////////////////
 				if ( options::output::s ) { // QSS variable outputs
 					for ( size_type i = 0; i < n_vars; ++i ) {
 						if ( options::output::x ) x_streams[ i ] << tOut << '\t' << vars[ i ]->x( tOut ) << '\n';
@@ -503,7 +502,6 @@ simulate()
 			}
 		}
 		if ( t <= tE ) { // Perform event
-			//std::cout << "Event time: " << t << std::endl;/////////////////////////////////////
 			++n_requant_events;
 			fmi2_import_set_time( fmu, t );
 			if ( events.simultaneous() ) { // Simultaneous trigger

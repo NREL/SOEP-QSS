@@ -141,7 +141,6 @@ simulate()
 		if ( doSOut ) { // Sampled and/or FMU outputs
 			Time const tStop( std::min( t, tE ) );
 			while ( tOut < tStop ) {
-				//std::cout << "Output time: " << tOut << std::endl;/////////////////////////////////////
 				for ( size_type i = 0; i < n_vars; ++i ) {
 					if ( options::output::x ) x_streams[ i ] << tOut << '\t' << vars[ i ]->x( tOut ) << '\n';
 					if ( options::output::q ) q_streams[ i ] << tOut << '\t' << vars[ i ]->q( tOut ) << '\n';
@@ -151,7 +150,6 @@ simulate()
 			}
 		}
 		if ( t <= tE ) { // Perform event
-			//std::cout << "Event time: " << t << std::endl;/////////////////////////////////////
 			++n_requant_events;
 			if ( events.simultaneous() ) { // Simultaneous trigger
 				if ( options::output::d ) std::cout << "Simultaneous trigger event at t = " << t << std::endl;
