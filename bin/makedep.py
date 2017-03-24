@@ -2,6 +2,8 @@
 
 # Dependency Generator for C/C++
 #
+# Language: Python (2.7 or 3.x)
+#
 # Version: 1.0.0
 #
 # Copyright (c) 2000-2017 Objexx Engineering, Inc. All Rights Reserved.
@@ -51,7 +53,7 @@ def main():
 
     # Parse source file name
     if not os.path.isfile( arg.source ):
-        raise IOError, 'Source file not found: ' + str( arg.source )
+        raise IOError( 'Source file not found: ' + str( arg.source ) )
     src_path = os.path.dirname( arg.source )
     src_name = os.path.basename( arg.source )
     src_base, src_ext = os.path.splitext( src_name )
@@ -59,7 +61,7 @@ def main():
     obj_name = src_base + '.' + arg.ext
     if src_ext: src_ext = src_ext[ 1: ]
     if not ( src_base and src_ext and C_ext.match( src_ext ) ):
-        raise ValueError, 'Not a recognized C/C++ file name extension: ' + str( src_ext )
+        raise ValueError( 'Not a recognized C/C++ file name extension: ' + str( src_ext ) )
 
     # Build dependencies
     tar = obj_name + ' ' + dep_name
@@ -70,7 +72,7 @@ def main():
     dep_str = ' '.join( dep )
 
     # Write dependency file
-    dep_file = open( dep_name, 'wb' )
+    dep_file = open( dep_name, 'w' )
     dep_file.write( tar + ' : ' + dep_str + '\n' )
     dep_file.write( dep_str + ' :\n' )
     dep_file.close()

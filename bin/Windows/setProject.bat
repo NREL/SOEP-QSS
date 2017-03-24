@@ -10,3 +10,5 @@ set Path=%Path%;%QSS%\bin\Windows;%QSS%\bin
 
 rem ObjexxPlot Setup
 set Path=%Path%;C:\Projects\ObjexxSISAME\dev\pkg\bin
+
+call setPython.bat
