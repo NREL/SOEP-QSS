@@ -1,7 +1,7 @@
 #ifndef QSS_EventQueue_hh_INCLUDED
 #define QSS_EventQueue_hh_INCLUDED
 
-// QSS Event Queue Based on std::multimap
+// QSS Event Queue
 //
 // Project: QSS Solver
 //
@@ -9,27 +9,40 @@
 // under contract to the National Renewable Energy Laboratory
 // of the U.S. Department of Energy
 
-// This is a simple baseline event queue that is non-optimal for sequential and concurrent access
+// This is a simple event queue based on std::multimap that is non-optimal for sequential and concurrent access
 // Will need to put mutex locks around modifying operations for concurrent use
-// Should explore concurrent-friendly priority queues once we have large scale cases to test with
+// Should explore concurrent-friendly priority queues once we have large scale test cases
+
+// QSS Headers
+#include <QSS/Event.hh>
+#include <QSS/math.hh>
+#include <QSS/SuperdenseTime.hh>
 
 // C++ Headers
 #include <cassert>
+#include <cstddef>
+#include <iostream>
 #include <map>
 #include <vector>
 
-// QSS Event Queue Based on std::multimap
+namespace QSS {
+
+// QSS Event Queue
 template< typename V >
 class EventQueue
 {
 
 public: // Types
 
-	using Time = double;
-	using Variable = V;
-	using Variables = std::vector< Variable * >;
+	using Type = typename Event< V >::Type;
+	using Value = typename Event< V >::Value;
+	using Time = SuperdenseTime::Time;
+	using Index = SuperdenseTime::Index;
+	using Var = V;
+	using Variables = std::vector< V * >;
+	using Events = std::vector< Event< V > >;
 
-	using EventMap = std::multimap< Time, Variable * >;
+	using EventMap = std::multimap< SuperdenseTime, Event< V > >;
 	using size_type = typename EventMap::size_type;
 	using const_iterator = typename EventMap::const_iterator;
 	using iterator = typename EventMap::iterator;
@@ -38,13 +51,15 @@ public: // Types
 	using const_reference = typename EventMap::const_reference;
 	using reference = typename EventMap::reference;
 
-public: // Creation
+	// SuperdenseTime Index Offsets
+	struct Off {
+		static SuperdenseTime::Index const ZC{ 0 };
+		static SuperdenseTime::Index const QSS{ 2 }; // So QSS observer updates occur after observer ZC -> Handler events
+		static SuperdenseTime::Index const Observer{ 0 };
+		static SuperdenseTime::Index const Handler{ 0 };
+	};
 
-	// Default Constructor
-	EventQueue()
-	{}
-
-public: // Collection Methods
+public: // Predicates
 
 	// Empty?
 	bool
@@ -53,6 +68,75 @@ public: // Collection Methods
 		return m_.empty();
 	}
 
+	// Has Event at SuperdenseTime s?
+	bool
+	has( SuperdenseTime const & s ) const
+	{
+		return ( m_.find( s ) != m_.end() );
+	}
+
+	// Top Event is ZC?
+	bool
+	top_is_ZC() const
+	{
+		assert( ! m_.empty() );
+		return m_.begin()->second.is_ZC();
+	}
+
+	// Top Event is QSS?
+	bool
+	top_is_QSS() const
+	{
+		assert( ! m_.empty() );
+		return m_.begin()->second.is_QSS();
+	}
+
+	// Top Event is Observer?
+	bool
+	top_is_observer() const
+	{
+		assert( ! m_.empty() );
+		return m_.begin()->second.is_observer();
+	}
+
+	// Top Event is Handler?
+	bool
+	top_is_handler() const
+	{
+		assert( ! m_.empty() );
+		return m_.begin()->second.is_handler();
+	}
+
+	// Single Trigger Variable at Front of Queue?
+	bool
+	single() const
+	{
+		if ( m_.size() >= 2u ) {
+			const_iterator i( m_.begin() );
+			const_iterator const event1( i );
+			const_iterator const event2( ++i );
+			return ( event1->first != event2->first );
+		} else {
+			return ( m_.size() == 1u );
+		}
+	}
+
+	// Simultaneous Trigger Variables at Front of Queue?
+	bool
+	simultaneous() const
+	{
+		if ( m_.size() >= 2u ) {
+			const_iterator i( m_.begin() );
+			const_iterator const event1( i );
+			const_iterator const event2( ++i );
+			return ( event1->first == event2->first );
+		} else {
+			return false;
+		}
+	}
+
+public: // Properties
+
 	// Size
 	size_type
 	size() const
@@ -60,75 +144,127 @@ public: // Collection Methods
 		return m_.size();
 	}
 
-	// Top Event Variable
-	Variable *
+	// Count of Events at SuperdenseTime s
+	size_type
+	count( SuperdenseTime const & s ) const
+	{
+		return m_.count( s );
+	}
+
+	// Any Event at SuperdenseTime s
+	const_iterator
+	find( SuperdenseTime const & s ) const
+	{
+		return m_.find( s );
+	}
+
+	// Any Event at SuperdenseTime s
+	iterator
+	find( SuperdenseTime const & s )
+	{
+		return m_.find( s );
+	}
+
+	// All Events at SuperdenseTime s
+	std::pair< const_iterator, const_iterator >
+	equal_range( SuperdenseTime const & s ) const
+	{
+		return m_.equal_range( s );
+	}
+
+	// All Events at SuperdenseTime s
+	std::pair< iterator, iterator >
+	equal_range( SuperdenseTime const & s )
+	{
+		return m_.equal_range( s );
+	}
+
+	// All Events at Top Events SuperdenseTime
+	std::pair< const_iterator, const_iterator >
+	tops() const
+	{
+		return m_.equal_range( top_stime() );
+	}
+
+	// All Events at Top Events SuperdenseTime
+	std::pair< iterator, iterator >
+	tops()
+	{
+		return m_.equal_range( top_stime() );
+	}
+
+	// Top Event Type
+	typename Event< V >::Type
+	top_Event_Type() const
+	{
+		assert( ! m_.empty() );
+		return m_.begin()->second.type();
+	}
+
+	// Top Event
+	Event< V > const &
+	top() const
+	{
+		assert( ! m_.empty() );
+		return m_.begin()->second;
+	}
+
+	// Top Event
+	Event< V > &
 	top()
 	{
-		assert ( ! m_.empty() );
+		assert( ! m_.empty() );
 		return m_.begin()->second;
+	}
+
+	// Top Event Variable
+	Var const *
+	top_var() const
+	{
+		assert( ! m_.empty() );
+		return m_.begin()->second.var();
+	}
+
+	// Top Event Variable
+	Var *
+	top_var()
+	{
+		assert( ! m_.empty() );
+		return m_.begin()->second.var();
 	}
 
 	// Top Event Time
 	Time
 	top_time() const
 	{
-		assert ( ! m_.empty() );
-		return m_.begin()->first;
+		assert( ! m_.empty() );
+		return m_.begin()->first.t;
 	}
 
-	// Top Event Iterator
-	iterator
-	top_iterator()
+	// Top Event SuperdenseTime
+	SuperdenseTime const &
+	top_stime() const
 	{
-		return m_.begin();
+		assert( ! m_.empty() );
+		SuperdenseTime const & s( m_.begin()->first );
+		t_ = s.t; // Set active time
+		return s;
 	}
 
-//	// Pop and Return Top Event Variable
-//	Variable *
-//	pop()
-//	{
-//		assert ( ! m_.empty() );
-//		iterator const begin( m_.begin() );
-//		Variable * x( begin->second );
-//		m_.erase( begin );
-//		return x;
-//	}
-
-	// Simultaneous Trigger Variables?
-	bool
-	simultaneous() const
+	// Top Event Index
+	Index
+	top_index() const
 	{
-		if ( m_.size() >= 2u ) {
-			const_iterator const event1( m_.begin() );
-			const_iterator const event2( ++m_.begin() );
-			return ( event1->first == event2->first );
-		} else {
-			return false;
-		}
+		assert( ! m_.empty() );
+		return m_.begin()->first.i;
 	}
 
-	// Simultaneous Trigger Variables
-	Variables
-	simultaneous_variables() const
+	// Next Event Index
+	Index
+	next_index() const
 	{
-		Variables vars;
-		if ( ! m_.empty() ) {
-			const_iterator i( m_.begin() );
-			const_iterator e( m_.end() );
-			Time const t( i->first );
-			while ( ( i != e ) && ( i->first == t ) ) {
-				vars.push_back( i->second );
-				++i;
-			}
-		}
-		return vars;
-	}
-
-	// Clear
-	void
-	clear()
-	{
-		m_.clear();
+		assert( ! m_.empty() );
+		return m_.begin()->first.i + Index( 1u );
 	}
 
 public: // Iterators
@@ -161,86 +297,190 @@ public: // Iterators
 		return m_.end();
 	}
 
-public: // Time Methods
+public: // Methods
 
-	// Add an Event
-	iterator
-	add(
-	 Time const t,
-	 Variable * x
-	)
+	// Simultaneous Trigger Variables at Front of Queue
+	Variables
+	top_vars()
 	{
-		return m_.emplace( t, x );
+		Variables vars;
+		if ( ! m_.empty() ) {
+			iterator i( m_.begin() );
+			iterator e( m_.end() );
+			SuperdenseTime const & s( i->first );
+			while ( ( i != e ) && ( i->first == s ) ) {
+				vars.push_back( i->second.var() );
+				++i;
+			}
+		}
+		return vars;
 	}
 
-	// Push an Event
-	iterator
-	push(
-	 Time const t,
-	 Variable * x
-	)
+	// Simultaneous Events at Front of Queue
+	Events
+	top_events()
 	{
-		return m_.emplace( t, x );
+		Events tops;
+		if ( ! m_.empty() ) {
+			iterator i( m_.begin() );
+			iterator e( m_.end() );
+			SuperdenseTime const & s( i->first );
+			while ( ( i != e ) && ( i->first == s ) ) {
+				tops.push_back( i->second );
+				++i;
+			}
+		}
+		return tops;
 	}
 
-	// Shift an Event to a New Time
+	// Set Active Time
+	void
+	set_active_time() const
+	{
+		assert( ! m_.empty() );
+		t_ = m_.begin()->first.t;
+	}
+
+	// Clear
+	void
+	clear()
+	{
+		m_.clear();
+	}
+
+public: // Zero-Crossing Event Methods
+
+	// Add Zero-Crossing Event
 	iterator
-	shift(
+	add_ZC(
+	 Time const t,
+	 Var * var
+	)
+	{
+		return m_.emplace( SuperdenseTime( t, Off::ZC ), Event< V >( Event< V >::ZC, var ) );
+	}
+
+	// Shift Zero-Crossing Event
+	iterator
+	shift_ZC(
 	 Time const t,
 	 iterator const i
 	)
 	{
-		Variable * x( i->second );
+		Index const idx( t == t_ ? next_index() + Off::ZC : Off::ZC );
+		Var * var( i->second.var() );
 		m_.erase( i );
-		return m_.emplace( t, x ); //Do See if faster to insert with position hint of i
+		return m_.emplace( SuperdenseTime( t, idx ), Event< V >( Event< V >::ZC, var ) );
 	}
 
-	// Has Event at Time t?
-	bool
-	has( Time const t ) const
-	{
-		return m_.find( t ) != m_.end();
-	}
+public: // QSS Event Methods
 
-	// Count of Events at Time t
-	size_type
-	count( Time const t ) const
-	{
-		return m_.count( t );
-	}
-
-	// Any Event at Time t
-	const_iterator
-	any( Time const t ) const
-	{
-		return m_.find( t );
-	}
-
-	// Any Event at Time t
+	// Add QSS Event
 	iterator
-	any( Time const t )
+	add_QSS(
+	 Time const t,
+	 Var * var
+	)
 	{
-		return m_.find( t );
+		return m_.emplace( SuperdenseTime( t, Off::QSS ), Event< V >( Event< V >::QSS, var ) );
 	}
 
-	// All Events at Time t
-	std::pair< const_iterator, const_iterator >
-	all( Time const t ) const
+	// Shift QSS Event
+	iterator
+	shift_QSS(
+	 Time const t,
+	 iterator const i
+	)
 	{
-		return m_.equal_range( t );
+		Index const idx( t == t_ ? next_index() + Off::QSS : Off::QSS );
+		Var * var( i->second.var() );
+		m_.erase( i );
+		return m_.emplace( SuperdenseTime( t, idx ), Event< V >( Event< V >::QSS, var ) );
 	}
 
-	// All Events at Time t
-	std::pair< iterator, iterator >
-	all( Time const t )
+public: // Observer Event Methods
+
+	// Shift Observer Event
+	iterator
+	shift_observer(
+	 Time const t,
+	 iterator const i
+	)
 	{
-		return m_.equal_range( t );
+		Index const idx( next_index() + Off::Observer );
+		Var * var( i->second.var() );
+		m_.erase( i );
+		return m_.emplace( SuperdenseTime( t, idx ), Event< V >( Event< V >::Observer, var ) );
+	}
+
+public: // Handler Event Methods
+
+	// Add Handler Event
+	iterator
+	add_handler(
+	 Time const t,
+	 Var * var
+	)
+	{
+		return m_.emplace( SuperdenseTime( t, Off::Handler ), Event< V >( Event< V >::Handler, var ) );
+	}
+
+	// Add Handler Event at Time Infinity
+	iterator
+	add_handler( Var * var )
+	{
+		return m_.emplace( SuperdenseTime( infinity, Off::Handler ), Event< V >( Event< V >::Handler, var ) );
+	}
+
+	// Shift Handler Event
+	iterator
+	shift_handler(
+	 Time const t,
+	 Value const val,
+	 iterator const i
+	)
+	{
+		Index const idx( next_index() + Off::Handler );
+		Var * var( i->second.var() );
+		SuperdenseTime const & s( i->first );
+		if ( ( s.t == t ) && ( s.i == idx ) ) { // Variable already has event at same superdense time
+			Event< V > const & e( i->second );
+			if ( ( e.is_handler() ) && ( e.val() != val ) ) std::cerr << "Zero-crossing handler events at the same time but with different values occurred for: " << var->name << std::endl;
+		}
+		m_.erase( i );
+		return m_.emplace( SuperdenseTime( t, idx ), Event< V >( Event< V >::Handler, var, val ) );
+	}
+
+	// Shift Handler Event: FMU Sets Value
+	iterator
+	shift_handler(
+	 Time const t,
+	 iterator const i
+	)
+	{
+		Index const idx( next_index() + Off::Handler );
+		Var * var( i->second.var() );
+		SuperdenseTime const & s( i->first );
+		m_.erase( i );
+		return m_.emplace( SuperdenseTime( t, idx ), Event< V >( Event< V >::Handler, var ) );
+	}
+
+	// Shift Handler Event to Time Infinity
+	iterator
+	shift_handler( iterator const i )
+	{
+		Var * var( i->second.var() );
+		m_.erase( i );
+		return m_.emplace( SuperdenseTime( infinity, Off::Handler ), Event< V >( Event< V >::Handler, var ) );
 	}
 
 private: // Data
 
 	EventMap m_;
+	mutable Time t_{ 0.0 }; // Active event time
 
 };
+
+} // QSS
 
 #endif

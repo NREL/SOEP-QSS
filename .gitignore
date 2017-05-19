@@ -28,6 +28,7 @@
 .cproject
 .idea
 .se
+.vscode
 
 *.asc
 *.csv

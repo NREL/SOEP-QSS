@@ -40,14 +40,14 @@ main()
 	std::uniform_real_distribution< Time > distribution( t, tE );
 	for ( Variables::size_type i = 0; i < N; ++i ) {
 		vars.emplace_back( V() );
-		events.add( distribution( random_generator ), &vars[ i ] );
+		events.add_QSS( distribution( random_generator ), &vars[ i ] );
 	}
 
 	double const time_beg = (double)clock()/CLOCKS_PER_SEC;
 	size_t ns( 0u ), nr( 0u ), nl( 0u );
 	for ( size_t r = 1; r <= R; ++r ) {
-		auto i( events.top_iterator() );
-		events.shift( i->first + ( 0.5 * ( 10.0 - i->first ) ), i ); // Move halfway to tE
+		auto i( events.begin() );
+		events.shift_QSS( i->first + ( 0.5 * ( 10.0 - i->first ) ), i ); // Move halfway to tE
 	}
 	double const time_end = (double)clock()/CLOCKS_PER_SEC;
 	cout << std::setprecision( 15 ) << time_end - time_beg << " (s) " << events.top_time() << ' ' << N << ' ' << R << endl << endl;

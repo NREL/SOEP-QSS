@@ -8,6 +8,7 @@
 
 // QSS Headers
 #include <QSS/options.hh>
+#include <QSS/math.hh>
 
 // C++ Headers
 #include <algorithm>
@@ -15,7 +16,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <limits>
 
+namespace QSS {
 namespace options {
 
 QSS qss( QSS::QSS2 ); // QSS method: (LI)QSS1|2|3  [QSS2]
@@ -24,8 +27,11 @@ bool inflection( false ); // Requantize at inflections?  [F]
 double rTol( 1.0e-4 ); // Relative tolerance  [1e-4|FMU]
 double aTol( 1.0e-6 ); // Absolute tolerance  [1e-6]
 bool rTol_set( false ); // Relative tolerance set?
+double dtMin( 0.0 ); // Min time step (s)
+double dtMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Max time step (s)
 double dtOut( 1.0e-3 ); // Sampled & FMU output time step (s)  [1e-3]
 double dtND( 1.0e-6 ); // Numeric differentiation time step (s)  [1e-6]
+double one_over_dtND( 1.0e6 ); // 1 / dtND  [computed]
 double one_half_over_dtND( 5.0e5 ); // 0.5 / dtND  [computed]
 double tEnd( 1.0 ); // End time (s)  [1|FMU]
 bool tEnd_set( false ); // End time set?
@@ -34,8 +40,9 @@ std::string model; // Name of model or FMU
 
 namespace output { // Output selections
 
-bool r( true ); // Requantization events?  [T]
-bool a( false ); // All variables at requantization events?  [F]
+bool r( true ); // Requantizations?  [T]
+bool o( false ); // Observers at requantizations?  [F]
+bool a( false ); // All variables at requantization events? (=> r)  [F]
 bool s( false ); // Sampled output?  [F]
 bool f( true ); // FMU outputs?  [T]
 bool d( false ); // Diagnostic output?  [F]
@@ -159,12 +166,15 @@ help_display()
 	std::cout << " --inflection  Requantize at inflections?  [F]" << '\n';
 	std::cout << " --rTol=TOL    Relative tolerance  [1e-4|FMU]" << '\n';
 	std::cout << " --aTol=TOL    Absolute tolerance  [1e-6]" << '\n';
+	std::cout << " --dtMin=STEP  Min time step (s)  [0.0]" << '\n';
+	std::cout << " --dtMax=STEP  Max time step (s)  [infinity]" << '\n';
 	std::cout << " --dtOut=STEP  Sampled & FMU output step (s)  [1e-3]" << '\n';
 	std::cout << " --dtND=STEP   Numeric differentiation step (s)  [1e-6]" << '\n';
 	std::cout << " --tEnd=TIME   End time (s)  [1|FMU]" << '\n';
 	std::cout << " --out=OUTPUTS Outputs: r, a, s, d, x, q, f  [rfx]" << '\n';
-	std::cout << "       r       Requantization events" << '\n';
-	std::cout << "       a       All variables at requantizations (=> r)" << '\n';
+	std::cout << "       r       Requantizations" << '\n';
+	std::cout << "       o       Observers at requantizations" << '\n';
+	std::cout << "       a       All variables at requantizations (=> r & o)" << '\n';
 	std::cout << "       s       Sampled time steps" << '\n';
 	std::cout << "       f       FMU outputs" << '\n';
 	std::cout << "       d       Diagnostic output" << '\n';
@@ -176,11 +186,13 @@ help_display()
 	std::cout << "  achilles2 : Adds symmetry for simultaneous triggering" << '\n';
 	std::cout << "  achillesc : Custom functions demo " << '\n';
 	std::cout << "  achilles_ND : Numeric differentiation" << '\n';
+	std::cout << "  bball : Bouncing ball (discrete events)" << '\n';
 	std::cout << "  exponential_decay : Exponential decay" << '\n';
 	std::cout << "  exponential_decay_sine : Adds sine input function" << '\n';
 	std::cout << "  exponential_decay_sine_ND : Numeric differentiation" << '\n';
 	std::cout << "  nonlinear : Nonlinear derivative demo" << '\n';
 	std::cout << "  nonlinear_ND : Numeric differentiation" << '\n';
+	std::cout << "  StateEvents6 : Zero-crossing model" << '\n';
 	std::cout << "  stiff : Stiff system from literature" << '\n';
 	std::cout << "  xy : Simple 2 variable model" << '\n';
 	std::cout << "  xyz : Simple 3 variable model" << '\n';
@@ -202,7 +214,7 @@ process_args( int argc, char * argv[] )
 		if ( ( arg == "--help" ) || ( arg == "-h" ) ) { // Show help
 			help_display();
 			help = true;
-		} else if ( has_value_option( arg, "qss" ) ) {
+		} else if ( has_value_option( arg, "qss" ) || has_value_option( arg, "QSS" ) ) {
 			std::string const qss_name( uppercased( arg_value( arg ) ) );
 			if ( qss_name == "QSS1" ) {
 				qss = QSS::QSS1;
@@ -255,6 +267,30 @@ process_args( int argc, char * argv[] )
 				std::cerr << "Nonnumeric aTol: " << aTol_str << std::endl;
 				fatal = true;
 			}
+		} else if ( has_value_option( arg, "dtMin" ) ) {
+			std::string const dtMin_str( arg_value( arg ) );
+			if ( is_double( dtMin_str ) ) {
+				dtMin = double_of( dtMin_str );
+				if ( dtMin < 0.0 ) {
+					std::cerr << "Negative dtMin: " << dtMin_str << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::cerr << "Nonnumeric dtMin: " << dtMin_str << std::endl;
+				fatal = true;
+			}
+		} else if ( has_value_option( arg, "dtMax" ) ) {
+			std::string const dtMax_str( arg_value( arg ) );
+			if ( is_double( dtMax_str ) ) {
+				dtMax = double_of( dtMax_str );
+				if ( dtMax < 0.0 ) {
+					std::cerr << "Negative dtMax: " << dtMax_str << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::cerr << "Nonnumeric dtMax: " << dtMax_str << std::endl;
+				fatal = true;
+			}
 		} else if ( has_value_option( arg, "dtOut" ) ) {
 			std::string const dtOut_str( arg_value( arg ) );
 			if ( is_double( dtOut_str ) ) {
@@ -275,6 +311,7 @@ process_args( int argc, char * argv[] )
 					std::cerr << "Negative dtND: " << dtND_str << std::endl;
 					fatal = true;
 				}
+				one_over_dtND = 1.0 / dtND;
 				one_half_over_dtND = 0.5 / dtND;
 			} else {
 				std::cerr << "Nonnumeric dtND: " << dtND_str << std::endl;
@@ -295,18 +332,25 @@ process_args( int argc, char * argv[] )
 			}
 		} else if ( has_value_option( arg, "out" ) ) {
 			out = arg_value( arg );
-			if ( has_any_not_of( out, "rasfdxq" ) ) {
-				std::cerr << "Output flag not in rasfdxq: " << out << std::endl;
+			if ( has_any_not_of( out, "roasfdxq" ) ) {
+				std::cerr << "Output flag not in roasfdxq: " << out << std::endl;
 				fatal = true;
 			}
 			output::r = has( out, 'r' );
+			output::o = has( out, 'o' );
 			output::a = has( out, 'a' );
 			output::s = has( out, 's' );
 			output::f = has( out, 'f' );
 			output::d = has( out, 'd' );
 			output::x = has( out, 'x' );
 			output::q = has( out, 'q' );
-			if ( output::a ) output::r = true; // a => r
+			if ( output::a ) {
+				output::r = true; // a => r
+				output::o = true; // a => o
+			}
+		} else if ( arg[ 0 ] == '-' ) {
+			std::cerr << "Unsupported option: " << arg << std::endl;
+			fatal = true;
 		} else { // Treat non-option argument as model
 			model = arg;
 		}
@@ -317,3 +361,4 @@ process_args( int argc, char * argv[] )
 }
 
 } // options
+} // QSS

@@ -21,7 +21,7 @@ OBJ_PATH := .
 BIN_PATH := $(QSS_bin)
 
 # Search Paths
-vpath %.cc  $(SRC_PATH)
+vpath %.cc  $(SRC_PATH) $(SRC_PATH)/dfn $(SRC_PATH)/dfn/mdl $(SRC_PATH)/fmu
 vpath %.cpp $(SRC_PATH)
 vpath %.c   $(SRC_PATH)
 vpath %.hh  $(INC_PATH)
@@ -36,6 +36,15 @@ vpath %.def $(BIN_PATH)
 vpath %.dll $(BIN_PATH)
 
 # Implicit Rules
+
+%.d : %.cc
+	@$(MAKEDEPEND) $<
+
+%.d : %.cpp
+	@$(MAKEDEPEND) $<
+
+%.d : %.c
+	@$(MAKEDEPEND) $<
 
 %.o : %.cc
 	@$(MAKEDEPEND) $<

@@ -5,7 +5,7 @@
 # Platform: Windows/VC/64/r
 
 # Variables
-CXXFLAGS := /nologo /TP /EHsc /W3 /wd4068 /wd4244 /wd4996 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DWIN32 /DFMILIB_STATIC_LIB_ONLY /arch:AVX2 /DNDEBUG /O2 /fp:fast /Qpar /GS- /MD
+CXXFLAGS := /nologo /TP /EHsc /W3 /wd4068 /wd4244 /wd4258 /wd4996 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DWIN32 /DFMILIB_STATIC_LIB_ONLY /arch:AVX2 /DNDEBUG /O2 /fp:fast /Qpar /GS- /MD
 CFLAGS := /nologo /TC /W3 /wd4068 /wd4244 /wd4996 /DWIN32_LEAN_AND_MEAN /DWIN32 /DFMILIB_STATIC_LIB_ONLY /arch:AVX2 /DNDEBUG /O2 /fp:fast /GS- /MD
 # Disabled Warnings:
 #  4068 Unknown pragma
@@ -17,6 +17,7 @@ CFLAGS := /nologo /TC /W3 /wd4068 /wd4244 /wd4996 /DWIN32_LEAN_AND_MEAN /DWIN32 
 #  4996 Deprecated functions (/D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS)
 # Notes:
 #  /D_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1 /D_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1 enables secure template overloads
+#  /RTCc gave exe blocked by Windows 8.1 Defender with ostringstream
 LDFLAGS := /nologo /F8388608
 LINKFLAGS := /link /LIBPATH:$(QSS_bin)
 

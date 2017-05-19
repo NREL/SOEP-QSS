@@ -18,19 +18,19 @@ include $(QSS_bin)/GNUmakeinit.mk
 # Variables
 TAR := QSS
 SRC := $(notdir $(wildcard $(TST_PATH)/*.cc))
+SRC += $(notdir $(wildcard $(TST_PATH)/dfn/*.cc))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .obj,$(basename $(SRC)))
 APP_OBJ := $(filter-out $(QSS)/src/QSS/$(PlatformFull)/QSS.obj,$(wildcard $(QSS)/src/QSS/$(PlatformFull)/*.obj))
 EXE := $(BIN_PATH)\$(TAR).unit.exe
 PATH_LIBS := $(BIN_PATH)\lib$(TAR).lib
 LINK_LIBS :=
-CXXFLAGS += /D_VARIADIC_MAX=10
 
 # Extensions
 .SUFFIXES: .h
 
 # Search Paths
-vpath %.cc  $(TST_PATH)
+vpath %.cc  $(TST_PATH) $(TST_PATH)/dfn
 vpath %.hh  $(TST_PATH)
 vpath %.h   $(GTEST_INC)
 
@@ -76,13 +76,13 @@ run : $(EXE)
 #$(EXE) : $(OBJ) $(PATH_LIBS)
 #	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 #	@-rm -f $(filter-out $(OBJ),$(wildcard *.obj)) # Prune obs objs
-#	$(CXX) $(LDFLAGS) /Fe$(subst \,/,$@) $^ $(LINKFLAGS) $(LINK_LIBS) $(GTEST_BIN)\gtest.lib
+#	$(CXX) $(LDFLAGS) /Fe$(subst \,/,$@) $^ $(LINKFLAGS) $(LINK_LIBS) $(GTEST_BIN)\gtest.lib $(FMIL_HOME)\lib\fmilib_shared.lib
 
 # Executable from objects
 $(EXE) : $(OBJ) $(APP_OBJ)
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.obj)) # Prune obs objs
-	$(CXX) $(LDFLAGS) /Fe$(subst \,/,$@) $^ $(LINKFLAGS) $(LINK_LIBS) $(GTEST_BIN)\gtest.lib
+	$(CXX) $(LDFLAGS) /Fe$(subst \,/,$@) $^ $(LINKFLAGS) $(LINK_LIBS) $(GTEST_BIN)\gtest.lib $(FMIL_HOME)\lib\fmilib_shared.lib
 
 .PRECIOUS : $(EXE)
 

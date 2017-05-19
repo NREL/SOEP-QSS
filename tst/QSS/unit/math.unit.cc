@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <cmath>
 
+using namespace QSS;
+
 TEST( MathTest, Sign )
 {
 	EXPECT_EQ( 1.0, sign( 3.0 ) );

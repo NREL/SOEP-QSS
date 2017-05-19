@@ -7,8 +7,8 @@
 // of the U.S. Department of Energy
 
 // QSS Headers
-#include <QSS/ex_simulate.hh>
-#include <QSS/FMU_simulate.hh>
+#include <QSS/dfn/simulate_dfn.hh>
+#include <QSS/fmu/simulate_fmu.hh>
 #include <QSS/options.hh>
 
 // C++ Headers
@@ -19,6 +19,8 @@
 int
 main( int argc, char * argv[] )
 {
+	using namespace QSS;
+
 	// Process command line arguments
 	options::process_args( argc, argv );
 
@@ -27,8 +29,8 @@ main( int argc, char * argv[] )
 		std::cerr << "No model name or FMU file specified" << std::endl;
 		std::exit( EXIT_FAILURE );
 	} else if ( ( options::model.length() >= 5 ) && ( options::model.rfind( ".fmu" ) == options::model.length() - 4u ) ) { // FMU
-		FMU::simulate();
+		fmu::simulate_fmu();
 	} else { // Example
-		ex::simulate();
+		dfn::simulate_dfn();
 	}
 }

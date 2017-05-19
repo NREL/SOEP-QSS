@@ -13,17 +13,18 @@ Currently the code has:
 * Simultaneous requantization event support.
 * Numeric bulletproofing of root solvers.
 * A master algorithm with sampling and diagnostic output controls.
-* A few simple hard-coded test cases.
-* Initial FMU demo support for QSS1 and QSS2.
+* A few simple code-defined example cases.
+* FMU demo support for QSS1 and QSS2.
+* Zero-crossing event support.
+* Discrete real-valued variables.
 
 Notes:
-* No Modelica input file processing is supported: test cases are hard-coded or loaded from FMUs.
+* No Modelica input file processing is supported: test cases are code-defined or loaded from FMUs.
 
 ## Plan
 
 Planned development in anticipated sequence order are:
-* FMU support: unit conversions, LIQSS1/2, QSS3, Modelica annotations, higher derivatives, ...
-* Discrete-valued variables (zero-crossing functions).
+* FMU support extensions: unit conversions, LIQSS1/2, QSS3, Modelica annotations, higher derivatives, ...
 * Algebraic relationship/loop support.
 * Extended precision time handling for large time span simulation.
 * Higher performance event queue.
@@ -62,9 +63,7 @@ Notes:
 * Holds the iterator of its entry in the event queue to save one _O_( log N ) lookup.
 * Supports mix of different QSS method variables in the same model.
 * Flags whether its derivative depends on its own value (self-observer) and uses that for efficiency:
-  * If not a self-observer the continuous representation trajectory doesn't change at requantization events.
-    While the continuous representation could be advanced to re-sync segment start times with the requantized representation some efficiency is gained by not doing so.
-    There are different precision impacts of each approach but with bulletproofing against small negative time steps due to finite precision there is probably no benefit to shifting the continuous representation when the trajectory doesn't change.
+  * If not a self-observer the continuous representation trajectory doesn't change at requantization events. While the continuous representation could be advanced to re-sync segment start times with the requantized representation some efficiency is gained by not doing so. There are different precision impacts of each approach but with bulletproofing against small negative time steps due to finite precision there is probably no benefit to shifting the continuous representation when the trajectory doesn't change.
 * Handles self-observer continuous representation updates specially instead of as part of general observer updates for efficiency:
   * Assigns continuous representation coefficients from the corresponding quantized representation during requantization instead of recomputing them.
 * Input variable classes fit under the Variable hierarchy so that they can be processed along with QSS state variables.
@@ -74,32 +73,15 @@ Notes:
 
 #### Inflection Points
 
-QSS methods can have trouble converging tightly on asymptotic values such as tails of exponential decay functions.
-This can be caused by the continuous representation reversing course and moving away from the quantized representation before the next quantum-based requantization event.
-An option to add inflection point requantization time steps has been built in to this package for QSS methods of order 2 and above to address this limitation.
-This will move up the next requantization time to the time when the continuous representation's next to highest derivative will pass through zero if the sign of that derivative in the quantized and continuous representations is the same at the start of the continuous representation time segment.
-(If the signs differ at the segment start then an inflection point would only improve the fit of the continuous and quantized representations, so we leave this case alone and let the normal quantization limits control the next time step.)
-So for (LI)QSS2 this finds the time where the slope is zero, and for QSS3 this finds the time when the second derivative is zero.
-If this time is positive and less than the computed quantum-based next requantization time then it is used as the next requantization time.
-In testing so far this has proven very effective in improving convergence at a modest cost of a few extra time steps but this should be evaluated in real-world cases.
+QSS methods can have trouble converging tightly on asymptotic values such as tails of exponential decay functions. This can be caused by the continuous representation reversing course and moving away from the quantized representation before the next quantum-based requantization event. An option to add inflection point requantization time steps has been built in to this package for QSS methods of order 2 and above to address this limitation. This will move up the next requantization time to the time when the continuous representation's next to highest derivative will pass through zero if the sign of that derivative in the quantized and continuous representations is the same at the start of the continuous representation time segment. (If the signs differ at the segment start then an inflection point would only improve the fit of the continuous and quantized representations, so we leave this case alone and let the normal quantization limits control the next time step.) So for (LI)QSS2 this finds the time where the slope is zero, and for QSS3 this finds the time when the second derivative is zero. If this time is positive and less than the computed quantum-based next requantization time then it is used as the next requantization time. In testing so far this has proven very effective in improving convergence at a modest cost of a few extra time steps but this should be evaluated in real-world cases.
 
-Note that this differs from the literature.
-In some papers by the original QSS authors there is an additional time step recommended at the point when the QSS order derivative is zero.
-As noted by David Lorenzetti this is confusing because the Nth derivative of the continuous representation in a QSS order N method is a constant.
-Nevertheless, there may be some room for alternative approaches to improving QSS convergence.
+Note that this differs from the literature. In some papers by the original QSS authors there is an additional time step recommended at the point when the QSS order derivative is zero. As noted by David Lorenzetti this is confusing because the Nth derivative of the continuous representation in a QSS order N method is a constant. Nevertheless, there may be some room for alternative approaches to improving QSS convergence.
 
 #### Deactivation
 
-The QSS time stepping logic looks at the magnitude of the highest order continuous representation derivative to set the next trigger time based on when the quantized and continuous representations will diverge by the selected quantum threshold.
-This does not always give a good indication of the divergence of the quantized representation from the actual/analytical value of QSS (ODE) state variables or input variables.
-A trivial example is f(t) = t<sup>n</sup> : at t=0 the value and all derivatives other than the n<sup>th</sup> are zero, so only an n<sup>th</sup> order method will avoid setting the next trigger time to infinity.
-For a QSS variable that is "isolated" (does not appear in many or any other variable's derivatives) or any input variable an artificially large time step causes the variable to "deactivate", becoming stuck in a fixed quantized and continuous representation.
+The QSS time stepping logic looks at the magnitude of the highest order continuous representation derivative to set the next trigger time based on when the quantized and continuous representations will diverge by the selected quantum threshold. This does not always give a good indication of the divergence of the quantized representation from the actual/analytical value of QSS (ODE) state variables or input variables. A trivial example is f(t) = t<sup>n</sup> : at t=0 the value and all derivatives other than the n<sup>th</sup> are zero, so only an n<sup>th</sup> order method will avoid setting the next trigger time to infinity. For a QSS variable that is "isolated" (does not appear in many or any other variable's derivatives) or any input variable an artificially large time step causes the variable to "deactivate", becoming stuck in a fixed quantized and continuous representation.
 
-This appears to be a fairly serious flaw in the QSS approach.
-An elegant, robust and efficient solution to this is not yet obvious.
-As a backstop solution a max time step field was added to the implementation and its use is strongly suggested for input and isolated QSS variables.
-In a production implementation it would probably make sense for each function class to provide an API to set a max time step that makes sense for that function.
-Finding a better, more automated solution would be a worthwhile investigation.
+This appears to be a fairly serious flaw in the QSS approach. An elegant, robust and efficient solution to this is not yet obvious. As a backstop solution a max time step field was added to the implementation and its use is strongly suggested for input and isolated QSS variables. In a production implementation it would probably make sense for each function class to provide an API to set a max time step that makes sense for that function. Finding a better, more automated solution would be a worthwhile investigation.
 
 ### LIQSS
 
@@ -107,19 +89,14 @@ LIQSS as described in the literature is somewhat under-defined and inconsistent 
 
 #### Cyclic Dependency
 
-At startup and simultaneous requantization trigger events the LIQSS approach defined in the literature is inadequate because the quantized values depend on derivatives which, in turn, depend on other quantized values.
-When multiple variables' quantized values need to be set at the same time point there is, in general, a cyclic dependency among them. Approaches that were considered:
+At startup and simultaneous requantization trigger events the LIQSS approach defined in the literature is inadequate because the quantized values depend on derivatives which, in turn, depend on other quantized values. When multiple variables' quantized values need to be set at the same time point there is, in general, a cyclic dependency among them. Approaches that were considered:
 * Single pass in arbitrary order: Leaves different representations of the same variable in the system and has a processing order dependency so results can be non-deterministic depending on how variables are held in containers.
 * Multiple passes hoping for a fixed point: May not find a consistent fixed point and is still potentially non-deterministic.
 * Use derivatives evaluated for the continuous, not quantized, representation at these events: Since the continous representation value is set first this allows a single pass, deterministic treatment. This is the approach used here.
 
 Even when using the continuous representation in the LIQSS derivatives issues remain:
 * LIQSS1: The LIQSS1 variables need to be processed first in the first derivative processing pass since it alters their quantized value terms.
-* LIQSS2: Because the second derivative pass alters their quantized value and slope terms there is no way to avoid the potential for cyclic dependencies.
-  The impact is controlled by setting the neutral (centered) values and first derivatives in those passes but this still allows other variable derivatives to be using these non-final values.
-  The exposure is reduced somewhat by processing the LIQSS2 variables first in the second derivative pass.
-  No ideal solution has been found for this LIQSS2+ limitation.
-  It is possible that when LIQSS2+ variables are present simultaneous triggering would be better handled as a sequence of separate trigger events at very closely spaced time steps: this is a good research topic.
+* LIQSS2: Because the second derivative pass alters their quantized value and slope terms there is no way to avoid the potential for cyclic dependencies. The impact is controlled by setting the neutral (centered) values and first derivatives in those passes but this still allows other variable derivatives to be using these non-final values. The exposure is reduced somewhat by processing the LIQSS2 variables first in the second derivative pass. No ideal solution has been found for this LIQSS2+ limitation. It is possible that when LIQSS2+ variables are present simultaneous triggering would be better handled as a sequence of separate trigger events at very closely-spaced time steps: this is a good research topic.
 
 ### Event Queue
 
@@ -137,71 +114,97 @@ Even when using the continuous representation in the LIQSS derivatives issues re
 * Sample input variable functions with analytical and numeric derivatives are included.
 * We'll need a general purpose function approach for the JModelica-generated code: probably a function class that calls back to a provided function.
 
+### Zero-Crossing Functions
+
+So-called zero-crossing functions are the mechanism Modelica uses to introduce conditional behavior to a model. For each such behavior a corresponding function crosses zero when an event needs to be carried out. This might be, for instance, a thermostat control reaching a trigger temperature that needs to turn on an A/C system. Zero crossings cause (discontinuous) changes to (otherwise) continuous and discrete variables via so-called handler functions.
+
+In traditional solvers a zero crossing is detected after it occurs and time backtracking may be used to find its precise time of crossing. With QSS we can do better by predicting the zero crossing using the QSS-style polynomial representation, optionally refining that prediction with an iterative root finder. The zero-crossing support is integrated with the QSS system as zero-crossing variables that are somewhat analogous to the QSS variables in their use of polynomial trajectories that requantize based on specified tolerances. The predicted zero crossings are events on the QSS event queue so they are handled efficiently without a need for backtracking.
+
+Zero crossings introduce the potential for cyclic dependencies and a cascade of updates that occur at the same time point. Zero crossing events change some variable values. Because those changes are discontinuous this acts like a requantization event that must update both the quantized and continuous representation of those modified variables, which, in turn, can cause zero-crossing variables to update, possibly triggering another round of zero crossings, and so on. All of these events happen at the same (clock) time but they are logically sequentially triggered so we cannot know or process them simultaneously. To create a deterministic simulation with zero crossings the following approach is used:
+* The phases of zero crossing, handler updates, and resulting requantizations are clustered together by the use of a sort of what is called superdense time, which is a time value paired with a sequencing index.
+* Any phase causing both new zero crossings and new requantizations the zero crossings are processed first (via superdense time indexing).
+* In each phase multiple events of the same (zero crossing, handler, or requantization) type are handled together as simultaneous events: the processing for simultaneous events is phased so that the changes to interdependent variables are propagated deterministically (except for LIQSS2+ where it is not possible to eliminate a processing order dependency).
+
+With cyclic dependencies it is possible for an infinite cascade loop of such changes to occur at the same (clock) time. Detecting such dependencies and the occurrence of these infinite loops is necessary with zero crossing support.
+
 ## FMU Support
 
-Models defined by FMUs following the FMI 2.0 API can be run by this QSS solver using QSS1 or QSS2 solvers.
-This is currently an initial/demonstration capability that cannot yet handle discrete variables, unit conversions (pure SI models are OK), or algebraic relationships.
-Some simple test model FMUs and a 50-variable room air thermal model have been simulated successfully.
+Models defined by FMUs following the FMI 2.0 API can be run by this QSS solver using QSS1 or QSS2 solvers. Discrete variables and zero crossing functions are supported. This is currently an initial/demonstration capability that cannot yet handle unit conversions (pure SI models are OK), or algebraic relationships. Some simple test model FMUs and a 50-variable room air thermal model have been simulated successfully.
 
 Notes:
 * Mixing QSS1 and QSS2 variables in an FMU simulation is not yet supported.
 * QSS3 and LIQSS1/2 solvers are planned when they become more practical when the FMI 2.0 API extensions are implemented in the FMI Library.
 * The FMU support is performance-limited by the FMI 2.0 API, which requires expensive get-all-derivatives calls where QSS needs individual derivatives.
 * QSS2 performance is limited by the use of numeric differentiation: the FMI ME 2.0 API doesn't provide higher derivatives but they may become avaialble via FMI extensions.
+* Zero crossings are problematic because the FMI spec doesn't expose the dependency of variables that are modified when each zero crossing occurs. Until such information is added our approach is to add the dependencies to the xml file. A fallback strategy of assuming that any continuous or discrete variable may have been modified could be used, at some cost to efficiency.
 
 ## Implementation
 
+### Code Structure
+
+Much of the source code is split into separate directories for the code-defined example models (`/dfn`) and FMU-based models (`/fmu`). While there is significant overlap between these codes there are a number of fundamental differences.
+
 ### Numeric Differentiatation
 
-Higher derivatives are needed for QSS2+ methods.
-These are available analytically for linear functions and we provide them for the nonlinear function examples.
-In general analytical higher derivatives may not be provided by the model description or via automatic differentiation or may not be available across an FMU interface so we need some support for numeric differentiation.
-Numeric differentiation variants of some of the function classes were built to allow emulation of an environment where analytical higher derivatives are not available.
-A simple and fast approach suffices for this purpose:
+Higher derivatives are needed for QSS2+ methods. These are available analytically for linear functions and we provide them for the nonlinear function examples. In general analytical higher derivatives may not be provided by the model description or via automatic differentiation or may not be available across an FMU interface so we need some support for numeric differentiation. Numeric differentiation variants of some of the function classes were built to allow emulation of an environment where analytical higher derivatives are not available. A simple and fast approach suffices for this purpose:
 * QSS2 does 2-point forward difference differentiation to allow reuse of one derivative evaulation.
 * QSS3 does 2 and 3-point centered difference differentiation to allow reuse of derivative evaluations.
 * Input variables of orders 2 and 3 are handled analogously to the corresponding QSS variable.
 
-A mechanism to specify a per-Variable differentiation time step is provided with defaulting to a global differentiation time step.
+A mechanism to specify a per-variable differentiation time step is provided with defaulting to a global differentiation time step.
 
-At startup and requantization events QSS3 with numeric differentiation has a cyclic dependency problem because the derivative function evaluations at time step offsets used to compute the higher derivatives are both used to set the q2 coefficient of the quantized representation but also depend on q2.
-The QSS literature does not offer a robust solution and none is implementated at this point.
-An iterative approach could be used to find a fixed point solution for a stable q2 value but this would require a number of additional derivative evaluations.
-The impact of this flaw will vary across models and could be severe in some situations so it should be addressed if numeric differentiation will be used in the production JModelica+QSS system.
+At startup and requantization events QSS3 with numeric differentiation has a cyclic dependency problem because the derivative function evaluations at time step offsets used to compute the higher derivatives are both used to set the q2 coefficient of the quantized representation but also depend on q2. The QSS literature does not offer a robust solution and none is implementated at this point. An iterative approach could be used to find a fixed point solution for a stable q2 value but this would require a number of additional derivative evaluations. The impact of this flaw will vary across models and could be severe in some situations so it should be addressed if numeric differentiation will be used in the production JModelica+QSS system.
 
 ### Numeric Bulletproofing
 
-The time advance functions solve for the roots of polynomials of the QSS method order to see where the continuous representation next crosses the quantized representation +/-Q boundaries.
-The naive approach is to just pick the smallest positive root that the root solver finds, but with finite precision computations it is possible for this to select the "wrong" root that allows the continuous representation trajectory to fall outside the quantum band.
-To protect against this we take a few steps:
-* Roots that cross the boundary in the wrong direction (moving from outside to inside) are culled out.
-  The crossing direction tests have some computational cost: in the unlikely event that this is significant a "fast and dangerous" mode could be provided that omits them.
+The time advance functions solve for the roots of polynomials of the QSS method order to see where the continuous representation next crosses the quantized representation +/-Q boundaries. The naive approach is to just pick the smallest positive root that the root solver finds, but with finite precision computations it is possible for this to select the "wrong" root that allows the continuous representation trajectory to fall outside the quantum band. To protect against this we take a few steps:
+* Roots that cross the boundary in the wrong direction (moving from outside to inside) are culled out. The crossing direction tests have some computational cost: in the unlikely event that this is significant a "fast and dangerous" mode could be provided that omits them.
 * When a numeric precision loss causes a bad solution we exploit knowledge of the actual behavior to produce a zero time step rather than an infinite step.
 * When the polynomial coefficients indicate which boundary must be hit first we save time by only root solving on that boundary and we exploit the known coefficient signs.
-* When the polynomial coefficients don't clearly show which boundary will be hit first we process the boundaries together to exploit knowledge that at least one of them should have a positive root with the correct, outward crossing direction.
+* When the polynomial coefficients don't clearly show which boundary will be hit first we process the boundaries together to exploit knowledge that at least one of them should have a positive root with the correct, outward-crossing direction.
+
+### Zero-Crossing Support
+
+Zero crossing implementation must deal with some obstacles:
+* Some combinations of zero-crossing functions and QSS method orders cannot predict zero crossings, such as a zero-crossing function that is simply the value of a QSS1 variable (whose quantized representation is always a constant). The QSS system will detect zero crossings during observer updates of the zero-crossing variables but these will lag the precise zero crossing times.
+
+Some of the tasks remaining for a robust, production-quality implementation are:
+* Detect and warn about cyclic dependencies that could lead to infinite update cascades.
+* Detect the occurrence of infinite update cascades and terminate with an error.
+* Zero-crossing root finding is a complicated for the case of large tolerance and/or complex zero-crossing functions, where multiple zero crossings might occur within the active quantization time segment. A combination of long and short range algorithms is needed to minimize the possibility of missing roots. Careful development of such an approach is recommended for production use. The current code is only robust for small tolerances and sufficiently simple zero-crossing functions that the continuous trajectory representation is able to localize the root to good accuracy and only one root is present in any quantized time segment.
+* LIQSS variables present a problem with zero crossings since the quantized and continuous representations do not generally start at the same value in a requantization event. To avoid this LIQSS handler advances set the zero order quantized and continuous coefficients to the same value rather than using the normal LIQSS behavior.
+* Zero-crossing "chattering" can occur for some models so a threshold mechanism to avoid this should be added.
+* Startup behavior is not well-handled by zero-crossings: the initial model state may put the zero-crossing function in any of its conditions but no zero crossing occurred to get there so it isn't detected. Think of a bouncing ball model where the ball starts on or below the floor: no crossing from above the floor occurs so the ball will fall to negative infinity unless a startup procedure is used. A set of rules and a mechanism for dealing with startup state of zero crossings needs to be developed.
+
+Bulletproofing present in the implementation:
+* Attempting to change the same variable to different values in two zero-crossing handlers in the same superdense time pass is detected as a (non-fatal) error.
+* Crossing type/direction is part of the zero-crossing event so that handlers can ignore irrelevant crossings.
+* When zero crossing events cluster up closer and closer (such as a bouncing ball) eventually time may not progress and an infinite loop can occur. The bball model shows how a handler should be designed to detect and address this. For Modelica-based models such a set of rules may not be possible in which case the chattering prevention will be needed.
+
+FMU zero crossing support has some additional complications and limitations:
+* Zero-crossing functions are implicitly defined by if and when blocks in the Modelica file and are not directly exposed via the FMI API. Until this is addressed we have created a convention of defining output variables and their derivatives for each zero-crossing function with names of the form \_\_zc\__name_ and \_\_zc\_der\__name_.
+* When zero crossings occur a "handler" function within the FMU makes the required changes to state and discrete variables. The QSS solver needs to know the dependency of these modified variables on its zero-crossing variable to maintain its state but neither the FMI API nor the generated xml files expose these dependencies. We are adding such dependencies to `DiscreteStates` (dropped from FMI 2.0 but supported by FMI Library) of the xml for discrete variables and `InitialUnknowns` for continuous state variables.
+* There is no FMI API to trigger the zero-crossing handlers to run when the QSS solver reaches zero-crossing events. Instead we set the FMU variables to a time slightly beyond the zero-crossing time with the hope that the zero crossing will be detected by the FMU. This is not highly robust because the output variables used to track the zero crossing derivatives are (at least for Dymola-generated FMUs) numerically, not analytically, based so the QSS zero-crossing function does not track the actual FMU zero-crossing function to high precision.
+* Zero-crossing root refinement is not practical with the current FMI limitations so it has been disabled. Once we have atomic variable get/set FMU operations root refinement should be enabled.
+
+Notes:
+* Zero-crossing variables should not need and are required to have no observers (but they do have dependents: the variables modified by their handlers).
+* Zero-crossing variables must initialize and advance after other variables because their zero-order coefficients come from their function evaluation that depends on the zero-order coefficients of other variables being advanced.
+* Zero-crossing variables use the quantized, not continuous, representations of variables appearing in their functions. This is what the literature indicates and it prevents additional updating operations and potential event cascades. But it also provides a lower accuracy representation, making root finding and refinement more critical. It also means that QSS1 variables appearing linearly in zero-crossing functions only contribute a constant to the function at any time: if all variables are QSS1 and/or discrete then no zero crossings can be predicted so zero crossings will only occur as a result of observer updates of the zero-crossing variable. For this reason QSS1 is not suggested when zero crossings are in use.
 
 ## Performance
 
-Once the code capabilities are sufficient and larger models are built some performance assessments will be carried out.
-Run time comparisons _vs._ [Qss Solver](https://sourceforge.net/projects/qssengine/), [Ptolemy](http://ptolemy.eecs.berkeley.edu/), and other implementations will be performed.
-Profiling will be used to identify bottlenecks in performance and in scalability as problem size grows.
-Performance tuning and experimentation with alternative implementation designs are anticipated.
-Specifically, evaluation of alternative event queue designs is likely to be worthwhile, especially once parallel processing is added.
+Once the code capabilities are sufficient and larger models are built some performance assessments will be carried out. Run time comparisons _vs._ [Qss Solver](https://sourceforge.net/projects/qssengine/), [Ptolemy](http://ptolemy.eecs.berkeley.edu/), and other implementations will be performed. Profiling will be used to identify bottlenecks in performance and in scalability as problem size grows. Performance tuning and experimentation with alternative implementation designs are anticipated. Specifically, evaluation of alternative event queue designs is likely to be worthwhile, especially once parallel processing is added.
 
 ### Performance Findings
 
 Performance findings and observations:
-* Simultaneous requantization triggering:
-  * Could skip continuous rep update if a variable is not an observer of any of the requantizing variables.
-    This would save assignments but more importantly evaluation of the highest derivative.
-    There is some overhead in determining whether a variable qualifies.
-    Testing so far doesn't show a significant benefit for this optimization but it should be reevaluated with real-world cases where simultaneous triggering is common.
+* Simultaneous requantization triggering: Could skip continuous rep update if a variable is not an observer of any of the requantizing variables. This would save assignments but more importantly evaluation of the highest derivative. There is some overhead in determining whether a variable qualifies. Testing so far doesn't show a significant benefit for this optimization but it should be reevaluated with real-world cases where simultaneous triggering is common.
 
 ### Performance Notes
 
 * Variable hierarchy virtual calls can be reduced via some refactoring.
-* FMU performance is currently severely hobbled by the FMI 2.0 API that is not ill-suited to QSS simulation and by the restriction to QSS1 solvers.
-  QSS2 solvers will help but will also be performance-limited by the need for numeric differentiation until higher derivatives become available via FMI extensions.
+* FMU performance is currently severely hobbled by the FMI 2.0 API that is not ill-suited to QSS simulation and by the restriction to QSS1 solvers. QSS2 solvers will help but will also be performance-limited by the need for numeric differentiation until higher derivatives become available via FMI extensions.
 
 ## Testing
 
@@ -215,6 +218,7 @@ Instructions for building on different platforms follows.
 ### Linux
 
 Preparation:
+* You will need a build of the latest [FMI Library](http://www.jmodelica.org/FMILibrary).
 * Copy `bin/Linux/<compiler>/setFMIL` to a directory in your PATH and adapt it to the location of you FMI Library installation.
 * The unit tests use googletest. The `setGTest` scripts under `\bin\Windows` set up the necessary environment variables to find googletest: put a custom version of `setGTest` in your `PATH` to adapt it to your system.
 
@@ -232,7 +236,7 @@ To run the unit tests on Linux:
 
 Preparation:
 * Copy `bin\Windows\<compiler>\setFMIL.bat` to a directory in your PATH and adapt it to the location of you FMI Library installation.
-* The unit tests use googletest. The `setGTest.bat` scripts under `\bin\Windows` set up the necessary environment variables to find googletest: put a custom version of `setGTest.bat` in your `PATH` to adapt it to your system.
+* The unit tests use googletest so you will need to have a googletest build for your complier available. The `setGTest.bat` scripts under `\bin\Windows` set up the necessary environment variables to find googletest: put a custom version of `setGTest.bat` in your `PATH` to adapt it to your system.
 
 To build the QSS prototype on Windows:
 * `cd <path_to_repository>`
@@ -246,9 +250,9 @@ To run the unit tests on Windows:
 
 ## Running
 
-The QSS solver code can run both hard-coded and FMU test cases.
+The QSS solver code can run both code-defined and FMU-based test cases.
 
-There are options to select the QSS method, set quantization tolerances, output and differentiation time steps, and output selection controls.
+There are command line options to select the QSS method, set quantization tolerances, output and differentiation time steps, and output selection controls.
 * Relative tolerance is taken from the FMU if available by default but can be overridden with a command line option.
 * QSS variable continuous and/or quantized trajectory values can be output at their requantization events.
 * QSS variable continuous and/or quantized trajectory output at a regular sampling time step interval can be enabled.
@@ -256,7 +260,3 @@ There are options to select the QSS method, set quantization tolerances, output 
 * Diagnostic output can be enabled, which includes a line for each quantization-related variable update.
 
 Run `QSS --help` to see the command line usage.
-
-Edit QSS.cc to enable or add hard-coded examples.
-
-You will need a build of the latest [FMI Library](http://www.jmodelica.org/FMILibrary).

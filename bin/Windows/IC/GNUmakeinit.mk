@@ -22,12 +22,12 @@ OBJ_PATH := .
 BIN_PATH := $(QSS_bin)
 
 # Search Paths
-vpath %.cc  $(SRC_PATH)
+vpath %.cc  $(SRC_PATH) $(SRC_PATH)/dfn $(SRC_PATH)/dfn/mdl $(SRC_PATH)/fmu
 vpath %.cpp $(SRC_PATH)
 vpath %.c   $(SRC_PATH)
 vpath %.hh  $(INC_PATH)
 vpath %.hpp $(INC_PATH)
-vpath %.h   $(SRC_PATH)\Windows $(INC_PATH)
+vpath %.h   $(INC_PATH)
 vpath %.d   $(OBJ_PATH)
 vpath %.obj $(OBJ_PATH)
 vpath %.exe $(BIN_PATH)

@@ -9,6 +9,8 @@
 // C++ Headers
 #include <vector>
 
+using namespace QSS;
+
 // Variable Mock
 class V {};
 
@@ -26,28 +28,32 @@ TEST( EventQueueTest, Basic )
 	Time const tE( 10.0 );
 	for ( Variables::size_type i = 0; i < 10; ++i ) {
 		vars.emplace_back( V() );
-		events.add( Time( i ), &vars[ i ] );
+		events.add_QSS( Time( i ), &vars[ i ] );
 	}
 
 	EXPECT_FALSE( events.empty() );
 	EXPECT_EQ( 10u, events.size() );
-	EXPECT_EQ( &vars[ 0 ], events.top() );
+	EXPECT_EQ( &vars[ 0 ], events.top_var() );
 	EXPECT_EQ( Time( 0.0 ), events.top_time() );
 	for ( Variables::size_type i = 0; i < 10; ++i ) {
-		EXPECT_TRUE( events.has( Time( i ) ) );
-		EXPECT_EQ( 1u, events.count( Time( i ) ) );
-		EXPECT_EQ( Time( i ), events.any( Time( i ) )->first );
-		EXPECT_EQ( &vars[ i ], events.any( Time( i ) )->second );
+		SuperdenseTime const s( Time( i ), EventQ::Off::QSS );
+		EXPECT_TRUE( events.has( s ) );
+		EXPECT_EQ( 1u, events.count( s ) );
+		EXPECT_EQ( Time( i ), events.find( s )->first.t );
+		EXPECT_EQ( &vars[ i ], events.find( s )->second.var() );
 	}
 
-	events.shift( 2.0, events.top_iterator() );
-	EXPECT_EQ( &vars[ 1 ], events.top() );
+	events.set_active_time();
+	events.shift_QSS( Time( 2.0 ), events.begin() );
+	SuperdenseTime const s( Time( 2.0 ), EventQ::Off::QSS );
+	EXPECT_EQ( &vars[ 1 ], events.top_var() );
 	EXPECT_EQ( Time( 1.0 ), events.top_time() );
-	EXPECT_EQ( 2u, events.count( 2.0 ) );
-	auto all( events.all( 2.0 ) );
+	EXPECT_EQ( SuperdenseTime( Time( 1.0 ), EventQ::Off::QSS ), events.top_stime() );
+	EXPECT_EQ( 2u, events.count( s ) );
+	auto all( events.equal_range( s ) );
 	EXPECT_EQ( 2u, std::distance( all.first, all.second ) );
 	for ( auto i = all.first; i != all.second; ++i ) {
-		EXPECT_EQ( Time( 2.0 ), i->first );
+		EXPECT_EQ( Time( 2.0 ), i->first.t );
 	}
 
 	events.clear();

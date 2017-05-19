@@ -12,6 +12,7 @@
 // C++ Headers
 #include <string>
 
+namespace QSS {
 namespace options {
 
 // QSS Method Enumerator
@@ -30,8 +31,11 @@ extern bool inflection; // Requantize at inflections?  [F]
 extern double rTol; // Relative tolerance  [1e-4|FMU]
 extern double aTol; // Absolute tolerance  [1e-6]
 extern bool rTol_set; // Relative tolerance set?
+extern double dtMin; // Min time step (s)
+extern double dtMax; // Max time step (s)
 extern double dtOut; // Sampled & FMU output time step (s)  [1e-3]
 extern double dtND; // Numeric differentiation time step (s)  [1e-6]
+extern double one_over_dtND; // 1 / dtND  [computed]
 extern double one_half_over_dtND; // 0.5 / dtND  [computed]
 extern double tEnd; // End time (s)  [1|FMU]
 extern bool tEnd_set; // End time set?
@@ -40,8 +44,9 @@ extern std::string model; // Name of model or FMU
 
 namespace output { // Output selections
 
-extern bool r; // Requantization events?  [T]
-extern bool a; // All variables at requantization events?  [F]
+extern bool r; // Requantizations?  [T]
+extern bool o; // Observers at requantizations?  [F]
+extern bool a; // All variables at requantization? (=> r & o)  [F]
 extern bool s; // Sampled output?  [F]
 extern bool f; // FMU outputs?  [T]
 extern bool d; // Diagnostic output?  [F]
@@ -55,5 +60,6 @@ void
 process_args( int argc, char * argv[] );
 
 } // options
+} // QSS
 
 #endif

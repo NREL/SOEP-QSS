@@ -13,6 +13,8 @@
 #include <cmath>
 #include <limits>
 
+namespace QSS {
+
 // Globals
 double const zero( 0.0 );
 double const two( 2.0 );
@@ -27,3 +29,5 @@ double const one_ninth( 1.0 / 9.0 );
 double const two_thirds( 2.0 / 3.0 );
 double const pi( 4.0 * std::atan( 1.0 ) );
 double const infinity( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() );
+
+} // QSS
