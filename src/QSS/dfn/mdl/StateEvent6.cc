@@ -1,4 +1,4 @@
-// StateEvents6 Example Setup
+// StateEvent6 Example Setup
 //
 // Project: QSS Solver
 //
@@ -7,7 +7,7 @@
 // of the U.S. Department of Energy
 
 // QSS Headers
-#include <QSS/dfn/mdl/StateEvents6.hh>
+#include <QSS/dfn/mdl/StateEvent6.hh>
 #include <QSS/dfn/mdl/Function_LTI.hh>
 #include <QSS/dfn/Variable_D.hh>
 #include <QSS/dfn/Variable_LIQSS1.hh>
@@ -27,9 +27,9 @@ namespace QSS {
 namespace dfn {
 namespace mdl {
 
-// Zero-Crossing Handler for StateEvents6 Model
+// Zero-Crossing Handler for StateEvent6 Model
 template< typename V > // Template to avoid cyclic inclusion with Variable
-class Handler_StateEvents6
+class Handler_StateEvent6
 {
 
 public: // Types
@@ -189,9 +189,9 @@ public: // Static Data
 
 };
 
-// StateEvents6 Example Setup
+// StateEvent6 Example Setup
 void
-StateEvents6( Variables & vars )
+StateEvent6( Variables & vars )
 {
 	using namespace options;
 
@@ -241,12 +241,12 @@ StateEvents6( Variables & vars )
 	vars.push_back( y );
 
 	// Zero-crossing variable
-	using Z = Variable_ZC< Function_LTI, Handler_StateEvents6 >;
+	using Z = Variable_ZC< Function_LTI, Handler_StateEvent6 >;
 	Z * z( nullptr );
 	if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) ) {
-		vars.push_back( z = new Variable_ZC1< Function_LTI, Handler_StateEvents6 >( "z", rTol, aTol ) );
+		vars.push_back( z = new Variable_ZC1< Function_LTI, Handler_StateEvent6 >( "z", rTol, aTol ) );
 	} else { // Use QSS2
-		vars.push_back( z = new Variable_ZC2< Function_LTI, Handler_StateEvents6 >( "z", rTol, aTol ) );
+		vars.push_back( z = new Variable_ZC2< Function_LTI, Handler_StateEvent6 >( "z", rTol, aTol ) );
 	}
 	z->add_crossings_Up();
 	z->f().add( x1 ).add( -1.0 );

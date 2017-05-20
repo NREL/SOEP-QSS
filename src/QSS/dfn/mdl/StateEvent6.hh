@@ -1,7 +1,7 @@
-#ifndef QSS_dnf_mdl_StateEvents6_hh_INCLUDED
-#define QSS_dnf_mdl_StateEvents6_hh_INCLUDED
+#ifndef QSS_dnf_mdl_StateEvent6_hh_INCLUDED
+#define QSS_dnf_mdl_StateEvent6_hh_INCLUDED
 
-// StateEvents6 Example Setup
+// StateEvent6 Example Setup
 //
 // Project: QSS Solver
 //
@@ -21,9 +21,9 @@ namespace mdl {
 
 using Variables = std::vector< Variable * >;
 
-// StateEvents6 Example Setup
+// StateEvent6 Example Setup
 void
-StateEvents6( Variables & vars );
+StateEvent6( Variables & vars );
 
 } // mdl
 } // dfn

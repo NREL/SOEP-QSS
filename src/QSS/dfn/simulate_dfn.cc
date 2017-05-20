@@ -21,7 +21,7 @@
 #include <QSS/dfn/mdl/exponential_decay_sine_ND.hh>
 #include <QSS/dfn/mdl/nonlinear.hh>
 #include <QSS/dfn/mdl/nonlinear_ND.hh>
-#include <QSS/dfn/mdl/StateEvents6.hh>
+#include <QSS/dfn/mdl/StateEvent6.hh>
 #include <QSS/dfn/mdl/stiff.hh>
 #include <QSS/dfn/mdl/xy.hh>
 #include <QSS/dfn/mdl/xyz.hh>
@@ -87,8 +87,8 @@ simulate_dfn()
 		mdl::nonlinear_ND( vars );
 	} else if ( options::model== "stiff" ) {
 		mdl::stiff( vars );
-	} else if ( ( options::model== "StateEvents6" ) || ( options::model== "stateevents6" ) ) {
-		mdl::StateEvents6( vars );
+	} else if ( ( options::model== "StateEvent6" ) || ( options::model== "stateevent6" ) ) {
+		mdl::StateEvent6( vars );
 	} else if ( options::model== "xy" ) {
 		mdl::xy( vars );
 	} else if ( options::model== "xyz" ) {

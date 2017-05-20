@@ -192,7 +192,7 @@ help_display()
 	std::cout << "  exponential_decay_sine_ND : Numeric differentiation" << '\n';
 	std::cout << "  nonlinear : Nonlinear derivative demo" << '\n';
 	std::cout << "  nonlinear_ND : Numeric differentiation" << '\n';
-	std::cout << "  StateEvents6 : Zero-crossing model" << '\n';
+	std::cout << "  StateEvent6 : Zero-crossing model" << '\n';
 	std::cout << "  stiff : Stiff system from literature" << '\n';
 	std::cout << "  xy : Simple 2 variable model" << '\n';
 	std::cout << "  xyz : Simple 3 variable model" << '\n';

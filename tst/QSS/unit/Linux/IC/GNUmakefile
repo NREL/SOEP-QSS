@@ -21,7 +21,7 @@ SRC := $(notdir $(wildcard $(TST_PATH)/*.cc))
 SRC += $(notdir $(wildcard $(TST_PATH)/dfn/*.cc))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .o,$(basename $(SRC)))
-EXE := $(BIN_PATH)/$(TAR).unit.exe
+EXE := $(BIN_PATH)/$(TAR).unit
 PATH_LIBS := $(BIN_PATH)/lib$(TAR).a
 LINK_LIBS := -ldl
 
