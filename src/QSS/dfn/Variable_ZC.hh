@@ -11,6 +11,7 @@
 
 // QSS Headers
 #include <QSS/dfn/Variable.hh>
+#include <QSS/EnumHash.hh> // GCC 5.x needs this
 
 // C++ Headers
 #include <unordered_set>
@@ -30,7 +31,8 @@ public: // Types
 	using Value = Variable::Value;
 	using Function = F< Variable >;
 	using Handler = H< Variable >;
-	using Crossings = std::unordered_set< Crossing >;
+	using Crossing = Variable::Crossing;
+	using Crossings = std::unordered_set< Crossing, EnumHash >;
 
 protected: // Creation
 

@@ -11,6 +11,7 @@
 
 // QSS Headers
 #include <QSS/fmu/Variable.hh>
+#include <QSS/EnumHash.hh> // GCC 5.x needs this
 
 // C++ Headers
 #include <unordered_set>
@@ -25,7 +26,7 @@ class Variable_ZC : public Variable
 public: // Types
 
 	using Super = Variable;
-	using Crossings = std::unordered_set< Crossing >;
+	using Crossings = std::unordered_set< Crossing, EnumHash >;
 
 protected: // Creation
 

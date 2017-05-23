@@ -51,7 +51,7 @@ public: // Types
 	 ZC
 	};
 
-	// Value/Zero Crossing Type
+	// Zero Crossing Type
 	enum class Crossing {
 	 DnPZ = -4, // Downward: Positive to zero
 	 DnZN = -3, // Downward: Zero to negative
