@@ -51,13 +51,13 @@ public: // Types
 	// Zero Crossing Type
 	enum class Crossing {
 	 DnPN = -4, // Downward: Positive to negative
-	 DnPZ = -3, // Downward: Positive to zero
-	 DnZN = -2, // Downward: Zero to negative
+	 DnZN = -3, // Downward: Zero to negative
+	 DnPZ = -2, // Downward: Positive to zero
 	 Dn = -1,   // Downward
 	 Flat =  0, // Flat zero value
 	 Up = +1,   // Upward
-	 UpZP = +2, // Upward: Zero to positive
-	 UpNZ = +3, // Upward: Negative to zero
+	 UpNZ = +2, // Upward: Negative to zero
+	 UpZP = +3, // Upward: Zero to positive
 	 UpNP = +4  // Upward: Negative to positive
 	};
 
@@ -415,7 +415,7 @@ public: // Methods
 	advance_QSS_3()
 	{}
 
-	// Advance Non-Self Observers to Time tQ
+	// Advance Observers
 	void
 	advance_observers()
 	{
@@ -461,7 +461,7 @@ public: // Methods
 	void
 	advance_handler_1()
 	{
-		assert( false ); // Not a QSS or Discrete variable
+		assert( false ); // Not a QSS variable
 	}
 
 	// Handler Advance: Stage 2
@@ -469,7 +469,7 @@ public: // Methods
 	void
 	advance_handler_2()
 	{
-		assert( false ); // Not a QSS or Discrete variable
+		assert( false ); // Not a QSS variable
 	}
 
 	// Handler Advance: Stage 3
@@ -477,7 +477,7 @@ public: // Methods
 	void
 	advance_handler_3()
 	{
-		assert( false ); // Not a QSS or Discrete variable
+		assert( false ); // Not a QSS variable
 	}
 
 	// Shift Observer to Time t

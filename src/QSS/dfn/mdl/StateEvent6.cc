@@ -6,6 +6,37 @@
 // under contract to the National Renewable Energy Laboratory
 // of the U.S. Department of Energy
 
+//  model StateEvent6
+//    // This model has 8 state events at t=1.35s,
+//    // t = 2.39s, t = 3.85s, t = 4.9s, t = 6.35s,
+//    // t = 7.4s, t = 8.85s, t = 9.9s
+//    // when simulated from 0 to 10s.
+//    Real x1(start=1.1, fixed=true);
+//    Real x2(start=-2.5, fixed=true);
+//    Real x3(start=4, fixed=true);
+//    discrete Real y;
+//    Modelica.Blocks.Interfaces.RealOutput __zc_z "Zero crossing";
+//    Modelica.Blocks.Interfaces.RealOutput __zc_der_z
+//      "Derivative of Zero crossing";
+//  equation
+//    der(x1) = cos(2*3.14*time/2.5);
+//    der(x2) = 1;
+//    der(x3) = -2;
+//    __zc_z = x1 - 1;
+//    __zc_der_z = der(x1 - 1);
+//    when (x1 > 1) then
+//      y = 1;
+//    elsewhen (x1 <= 1) then
+//      y = 0;
+//    end when annotation (Documentation(info="<html>
+//<p>
+//This model has 8 state event at 1.35, 2.39,
+//3.85, 4.9, 6.35, 7.4, 8.85, 9.9s when simulated from 0 to 10s.
+//</p>
+//</html>"));
+//
+//  end StateEvent6;
+
 // QSS Headers
 #include <QSS/dfn/mdl/StateEvent6.hh>
 #include <QSS/dfn/mdl/Function_LTI.hh>
@@ -45,8 +76,10 @@ public: // Properties
 	void
 	operator ()( Time const t, Crossing const crossing )
 	{
-		if ( crossing >= Crossing::Up ) { // Upward zero-crossing
+		if ( crossing >= Crossing::Up ) { // Upward crossing
 			y_->shift_handler( t, 1.0 );
+		} else if ( crossing <= Crossing::Dn ) { // Downward crossing
+			y_->shift_handler( t, 0.0 );
 		}
 	}
 
@@ -248,7 +281,7 @@ StateEvent6( Variables & vars )
 	} else { // Use QSS2
 		vars.push_back( z = new Variable_ZC2< Function_LTI, Handler_StateEvent6 >( "z", rTol, aTol ) );
 	}
-	z->add_crossings_Up();
+	z->add_crossings_non_Flat();
 	z->f().add( x1 ).add( -1.0 );
 	z->h().var( y );
 }

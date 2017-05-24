@@ -91,6 +91,7 @@ public: // Properties
 	x1( Time const t ) const
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
+		(void)t; // Suppress unused parameter warning
 		return x_1_;
 	}
 
@@ -162,20 +163,7 @@ public: // Methods
 		set_qTol();
 		x_1_ = f_.q1( t );
 		set_tE();
-		if ( sign_old != sign_new ) { // Zero-crossing occurs at t
-			Crossing const crossing_check( crossing_type( sign_old, sign_new ) );
-			if ( has( crossing_check ) ) { // Crossing type is relevant
-				crossing = crossing_check;
-				tZ = t;
-				event( events.shift_ZC( tZ, event() ) );
-			} else {
-				set_tZ();
-				event( tE < tZ ? events.shift_QSS( tE, event() ) : events.shift_ZC( tZ, event() ) );
-			}
-		} else {
-			set_tZ();
-			event( tE < tZ ? events.shift_QSS( tE, event() ) : events.shift_ZC( tZ, event() ) );
-		}
+		crossing_detect( sign_old, signum( x_0_ ) );
 		if ( options::output::d ) std::cout << "  " << name << '(' << t << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tZ=" << tZ <<  '\n';
 	}
 
@@ -184,9 +172,8 @@ public: // Methods
 	advance_ZC()
 	{
 		h_( tZ, crossing ); // Handler
-		tZ_prev = tZ;
 		if ( options::output::d ) std::cout << "Z " << name << '(' << tZ << ')' << '\n';
-		set_tZ( tZ ); // Next zero-crossing: Might be in active segment
+		set_tZ( tZ_prev = tZ ); // Next zero-crossing: Might be in active segment
 		event( tE < tZ ? events.shift_QSS( tE, event() ) : events.shift_ZC( tZ, event() ) );
 	}
 
@@ -237,9 +224,10 @@ private: // Methods
 			tZ = infinity;
 		} else {
 			int const sign_old( signum( x_0_ ) );
-			Crossing const crossing_check( crossing_type( sign_old, 0 ) );
+			int const sign_new( signum( x_1_ ) );
+			Crossing const crossing_check( crossing_type( sign_old, sign_new ) );
 			if ( has( crossing_check ) ) { // Crossing type is relevant
-				if ( ( x_1_ != 0.0 ) && ( sign_old != signum( x_1_ ) ) ) { // Heading towards zero
+				if ( ( x_1_ != 0.0 ) && ( sign_old != sign_new ) ) { // Heading towards zero
 					tZ = tX - ( x_0_ / x_1_ ); // Root of continuous rep
 					assert( tX < tZ );
 					crossing = crossing_check;
@@ -275,6 +263,26 @@ private: // Methods
 	set_tZ( Time const /*tB*/ )
 	{
 		tZ = infinity; //! For now we don't handle multiple roots in active segment
+	}
+
+	// Crossing Detection
+	void
+	crossing_detect( int const sign_old, int const sign_new )
+	{
+		if ( sign_old != sign_new ) { // Zero-crossing occurs at t
+			Crossing const crossing_check( crossing_type( sign_old, sign_new ) );
+			if ( has( crossing_check ) ) { // Crossing type is relevant
+				crossing = crossing_check;
+				tZ = tX;
+				event( events.shift_ZC( tZ, event() ) );
+			} else {
+				set_tZ();
+				event( tE < tZ ? events.shift_QSS( tE, event() ) : events.shift_ZC( tZ, event() ) );
+			}
+		} else {
+			set_tZ();
+			event( tE < tZ ? events.shift_QSS( tE, event() ) : events.shift_ZC( tZ, event() ) );
+		}
 	}
 
 private: // Data

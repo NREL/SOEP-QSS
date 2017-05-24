@@ -53,15 +53,15 @@ public: // Types
 
 	// Zero Crossing Type
 	enum class Crossing {
-	 DnPZ = -4, // Downward: Positive to zero
+	 DnPN = -4, // Downward: Positive to negative
 	 DnZN = -3, // Downward: Zero to negative
-	 DnPN = -2, // Downward: Positive to negative
+	 DnPZ = -2, // Downward: Positive to zero
 	 Dn = -1,   // Downward
 	 Flat =  0, // Flat zero value
 	 Up = +1,   // Upward
-	 UpNP = +2, // Upward: Negative to positive
+	 UpNZ = +2, // Upward: Negative to zero
 	 UpZP = +3, // Upward: Zero to positive
-	 UpNZ = +4  // Upward: Negative to zero
+	 UpNP = +4  // Upward: Negative to positive
 	};
 
 	struct AdvanceSpecs_LIQSS1

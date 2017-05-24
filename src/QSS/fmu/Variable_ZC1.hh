@@ -214,14 +214,14 @@ private: // Methods
 			tZ = infinity;
 		} else {
 			int const sign_old( signum( x_0_ ) );
-			Crossing const crossing_check( crossing_type( sign_old, 0 ) );
+			int const sign_new( signum( x_1_ ) );
+			Crossing const crossing_check( crossing_type( sign_old, sign_new ) );
 			if ( has( crossing_check ) ) { // Crossing type is relevant
-				if ( ( x_1_ != 0.0 ) && ( sign_old != signum( x_1_ ) ) ) { // Heading towards zero
+				if ( ( x_1_ != 0.0 ) && ( sign_old != sign_new ) ) { // Heading towards zero
 					tZ = tX - ( x_0_ / x_1_ ); // Root of continuous rep
 					assert( tX < tZ );
 					crossing = crossing_check;
-// Root refinement would be too expensive and complex through an FMU
-//					Time t( tZ ), t_p( t );
+//					Time t( tZ ), t_p( t ); // Root refinement would be too expensive and complex through an FMU
 //					Value const vZ( f_.q( tZ ) );
 //					Value v( vZ ), v_p( vZ );
 //					Value m( 1.0 ); // Multiplier

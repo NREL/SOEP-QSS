@@ -225,6 +225,13 @@ public: // Methods
 
 private: // Methods
 
+	// Continuous First Derivative at Time t
+	Value
+	x1x( Time const t ) const
+	{
+		return x_1_ + ( two * x_2_ * ( t - tX ) ); // Allows t beyond tE for set_tZ use
+	}
+
 	// New End Time
 	Time
 	new_tE()
@@ -263,54 +270,36 @@ private: // Methods
 		assert( tE == new_tE() ); // tE must be set
 
 		// Simple root search: Only robust for small active segments with continuous rep close to function //Do Make robust version
-		int const sign_old( signum( x_0_ ) );
-		if ( sign_old == 0 ) { // Check crossing direction at new tZ
-			Time const dtX( min_positive_root_quadratic( x_2_, x_1_, x_0_ ) ); // Root of continuous rep
-			assert( dtX > 0.0 );
-			if ( dtX != infinity ) { // Root found on (tX,tE]
-				tZ = tX + dtX;
-				int const sign_tZ( -signum( x_2_ ) ); // Sign of function approaching tZ
-				Crossing const crossing_check( tZ == tX ? Crossing::Flat : crossing_type( sign_tZ, 0 ) );
-				if ( has( crossing_check ) ) { // Crossing type is relevant
-					crossing = crossing_check;
-				} else { // Crossing type not relevant
-					tZ = infinity;
-					return;
-				}
-			} else { // Root not found
-				tZ = infinity;
-				return;
-			}
-		} else { // Use sign_old to deduce crossing type
-			Crossing const crossing_check( crossing_type( sign_old, 0 ) );
+		Time const dtX( min_positive_root_quadratic( x_2_, x_1_, x_0_ ) ); // Root of continuous rep
+		assert( dtX > 0.0 );
+		if ( dtX != infinity ) { // Root found on (tX,tE]
+			tZ = tX + dtX;
+			Crossing const crossing_check( x_0_ == 0.0 ?
+			 ( tZ == tX ? Crossing::Flat : crossing_type( -x_1_ ) ) :
+			 crossing_type( x_0_ > 0.0 ? std::min( x1x( tZ ), Value( 0.0 ) ) : std::max( x1x( tZ ), Value( 0.0 ) ) ) );
 			if ( has( crossing_check ) ) { // Crossing type is relevant
-				Time const dtX( min_positive_root_quadratic( x_2_, x_1_, x_0_ ) ); // Root of continuous rep
-				assert( dtX > 0.0 );
-				if ( dtX != infinity ) { // Root found on (tX,tE]
-					tZ = tX + dtX;
-					crossing = crossing_check;
-				} else { // Root not found
-					tZ = infinity;
-					return;
-				}
+				crossing = crossing_check;
 			} else { // Crossing type not relevant
 				tZ = infinity;
 				return;
 			}
+		} else { // Root not found
+			tZ = infinity;
+			return;
 		}
 
-// Root refinement would be too expensive and complex through an FMU
-//		// Refine root
+//		// Refine root // Root refinement would be too expensive and complex through an FMU
 //		Time t( tZ ), t_p( t );
 //		Value const vZ( f_.q( tZ ) );
 //		Value v( vZ ), v_p( vZ );
 //		Value m( 1.0 ); // Multiplier
 //		std::size_t i( 0 );
 //		std::size_t const n( 10u ); // Max iterations
+//		int const sign_0( signum( x_0_ ) );
 //		while ( ( ++i <= n ) && ( std::abs( v ) > aTol ) ) {
 //			Value const d( f_.q1( t ) );
 //			if ( d == 0.0 ) break;
-//			if ( ( signum( d ) != sign_old ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
+//			if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 //			t -= m * ( v / d );
 //			v = f_.q( t );
 //			if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size

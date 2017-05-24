@@ -181,19 +181,33 @@ public: // Methods
 
 protected: // Methods
 
-	// Crossing Type
+	// Crossing Type from Values
+	template< typename T >
 	static
 	Crossing
-	crossing_type( int const sign_old, int const sign_new )
+	crossing_type( T const val1, T const val2 )
 	{
-		assert( ( -1 <= sign_old ) && ( sign_old <= +1 ) );
-		assert( ( -1 <= sign_new ) && ( sign_new <= +1 ) );
-		if ( sign_old == 0 ) {
-			return ( sign_new == +1 ? Crossing::UpZP : ( sign_new == 0 ? Crossing::Flat : Crossing::DnZN ) );
-		} else if ( sign_new == 0 ) {
-			return ( sign_old == +1 ? Crossing::DnPZ : Crossing::UpNZ );
+		if ( val1 == T( 0 ) ) {
+			return ( val2 > T( 0 ) ? Crossing::UpZP : ( val2 == T( 0 ) ? Crossing::Flat : Crossing::DnZN ) );
+		} else if ( val2 == T( 0 ) ) {
+			return ( val1 > T( 0 )? Crossing::DnPZ : Crossing::UpNZ );
 		} else {
-			return ( sign_old == +1 ? Crossing::DnPN : Crossing::UpNP );
+			return ( val1 > T( 0 ) ? Crossing::DnPN : Crossing::UpNP );
+		}
+	}
+
+	// Crossing Type from Slope
+	template< typename T >
+	static
+	Crossing
+	crossing_type( T const slope )
+	{
+		if ( slope == T( 0 ) ) {
+			return Crossing::Flat;
+		} else if ( slope > T( 0 ) ) {
+			return Crossing::UpNP;
+		} else {
+			return Crossing::DnPN;
 		}
 	}
 

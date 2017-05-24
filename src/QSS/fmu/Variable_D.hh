@@ -112,7 +112,6 @@ public: // Methods
 		assert( observees_.empty() );
 		shrink_observers(); // Optional
 		sort_observers();
-//		fmu_set_value( x_ = x ); // Can't call for discrete variable unless in FMU initialization mode but this value should be set anyway
 		add_handler();
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << '\n';
 	}
@@ -124,7 +123,6 @@ public: // Methods
 		assert( observees_.empty() );
 		shrink_observers(); // Optional
 		sort_observers();
-//		fmu_set_value( x_ = xIni ); // Can't call for discrete variable unless in FMU initialization mode but this value should be set anyway
 		add_handler();
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << '\n';
 	}

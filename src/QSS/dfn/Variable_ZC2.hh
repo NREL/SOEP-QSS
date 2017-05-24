@@ -100,6 +100,7 @@ public: // Properties
 	x2( Time const t ) const
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
+		(void)t; // Suppress unused parameter warning
 		return two * x_2_;
 	}
 
@@ -181,20 +182,7 @@ public: // Methods
 		x_1_ = q_1_ = f_.q1( t );
 		x_2_ = one_half * f_.q2( t );
 		set_tE();
-		if ( sign_old != sign_new ) { // Zero-crossing occurs at t
-			Crossing const crossing_check( crossing_type( sign_old, sign_new ) );
-			if ( has( crossing_check ) ) { // Crossing type is relevant
-				crossing = crossing_check;
-				tZ = t;
-				event( events.shift_ZC( tZ, event() ) );
-			} else {
-				set_tZ();
-				event( tE < tZ ? events.shift_QSS( tE, event() ) : events.shift_ZC( tZ, event() ) );
-			}
-		} else {
-			set_tZ();
-			event( tE < tZ ? events.shift_QSS( tE, event() ) : events.shift_ZC( tZ, event() ) );
-		}
+		crossing_detect( sign_old, sign_new );
 		if ( options::output::d ) std::cout << "  " << name << '(' << t << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << "   tZ=" << tZ <<  '\n';
 	}
 
@@ -203,13 +191,19 @@ public: // Methods
 	advance_ZC()
 	{
 		h_( tZ, crossing ); // Handler
-		tZ_prev = tZ;
 		if ( options::output::d ) std::cout << "Z " << name << '(' << tZ << ')' << '\n';
-		set_tZ( tZ ); // Next zero-crossing: Might be in active segment
+		set_tZ( tZ_prev = tZ ); // Next zero-crossing: Might be in active segment
 		event( tE < tZ ? events.shift_QSS( tE, event() ) : events.shift_ZC( tZ, event() ) );
 	}
 
 private: // Methods
+
+	// Continuous First Derivative at Time t
+	Value
+	x1x( Time const t ) const
+	{
+		return x_1_ + ( two * x_2_ * ( t - tX ) ); // Allows t beyond tE for set_tZ use
+	}
 
 	// QSS Advance: Core
 	void
@@ -262,40 +256,22 @@ private: // Methods
 		assert( tE == new_tE() ); // tE must be set
 
 		// Simple root search: Only robust for small active segments with continuous rep close to function //Do Make robust version
-		int const sign_old( signum( x_0_ ) );
-		if ( sign_old == 0 ) { // Check crossing direction at new tZ
-			Time const dtX( min_positive_root_quadratic( x_2_, x_1_, x_0_ ) ); // Root of continuous rep
-			assert( dtX > 0.0 );
-			if ( dtX != infinity ) { // Root found on (tX,tE]
-				tZ = tX + dtX;
-				int const sign_tZ( -signum( x_2_ ) ); // Sign of function approaching tZ
-				Crossing const crossing_check( tZ == tX ? Crossing::Flat : crossing_type( sign_tZ, 0 ) );
-				if ( has( crossing_check ) ) { // Crossing type is relevant
-					crossing = crossing_check;
-				} else { // Crossing type not relevant
-					tZ = infinity;
-					return;
-				}
-			} else { // Root not found
-				tZ = infinity;
-				return;
-			}
-		} else { // Use sign_old to deduce crossing type
-			Crossing const crossing_check( crossing_type( sign_old, 0 ) );
+		Time const dtX( min_positive_root_quadratic( x_2_, x_1_, x_0_ ) ); // Root of continuous rep
+		assert( dtX > 0.0 );
+		if ( dtX != infinity ) { // Root found on (tX,tE]
+			tZ = tX + dtX;
+			Crossing const crossing_check( x_0_ == 0.0 ?
+			 ( tZ == tX ? Crossing::Flat : crossing_type( -x_1_ ) ) :
+			 crossing_type( x_0_ > 0.0 ? std::min( x1x( tZ ), Value( 0.0 ) ) : std::max( x1x( tZ ), Value( 0.0 ) ) ) );
 			if ( has( crossing_check ) ) { // Crossing type is relevant
-				Time const dtX( min_positive_root_quadratic( x_2_, x_1_, x_0_ ) ); // Root of continuous rep
-				assert( dtX > 0.0 );
-				if ( dtX != infinity ) { // Root found on (tX,tE]
-					tZ = tX + dtX;
-					crossing = crossing_check;
-				} else { // Root not found
-					tZ = infinity;
-					return;
-				}
+				crossing = crossing_check;
 			} else { // Crossing type not relevant
 				tZ = infinity;
 				return;
 			}
+		} else { // Root not found
+			tZ = infinity;
+			return;
 		}
 
 		// Refine root
@@ -305,10 +281,11 @@ private: // Methods
 		Value m( 1.0 ); // Multiplier
 		std::size_t i( 0 );
 		std::size_t const n( 10u ); // Max iterations
+		int const sign_0( signum( x_0_ ) );
 		while ( ( ++i <= n ) && ( std::abs( v ) > aTol ) ) {
 			Value const d( f_.q1( t ) );
 			if ( d == 0.0 ) break;
-			if ( ( signum( d ) != sign_old ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
+			if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 			t -= m * ( v / d );
 			v = f_.q( t );
 			if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
@@ -324,6 +301,26 @@ private: // Methods
 	set_tZ( Time const /*tB*/ )
 	{
 		tZ = infinity; //! For now we don't handle multiple roots in active segment
+	}
+
+	// Crossing Detection
+	void
+	crossing_detect( int const sign_old, int const sign_new )
+	{
+		if ( sign_old != sign_new ) { // Zero-crossing occurs at t
+			Crossing const crossing_check( crossing_type( sign_old, sign_new ) );
+			if ( has( crossing_check ) ) { // Crossing type is relevant
+				crossing = crossing_check;
+				tZ = tX;
+				event( events.shift_ZC( tZ, event() ) );
+			} else {
+				set_tZ();
+				event( tE < tZ ? events.shift_QSS( tE, event() ) : events.shift_ZC( tZ, event() ) );
+			}
+		} else {
+			set_tZ();
+			event( tE < tZ ? events.shift_QSS( tE, event() ) : events.shift_ZC( tZ, event() ) );
+		}
 	}
 
 private: // Data
