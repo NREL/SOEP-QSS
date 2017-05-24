@@ -11,7 +11,4 @@ set PlatformCompiler=Windows\IC
 
 set Path=%Path%;%QSS%\bin\%PlatformCompiler%
 
-call setFMIL.bat
-set INCLUDE=.;%QSS%\src;%FMIL_HOME%\include;%FMIL_HOME%\include\FMI;%FMIL_HOME%\include\FMI2;%FMIL_HOME%\include\JM;%INCLUDE%
-
 %~dp0..\setProject.bat

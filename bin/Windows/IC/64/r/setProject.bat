@@ -11,4 +11,7 @@ set Path=%Path%;%QSS_bin%
 
 set LIB=%LIB%;%QSS_bin%
 
+call setFMIL.bat
+set INCLUDE=.;%QSS%\src;%FMIL_HOME%\include;%FMIL_HOME%\include\FMI;%FMIL_HOME%\include\FMI2;%FMIL_HOME%\include\JM;%INCLUDE%
+
 %~dp0..\setProject.bat
