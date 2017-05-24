@@ -190,7 +190,7 @@ protected: // Methods
 		if ( val1 == T( 0 ) ) {
 			return ( val2 > T( 0 ) ? Crossing::UpZP : ( val2 == T( 0 ) ? Crossing::Flat : Crossing::DnZN ) );
 		} else if ( val2 == T( 0 ) ) {
-			return ( val1 > T( 0 )? Crossing::DnPZ : Crossing::UpNZ );
+			return ( val1 > T( 0 ) ? Crossing::DnPZ : Crossing::UpNZ );
 		} else {
 			return ( val1 > T( 0 ) ? Crossing::DnPN : Crossing::UpNP );
 		}
