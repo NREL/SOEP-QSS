@@ -178,14 +178,14 @@ public: // Methods
 	advance_QSS()
 	{
 		Time const tDel( ( tQ = tE ) - tX );
-		q_c_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		x_0_ = q_c_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 		set_qTol();
 		if ( self_observer ) {
-			x_0_ = q_c_;
 			advance_q( tX = tE );
 		} else {
+			x_1_ = q_1_ = d_.q( tE );
+			x_2_ = one_half * d_.q1( tX = tE );
 			q_0_ += signum( x_2_ ) * qTol;
-			q_1_ = x_1_ + ( two * x_2_ * tDel );
 		}
 		set_tE_aligned();
 		event( events.shift_QSS( tE, event() ) );
@@ -346,8 +346,8 @@ private: // Methods
 			x_1_ = q_1_ = specs.u1;
 			x_2_ = one_half * specs.u2;
 		} else { // Straight trajectory
-			x_1_ = q_1_ = specs.z1;
 			q_0_ = std::min( std::max( specs.z2, q_0_ - qTol ), q_0_ + qTol ); // Clipped in case of roundoff
+			x_1_ = q_1_ = specs.z1;
 			x_2_ = 0.0;
 		}
 	}

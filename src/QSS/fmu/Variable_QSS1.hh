@@ -122,15 +122,12 @@ public: // Methods
 	void
 	advance_QSS()
 	{
-		q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
+		x_0_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
 		set_qTol();
 		advance_observers_1();
-		if ( self_observer ) {
-			x_0_ = q_0_;
-			fmu_set_observees_q( tX = tQ );
-			if ( observers_.empty() ) fmu_set_value( q_0_ );
-			x_1_ = fmu_get_deriv();
-		}
+		fmu_set_observees_q( tX = tQ );
+		if ( observers_.empty() ) fmu_set_value( q_0_ );
+		x_1_ = fmu_get_deriv();
 		if ( observers_max_order_ >= 2 ) {
 			fmu::set_time( tD = tQ + options::dtND );
 			advance_observers_2();

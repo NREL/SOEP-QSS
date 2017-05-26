@@ -145,12 +145,9 @@ public: // Methods
 	void
 	advance_QSS()
 	{
-		q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
+		x_0_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
 		set_qTol();
-		if ( self_observer ) {
-			x_0_ = q_0_;
-			x_1_ = d_.q( tX = tE );
-		}
+		x_1_ = d_.q( tX = tE );
 		set_tE_aligned();
 		event( events.shift_QSS( tE, event() ) );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';

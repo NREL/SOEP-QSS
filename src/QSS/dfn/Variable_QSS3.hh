@@ -193,17 +193,11 @@ public: // Methods
 	advance_QSS()
 	{
 		Time const tDel( ( tQ = tE ) - tX );
-		q_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
+		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
 		set_qTol();
-		if ( self_observer ) {
-			x_0_ = q_0_;
-			x_1_ = q_1_ = d_.qs( tE );
-			x_2_ = q_2_ = one_half * d_.qc1( tE );
-			x_3_ = one_sixth * d_.qc2( tX = tE );
-		} else {
-			q_1_ = x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_ * tDel ) ) * tDel );
-			q_2_ = x_2_ + ( three * x_3_ * tDel );
-		}
+		x_1_ = q_1_ = d_.qs( tE );
+		x_2_ = q_2_ = one_half * d_.qc1( tE );
+		x_3_ = one_sixth * d_.qc2( tX = tE );
 		set_tE_aligned();
 		event( events.shift_QSS( tE, event() ) );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t+" << q_2_ << "*t^2 quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2+" << x_3_ << "*t^3 internal   tE=" << tE << '\n';

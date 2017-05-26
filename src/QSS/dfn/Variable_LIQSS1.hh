@@ -152,12 +152,12 @@ public: // Methods
 	void
 	advance_QSS()
 	{
-		q_c_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
+		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
 		set_qTol();
 		if ( self_observer ) {
-			x_0_ = q_c_;
 			advance_q( tX = tE );
 		} else {
+			x_1_ = d_.q( tX = tE );
 			q_0_ += signum( x_1_ ) * qTol;
 		}
 		set_tE_aligned();

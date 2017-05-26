@@ -146,26 +146,17 @@ public: // Methods
 	advance_QSS()
 	{
 		Time const tDel( ( tQ = tE ) - tX );
-		q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 		set_qTol();
 		advance_observers_1();
-		if ( self_observer ) {
-			x_0_ = q_0_;
-			fmu_set_observees_q( tX = tQ );
-			if ( observers_.empty() ) fmu_set_value( q_0_ );
-			x_1_ = q_1_ = fmu_get_deriv();
-		} else {
-			q_1_ = x_1_ + ( two * x_2_ * tDel );
-		}
-		if ( ( self_observer ) || ( observers_max_order_ >= 2 ) ) {
-			fmu::set_time( tD = tQ + options::dtND );
-			if ( observers_max_order_ >= 2 ) advance_observers_2();
-			if ( self_observer ) {
-				fmu_set_observees_q( tD );
-				if ( observers_max_order_ <= 1 ) fmu_set_q( tD );
-				x_2_ = options::one_half_over_dtND * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
-			}
-		}
+		fmu_set_observees_q( tX = tQ );
+		if ( ( self_observer ) && ( observers_.empty() ) ) fmu_set_value( q_0_ );
+		x_1_ = q_1_ = fmu_get_deriv();
+		fmu::set_time( tD = tQ + options::dtND );
+		if ( observers_max_order_ >= 2 ) advance_observers_2();
+		fmu_set_observees_q( tD );
+		if ( ( self_observer ) && ( observers_max_order_ <= 1 ) ) fmu_set_q( tD );
+		x_2_ = options::one_half_over_dtND * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE_aligned();
 		event( events.shift_QSS( tE, event() ) );
 		if ( options::output::d ) {
