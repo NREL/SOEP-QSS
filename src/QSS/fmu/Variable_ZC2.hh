@@ -213,7 +213,7 @@ public: // Methods
 		std::cout << "  " << name << '(' << tX << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << "   tZ=" << tZ <<  '\n';
 	}
 
-	// Zero-Crossing Trigger Advance
+	// Zero-Crossing Advance
 	void
 	advance_ZC()
 	{

@@ -67,7 +67,6 @@ TEST( Variable_ZC2Test, Basic )
 	EXPECT_DOUBLE_EQ( 1.0 - 1.0e-7, x.q( 1.0e-7 ) );
 	EXPECT_EQ( infinity, x.tE );
 
-//	Variable_ZC2< Function_LTI, Handler_ZC2Test > z( "z", 2.0, 2.0 ); // Big tolerances to make tE > tZ
 	Variable_ZC2< Function_LTI, Handler_ZC2Test > z( "z" );
 	z.add_crossings_Dn();
 	z.f().add( x );
@@ -81,7 +80,7 @@ TEST( Variable_ZC2Test, Basic )
 	EXPECT_DOUBLE_EQ( 1.0 - 1.0e-7, z.q( 1.0e-7 ) );
 	EXPECT_EQ( infinity, z.tE );
 	EXPECT_DOUBLE_EQ( 1.0, z.tZ );
-	EXPECT_EQ( Variable::Crossing::DnPZ, z.crossing );
+	EXPECT_EQ( Variable::Crossing::DnPN, z.crossing );
 
 	EXPECT_DOUBLE_EQ( 0.0, x.x( 1.0 ) );
 	EXPECT_DOUBLE_EQ( 0.0, x.q( 1.0 ) );

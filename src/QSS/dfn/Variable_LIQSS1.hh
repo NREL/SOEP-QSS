@@ -85,7 +85,7 @@ public: // Properties
 
 	// Continuous First Derivative at Time t
 	Value
-	x1( Time const t ) const
+	x1( Time const ) const
 	{
 		return x_1_;
 	}
@@ -175,7 +175,7 @@ public: // Methods
 		set_qTol();
 	}
 
-	// LIQSS Trigger Advance: Stage 1
+	// LIQSS Advance: Stage 1
 	void
 	advance_LIQSS_1()
 	{ // Call before advance_QSS_1 since it alters q_0_

@@ -471,7 +471,7 @@ public: // Methods
 	advance_QSS_0()
 	{}
 
-	// LIQSS Trigger Advance: Stage 1
+	// LIQSS Advance: Stage 1
 	virtual
 	void
 	advance_LIQSS_1()
@@ -483,7 +483,7 @@ public: // Methods
 	advance_QSS_1()
 	{}
 
-	// LIQSS Trigger Advance: Stage 2
+	// LIQSS Advance: Stage 2
 	virtual
 	void
 	advance_LIQSS_2()
@@ -577,7 +577,7 @@ public: // Methods
 		assert( false );
 	}
 
-	// Zero-Crossing Trigger Advance
+	// Zero-Crossing Advance
 	virtual
 	void
 	advance_ZC()

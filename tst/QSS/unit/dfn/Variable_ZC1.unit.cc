@@ -78,9 +78,9 @@ TEST( Variable_ZC1Test, Basic )
 	EXPECT_EQ( 1.0, z.q( 0.0 ) );
 	EXPECT_DOUBLE_EQ( 1.0 - 1.0e-7, z.x( 1.0e-7 ) );
 	EXPECT_DOUBLE_EQ( 1.0, z.q( 1.0e-7 ) );
-	EXPECT_DOUBLE_EQ( std::max( z.rTol, z.aTol ) / 1.0, z.tE );
+	EXPECT_DOUBLE_EQ( 0.0 + std::max( z.rTol * 1.0, z.aTol ) / 1.0, z.tE );
 	EXPECT_DOUBLE_EQ( 1.0, z.tZ );
-	EXPECT_EQ( Variable::Crossing::DnPZ, z.crossing );
+	EXPECT_EQ( Variable::Crossing::DnPN, z.crossing );
 
 	EXPECT_DOUBLE_EQ( 0.0, x.x( 1.0 ) );
 	EXPECT_DOUBLE_EQ( 0.0, x.q( 1.0 ) );

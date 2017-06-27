@@ -167,7 +167,7 @@ public: // Methods
 		if ( options::output::d ) std::cout << "  " << name << '(' << t << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tZ=" << tZ <<  '\n';
 	}
 
-	// Zero-Crossing Trigger Advance
+	// Zero-Crossing Advance
 	void
 	advance_ZC()
 	{

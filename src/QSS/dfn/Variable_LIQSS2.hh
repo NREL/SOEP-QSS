@@ -210,7 +210,7 @@ public: // Methods
 		x_1_ = q_1_ = d_.x( tE ); // Continuous rep used to reduce impact of cyclic dependency
 	}
 
-	// LIQSS Trigger Advance: Stage 2
+	// LIQSS Advance: Stage 2
 	void
 	advance_LIQSS_2()
 	{ // Call before advance_QSS_2 since it alters q_0_
