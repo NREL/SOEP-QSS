@@ -1,17 +1,45 @@
-#ifndef QSS_EventQueue_hh_INCLUDED
-#define QSS_EventQueue_hh_INCLUDED
-
 // QSS Event Queue
 //
 // Project: QSS Solver
 //
-// Developed by Objexx Engineering, Inc. (http://objexx.com)
-// under contract to the National Renewable Energy Laboratory
-// of the U.S. Department of Energy
+// Developed by Objexx Engineering, Inc. (http://objexx.com) under contract to
+// the National Renewable Energy Laboratory of the U.S. Department of Energy
+//
+// Copyright (c) 2017 Objexx Engineerinc, Inc. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// (1) Redistributions of source code must retain the above copyright notice,
+//     this list of conditions and the following disclaimer.
+//
+// (2) Redistributions in binary form must reproduce the above copyright notice,
+//     this list of conditions and the following disclaimer in the documentation
+//     and/or other materials provided with the distribution.
+//
+// (3) Neither the name of the copyright holder nor the names of its
+//     contributors may be used to endorse or promote products derived from this
+//     software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
-// This is a simple event queue based on std::multimap that is non-optimal for sequential and concurrent access
+// This is a simple event queue based on std::multimap
+// It is non-optimal for sequential and concurrent access
 // Will need to put mutex locks around modifying operations for concurrent use
-// Should explore concurrent-friendly priority queues once we have large scale test cases
+// Will explore concurrent-friendly priority queues once we have large scale test cases
+
+#ifndef QSS_EventQueue_hh_INCLUDED
+#define QSS_EventQueue_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/Event.hh>
@@ -183,14 +211,14 @@ public: // Properties
 	std::pair< const_iterator, const_iterator >
 	tops() const
 	{
-		return m_.equal_range( top_stime() );
+		return m_.equal_range( top_superdense_time() );
 	}
 
 	// All Events at Top Events SuperdenseTime
 	std::pair< iterator, iterator >
 	tops()
 	{
-		return m_.equal_range( top_stime() );
+		return m_.equal_range( top_superdense_time() );
 	}
 
 	// Top Event Type
@@ -243,12 +271,24 @@ public: // Properties
 
 	// Top Event SuperdenseTime
 	SuperdenseTime const &
-	top_stime() const
+	top_superdense_time() const
 	{
 		assert( ! m_.empty() );
-		SuperdenseTime const & s( m_.begin()->first );
-		t_ = s.t; // Set active time
-		return s;
+		return m_.begin()->first;
+	}
+
+	// Active Event Time
+	Time
+	active_time() const
+	{
+		return t_;
+	}
+
+	// Active Event SuperdenseTime
+	SuperdenseTime const &
+	active_superdense_time() const
+	{
+		return s_;
 	}
 
 	// Top Event Index
@@ -335,10 +375,10 @@ public: // Methods
 
 	// Set Active Time
 	void
-	set_active_time() const
+	set_active_time()
 	{
-		assert( ! m_.empty() );
-		t_ = m_.begin()->first.t;
+		s_ = ( ! m_.empty() ? m_.begin()->first : sZero_ );
+		t_ = s_.t;
 	}
 
 	// Clear
@@ -474,12 +514,20 @@ public: // Handler Event Methods
 		return m_.emplace( SuperdenseTime( infinity, Off::Handler ), Event< V >( Event< V >::Handler, var ) );
 	}
 
+private: // Static Data
+
+	static SuperdenseTime const sZero_; // Zero superdense time
+
 private: // Data
 
 	EventMap m_;
-	mutable Time t_{ 0.0 }; // Active event time
+	SuperdenseTime s_; // Active event superdense time
+	Time t_{ 0.0 }; // Active event time
 
 };
+
+	// Static Data Member Template Definitions
+	template< typename V > SuperdenseTime const EventQueue< V >::sZero_ = SuperdenseTime();
 
 } // QSS
 

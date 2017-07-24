@@ -1,17 +1,40 @@
-#ifndef QSS_dfn_mdl_Function_nonlinear_hh_INCLUDED
-#define QSS_dfn_mdl_Function_nonlinear_hh_INCLUDED
-
 // Derivative Function for Nonlinear Example
 //
 // Project: QSS Solver
 //
-// Developed by Objexx Engineering, Inc. (http://objexx.com)
-// under contract to the National Renewable Energy Laboratory
-// of the U.S. Department of Energy
+// Developed by Objexx Engineering, Inc. (http://objexx.com) under contract to
+// the National Renewable Energy Laboratory of the U.S. Department of Energy
+//
+// Copyright (c) 2017 Objexx Engineerinc, Inc. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// (1) Redistributions of source code must retain the above copyright notice,
+//     this list of conditions and the following disclaimer.
+//
+// (2) Redistributions in binary form must reproduce the above copyright notice,
+//     this list of conditions and the following disclaimer in the documentation
+//     and/or other materials provided with the distribution.
+//
+// (3) Neither the name of the copyright holder nor the names of its
+//     contributors may be used to endorse or promote products derived from this
+//     software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
-// Problem:  y'( t ) = ( 1 + 2 t ) / ( y + 2 ), y( 0 ) = 2
-// Solution: y = sqrt( 2 t^2 + 2 t + 16 ) - 2
-// Note:     y''( t ) = ( 2 / ( y + 2 ) ) - ( ( 1 + 2 t )^2 / ( y + 2 )^3 )
+#ifndef QSS_dfn_mdl_Function_nonlinear_hh_INCLUDED
+#define QSS_dfn_mdl_Function_nonlinear_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/math.hh>
@@ -23,6 +46,10 @@
 namespace QSS {
 namespace dfn {
 namespace mdl {
+
+// Problem:  y'( t ) = ( 1 + 2 t ) / ( y + 2 ), y( 0 ) = 2
+// Solution: y = sqrt( 2 t^2 + 2 t + 16 ) - 2
+// Note:     y''( t ) = ( 2 / ( y + 2 ) ) - ( ( 1 + 2 t )^2 / ( y + 2 )^3 )
 
 // Derivative Function for Nonlinear Example
 template< typename V > // Template to avoid cyclic inclusion with Variable
@@ -60,6 +87,15 @@ public: // Properties
 	{
 		Value const v( y_->x( t ) + 2.0 );
 		return ( ( 2.0 * v ) - ( y_->x1( t ) * ( 1.0 + ( 2.0 * t ) ) ) ) / square( v );
+	}
+
+	// Continuous Second Derivative at Time t
+	Value
+	x2( Time const t ) const
+	{
+		Value const v( y_->x( t ) + 2.0 );
+		Value const w( 1.0 + 2.0 * t );
+		return ( ( 2.0 * square( y_->x1( t ) ) * w ) - ( v * ( ( y_->x2( t ) * w ) + ( 4.0 * y_->x1( t ) ) ) ) ) / cube( v );
 	}
 
 	// Quantized Value at Time t
@@ -114,6 +150,74 @@ public: // Properties
 		return q2( t );
 	}
 
+	// Simultaneous Value at Time t
+	Value
+	s( Time const t ) const
+	{
+		return ( 1.0 + ( 2.0 * t ) ) / ( y_->s( t ) + 2.0 );
+	}
+
+	// Simultaneous First Derivative at Time t
+	Value
+	s1( Time const t ) const
+	{
+		Value const v( y_->s( t ) + 2.0 );
+		return ( ( 2.0 * v ) - ( y_->s1( t ) * ( 1.0 + ( 2.0 * t ) ) ) ) / square( v );
+	}
+
+	// Simultaneous Second Derivative at Time t
+	Value
+	s2( Time const t ) const
+	{
+		Value const v( y_->s( t ) + 2.0 );
+		Value const w( 1.0 + 2.0 * t );
+		return ( ( 2.0 * square( y_->s1( t ) ) * w ) - ( v * ( ( y_->s2( t ) * w ) + ( 4.0 * y_->s1( t ) ) ) ) ) / cube( v );
+	}
+
+	// Simultaneous Sequential Value at Time t
+	Value
+	ss( Time const t ) const
+	{
+		return s( t );
+	}
+
+	// Simultaneous Forward-Difference Sequential First Derivative at Time t
+	Value
+	sf1( Time const t ) const
+	{
+		return s1( t );
+	}
+
+	// Simultaneous Centered-Difference Sequential First Derivative at Time t
+	Value
+	sc1( Time const t ) const
+	{
+		return s1( t );
+	}
+
+	// Simultaneous Centered-Difference Sequential Second Derivative at Time t
+	Value
+	sc2( Time const t ) const
+	{
+		return s2( t );
+	}
+
+	// Continuous Values at Time t and at Variable +/- Delta
+	AdvanceSpecs_LIQSS1
+	xlu1( Time const t, Value const del ) const
+	{
+		// Value at +/- del
+		Value const num( 1.0 + ( 2.0 * t ) );
+		Value const y2( y_->x( t ) + 2.0 );
+		Value const vl( num / ( y2 - del ) );
+		Value const vu( num / ( y2 + del ) );
+
+		// Zero point: No y gives zero function value at any t >= 0
+		Value const z( 0.0 );
+
+		return AdvanceSpecs_LIQSS1{ vl, vu, z };
+	}
+
 	// Quantized Values at Time t and at Variable +/- Delta
 	AdvanceSpecs_LIQSS1
 	qlu1( Time const t, Value const del ) const
@@ -130,13 +234,13 @@ public: // Properties
 		return AdvanceSpecs_LIQSS1{ vl, vu, z };
 	}
 
-	// Continuous Values at Time t and at Variable +/- Delta
+	// Simultaneous Values at Time t and at Variable +/- Delta
 	AdvanceSpecs_LIQSS1
-	xlu1( Time const t, Value const del ) const
+	slu1( Time const t, Value const del ) const
 	{
 		// Value at +/- del
 		Value const num( 1.0 + ( 2.0 * t ) );
-		Value const y2( y_->q( t ) + 2.0 );
+		Value const y2( y_->s( t ) + 2.0 );
 		Value const vl( num / ( y2 - del ) );
 		Value const vu( num / ( y2 + del ) );
 
@@ -144,6 +248,30 @@ public: // Properties
 		Value const z( 0.0 );
 
 		return AdvanceSpecs_LIQSS1{ vl, vu, z };
+	}
+
+	// Continuous Values and Derivatives at Time t and at Variable +/- Delta
+	AdvanceSpecs_LIQSS2
+	xlu2( Time const t, Value const del ) const
+	{
+		// Value at +/- del
+		Value const num( 1.0 + ( 2.0 * t ) );
+		Value const y2( y_->x( t ) + 2.0 );
+		Value const vl( num / ( y2 - del ) );
+		Value const vu( num / ( y2 + del ) );
+
+		// Derivative at +/- del
+		Value const ts( square( 1.0 + ( 2.0 * t ) ) );
+		Value const sl( derivative( ts, y2 - del ) );
+		Value const su( derivative( ts, y2 + del ) );
+
+		// Zero point: No solution points have zero function derivative
+		assert( signum( sl ) == signum( su ) );
+		assert( signum( sl ) != 0 );
+		Value const z1( 0.0 );
+		Value const z2( 0.0 );
+
+		return AdvanceSpecs_LIQSS2{ vl, vu, z1, sl, su, z2 };
 	}
 
 	// Quantized Values and Derivatives at Time t and at Variable +/- Delta
@@ -170,13 +298,13 @@ public: // Properties
 		return AdvanceSpecs_LIQSS2{ vl, vu, z1, sl, su, z2 };
 	}
 
-	// Continuous Values and Derivatives at Time t and at Variable +/- Delta
+	// Simultaneous Values and Derivatives at Time t and at Variable +/- Delta
 	AdvanceSpecs_LIQSS2
-	xlu2( Time const t, Value const del ) const
+	slu2( Time const t, Value const del ) const
 	{
 		// Value at +/- del
 		Value const num( 1.0 + ( 2.0 * t ) );
-		Value const y2( y_->x( t ) + 2.0 );
+		Value const y2( y_->s( t ) + 2.0 );
 		Value const vl( num / ( y2 - del ) );
 		Value const vu( num / ( y2 + del ) );
 

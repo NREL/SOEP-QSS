@@ -48,7 +48,7 @@ TEST( EventQueueTest, Basic )
 	SuperdenseTime const s( Time( 2.0 ), EventQ::Off::QSS );
 	EXPECT_EQ( &vars[ 1 ], events.top_var() );
 	EXPECT_EQ( Time( 1.0 ), events.top_time() );
-	EXPECT_EQ( SuperdenseTime( Time( 1.0 ), EventQ::Off::QSS ), events.top_stime() );
+	EXPECT_EQ( SuperdenseTime( Time( 1.0 ), EventQ::Off::QSS ), events.top_superdense_time() );
 	EXPECT_EQ( 2u, events.count( s ) );
 	auto all( events.equal_range( s ) );
 	EXPECT_EQ( 2u, std::distance( all.first, all.second ) );

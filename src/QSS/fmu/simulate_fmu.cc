@@ -2,9 +2,36 @@
 //
 // Project: QSS Solver
 //
-// Developed by Objexx Engineering, Inc. (http://objexx.com)
-// under contract to the National Renewable Energy Laboratory
-// of the U.S. Department of Energy
+// Developed by Objexx Engineering, Inc. (http://objexx.com) under contract to
+// the National Renewable Energy Laboratory of the U.S. Department of Energy
+//
+// Copyright (c) 2017 Objexx Engineerinc, Inc. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// (1) Redistributions of source code must retain the above copyright notice,
+//     this list of conditions and the following disclaimer.
+//
+// (2) Redistributions in binary form must reproduce the above copyright notice,
+//     this list of conditions and the following disclaimer in the documentation
+//     and/or other materials provided with the distribution.
+//
+// (3) Neither the name of the copyright holder nor the names of its
+//     contributors may be used to endorse or promote products derived from this
+//     software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 // QSS Headers
 #include <QSS/fmu/simulate_fmu.hh>
@@ -12,6 +39,8 @@
 #include <QSS/fmu/FMU_Variable.hh>
 #include <QSS/fmu/globals_fmu.hh>
 #include <QSS/fmu/Variable_D.hh>
+#include <QSS/fmu/Variable_LIQSS1.hh>
+#include <QSS/fmu/Variable_LIQSS2.hh>
 #include <QSS/fmu/Variable_QSS1.hh>
 #include <QSS/fmu/Variable_QSS2.hh>
 #include <QSS/fmu/Variable_ZC1.hh>
@@ -330,6 +359,10 @@ simulate_fmu()
 					qss_var = new Variable_QSS1( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
 				} else if ( options::qss == options::QSS::QSS2 ) {
 					qss_var = new Variable_QSS2( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
+				} else if ( options::qss == options::QSS::LIQSS1 ) {
+					qss_var = new Variable_LIQSS1( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
+				} else if ( options::qss == options::QSS::LIQSS2 ) {
+					qss_var = new Variable_LIQSS2( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
 				} else {
 					std::cerr << "Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 					std::exit( EXIT_FAILURE );
@@ -393,9 +426,9 @@ simulate_fmu()
 								fmu_ders[ var_real ] = fmu_der;
 								fmu_dvrs[ der_real ] = fmu_var;
 								Variable_ZC * qss_var( nullptr );
-								if ( options::qss == options::QSS::QSS1 ) {
+								if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) ) {
 									qss_var = new Variable_ZC1( var_name, options::rTol, options::aTol, fmu_var, fmu_der );
-								} else if ( options::qss == options::QSS::QSS2 ) {
+								} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) ) {
 									qss_var = new Variable_ZC2( var_name, options::rTol, options::aTol, fmu_var, fmu_der );
 								} else {
 									std::cerr << "Error: Specified QSS method is not yet supported for FMUs" << std::endl;
@@ -409,6 +442,7 @@ simulate_fmu()
 								fmu_idxs[ fmu_var.idx ] = qss_var; // Add to map from FMU variable index to QSS variable
 								std::cout << " FMU idx: " << fmu_var.idx << " maps to QSS var: " << qss_var->name << std::endl;
 							}
+							break; // Found derivative so stop scanning
 						}
 					}
 				}
@@ -690,20 +724,14 @@ simulate_fmu()
 	for ( auto var : vars_nonZC ) {
 		var->init_0();
 	}
-//	for ( auto var : vars_nonZC ) {
-//		var->init_LIQSS_1();
-//	}
 	for ( auto var : vars_nonZC ) {
 		var->init_1();
 	}
 	if ( QSS_order_max >= 2 ) {
 		fmu::set_time( t = t0 + options::dtND );
 		for ( auto var : vars_nonZC ) {
-			if ( ! var->is_Discrete() ) var->fmu_set_q( t );
+			if ( ! var->is_Discrete() ) var->fmu_set_sn( t );
 		}
-//		for ( auto var : vars_nonZC ) {
-//			var->init_LIQSS_2();
-//		}
 		for ( auto var : vars_nonZC ) {
 			var->init_2();
 		}
@@ -794,7 +822,8 @@ simulate_fmu()
 		if ( t <= tE ) { // Perform event(s)
 			fmu::set_time( t );
 			Event< Variable > & event( events.top() );
-			SuperdenseTime const & s( events.top_stime() );
+			SuperdenseTime const & s( events.top_superdense_time() );
+			events.set_active_time();
 			if ( event.is_QSS() ) { // QSS requantization event
 				++n_QSS_events;
 				if ( events.single() ) { // Single trigger
@@ -841,11 +870,12 @@ simulate_fmu()
 						} else { // Non-ZC variable
 							triggers_nonZC.push_back( trigger );
 						}
+						trigger->sT = s; // Set trigger superdense time
 					}
 					size_type const iBeg_triggers_nonZC_2( static_cast< size_type >( std::distance( triggers_nonZC.begin(), std::find_if( triggers_nonZC.begin(), triggers_nonZC.end(), []( Variable * v ){ return v->order() >= 2; } ) ) ) );
 					int const triggers_ZC_order_max( triggers_ZC.empty() ? 0 : triggers_ZC.back()->order() );
 					int const triggers_nonZC_order_max( triggers_nonZC.empty() ? 0 : triggers_nonZC.back()->order() );
-					VariableLookup const var_lookup( triggers.begin(), triggers.end() );
+					VariableLookup const var_lookup( triggers_nonZC.begin(), triggers_nonZC.end() );
 					ObserversSet observers_set;
 					for ( Variable * trigger : triggers_nonZC ) { // Collect observers to avoid duplicate advance calls
 						for ( Variable * observer : trigger->observers() ) {
@@ -860,50 +890,48 @@ simulate_fmu()
 						assert( trigger->tE == t );
 						trigger->advance_QSS_0();
 					}
-//					for ( Variable * trigger : triggers_nonZC ) {
-//						trigger->advance_LIQSS_1();
-//					}
-					for ( Variable * observer : observers ) {
-						observer->advance_observer_simultaneous_1( t );
-					}
 					for ( Variable * trigger : triggers_nonZC ) {
 						trigger->advance_QSS_1();
 					}
-					if ( nonZC_order_max >= 2 ) { // Order 2+ pass needed
-						Time const tD( t + options::dtND ); // Advance time to t + delta for numeric differentiation
-						fmu::set_time( tD );
-//						for ( size_type i = iBeg_triggers_nonZC_2, n = triggers_nonZC.size(); i < n; ++i ) {
-//							triggers_nonZC[ i ]->advance_LIQSS_2();
-//						}
-						for ( size_type i = iBeg_observers_2, n = observers.size(); i < n; ++i ) {
-							observers[ i ]->advance_observer_simultaneous_2( tD );
-						}
+					if ( nonZC_order_max >= 2 ) { // 2nd order pass
+						fmu::set_time( t + options::dtND ); // Set time to t + delta for numeric differentiation
 						for ( size_type i = iBeg_triggers_nonZC_2, n = triggers_nonZC.size(); i < n; ++i ) {
 							triggers_nonZC[ i ]->advance_QSS_2();
 						}
 					}
-
 					if ( ! triggers_ZC.empty() ) { // ZC variables after to get actual LIQSS2+ quantized reps
-						fmu::set_time( t );
+						if ( nonZC_order_max >= 2 ) fmu::set_time( t );
 						for ( Variable * trigger : triggers_ZC ) {
 							assert( trigger->tE == t );
 							trigger->advance_QSS_0();
 						}
-						fmu::set_time( t + options::dtND ); // Advance time to t + delta for numeric differentiation
+						fmu::set_time( t + options::dtND ); // Set time to t + delta for numeric differentiation
 						for ( Variable * trigger : triggers_ZC ) {
 							trigger->advance_QSS_1();
 						}
 						if ( triggers_ZC_order_max >= 2 ) {
-							fmu::set_time( t - options::dtND ); // Advance time to t + delta for numeric differentiation
-							for ( Variable * trigger : triggers_ZC ) { /// limit to order 2+
+							fmu::set_time( t - options::dtND ); // Set time to t - delta for numeric differentiation
+							for ( Variable * trigger : triggers_ZC ) {
 								trigger->advance_QSS_2();
 							}
 						}
 					}
-
-					if ( options::output::d ) {
+					if ( ! observers.empty() ) { // Observer advance
+						if ( ( nonZC_order_max >= 2 ) || ( ! triggers_ZC.empty() ) ) fmu::set_time( t );
 						for ( Variable * observer : observers ) {
-							observer->advance_observer_d();
+							observer->advance_observer_simultaneous_1( t );
+						}
+						if ( nonZC_order_max >= 2 ) { // 2nd order pass
+							Time const tD( t + options::dtND ); // Set time to t + delta for numeric differentiation
+							fmu::set_time( tD );
+							for ( size_type i = iBeg_observers_2, n = observers.size(); i < n; ++i ) {
+								observers[ i ]->advance_observer_simultaneous_2( tD );
+							}
+						}
+						if ( options::output::d ) {
+							for ( Variable * observer : observers ) {
+								observer->advance_observer_d();
+							}
 						}
 					}
 					if ( doROut ) { // Requantization output
@@ -940,7 +968,7 @@ simulate_fmu()
 				}
 			} else if ( event.is_ZC() ) { // Zero-crossing event
 				++n_ZC_events;
-				while ( events.top_stime() == s ) {
+				while ( events.top_superdense_time() == s ) {
 					Variable * trigger( events.top_var() );
 					assert( trigger->tZC() == t );
 					trigger->advance_ZC();
@@ -1100,7 +1128,7 @@ simulate_fmu()
 					for ( size_type i = iBeg_handlers_1, n = handlers.size(); i < n; ++i ) {
 						handlers[ i ]->advance_handler_1();
 					}
-					if ( ho_order_max >= 2 ) { // Order 2+ pass needed
+					if ( ho_order_max >= 2 ) { // 2nd order pass
 						Time const tD( t + options::dtND ); // Advance time to t + delta for numeric differentiation
 						fmu::set_time( tD );
 						for ( size_type i = iBeg_observers_2, n = observers.size(); i < n; ++i ) {

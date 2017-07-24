@@ -1,13 +1,40 @@
-#ifndef QSS_dfn_mdl_Function_LTI_hh_INCLUDED
-#define QSS_dfn_mdl_Function_LTI_hh_INCLUDED
-
 // Linear Time-Invariant Function
 //
 // Project: QSS Solver
 //
-// Developed by Objexx Engineering, Inc. (http://objexx.com)
-// under contract to the National Renewable Energy Laboratory
-// of the U.S. Department of Energy
+// Developed by Objexx Engineering, Inc. (http://objexx.com) under contract to
+// the National Renewable Energy Laboratory of the U.S. Department of Energy
+//
+// Copyright (c) 2017 Objexx Engineerinc, Inc. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// (1) Redistributions of source code must retain the above copyright notice,
+//     this list of conditions and the following disclaimer.
+//
+// (2) Redistributions in binary form must reproduce the above copyright notice,
+//     this list of conditions and the following disclaimer in the documentation
+//     and/or other materials provided with the distribution.
+//
+// (3) Neither the name of the copyright holder nor the names of its
+//     contributors may be used to endorse or promote products derived from this
+//     software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
+#ifndef QSS_dfn_mdl_Function_LTI_hh_INCLUDED
+#define QSS_dfn_mdl_Function_LTI_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/math.hh>
@@ -172,26 +199,68 @@ public: // Properties
 		return q2( t );
 	}
 
-	// Quantized Values at Time t and at Variable +/- Delta
-	AdvanceSpecs_LIQSS1
-	qlu1( Time const t, Value const del ) const
+	// Simultaneous Value at Time t
+	Value
+	s( Time const t ) const
 	{
-		assert( co_.size() == xo_.size() );
-
-		// Value at +/- del
+		assert( c_.size() == x_.size() );
 		Value v( c0_ );
-		for ( size_type i = 0, n = co_.size(); i < n; ++i ) {
-			v += co_[ i ] * xo_[ i ]->q( t );
+		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
+			v += c_[ i ] * x_[ i ]->s( t );
 		}
-		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * xv_->q( t ) ) );
-		Value const cv_del( cv_ * del );
-		Value const vl( vc - cv_del );
-		Value const vu( vc + cv_del );
+		return v;
+	}
 
-		// Zero point
-		Value const z( signum( vl ) != signum( vu ) ? -( v * cv_inv_ ) : 0.0 );
+	// Simultaneous First Derivative at Time t
+	Value
+	s1( Time const t ) const
+	{
+		assert( c_.size() == x_.size() );
+		Value s( 0.0 );
+		for ( size_type i = iBeg[ 2 ], n = c_.size(); i < n; ++i ) {
+			s += c_[ i ] * x_[ i ]->s1( t );
+		}
+		return s;
+	}
 
-		return AdvanceSpecs_LIQSS1{ vl, vu, z };
+	// Simultaneous Second Derivative at Time t
+	Value
+	s2( Time const t ) const
+	{
+		assert( c_.size() == x_.size() );
+		Value s( 0.0 );
+		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
+			s += c_[ i ] * x_[ i ]->s2( t );
+		}
+		return s;
+	}
+
+	// Simultaneous Sequential Value at Time t
+	Value
+	ss( Time const t ) const
+	{
+		return s( t );
+	}
+
+	// Simultaneous Forward-Difference Sequential First Derivative at Time t
+	Value
+	sf1( Time const t ) const
+	{
+		return s1( t );
+	}
+
+	// Simultaneous Centered-Difference Sequential First Derivative at Time t
+	Value
+	sc1( Time const t ) const
+	{
+		return s1( t );
+	}
+
+	// Simultaneous Centered-Difference Sequential Second Derivative at Time t
+	Value
+	sc2( Time const t ) const
+	{
+		return s2( t );
 	}
 
 	// Continuous Values at Time t and at Variable +/- Delta
@@ -214,6 +283,82 @@ public: // Properties
 		Value const z( signum( vl ) != signum( vu ) ? -( v * cv_inv_ ) : 0.0 );
 
 		return AdvanceSpecs_LIQSS1{ vl, vu, z };
+	}
+
+	// Quantized Values at Time t and at Variable +/- Delta
+	AdvanceSpecs_LIQSS1
+	qlu1( Time const t, Value const del ) const
+	{
+		assert( co_.size() == xo_.size() );
+
+		// Value at +/- del
+		Value v( c0_ );
+		for ( size_type i = 0, n = co_.size(); i < n; ++i ) {
+			v += co_[ i ] * xo_[ i ]->q( t );
+		}
+		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * xv_->q( t ) ) );
+		Value const cv_del( cv_ * del );
+		Value const vl( vc - cv_del );
+		Value const vu( vc + cv_del );
+
+		// Zero point
+		Value const z( signum( vl ) != signum( vu ) ? -( v * cv_inv_ ) : 0.0 );
+
+		return AdvanceSpecs_LIQSS1{ vl, vu, z };
+	}
+
+	// Simultaneous Values at Time t and at Variable +/- Delta
+	AdvanceSpecs_LIQSS1
+	slu1( Time const t, Value const del ) const
+	{
+		assert( co_.size() == xo_.size() );
+
+		// Value at +/- del
+		Value v( c0_ );
+		for ( size_type i = 0, n = co_.size(); i < n; ++i ) {
+			v += co_[ i ] * xo_[ i ]->s( t );
+		}
+		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * xv_->x( t ) ) );
+		Value const cv_del( cv_ * del );
+		Value const vl( vc - cv_del );
+		Value const vu( vc + cv_del );
+
+		// Zero point
+		Value const z( signum( vl ) != signum( vu ) ? -( v * cv_inv_ ) : 0.0 );
+
+		return AdvanceSpecs_LIQSS1{ vl, vu, z };
+	}
+
+	// Continuous Values and Derivatives at Time t and at Variable +/- Delta
+	AdvanceSpecs_LIQSS2
+	xlu2( Time const t, Value const del ) const
+	{
+		assert( co_.size() == xo_.size() );
+
+		// Value at +/- del
+		Value v( c0_ );
+		for ( size_type i = 0, n = co_.size(); i < n; ++i ) {
+			v += co_[ i ] * xo_[ i ]->x( t );
+		}
+		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * xv_->x( t ) ) );
+		Value const cv_del( cv_ * del );
+		Value const vl( vc - cv_del );
+		Value const vu( vc + cv_del );
+
+		// Derivative at +/- del
+		Value s( 0.0 );
+		for ( size_type i = ioBeg[ 2 ], n = co_.size(); i < n; ++i ) {
+			s += co_[ i ] * xo_[ i ]->x1( t );
+		}
+		Value const sl( s + ( cv_ * vl ) );
+		Value const su( s + ( cv_ * vu ) );
+
+		// Zero point
+		bool const signs_differ( signum( sl ) != signum( su ) );
+		Value const z1( signs_differ ? -( s * cv_inv_ ) : 0.0 );
+		Value const z2( signs_differ ? ( z1 - v ) * cv_inv_ : 0.0 );
+
+		return AdvanceSpecs_LIQSS2{ vl, vu, z1, sl, su, z2 };
 	}
 
 	// Quantized Values and Derivatives at Time t and at Variable +/- Delta
@@ -248,16 +393,16 @@ public: // Properties
 		return AdvanceSpecs_LIQSS2{ vl, vu, z1, sl, su, z2 };
 	}
 
-	// Continuous Values and Derivatives at Time t and at Variable +/- Delta
+	// Simultaneous Values and Derivatives at Time t and at Variable +/- Delta
 	AdvanceSpecs_LIQSS2
-	xlu2( Time const t, Value const del ) const
+	slu2( Time const t, Value const del ) const
 	{
 		assert( co_.size() == xo_.size() );
 
 		// Value at +/- del
 		Value v( c0_ );
 		for ( size_type i = 0, n = co_.size(); i < n; ++i ) {
-			v += co_[ i ] * xo_[ i ]->x( t );
+			v += co_[ i ] * xo_[ i ]->s( t );
 		}
 		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * xv_->x( t ) ) );
 		Value const cv_del( cv_ * del );
@@ -267,7 +412,7 @@ public: // Properties
 		// Derivative at +/- del
 		Value s( 0.0 );
 		for ( size_type i = ioBeg[ 2 ], n = co_.size(); i < n; ++i ) {
-			s += co_[ i ] * xo_[ i ]->x1( t );
+			s += co_[ i ] * xo_[ i ]->s1( t );
 		}
 		Value const sl( s + ( cv_ * vl ) );
 		Value const su( s + ( cv_ * vu ) );

@@ -1,13 +1,40 @@
-#ifndef QSS_dfn_Variable_LIQSS1_hh_INCLUDED
-#define QSS_dfn_Variable_LIQSS1_hh_INCLUDED
-
 // LIQSS1 Variable
 //
 // Project: QSS Solver
 //
-// Developed by Objexx Engineering, Inc. (http://objexx.com)
-// under contract to the National Renewable Energy Laboratory
-// of the U.S. Department of Energy
+// Developed by Objexx Engineering, Inc. (http://objexx.com) under contract to
+// the National Renewable Energy Laboratory of the U.S. Department of Energy
+//
+// Copyright (c) 2017 Objexx Engineerinc, Inc. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// (1) Redistributions of source code must retain the above copyright notice,
+//     this list of conditions and the following disclaimer.
+//
+// (2) Redistributions in binary form must reproduce the above copyright notice,
+//     this list of conditions and the following disclaimer in the documentation
+//     and/or other materials provided with the distribution.
+//
+// (3) Neither the name of the copyright holder nor the names of its
+//     contributors may be used to endorse or promote products derived from this
+//     software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
+#ifndef QSS_dfn_Variable_LIQSS1_hh_INCLUDED
+#define QSS_dfn_Variable_LIQSS1_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/dfn/Variable_QSS.hh>
@@ -35,6 +62,7 @@ public: // Types
 	using Super::tQ;
 	using Super::tX;
 	using Super::tE;
+	using Super::sT;
 	using Super::dt_min;
 	using Super::dt_max;
 	using Super::self_observer;
@@ -97,6 +125,20 @@ public: // Properties
 		return q_0_;
 	}
 
+	// Simultaneous Value at Time t
+	Value
+	s( Time const ) const
+	{
+		return ( sT == events.active_superdense_time() ? q_c_ : q_0_ );
+	}
+
+	// Simultaneous Numeric Differentiation Value at Time t
+	Value
+	sn( Time const t ) const
+	{
+		return ( sT == events.active_superdense_time() ? q_c_ : q_0_ );
+	}
+
 public: // Methods
 
 	// Initialization to a Value
@@ -104,7 +146,7 @@ public: // Methods
 	init( Value const x )
 	{
 		init_0( x );
-		init_LIQSS_1();
+		init_1();
 	}
 
 	// Initialization to a Value: Stage 0
@@ -123,16 +165,16 @@ public: // Methods
 		set_qTol();
 	}
 
-	// Initialization: LIQSS Stage 1
+	// Initialization: Stage 1
 	void
-	init_LIQSS_1()
-	{ // Call before init_1 since it alters q_0_
+	init_1()
+	{
 		self_observer = d_.finalize( this );
 		shrink_observers(); // Optional
 		if ( self_observer ) {
-			advance_x( tQ ); // Continuous rep used to avoid cyclic dependency
+			advance_s( tQ ); // Simultaneous reps used to avoid cyclic dependency
 		} else {
-			x_1_ = d_.x( tQ ); // Continuous rep used to avoid cyclic dependency
+			x_1_ = d_.s( tQ ); // Simultaneous reps used to avoid cyclic dependency
 			q_0_ += signum( x_1_ ) * qTol;
 		}
 		set_tE_aligned();
@@ -175,22 +217,16 @@ public: // Methods
 		set_qTol();
 	}
 
-	// LIQSS Advance: Stage 1
-	void
-	advance_LIQSS_1()
-	{ // Call before advance_QSS_1 since it alters q_0_
-		if ( self_observer ) {
-			advance_x( tE ); // Continuous rep used to avoid cyclic dependency
-		} else {
-			x_1_ = d_.x( tE ); // Continuous rep used to avoid cyclic dependency
-			q_0_ += signum( x_1_ ) * qTol;
-		}
-	}
-
 	// QSS Advance: Stage 1
 	void
 	advance_QSS_1()
 	{
+		if ( self_observer ) {
+			advance_s( tE ); // Simultaneous reps used to avoid cyclic dependency
+		} else {
+			x_1_ = d_.s( tE ); // Simultaneous reps used to avoid cyclic dependency
+			q_0_ += signum( x_1_ ) * qTol;
+		}
 		set_tE_aligned();
 		event( events.shift_QSS( tE, event() ) );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
@@ -291,18 +327,25 @@ private: // Methods
 		}
 	}
 
-	// Advance Self-Observing Trigger using Quantized Derivative
-	void
-	advance_q( Time const t )
-	{
-		advance_LIQSS( d_.qlu1( t, qTol ) ); // Quantized rep used for single trigger
-	}
-
 	// Advance Self-Observing Trigger using Continuous Derivative
 	void
 	advance_x( Time const t )
 	{
-		advance_LIQSS( d_.xlu1( t, qTol ) ); // Continuous rep used for simultaneous triggers
+		advance_LIQSS( d_.xlu1( t, qTol ) );
+	}
+
+	// Advance Self-Observing Trigger using Quantized Derivative
+	void
+	advance_q( Time const t )
+	{
+		advance_LIQSS( d_.qlu1( t, qTol ) );
+	}
+
+	// Advance Self-Observing Trigger using Simultaneous Derivative
+	void
+	advance_s( Time const t )
+	{
+		advance_LIQSS( d_.slu1( t, qTol ) );
 	}
 
 private: // Data

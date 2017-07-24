@@ -2,9 +2,36 @@
 //
 // Project: QSS Solver
 //
-// Developed by Objexx Engineering, Inc. (http://objexx.com)
-// under contract to the National Renewable Energy Laboratory
-// of the U.S. Department of Energy
+// Developed by Objexx Engineering, Inc. (http://objexx.com) under contract to
+// the National Renewable Energy Laboratory of the U.S. Department of Energy
+//
+// Copyright (c) 2017 Objexx Engineerinc, Inc. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// (1) Redistributions of source code must retain the above copyright notice,
+//     this list of conditions and the following disclaimer.
+//
+// (2) Redistributions in binary form must reproduce the above copyright notice,
+//     this list of conditions and the following disclaimer in the documentation
+//     and/or other materials provided with the distribution.
+//
+// (3) Neither the name of the copyright holder nor the names of its
+//     contributors may be used to endorse or promote products derived from this
+//     software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 //  model StateEvent6
 //    // This model has 8 state events at t=1.35s,
@@ -188,6 +215,55 @@ public: // Properties
 		return q2( t );
 	}
 
+	// Simultaneous Value at Time t
+	Value
+	s( Time const t ) const
+	{
+		return std::cos( c() * t );
+	}
+
+	// Simultaneous First Derivative at Time t
+	Value
+	s1( Time const t ) const
+	{
+		return -c() * std::sin( c() * t );
+	}
+
+	// Simultaneous Second Derivative at Time t
+	Value
+	s2( Time const t ) const
+	{
+		return -square( c() ) * std::cos( c() * t );
+	}
+
+	// Simultaneous Sequential Value at Time t
+	Value
+	ss( Time const t ) const
+	{
+		return s( t );
+	}
+
+	// Simultaneous Forward-Difference Sequential First Derivative at Time t
+	Value
+	sf1( Time const t ) const
+	{
+		return s1( t );
+	}
+
+	// Simultaneous Centered-Difference Sequential First Derivative at Time t
+	Value
+	sc1( Time const t ) const
+	{
+		return s1( t );
+	}
+
+	// Simultaneous Centered-Difference Sequential Second Derivative at Time t
+	Value
+	sc2( Time const t ) const
+	{
+		return s2( t );
+	}
+
 public: // Methods
 
 	// Finalize Function Representation
@@ -253,7 +329,7 @@ StateEvent6( Variables & vars )
 		vars.push_back( x2 = new Variable_QSS3< Function_LTI >( "x2", rTol, aTol, -2.5 ) );
 		vars.push_back( x3 = new Variable_QSS3< Function_LTI >( "x3", rTol, aTol, +4.0 ) );
 	} else if ( qss == QSS::LIQSS1 ) {
-		vars.push_back( x1 = new Variable_QSS1< Function_x1 >( "x1", rTol, aTol, +1.1 ) ); // Add q/xlu1 to enable LIQSS1
+		vars.push_back( x1 = new Variable_QSS1< Function_x1 >( "x1", rTol, aTol, +1.1 ) ); // Add q/slu1 to enable LIQSS1
 		vars.push_back( x2 = new Variable_LIQSS1< Function_LTI >( "x2", rTol, aTol, -2.5 ) );
 		vars.push_back( x3 = new Variable_LIQSS1< Function_LTI >( "x3", rTol, aTol, +4.0 ) );
 	} else if ( qss == QSS::LIQSS2 ) {

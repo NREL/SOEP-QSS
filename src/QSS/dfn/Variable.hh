@@ -1,13 +1,40 @@
-#ifndef QSS_dfn_Variable_hh_INCLUDED
-#define QSS_dfn_Variable_hh_INCLUDED
-
 // Variable Abstract Base Class
 //
 // Project: QSS Solver
 //
-// Developed by Objexx Engineering, Inc. (http://objexx.com)
-// under contract to the National Renewable Energy Laboratory
-// of the U.S. Department of Energy
+// Developed by Objexx Engineering, Inc. (http://objexx.com) under contract to
+// the National Renewable Energy Laboratory of the U.S. Department of Energy
+//
+// Copyright (c) 2017 Objexx Engineerinc, Inc. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// (1) Redistributions of source code must retain the above copyright notice,
+//     this list of conditions and the following disclaimer.
+//
+// (2) Redistributions in binary form must reproduce the above copyright notice,
+//     this list of conditions and the following disclaimer in the documentation
+//     and/or other materials provided with the distribution.
+//
+// (3) Neither the name of the copyright holder nor the names of its
+//     contributors may be used to endorse or promote products derived from this
+//     software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
+#ifndef QSS_dfn_Variable_hh_INCLUDED
+#define QSS_dfn_Variable_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/dfn/Variable.fwd.hh>
@@ -96,7 +123,7 @@ protected: // Creation
 		dt_max = options::dtMax;
 	}
 
-	// Default-Tolerance Constructor
+	// Name + Value Constructor
 	explicit
 	Variable(
 	 std::string const & name,
@@ -225,6 +252,40 @@ public: // Properties
 		return 0.0;
 	}
 
+	// Simultaneous Value at Time t
+	virtual
+	Value
+	s( Time const ) const
+	{
+		assert( false ); // Missing override
+		return 0.0;
+	}
+
+	// Simultaneous Numeric Differentiation Value at Time t
+	virtual
+	Value
+	sn( Time const ) const
+	{
+		assert( false ); // Missing override
+		return 0.0;
+	}
+
+	// Simultaneous First Derivative at Time t
+	virtual
+	Value
+	s1( Time const ) const
+	{
+		return 0.0;
+	}
+
+	// Simultaneous Second Derivative at Time t
+	virtual
+	Value
+	s2( Time const ) const
+	{
+		return 0.0;
+	}
+
 	// Observers
 	Variables const &
 	observers() const
@@ -333,22 +394,10 @@ public: // Methods
 	init_0( Value const )
 	{}
 
-	// Initialization: LIQSS Stage 1
-	virtual
-	void
-	init_LIQSS_1()
-	{}
-
 	// Initialization: Stage 1
 	virtual
 	void
 	init_1()
-	{}
-
-	// Initialization: LIQSS Stage 2
-	virtual
-	void
-	init_LIQSS_2()
 	{}
 
 	// Initialization: Stage 2
@@ -385,22 +434,10 @@ public: // Methods
 	advance_QSS_0()
 	{}
 
-	// LIQSS Advance: Stage 1
-	virtual
-	void
-	advance_LIQSS_1()
-	{}
-
 	// QSS Advance: Stage 1
 	virtual
 	void
 	advance_QSS_1()
-	{}
-
-	// LIQSS Advance: Stage 2
-	virtual
-	void
-	advance_LIQSS_2()
 	{}
 
 	// QSS Advance: Stage 2
@@ -510,9 +547,10 @@ public: // Data
 	Value xIni{ 0.0 }; // Initial value
 	Time tQ{ 0.0 }; // Quantized time range begin
 	Time tX{ 0.0 }; // Continuous time range begin
-	Time tE{ infinity }; // Time range end: tQ <= tE and tX <= tE
+	Time tE{ 0.0 }; // Time range end: tQ <= tE and tX <= tE
 	Time dt_min{ 0.0 }; // Time step min
 	Time dt_max{ infinity }; // Time step max
+	SuperdenseTime sT; // Trigger superdense time
 	bool self_observer{ false }; // Variable appears in its function/derivative?
 
 protected: // Data

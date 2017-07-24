@@ -1,4 +1,4 @@
-// FMU-Based QSS2 Variable
+// FMU-Based LIQSS2 Variable
 //
 // Project: QSS Solver
 //
@@ -33,8 +33,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_Variable_QSS2_hh_INCLUDED
-#define QSS_fmu_Variable_QSS2_hh_INCLUDED
+#ifndef QSS_fmu_Variable_LIQSS2_hh_INCLUDED
+#define QSS_fmu_Variable_LIQSS2_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/fmu/Variable_QSS.hh>
@@ -42,8 +42,8 @@
 namespace QSS {
 namespace fmu {
 
-// FMU-Based QSS2 Variable
-class Variable_QSS2 final : public Variable_QSS
+// FMU-Based LIQSS2 Variable
+class Variable_LIQSS2 final : public Variable_QSS
 {
 
 public: // Types
@@ -54,7 +54,7 @@ public: // Creation
 
 	// Constructor
 	explicit
-	Variable_QSS2(
+	Variable_LIQSS2(
 	 std::string const & name,
 	 Value const rTol = 1.0e-4,
 	 Value const aTol = 1.0e-6,
@@ -64,6 +64,7 @@ public: // Creation
 	) :
 	 Super( name, rTol, aTol, xIni, var, der ),
 	 x_0_( xIni ),
+	 q_c_( xIni ),
 	 q_0_( xIni )
 	{
 		set_qTol();
@@ -118,21 +119,21 @@ public: // Properties
 	Value
 	s( Time const t ) const
 	{
-		return q_0_ + ( q_1_ * ( t - tQ ) );
+		return ( sT == events.active_superdense_time() ? q_c_ : q_0_ + ( q_1_ * ( t - tQ ) ) );
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
 	Value
 	sn( Time const t ) const
 	{
-		return q_0_ + ( q_1_ * ( t - tQ ) );
+		return ( sT == events.active_superdense_time() ? q_c_ : q_0_ ) + ( q_1_ * ( t - tQ ) );
 	}
 
 	// Simultaneous First Derivative at Time t
 	Value
 	s1( Time const ) const
 	{
-		return q_1_;
+		return ( sT == events.active_superdense_time() ? s_1_ : q_1_ );
 	}
 
 public: // Methods
@@ -151,7 +152,7 @@ public: // Methods
 	init_0( Value const x )
 	{
 		init_observers();
-		fmu_set_value( x_0_ = q_0_ = x );
+		fmu_set_value( x_0_ = q_c_ = q_0_ = x );
 		set_qTol();
 	}
 
@@ -160,7 +161,7 @@ public: // Methods
 	init_0()
 	{
 		init_observers();
-		fmu_set_value( x_0_ = q_0_ = xIni );
+		fmu_set_value( x_0_ = q_c_ = q_0_ = xIni );
 		set_qTol();
 	}
 
@@ -168,14 +169,25 @@ public: // Methods
 	void
 	init_1()
 	{
-		x_1_ = q_1_ = fmu_get_deriv();
+		x_1_ = q_1_ = s_1_ = fmu_get_deriv();
+		if ( self_observer ) {
+			advance_LIQSS_1();
+			fmu_set_value( x_0_ );
+		}
 	}
 
 	// Initialization: Stage 2
 	void
 	init_2()
 	{
-		x_2_ = options::one_half_over_dtND * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+		if ( self_observer ) {
+			tD = tQ + options::dtND;
+			advance_LIQSS_2();
+			fmu_set_sn( tD );
+		} else {
+			x_2_ = options::one_half_over_dtND * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+			q_0_ += signum( x_2_ ) * qTol;
+		}
 		set_tE_aligned();
 		event( events.add_QSS( tE, this ) );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';
@@ -185,7 +197,7 @@ public: // Methods
 	void
 	set_qTol()
 	{
-		qTol = std::max( rTol * std::abs( q_0_ ), aTol );
+		qTol = std::max( rTol * std::abs( q_c_ ), aTol );
 		assert( qTol > 0.0 );
 	}
 
@@ -194,23 +206,27 @@ public: // Methods
 	advance_QSS()
 	{
 		Time const tDel( ( tQ = tE ) - tX );
-		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		x_0_ = q_c_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 		set_qTol();
 		fmu_set_observees_q( tX = tQ );
-		if ( observers_.empty() ) {
-			if ( self_observer ) fmu_set_value( q_0_ );
+		if ( self_observer ) {
+			advance_LIQSS_1();
+			fmu::set_time( tD = tQ + options::dtND );
+			fmu_set_observees_q( tD );
+			advance_LIQSS_2();
 		} else {
-			advance_observers_1();
+			x_1_ = q_1_ = s_1_ = fmu_get_deriv();
+			fmu::set_time( tD = tQ + options::dtND );
+			fmu_set_observees_q( tD );
+			x_2_ = options::one_half_over_dtND * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+			q_0_ += signum( x_2_ ) * qTol;
 		}
-		x_1_ = q_1_ = fmu_get_deriv();
-		fmu::set_time( tD = tQ + options::dtND );
-		fmu_set_observees_q( tD );
-		if ( observers_max_order_ <= 1 ) {
-			if ( self_observer ) fmu_set_q( tD );
-		} else {
+		fmu::set_time( tQ );
+		advance_observers_1();
+		if ( observers_max_order_ >= 2 ) {
+			fmu::set_time( tD = tQ + options::dtND );
 			advance_observers_2();
 		}
-		x_2_ = options::one_half_over_dtND * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE_aligned();
 		event( events.shift_QSS( tE, event() ) );
 		if ( options::output::d ) {
@@ -224,7 +240,7 @@ public: // Methods
 	advance_QSS_0()
 	{
 		Time const tDel( ( tQ = tE ) - tX );
-		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		x_0_ = q_c_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 		tX = tE;
 		set_qTol();
 	}
@@ -234,8 +250,11 @@ public: // Methods
 	advance_QSS_1()
 	{
 		fmu_set_observees_s( tQ );
-		if ( self_observer ) fmu_set_value( q_0_ );
-		x_1_ = q_1_ = fmu_get_deriv();
+		if ( self_observer ) {
+			advance_LIQSS_1();
+			fmu_set_value( x_0_ );
+		}
+		x_1_ = q_1_ = s_1_ = fmu_get_deriv();
 	}
 
 	// QSS Advance: Stage 2
@@ -243,8 +262,12 @@ public: // Methods
 	advance_QSS_2()
 	{
 		fmu_set_observees_sn( tD = tQ + options::dtND );
-		if ( self_observer ) fmu_set_q( tD );
-		x_2_ = options::one_half_over_dtND * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+		if ( self_observer ) {
+			advance_LIQSS_2();
+		} else {
+			x_2_ = options::one_half_over_dtND * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+			q_0_ += signum( x_2_ ) * qTol;
+		}
 		set_tE_aligned();
 		event( events.shift_QSS( tE, event() ) );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';
@@ -258,7 +281,7 @@ public: // Methods
 		Time const tDel( t - tX );
 		tX = t;
 		x_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
-		x_1_ = fmu_get_deriv();
+		x_1_ = s_1_ = fmu_get_deriv();
 	}
 
 	// Observer Advance: Stage 2
@@ -283,12 +306,12 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
-		x_0_ = q_0_ = fmu_get_value(); // Assume FMU ran zero-crossing handler
+		x_0_ = q_c_ = q_0_ = fmu_get_value(); // Assume FMU ran zero-crossing handler
 		set_qTol();
 		advance_observers_1();
 		fmu_set_observees_q( tQ );
 		if ( ( self_observer ) && ( observers_.empty() ) ) fmu_set_value( q_0_ );
-		x_1_ = q_1_ = fmu_get_deriv();
+		x_1_ = q_1_ = s_1_ = fmu_get_deriv();
 		fmu::set_time( tD = tQ + options::dtND );
 		if ( observers_max_order_ >= 2 ) advance_observers_2();
 		fmu_set_observees_q( tD );
@@ -308,7 +331,7 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
-		x_0_ = q_0_ = fmu_get_value(); // Assume FMU ran zero-crossing handler
+		x_0_ = q_c_ = q_0_ = fmu_get_value(); // Assume FMU ran zero-crossing handler
 		set_qTol();
 	}
 
@@ -318,7 +341,7 @@ public: // Methods
 	{
 		fmu_set_observees_q( tQ );
 		if ( ( self_observer ) && ( observers_.empty() ) ) fmu_set_value( q_0_ );
-		x_1_ = q_1_ = fmu_get_deriv();
+		x_1_ = q_1_ = s_1_ = fmu_get_deriv();
 	}
 
 	// Handler Advance: Stage 2
@@ -356,7 +379,7 @@ private: // Methods
 	{
 		assert( tQ <= tX );
 		assert( dt_min <= dt_max );
-		Value const d0( x_0_ - ( q_0_ + ( q_1_ * ( tX - tQ ) ) ) );
+		Value const d0( x_0_ - ( q_c_ + ( q_1_ * ( tX - tQ ) ) ) );
 		Value const d1( x_1_ - q_1_ );
 		Time dtX;
 		if ( ( d1 >= 0.0 ) && ( x_2_ >= 0.0 ) ) { // Upper boundary crossing
@@ -373,10 +396,62 @@ private: // Methods
 		}
 	}
 
+	// Advance Self-Observing LIQSS1 Trigger: Stage 1
+	void
+	advance_LIQSS_1()
+	{
+		assert( qTol > 0.0 );
+		assert( self_observer );
+
+		// Derivative at +/- qTol
+		fmu_set_value( q_c_ - qTol );
+		d_l_ = fmu_get_deriv();
+		fmu_set_value( q_c_ + qTol );
+		d_u_ = fmu_get_deriv();
+	}
+
+	// Advance Self-Observing LIQSS1 Trigger: Stage 2
+	void
+	advance_LIQSS_2()
+	{
+		assert( qTol > 0.0 );
+		assert( self_observer );
+		assert( tD == tQ + options::dtND );
+
+		// Value at +/- qTol
+		Value const q_l( q_c_ - qTol + ( d_l_ * options::dtND ) );
+		Value const q_u( q_c_ + qTol + ( d_u_ * options::dtND ) );
+
+		// Second derivative at +/- qTol
+		fmu_set_value( q_l );
+		Value const d2_l( options::one_half_over_dtND * ( fmu_get_deriv() - d_l_ ) ); // 1/2 * 2nd derivative
+		int const d2_l_s( signum( d2_l ) );
+		fmu_set_value( q_u );
+		Value const d2_u( options::one_half_over_dtND * ( fmu_get_deriv() - d_u_ ) ); // 1/2 * 2nd derivative
+		int const d2_u_s( signum( d2_u ) );
+
+		// Set coefficients based on second derivative signs
+		if ( ( d2_l_s == -1 ) && ( d2_u_s == -1 ) ) { // Downward curving trajectory
+			q_0_ -= qTol;
+			x_1_ = q_1_ = d_l_; // s_1_ is not changed
+			x_2_ = d2_l;
+		} else if ( ( d2_l_s == +1 ) && ( d2_u_s == +1 ) ) { // Upward curving trajectory
+			q_0_ += qTol;
+			x_1_ = q_1_ = d_u_; // s_1_ is not changed
+			x_2_ = d2_u;
+		} else { // Straight trajectory
+			q_0_ = std::min( std::max( ( ( q_u * d2_u ) - ( q_l * d2_l ) ) / ( d2_u - d2_l ), q_0_ - qTol ), q_0_ + qTol ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
+			x_1_ = q_1_ = ( ( ( q_u - q_0_ ) * d_l_ ) + ( ( q_0_ - q_l ) * d_u_ ) ) / ( 2.0 * qTol ); // 1st deriv at q_z // s_1_ is not changed
+			x_2_ = 0.0;
+		}
+	}
+
 private: // Data
 
 	Value x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous rep coefficients
-	Value q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized rep coefficients
+	Value q_c_{ 0.0 }, q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized rep coefficients
+	Value s_1_{ 0.0 }; // Simultaneuous rep coefficients
+	Value d_l_{ 0.0 }, d_u_{ 0.0 }; // Derivative at +/- qTol
 
 };
 

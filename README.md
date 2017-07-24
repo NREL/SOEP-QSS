@@ -24,7 +24,7 @@ Notes:
 ## Plan
 
 Planned development in anticipated sequence order are:
-* FMU support extensions: unit conversions, LIQSS1/2, QSS3, Modelica annotations, higher derivatives, ...
+* FMU support extensions: input variables, Modelica annotations, higher derivatives, ...
 * Algebraic relationship/loop support.
 * Extended precision time handling for large time span simulation.
 * Higher performance event queue.
@@ -90,13 +90,13 @@ LIQSS as described in the literature is somewhat under-defined and inconsistent 
 #### Cyclic Dependency
 
 At startup and simultaneous requantization trigger events the LIQSS approach defined in the literature is inadequate because the quantized values depend on derivatives which, in turn, depend on other quantized values. When multiple variables' quantized values need to be set at the same time point there is, in general, a cyclic dependency among them. Approaches that were considered:
-* Single pass in arbitrary order: Leaves different representations of the same variable in the system and has a processing order dependency so results can be non-deterministic depending on how variables are held in containers.
+* Single pass in arbitrary order: Leaves different representations of the same variable in the system and has a processing order dependency so results can be non-deterministic depending on the order of variables in their containers.
 * Multiple passes hoping for a fixed point: May not find a consistent fixed point and is still potentially non-deterministic.
-* Use derivatives evaluated for the continuous, not quantized, representation at these events: Since the continous representation value is set first this allows a single pass, deterministic treatment. This is the approach used here.
+* Use derivatives evaluated for the continuous, not quantized, representation of LIQSS variables at these events: Since the continous representation value is set first this allows a single pass, deterministic treatment. This is the approach used here.
 
 Even when using the continuous representation in the LIQSS derivatives issues remain:
-* LIQSS1: The LIQSS1 variables need to be processed first in the first derivative processing pass since it alters their quantized value terms.
-* LIQSS2: Because the second derivative pass alters their quantized value and slope terms there is no way to avoid the potential for cyclic dependencies. The impact is controlled by setting the neutral (centered) values and first derivatives in those passes but this still allows other variable derivatives to be using these non-final values. The exposure is reduced somewhat by processing the LIQSS2 variables first in the second derivative pass. No ideal solution has been found for this LIQSS2+ limitation. It is possible that when LIQSS2+ variables are present simultaneous triggering would be better handled as a sequence of separate trigger events at very closely-spaced time steps: this is a good research topic.
+* The potential for solution discontinuities at transitions from input/simultaneous events to non-simultaneous events.
+* LIQSS2+: Because the second derivative pass alters the continuous representation first derivative coefficients a cyclic/ordering dependency remains unless the original, centered first derivative coefficient is used by other variables in this pass. The impact is controlled by setting the neutral (centered) values and first derivatives in those passes but this still allows other variable derivatives to be using these non-final values. The exposure is reduced somewhat by processing the LIQSS2 variables first in the second derivative pass. No ideal solution has been found for this LIQSS2+ limitation. It is possible that when LIQSS2+ variables are present simultaneous triggering would be better handled as a sequence of separate trigger events at very closely-spaced time steps: this is a good research topic.
 
 ### Event Queue
 
@@ -133,10 +133,10 @@ Models defined by FMUs following the FMI 2.0 API can be run by this QSS solver u
 
 Notes:
 * Mixing QSS1 and QSS2 variables in an FMU simulation is not yet supported.
-* QSS3 and LIQSS1/2 solvers are planned when they become more practical when the FMI 2.0 API extensions are implemented in the FMI Library.
 * The FMU support is performance-limited by the FMI 2.0 API, which requires expensive get-all-derivatives calls where QSS needs individual derivatives.
 * QSS2 performance is limited by the use of numeric differentiation: the FMI ME 2.0 API doesn't provide higher derivatives but they may become avaialble via FMI extensions.
 * Zero crossings are problematic because the FMI spec doesn't expose the dependency of variables that are modified when each zero crossing occurs. Until such information is added our approach is to add the dependencies to the xml file. A fallback strategy of assuming that any continuous or discrete variable may have been modified could be used, at some cost to efficiency.
+* QSS3 and LIQSS3 solvers can be added when they become more practical with the planned FMI Library FMI 2.0 API extensions.
 
 ## Implementation
 

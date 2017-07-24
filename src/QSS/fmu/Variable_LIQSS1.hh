@@ -1,4 +1,4 @@
-// FMU-Based QSS1 Variable
+// FMU-Based LIQSS1 Variable
 //
 // Project: QSS Solver
 //
@@ -33,8 +33,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_Variable_QSS1_hh_INCLUDED
-#define QSS_fmu_Variable_QSS1_hh_INCLUDED
+#ifndef QSS_fmu_Variable_LIQSS1_hh_INCLUDED
+#define QSS_fmu_Variable_LIQSS1_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/fmu/Variable_QSS.hh>
@@ -42,8 +42,8 @@
 namespace QSS {
 namespace fmu {
 
-// FMU-Based QSS1 Variable
-class Variable_QSS1 final : public Variable_QSS
+// FMU-Based LIQSS1 Variable
+class Variable_LIQSS1 final : public Variable_QSS
 {
 
 public: // Types
@@ -54,7 +54,7 @@ public: // Creation
 
 	// Constructor
 	explicit
-	Variable_QSS1(
+	Variable_LIQSS1(
 	 std::string const & name,
 	 Value const rTol = 1.0e-4,
 	 Value const aTol = 1.0e-6,
@@ -64,6 +64,7 @@ public: // Creation
 	) :
 	 Super( name, rTol, aTol, xIni, var, der ),
 	 x_0_( xIni ),
+	 q_c_( xIni ),
 	 q_0_( xIni )
 	{
 		set_qTol();
@@ -103,14 +104,14 @@ public: // Properties
 	Value
 	s( Time const ) const
 	{
-		return q_0_;
+		return ( sT == events.active_superdense_time() ? q_c_ : q_0_ );
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
 	Value
-	sn( Time const ) const
+	sn( Time const t ) const
 	{
-		return q_0_;
+		return ( sT == events.active_superdense_time() ? q_c_ : q_0_ );
 	}
 
 public: // Methods
@@ -128,7 +129,7 @@ public: // Methods
 	init_0( Value const x )
 	{
 		init_observers();
-		fmu_set_value( x_0_ = q_0_ = x );
+		fmu_set_value( x_0_ = q_c_ = q_0_ = x );
 		set_qTol();
 	}
 
@@ -137,7 +138,7 @@ public: // Methods
 	init_0()
 	{
 		init_observers();
-		fmu_set_value( x_0_ = q_0_ = xIni );
+		fmu_set_value( x_0_ = q_c_ = q_0_ = xIni );
 		set_qTol();
 	}
 
@@ -145,7 +146,13 @@ public: // Methods
 	void
 	init_1()
 	{
-		x_1_ = fmu_get_deriv();
+		if ( self_observer ) {
+			advance_LIQSS();
+			fmu_set_value( x_0_ );
+		} else {
+			x_1_ = fmu_get_deriv();
+			q_0_ += signum( x_1_ ) * qTol;
+		}
 		set_tE_aligned();
 		event( events.add_QSS( tE, this ) );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
@@ -155,7 +162,7 @@ public: // Methods
 	void
 	set_qTol()
 	{
-		qTol = std::max( rTol * std::abs( q_0_ ), aTol );
+		qTol = std::max( rTol * std::abs( q_c_ ), aTol );
 		assert( qTol > 0.0 );
 	}
 
@@ -163,15 +170,16 @@ public: // Methods
 	void
 	advance_QSS()
 	{
-		x_0_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
+		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
 		set_qTol();
 		fmu_set_observees_q( tX = tQ );
-		if ( observers_.empty() ) {
-			if ( self_observer ) fmu_set_value( q_0_ );
+		if ( self_observer ) {
+			advance_LIQSS();
 		} else {
-			advance_observers_1();
+			x_1_ = fmu_get_deriv();
+			q_0_ += signum( x_1_ ) * qTol;
 		}
-		x_1_ = fmu_get_deriv();
+		advance_observers_1();
 		if ( observers_max_order_ >= 2 ) {
 			fmu::set_time( tD = tQ + options::dtND );
 			advance_observers_2();
@@ -188,7 +196,7 @@ public: // Methods
 	void
 	advance_QSS_0()
 	{
-		x_0_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
+		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
 		tX = tE;
 		set_qTol();
 	}
@@ -198,8 +206,12 @@ public: // Methods
 	advance_QSS_1()
 	{
 		fmu_set_observees_s( tQ );
-		if ( self_observer ) fmu_set_value( q_0_ );
-		x_1_ = fmu_get_deriv();
+		if ( self_observer ) {
+			advance_LIQSS();
+		} else {
+			x_1_ = fmu_get_deriv();
+			q_0_ += signum( x_1_ ) * qTol;
+		}
 		set_tE_aligned();
 		event( events.shift_QSS( tE, event() ) );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
@@ -230,7 +242,7 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
-		x_0_ = q_0_ = fmu_get_value(); // Assume FMU ran zero-crossing handler
+		x_0_ = q_c_ = q_0_ = fmu_get_value(); // Assume FMU ran zero-crossing handler
 		set_qTol();
 		advance_observers_1();
 		fmu_set_observees_q( tQ );
@@ -254,7 +266,7 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
-		x_0_ = q_0_ = fmu_get_value(); // Assume FMU ran zero-crossing handler
+		x_0_ = q_c_ = q_0_ = fmu_get_value(); // Assume FMU ran zero-crossing handler
 		set_qTol();
 	}
 
@@ -290,17 +302,49 @@ private: // Methods
 		assert( tQ <= tX );
 		assert( dt_min <= dt_max );
 		tE =
-		 ( x_1_ > 0.0 ? tX + ( ( q_0_ + qTol - x_0_ ) / x_1_ ) :
-		 ( x_1_ < 0.0 ? tX + ( ( q_0_ - qTol - x_0_ ) / x_1_ ) :
+		 ( x_1_ > 0.0 ? tX + ( ( q_c_ + qTol - x_0_ ) / x_1_ ) :
+		 ( x_1_ < 0.0 ? tX + ( ( q_c_ - qTol - x_0_ ) / x_1_ ) :
 		 infinity ) );
 		if ( dt_max != infinity ) tE = std::min( tE, tX + dt_max );
 		tE = std::max( tE, tX ); // Numeric bulletproofing
 	}
 
+	// Advance Self-Observing LIQSS1 Trigger
+	void
+	advance_LIQSS()
+	{
+		assert( qTol > 0.0 );
+		assert( self_observer );
+
+		// Value at +/- qTol
+		Value const q_l( q_c_ - qTol );
+		Value const q_u( q_c_ + qTol );
+
+		// Derivative at +/- qTol
+		fmu_set_value( q_l );
+		Value const d_l( fmu_get_deriv() );
+		int const d_l_s( signum( d_l ) );
+		fmu_set_value( q_u );
+		Value const d_u( fmu_get_deriv() );
+		int const d_u_s( signum( d_u ) );
+
+		// Set coefficients based on derivative signs
+		if ( ( d_l_s == -1 ) && ( d_u_s == -1 ) ) { // Downward trajectory
+			q_0_ -= qTol;
+			x_1_ = d_l;
+		} else if ( ( d_l_s == +1 ) && ( d_u_s == +1 ) ) { // Upward trajectory
+			q_0_ += qTol;
+			x_1_ = d_u;
+		} else { // Flat trajectory
+			q_0_ = std::min( std::max( q_l - ( d_l * ( ( 2.0 * qTol ) / ( d_u - d_l ) ) ), q_l ), q_u ); // Value where deriv is ~ 0 // Clipped in case of roundoff
+			x_1_ = 0.0;
+		}
+	}
+
 private: // Data
 
 	Value x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
-	Value q_0_{ 0.0 }; // Quantized rep coefficients
+	Value q_c_{ 0.0 }, q_0_{ 0.0 }; // Quantized rep coefficients
 
 };
 

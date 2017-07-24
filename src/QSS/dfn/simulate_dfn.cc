@@ -2,9 +2,36 @@
 //
 // Project: QSS Solver
 //
-// Developed by Objexx Engineering, Inc. (http://objexx.com)
-// under contract tOut the National Renewable Energy Laboratory
-// of the U.S. Department of Energy
+// Developed by Objexx Engineering, Inc. (http://objexx.com) under contract to
+// the National Renewable Energy Laboratory of the U.S. Department of Energy
+//
+// Copyright (c) 2017 Objexx Engineerinc, Inc. All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// (1) Redistributions of source code must retain the above copyright notice,
+//     this list of conditions and the following disclaimer.
+//
+// (2) Redistributions in binary form must reproduce the above copyright notice,
+//     this list of conditions and the following disclaimer in the documentation
+//     and/or other materials provided with the distribution.
+//
+// (3) Neither the name of the copyright holder nor the names of its
+//     contributors may be used to endorse or promote products derived from this
+//     software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 // QSS Headers
 #include <QSS/dfn/simulate_dfn.hh>
@@ -134,15 +161,9 @@ simulate_dfn()
 		var->init_0();
 	}
 	for ( auto var : vars_nonZC ) {
-		var->init_LIQSS_1();
-	}
-	for ( auto var : vars_nonZC ) {
 		var->init_1();
 	}
 	if ( QSS_order_max >= 2 ) {
-		for ( auto var : vars_nonZC ) {
-			var->init_LIQSS_2();
-		}
 		for ( auto var : vars_nonZC ) {
 			var->init_2();
 		}
@@ -190,7 +211,8 @@ simulate_dfn()
 		}
 		if ( t <= tE ) { // Perform event(s)
 			Event< Variable > & event( events.top() );
-			SuperdenseTime const & s( events.top_stime() );
+			SuperdenseTime const & s( events.top_superdense_time() );
+			events.set_active_time();
 			if ( event.is_QSS() ) { // QSS requantization event
 				++n_QSS_events;
 				if ( events.single() ) { // Single trigger
@@ -237,6 +259,7 @@ simulate_dfn()
 						} else { // Non-ZC variable
 							triggers_nonZC.push_back( trigger );
 						}
+						trigger->sT = s; // Set trigger superdense time
 					}
 					size_type const iBeg_triggers_nonZC_2( static_cast< size_type >( std::distance( triggers_nonZC.begin(), std::find_if( triggers_nonZC.begin(), triggers_nonZC.end(), []( Variable * v ){ return v->order() >= 2; } ) ) ) );
 					size_type const iBeg_triggers_nonZC_3( static_cast< size_type >( std::distance( triggers_nonZC.begin(), std::find_if( triggers_nonZC.begin(), triggers_nonZC.end(), []( Variable * v ){ return v->order() >= 3; } ) ) ) );
@@ -257,19 +280,13 @@ simulate_dfn()
 						trigger->advance_QSS_0();
 					}
 					for ( Variable * trigger : triggers_nonZC ) {
-						trigger->advance_LIQSS_1();
-					}
-					for ( Variable * trigger : triggers_nonZC ) {
 						trigger->advance_QSS_1();
 					}
-					if ( nonZC_order_max >= 2 ) { // Order 2+ pass needed
-						for ( size_type i = iBeg_triggers_nonZC_2, n = triggers_nonZC.size(); i < n; ++i ) {
-							triggers_nonZC[ i ]->advance_LIQSS_2();
-						}
+					if ( nonZC_order_max >= 2 ) { // 2nd order pass
 						for ( size_type i = iBeg_triggers_nonZC_2, n = triggers_nonZC.size(); i < n; ++i ) {
 							triggers_nonZC[ i ]->advance_QSS_2();
 						}
-						if ( nonZC_order_max >= 3 ) {
+						if ( nonZC_order_max >= 3 ) { // 3rd order pass needed
 							for ( size_type i = iBeg_triggers_nonZC_3, n = triggers_nonZC.size(); i < n; ++i ) {
 								triggers_nonZC[ i ]->advance_QSS_3();
 							}
@@ -316,7 +333,7 @@ simulate_dfn()
 				}
 			} else if ( event.is_ZC() ) { // Zero-crossing event
 				++n_ZC_events;
-				while ( events.top_stime() == s ) {
+				while ( events.top_superdense_time() == s ) {
 					Variable * trigger( events.top_var() );
 					assert( trigger->tZC() == t );
 					trigger->advance_ZC();
@@ -440,11 +457,11 @@ simulate_dfn()
 					for ( size_type i = iBeg_handlers_1, n = handlers.size(); i < n; ++i ) {
 						handlers[ i ]->advance_handler_1();
 					}
-					if ( handlers_order_max >= 2 ) { // Order 2+ pass needed
+					if ( handlers_order_max >= 2 ) { // 2nd order pass
 						for ( size_type i = iBeg_handlers_2, n = handlers.size(); i < n; ++i ) {
 							handlers[ i ]->advance_handler_2();
 						}
-						if ( handlers_order_max >= 3 ) { // Order 3+ pass needed
+						if ( handlers_order_max >= 3 ) { // 3rd order pass
 							for ( size_type i = iBeg_handlers_3, n = handlers.size(); i < n; ++i ) {
 								handlers[ i ]->advance_handler_3();
 							}
