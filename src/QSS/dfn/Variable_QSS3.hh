@@ -63,6 +63,7 @@ public: // Types
 	using Super::tE;
 	using Super::dt_min;
 	using Super::dt_max;
+	using Super::dt_inf;
 	using Super::self_observer;
 
 	using Super::advance_observers;
@@ -376,6 +377,7 @@ private: // Methods
 			Time const tI( tX - ( x_2_ / ( three * x_3_ ) ) );
 			if ( tQ < tI ) tE = std::min( tE, tI );
 		}
+		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tQ + dt_inf;
 	}
 
 	// Set End Time: Quantized and Continuous Unaligned
@@ -397,10 +399,12 @@ private: // Methods
 			dtX = min_root_cubic_both( x_3_, d2, d1, d0 + qTol, d0 - qTol );
 		}
 		tE = ( dtX == infinity ? infinity : tX + std::min( dtX, dt_max ) );
+		tE = std::max( tE, tX + dt_min );
 		if ( ( options::inflection ) && ( x_3_ != 0.0 ) && ( signum( x_2_ ) != signum( x_3_ ) ) && ( signum( x_2_ ) == signum( q_2_ ) ) ) {
 			Time const tI( tX - ( x_2_ / ( three * x_3_ ) ) );
 			if ( tX < tI ) tE = std::min( tE, tI );
 		}
+		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tX + dt_inf;
 	}
 
 private: // Data

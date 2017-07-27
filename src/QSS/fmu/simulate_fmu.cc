@@ -491,10 +491,11 @@ simulate_fmu()
 					auto idep( fmu_idxs.find( dep_idx ) ); //Do Add support for input variable dependents
 					if ( idep != fmu_idxs.end() ) {
 						Variable * dep( idep->second );
-						std::cout << "  Var: " << dep->name << " has observer " << var->name << std::endl;
 						if ( dep == var ) {
+							std::cout << "  Var: " << dep->name << " is self-observer" << std::endl;
 							var->self_observer = true;
 						} else {
+							std::cout << "  Var: " << dep->name << " has observer " << var->name << std::endl;
 							dep->add_observer( var );
 							if ( ! dep->is_ZC() ) var->add_observee( dep );
 						}
@@ -783,6 +784,7 @@ simulate_fmu()
 	// Simulation loop
 	std::cout << "\nSimulation Loop =====" << std::endl;
 	size_type n_QSS_events( 0 );
+	size_type n_QSS_simultaneous_events( 0 );
 	size_type n_ZC_events( 0 );
 	while ( t <= tE ) {
 		t = events.top_time();
@@ -860,6 +862,7 @@ simulate_fmu()
 						}
 					}
 				} else { // Simultaneous triggers
+					++n_QSS_simultaneous_events;
 					Variables triggers( events.top_vars() );
 					std::sort( triggers.begin(), triggers.end(), []( Variable * v1, Variable * v2 ){ return v1->order() < v2->order(); } ); // Sort triggers by order
 					Variables triggers_ZC;
@@ -1234,8 +1237,9 @@ simulate_fmu()
 
 	// Reporting
 	std::cout << "\nSimulation Complete =====" << std::endl;
-	std::cout << n_QSS_events << " requantization event passes" << std::endl;
-	std::cout << n_ZC_events << " zero-crossing event passes" << std::endl;
+	if ( n_QSS_events > 0 ) std::cout << n_QSS_events << " requantization event passes" << std::endl;
+	if ( n_QSS_simultaneous_events > 0 ) std::cout << n_QSS_simultaneous_events << " simultaneous requantization event passes" << std::endl;
+	if ( n_ZC_events > 0 ) std::cout << n_ZC_events << " zero-crossing event passes" << std::endl;
 
 	// QSS cleanup
 	for ( auto & var : vars ) delete var;

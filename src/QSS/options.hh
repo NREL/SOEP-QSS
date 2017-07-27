@@ -60,6 +60,7 @@ extern double aTol; // Absolute tolerance  [1e-6]
 extern bool rTol_set; // Relative tolerance set?
 extern double dtMin; // Min time step (s)
 extern double dtMax; // Max time step (s)
+extern double dtInf; // Inf time step (s)
 extern double dtOut; // Sampled & FMU output time step (s)  [1e-3]
 extern double dtND; // Numeric differentiation time step (s)  [1e-6]
 extern double one_over_dtND; // 1 / dtND  [computed]

@@ -24,10 +24,10 @@ Notes:
 ## Plan
 
 Planned development in anticipated sequence order are:
-* FMU support extensions: input variables, Modelica annotations, higher derivatives, ...
+* FMU support extensions: input variables, Modelica annotations, JModelica/FMIL API migration, higher derivatives, ...
 * Algebraic relationship/loop support.
 * Extended precision time handling for large time span simulation.
-* Higher performance event queue.
+* Performance refinements possibly including a higher performance event queue.
 * Parallelization and vectorization.
 
 ## Goals
@@ -42,8 +42,7 @@ Planned development in anticipated sequence order are:
 
 ## Design
 
-The design concepts are still emerging.
-The basic constituents of a fast QSS solver seem to be:
+The design concepts are still emerging. The basic constituents of a fast QSS solver seem to be:
 * Variables for each QSS method (QSS1/2/3, LIQSS1/2/3, ...).
 * Functions for derivative representation: linear and nonlinear.
 * Event queue to find the next "trigger" variable to advance.
@@ -81,22 +80,20 @@ Note that this differs from the literature. In some papers by the original QSS a
 
 The QSS time stepping logic looks at the magnitude of the highest order continuous representation derivative to set the next trigger time based on when the quantized and continuous representations will diverge by the selected quantum threshold. This does not always give a good indication of the divergence of the quantized representation from the actual/analytical value of QSS (ODE) state variables or input variables. A trivial example is f(t) = t<sup>n</sup> : at t=0 the value and all derivatives other than the n<sup>th</sup> are zero, so only an n<sup>th</sup> order method will avoid setting the next trigger time to infinity. For a QSS variable that is "isolated" (does not appear in many or any other variable's derivatives) or any input variable an artificially large time step causes the variable to "deactivate", becoming stuck in a fixed quantized and continuous representation.
 
-This appears to be a fairly serious flaw in the QSS approach. An elegant, robust and efficient solution to this is not yet obvious. As a backstop solution a max time step field was added to the implementation and its use is strongly suggested for input and isolated QSS variables. In a production implementation it would probably make sense for each function class to provide an API to set a max time step that makes sense for that function. Finding a better, more automated solution would be a worthwhile investigation.
+Deactivation is more of an issue for LIQSS methods because they set the highest derivative to zero when an interior point quantized representation start value occurs.
+
+This appears to be a fairly serious flaw in the QSS approach. To address this a time step to use when deactivation occurs was added as an option (`dtInf`) and its use, especially for LIQSS methods is highly recommended. A more effective and efficient solution may be to fall back to a lower-order QSS method for computing the next requantization time: this will be explored.
 
 ### LIQSS
 
 LIQSS as described in the literature is somewhat under-defined and inconsistent in some details. Some of the key issues and how they are addressed in this code are detailed below.
 
-#### Cyclic Dependency
+#### Cyclic/Order Dependency
 
 At startup and simultaneous requantization trigger events the LIQSS approach defined in the literature is inadequate because the quantized values depend on derivatives which, in turn, depend on other quantized values. When multiple variables' quantized values need to be set at the same time point there is, in general, a cyclic dependency among them. Approaches that were considered:
 * Single pass in arbitrary order: Leaves different representations of the same variable in the system and has a processing order dependency so results can be non-deterministic depending on the order of variables in their containers.
 * Multiple passes hoping for a fixed point: May not find a consistent fixed point and is still potentially non-deterministic.
-* Use derivatives evaluated for the continuous, not quantized, representation of LIQSS variables at these events: Since the continous representation value is set first this allows a single pass, deterministic treatment. This is the approach used here.
-
-Even when using the continuous representation in the LIQSS derivatives issues remain:
-* The potential for solution discontinuities at transitions from input/simultaneous events to non-simultaneous events.
-* LIQSS2+: Because the second derivative pass alters the continuous representation first derivative coefficients a cyclic/ordering dependency remains unless the original, centered first derivative coefficient is used by other variables in this pass. The impact is controlled by setting the neutral (centered) values and first derivatives in those passes but this still allows other variable derivatives to be using these non-final values. The exposure is reduced somewhat by processing the LIQSS2 variables first in the second derivative pass. No ideal solution has been found for this LIQSS2+ limitation. It is possible that when LIQSS2+ variables are present simultaneous triggering would be better handled as a sequence of separate trigger events at very closely-spaced time steps: this is a good research topic.
+* Use derivatives based on a stable LIQSS state at these events to eliminate the order dependency. This is the approach chosen and a "simulanteous" representation is used that contains the stable coefficients determined for each order pass of the algorithm, without the updates made by the highest-order LIQSS pass. This approach has the potential for solution value and derivative discontinuities at transitions between simultaneous and non-simultaneous events but no clearly better alternative is apparent.
 
 ### Event Queue
 
@@ -132,9 +129,9 @@ With cyclic dependencies it is possible for an infinite cascade loop of such cha
 Models defined by FMUs following the FMI 2.0 API can be run by this QSS solver using QSS1 or QSS2 solvers. Discrete variables and zero crossing functions are supported. This is currently an initial/demonstration capability that cannot yet handle unit conversions (pure SI models are OK), or algebraic relationships. Some simple test model FMUs and a 50-variable room air thermal model have been simulated successfully.
 
 Notes:
-* Mixing QSS1 and QSS2 variables in an FMU simulation is not yet supported.
+* Mixing QSS methods in an FMU simulation is not yet supported and will require a Modelica annotation to indicate QSS methods on a per-variable basis.
 * The FMU support is performance-limited by the FMI 2.0 API, which requires expensive get-all-derivatives calls where QSS needs individual derivatives.
-* QSS2 performance is limited by the use of numeric differentiation: the FMI ME 2.0 API doesn't provide higher derivatives but they may become avaialble via FMI extensions.
+* QSS2 performance is limited by the use of numeric differentiation: the FMI ME 2.0 API doesn't provide higher derivatives but they may become available via FMI extensions.
 * Zero crossings are problematic because the FMI spec doesn't expose the dependency of variables that are modified when each zero crossing occurs. Until such information is added our approach is to add the dependencies to the xml file. A fallback strategy of assuming that any continuous or discrete variable may have been modified could be used, at some cost to efficiency.
 * QSS3 and LIQSS3 solvers can be added when they become more practical with the planned FMI Library FMI 2.0 API extensions.
 

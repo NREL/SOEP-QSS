@@ -106,12 +106,12 @@ protected: // Creation
 	 rTol( std::max( rTol, 0.0 ) ),
 	 aTol( std::max( aTol, std::numeric_limits< Value >::min() ) ),
 	 xIni( xIni ),
+	 dt_min( options::dtMin ),
+	 dt_max( options::dtMax ),
+	 dt_inf( options::dtInf ),
 	 var( var ),
 	 der( der )
-	{
-		dt_min = options::dtMin;
-		dt_max = options::dtMax;
-	}
+	{}
 
 	// Name + Value Constructor
 	explicit
@@ -123,12 +123,12 @@ protected: // Creation
 	) :
 	 name( name ),
 	 xIni( xIni ),
+	 dt_min( options::dtMin ),
+	 dt_max( options::dtMax ),
+	 dt_inf( options::dtInf ),
 	 var( var ),
 	 der( der )
-	{
-		dt_min = options::dtMin;
-		dt_max = options::dtMax;
-	}
+	{}
 
 	// Copy Constructor
 	Variable( Variable const & ) = default;
@@ -786,6 +786,7 @@ public: // Data
 	Time tD{ 0.0 }; // Numeric differentiation time
 	Time dt_min{ 0.0 }; // Time step min
 	Time dt_max{ infinity }; // Time step max
+	Time dt_inf{ infinity }; // Time step inf
 	SuperdenseTime sT; // Trigger superdense time
 	bool self_observer{ false }; // Variable appears in its function/derivative?
 	FMU_Variable var; // FMU variables specs

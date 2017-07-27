@@ -117,11 +117,11 @@ protected: // Creation
 	 name( name ),
 	 rTol( std::max( rTol, 0.0 ) ),
 	 aTol( std::max( aTol, std::numeric_limits< Value >::min() ) ),
-	 xIni( xIni )
-	{
-		dt_min = options::dtMin;
-		dt_max = options::dtMax;
-	}
+	 xIni( xIni ),
+	 dt_min( options::dtMin ),
+	 dt_max( options::dtMax ),
+	 dt_inf( options::dtInf )
+	{}
 
 	// Name + Value Constructor
 	explicit
@@ -130,11 +130,11 @@ protected: // Creation
 	 Value const xIni = 0.0
 	) :
 	 name( name ),
-	 xIni( xIni )
-	{
-		dt_min = options::dtMin;
-		dt_max = options::dtMax;
-	}
+	 xIni( xIni ),
+	 dt_min( options::dtMin ),
+	 dt_max( options::dtMax ),
+	 dt_inf( options::dtInf )
+	{}
 
 	// Copy Constructor
 	Variable( Variable const & ) = default;
@@ -550,6 +550,7 @@ public: // Data
 	Time tE{ 0.0 }; // Time range end: tQ <= tE and tX <= tE
 	Time dt_min{ 0.0 }; // Time step min
 	Time dt_max{ infinity }; // Time step max
+	Time dt_inf{ infinity }; // Time step inf
 	SuperdenseTime sT; // Trigger superdense time
 	bool self_observer{ false }; // Variable appears in its function/derivative?
 

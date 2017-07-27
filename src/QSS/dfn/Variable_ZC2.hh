@@ -67,6 +67,7 @@ public: // Types
 	using Super::tZ_prev;
 	using Super::dt_min;
 	using Super::dt_max;
+	using Super::dt_inf;
 	using Super::self_observer;
 
 	using Super::event;
@@ -258,6 +259,7 @@ private: // Methods
 			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
 			if ( tQ < tI ) tEnd = std::min( tEnd, tI );
 		}
+		if ( ( tEnd == infinity ) && ( dt_inf != infinity ) ) tEnd = tQ + dt_inf;
 		return tEnd;
 	}
 
@@ -274,6 +276,7 @@ private: // Methods
 			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
 			if ( tQ < tI ) tE = std::min( tE, tI );
 		}
+		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tQ + dt_inf;
 	}
 
 	// Set Zero-Crossing Time and Type on Active Segment

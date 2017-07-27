@@ -62,6 +62,7 @@ public: // Types
 	using Super::tE;
 	using Super::dt_min;
 	using Super::dt_max;
+	using Super::dt_inf;
 
 	using Super::advance_observers;
 	using Super::event;
@@ -206,6 +207,7 @@ private: // Methods
 		tE = ( x_1_ != 0.0 ? tQ + ( qTol / std::abs( x_1_ ) ) : infinity );
 		if ( dt_max != infinity ) tE = std::min( tE, tQ + dt_max );
 		tE = std::max( tE, tQ + dt_min );
+		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tQ + dt_inf;
 	}
 
 private: // Data

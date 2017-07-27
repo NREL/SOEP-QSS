@@ -56,6 +56,7 @@ double aTol( 1.0e-6 ); // Absolute tolerance  [1e-6]
 bool rTol_set( false ); // Relative tolerance set?
 double dtMin( 0.0 ); // Min time step (s)
 double dtMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Max time step (s)
+double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Inf time step (s)
 double dtOut( 1.0e-3 ); // Sampled & FMU output time step (s)  [1e-3]
 double dtND( 1.0e-6 ); // Numeric differentiation time step (s)  [1e-6]
 double one_over_dtND( 1.0e6 ); // 1 / dtND  [computed]
@@ -195,6 +196,7 @@ help_display()
 	std::cout << " --aTol=TOL    Absolute tolerance  [1e-6]" << '\n';
 	std::cout << " --dtMin=STEP  Min time step (s)  [0.0]" << '\n';
 	std::cout << " --dtMax=STEP  Max time step (s)  [infinity]" << '\n';
+	std::cout << " --dtInf=STEP  Inf alt time step (s)  [infinity]" << '\n';
 	std::cout << " --dtOut=STEP  Sampled & FMU output step (s)  [1e-3]" << '\n';
 	std::cout << " --dtND=STEP   Numeric differentiation step (s)  [1e-6]" << '\n';
 	std::cout << " --tEnd=TIME   End time (s)  [1|FMU]" << '\n';
@@ -316,6 +318,18 @@ process_args( int argc, char * argv[] )
 				}
 			} else {
 				std::cerr << "Nonnumeric dtMax: " << dtMax_str << std::endl;
+				fatal = true;
+			}
+		} else if ( has_value_option( arg, "dtInf" ) ) {
+			std::string const dtInf_str( arg_value( arg ) );
+			if ( is_double( dtInf_str ) ) {
+				dtInf = double_of( dtInf_str );
+				if ( dtInf < 0.0 ) {
+					std::cerr << "Negative dtInf: " << dtInf_str << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::cerr << "Nonnumeric dtInf: " << dtInf_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtOut" ) ) {

@@ -216,7 +216,9 @@ private: // Methods
 		assert( dt_min <= dt_max );
 		Time tEnd( x_1_ != 0.0 ? tQ + ( qTol / std::abs( x_1_ ) ) : infinity );
 		if ( dt_max != infinity ) tEnd = std::min( tEnd, tQ + dt_max );
-		return std::max( tEnd, tQ + dt_min );
+		tEnd = std::max( tEnd, tQ + dt_min );
+		if ( ( tEnd == infinity ) && ( dt_inf != infinity ) ) tEnd = tQ + dt_inf;
+		return tEnd;
 	}
 
 	// Set End Time
@@ -228,6 +230,7 @@ private: // Methods
 		tE = ( x_1_ != 0.0 ? tQ + ( qTol / std::abs( x_1_ ) ) : infinity );
 		if ( dt_max != infinity ) tE = std::min( tE, tQ + dt_max );
 		tE = std::max( tE, tQ + dt_min );
+		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tQ + dt_inf;
 	}
 
 	// Set Zero-Crossing Time and Type on Active Segment

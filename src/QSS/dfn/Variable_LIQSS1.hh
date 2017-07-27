@@ -65,6 +65,7 @@ public: // Types
 	using Super::sT;
 	using Super::dt_min;
 	using Super::dt_max;
+	using Super::dt_inf;
 	using Super::self_observer;
 
 	using Super::advance_observers;
@@ -289,6 +290,7 @@ private: // Methods
 		tE = ( x_1_ != 0.0 ? tQ + ( qTol / std::abs( x_1_ ) ) : infinity );
 		if ( dt_max != infinity ) tE = std::min( tE, tQ + dt_max );
 		tE = std::max( tE, tQ + dt_min );
+		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tQ + dt_inf;
 	}
 
 	// Set End Time: Quantized and Continuous Unaligned
@@ -302,10 +304,11 @@ private: // Methods
 		 ( x_1_ < 0.0 ? tX + ( ( q_c_ - qTol - x_0_ ) / x_1_ ) :
 		 infinity ) );
 		if ( dt_max != infinity ) tE = std::min( tE, tX + dt_max );
-		tE = std::max( tE, tX ); // Numeric bulletproofing
+		tE = std::max( tE, tX + dt_min );
+		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tX + dt_inf;
 	}
 
-	// Advance Self-Observing Trigger using Quantized Derivative
+	// Advance Self-Observing Trigger
 	void
 	advance_LIQSS( AdvanceSpecs_LIQSS1 const & specs )
 	{

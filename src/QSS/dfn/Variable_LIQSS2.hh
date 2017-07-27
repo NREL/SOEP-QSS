@@ -65,6 +65,7 @@ public: // Types
 	using Super::sT;
 	using Super::dt_min;
 	using Super::dt_max;
+	using Super::dt_inf;
 	using Super::self_observer;
 
 	using Super::advance_observers;
@@ -151,7 +152,7 @@ public: // Properties
 	Value
 	sn( Time const t ) const
 	{
-		return ( sT == events.active_superdense_time() ? q_c_ : q_0_ ) + ( q_1_ * ( t - tQ ) );
+		return ( sT == events.active_superdense_time() ? q_c_ + ( s_1_ * ( t - tQ ) ) : q_0_ + ( q_1_ * ( t - tQ ) ) );
 	}
 
 	// Simultaneous First Derivative at Time t
@@ -279,7 +280,7 @@ public: // Methods
 		assert( ( tX <= t ) && ( t <= tE ) );
 		Time const tDel( t - tX );
 		x_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
-		x_1_ = s_1_ = d_.qs( t );
+		x_1_ = d_.qs( t );
 		x_2_ = one_half * d_.qf1( tX = t );
 		set_tE_unaligned();
 		event( events.shift_QSS( tE, event() ) );
@@ -343,6 +344,7 @@ private: // Methods
 			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
 			if ( tQ < tI ) tE = std::min( tE, tI );
 		}
+		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tQ + dt_inf;
 	}
 
 	// Set End Time: Quantized and Continuous Unaligned
@@ -362,18 +364,22 @@ private: // Methods
 			dtX = min_root_quadratic_both( x_2_, d1, d0 + qTol, d0 - qTol );
 		}
 		tE = ( dtX == infinity ? infinity : tX + std::min( dtX, dt_max ) );
+		tE = std::max( tE, tX + dt_min );
 		if ( ( options::inflection ) && ( x_2_ != 0.0 ) && ( signum( x_1_ ) != signum( x_2_ ) ) && ( signum( x_1_ ) == signum( q_1_ ) ) ) {
 			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
 			if ( tX < tI ) tE = std::min( tE, tI );
 		}
+		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tX + dt_inf;
 	}
 
-	// Advance Self-Observing Trigger using Quantized Derivative
+	// Advance Self-Observing Trigger
 	void
 	advance_LIQSS( AdvanceSpecs_LIQSS2 const & specs )
 	{
 		assert( qTol > 0.0 );
 		assert( self_observer );
+		assert( q_c_ == q_0_ );
+		assert( x_0_ == q_0_ );
 
 		// Set coefficients based on second derivative signs
 		int const dls( signum( specs.l2 ) );
@@ -387,7 +393,7 @@ private: // Methods
 			x_1_ = q_1_ = specs.u1; // s_1_ is not changed
 			x_2_ = one_half * specs.u2;
 		} else { // Straight trajectory
-			q_0_ = std::min( std::max( specs.z2, q_0_ - qTol ), q_0_ + qTol ); // Clipped in case of roundoff
+			q_0_ = std::min( std::max( specs.z2, q_c_ - qTol ), q_c_ + qTol ); // Clipped in case of roundoff
 			x_1_ = q_1_ = specs.z1; // s_1_ is not changed
 			x_2_ = 0.0;
 		}
@@ -398,6 +404,7 @@ private: // Methods
 	advance_x( Time const t )
 	{
 		advance_LIQSS( d_.xlu2( t, qTol ) );
+		s_1_ = q_1_;
 	}
 
 	// Advance Self-Observing Trigger using Quantized Derivative
@@ -405,6 +412,7 @@ private: // Methods
 	advance_q( Time const t )
 	{
 		advance_LIQSS( d_.qlu2( t, qTol ) );
+		s_1_ = q_1_;
 	}
 
 	// Advance Self-Observing Trigger using Simultaneous Derivative

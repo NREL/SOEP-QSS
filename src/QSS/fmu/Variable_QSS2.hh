@@ -348,6 +348,7 @@ private: // Methods
 			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
 			if ( tQ < tI ) tE = std::min( tE, tI );
 		}
+		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tQ + dt_inf;
 	}
 
 	// Set End Time: Quantized and Continuous Unaligned
@@ -367,10 +368,12 @@ private: // Methods
 			dtX = min_root_quadratic_both( x_2_, d1, d0 + qTol, d0 - qTol );
 		}
 		tE = ( dtX == infinity ? infinity : tX + std::min( dtX, dt_max ) );
+		tE = std::max( tE, tX + dt_min );
 		if ( ( options::inflection ) && ( x_2_ != 0.0 ) && ( signum( x_1_ ) != signum( x_2_ ) ) && ( signum( x_1_ ) == signum( q_1_ ) ) ) {
 			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
 			if ( tX < tI ) tE = std::min( tE, tI );
 		}
+		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tX + dt_inf;
 	}
 
 private: // Data

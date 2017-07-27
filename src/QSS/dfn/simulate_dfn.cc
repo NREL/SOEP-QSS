@@ -195,6 +195,7 @@ simulate_dfn()
 
 	// Simulation loop
 	size_type n_QSS_events( 0 );
+	size_type n_QSS_simultaneous_events( 0 );
 	size_type n_ZC_events( 0 );
 	while ( t <= tE ) {
 		t = events.top_time();
@@ -249,6 +250,7 @@ simulate_dfn()
 						}
 					}
 				} else { // Simultaneous triggers
+					++n_QSS_simultaneous_events;
 					Variables triggers( events.top_vars() );
 					std::sort( triggers.begin(), triggers.end(), []( Variable * v1, Variable * v2 ){ return v1->order() < v2->order(); } ); // Sort triggers by order
 					Variables triggers_ZC;
@@ -527,8 +529,9 @@ simulate_dfn()
 
 	// Reporting
 	std::cout << "Simulation complete" << std::endl;
-	std::cout << n_QSS_events << " requantization event passes" << std::endl;
-	std::cout << n_ZC_events << " zero-crossing event passes" << std::endl;
+	if ( n_QSS_events > 0 ) std::cout << n_QSS_events << " requantization event passes" << std::endl;
+	if ( n_QSS_simultaneous_events > 0 ) std::cout << n_QSS_simultaneous_events << " simultaneous requantization event passes" << std::endl;
+	if ( n_ZC_events > 0 ) std::cout << n_ZC_events << " zero-crossing event passes" << std::endl;
 
 	// QSS cleanup
 	for ( auto & var : vars ) delete var;
