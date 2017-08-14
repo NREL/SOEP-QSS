@@ -169,25 +169,25 @@ public: // Methods
 	void
 	init_1()
 	{
+		if ( self_observer ) {
+			advance_LIQSS_1();
+			fmu_set_value( x_0_ );
+		}
 		x_1_ = q_1_ = s_1_ = fmu_get_deriv();
-//		if ( self_observer ) {
-//			advance_LIQSS_1();
-//			fmu_set_value( x_0_ );
-//		}
 	}
 
 	// Initialization: Stage 2
 	void
 	init_2()
 	{
-//		if ( self_observer ) {
-//			tD = tQ + options::dtND;
-//			advance_LIQSS_2();
-//			fmu_set_sn( tD );
-//		} else {
+		if ( self_observer ) {
+			tD = tQ + options::dtND;
+			advance_LIQSS_2();
+			fmu_set_sn( tD );
+		} else {
 			x_2_ = options::one_half_over_dtND * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
-//			q_0_ += signum( x_2_ ) * qTol;
-//		}
+			q_0_ += signum( x_2_ ) * qTol;
+		}
 		set_tE_aligned();
 		event( events.add_QSS( tE, this ) );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';
