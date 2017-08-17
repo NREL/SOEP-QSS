@@ -414,10 +414,10 @@ private: // Data
 	mutable Value v_t_; // Last value(t) computed
 	mutable Value v_p_; // Last value(t+dtn) computed
 	mutable Value v_m_; // Last value(t-dtn) computed
-	Time dtn_{ options::dtND }; // Differentiation time step
-	Time dtn_inv_{ 1.0 / options::dtND }; // Differentiation time step inverse
-	Time dtn_inv_2_{ 0.5 / options::dtND }; // Differentiation time step half inverse
-	Time dtn_inv_sq_{ 1.0 / ( options::dtND * options::dtND ) }; // Differentiation time step inverse squared
+	Time dtn_{ options::dtNum }; // Differentiation time step
+	Time dtn_inv_{ 1.0 / options::dtNum }; // Differentiation time step inverse
+	Time dtn_inv_2_{ 0.5 / options::dtNum }; // Differentiation time step half inverse
+	Time dtn_inv_sq_{ 1.0 / ( options::dtNum * options::dtNum ) }; // Differentiation time step inverse squared
 
 };
 

@@ -116,6 +116,14 @@ public: // Properties
 
 public: // Methods
 
+	// Initialization
+	void
+	init()
+	{
+		init_0();
+		init_1();
+	}
+
 	// Initialization to a Value
 	void
 	init( Value const x )
@@ -124,21 +132,21 @@ public: // Methods
 		init_1();
 	}
 
-	// Initialization to a Value: Stage 0
-	void
-	init_0( Value const x )
-	{
-		init_observers();
-		fmu_set_value( x_0_ = q_c_ = q_0_ = x );
-		set_qTol();
-	}
-
 	// Initialization: Stage 0
 	void
 	init_0()
 	{
 		init_observers();
 		fmu_set_value( x_0_ = q_c_ = q_0_ = xIni );
+		set_qTol();
+	}
+
+	// Initialization to a Value: Stage 0
+	void
+	init_0( Value const x )
+	{
+		init_observers();
+		fmu_set_value( x_0_ = q_c_ = q_0_ = x );
 		set_qTol();
 	}
 
@@ -181,7 +189,7 @@ public: // Methods
 		}
 		advance_observers_1();
 		if ( observers_max_order_ >= 2 ) {
-			fmu::set_time( tD = tQ + options::dtND );
+			fmu::set_time( tN = tQ + options::dtNum );
 			advance_observers_2();
 		}
 		set_tE_aligned();
@@ -249,7 +257,7 @@ public: // Methods
 		if ( ( self_observer ) && ( observers_.empty() ) ) fmu_set_value( q_0_ );
 		x_1_ = fmu_get_deriv();
 		if ( observers_max_order_ >= 2 ) {
-			fmu::set_time( tD = tQ + options::dtND );
+			fmu::set_time( tN = tQ + options::dtNum );
 			advance_observers_2();
 		}
 		set_tE_aligned();

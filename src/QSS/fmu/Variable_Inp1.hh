@@ -1,4 +1,4 @@
-// FMU-Based QSS1 Variable
+// FMU-Based QSS1 Input Variable
 //
 // Project: QSS Solver
 //
@@ -33,41 +33,36 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_Variable_QSS1_hh_INCLUDED
-#define QSS_fmu_Variable_QSS1_hh_INCLUDED
+#ifndef QSS_fmu_Variable_Inp1_hh_INCLUDED
+#define QSS_fmu_Variable_Inp1_hh_INCLUDED
 
 // QSS Headers
-#include <QSS/fmu/Variable_QSS.hh>
+#include <QSS/fmu/Variable_Inp.hh>
 
 namespace QSS {
 namespace fmu {
 
-// FMU-Based QSS1 Variable
-class Variable_QSS1 final : public Variable_QSS
+// FMU-Based QSS1 Input Variable
+class Variable_Inp1 final : public Variable_Inp
 {
 
 public: // Types
 
-	using Super = Variable_QSS;
+	using Super = Variable_Inp;
 
 public: // Creation
 
 	// Constructor
 	explicit
-	Variable_QSS1(
+	Variable_Inp1(
 	 std::string const & name,
 	 Value const rTol = 1.0e-4,
 	 Value const aTol = 1.0e-6,
-	 Value const xIni = 0.0,
 	 FMU_Variable const var = FMU_Variable(),
-	 FMU_Variable const der = FMU_Variable()
+	 Function f = Function()
 	) :
-	 Super( name, rTol, aTol, xIni, var, der ),
-	 x_0_( xIni ),
-	 q_0_( xIni )
-	{
-		set_qTol();
-	}
+	 Super( name, rTol, aTol, var, f )
+	{}
 
 public: // Properties
 
@@ -135,8 +130,9 @@ public: // Methods
 	void
 	init_0()
 	{
+		assert( observees_.empty() );
 		init_observers();
-		fmu_set_value( x_0_ = q_0_ = xIni );
+		x_0_ = q_0_ = f_( tQ ).x_0;
 		set_qTol();
 	}
 
@@ -144,8 +140,9 @@ public: // Methods
 	void
 	init_0( Value const x )
 	{
+		assert( observees_.empty() );
 		init_observers();
-		fmu_set_value( x_0_ = q_0_ = x );
+		x_0_ = q_0_ = x;
 		set_qTol();
 	}
 
@@ -153,10 +150,11 @@ public: // Methods
 	void
 	init_1()
 	{
-		x_1_ = fmu_get_deriv();
-		set_tE_aligned();
-		event( events.add_QSS( tE, this ) );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
+		x_1_ = f_( tQ ).x_1;
+		set_tE();
+		tD = f_( tQ ).tD;
+		event( tE < tD ? events.add_QSS( tE, this ) : events.add_discrete( tD, this ) );
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
 	// Set Current Tolerance
@@ -167,27 +165,57 @@ public: // Methods
 		assert( qTol > 0.0 );
 	}
 
+	// Discrete Advance
+	void
+	advance_discrete()
+	{
+		x_0_ = q_0_ = f_( tX = tQ = tD ).x_0;
+		set_qTol();
+		x_1_ = f_( tD ).x_1;
+		advance_observers_1();
+		if ( observers_max_order_ >= 2 ) {
+			fmu::set_time( tN = tD + options::dtNum );
+			advance_observers_2();
+		}
+		set_tE();
+		tD = f_( tD ).tD;
+		event( tE < tD ? events.shift_QSS( tE, event() ) : events.shift_discrete( tD, event() ) );
+		if ( options::output::d ) {
+			std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tD=" << tD << '\n';
+			advance_observers_d();
+		}
+	}
+
+	// Discrete Advance: Stages 0 and 1
+	void
+	advance_discrete_0_1()
+	{
+		x_0_ = q_0_ = f_( tX = tQ = tD ).x_0;
+		set_qTol();
+		x_1_ = f_( tD ).x_1;
+		set_tE();
+		tD = f_( tD ).tD;
+		event( tE < tD ? events.shift_QSS( tE, event() ) : events.shift_discrete( tD, event() ) );
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tD=" << tD << '\n';
+	}
+
 	// QSS Advance
 	void
 	advance_QSS()
 	{
-		x_0_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
+		x_0_ = q_0_ = f_( tX = tQ = tE ).x_0;
 		set_qTol();
-		fmu_set_observees_q( tX = tQ );
-		if ( observers_.empty() ) {
-			if ( self_observer ) fmu_set_value( q_0_ );
-		} else {
-			advance_observers_1();
-		}
-		x_1_ = fmu_get_deriv();
+		x_1_ = f_( tQ ).x_1;
+		advance_observers_1();
 		if ( observers_max_order_ >= 2 ) {
 			fmu::set_time( tN = tQ + options::dtNum );
 			advance_observers_2();
 		}
-		set_tE_aligned();
-		event( events.shift_QSS( tE, event() ) );
+		set_tE();
+		tD = f_( tQ ).tD;
+		event( tE < tD ? events.shift_QSS( tE, event() ) : events.shift_discrete( tD, event() ) );
 		if ( options::output::d ) {
-			std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
+			std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tD=" << tD << '\n';
 			advance_observers_d();
 		}
 	}
@@ -196,8 +224,7 @@ public: // Methods
 	void
 	advance_QSS_0()
 	{
-		x_0_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
-		tX = tE;
+		x_0_ = q_0_ = f_( tX = tQ = tE ).x_0;
 		set_qTol();
 	}
 
@@ -205,84 +232,18 @@ public: // Methods
 	void
 	advance_QSS_1()
 	{
-		fmu_set_observees_s( tQ );
-		if ( self_observer ) fmu_set_value( q_0_ );
-		x_1_ = fmu_get_deriv();
-		set_tE_aligned();
-		event( events.shift_QSS( tE, event() ) );
-		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
-	}
-
-	// Observer Advance: Stage 1
-	void
-	advance_observer_1( Time const t )
-	{
-		assert( ( tX <= t ) && ( t <= tE ) );
-		x_0_ = x_0_ + ( x_1_ * ( t - tX ) );
-		tX = t;
-		x_1_ = fmu_get_deriv();
-		set_tE_unaligned();
-		event( events.shift_QSS( tE, event() ) );
-	}
-
-	// Observer Advance: Stage d
-	void
-	advance_observer_d()
-	{
-		std::cout << "  " << name << '(' << tX << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
-	}
-
-	// Handler Advance
-	void
-	advance_handler( Time const t )
-	{
-		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
-		tX = tQ = t;
-		x_0_ = q_0_ = fmu_get_value(); // Assume FMU ran zero-crossing handler
-		set_qTol();
-		advance_observers_1();
-		fmu_set_observees_q( tQ );
-		if ( ( self_observer ) && ( observers_.empty() ) ) fmu_set_value( q_0_ );
-		x_1_ = fmu_get_deriv();
-		if ( observers_max_order_ >= 2 ) {
-			fmu::set_time( tN = tQ + options::dtNum );
-			advance_observers_2();
-		}
-		set_tE_aligned();
-		event( events.shift_QSS( tE, event() ) );
-		if ( options::output::d ) {
-			std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
-			advance_observers_d();
-		}
-	}
-
-	// Handler Advance: Stage 0
-	void
-	advance_handler_0( Time const t )
-	{
-		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
-		tX = tQ = t;
-		x_0_ = q_0_ = fmu_get_value(); // Assume FMU ran zero-crossing handler
-		set_qTol();
-	}
-
-	// Handler Advance: Stage 1
-	void
-	advance_handler_1()
-	{
-		fmu_set_observees_q( tQ );
-		if ( ( self_observer ) && ( observers_.empty() ) ) fmu_set_value( q_0_ );
-		x_1_ = fmu_get_deriv();
-		set_tE_aligned();
-		event( events.shift_QSS( tE, event() ) );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
+		x_1_ = f_( tE ).x_1;
+		set_tE();
+		tD = f_( tQ ).tD;
+		event( tE < tD ? events.shift_QSS( tE, event() ) : events.shift_discrete( tD, event() ) );
+		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
 private: // Methods
 
 	// Set End Time: Quantized and Continuous Aligned
 	void
-	set_tE_aligned()
+	set_tE()
 	{
 		assert( tX <= tQ );
 		assert( dt_min <= dt_max );
@@ -290,21 +251,6 @@ private: // Methods
 		if ( dt_max != infinity ) tE = std::min( tE, tQ + dt_max );
 		tE = std::max( tE, tQ + dt_min );
 		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tQ + dt_inf;
-	}
-
-	// Set End Time: Quantized and Continuous Unaligned
-	void
-	set_tE_unaligned()
-	{
-		assert( tQ <= tX );
-		assert( dt_min <= dt_max );
-		tE =
-		 ( x_1_ > 0.0 ? tX + ( ( q_0_ + qTol - x_0_ ) / x_1_ ) :
-		 ( x_1_ < 0.0 ? tX + ( ( q_0_ - qTol - x_0_ ) / x_1_ ) :
-		 infinity ) );
-		if ( dt_max != infinity ) tE = std::min( tE, tX + dt_max );
-		tE = std::max( tE, tX + dt_min );
-		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tX + dt_inf;
 	}
 
 private: // Data

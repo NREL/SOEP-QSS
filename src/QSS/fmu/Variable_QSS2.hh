@@ -137,6 +137,15 @@ public: // Properties
 
 public: // Methods
 
+	// Initialization
+	void
+	init()
+	{
+		init_0();
+		init_1();
+		init_2();
+	}
+
 	// Initialization to a Value
 	void
 	init( Value const x )
@@ -146,21 +155,21 @@ public: // Methods
 		init_2();
 	}
 
-	// Initialization to a Value: Stage 0
-	void
-	init_0( Value const x )
-	{
-		init_observers();
-		fmu_set_value( x_0_ = q_0_ = x );
-		set_qTol();
-	}
-
 	// Initialization: Stage 0
 	void
 	init_0()
 	{
 		init_observers();
 		fmu_set_value( x_0_ = q_0_ = xIni );
+		set_qTol();
+	}
+
+	// Initialization to a Value: Stage 0
+	void
+	init_0( Value const x )
+	{
+		init_observers();
+		fmu_set_value( x_0_ = q_0_ = x );
 		set_qTol();
 	}
 
@@ -175,7 +184,7 @@ public: // Methods
 	void
 	init_2()
 	{
-		x_2_ = options::one_half_over_dtND * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE_aligned();
 		event( events.add_QSS( tE, this ) );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';
@@ -203,14 +212,14 @@ public: // Methods
 			advance_observers_1();
 		}
 		x_1_ = q_1_ = fmu_get_deriv();
-		fmu::set_time( tD = tQ + options::dtND );
-		fmu_set_observees_q( tD );
+		fmu::set_time( tN = tQ + options::dtNum );
+		fmu_set_observees_q( tN );
 		if ( observers_max_order_ <= 1 ) {
-			if ( self_observer ) fmu_set_q( tD );
+			if ( self_observer ) fmu_set_q( tN );
 		} else {
 			advance_observers_2();
 		}
-		x_2_ = options::one_half_over_dtND * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE_aligned();
 		event( events.shift_QSS( tE, event() ) );
 		if ( options::output::d ) {
@@ -242,9 +251,9 @@ public: // Methods
 	void
 	advance_QSS_2()
 	{
-		fmu_set_observees_sn( tD = tQ + options::dtND );
-		if ( self_observer ) fmu_set_q( tD );
-		x_2_ = options::one_half_over_dtND * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+		fmu_set_observees_sn( tN = tQ + options::dtNum );
+		if ( self_observer ) fmu_set_q( tN );
+		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE_aligned();
 		event( events.shift_QSS( tE, event() ) );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';
@@ -265,7 +274,7 @@ public: // Methods
 	void
 	advance_observer_2()
 	{
-		x_2_ = options::one_half_over_dtND * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE_unaligned();
 		event( events.shift_QSS( tE, event() ) );
 	}
@@ -289,11 +298,11 @@ public: // Methods
 		fmu_set_observees_q( tQ );
 		if ( ( self_observer ) && ( observers_.empty() ) ) fmu_set_value( q_0_ );
 		x_1_ = q_1_ = fmu_get_deriv();
-		fmu::set_time( tD = tQ + options::dtND );
+		fmu::set_time( tN = tQ + options::dtNum );
 		if ( observers_max_order_ >= 2 ) advance_observers_2();
-		fmu_set_observees_q( tD );
-		if ( ( self_observer ) && ( observers_max_order_ <= 1 ) ) fmu_set_q( tD );
-		x_2_ = options::one_half_over_dtND * ( fmu_get_deriv() - x_1_ ); // Forward Euler
+		fmu_set_observees_q( tN );
+		if ( ( self_observer ) && ( observers_max_order_ <= 1 ) ) fmu_set_q( tN );
+		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
 		set_tE_aligned();
 		event( events.shift_QSS( tE, event() ) );
 		if ( options::output::d ) {
@@ -325,9 +334,9 @@ public: // Methods
 	void
 	advance_handler_2()
 	{
-		fmu_set_observees_q( tD = tQ + options::dtND );
-		if ( ( self_observer ) && ( observers_max_order_ <= 1 ) ) fmu_set_q( tD );
-		x_2_ = options::one_half_over_dtND * ( fmu_get_deriv() - x_1_ ); // Forward Euler
+		fmu_set_observees_q( tN = tQ + options::dtNum );
+		if ( ( self_observer ) && ( observers_max_order_ <= 1 ) ) fmu_set_q( tN );
+		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
 		set_tE_aligned();
 		event( events.shift_QSS( tE, event() ) );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';

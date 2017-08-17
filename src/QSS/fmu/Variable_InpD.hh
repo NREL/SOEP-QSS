@@ -1,4 +1,4 @@
-// FMU-Based QSS Discrete Variable
+// FMU-Based Discrete-Valued Input Variable
 //
 // Project: QSS Solver
 //
@@ -33,62 +33,38 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_Variable_D_hh_INCLUDED
-#define QSS_fmu_Variable_D_hh_INCLUDED
+#ifndef QSS_fmu_Variable_InpD_hh_INCLUDED
+#define QSS_fmu_Variable_InpD_hh_INCLUDED
 
 // QSS Headers
-#include <QSS/fmu/Variable.hh>
+#include <QSS/fmu/Variable_Inp.hh>
 
 namespace QSS {
 namespace fmu {
 
-// FMU-Based QSS Discrete Variable
-class Variable_D final : public Variable
+// FMU-Based Discrete-Valued Input Variable
+class Variable_InpD final : public Variable_Inp
 {
 
 public: // Types
 
-	using Super = Variable;
+	using Super = Variable_Inp;
 
 public: // Creation
 
 	// Constructor
-	Variable_D(
-	 std::string const & name,
-	 Value const xIni,
-	 FMU_Variable const var = FMU_Variable()
-	) :
-	 Super( name, xIni, var ),
-	 x_( xIni )
-	{}
-
-	// Name Constructor
 	explicit
-	Variable_D(
+	Variable_InpD(
 	 std::string const & name,
-	 FMU_Variable const var = FMU_Variable()
+	 Value const rTol = 1.0e-4,
+	 Value const aTol = 1.0e-6,
+	 FMU_Variable const var = FMU_Variable(),
+	 Function f = Function()
 	) :
-	 Super( name, 0.0, var ),
-	 x_( 0.0 )
+	 Super( name, rTol, aTol, var, f )
 	{}
-
-public: // Predicate
-
-	// Discrete Variable?
-	bool
-	is_Discrete() const
-	{
-		return true;
-	}
 
 public: // Properties
-
-	// Category
-	Cat
-	cat() const
-	{
-		return Cat::Discrete;
-	}
 
 	// Order of Method
 	int
@@ -167,11 +143,11 @@ public: // Methods
 	init_0()
 	{
 		assert( observees_.empty() );
-		shrink_observers(); // Optional
-		sort_observers();
-		x_ = xIni;
-		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+		init_observers();
+		x_ = f_( tQ ).x_0;
+		tD = f_( tQ ).tD;
+		event( events.add_discrete( tD, this ) );
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 	}
 
 	// Initialization to a Value: Stage 0
@@ -179,41 +155,39 @@ public: // Methods
 	init_0( Value const x )
 	{
 		assert( observees_.empty() );
-		shrink_observers(); // Optional
-		sort_observers();
+		init_observers();
 		x_ = x;
-		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+		tD = f_( tQ ).tD;
+		event( events.add_discrete( tD, this ) );
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 	}
 
-	// Handler Advance
+	// Discrete Advance
 	void
-	advance_handler( Time const t )
+	advance_discrete()
 	{
-		assert( tX <= t );
-		tX = tQ = t;
-		x_ = fmu_get_value(); // Assume FMU ran zero-crossing handler
+		x_ = f_( tX = tQ = tD ).x_0;
 		advance_observers_1();
 		if ( observers_max_order_ >= 2 ) {
 			fmu::set_time( tN = tQ + options::dtNum );
 			advance_observers_2();
 		}
-		shift_handler();
+		tD = f_( tD ).tD;
+		event( events.shift_discrete( tD, event() ) );
 		if ( options::output::d ) {
-			std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+			std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 			advance_observers_d();
 		}
 	}
 
-	// Handler Advance: Stage 0
+	// Discrete Advance: Stages 0 and 1
 	void
-	advance_handler_0( Time const t )
+	advance_discrete_0_1()
 	{
-		assert( tX <= t );
-		tX = tQ = t;
-		x_ = fmu_get_value(); // Assume FMU ran zero-crossing handler
-		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+		x_ = f_( tX = tQ = tD ).x_0;
+		tD = f_( tD ).tD;
+		event( events.shift_discrete( tD, event() ) );
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 	}
 
 private: // Data

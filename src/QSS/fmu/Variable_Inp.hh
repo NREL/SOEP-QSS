@@ -1,4 +1,4 @@
-// Options Support
+// FMU-Based QSS Input Variable Abstract Base Class
 //
 // Project: QSS Solver
 //
@@ -33,62 +33,98 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_options_hh_INCLUDED
-#define QSS_options_hh_INCLUDED
+#ifndef QSS_fmu_Variable_Inp_hh_INCLUDED
+#define QSS_fmu_Variable_Inp_hh_INCLUDED
+
+// QSS Headers
+#include <QSS/fmu/Variable.hh>
+#include <QSS/fmu/SmoothToken.hh>
 
 // C++ Headers
-#include <string>
+#include <functional>
 
 namespace QSS {
-namespace options {
+namespace fmu {
 
-// QSS Method Enumerator
-enum class QSS {
- QSS1,
- QSS2,
- QSS3,
- LIQSS1,
- LIQSS2,
- LIQSS3
+// FMU-Based QSS Input Variable Abstract Base Class
+class Variable_Inp : public Variable
+{
+
+public: // Types
+
+	using Super = Variable;
+	using Function = std::function< SmoothToken const &( Time const ) >;
+
+protected: // Creation
+
+	// Constructor
+	explicit
+	Variable_Inp(
+	 std::string const & name,
+	 Value const rTol = 1.0e-4,
+	 Value const aTol = 1.0e-6,
+	 FMU_Variable const var = FMU_Variable(),
+	 Function f = Function()
+	) :
+	 Super( name, rTol, aTol, 0.0, var ),
+	 f_( f )
+	{
+		xIni = f_( tQ ).x_0; // Set xIni now that tQ exists
+	}
+
+	// Copy Constructor
+	Variable_Inp( Variable_Inp const & ) = default;
+
+	// Move Constructor
+	Variable_Inp( Variable_Inp && ) noexcept = default;
+
+public: // Creation
+
+	// Destructor
+	virtual
+	~Variable_Inp()
+	{}
+
+protected: // Assignment
+
+	// Copy Assignment
+	Variable_Inp &
+	operator =( Variable_Inp const & ) = default;
+
+	// Move Assignment
+	Variable_Inp &
+	operator =( Variable_Inp && ) noexcept = default;
+
+public: // Properties
+
+	// Category
+	Cat
+	cat() const
+	{
+		return Cat::Input;
+	}
+
+	// Function
+	Function const &
+	f() const
+	{
+		return f_;
+	}
+
+	// Function
+	Function &
+	f()
+	{
+		return f_;
+	}
+
+protected: // Data
+
+	Function f_; // Input function
+
 };
 
-extern QSS qss; // QSS method: (LI)QSS1|2|3  [QSS2]
-extern int qss_order; // QSS method order  [computed]
-extern bool inflection; // Requantize at inflections?  [F]
-extern double rTol; // Relative tolerance  [1e-4|FMU]
-extern double aTol; // Absolute tolerance  [1e-6]
-extern bool rTol_set; // Relative tolerance set?
-extern double dtMin; // Min time step (s)
-extern double dtMax; // Max time step (s)
-extern double dtInf; // Inf time step (s)
-extern double dtOut; // Sampled & FMU output time step (s)  [1e-3]
-extern double dtNum; // Numeric differentiation time step (s)  [1e-6]
-extern double one_over_dtNum; // 1 / dtNum  [computed]
-extern double one_half_over_dtNum; // 0.5 / dtNum  [computed]
-extern double tEnd; // End time (s)  [1|FMU]
-extern bool tEnd_set; // End time set?
-extern std::string out; // Outputs: r, a, s, x, q, f  [rx]
-extern std::string model; // Name of model or FMU
-
-namespace output { // Output selections
-
-extern bool t; // Time events?  [T]
-extern bool r; // Requantizations?  [T]
-extern bool o; // Observers?  [F]
-extern bool a; // All variables?  [F]
-extern bool s; // Sampled output?  [F]
-extern bool f; // FMU outputs?  [T]
-extern bool x; // Continuous trajectories?  [T]
-extern bool q; // Quantized trajectories?  [F]
-extern bool d; // Diagnostic output?  [F]
-
-} // out
-
-// Process command line arguments
-void
-process_args( int argc, char * argv[] );
-
-} // options
+} // fmu
 } // QSS
 
 #endif

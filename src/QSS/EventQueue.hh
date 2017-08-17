@@ -81,10 +81,10 @@ public: // Types
 
 	// SuperdenseTime Index Offsets
 	struct Off {
-		static SuperdenseTime::Index const ZC{ 0 };
-		static SuperdenseTime::Index const QSS{ 2 }; // So QSS observer updates occur after observer ZC -> Handler events
-		static SuperdenseTime::Index const Observer{ 0 };
-		static SuperdenseTime::Index const Handler{ 0 };
+		static SuperdenseTime::Index const Discrete{ 0 };
+		static SuperdenseTime::Index const Handler{ 1 };
+		static SuperdenseTime::Index const ZC{ 2 };
+		static SuperdenseTime::Index const QSS{ 5 }; // Process after handler events
 	};
 
 public: // Predicates
@@ -103,6 +103,22 @@ public: // Predicates
 		return ( m_.find( s ) != m_.end() );
 	}
 
+	// Top Event is Discrete?
+	bool
+	top_is_discrete() const
+	{
+		assert( ! m_.empty() );
+		return m_.begin()->second.is_discrete();
+	}
+
+	// Top Event is Handler?
+	bool
+	top_is_handler() const
+	{
+		assert( ! m_.empty() );
+		return m_.begin()->second.is_handler();
+	}
+
 	// Top Event is ZC?
 	bool
 	top_is_ZC() const
@@ -117,22 +133,6 @@ public: // Predicates
 	{
 		assert( ! m_.empty() );
 		return m_.begin()->second.is_QSS();
-	}
-
-	// Top Event is Observer?
-	bool
-	top_is_observer() const
-	{
-		assert( ! m_.empty() );
-		return m_.begin()->second.is_observer();
-	}
-
-	// Top Event is Handler?
-	bool
-	top_is_handler() const
-	{
-		assert( ! m_.empty() );
-		return m_.begin()->second.is_handler();
 	}
 
 	// Single Trigger Variable at Front of Queue?
@@ -388,6 +388,94 @@ public: // Methods
 		m_.clear();
 	}
 
+public: // Discrete Event Methods
+
+	// Add Discrete Event
+	iterator
+	add_discrete(
+	 Time const t,
+	 Var * var
+	)
+	{
+		return m_.emplace( SuperdenseTime( t, Off::Discrete ), Event< V >( Event< V >::Discrete, var ) );
+	}
+
+	// Shift Discrete Event
+	iterator
+	shift_discrete(
+	 Time const t,
+	 iterator const i
+	)
+	{
+		Index const idx( t == t_ ? next_index() + Off::Discrete : Off::Discrete );
+		Var * var( i->second.var() );
+		m_.erase( i );
+		return m_.emplace( SuperdenseTime( t, idx ), Event< V >( Event< V >::Discrete, var ) );
+	}
+
+public: // Handler Event Methods
+
+	// Add Handler Event
+	iterator
+	add_handler(
+	 Time const t,
+	 Var * var
+	)
+	{
+		return m_.emplace( SuperdenseTime( t, Off::Handler ), Event< V >( Event< V >::Handler, var ) );
+	}
+
+	// Add Handler Event at Time Infinity
+	iterator
+	add_handler( Var * var )
+	{
+		return m_.emplace( SuperdenseTime( infinity, Off::Handler ), Event< V >( Event< V >::Handler, var ) );
+	}
+
+	// Shift Handler Event
+	iterator
+	shift_handler(
+	 Time const t,
+	 Value const val,
+	 iterator const i
+	)
+	{
+		assert( t == t_ );
+		Index const idx( next_index() + Off::Handler );
+		Var * var( i->second.var() );
+		SuperdenseTime const & s( i->first );
+		if ( ( s.t == t ) && ( s.i == idx ) ) { // Variable already has event at same superdense time
+			Event< V > const & e( i->second );
+			if ( ( e.is_handler() ) && ( e.val() != val ) ) std::cerr << "Zero-crossing handler events at the same time but with different values occurred for: " << var->name << std::endl;
+		}
+		m_.erase( i );
+		return m_.emplace( SuperdenseTime( t, idx ), Event< V >( Event< V >::Handler, var, val ) );
+	}
+
+	// Shift Handler Event: FMU Sets Value
+	iterator
+	shift_handler(
+	 Time const t,
+	 iterator const i
+	)
+	{
+		assert( t == t_ );
+		Index const idx( next_index() + Off::Handler );
+		Var * var( i->second.var() );
+		SuperdenseTime const & s( i->first );
+		m_.erase( i );
+		return m_.emplace( SuperdenseTime( t, idx ), Event< V >( Event< V >::Handler, var ) );
+	}
+
+	// Shift Handler Event to Time Infinity
+	iterator
+	shift_handler( iterator const i )
+	{
+		Var * var( i->second.var() );
+		m_.erase( i );
+		return m_.emplace( SuperdenseTime( infinity, Off::Handler ), Event< V >( Event< V >::Handler, var ) );
+	}
+
 public: // Zero-Crossing Event Methods
 
 	// Add Zero-Crossing Event
@@ -436,82 +524,6 @@ public: // QSS Event Methods
 		Var * var( i->second.var() );
 		m_.erase( i );
 		return m_.emplace( SuperdenseTime( t, idx ), Event< V >( Event< V >::QSS, var ) );
-	}
-
-public: // Observer Event Methods
-
-	// Shift Observer Event
-	iterator
-	shift_observer(
-	 Time const t,
-	 iterator const i
-	)
-	{
-		Index const idx( next_index() + Off::Observer );
-		Var * var( i->second.var() );
-		m_.erase( i );
-		return m_.emplace( SuperdenseTime( t, idx ), Event< V >( Event< V >::Observer, var ) );
-	}
-
-public: // Handler Event Methods
-
-	// Add Handler Event
-	iterator
-	add_handler(
-	 Time const t,
-	 Var * var
-	)
-	{
-		return m_.emplace( SuperdenseTime( t, Off::Handler ), Event< V >( Event< V >::Handler, var ) );
-	}
-
-	// Add Handler Event at Time Infinity
-	iterator
-	add_handler( Var * var )
-	{
-		return m_.emplace( SuperdenseTime( infinity, Off::Handler ), Event< V >( Event< V >::Handler, var ) );
-	}
-
-	// Shift Handler Event
-	iterator
-	shift_handler(
-	 Time const t,
-	 Value const val,
-	 iterator const i
-	)
-	{
-		Index const idx( next_index() + Off::Handler );
-		Var * var( i->second.var() );
-		SuperdenseTime const & s( i->first );
-		if ( ( s.t == t ) && ( s.i == idx ) ) { // Variable already has event at same superdense time
-			Event< V > const & e( i->second );
-			if ( ( e.is_handler() ) && ( e.val() != val ) ) std::cerr << "Zero-crossing handler events at the same time but with different values occurred for: " << var->name << std::endl;
-		}
-		m_.erase( i );
-		return m_.emplace( SuperdenseTime( t, idx ), Event< V >( Event< V >::Handler, var, val ) );
-	}
-
-	// Shift Handler Event: FMU Sets Value
-	iterator
-	shift_handler(
-	 Time const t,
-	 iterator const i
-	)
-	{
-		Index const idx( next_index() + Off::Handler );
-		Var * var( i->second.var() );
-		SuperdenseTime const & s( i->first );
-		m_.erase( i );
-		return m_.emplace( SuperdenseTime( t, idx ), Event< V >( Event< V >::Handler, var ) );
-	}
-
-	// Shift Handler Event to Time Infinity
-	iterator
-	shift_handler( iterator const i )
-	{
-		Var * var( i->second.var() );
-		m_.erase( i );
-		return m_.emplace( SuperdenseTime( infinity, Off::Handler ), Event< V >( Event< V >::Handler, var ) );
 	}
 
 private: // Static Data

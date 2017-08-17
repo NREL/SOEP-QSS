@@ -1,4 +1,4 @@
-// QSS FMU Variable Specifications
+// Sine Input Function
 //
 // Project: QSS Solver
 //
@@ -33,73 +33,118 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_FMU_Variable_hh_INCLUDED
-#define QSS_fmu_FMU_Variable_hh_INCLUDED
+#ifndef QSS_fmu_Function_Inp_sin_hh_INCLUDED
+#define QSS_fmu_Function_Inp_sin_hh_INCLUDED
 
-// FMI Library Headers
-#include <FMI2/fmi2_import.h>
+// QSS Headers
+#include <QSS/fmu/SmoothToken.hh>
+#include <QSS/math.hh>
 
 // C++ Headers
-#include <cassert>
-#include <cstddef>
+#include <cmath>
 
 namespace QSS {
 namespace fmu {
 
-// QSS FMU Variable Specifications
-class FMU_Variable
+// Sine Input Function
+class Function_Inp_sin
 {
 
 public: // Types
 
-	using size_type = std::size_t;
+	using Time = double;
+	using Value = double;
 
 public: // Creation
 
-	// Default Constructor
-	FMU_Variable()
-	{}
-
-	// Real Variable Constructor
-	FMU_Variable(
-	 fmi2_import_variable_t * const var,
-	 fmi2_import_real_variable_t * const rvr,
-	 fmi2_value_reference_t const ref,
-	 size_type const idx,
-	 size_type const ics = 0u
+	// Constructor
+	Function_Inp_sin(
+	 Value const a = 1.0, // Amplitude
+	 Value const b = 1.0, // Time scaling (2*pi/period)
+	 Value const c = 0.0 // Shift
 	) :
-	 var( var ),
-	 rvr( rvr ),
-	 ref( ref ),
-	 idx( idx ),
-	 ics( ics )
+	 s_( 3, c, a * b, 0.0, -( a * b * b * b ) ),
+	 a_( a ),
+	 b_( b ),
+	 c_( c ),
+	 a_b_( a * b ),
+	 a_b2_( a * b * b ),
+	 a_b3_( a * b * b * b )
 	{}
 
-	// Integer Variable Constructor
-	FMU_Variable(
-	 fmi2_import_variable_t * const var,
-	 fmi2_import_integer_variable_t * const ivr,
-	 fmi2_value_reference_t const ref,
-	 size_type const idx,
-	 size_type const ics = 0u
-	) :
-	 var( var ),
-	 ivr( ivr ),
-	 ref( ref ),
-	 idx( idx ),
-	 ics( ics )
-	{}
+public: // Properties
 
-public: // Data
+	// State at Time t
+	SmoothToken const &
+	operator ()( Time const t ) const
+	{
+		if ( t != s_.t ) { // Reevaluate state
+			s_.t = t;
+			s_.x_0 = v( t );
+			s_.x_1 = d1( t );
+			s_.x_2 = d2( t );
+			s_.x_3 = d3( t );
+		}
+		return s_;
+	}
 
-	fmi2_import_variable_t * var{ nullptr }; // FMU variable pointer (non-owning)
-	union { // Support FMU real and integer variables
-		fmi2_import_real_variable_t * rvr{ nullptr }; // FMU real variable pointer (non-owning)
-		fmi2_import_integer_variable_t * ivr; // FMU integer variable pointer (non-owning)
-	};
-	fmi2_value_reference_t ref{ 0 }; // FMU variable value reference
-	size_type idx{ 0u }; // FMU variable index
-	size_type ics{ 0u }; // FMU continuous state index
+	// State at Time t (Reevaluated)
+	SmoothToken const &
+	smooth_token( Time const t ) const
+	{
+		s_.t = t;
+		s_.x_0 = v( t );
+		s_.x_1 = d1( t );
+		s_.x_2 = d2( t );
+		s_.x_3 = d3( t );
+		return s_;
+	}
+
+	// Value at Time t
+	Value
+	v( Time const t ) const
+	{
+		return ( a_ * std::sin( b_ * t ) ) + c_;
+	}
+
+	// First Derivative at Time t
+	Value
+	d1( Time const t ) const
+	{
+		return a_b_ * std::cos( b_ * t );
+	}
+
+	// Second Derivative at Time t
+	Value
+	d2( Time const t ) const
+	{
+		return -a_b2_ * std::sin( b_ * t );
+	}
+
+	// Third Derivative at Time t
+	Value
+	d3( Time const t ) const
+	{
+		return -a_b3_ * std::cos( b_ * t );
+	}
+
+	// Discrete Event after Time t
+	Value
+	tD( Time const t ) const
+	{
+		return infinity;
+	}
+
+private: // Data
+
+	mutable SmoothToken s_; // Cached state
+
+	Value const a_{ 1.0 }; // Amplitude
+	Value const b_{ 1.0 }; // Time scaling (2*pi/period)
+	Value const c_{ 0.0 }; // Shift
+	Value const a_b_{ 1.0 }; // a * b^2
+	Value const a_b2_{ 1.0 }; // a * b^2
+	Value const a_b3_{ 1.0 }; // a * b^3
 
 };
 

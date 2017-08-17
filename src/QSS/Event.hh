@@ -53,10 +53,10 @@ public: // Types
 
 	// Event Type
 	enum Type : std::size_t {
-		ZC,
-		QSS,
-		Observer,
-		Handler
+	 Discrete, // Discrete
+	 Handler, // Zero-crossing handler
+	 ZC, // Zero-crossing
+	 QSS // Requantization
 	};
 
 public: // Creation
@@ -74,6 +74,20 @@ public: // Creation
 
 public: // Properties
 
+	// Discrete Event?
+	bool
+	is_discrete() const
+	{
+		return ( typ_ == Discrete );
+	}
+
+	// Handler Event?
+	bool
+	is_handler() const
+	{
+		return ( typ_ == Handler );
+	}
+
 	// Zero-Crossing Event?
 	bool
 	is_ZC() const
@@ -86,20 +100,6 @@ public: // Properties
 	is_QSS() const
 	{
 		return ( typ_ == QSS );
-	}
-
-	// Observer Event?
-	bool
-	is_observer() const
-	{
-		return ( typ_ == Observer );
-	}
-
-	// Handler Event?
-	bool
-	is_handler() const
-	{
-		return ( typ_ == Handler );
 	}
 
 	// Event Type

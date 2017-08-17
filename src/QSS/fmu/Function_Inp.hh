@@ -1,4 +1,4 @@
-// Options Support
+// Input Function Mockup
 //
 // Project: QSS Solver
 //
@@ -33,62 +33,108 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_options_hh_INCLUDED
-#define QSS_options_hh_INCLUDED
+#ifndef QSS_fmu_Function_Inp_hh_INCLUDED
+#define QSS_fmu_Function_Inp_hh_INCLUDED
 
-// C++ Headers
-#include <string>
+// QSS Headers
+#include <QSS/fmu/SmoothToken.hh>
 
 namespace QSS {
-namespace options {
+namespace fmu {
 
-// QSS Method Enumerator
-enum class QSS {
- QSS1,
- QSS2,
- QSS3,
- LIQSS1,
- LIQSS2,
- LIQSS3
+// Input Function Mockup
+class Function_Inp
+{
+
+public: // Types
+
+	using Time = double;
+	using Value = double;
+
+public: // Creation
+
+	// Default Constructor
+	Function_Inp(
+	 Value const x_0 = 0.0,
+	 Value const x_1 = 0.0,
+	 Value const x_2 = 0.0,
+	 Value const x_3 = 0.0,
+	) :
+	 s_( 3, x_0, x_1, x_2, x_3 )
+	{}
+
+public: // Properties
+
+	// State at Time t
+	SmoothToken const &
+	operator ()( Time const t ) const
+	{
+		if ( t != s_.t ) { // Reevaluate state
+			s_.t = t;
+			s_.tD = tD( t );
+			s_.x_0 = v( t );
+			s_.x_1 = d1( t );
+			s_.x_2 = d2( t );
+			s_.x_3 = d3( t );
+		}
+		return s_;
+	}
+
+	// State at Time t (Reevaluated)
+	SmoothToken const &
+	smooth_token( Time const t ) const
+	{
+		s_.t = t;
+		s_.tD = tD( t );
+		s_.x_0 = v( t );
+		s_.x_1 = d1( t );
+		s_.x_2 = d2( t );
+		s_.x_3 = d3( t );
+		return s_;
+	}
+
+	// Value at Time t
+	Value const
+	v( Time const t ) const
+	{
+		return ?;
+	}
+
+	// First Derivative at Time t
+	Value const
+	d1( Time const t ) const
+	{
+		return ?;
+	}
+
+	// Second Derivative at Time t
+	Value const
+	d2( Time const t ) const
+	{
+		return ?;
+	}
+
+	// Third Derivative at Time t
+	Value const
+	d3( Time const t ) const
+	{
+		return ?;
+	}
+
+	// Discrete Event after Time t
+	Value const
+	tD( Time const t ) const
+	{
+		return ?;
+	}
+
+private: // Data
+
+	mutable SmoothToken s_; // Cached state
+
 };
 
-extern QSS qss; // QSS method: (LI)QSS1|2|3  [QSS2]
-extern int qss_order; // QSS method order  [computed]
-extern bool inflection; // Requantize at inflections?  [F]
-extern double rTol; // Relative tolerance  [1e-4|FMU]
-extern double aTol; // Absolute tolerance  [1e-6]
-extern bool rTol_set; // Relative tolerance set?
-extern double dtMin; // Min time step (s)
-extern double dtMax; // Max time step (s)
-extern double dtInf; // Inf time step (s)
-extern double dtOut; // Sampled & FMU output time step (s)  [1e-3]
-extern double dtNum; // Numeric differentiation time step (s)  [1e-6]
-extern double one_over_dtNum; // 1 / dtNum  [computed]
-extern double one_half_over_dtNum; // 0.5 / dtNum  [computed]
-extern double tEnd; // End time (s)  [1|FMU]
-extern bool tEnd_set; // End time set?
-extern std::string out; // Outputs: r, a, s, x, q, f  [rx]
-extern std::string model; // Name of model or FMU
-
-namespace output { // Output selections
-
-extern bool t; // Time events?  [T]
-extern bool r; // Requantizations?  [T]
-extern bool o; // Observers?  [F]
-extern bool a; // All variables?  [F]
-extern bool s; // Sampled output?  [F]
-extern bool f; // FMU outputs?  [T]
-extern bool x; // Continuous trajectories?  [T]
-extern bool q; // Quantized trajectories?  [F]
-extern bool d; // Diagnostic output?  [F]
-
-} // out
-
-// Process command line arguments
-void
-process_args( int argc, char * argv[] );
-
-} // options
+} // fmu
 } // QSS
 
 #endif

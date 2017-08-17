@@ -1,4 +1,4 @@
-// Options Support
+// SmoothToken Class
 //
 // Project: QSS Solver
 //
@@ -33,62 +33,60 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_options_hh_INCLUDED
-#define QSS_options_hh_INCLUDED
+#ifndef QSS_fmu_SmoothToken_hh_INCLUDED
+#define QSS_fmu_SmoothToken_hh_INCLUDED
 
-// C++ Headers
-#include <string>
+// QSS Headers
+#include <QSS/math.hh>
 
 namespace QSS {
-namespace options {
+namespace fmu {
 
-// QSS Method Enumerator
-enum class QSS {
- QSS1,
- QSS2,
- QSS3,
- LIQSS1,
- LIQSS2,
- LIQSS3
+// SmoothToken Class
+class SmoothToken
+{
+
+public: // Types
+
+	using Time = double;
+	using Value = double;
+
+public: // Creation
+
+	// Default Constructor
+	SmoothToken(
+	 int const order = 3,
+	 Value const x_0 = 0.0,
+	 Value const x_1 = 0.0,
+	 Value const x_2 = 0.0,
+	 Value const x_3 = 0.0
+	) :
+	 order( order ),
+	 x_0( x_0 ),
+	 x_1( x_1 ),
+	 x_2( x_2 ),
+	 x_3( x_3 )
+	{}
+
+public: // Properties
+
+	// Has a Discrete Event?
+	bool
+	has_discrete() const
+	{
+		return tD < infinity;
+	}
+
+public: // Data
+
+	int order{ 3 }; // Highest derivative order set
+	Time t{ 0.0 }; // Time
+	Time tD{ infinity }; // Next discrete event time
+	Value x_0{ 0.0 }, x_1{ 0.0 }, x_2{ 0.0 }, x_3{ 0.0 }; // Value and derivatives
+
 };
 
-extern QSS qss; // QSS method: (LI)QSS1|2|3  [QSS2]
-extern int qss_order; // QSS method order  [computed]
-extern bool inflection; // Requantize at inflections?  [F]
-extern double rTol; // Relative tolerance  [1e-4|FMU]
-extern double aTol; // Absolute tolerance  [1e-6]
-extern bool rTol_set; // Relative tolerance set?
-extern double dtMin; // Min time step (s)
-extern double dtMax; // Max time step (s)
-extern double dtInf; // Inf time step (s)
-extern double dtOut; // Sampled & FMU output time step (s)  [1e-3]
-extern double dtNum; // Numeric differentiation time step (s)  [1e-6]
-extern double one_over_dtNum; // 1 / dtNum  [computed]
-extern double one_half_over_dtNum; // 0.5 / dtNum  [computed]
-extern double tEnd; // End time (s)  [1|FMU]
-extern bool tEnd_set; // End time set?
-extern std::string out; // Outputs: r, a, s, x, q, f  [rx]
-extern std::string model; // Name of model or FMU
-
-namespace output { // Output selections
-
-extern bool t; // Time events?  [T]
-extern bool r; // Requantizations?  [T]
-extern bool o; // Observers?  [F]
-extern bool a; // All variables?  [F]
-extern bool s; // Sampled output?  [F]
-extern bool f; // FMU outputs?  [T]
-extern bool x; // Continuous trajectories?  [T]
-extern bool q; // Quantized trajectories?  [F]
-extern bool d; // Diagnostic output?  [F]
-
-} // out
-
-// Process command line arguments
-void
-process_args( int argc, char * argv[] );
-
-} // options
+} // fmu
 } // QSS
 
 #endif

@@ -517,13 +517,6 @@ public: // Methods
 		assert( false ); // Not a QSS variable
 	}
 
-	// Shift Observer to Time t
-	void
-	shift_observer( Time const t )
-	{
-		event_ = events.shift_observer( t, event_ );
-	}
-
 	// Shift Handler to Time t
 	void
 	shift_handler( Time const t, Value const val )

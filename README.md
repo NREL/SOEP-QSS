@@ -8,13 +8,13 @@ Currently the code has:
 * QSS1/2/3 and LIQSS1/2 solvers.
 * Linear and nonlinear derivative function support.
 * Input variables/functions.
+* Discrete-valued variables.
 * Numeric differentiation support.
 * A simple "baseline" event queue built on `std::multimap`.
-* Simultaneous requantization event support.
+* Simultaneous event support.
 * Numeric bulletproofing of root solvers.
 * A master algorithm with sampling and diagnostic output controls.
 * A few simple code-defined example cases.
-* FMU demo support for QSS1 and QSS2.
 * Zero-crossing event support.
 * Discrete real-valued variables.
 
@@ -24,7 +24,7 @@ Notes:
 ## Plan
 
 Planned development in anticipated sequence order are:
-* FMU support extensions: input variables, Modelica annotations, JModelica/FMIL API migration, higher derivatives, ...
+* FMU support extensions: Modelica annotations, JModelica/FMIL API migration, higher derivatives, ...
 * Algebraic relationship/loop support.
 * Extended precision time handling for large time span simulation.
 * Performance refinements possibly including a higher performance event queue.
@@ -113,16 +113,22 @@ At startup and simultaneous requantization trigger events the LIQSS approach def
 
 ### Zero-Crossing Functions
 
-So-called zero-crossing functions are the mechanism Modelica uses to introduce conditional behavior to a model. For each such behavior a corresponding function crosses zero when an event needs to be carried out. This might be, for instance, a thermostat control reaching a trigger temperature that needs to turn on an A/C system. Zero crossings cause (discontinuous) changes to (otherwise) continuous and discrete variables via so-called handler functions.
+So-called zero-crossing functions are the mechanism Modelica uses to introduce conditional behavior to a model. For each such behavior a corresponding function crosses zero when an event needs to be carried out. This might be, for instance, a thermostat control reaching a trigger temperature that needs to turn on an A/C system. Zero crossings cause (discontinuous) changes to (otherwise) continuous and discrete variables via "handler" functions.
 
 In traditional solvers a zero crossing is detected after it occurs and time backtracking may be used to find its precise time of crossing. With QSS we can do better by predicting the zero crossing using the QSS-style polynomial representation, optionally refining that prediction with an iterative root finder. The zero-crossing support is integrated with the QSS system as zero-crossing variables that are somewhat analogous to the QSS variables in their use of polynomial trajectories that requantize based on specified tolerances. The predicted zero crossings are events on the QSS event queue so they are handled efficiently without a need for backtracking.
 
 Zero crossings introduce the potential for cyclic dependencies and a cascade of updates that occur at the same time point. Zero crossing events change some variable values. Because those changes are discontinuous this acts like a requantization event that must update both the quantized and continuous representation of those modified variables, which, in turn, can cause zero-crossing variables to update, possibly triggering another round of zero crossings, and so on. All of these events happen at the same (clock) time but they are logically sequentially triggered so we cannot know or process them simultaneously. To create a deterministic simulation with zero crossings the following approach is used:
 * The phases of zero crossing, handler updates, and resulting requantizations are clustered together by the use of a sort of what is called superdense time, which is a time value paired with a sequencing index.
-* Any phase causing both new zero crossings and new requantizations the zero crossings are processed first (via superdense time indexing).
-* In each phase multiple events of the same (zero crossing, handler, or requantization) type are handled together as simultaneous events: the processing for simultaneous events is phased so that the changes to interdependent variables are propagated deterministically (except for LIQSS2+ where it is not possible to eliminate a processing order dependency).
+* In any phase causing both new zero crossings and new requantizations the zero crossings are processed first (via superdense time indexing).
+* In each phase multiple events of the same (zero crossing, handler, or requantization) type are handled together as simultaneous events: the processing for simultaneous events is phased so that the changes to interdependent variables are propagated deterministically.
 
 With cyclic dependencies it is possible for an infinite cascade loop of such changes to occur at the same (clock) time. Detecting such dependencies and the occurrence of these infinite loops is necessary with zero crossing support.
+
+### Input Functions
+
+Input functions are external system "drivers" that do not depend on the state of other variables within the DAE system. The QSS solver implements input functions for continuous real-valued variables with QSS-like quantized and continuous representations and logic for selecting the next time at which to update these representations. Input variables using this approach are smoothly integrated with the QSS variable system.
+
+Discrete and integer valued input functions can also have discrete events at which their value changes. To provide accurate behavior with QSS solvers, where time steps can be large and variable, these discrete events are assumed predictable by the input functions. These predicted discrete events are placed in the QSS event queue to assure they are processed at their exact event time. We don't currently support discrete events for continuous input functions but this is easily added if needed.
 
 ## FMU Support
 
@@ -134,6 +140,7 @@ Notes:
 * QSS2 performance is limited by the use of numeric differentiation: the FMI ME 2.0 API doesn't provide higher derivatives but they may become available via FMI extensions.
 * Zero crossings are problematic because the FMI spec doesn't expose the dependency of variables that are modified when each zero crossing occurs. Until such information is added our approach is to add the dependencies to the xml file. A fallback strategy of assuming that any continuous or discrete variable may have been modified could be used, at some cost to efficiency.
 * QSS3 and LIQSS3 solvers can be added when they become more practical with the planned FMI Library FMI 2.0 API extensions.
+* Input function evaluations will be provided by JModelica when QSS is integrated. For stand-alone QSS testing purposes a few input functions are provided for use with FMUs.
 
 ## Implementation
 
@@ -197,12 +204,12 @@ Once the code capabilities are sufficient and larger models are built some perfo
 ### Performance Findings
 
 Performance findings and observations:
-* Simultaneous requantization triggering: Could skip continuous rep update if a variable is not an observer of any of the requantizing variables. This would save assignments but more importantly evaluation of the highest derivative. There is some overhead in determining whether a variable qualifies. Testing so far doesn't show a significant benefit for this optimization but it should be reevaluated with real-world cases where simultaneous triggering is common.
+* Simultaneous requantization triggering: Could skip continuous representation update if a variable is not an observer of any of the requantizing variables. This would save assignments but more importantly evaluation of the highest derivative. There is some overhead in determining whether a variable qualifies. Testing so far doesn't show a significant benefit for this optimization but it should be reevaluated with real-world cases where simultaneous triggering is common.
 
 ### Performance Notes
 
 * Variable hierarchy virtual calls can be reduced via some refactoring.
-* FMU performance is currently severely hobbled by the FMI 2.0 API that is not ill-suited to QSS simulation and by the restriction to QSS1 solvers. QSS2 solvers will help but will also be performance-limited by the need for numeric differentiation until higher derivatives become available via FMI extensions.
+* FMU performance is currently severely hobbled by the FMI 2.0 API that is ill-suited to QSS simulation and the need for numeric differentiation until higher derivatives become available via FMI extensions.
 
 ## Testing
 

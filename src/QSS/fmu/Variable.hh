@@ -495,6 +495,28 @@ public: // Methods
 	init_2()
 	{}
 
+	// Discrete Advance
+	virtual
+	void
+	advance_discrete()
+	{
+		assert( false );
+	}
+
+	// Discrete Advance: Stages 0 and 1
+	virtual
+	void
+	advance_discrete_0_1()
+	{
+		assert( false );
+	}
+
+	// Discrete Advance: Stage 2
+	virtual
+	void
+	advance_discrete_2()
+	{}
+
 	// QSS Advance
 	virtual
 	void
@@ -507,13 +529,17 @@ public: // Methods
 	virtual
 	void
 	advance_QSS_0()
-	{}
+	{
+		assert( false );
+	}
 
 	// QSS Advance: Stage 1
 	virtual
 	void
 	advance_QSS_1()
-	{}
+	{
+		assert( false );
+	}
 
 	// QSS Advance: Stage 2
 	virtual
@@ -535,8 +561,8 @@ public: // Methods
 	void
 	advance_observers_2()
 	{
-		assert( tD == tQ + options::dtND );
-		fmu_set_observers_2_observees_q( tD );
+		assert( tN == tQ + options::dtNum );
+		fmu_set_observers_2_observees_q( tN );
 		for ( size_type i = iBeg_observers_2_, n = observers_.size(); i < n; ++i ) { // Order 2+ observers
 			observers_[ i ]->advance_observer_2();
 		}
@@ -641,13 +667,6 @@ public: // Methods
 	advance_handler_2()
 	{
 		assert( false ); // Not a QSS variable
-	}
-
-	// Shift Observer to Time t
-	void
-	shift_observer( Time const t )
-	{
-		event_ = events.shift_observer( t, event_ );
 	}
 
 	// Shift Handler to Time t
@@ -783,7 +802,8 @@ public: // Data
 	Time tQ{ 0.0 }; // Quantized time range begin
 	Time tX{ 0.0 }; // Continuous time range begin
 	Time tE{ 0.0 }; // Time range end: tQ <= tE and tX <= tE
-	Time tD{ 0.0 }; // Numeric differentiation time
+	Time tN{ 0.0 }; // Numeric differentiation time
+	Time tD{ infinity }; // Discrete event time: tQ <= tD and tX <= tD
 	Time dt_min{ 0.0 }; // Time step min
 	Time dt_max{ infinity }; // Time step max
 	Time dt_inf{ infinity }; // Time step inf

@@ -58,9 +58,9 @@ double dtMin( 0.0 ); // Min time step (s)
 double dtMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Max time step (s)
 double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Inf time step (s)
 double dtOut( 1.0e-3 ); // Sampled & FMU output time step (s)  [1e-3]
-double dtND( 1.0e-6 ); // Numeric differentiation time step (s)  [1e-6]
-double one_over_dtND( 1.0e6 ); // 1 / dtND  [computed]
-double one_half_over_dtND( 5.0e5 ); // 0.5 / dtND  [computed]
+double dtNum( 1.0e-6 ); // Numeric differentiation time step (s)  [1e-6]
+double one_over_dtNum( 1.0e6 ); // 1 / dtNum  [computed]
+double one_half_over_dtNum( 5.0e5 ); // 0.5 / dtNum  [computed]
 double tEnd( 1.0 ); // End time (s)  [1|FMU]
 bool tEnd_set( false ); // End time set?
 std::string out; // Outputs: r, a, s, x, q, f  [rx]
@@ -68,14 +68,15 @@ std::string model; // Name of model or FMU
 
 namespace output { // Output selections
 
+bool t( true ); // Time events?  [T]
 bool r( true ); // Requantizations?  [T]
-bool o( false ); // Observers at requantizations?  [F]
-bool a( false ); // All variables at requantization events? (=> r)  [F]
+bool o( false ); // Observers?  [F]
+bool a( false ); // All variables?  [F]
 bool s( false ); // Sampled output?  [F]
 bool f( true ); // FMU outputs?  [T]
-bool d( false ); // Diagnostic output?  [F]
 bool x( true ); // Continuous trajectories?  [T]
 bool q( false ); // Quantized trajectories?  [F]
+bool d( false ); // Diagnostic output?  [F]
 
 } // out
 
@@ -198,17 +199,18 @@ help_display()
 	std::cout << " --dtMax=STEP  Max time step (s)  [infinity]" << '\n';
 	std::cout << " --dtInf=STEP  Inf alt time step (s)  [infinity]" << '\n';
 	std::cout << " --dtOut=STEP  Sampled & FMU output step (s)  [1e-3]" << '\n';
-	std::cout << " --dtND=STEP   Numeric differentiation step (s)  [1e-6]" << '\n';
+	std::cout << " --dtNum=STEP  Numeric differentiation step (s)  [1e-6]" << '\n';
 	std::cout << " --tEnd=TIME   End time (s)  [1|FMU]" << '\n';
-	std::cout << " --out=OUTPUTS Outputs: r, a, s, d, x, q, f  [rfx]" << '\n';
+	std::cout << " --out=OUTPUTS Outputs  [trfx]" << '\n';
+	std::cout << "       t       Time events" << '\n';
 	std::cout << "       r       Requantizations" << '\n';
-	std::cout << "       o       Observers at requantizations" << '\n';
-	std::cout << "       a       All variables at requantizations (=> r & o)" << '\n';
+	std::cout << "       o       Observers" << '\n';
+	std::cout << "       a       All variables" << '\n';
 	std::cout << "       s       Sampled time steps" << '\n';
 	std::cout << "       f       FMU outputs" << '\n';
-	std::cout << "       d       Diagnostic output" << '\n';
 	std::cout << "       x       Continuous trajectories" << '\n';
 	std::cout << "       q       Quantized trajectories" << '\n';
+	std::cout << "       d       Diagnostic output" << '\n';
 	std::cout << '\n';
 	std::cout << "Models:" << "\n\n";
 	std::cout << "  achilles : Achilles and the Tortoise" << '\n';
@@ -344,18 +346,18 @@ process_args( int argc, char * argv[] )
 				std::cerr << "Nonnumeric dtOut: " << dtOut_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "dtND" ) ) {
-			std::string const dtND_str( arg_value( arg ) );
-			if ( is_double( dtND_str ) ) {
-				dtND = double_of( dtND_str );
-				if ( dtND < 0.0 ) {
-					std::cerr << "Negative dtND: " << dtND_str << std::endl;
+		} else if ( has_value_option( arg, "dtNum" ) ) {
+			std::string const dtNum_str( arg_value( arg ) );
+			if ( is_double( dtNum_str ) ) {
+				dtNum = double_of( dtNum_str );
+				if ( dtNum < 0.0 ) {
+					std::cerr << "Negative dtNum: " << dtNum_str << std::endl;
 					fatal = true;
 				}
-				one_over_dtND = 1.0 / dtND;
-				one_half_over_dtND = 0.5 / dtND;
+				one_over_dtNum = 1.0 / dtNum;
+				one_half_over_dtNum = 0.5 / dtNum;
 			} else {
-				std::cerr << "Nonnumeric dtND: " << dtND_str << std::endl;
+				std::cerr << "Nonnumeric dtNum: " << dtNum_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "tEnd" ) ) {
@@ -373,22 +375,20 @@ process_args( int argc, char * argv[] )
 			}
 		} else if ( has_value_option( arg, "out" ) ) {
 			out = arg_value( arg );
-			if ( has_any_not_of( out, "roasfdxq" ) ) {
-				std::cerr << "Output flag not in roasfdxq: " << out << std::endl;
+			if ( has_any_not_of( out, "troasfxqd" ) ) {
+				std::cerr << "Output flag not in troasfxqd: " << out << std::endl;
 				fatal = true;
 			}
+			output::t = has( out, 't' );
 			output::r = has( out, 'r' );
 			output::o = has( out, 'o' );
 			output::a = has( out, 'a' );
 			output::s = has( out, 's' );
 			output::f = has( out, 'f' );
-			output::d = has( out, 'd' );
 			output::x = has( out, 'x' );
 			output::q = has( out, 'q' );
-			if ( output::a ) {
-				output::r = true; // a => r
-				output::o = true; // a => o
-			}
+			output::d = has( out, 'd' );
+			if ( output::a ) output::o = true; // a => o
 		} else if ( arg[ 0 ] == '-' ) {
 			std::cerr << "Unsupported option: " << arg << std::endl;
 			fatal = true;

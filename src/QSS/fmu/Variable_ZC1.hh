@@ -117,6 +117,10 @@ public: // Methods
 			std::cerr << "Zero-crossing variable is self-observer: " << name << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
+		if ( ! observers_.empty() ) {
+			std::cerr << "Zero-crossing variable has observers: " << name << std::endl;
+			std::exit( EXIT_FAILURE );
+		}
 		init_observers();
 		fmu_set_observees_q( tQ );
 		x_0_ = q_0_ = fmu_get_value();

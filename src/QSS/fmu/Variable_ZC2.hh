@@ -135,6 +135,10 @@ public: // Methods
 			std::cerr << "Zero-crossing variable is self-observer: " << name << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
+		if ( ! observers_.empty() ) {
+			std::cerr << "Zero-crossing variable has observers: " << name << std::endl;
+			std::exit( EXIT_FAILURE );
+		}
 		init_observers();
 		fmu_set_observees_q( tQ );
 		x_0_ = q_0_ = fmu_get_value();
@@ -152,8 +156,8 @@ public: // Methods
 	void
 	init_2()
 	{
-		fmu_set_observees_q( tD = tQ + options::dtND );
-		x_2_ = options::one_half_over_dtND * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+		fmu_set_observees_q( tN = tQ + options::dtNum );
+		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE();
 		set_tZ();
 		event( tE < tZ ? events.add_QSS( tE, this ) : events.add_ZC( tZ, this ) );
@@ -176,9 +180,9 @@ public: // Methods
 		x_0_ = q_0_ = fmu_get_value();
 		set_qTol();
 		x_1_ = q_1_ = fmu_get_deriv();
-		fmu::set_time( tD = tQ + options::dtND );
-		fmu_set_observees_q( tD );
-		x_2_ = options::one_half_over_dtND * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+		fmu::set_time( tN = tQ + options::dtNum );
+		fmu_set_observees_q( tN );
+		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE();
 		set_tZ();
 		event( tE < tZ ? events.shift_QSS( tE, event() ) : events.shift_ZC( tZ, event() ) );
@@ -205,8 +209,8 @@ public: // Methods
 	void
 	advance_QSS_2()
 	{
-		fmu_set_observees_q( tD = tQ + options::dtND );
-		x_2_ = options::one_half_over_dtND * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+		fmu_set_observees_q( tN = tQ + options::dtNum );
+		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE();
 		set_tZ();
 		event( tE < tZ ? events.shift_QSS( tE, event() ) : events.shift_ZC( tZ, event() ) );
@@ -228,7 +232,7 @@ public: // Methods
 	void
 	advance_observer_2()
 	{
-		x_2_ = options::one_half_over_dtND * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE();
 		crossing_detect( sign_old_, signum( x_0_ ) );
 	}
