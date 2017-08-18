@@ -446,7 +446,7 @@ public: // Handler Event Methods
 		SuperdenseTime const & s( i->first );
 		if ( ( s.t == t ) && ( s.i == idx ) ) { // Variable already has event at same superdense time
 			Event< V > const & e( i->second );
-			if ( ( e.is_handler() ) && ( e.val() != val ) ) std::cerr << "Zero-crossing handler events at the same time but with different values occurred for: " << var->name << std::endl;
+			if ( ( e.is_handler() ) && ( e.val() != val ) ) std::cerr << "Error: Zero-crossing handler events at the same time but with different values occurred for: " << var->name << std::endl;
 		}
 		m_.erase( i );
 		return m_.emplace( SuperdenseTime( t, idx ), Event< V >( Event< V >::Handler, var, val ) );

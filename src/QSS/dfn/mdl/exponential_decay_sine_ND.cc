@@ -85,7 +85,7 @@ exponential_decay_sine_ND( Variables & vars )
 		vars.push_back( x = new Variable_LIQSS2< Function_LTI >( "x", rTol, aTol, 1.0 ) );
 		vars.push_back( u = new Variable_Inp2< Function_sin_ND >( "u", rTol, aTol ) );
 	} else {
-		std::cerr << "Unsupported QSS method" << std::endl;
+		std::cerr << "Error: Unsupported QSS method" << std::endl;
 		std::exit( EXIT_FAILURE );
 	}
 

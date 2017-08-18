@@ -82,7 +82,7 @@ achillesc( Variables & vars )
 //		vars.push_back( x1 = new Variable_LIQSS2< Function_achilles1 >( "x1", rTol, aTol, 0.0 ) );
 //		vars.push_back( x2 = new Variable_LIQSS2< Function_achilles2 >( "x2", rTol, aTol, 2.0 ) );
 	} else {
-		std::cerr << "Unsupported QSS method" << std::endl;
+		std::cerr << "Error: Unsupported QSS method" << std::endl;
 		std::exit( EXIT_FAILURE );
 	}
 

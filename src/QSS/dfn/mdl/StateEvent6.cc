@@ -337,7 +337,7 @@ StateEvent6( Variables & vars )
 		vars.push_back( x2 = new Variable_LIQSS2< Function_LTI >( "x2", rTol, aTol, -2.5 ) );
 		vars.push_back( x3 = new Variable_LIQSS2< Function_LTI >( "x3", rTol, aTol, +4.0 ) );
 	} else {
-		std::cerr << "Unsupported QSS method" << std::endl;
+		std::cerr << "Error: Unsupported QSS method" << std::endl;
 		std::exit( EXIT_FAILURE );
 	}
 

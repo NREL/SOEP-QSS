@@ -139,7 +139,7 @@ bball( Variables & vars )
 		vars.push_back( h = new Variable_LIQSS2< Function_LTI >( "h", rTol, aTol, 1.0 ) );
 		vars.push_back( v = new Variable_LIQSS2< Function_LTI >( "v", rTol, aTol, 0.0 ) );
 	} else {
-		std::cerr << "Unsupported QSS method" << std::endl;
+		std::cerr << "Error: Unsupported QSS method" << std::endl;
 		std::exit( EXIT_FAILURE );
 	}
 

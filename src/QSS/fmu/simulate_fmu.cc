@@ -440,7 +440,7 @@ simulate_fmu()
 				if ( start ) {
 					Value const var_initial( fmi2_import_get_real_variable_start( var_real ) );
 					if ( var_initial != states_initial ) {
-						std::cerr << "Warning: Initial value from xml specs: " << var_initial << " is not equal to initial value from fmi2GetContinuousStates(): " << states_initial << std::endl;
+						std::cerr << "Warning: Initial value from xml specs: " << var_initial << " is not equal to initial value from fmi2GetContinuousStates(): " << states_initial << '\n';
 						std::cerr << "         Using initial value from fmi2GetContinuousStates()" << std::endl;
 					}
 				}
@@ -847,7 +847,7 @@ simulate_fmu()
 	bool const doSOut( ( options::output::s && ( options::output::x || options::output::q ) ) || ( options::output::f && ( n_outs + n_fmu_outs > 0u ) ) );
 	bool const doTOut( options::output::t && ( options::output::x || options::output::q ) );
 	bool const doROut( options::output::r && ( options::output::x || options::output::q ) );
-	if ( ( options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) { // t0 QSS outputs
+	if ( ( options::output::t || options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) { // t0 QSS outputs
 		for ( auto var : vars ) { // QSS outputs
 			if ( options::output::x ) {
 				x_streams.push_back( std::ofstream( var->name + ".x.out", std::ios_base::binary | std::ios_base::out ) );
@@ -1210,7 +1210,7 @@ simulate_fmu()
 					fmistatus = fmi2_import_get_continuous_states( fmu, states, n_states );
 					fmistatus = fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 				} else {
-					std::cout << "Warning: Expected zero-crossing event(s) not detected by FMU at t=" << t << std::endl;
+					std::cerr << "Warning: Expected zero-crossing event(s) not detected by FMU at t=" << t << std::endl;
 				}
 
 				// Perform handler operations on QSS side

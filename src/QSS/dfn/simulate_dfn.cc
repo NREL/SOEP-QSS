@@ -121,7 +121,7 @@ simulate_dfn()
 	} else if ( options::model== "xyz" ) {
 		mdl::xyz( vars );
 	} else {
-		std::cerr << "Unknown model: " << options::model << std::endl;
+		std::cerr << "Error: Unknown model: " << options::model << std::endl;
 		std::exit( EXIT_FAILURE );
 	}
 
@@ -179,8 +179,9 @@ simulate_dfn()
 
 	// Output stream initialization
 	bool const doSOut( options::output::s && ( options::output::x || options::output::q ) );
-	bool const doROut( ( options::output::r || options::output::o ) && ( options::output::x || options::output::q ) );
-	if ( ( options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) { // t0 QSS outputs
+	bool const doTOut( options::output::t && ( options::output::x || options::output::q ) );
+	bool const doROut( options::output::r && ( options::output::x || options::output::q ) );
+	if ( ( options::output::t || options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) { // t0 QSS outputs
 		for ( auto var : vars ) { // QSS outputs
 			if ( options::output::x ) {
 				x_streams.push_back( std::ofstream( var->name + ".x.out", std::ios_base::binary | std::ios_base::out ) );

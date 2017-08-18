@@ -94,7 +94,7 @@ achilles2( Variables & vars )
 		vars.push_back( y1 = new Variable_LIQSS2< Function_LTI >( "y1", rTol, aTol, 0.0 ) );
 		vars.push_back( y2 = new Variable_LIQSS2< Function_LTI >( "y2", rTol, aTol, 2.0 ) );
 	} else {
-		std::cerr << "Unsupported QSS method" << std::endl;
+		std::cerr << "Error: Unsupported QSS method" << std::endl;
 		std::exit( EXIT_FAILURE );
 	}
 

@@ -114,11 +114,7 @@ public: // Methods
 	init_0()
 	{
 		if ( self_observer ) {
-			std::cerr << "Zero-crossing variable is self-observer: " << name << std::endl;
-			std::exit( EXIT_FAILURE );
-		}
-		if ( ! observers_.empty() ) {
-			std::cerr << "Zero-crossing variable has observers: " << name << std::endl;
+			std::cerr << "Error: Zero-crossing variable is self-observer: " << name << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
 		init_observers();

@@ -78,7 +78,7 @@ nonlinear( Variables & vars )
 	} else if ( qss == QSS::LIQSS2 ) {
 		vars.push_back( y = new Variable_LIQSS2< Function_nonlinear >( "y", rTol, aTol, 2.0 ) );
 	} else {
-		std::cerr << "Unsupported QSS method" << std::endl;
+		std::cerr << "Error: Unsupported QSS method" << std::endl;
 		std::exit( EXIT_FAILURE );
 	}
 

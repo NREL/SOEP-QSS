@@ -86,7 +86,7 @@ xyz( Variables & vars )
 		vars.push_back( y = new Variable_LIQSS2< Function_LTI >( "y", rTol, aTol, 0.0 ) );
 		vars.push_back( z = new Variable_LIQSS2< Function_LTI >( "z", rTol, aTol, 0.0 ) );
 	} else {
-		std::cerr << "Unsupported QSS method" << std::endl;
+		std::cerr << "Error: Unsupported QSS method" << std::endl;
 		std::exit( EXIT_FAILURE );
 	}
 

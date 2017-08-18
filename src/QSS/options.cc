@@ -265,10 +265,10 @@ process_args( int argc, char * argv[] )
 			} else if ( qss_name == "LIQSS3" ) {
 				qss = QSS::LIQSS3;
 				qss_order = 3;
-				std::cerr << "The LIQSS3 method is not yet implemented" << std::endl;
+				std::cerr << "Error: The LIQSS3 method is not yet implemented" << std::endl;
 				fatal = true;
 			} else {
-				std::cerr << "Unsupported QSS method: " << qss_name << std::endl;
+				std::cerr << "Error: Unsupported QSS method: " << qss_name << std::endl;
 				fatal = true;
 			}
 		} else if ( has_option( arg, "inflection" ) ) {
@@ -278,12 +278,12 @@ process_args( int argc, char * argv[] )
 			if ( is_double( rTol_str ) ) {
 				rTol = double_of( rTol_str );
 				if ( rTol < 0.0 ) {
-					std::cerr << "Negative rTol: " << rTol_str << std::endl;
+					std::cerr << "Error: Negative rTol: " << rTol_str << std::endl;
 					fatal = true;
 				}
 				rTol_set = true;
 			} else {
-				std::cerr << "Nonnumeric rTol: " << rTol_str << std::endl;
+				std::cerr << "Error: Nonnumeric rTol: " << rTol_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "aTol" ) ) {
@@ -291,11 +291,11 @@ process_args( int argc, char * argv[] )
 			if ( is_double( aTol_str ) ) {
 				aTol = double_of( aTol_str );
 				if ( aTol <= 0.0 ) {
-					std::cerr << "Nonpositive aTol: " << aTol_str << std::endl;
+					std::cerr << "Error: Nonpositive aTol: " << aTol_str << std::endl;
 					fatal = true;
 				}
 			} else {
-				std::cerr << "Nonnumeric aTol: " << aTol_str << std::endl;
+				std::cerr << "Error: Nonnumeric aTol: " << aTol_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtMin" ) ) {
@@ -303,11 +303,11 @@ process_args( int argc, char * argv[] )
 			if ( is_double( dtMin_str ) ) {
 				dtMin = double_of( dtMin_str );
 				if ( dtMin < 0.0 ) {
-					std::cerr << "Negative dtMin: " << dtMin_str << std::endl;
+					std::cerr << "Error: Negative dtMin: " << dtMin_str << std::endl;
 					fatal = true;
 				}
 			} else {
-				std::cerr << "Nonnumeric dtMin: " << dtMin_str << std::endl;
+				std::cerr << "Error: Nonnumeric dtMin: " << dtMin_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtMax" ) ) {
@@ -315,11 +315,11 @@ process_args( int argc, char * argv[] )
 			if ( is_double( dtMax_str ) ) {
 				dtMax = double_of( dtMax_str );
 				if ( dtMax < 0.0 ) {
-					std::cerr << "Negative dtMax: " << dtMax_str << std::endl;
+					std::cerr << "Error: Negative dtMax: " << dtMax_str << std::endl;
 					fatal = true;
 				}
 			} else {
-				std::cerr << "Nonnumeric dtMax: " << dtMax_str << std::endl;
+				std::cerr << "Error: Nonnumeric dtMax: " << dtMax_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtInf" ) ) {
@@ -327,11 +327,11 @@ process_args( int argc, char * argv[] )
 			if ( is_double( dtInf_str ) ) {
 				dtInf = double_of( dtInf_str );
 				if ( dtInf < 0.0 ) {
-					std::cerr << "Negative dtInf: " << dtInf_str << std::endl;
+					std::cerr << "Error: Negative dtInf: " << dtInf_str << std::endl;
 					fatal = true;
 				}
 			} else {
-				std::cerr << "Nonnumeric dtInf: " << dtInf_str << std::endl;
+				std::cerr << "Error: Nonnumeric dtInf: " << dtInf_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtOut" ) ) {
@@ -339,11 +339,11 @@ process_args( int argc, char * argv[] )
 			if ( is_double( dtOut_str ) ) {
 				dtOut = double_of( dtOut_str );
 				if ( dtOut < 0.0 ) {
-					std::cerr << "Negative dtOut: " << dtOut_str << std::endl;
+					std::cerr << "Error: Negative dtOut: " << dtOut_str << std::endl;
 					fatal = true;
 				}
 			} else {
-				std::cerr << "Nonnumeric dtOut: " << dtOut_str << std::endl;
+				std::cerr << "Error: Nonnumeric dtOut: " << dtOut_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtNum" ) ) {
@@ -351,13 +351,13 @@ process_args( int argc, char * argv[] )
 			if ( is_double( dtNum_str ) ) {
 				dtNum = double_of( dtNum_str );
 				if ( dtNum < 0.0 ) {
-					std::cerr << "Negative dtNum: " << dtNum_str << std::endl;
+					std::cerr << "Error: Negative dtNum: " << dtNum_str << std::endl;
 					fatal = true;
 				}
 				one_over_dtNum = 1.0 / dtNum;
 				one_half_over_dtNum = 0.5 / dtNum;
 			} else {
-				std::cerr << "Nonnumeric dtNum: " << dtNum_str << std::endl;
+				std::cerr << "Error: Nonnumeric dtNum: " << dtNum_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "tEnd" ) ) {
@@ -365,18 +365,18 @@ process_args( int argc, char * argv[] )
 			if ( is_double( tEnd_str ) ) {
 				tEnd = double_of( tEnd_str );
 				if ( tEnd < 0.0 ) {
-					std::cerr << "Negative tEnd: " << tEnd_str << std::endl;
+					std::cerr << "Error: Negative tEnd: " << tEnd_str << std::endl;
 					fatal = true;
 				}
 				tEnd_set = true;
 			} else {
-				std::cerr << "Nonnumeric tEnd: " << tEnd_str << std::endl;
+				std::cerr << "Error: Nonnumeric tEnd: " << tEnd_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "out" ) ) {
 			out = arg_value( arg );
 			if ( has_any_not_of( out, "troasfxqd" ) ) {
-				std::cerr << "Output flag not in troasfxqd: " << out << std::endl;
+				std::cerr << "Error: Output flag not in troasfxqd: " << out << std::endl;
 				fatal = true;
 			}
 			output::t = has( out, 't' );
@@ -390,7 +390,7 @@ process_args( int argc, char * argv[] )
 			output::d = has( out, 'd' );
 			if ( output::a ) output::o = true; // a => o
 		} else if ( arg[ 0 ] == '-' ) {
-			std::cerr << "Unsupported option: " << arg << std::endl;
+			std::cerr << "Error: Unsupported option: " << arg << std::endl;
 			fatal = true;
 		} else { // Treat non-option argument as model
 			model = arg;

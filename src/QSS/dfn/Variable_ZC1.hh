@@ -140,11 +140,11 @@ public: // Methods
 	{
 		self_observer = f_.finalize( this );
 		if ( self_observer ) {
-			std::cerr << "Zero-crossing variable is self-observer: " << name << std::endl;
+			std::cerr << "Error: Zero-crossing variable is self-observer: " << name << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
 		if ( ! observers_.empty() ) {
-			std::cerr << "Zero-crossing variable has observers: " << name << std::endl;
+			std::cerr << "Error: Zero-crossing variable has observers: " << name << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
 		x_0_ = q_0_ = f_.q( tQ );
