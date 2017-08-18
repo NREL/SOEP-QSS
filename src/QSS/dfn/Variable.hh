@@ -67,14 +67,6 @@ public: // Types
 	using EventQ = EventQueue< Variable >;
 	using size_type = Variables::size_type;
 
-	// Variable category
-	enum class Cat {
-	 Discrete,
-	 Input,
-	 QSS,
-	 ZC
-	};
-
 	// Zero Crossing Type
 	enum class Crossing {
 	 DnPN = -4, // Downward: Positive to negative
@@ -194,11 +186,6 @@ public: // Predicate
 	}
 
 public: // Properties
-
-	// Category
-	virtual
-	Cat
-	cat() const = 0;
 
 	// Order of Method
 	virtual

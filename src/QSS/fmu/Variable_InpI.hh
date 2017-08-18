@@ -68,6 +68,15 @@ public: // Creation
 	 Super( name, rTol, aTol, var, f )
 	{}
 
+public: // Predicate
+
+	// Discrete Variable?
+	bool
+	is_Discrete() const
+	{
+		return true;
+	}
+
 public: // Properties
 
 	// Order of Method

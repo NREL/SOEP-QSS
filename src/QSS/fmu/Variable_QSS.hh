@@ -97,15 +97,6 @@ public: // Predicate
 		return true;
 	}
 
-public: // Properties
-
-	// Category
-	Cat
-	cat() const
-	{
-		return Cat::QSS;
-	}
-
 };
 
 } // fmu

@@ -70,14 +70,6 @@ public: // Types
 	using EventQ = EventQueue< Variable >;
 	using size_type = Variables::size_type;
 
-	// Variable category
-	enum class Cat {
-	 Discrete,
-	 Input,
-	 QSS,
-	 ZC
-	};
-
 	// Zero Crossing Type
 	enum class Crossing {
 	 DnPN = -4, // Downward: Positive to negative
@@ -188,11 +180,6 @@ public: // Predicate
 	}
 
 public: // Properties
-
-	// Category
-	virtual
-	Cat
-	cat() const = 0;
 
 	// Order of Method
 	virtual
@@ -739,7 +726,7 @@ public: // Methods: FMU
 	fmu_set_observees_x( Time const t ) const
 	{
 		for ( auto observee : observees_ ) {
-			observee->fmu_set_x( t );
+			if ( ! observee->is_Discrete() ) observee->fmu_set_x( t );
 		}
 	}
 
@@ -748,7 +735,7 @@ public: // Methods: FMU
 	fmu_set_observees_q( Time const t ) const
 	{
 		for ( auto observee : observees_ ) {
-			observee->fmu_set_q( t );
+			if ( ! observee->is_Discrete() ) observee->fmu_set_q( t );
 		}
 	}
 
@@ -757,7 +744,7 @@ public: // Methods: FMU
 	fmu_set_observees_s( Time const t ) const
 	{
 		for ( auto observee : observees_ ) {
-			observee->fmu_set_s( t );
+			if ( ! observee->is_Discrete() ) observee->fmu_set_s( t );
 		}
 	}
 
@@ -766,7 +753,7 @@ public: // Methods: FMU
 	fmu_set_observees_sn( Time const t ) const
 	{
 		for ( auto observee : observees_ ) {
-			observee->fmu_set_sn( t );
+			if ( ! observee->is_Discrete() ) observee->fmu_set_sn( t );
 		}
 	}
 
@@ -775,7 +762,7 @@ public: // Methods: FMU
 	fmu_set_observers_observees_q( Time const t ) const
 	{
 		for ( auto observee : observers_observees_ ) {
-			observee->fmu_set_q( t );
+			if ( ! observee->is_Discrete() ) observee->fmu_set_q( t );
 		}
 	}
 
@@ -784,7 +771,8 @@ public: // Methods: FMU
 	fmu_set_observers_2_observees_q( Time const t ) const
 	{
 		for ( size_type i = iBeg_observers_2_observees_, n = observers_observees_.size(); i < n; ++i ) {
-			observers_observees_[ i ]->fmu_set_q( t );
+			auto & observee( observers_observees_[ i ] );
+			if ( ! observee->is_Discrete() ) observee->fmu_set_q( t );
 		}
 	}
 

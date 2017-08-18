@@ -205,7 +205,7 @@ simulate_fmu()
 	fmi2_real_t const tstop( fmi2_import_get_default_experiment_stop( fmu ) ); // [1.0]
 	std::cout << "\nSimulation Time Range:  Start: " << tstart << "  Stop: " << tstop << std::endl;
 	fmi2_real_t const relativeTolerance( fmi2_import_get_default_experiment_tolerance( fmu ) ); // [0.0001]
-	std::cout << "\nRelative Tolerance: " << relativeTolerance << std::endl;
+	std::cout << "\nRelative Tolerance in FMU: " << relativeTolerance << std::endl;
 	fmi2_boolean_t callEventUpdate( fmi2_false );
 	fmi2_boolean_t terminateSimulation( fmi2_false );
 	fmi2_boolean_t const toleranceControlled( fmi2_false ); // FMIL says tolerance control not supported for ME
@@ -218,7 +218,12 @@ simulate_fmu()
 	Time t( t0 ); // Simulation current time
 	Time tOut( t0 + options::dtOut ); // Sampling time
 	size_type iOut( 1u ); // Output step index
-	if ( !options::rTol_set ) options::rTol = relativeTolerance; // Quantization relative tolerance (FMU doesn't have an absolute tolerance)
+	if ( options::rTol_set ) {
+	} else {
+		options::rTol = relativeTolerance; // Quantization relative tolerance (FMU doesn't have an absolute tolerance)
+	}
+	std::cout << "Relative Tolerance: " << options::rTol << std::endl;
+	std::cout << "Absolute Tolerance: " << options::aTol << std::endl;
 
 	fmi2_import_enter_initialization_mode( fmu );
 	fmi2_import_exit_initialization_mode( fmu );

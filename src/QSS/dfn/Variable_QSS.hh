@@ -102,13 +102,6 @@ public: // Predicate
 
 public: // Properties
 
-	// Category
-	Cat
-	cat() const
-	{
-		return Cat::QSS;
-	}
-
 	// Derivative Function
 	Derivative const &
 	d() const

@@ -114,13 +114,6 @@ public: // Predicate
 
 public: // Properties
 
-	// Category
-	Cat
-	cat() const
-	{
-		return Cat::ZC;
-	}
-
 	// Zero-Crossing Time
 	Time
 	tZC() const

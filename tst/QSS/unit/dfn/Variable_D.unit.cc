@@ -51,7 +51,6 @@ TEST( Variable_DTest, Basic )
 	d.init( 42.0 );
 
 	EXPECT_TRUE( d.is_Discrete() );
-	EXPECT_EQ( Variable::Cat::Discrete, d.cat() );
 	EXPECT_EQ( 0, d.order() );
 	EXPECT_EQ( 1.0e-4, d.rTol );
 	EXPECT_EQ( 1.0e-6, d.aTol );

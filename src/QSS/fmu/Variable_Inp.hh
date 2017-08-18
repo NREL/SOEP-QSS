@@ -95,14 +95,16 @@ protected: // Assignment
 	Variable_Inp &
 	operator =( Variable_Inp && ) noexcept = default;
 
-public: // Properties
+public: // Predicate
 
-	// Category
-	Cat
-	cat() const
+	// Input Variable?
+	bool
+	is_Input() const
 	{
-		return Cat::Input;
+		return true;
 	}
+
+public: // Properties
 
 	// Function
 	Function const &

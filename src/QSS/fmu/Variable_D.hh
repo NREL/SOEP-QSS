@@ -83,13 +83,6 @@ public: // Predicate
 
 public: // Properties
 
-	// Category
-	Cat
-	cat() const
-	{
-		return Cat::Discrete;
-	}
-
 	// Order of Method
 	int
 	order() const
