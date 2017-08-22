@@ -35,6 +35,9 @@ exe : $(EXE)
 .PHONY : lib
 lib : $(SLB)
 
+.PHONY : dep
+dep : $(DEP)
+
 .PHONY : obj
 obj : $(OBJ)
 
@@ -69,4 +72,12 @@ $(EXE) : $(OBJ)
 	rm -f $(subst \,/,$(BIN_PATH))/$(TAR).exp $(subst \,/,$(BIN_PATH))/$(TAR).lib
 
 # Dependencies
+ifneq ($(MAKECMDGOALS),dep)
+ifneq ($(MAKECMDGOALS),check)
+ifneq ($(MAKECMDGOALS),clear)
+ifneq ($(MAKECMDGOALS),clean)
 -include $(DEP)
+endif
+endif
+endif
+endif

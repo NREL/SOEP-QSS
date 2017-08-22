@@ -35,6 +35,9 @@ exe : $(EXE)
 .PHONY : lib
 lib : $(SLB)
 
+.PHONY : dep
+dep : $(DEP)
+
 .PHONY : obj
 obj : $(OBJ)
 
@@ -72,4 +75,12 @@ $(EXE) : QSS.o $(SLB)
 #	$(CXX) $(LDFLAGS) $(PGO) -o $@ $^ -L$(FMIL_HOME)/lib -lfmilib -ldl
 
 # Dependencies
+ifneq ($(MAKECMDGOALS),dep)
+ifneq ($(MAKECMDGOALS),check)
+ifneq ($(MAKECMDGOALS),clear)
+ifneq ($(MAKECMDGOALS),clean)
 -include $(DEP)
+endif
+endif
+endif
+endif

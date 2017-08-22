@@ -47,6 +47,9 @@ all : $(EXE)
 .PHONY : exe
 exe : $(EXE)
 
+.PHONY : dep
+dep : $(DEP)
+
 .PHONY : obj
 obj : $(OBJ)
 
@@ -78,4 +81,12 @@ $(EXE) : $(OBJ) $(PATH_LIBS)
 .PRECIOUS : $(EXE)
 
 # Dependencies
+ifneq ($(MAKECMDGOALS),dep)
+ifneq ($(MAKECMDGOALS),check)
+ifneq ($(MAKECMDGOALS),clear)
+ifneq ($(MAKECMDGOALS),clean)
 -include $(DEP)
+endif
+endif
+endif
+endif
