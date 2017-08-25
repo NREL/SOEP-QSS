@@ -181,6 +181,26 @@ simulate_fmu()
 		std::exit( EXIT_FAILURE );
 	}
 
+	// Check SI units
+	fmi2_import_unit_definitions_t * unit_defs( fmi2_import_get_unit_definitions( fmu ) );
+	if ( unit_defs != nullptr ) {
+		size_type const n_units( fmi2_import_get_unit_definitions_number( unit_defs ) );
+		std::cout << n_units << " units defined" << std::endl;
+		bool units_error( false );
+		for ( size_type i = 0; i < n_units; ++i ) {
+			fmi2_import_unit_t * unit( fmi2_import_get_unit( unit_defs, static_cast< unsigned >( i ) ) );
+			if ( unit != nullptr ) {
+				double const scl( fmi2_import_get_SI_unit_factor( unit ) );
+				double const del( fmi2_import_get_SI_unit_offset( unit ) );
+				if ( ( scl != 1.0 ) || ( del != 0.0 ) ) {
+					std::cerr << "Error: Non-SI unit present: " << fmi2_import_get_unit_name( unit ) << std::endl;
+					units_error = true;
+				}
+			}
+		}
+		if ( units_error ) std::exit( EXIT_FAILURE );
+	}
+
 	size_type const n_states( fmi2_import_get_number_of_continuous_states( fmu ) );
 	std::cout << n_states << " continuous variables" << std::endl;
 	size_type const n_event_indicators( fmi2_import_get_number_of_event_indicators( fmu ) );
