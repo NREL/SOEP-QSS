@@ -57,19 +57,34 @@ public: // Types
 
 protected: // Creation
 
-	// Constructor
+	// Name + Tolerance Constructor
 	explicit
 	Variable_Inp(
 	 std::string const & name,
-	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6,
+	 Value const rTol,
+	 Value const aTol,
 	 FMU_Variable const var = FMU_Variable(),
 	 Function f = Function()
 	) :
-	 Super( name, rTol, aTol, 0.0, var ),
+	 Super( name, rTol, aTol, var ),
 	 f_( f )
 	{
-		xIni = f_( tQ ).x_0; // Set xIni now that tQ exists
+		xIni = f_( tQ ).x_0;
+		tD = f_( tQ ).tD;
+	}
+
+	// Name Constructor
+	explicit
+	Variable_Inp(
+	 std::string const & name,
+	 FMU_Variable const var = FMU_Variable(),
+	 Function f = Function()
+	) :
+	 Super( name, var ),
+	 f_( f )
+	{
+		xIni = f_( tQ ).x_0;
+		tD = f_( tQ ).tD;
 	}
 
 	// Copy Constructor

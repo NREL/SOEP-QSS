@@ -99,7 +99,7 @@ public: // Types
 
 protected: // Creation
 
-	// Constructor
+	// Name + Tolerance + Value Constructor
 	Variable(
 	 std::string const & name,
 	 Value const rTol,
@@ -112,7 +112,8 @@ protected: // Creation
 	 xIni( xIni ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
-	 dt_inf( options::dtInf )
+	 dt_inf( options::dtInf ),
+	 dt_inf_rlx( options::dtInf == infinity ? infinity : 0.5 * options::dtInf )
 	{}
 
 	// Name + Value Constructor
@@ -125,7 +126,8 @@ protected: // Creation
 	 xIni( xIni ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
-	 dt_inf( options::dtInf )
+	 dt_inf( options::dtInf ),
+	 dt_inf_rlx( options::dtInf == infinity ? infinity : 0.5 * options::dtInf )
 	{}
 
 	// Copy Constructor
@@ -399,6 +401,34 @@ public: // Methods
 	init_3()
 	{}
 
+	// Discrete Advance
+	virtual
+	void
+	advance_discrete()
+	{
+		assert( false );
+	}
+
+	// Discrete Advance: Stages 0 and 1
+	virtual
+	void
+	advance_discrete_0_1()
+	{
+		assert( false );
+	}
+
+	// Discrete Advance: Stage 2
+	virtual
+	void
+	advance_discrete_2()
+	{}
+
+	// Discrete Advance: Stage 3
+	virtual
+	void
+	advance_discrete_3()
+	{}
+
 	// QSS Advance
 	virtual
 	void
@@ -419,13 +449,17 @@ public: // Methods
 	virtual
 	void
 	advance_QSS_0()
-	{}
+	{
+		assert( false );
+	}
 
 	// QSS Advance: Stage 1
 	virtual
 	void
 	advance_QSS_1()
-	{}
+	{
+		assert( false );
+	}
 
 	// QSS Advance: Stage 2
 	virtual
@@ -518,6 +552,40 @@ public: // Methods
 		event_ = events.shift_handler( event_ );
 	}
 
+protected: // Methods
+
+	// Infinite Aligned Time Step Processing
+	void
+	tE_infinity_tQ()
+	{
+		if ( dt_inf != infinity ) { // Deactivation control is enabled
+			if ( tE == infinity ) { // Deactivation has occurred
+				if ( dt_inf_rlx < half_infinity ) { // Relax and use deactivation time step
+					dt_inf_rlx *= 2.0;
+					tE = tQ + dt_inf_rlx;
+				}
+			} else { // Reset deactivation time step
+				dt_inf_rlx = dt_inf;
+			}
+		}
+	}
+
+	// Infinite Unaligned Time Step Processing
+	void
+	tE_infinity_tX()
+	{
+		if ( dt_inf != infinity ) { // Deactivation control is enabled
+			if ( tE == infinity ) { // Deactivation has occurred
+				if ( dt_inf_rlx < half_infinity ) { // Relax and use deactivation time step
+					dt_inf_rlx *= 2.0;
+					tE = tX + dt_inf_rlx;
+				}
+			} else { // Reset deactivation time step
+				dt_inf_rlx = dt_inf;
+			}
+		}
+	}
+
 public: // Data
 
 	std::string name;
@@ -528,15 +596,17 @@ public: // Data
 	Time tQ{ 0.0 }; // Quantized time range begin
 	Time tX{ 0.0 }; // Continuous time range begin
 	Time tE{ 0.0 }; // Time range end: tQ <= tE and tX <= tE
+	Time tD{ infinity }; // Discrete event time: tQ <= tD and tX <= tD
 	Time dt_min{ 0.0 }; // Time step min
 	Time dt_max{ infinity }; // Time step max
 	Time dt_inf{ infinity }; // Time step inf
+	Time dt_inf_rlx{ infinity }; // Relaxed time step inf
 	SuperdenseTime sT; // Trigger superdense time
 	bool self_observer{ false }; // Variable appears in its function/derivative?
 
 protected: // Data
 
-	Variables observers_; // Variables dependent on this Variable
+	Variables observers_; // Variables dependent on this one
 	EventQ::iterator event_; // Iterator to event queue entry
 
 };

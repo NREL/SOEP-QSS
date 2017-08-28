@@ -52,7 +52,7 @@ public: // Types
 
 public: // Creation
 
-	// Constructor
+	// Name + Value Constructor
 	Variable_D(
 	 std::string const & name,
 	 Value const xIni,
@@ -68,8 +68,8 @@ public: // Creation
 	 std::string const & name,
 	 FMU_Variable const var = FMU_Variable()
 	) :
-	 Super( name, 0.0, var ),
-	 x_( 0.0 )
+	 Super( name, var ),
+	 x_( xIni )
 	{}
 
 public: // Predicate

@@ -60,6 +60,7 @@ public: // Types
 	using Super::tQ;
 	using Super::tX;
 	using Super::tE;
+	using Super::tD;
 	using Super::dt_min;
 	using Super::dt_max;
 	using Super::dt_inf;
@@ -142,6 +143,7 @@ public: // Methods
 	void
 	init_0()
 	{
+		shrink_observers(); // Optional
 		x_0_ = q_0_ = f_.vs( tQ );
 		set_qTol();
 	}
@@ -150,11 +152,11 @@ public: // Methods
 	void
 	init_1()
 	{
-		shrink_observers(); // Optional
 		x_1_ = f_.df1( tQ );
 		set_tE();
-		event( events.add_QSS( tE, this ) );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
+		tD = f_.tD( tQ );
+		event( tE < tD ? events.add_QSS( tE, this ) : events.add_discrete( tD, this ) );
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
 	// Set Current Tolerance
@@ -165,6 +167,33 @@ public: // Methods
 		assert( qTol > 0.0 );
 	}
 
+	// Discrete Advance
+	void
+	advance_discrete()
+	{
+		x_0_ = q_0_ = f_.vs( tX = tQ = tD );
+		set_qTol();
+		x_1_ = f_.df1( tD );
+		set_tE();
+		tD = f_.tD( tD );
+		event( tE < tD ? events.shift_QSS( tE, event() ) : events.shift_discrete( tD, event() ) );
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tD=" << tD << '\n';
+		advance_observers();
+	}
+
+	// Discrete Advance: Stages 0 and 1
+	void
+	advance_discrete_0_1()
+	{
+		x_0_ = q_0_ = f_.vs( tX = tQ = tD );
+		set_qTol();
+		x_1_ = f_.df1( tD );
+		set_tE();
+		tD = f_.tD( tD );
+		event( tE < tD ? events.shift_QSS( tE, event() ) : events.shift_discrete( tD, event() ) );
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tD=" << tD << '\n';
+	}
+
 	// QSS Advance
 	void
 	advance_QSS()
@@ -173,8 +202,9 @@ public: // Methods
 		set_qTol();
 		x_1_ = f_.df1( tE );
 		set_tE();
-		event( events.shift_QSS( tE, event() ) );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
+		tD = f_.tD( tQ );
+		event( tE < tD ? events.shift_QSS( tE, event() ) : events.shift_discrete( tD, event() ) );
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tD=" << tD << '\n';
 		advance_observers();
 	}
 
@@ -192,8 +222,9 @@ public: // Methods
 	{
 		x_1_ = f_.df1( tE );
 		set_tE();
-		event( events.shift_QSS( tE, event() ) );
-		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
+		tD = f_.tD( tQ );
+		event( tE < tD ? events.shift_QSS( tE, event() ) : events.shift_discrete( tD, event() ) );
+		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
 private: // Methods
@@ -204,10 +235,10 @@ private: // Methods
 	{
 		assert( tX <= tQ );
 		assert( dt_min <= dt_max );
-		tE = ( x_1_ != 0.0 ? tQ + ( qTol / std::abs( x_1_ ) ) : infinity );
-		if ( dt_max != infinity ) tE = std::min( tE, tQ + dt_max );
-		tE = std::max( tE, tQ + dt_min );
-		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tQ + dt_inf;
+		Time dt( x_1_ != 0.0 ? qTol / std::abs( x_1_ ) : infinity );
+		dt = std::min( std::max( dt, dt_min ), dt_max );
+		tE = ( dt != infinity ? tQ + dt : infinity );
+		tE_infinity_tQ();
 	}
 
 private: // Data

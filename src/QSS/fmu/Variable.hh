@@ -85,12 +85,12 @@ public: // Types
 
 protected: // Creation
 
-	// Constructor
+	// Name + Tolerance + Value Constructor
 	Variable(
 	 std::string const & name,
 	 Value const rTol,
 	 Value const aTol,
-	 Value const xIni = 0.0,
+	 Value const xIni,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
@@ -101,6 +101,27 @@ protected: // Creation
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
 	 dt_inf( options::dtInf ),
+	 dt_inf_rlx( options::dtInf == infinity ? infinity : 0.5 * options::dtInf ),
+	 var( var ),
+	 der( der )
+	{}
+
+	// Name + Tolerance Constructor
+	Variable(
+	 std::string const & name,
+	 Value const rTol,
+	 Value const aTol,
+	 FMU_Variable const var = FMU_Variable(),
+	 FMU_Variable const der = FMU_Variable()
+	) :
+	 name( name ),
+	 rTol( std::max( rTol, 0.0 ) ),
+	 aTol( std::max( aTol, std::numeric_limits< Value >::min() ) ),
+	 xIni( 0.0 ),
+	 dt_min( options::dtMin ),
+	 dt_max( options::dtMax ),
+	 dt_inf( options::dtInf ),
+	 dt_inf_rlx( options::dtInf == infinity ? infinity : 0.5 * options::dtInf ),
 	 var( var ),
 	 der( der )
 	{}
@@ -109,7 +130,7 @@ protected: // Creation
 	explicit
 	Variable(
 	 std::string const & name,
-	 Value const xIni = 0.0,
+	 Value const xIni,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
@@ -118,6 +139,24 @@ protected: // Creation
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
 	 dt_inf( options::dtInf ),
+	 dt_inf_rlx( options::dtInf == infinity ? infinity : 0.5 * options::dtInf ),
+	 var( var ),
+	 der( der )
+	{}
+
+	// Name Constructor
+	explicit
+	Variable(
+	 std::string const & name,
+	 FMU_Variable const var = FMU_Variable(),
+	 FMU_Variable const der = FMU_Variable()
+	) :
+	 name( name ),
+	 xIni( 0.0 ),
+	 dt_min( options::dtMin ),
+	 dt_max( options::dtMax ),
+	 dt_inf( options::dtInf ),
+	 dt_inf_rlx( options::dtInf == infinity ? infinity : 0.5 * options::dtInf ),
 	 var( var ),
 	 der( der )
 	{}
@@ -432,7 +471,7 @@ public: // Methods
 				}
 			}
 		}
-		std::unordered_set< Variable * > oo1s; // Observees of observers of order 1 not in oo2s
+		std::unordered_set< Variable * > oo1s; // Observees of observers of order <=1 not in oo2s
 		for ( auto observer : observers_ ) {
 			if ( observer->order() <= 1 ) {
 				if ( ( observer->self_observer ) && ( oo2s.find( observer ) == oo2s.end() ) ) oo1s.insert( observer );
@@ -776,6 +815,40 @@ public: // Methods: FMU
 		}
 	}
 
+protected: // Methods
+
+	// Infinite Aligned Time Step Processing
+	void
+	tE_infinity_tQ()
+	{
+		if ( dt_inf != infinity ) { // Deactivation control is enabled
+			if ( tE == infinity ) { // Deactivation has occurred
+				if ( dt_inf_rlx < half_infinity ) { // Relax and use deactivation time step
+					dt_inf_rlx *= 2.0;
+					tE = tQ + dt_inf_rlx;
+				}
+			} else { // Reset deactivation time step
+				dt_inf_rlx = dt_inf;
+			}
+		}
+	}
+
+	// Infinite Unaligned Time Step Processing
+	void
+	tE_infinity_tX()
+	{
+		if ( dt_inf != infinity ) { // Deactivation control is enabled
+			if ( tE == infinity ) { // Deactivation has occurred
+				if ( dt_inf_rlx < half_infinity ) { // Relax and use deactivation time step
+					dt_inf_rlx *= 2.0;
+					tE = tX + dt_inf_rlx;
+				}
+			} else { // Reset deactivation time step
+				dt_inf_rlx = dt_inf;
+			}
+		}
+	}
+
 public: // Static Data
 
 	static int const max_order = 3; // Max QSS order supported
@@ -795,6 +868,7 @@ public: // Data
 	Time dt_min{ 0.0 }; // Time step min
 	Time dt_max{ infinity }; // Time step max
 	Time dt_inf{ infinity }; // Time step inf
+	Time dt_inf_rlx{ infinity }; // Relaxed time step inf
 	SuperdenseTime sT; // Trigger superdense time
 	bool self_observer{ false }; // Variable appears in its function/derivative?
 	FMU_Variable var; // FMU variables specs

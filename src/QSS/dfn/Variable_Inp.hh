@@ -64,7 +64,10 @@ protected: // Creation
 	 Value const aTol = 1.0e-6
 	) :
 	 Super( name, rTol, aTol )
-	{}
+	{
+		xIni = f_.vs( tQ );
+		tD = f_.tD( tQ );
+	}
 
 	// Copy Constructor
 	Variable_Inp( Variable_Inp const & ) = default;
@@ -116,7 +119,7 @@ public: // Properties
 
 protected: // Data
 
-	Function f_; // Value function
+	Function f_; // Input function
 
 };
 

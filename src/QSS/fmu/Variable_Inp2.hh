@@ -141,15 +141,6 @@ public: // Methods
 		init_2();
 	}
 
-	// Initialization to a Value
-	void
-	init( Value const x )
-	{
-		init_0( x );
-		init_1();
-		init_2();
-	}
-
 	// Initialization: Stage 0
 	void
 	init_0()
@@ -157,16 +148,6 @@ public: // Methods
 		assert( observees_.empty() );
 		init_observers();
 		x_0_ = q_0_ = f_( tQ ).x_0;
-		set_qTol();
-	}
-
-	// Initialization to a Value: Stage 0
-	void
-	init_0( Value const x )
-	{
-		assert( observees_.empty() );
-		init_observers();
-		x_0_ = q_0_ = x;
 		set_qTol();
 	}
 
@@ -294,14 +275,14 @@ private: // Methods
 	{
 		assert( tX <= tQ );
 		assert( dt_min <= dt_max );
-		tE = ( x_2_ != 0.0 ? tQ + std::sqrt( qTol / std::abs( x_2_ ) ) : infinity );
-		if ( dt_max != infinity ) tE = std::min( tE, tQ + dt_max );
-		tE = std::max( tE, tQ + dt_min );
+		Time dt( x_2_ != 0.0 ? std::sqrt( qTol / std::abs( x_2_ ) ) : infinity );
+		dt = std::min( std::max( dt, dt_min ), dt_max );
+		tE = ( dt != infinity ? tQ + dt : infinity );
 		if ( ( options::inflection ) && ( x_2_ != 0.0 ) && ( signum( x_1_ ) != signum( x_2_ ) ) ) {
 			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
 			if ( tQ < tI ) tE = std::min( tE, tI );
 		}
-		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tQ + dt_inf;
+		tE_infinity_tQ();
 	}
 
 private: // Data

@@ -1,4 +1,4 @@
-// Sine Function
+// Step Input Function
 //
 // Project: QSS Solver
 //
@@ -33,8 +33,11 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_dfn_mdl_Function_sin_hh_INCLUDED
-#define QSS_dfn_mdl_Function_sin_hh_INCLUDED
+#ifndef QSS_dfn_mdl_Function_Inp_step_hh_INCLUDED
+#define QSS_dfn_mdl_Function_Inp_step_hh_INCLUDED
+
+// QSS Headers
+#include <QSS/math.hh>
 
 // C++ Headers
 #include <cassert>
@@ -44,8 +47,8 @@ namespace QSS {
 namespace dfn {
 namespace mdl {
 
-// Sine Function
-class Function_sin
+// Step Input Function
+class Function_Inp_step
 {
 
 public: // Types
@@ -56,122 +59,157 @@ public: // Types
 
 public: // Creation
 
-	// Default Constructor
-	Function_sin()
-	{}
-
 	// Constructor
 	explicit
-	Function_sin(
-	 Coefficient const c,
-	 Coefficient const s = 1.0
+	Function_Inp_step(
+	 Coefficient const h_0 = 0.0,
+	 Coefficient const h = 1.0,
+	 Coefficient const d = 1.0
 	) :
-	 c_( c ),
-	 s_( s )
-	{}
+	 h_0_( h_0 ),
+	 h_( h ),
+	 d_( d )
+	{
+		assert( d_ > 0.0 );
+	}
 
 public: // Properties
 
-	// Value Scaling
+	// Initial Height
 	Coefficient
-	c() const
+	h_0() const
 	{
-		return c_;
+		return h_0_;
 	}
 
-	// Time Scaling
+	// Height
 	Coefficient
-	s() const
+	h() const
 	{
-		return s_;
+		return h_;
+	}
+
+	// Step Time Delta
+	Coefficient
+	d() const
+	{
+		return d_;
 	}
 
 	// Value at Time t
 	Value
 	operator ()( Time const t ) const
 	{
-		return c_ * std::sin( s_ * t );
+		return h_0_ + ( h_ * step_number( t ) );
 	}
 
 	// Value at Time t
 	Value
 	v( Time const t ) const
 	{
-		return c_ * std::sin( s_ * t );
+		return h_0_ + ( h_ * step_number( t ) );
 	}
 
 	// First Derivative at Time t
 	Value
-	d1( Time const t ) const
+	d1( Time const ) const
 	{
-		return c_ * s_ * std::cos( s_ * t );
+		return 0.0;
 	}
 
 	// Second Derivative at Time t
 	Value
-	d2( Time const t ) const
+	d2( Time const ) const
 	{
-		return -c_ * ( s_ * s_ ) * std::sin( s_ * t );
+		return 0.0;
 	}
 
 	// Third Derivative at Time t
 	Value
-	d3( Time const t ) const
+	d3( Time const ) const
 	{
-		return -c_ * ( s_ * s_ * s_ ) * std::cos( s_ * t );
+		return 0.0;
 	}
 
 	// Sequential Value at Time t
 	Value
 	vs( Time const t ) const
 	{
-		return v( t );
+		return h_0_ + ( h_ * step_number( t ) );
 	}
 
 	// Forward-Difference Sequential First Derivative at Time t
 	Value
-	df1( Time const t ) const
+	df1( Time const ) const
 	{
-		return d1( t );
+		return 0.0;
 	}
 
 	// Centered-Difference Sequential First Derivative at Time t
 	Value
-	dc1( Time const t ) const
+	dc1( Time const ) const
 	{
-		return d1( t );
+		return 0.0;
 	}
 
 	// Centered-Difference Sequential Second Derivative at Time t
 	Value
-	dc2( Time const t ) const
+	dc2( Time const ) const
 	{
-		return d2( t );
+		return 0.0;
 	}
 
 	// Centered-Difference Sequential Third Derivative at Time t
 	Value
-	dc3( Time const t ) const
+	dc3( Time const ) const
 	{
-		return d3( t );
+		return 0.0;
+	}
+
+	// Discrete Event after Time t
+	Time
+	tD( Time const t ) const
+	{
+		Coefficient const n_next( std::floor( t / d_ ) + 1.0 );
+		Coefficient const t_next( d_ * n_next );
+		return ( t_next > t ? t_next : d_ * ( n_next + 1.0 ) );
 	}
 
 public: // Methods
 
-	// Set Value Scaling
-	Function_sin &
-	c( Coefficient const c )
+	// Set Initial Height
+	Function_Inp_step &
+	h_0( Coefficient const & h_0 )
 	{
-		c_ = c;
+		h_0_ = h_0;
 		return *this;
 	}
 
-	// Set Time Scaling
-	Function_sin &
-	s( Coefficient const s )
+	// Set Height
+	Function_Inp_step &
+	h( Coefficient const & h )
 	{
-		s_ = s;
+		h_ = h;
 		return *this;
+	}
+
+	// Set Step Time Delta
+	Function_Inp_step &
+	d( Coefficient const & d )
+	{
+		d_ = d;
+		assert( d_ > 0.0 );
+		return *this;
+	}
+
+private: // Methods
+
+	// Step Number at Time t
+	Value
+	step_number( Time const t ) const
+	{
+		Value const ftd( std::floor( t / d_ ) );
+		return ( d_ * ( ftd + 1.0 ) > t ? ftd : ftd + 1.0 );
 	}
 
 public: // Static Data
@@ -180,8 +218,9 @@ public: // Static Data
 
 private: // Data
 
-	Coefficient c_{ 1.0 }; // Value scaling
-	Coefficient s_{ 1.0 }; // Time scaling
+	Coefficient h_0_{ 0.0 }; // Initial height
+	Coefficient h_{ 1.0 }; // Step height
+	Coefficient d_{ 1.0 }; // Step time delta
 
 };
 

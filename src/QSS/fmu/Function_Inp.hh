@@ -94,35 +94,35 @@ public: // Properties
 	}
 
 	// Value at Time t
-	Value const
+	Value
 	v( Time const t ) const
 	{
 		return ?;
 	}
 
 	// First Derivative at Time t
-	Value const
+	Value
 	d1( Time const t ) const
 	{
 		return ?;
 	}
 
 	// Second Derivative at Time t
-	Value const
+	Value
 	d2( Time const t ) const
 	{
 		return ?;
 	}
 
 	// Third Derivative at Time t
-	Value const
+	Value
 	d3( Time const t ) const
 	{
 		return ?;
 	}
 
 	// Discrete Event after Time t
-	Value const
+	Time
 	tD( Time const t ) const
 	{
 		return ?;

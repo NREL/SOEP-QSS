@@ -1,4 +1,4 @@
-// QSS Discrete Variable
+// Sine Input Function
 //
 // Project: QSS Solver
 //
@@ -33,167 +33,165 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_dfn_Variable_D_hh_INCLUDED
-#define QSS_dfn_Variable_D_hh_INCLUDED
+#ifndef QSS_dfn_mdl_Function_Inp_sin_hh_INCLUDED
+#define QSS_dfn_mdl_Function_Inp_sin_hh_INCLUDED
 
 // QSS Headers
-#include <QSS/dfn/Variable.hh>
+#include <QSS/math.hh>
+
+// C++ Headers
+#include <cassert>
+#include <cmath>
 
 namespace QSS {
 namespace dfn {
+namespace mdl {
 
-// QSS Discrete Variable
-class Variable_D final : public Variable
+// Sine Function
+class Function_Inp_sin
 {
 
 public: // Types
 
-	using Super = Variable;
+	using Time = double;
+	using Value = double;
+	using Coefficient = double;
 
 public: // Creation
 
 	// Constructor
 	explicit
-	Variable_D(
-	 std::string const & name,
-	 Value const xIni = 0.0
+	Function_Inp_sin(
+	 Coefficient const c = 1.0,
+	 Coefficient const s = 1.0
 	) :
-	 Super( name, xIni ),
-	 x_( xIni )
+	 c_( c ),
+	 s_( s )
 	{}
-
-public: // Predicate
-
-	// Discrete Variable?
-	bool
-	is_Discrete() const
-	{
-		return true;
-	}
 
 public: // Properties
 
-	// Order of Method
-	int
-	order() const
+	// Value Scaling
+	Coefficient
+	c() const
 	{
-		return 0;
+		return c_;
 	}
 
-	// Value
-	Value
-	x() const
+	// Time Scaling
+	Coefficient
+	s() const
 	{
-		return x_;
+		return s_;
 	}
 
-	// Continuous Value at Time t
+	// Value at Time t
 	Value
-	x( Time const ) const
+	operator ()( Time const t ) const
 	{
-		return x_;
+		return c_ * std::sin( s_ * t );
 	}
 
-	// Continuous First Derivative at Time t
+	// Value at Time t
 	Value
-	x1( Time const ) const
+	v( Time const t ) const
 	{
-		return 0.0;
+		return c_ * std::sin( s_ * t );
 	}
 
-	// Quantized Value
+	// First Derivative at Time t
 	Value
-	q() const
+	d1( Time const t ) const
 	{
-		return x_;
+		return c_ * s_ * std::cos( s_ * t );
 	}
 
-	// Quantized Value at Time t
+	// Second Derivative at Time t
 	Value
-	q( Time const ) const
+	d2( Time const t ) const
 	{
-		return x_;
+		return -c_ * ( s_ * s_ ) * std::sin( s_ * t );
 	}
 
-	// Simultaneous Value at Time t
+	// Third Derivative at Time t
 	Value
-	s( Time const ) const
+	d3( Time const t ) const
 	{
-		return x_;
+		return -c_ * ( s_ * s_ * s_ ) * std::cos( s_ * t );
 	}
 
-	// Simultaneous Numeric Differentiation Value at Time t
+	// Sequential Value at Time t
 	Value
-	sn( Time const ) const
+	vs( Time const t ) const
 	{
-		return x_;
+		return v( t );
+	}
+
+	// Forward-Difference Sequential First Derivative at Time t
+	Value
+	df1( Time const t ) const
+	{
+		return d1( t );
+	}
+
+	// Centered-Difference Sequential First Derivative at Time t
+	Value
+	dc1( Time const t ) const
+	{
+		return d1( t );
+	}
+
+	// Centered-Difference Sequential Second Derivative at Time t
+	Value
+	dc2( Time const t ) const
+	{
+		return d2( t );
+	}
+
+	// Centered-Difference Sequential Third Derivative at Time t
+	Value
+	dc3( Time const t ) const
+	{
+		return d3( t );
+	}
+
+	// Discrete Event after Time t
+	Time
+	tD( Time const ) const
+	{
+		return infinity;
 	}
 
 public: // Methods
 
-	// Initialization
-	void
-	init()
+	// Set Value Scaling
+	Function_Inp_sin &
+	c( Coefficient const c )
 	{
-		init_0();
+		c_ = c;
+		return *this;
 	}
 
-	// Initialization to a Value
-	void
-	init( Value const x )
+	// Set Time Scaling
+	Function_Inp_sin &
+	s( Coefficient const s )
 	{
-		init_0( x );
+		s_ = s;
+		return *this;
 	}
 
-	// Initialization: Stage 0
-	void
-	init_0()
-	{
-		shrink_observers(); // Optional
-		x_ = xIni;
-		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << '\n';
-	}
+public: // Static Data
 
-	// Initialization to a Value: Stage 0
-	void
-	init_0( Value const x )
-	{
-		shrink_observers(); // Optional
-		x_ = x;
-		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << '\n';
-	}
-
-	// Handler Advance
-	void
-	advance_handler( Time const t, Value const x )
-	{
-		assert( tX <= t );
-		tX = tQ = t;
-		x_ = x;
-		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
-		advance_observers();
-	}
-
-	// Handler Advance: Stage 0
-	void
-	advance_handler_0( Time const t, Value const x )
-	{
-		assert( tX <= t );
-		tX = tQ = t;
-		x_ = x;
-		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
-	}
+	static int const max_order = 3; // Max QSS order supported
 
 private: // Data
 
-	Value x_; // Value
+	Coefficient c_{ 1.0 }; // Value scaling
+	Coefficient s_{ 1.0 }; // Time scaling
 
 };
 
+} // mdl
 } // dfn
 } // QSS
 

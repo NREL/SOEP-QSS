@@ -186,6 +186,16 @@ public: // Properties
 
 public: // Methods
 
+	// Initialization
+	void
+	init()
+	{
+		init_0();
+		init_1();
+		init_2();
+		init_3();
+	}
+
 	// Initialization to a Value
 	void
 	init( Value const x )
@@ -196,19 +206,19 @@ public: // Methods
 		init_3();
 	}
 
-	// Initialization to a Value: Stage 0
-	void
-	init_0( Value const x )
-	{
-		x_0_ = q_0_ = x;
-		set_qTol();
-	}
-
 	// Initialization: Stage 0
 	void
 	init_0()
 	{
 		x_0_ = q_0_ = xIni;
+		set_qTol();
+	}
+
+	// Initialization to a Value: Stage 0
+	void
+	init_0( Value const x )
+	{
+		x_0_ = q_0_ = x;
 		set_qTol();
 	}
 
@@ -370,14 +380,14 @@ private: // Methods
 	{
 		assert( tX <= tQ );
 		assert( dt_min <= dt_max );
-		tE = ( x_3_ != 0.0 ? tQ + std::cbrt( qTol / std::abs( x_3_ ) ) : infinity );
-		if ( dt_max != infinity ) tE = std::min( tE, tQ + dt_max );
-		tE = std::max( tE, tQ + dt_min );
+		Time dt( x_3_ != 0.0 ? std::cbrt( qTol / std::abs( x_3_ ) ) : infinity );
+		dt = std::min( std::max( dt, dt_min ), dt_max );
+		tE = ( dt != infinity ? tQ + dt : infinity );
 		if ( ( options::inflection ) && ( x_3_ != 0.0 ) && ( signum( x_2_ ) != signum( x_3_ ) ) ) {
 			Time const tI( tX - ( x_2_ / ( three * x_3_ ) ) );
 			if ( tQ < tI ) tE = std::min( tE, tI );
 		}
-		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tQ + dt_inf;
+		tE_infinity_tQ();
 	}
 
 	// Set End Time: Quantized and Continuous Unaligned
@@ -390,21 +400,21 @@ private: // Methods
 		Value const d0( x_0_ - ( q_0_ + ( q_1_ + ( q_2_ * tXQ ) ) * tXQ ) );
 		Value const d1( x_1_ - ( q_1_ + ( two * q_2_ * tXQ ) ) );
 		Value const d2( x_2_ - q_2_ );
-		Time dtX;
+		Time dt;
 		if ( ( x_3_ >= 0.0 ) && ( d2 >= 0.0 ) && ( d1 >= 0.0 ) ) { // Upper boundary crossing
-			dtX = min_root_cubic_upper( x_3_, d2, d1, d0 - qTol );
+			dt = min_root_cubic_upper( x_3_, d2, d1, d0 - qTol );
 		} else if ( ( x_3_ <= 0.0 ) && ( d2 <= 0.0 ) && ( d1 <= 0.0 ) ) { // Lower boundary crossing
-			dtX = min_root_cubic_lower( x_3_, d2, d1, d0 + qTol );
+			dt = min_root_cubic_lower( x_3_, d2, d1, d0 + qTol );
 		} else { // Both boundaries can have crossings
-			dtX = min_root_cubic_both( x_3_, d2, d1, d0 + qTol, d0 - qTol );
+			dt = min_root_cubic_both( x_3_, d2, d1, d0 + qTol, d0 - qTol );
 		}
-		tE = ( dtX == infinity ? infinity : tX + std::min( dtX, dt_max ) );
-		tE = std::max( tE, tX + dt_min );
+		dt = std::min( std::max( dt, dt_min ), dt_max );
+		tE = ( dt == infinity ? infinity : tX + dt );
 		if ( ( options::inflection ) && ( x_3_ != 0.0 ) && ( signum( x_2_ ) != signum( x_3_ ) ) && ( signum( x_2_ ) == signum( q_2_ ) ) ) {
 			Time const tI( tX - ( x_2_ / ( three * x_3_ ) ) );
 			if ( tX < tI ) tE = std::min( tE, tI );
 		}
-		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tX + dt_inf;
+		tE_infinity_tX();
 	}
 
 private: // Data

@@ -37,7 +37,7 @@
 #include <gtest/gtest.h>
 
 // QSS Headers
-#include <QSS/dfn/mdl/Function_sin.hh>
+#include <QSS/dfn/mdl/Function_Inp_sin.hh>
 #include <QSS/dfn/Variable_Inp1.hh>
 
 // C++ Headers
@@ -49,7 +49,7 @@ using namespace QSS::dfn::mdl;
 
 TEST( Variable_Inp1Test, Basic )
 {
-	Variable_Inp1< Function_sin > u( "u" );
+	Variable_Inp1< Function_Inp_sin > u( "u" );
 	u.f().c( 0.05 ).s( 0.5 );
 	u.init();
 	EXPECT_EQ( 1.0e-4, u.rTol );

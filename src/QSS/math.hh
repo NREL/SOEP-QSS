@@ -59,6 +59,7 @@ extern double const one_ninth;
 extern double const two_thirds;
 extern double const pi;
 extern double const infinity;
+extern double const half_infinity;
 
 // Sign: Returns Passed Type
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >

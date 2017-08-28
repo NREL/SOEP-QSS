@@ -1,4 +1,4 @@
-// Exponential Decay with Sine Input Example Setup
+// Exponential Decay with Step Input Example Setup
 //
 // Project: QSS Solver
 //
@@ -28,18 +28,16 @@
 // GOVERNMENT, OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
 // SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-// OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+// OR BUSTEPSS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // QSS Headers
-#include <QSS/dfn/mdl/exponential_decay_sine.hh>
-#include <QSS/dfn/mdl/Function_Inp_sin.hh>
+#include <QSS/dfn/mdl/exponential_decay_step.hh>
+#include <QSS/dfn/mdl/Function_Inp_step.hh>
 #include <QSS/dfn/mdl/Function_LTI.hh>
-#include <QSS/dfn/Variable_Inp1.hh>
-#include <QSS/dfn/Variable_Inp2.hh>
-#include <QSS/dfn/Variable_Inp3.hh>
+#include <QSS/dfn/Variable_InpD.hh>
 #include <QSS/dfn/Variable_LIQSS1.hh>
 #include <QSS/dfn/Variable_LIQSS2.hh>
 #include <QSS/dfn/Variable_QSS1.hh>
@@ -53,9 +51,9 @@ namespace mdl {
 
 using Variables = std::vector< Variable * >;
 
-// Exponential Decay with Sine Input Example Setup
+// Exponential Decay with Step Input Example Setup
 void
-exponential_decay_sine( Variables & vars )
+exponential_decay_step( Variables & vars )
 {
 	using namespace options;
 
@@ -64,34 +62,29 @@ exponential_decay_sine( Variables & vars )
 
 	// Variables
 	using V = Variable_QSS< Function_LTI >;
-	using I = Variable_Inp< Function_Inp_sin >;
+	using I = Variable_InpD< Function_Inp_step >;
 	V * x( nullptr );
 	I * u( nullptr );
 	vars.clear();
 	vars.reserve( 2 );
 	if ( qss == QSS::QSS1 ) {
 		vars.push_back( x = new Variable_QSS1< Function_LTI >( "x", rTol, aTol, 1.0 ) );
-		vars.push_back( u = new Variable_Inp1< Function_Inp_sin >( "u", rTol, aTol ) );
 	} else if ( qss == QSS::QSS2 ) {
 		vars.push_back( x = new Variable_QSS2< Function_LTI >( "x", rTol, aTol, 1.0 ) );
-		vars.push_back( u = new Variable_Inp2< Function_Inp_sin >( "u", rTol, aTol ) );
 	} else if ( qss == QSS::QSS3 ) {
 		vars.push_back( x = new Variable_QSS3< Function_LTI >( "x", rTol, aTol, 1.0 ) );
-		vars.push_back( u = new Variable_Inp3< Function_Inp_sin >( "u", rTol, aTol ) );
 	} else if ( qss == QSS::LIQSS1 ) {
 		vars.push_back( x = new Variable_LIQSS1< Function_LTI >( "x", rTol, aTol, 1.0 ) );
-		vars.push_back( u = new Variable_Inp1< Function_Inp_sin >( "u", rTol, aTol ) );
 	} else if ( qss == QSS::LIQSS2 ) {
 		vars.push_back( x = new Variable_LIQSS2< Function_LTI >( "x", rTol, aTol, 1.0 ) );
-		vars.push_back( u = new Variable_Inp2< Function_Inp_sin >( "u", rTol, aTol ) );
 	} else {
 		std::cerr << "Error: Unsupported QSS method" << std::endl;
 		std::exit( EXIT_FAILURE );
 	}
+	vars.push_back( u = new Variable_InpD< Function_Inp_step >( "u" ) );
 
 	// Input
-	u->set_dt_max( 0.1 );
-	u->f().c( 0.05 ).s( 0.5 );
+	u->f().h_0( 0.0 ).h( 0.1 ).d( 10.0 ); // Step up by 0.1 every 10 s
 
 	// Derivatives
 	x->d().add( -1.0, x ).add( u );

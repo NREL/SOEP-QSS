@@ -82,7 +82,7 @@ extern bool x; // Continuous trajectories?  [T]
 extern bool q; // Quantized trajectories?  [F]
 extern bool d; // Diagnostic output?  [F]
 
-} // out
+} // output
 
 // Process command line arguments
 void

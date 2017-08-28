@@ -208,37 +208,22 @@ public: // Methods
 
 private: // Methods
 
-	// New End Time
-	Time
-	new_tE()
-	{
-		assert( tX <= tQ );
-		assert( dt_min <= dt_max );
-		Time tEnd( x_1_ != 0.0 ? tQ + ( qTol / std::abs( x_1_ ) ) : infinity );
-		if ( dt_max != infinity ) tEnd = std::min( tEnd, tQ + dt_max );
-		tEnd = std::max( tEnd, tQ + dt_min );
-		if ( ( tEnd == infinity ) && ( dt_inf != infinity ) ) tEnd = tQ + dt_inf;
-		return tEnd;
-	}
-
 	// Set End Time
 	void
 	set_tE()
 	{
 		assert( tX <= tQ );
 		assert( dt_min <= dt_max );
-		tE = ( x_1_ != 0.0 ? tQ + ( qTol / std::abs( x_1_ ) ) : infinity );
-		if ( dt_max != infinity ) tE = std::min( tE, tQ + dt_max );
-		tE = std::max( tE, tQ + dt_min );
-		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tQ + dt_inf;
+		Time dt( x_1_ != 0.0 ? qTol / std::abs( x_1_ ) : infinity );
+		dt = std::min( std::max( dt, dt_min ), dt_max );
+		tE = ( dt != infinity ? tQ + dt : infinity );
+		tE_infinity_tQ();
 	}
 
 	// Set Zero-Crossing Time and Type on Active Segment
 	void
 	set_tZ()
 	{
-		assert( tE == new_tE() ); // tE must be set
-
 		// Simple root search: Only robust for small active segments with continuous rep close to function //Do Make robust version
 		if ( x_0_ == 0.0 ) { // Zero at segment start
 			tZ = infinity;
@@ -257,7 +242,7 @@ private: // Methods
 //					Value m( 1.0 ); // Multiplier
 //					std::size_t i( 0 );
 //					std::size_t const n( 10u ); // Max iterations
-//					while ( ( ++i <= n ) && ( std::abs( v ) > aTol ) ) {
+//					while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
 //						Value const d( f_.q1( t ) );
 //						if ( d == 0.0 ) break;
 //						if ( ( signum( d ) != sign_old ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
@@ -280,9 +265,10 @@ private: // Methods
 
 	// Set Zero-Crossing Time and Type on (tB,tE]
 	void
-	set_tZ( Time const /*tB*/ )
+	set_tZ( Time const tB )
 	{
-		tZ = infinity; //! For now we don't handle multiple roots in active segment
+		set_tZ(); // Look at whole active segment for now: To be refined
+		tZ = ( tZ > tB ? tZ : infinity );
 	}
 
 	// Crossing Detection

@@ -259,50 +259,31 @@ private: // Methods
 		return x_1_ + ( two * x_2_ * ( t - tX ) ); // Allows t beyond tE for set_tZ use
 	}
 
-	// New End Time
-	Time
-	new_tE()
-	{
-		assert( tX <= tQ );
-		assert( dt_min <= dt_max );
-		Time tEnd( x_2_ != 0.0 ? tQ + std::sqrt( qTol / std::abs( x_2_ ) ) : infinity );
-		if ( dt_max != infinity ) tEnd = std::min( tEnd, tQ + dt_max );
-		tEnd = std::max( tEnd, tQ + dt_min );
-		if ( ( options::inflection ) && ( x_2_ != 0.0 ) && ( signum( x_1_ ) != signum( x_2_ ) ) ) {
-			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
-			if ( tQ < tI ) tEnd = std::min( tEnd, tI );
-		}
-		if ( ( tEnd == infinity ) && ( dt_inf != infinity ) ) tEnd = tQ + dt_inf;
-		return tEnd;
-	}
-
 	// Set End Time
 	void
 	set_tE()
 	{
 		assert( tX <= tQ );
 		assert( dt_min <= dt_max );
-		tE = ( x_2_ != 0.0 ? tQ + std::sqrt( qTol / std::abs( x_2_ ) ) : infinity );
-		if ( dt_max != infinity ) tE = std::min( tE, tQ + dt_max );
-		tE = std::max( tE, tQ + dt_min );
+		Time dt( x_2_ != 0.0 ? std::sqrt( qTol / std::abs( x_2_ ) ) : infinity );
+		dt = std::min( std::max( dt, dt_min ), dt_max );
+		tE = ( dt != infinity ? tQ + dt : infinity );
 		if ( ( options::inflection ) && ( x_2_ != 0.0 ) && ( signum( x_1_ ) != signum( x_2_ ) ) ) {
 			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
 			if ( tQ < tI ) tE = std::min( tE, tI );
 		}
-		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tQ + dt_inf;
+		tE_infinity_tQ();
 	}
 
 	// Set Zero-Crossing Time and Type on Active Segment
 	void
 	set_tZ()
 	{
-		assert( tE == new_tE() ); // tE must be set
-
 		// Simple root search: Only robust for small active segments with continuous rep close to function //Do Make robust version
-		Time const dtX( min_positive_root_quadratic( x_2_, x_1_, x_0_ ) ); // Root of continuous rep
-		assert( dtX > 0.0 );
-		if ( dtX != infinity ) { // Root found on (tX,tE]
-			tZ = tX + dtX;
+		Time const dt( min_positive_root_quadratic( x_2_, x_1_, x_0_ ) ); // Root of continuous rep
+		assert( dt > 0.0 );
+		if ( dt != infinity ) { // Root found on (tX,tE]
+			tZ = tX + dt;
 			Crossing const crossing_check( x_0_ == 0.0 ?
 			 ( tZ == tX ? Crossing::Flat : crossing_type( -x_1_ ) ) :
 			 crossing_type( x_0_ > 0.0 ? std::min( x1x( tZ ), Value( 0.0 ) ) : std::max( x1x( tZ ), Value( 0.0 ) ) ) );
@@ -325,7 +306,7 @@ private: // Methods
 //		std::size_t i( 0 );
 //		std::size_t const n( 10u ); // Max iterations
 //		int const sign_0( signum( x_0_ ) );
-//		while ( ( ++i <= n ) && ( std::abs( v ) > aTol ) ) {
+//		while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
 //			Value const d( f_.q1( t ) );
 //			if ( d == 0.0 ) break;
 //			if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
@@ -341,9 +322,10 @@ private: // Methods
 
 	// Set Zero-Crossing Time and Type on (tB,tE]
 	void
-	set_tZ( Time const /*tB*/ )
+	set_tZ( Time const tB )
 	{
-		tZ = infinity; //! For now we don't handle multiple roots in active segment
+		set_tZ(); // Look at whole active segment for now: To be refined
+		tZ = ( tZ > tB ? tZ : infinity );
 	}
 
 	// Crossing Detection

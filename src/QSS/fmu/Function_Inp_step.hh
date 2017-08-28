@@ -39,6 +39,9 @@
 // QSS Headers
 #include <QSS/fmu/SmoothToken.hh>
 
+// C++ Headers
+#include <cassert>
+
 namespace QSS {
 namespace fmu {
 
@@ -64,7 +67,8 @@ public: // Creation
 	 h_( h ),
 	 d_( d )
 	{
-		s_.tD = d;
+		assert( d_ > 0.0 );
+		s_.tD = d_;
 	}
 
 public: // Properties
@@ -95,35 +99,47 @@ public: // Properties
 	Value
 	v( Time const t ) const
 	{
-		return h_0_ + ( h_ * std::floor( t / d_ ) );
+		return h_0_ + ( h_ * step_number( t ) );
 	}
 
 	// First Derivative at Time t
 	Value
-	d1( Time const t ) const
+	d1( Time const ) const
 	{
 		return 0.0;
 	}
 
 	// Second Derivative at Time t
 	Value
-	d2( Time const t ) const
+	d2( Time const ) const
 	{
 		return 0.0;
 	}
 
 	// Third Derivative at Time t
 	Value
-	d3( Time const t ) const
+	d3( Time const ) const
 	{
 		return 0.0;
 	}
 
 	// Discrete Event after Time t
-	Value
+	Time
 	tD( Time const t ) const
 	{
-		return ( d_ > 0.0 ? d_ * ( std::floor( t / d_ ) + 1.0 ) : infinity );
+		Value const n_next( std::floor( t / d_ ) + 1.0 );
+		Value const t_next( d_ * n_next );
+		return ( t_next > t ? t_next : d_ * ( n_next + 1.0 ) );
+	}
+
+private: // Methods
+
+	// Step Number at Time t
+	Value
+	step_number( Time const t ) const
+	{
+		Value const ftd( std::floor( t / d_ ) );
+		return ( d_ * ( ftd + 1.0 ) > t ? ftd : ftd + 1.0 );
 	}
 
 private: // Data

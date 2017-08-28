@@ -142,6 +142,14 @@ public: // Properties
 
 public: // Methods
 
+	// Initialization
+	void
+	init()
+	{
+		init_0();
+		init_1();
+	}
+
 	// Initialization to a Value
 	void
 	init( Value const x )
@@ -150,19 +158,19 @@ public: // Methods
 		init_1();
 	}
 
-	// Initialization to a Value: Stage 0
-	void
-	init_0( Value const x )
-	{
-		x_0_ = q_c_ = q_0_ = x;
-		set_qTol();
-	}
-
 	// Initialization: Stage 0
 	void
 	init_0()
 	{
 		x_0_ = q_c_ = q_0_ = xIni;
+		set_qTol();
+	}
+
+	// Initialization to a Value: Stage 0
+	void
+	init_0( Value const x )
+	{
+		x_0_ = q_c_ = q_0_ = x;
 		set_qTol();
 	}
 
@@ -287,10 +295,10 @@ private: // Methods
 	{
 		assert( tX <= tQ );
 		assert( dt_min <= dt_max );
-		tE = ( x_1_ != 0.0 ? tQ + ( qTol / std::abs( x_1_ ) ) : infinity );
-		if ( dt_max != infinity ) tE = std::min( tE, tQ + dt_max );
-		tE = std::max( tE, tQ + dt_min );
-		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tQ + dt_inf;
+		Time dt( x_1_ != 0.0 ? qTol / std::abs( x_1_ ) : infinity );
+		dt = std::min( std::max( dt, dt_min ), dt_max );
+		tE = ( dt != infinity ? tQ + dt : infinity );
+		tE_infinity_tQ();
 	}
 
 	// Set End Time: Quantized and Continuous Unaligned
@@ -299,13 +307,13 @@ private: // Methods
 	{
 		assert( tQ <= tX );
 		assert( dt_min <= dt_max );
-		tE =
-		 ( x_1_ > 0.0 ? tX + ( ( q_c_ + qTol - x_0_ ) / x_1_ ) :
-		 ( x_1_ < 0.0 ? tX + ( ( q_c_ - qTol - x_0_ ) / x_1_ ) :
-		 infinity ) );
-		if ( dt_max != infinity ) tE = std::min( tE, tX + dt_max );
-		tE = std::max( tE, tX + dt_min );
-		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tX + dt_inf;
+		Time dt(
+		 ( x_1_ > 0.0 ? ( q_c_ + qTol - x_0_ ) / x_1_ :
+		 ( x_1_ < 0.0 ? ( q_c_ - qTol - x_0_ ) / x_1_ :
+		 infinity ) ) );
+		dt = std::min( std::max( dt, dt_min ), dt_max );
+		tE = ( dt != infinity ? tX + dt : infinity );
+		tE_infinity_tX();
 	}
 
 	// Advance Self-Observing Trigger

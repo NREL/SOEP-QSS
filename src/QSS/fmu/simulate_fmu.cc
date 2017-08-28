@@ -336,7 +336,7 @@ simulate_fmu()
 					std::cout << " Type: Real: Discrete: Input" << std::endl;
 //					Function inp_fxn = Function_Inp_constant( var_start ); // Constant start value
 					Function inp_fxn = Function_Inp_step( 1.0, 1.0, 0.1 ); // Step up by 1 every 0.1 s via discrete events
-					Variable_InpD * qss_var( new Variable_InpD( var_name, options::rTol, options::aTol, fmu_var, inp_fxn ) );
+					Variable_InpD * qss_var( new Variable_InpD( var_name, fmu_var, inp_fxn ) );
 					vars.push_back( qss_var ); // Add to QSS variables
 					fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
 					std::cout << " FMU idx: " << i+1 << " maps to QSS var: " << qss_var->name << std::endl;
@@ -366,7 +366,7 @@ simulate_fmu()
 					fmu_vars[ var_int ] = fmu_var;
 //					Function inp_fxn = Function_Inp_constant( var_start ); // Constant start value
 					Function inp_fxn = Function_Inp_step( 1.0, 1.0, 0.1 ); // Step up by 1 every 0.1 s via discrete events
-					Variable_InpI * qss_var( new Variable_InpI( var_name, options::rTol, options::aTol, fmu_var, inp_fxn ) );
+					Variable_InpI * qss_var( new Variable_InpI( var_name, fmu_var, inp_fxn ) );
 					vars.push_back( qss_var ); // Add to QSS variables
 					fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
 					std::cout << " FMU idx: " << i+1 << " maps to QSS var: " << qss_var->name << std::endl;
@@ -947,6 +947,35 @@ simulate_fmu()
 				if ( events.single() ) { // Single trigger
 					Variable * trigger( events.top_var() );
 					assert( trigger->tD == t );
+					if ( doTOut ) { // Time event variable output: Before discontinuous discrete changes
+						if ( options::output::a ) { // All variables output
+							for ( size_type i = 0; i < n_vars; ++i ) {
+								if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
+								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
+							}
+						} else { // Time event and/or observer variable output
+							if ( options::output::t ) { // Time event variable output
+								size_type const i( var_idx[ trigger ] );
+								if ( options::output::x ) x_streams[ i ] << t << '\t' << trigger->x( t ) << '\n';
+								if ( options::output::q ) q_streams[ i ] << t << '\t' << trigger->q( t ) << '\n';
+								for ( Variable const * observer : trigger->observers() ) {
+									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+										size_type const i( var_idx[ observer ] );
+										if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+										if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
+									}
+								}
+							}
+							if ( ( options::output::o ) && ( options::output::x ) ) { // Observer variable output
+								for ( Variable const * observer : trigger->observers() ) { // Zero-crossing observer output
+									if ( ( ! options::output::t ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::t
+										size_type const i( var_idx[ observer ] );
+										x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+									}
+								}
+							}
+						}
+					}
 					trigger->advance_discrete();
 					if ( doTOut ) { // Time event variable output
 						if ( options::output::a ) { // All variables output
@@ -996,12 +1025,43 @@ simulate_fmu()
 					std::sort( observers.begin(), observers.end(), []( Variable * v1, Variable * v2 ){ return v1->order() < v2->order(); } ); // Sort observers by order
 					size_type const iBeg_observers_2( static_cast< size_type >( std::distance( observers.begin(), std::find_if( observers.begin(), observers.end(), []( Variable * v ){ return v->order() >= 2; } ) ) ) );
 					int const order_max( observers.empty() ? triggers_order_max : std::max( triggers_order_max, observers.back()->order() ) );
+					if ( doTOut ) { // Time event output: Before discontinuous discrete changes
+						if ( options::output::a ) { // All variables output
+							for ( size_type i = 0; i < n_vars; ++i ) {
+								if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
+								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
+							}
+						} else { // Time event and/or observer variable output
+							if ( options::output::t ) { // Time event variable output
+								for ( Variable const * trigger : triggers ) { // Triggers
+									size_type const i( var_idx[ trigger ] );
+									if ( options::output::x ) x_streams[ i ] << t << '\t' << trigger->x( t ) << '\n';
+									if ( options::output::q ) q_streams[ i ] << t << '\t' << trigger->q( t ) << '\n';
+								}
+								for ( Variable const * observer : observers ) { // Zero-crossing observer output
+									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+										size_type const i( var_idx[ observer ] );
+										if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+										if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
+									}
+								}
+							}
+							if ( ( options::output::o ) && ( options::output::x ) ) { // Observer variable output
+								for ( Variable const * observer : observers ) { // Zero-crossing observer output
+									if ( ( ! options::output::t ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::t
+										size_type const i( var_idx[ observer ] );
+										x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+									}
+								}
+							}
+						}
+					}
 					for ( Variable * trigger : triggers ) {
 						assert( trigger->tD == t );
 						trigger->advance_discrete_0_1();
 					}
 					if ( order_max >= 2 ) { // 2nd order pass
-						fmu::set_time( t + options::dtNum ); // Set time to t + delta for numeric differentiation
+						//fmu::set_time( t + options::dtNum ); // Set time to t + delta for numeric differentiation // Don't need this until we enable discrete events on QSS variables
 						for ( size_type i = iBeg_triggers_2, n = triggers.size(); i < n; ++i ) {
 							triggers[ i ]->advance_discrete_2();
 						}

@@ -118,14 +118,6 @@ public: // Methods
 		init_1();
 	}
 
-	// Initialization to a Value
-	void
-	init( Value const x )
-	{
-		init_0( x );
-		init_1();
-	}
-
 	// Initialization: Stage 0
 	void
 	init_0()
@@ -133,16 +125,6 @@ public: // Methods
 		assert( observees_.empty() );
 		init_observers();
 		x_0_ = q_0_ = f_( tQ ).x_0;
-		set_qTol();
-	}
-
-	// Initialization to a Value: Stage 0
-	void
-	init_0( Value const x )
-	{
-		assert( observees_.empty() );
-		init_observers();
-		x_0_ = q_0_ = x;
 		set_qTol();
 	}
 
@@ -247,10 +229,10 @@ private: // Methods
 	{
 		assert( tX <= tQ );
 		assert( dt_min <= dt_max );
-		tE = ( x_1_ != 0.0 ? tQ + ( qTol / std::abs( x_1_ ) ) : infinity );
-		if ( dt_max != infinity ) tE = std::min( tE, tQ + dt_max );
-		tE = std::max( tE, tQ + dt_min );
-		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tQ + dt_inf;
+		Time dt( x_1_ != 0.0 ? qTol / std::abs( x_1_ ) : infinity );
+		dt = std::min( std::max( dt, dt_min ), dt_max );
+		tE = ( dt != infinity ? tQ + dt : infinity );
+		tE_infinity_tQ();
 	}
 
 private: // Data

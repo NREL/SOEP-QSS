@@ -60,6 +60,7 @@ public: // Types
 	using Super::tQ;
 	using Super::tX;
 	using Super::tE;
+	using Super::tD;
 	using Super::dt_min;
 	using Super::dt_max;
 	using Super::dt_inf;
@@ -191,6 +192,7 @@ public: // Methods
 	void
 	init_0()
 	{
+		shrink_observers(); // Optional
 		x_0_ = q_0_ = f_.vs( tQ );
 		set_qTol();
 	}
@@ -199,7 +201,6 @@ public: // Methods
 	void
 	init_1()
 	{
-		shrink_observers(); // Optional
 		x_1_ = q_1_ = f_.dc1( tQ );
 	}
 
@@ -216,8 +217,9 @@ public: // Methods
 	{
 		x_3_ = one_sixth * f_.dc3( tQ );
 		set_tE();
-		event( events.add_QSS( tE, this ) );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t+" << q_2_ << "*t^2 quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2+" << x_3_ << "*t^3 internal   tE=" << tE << '\n';
+		tD = f_.tD( tQ );
+		event( tE < tD ? events.add_QSS( tE, this ) : events.add_discrete( tD, this ) );
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t+" << q_2_ << "*t^2 quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2+" << x_3_ << "*t^3 internal   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
 	// Set Current Tolerance
@@ -226,6 +228,48 @@ public: // Methods
 	{
 		qTol = std::max( rTol * std::abs( q_0_ ), aTol );
 		assert( qTol > 0.0 );
+	}
+
+	// Discrete Advance
+	void
+	advance_discrete()
+	{
+		x_0_ = q_0_ = f_.vs( tX = tQ = tD );
+		set_qTol();
+		x_1_ = q_1_ = f_.dc1( tD );
+		x_2_ = q_2_ = one_half * f_.dc2( tD );
+		set_tE();
+		tD = f_.tD( tD );
+		event( tE < tD ? events.shift_QSS( tE, event() ) : events.shift_discrete( tD, event() ) );
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t+" << q_2_ << "*t^2 quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2+" << x_3_ << "*t^3 internal   tE=" << tE << "   tD=" << tD << '\n';
+		advance_observers();
+	}
+
+	// Discrete Advance: Stages 0 and 1
+	void
+	advance_discrete_0_1()
+	{
+		x_0_ = q_0_ = f_.vs( tX = tQ = tD );
+		set_qTol();
+		x_1_ = q_1_ = f_.dc1( tD );
+	}
+
+	// Discrete Advance: Stage 2
+	void
+	advance_discrete_2()
+	{
+		x_2_ = q_2_ = one_half * f_.dc2( tD );
+	}
+
+	// Discrete Advance: Stage 3
+	void
+	advance_discrete_3()
+	{
+		x_3_ = one_sixth * f_.dc3( tD );
+		set_tE();
+		tD = f_.tD( tD );
+		event( tE < tD ? events.shift_QSS( tE, event() ) : events.shift_discrete( tD, event() ) );
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t+" << q_2_ << "*t^2 quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2+" << x_3_ << "*t^3 internal   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
 	// QSS Advance
@@ -238,8 +282,9 @@ public: // Methods
 		x_2_ = q_2_ = one_half * f_.dc2( tE );
 		x_3_ = one_sixth * f_.dc3( tX = tE );
 		set_tE();
-		event( events.shift_QSS( tE, event() ) );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t+" << q_2_ << "*t^2 quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2+" << x_3_ << "*t^3 internal   tE=" << tE << '\n';
+		tD = f_.tD( tQ );
+		event( tE < tD ? events.shift_QSS( tE, event() ) : events.shift_discrete( tD, event() ) );
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t+" << q_2_ << "*t^2 quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2+" << x_3_ << "*t^3 internal   tE=" << tE << "   tD=" << tD << '\n';
 		advance_observers();
 	}
 
@@ -271,8 +316,9 @@ public: // Methods
 	{
 		x_3_ = one_sixth * f_.dc3( tE );
 		set_tE();
-		event( events.shift_QSS( tE, event() ) );
-		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t+" << q_2_ << "*t^2 quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2+" << x_3_ << "*t^3 internal   tE=" << tE << '\n';
+		tD = f_.tD( tQ );
+		event( tE < tD ? events.shift_QSS( tE, event() ) : events.shift_discrete( tD, event() ) );
+		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t+" << q_2_ << "*t^2 quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2+" << x_3_ << "*t^3 internal   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
 private: // Methods
@@ -283,14 +329,14 @@ private: // Methods
 	{
 		assert( tX <= tQ );
 		assert( dt_min <= dt_max );
-		tE = ( x_3_ != 0.0 ? tQ + std::cbrt( qTol / std::abs( x_3_ ) ) : infinity );
-		if ( dt_max != infinity ) tE = std::min( tE, tQ + dt_max );
-		tE = std::max( tE, tQ + dt_min );
+		Time dt( x_3_ != 0.0 ? std::cbrt( qTol / std::abs( x_3_ ) ) : infinity );
+		dt = std::min( std::max( dt, dt_min ), dt_max );
+		tE = ( dt != infinity ? tQ + dt : infinity );
 		if ( ( options::inflection ) && ( x_3_ != 0.0 ) && ( signum( x_2_ ) != signum( x_3_ ) ) ) {
 			Time const tI( tX - ( x_2_ / ( three * x_3_ ) ) );
 			if ( tQ < tI ) tE = std::min( tE, tI );
 		}
-		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tQ + dt_inf;
+		tE_infinity_tQ();
 	}
 
 private: // Data

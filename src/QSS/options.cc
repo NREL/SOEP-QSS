@@ -78,7 +78,7 @@ bool x( true ); // Continuous trajectories?  [T]
 bool q( false ); // Quantized trajectories?  [F]
 bool d( false ); // Diagnostic output?  [F]
 
-} // out
+} // output
 
 // Uppercased string
 std::string
@@ -221,6 +221,7 @@ help_display()
 	std::cout << "  exponential_decay : Exponential decay" << '\n';
 	std::cout << "  exponential_decay_sine : Adds sine input function" << '\n';
 	std::cout << "  exponential_decay_sine_ND : Numeric differentiation" << '\n';
+	std::cout << "  exponential_decay_step : Adds step input function" << '\n';
 	std::cout << "  nonlinear : Nonlinear derivative demo" << '\n';
 	std::cout << "  nonlinear_ND : Numeric differentiation" << '\n';
 	std::cout << "  StateEvent6 : Zero-crossing model" << '\n';
@@ -394,6 +395,9 @@ process_args( int argc, char * argv[] )
 			fatal = true;
 		} else { // Treat non-option argument as model
 			model = arg;
+		}
+		if ( ( dtMax != infinity ) && ( dtInf != infinity ) ) {
+			std::cerr << "Warning: dtInf has no effect when dtMax is specified" << std::endl;
 		}
 	}
 

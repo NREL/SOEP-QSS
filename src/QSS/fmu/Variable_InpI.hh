@@ -1,4 +1,4 @@
-// FMU-Based Integer-Valued Input Variable
+// FMU-Based Integer Input Variable
 //
 // Project: QSS Solver
 //
@@ -45,7 +45,7 @@
 namespace QSS {
 namespace fmu {
 
-// FMU-Based Integer-Valued Input Variable
+// FMU-Based Integer Input Variable
 class Variable_InpI final : public Variable_Inp
 {
 
@@ -60,12 +60,10 @@ public: // Creation
 	explicit
 	Variable_InpI(
 	 std::string const & name,
-	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6,
 	 FMU_Variable const var = FMU_Variable(),
 	 Function f = Function()
 	) :
-	 Super( name, rTol, aTol, var, f )
+	 Super( name, var, f )
 	{}
 
 public: // Predicate
@@ -158,13 +156,6 @@ public: // Methods
 		init_0();
 	}
 
-	// Initialization to a Value
-	void
-	init( Value const x )
-	{
-		init_0( x );
-	}
-
 	// Initialization: Stage 0
 	void
 	init_0()
@@ -172,18 +163,6 @@ public: // Methods
 		assert( observees_.empty() );
 		init_observers();
 		x_ = f_( tQ ).x_0;
-		tD = f_( tQ ).tD;
-		event( events.add_discrete( tD, this ) );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
-	}
-
-	// Initialization to a Value: Stage 0
-	void
-	init_0( Value const x )
-	{
-		assert( observees_.empty() );
-		init_observers();
-		x_ = x;
 		tD = f_( tQ ).tD;
 		event( events.add_discrete( tD, this ) );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';

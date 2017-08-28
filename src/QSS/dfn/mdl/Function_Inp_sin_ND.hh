@@ -1,4 +1,4 @@
-// Sine Function Using Numeric Differentiation
+// Sine Input Function Using Numeric Differentiation
 //
 // Project: QSS Solver
 //
@@ -33,10 +33,11 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_dfn_mdl_Function_sin_ND_hh_INCLUDED
-#define QSS_dfn_mdl_Function_sin_ND_hh_INCLUDED
+#ifndef QSS_dfn_mdl_Function_Inp_sin_ND_hh_INCLUDED
+#define QSS_dfn_mdl_Function_Inp_sin_ND_hh_INCLUDED
 
 // QSS Headers
+#include <QSS/math.hh>
 #include <QSS/options.hh>
 
 // C++ Headers
@@ -47,8 +48,8 @@ namespace QSS {
 namespace dfn {
 namespace mdl {
 
-// Sine Function Using Numeric Differentiation
-class Function_sin_ND
+// Sine Input Function Using Numeric Differentiation
+class Function_Inp_sin_ND
 {
 
 public: // Types
@@ -59,14 +60,10 @@ public: // Types
 
 public: // Creation
 
-	// Default Constructor
-	Function_sin_ND()
-	{}
-
 	// Constructor
 	explicit
-	Function_sin_ND(
-	 Coefficient const c,
+	Function_Inp_sin_ND(
+	 Coefficient const c = 1.0,
 	 Coefficient const s = 1.0
 	) :
 	 c_( c ),
@@ -166,10 +163,17 @@ public: // Properties
 		return dtn_;
 	}
 
+	// Discrete Event after Time t
+	Time
+	tD( Time const ) const
+	{
+		return infinity;
+	}
+
 public: // Methods
 
 	// Set Value Scaling
-	Function_sin_ND &
+	Function_Inp_sin_ND &
 	c( Coefficient const c )
 	{
 		c_ = c;
@@ -177,7 +181,7 @@ public: // Methods
 	}
 
 	// Set Time Scaling
-	Function_sin_ND &
+	Function_Inp_sin_ND &
 	s( Coefficient const s )
 	{
 		s_ = s;

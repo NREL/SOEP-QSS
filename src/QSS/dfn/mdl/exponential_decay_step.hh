@@ -1,4 +1,4 @@
-// QSS Math Utilities
+// Exponential Decay with Step Input Example Setup
 //
 // Project: QSS Solver
 //
@@ -28,34 +28,32 @@
 // GOVERNMENT, OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
 // SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-// OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+// OR BUSTEPSS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#ifndef QSS_dnf_mdl_exponential_decay_step_hh_INCLUDED
+#define QSS_dnf_mdl_exponential_decay_step_hh_INCLUDED
+
 // QSS Headers
-#include <QSS/math.hh>
+#include <QSS/dfn/Variable.fwd.hh>
 
 // C++ Headers
-#include <cmath>
-#include <limits>
+#include <vector>
 
 namespace QSS {
+namespace dfn {
+namespace mdl {
 
-// Globals
-double const zero( 0.0 );
-double const two( 2.0 );
-double const three( 3.0 );
-double const four( 4.0 );
-double const six( 6.0 );
-double const one_half( 0.5 );
-double const one_third( 1.0 / 3.0 );
-double const one_fourth( 0.25 );
-double const one_sixth( 1.0 / 6.0 );
-double const one_ninth( 1.0 / 9.0 );
-double const two_thirds( 2.0 / 3.0 );
-double const pi( 4.0 * std::atan( 1.0 ) );
-double const infinity( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() );
-double const half_infinity( 0.5 * infinity );
+using Variables = std::vector< Variable * >;
 
+// Exponential Decay with Step Input Example Setup
+void
+exponential_decay_step( Variables & vars );
+
+} // mdl
+} // dfn
 } // QSS
+
+#endif

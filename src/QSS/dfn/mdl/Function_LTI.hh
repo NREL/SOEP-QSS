@@ -526,9 +526,7 @@ public: // Methods
 		c.reserve( n );
 		Variables x;
 		x.reserve( n );
-		iBeg[ 0 ] = 0;
-		ioBeg[ 0 ] = 0;
-		for ( int order = 1; order <= max_order; ++order ) {
+		for ( int order = 0; order <= max_order; ++order ) {
 			iBeg[ order ] = c.size();
 			ioBeg[ order ] = co_.size();
 			for ( size_type i = 0; i < n; ++i ) {

@@ -1,4 +1,4 @@
-// QSS Discrete Variable
+// Discrete Input Variable
 //
 // Project: QSS Solver
 //
@@ -33,33 +33,45 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_dfn_Variable_D_hh_INCLUDED
-#define QSS_dfn_Variable_D_hh_INCLUDED
+#ifndef QSS_dfn_Variable_InpD_hh_INCLUDED
+#define QSS_dfn_Variable_InpD_hh_INCLUDED
 
 // QSS Headers
-#include <QSS/dfn/Variable.hh>
+#include <QSS/dfn/Variable_Inp.hh>
 
 namespace QSS {
 namespace dfn {
 
-// QSS Discrete Variable
-class Variable_D final : public Variable
+// Discrete Input Variable
+template< class F >
+class Variable_InpD final : public Variable_Inp< F >
 {
 
 public: // Types
 
-	using Super = Variable;
+	using Super = Variable_Inp< F >;
+	using Time = Variable::Time;
+	using Value = Variable::Value;
+
+	using Super::name;
+	using Super::tQ;
+	using Super::tX;
+	using Super::tD;
+
+	using Super::advance_observers;
+	using Super::event;
+	using Super::shrink_observers;
+
+private: // Types
+
+	using Super::f_;
 
 public: // Creation
 
 	// Constructor
 	explicit
-	Variable_D(
-	 std::string const & name,
-	 Value const xIni = 0.0
-	) :
-	 Super( name, xIni ),
-	 x_( xIni )
+	Variable_InpD( std::string const & name ) :
+	 Super( name )
 	{}
 
 public: // Predicate
@@ -138,54 +150,36 @@ public: // Methods
 		init_0();
 	}
 
-	// Initialization to a Value
-	void
-	init( Value const x )
-	{
-		init_0( x );
-	}
-
 	// Initialization: Stage 0
 	void
 	init_0()
 	{
 		shrink_observers(); // Optional
-		x_ = xIni;
-		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+		x_ = f_.vs( tQ );
+		tD = f_.tD( tQ );
+		event( events.add_discrete( tD, this ) );
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 	}
 
-	// Initialization to a Value: Stage 0
+	// Discrete Advance
 	void
-	init_0( Value const x )
+	advance_discrete()
 	{
-		shrink_observers(); // Optional
-		x_ = x;
-		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << '\n';
-	}
-
-	// Handler Advance
-	void
-	advance_handler( Time const t, Value const x )
-	{
-		assert( tX <= t );
-		tX = tQ = t;
-		x_ = x;
-		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+		x_ = f_.vs( tX = tQ = tD );
+		tD = f_.tD( tD );
+		event( events.shift_discrete( tD, event() ) );
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 		advance_observers();
 	}
 
-	// Handler Advance: Stage 0
+	// Discrete Advance: Stages 0 and 1
 	void
-	advance_handler_0( Time const t, Value const x )
+	advance_discrete_0_1()
 	{
-		assert( tX <= t );
-		tX = tQ = t;
-		x_ = x;
-		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+		x_ = f_.vs( tX = tQ = tD );
+		tD = f_.tD( tD );
+		event( events.shift_discrete( tD, event() ) );
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 	}
 
 private: // Data

@@ -161,6 +161,15 @@ public: // Properties
 
 public: // Methods
 
+	// Initialization
+	void
+	init()
+	{
+		init_0();
+		init_1();
+		init_2();
+	}
+
 	// Initialization to a Value
 	void
 	init( Value const x )
@@ -170,19 +179,19 @@ public: // Methods
 		init_2();
 	}
 
-	// Initialization to a Value: Stage 0
-	void
-	init_0( Value const x )
-	{
-		x_0_ = q_0_ = x;
-		set_qTol();
-	}
-
 	// Initialization: Stage 0
 	void
 	init_0()
 	{
 		x_0_ = q_0_ = xIni;
+		set_qTol();
+	}
+
+	// Initialization to a Value: Stage 0
+	void
+	init_0( Value const x )
+	{
+		x_0_ = q_0_ = x;
 		set_qTol();
 	}
 
@@ -320,14 +329,14 @@ private: // Methods
 	{
 		assert( tX <= tQ );
 		assert( dt_min <= dt_max );
-		tE = ( x_2_ != 0.0 ? tQ + std::sqrt( qTol / std::abs( x_2_ ) ) : infinity );
-		if ( dt_max != infinity ) tE = std::min( tE, tQ + dt_max );
-		tE = std::max( tE, tQ + dt_min );
+		Time dt( x_2_ != 0.0 ? std::sqrt( qTol / std::abs( x_2_ ) ) : infinity );
+		dt = std::min( std::max( dt, dt_min ), dt_max );
+		tE = ( dt != infinity ? tQ + dt : infinity );
 		if ( ( options::inflection ) && ( x_2_ != 0.0 ) && ( signum( x_1_ ) != signum( x_2_ ) ) ) {
 			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
 			if ( tQ < tI ) tE = std::min( tE, tI );
 		}
-		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tQ + dt_inf;
+		tE_infinity_tQ();
 	}
 
 	// Set End Time: Quantized and Continuous Unaligned
@@ -338,21 +347,21 @@ private: // Methods
 		assert( dt_min <= dt_max );
 		Value const d0( x_0_ - ( q_0_ + ( q_1_ * ( tX - tQ ) ) ) );
 		Value const d1( x_1_ - q_1_ );
-		Time dtX;
+		Time dt;
 		if ( ( d1 >= 0.0 ) && ( x_2_ >= 0.0 ) ) { // Upper boundary crossing
-			dtX = min_root_quadratic_upper( x_2_, d1, d0 - qTol );
+			dt = min_root_quadratic_upper( x_2_, d1, d0 - qTol );
 		} else if ( ( d1 <= 0.0 ) && ( x_2_ <= 0.0 ) ) { // Lower boundary crossing
-			dtX = min_root_quadratic_lower( x_2_, d1, d0 + qTol );
+			dt = min_root_quadratic_lower( x_2_, d1, d0 + qTol );
 		} else { // Both boundaries can have crossings
-			dtX = min_root_quadratic_both( x_2_, d1, d0 + qTol, d0 - qTol );
+			dt = min_root_quadratic_both( x_2_, d1, d0 + qTol, d0 - qTol );
 		}
-		tE = ( dtX == infinity ? infinity : tX + std::min( dtX, dt_max ) );
-		tE = std::max( tE, tX + dt_min );
+		dt = std::min( std::max( dt, dt_min ), dt_max );
+		tE = ( dt == infinity ? infinity : tX + dt );
 		if ( ( options::inflection ) && ( x_2_ != 0.0 ) && ( signum( x_1_ ) != signum( x_2_ ) ) && ( signum( x_1_ ) == signum( q_1_ ) ) ) {
 			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
 			if ( tX < tI ) tE = std::min( tE, tI );
 		}
-		if ( ( tE == infinity ) && ( dt_inf != infinity ) ) tE = tX + dt_inf;
+		tE_infinity_tX();
 	}
 
 private: // Data
