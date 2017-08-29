@@ -16,7 +16,6 @@ Currently the code has:
 * A master algorithm with sampling and diagnostic output controls.
 * A few simple code-defined example cases.
 * Zero-crossing event support.
-* Discrete real-valued variables.
 
 Notes:
 * No Modelica input file processing is supported: test cases are code-defined or loaded from FMUs.
@@ -78,11 +77,17 @@ Note that this differs from the literature. In some papers by the original QSS a
 
 #### Deactivation
 
-The QSS time stepping logic looks at the magnitude of the highest order continuous representation derivative to set the next trigger time based on when the quantized and continuous representations will diverge by the selected quantum threshold. This does not always give a good indication of the divergence of the quantized representation from the actual/analytical value of QSS (ODE) state variables or input variables. A trivial example is f(t) = t<sup>n</sup> : at t=0 the value and all derivatives other than the n<sup>th</sup> are zero, so only an n<sup>th</sup> order method will avoid setting the next trigger time to infinity. For a QSS variable that is "isolated" (does not appear in many or any other variable's derivatives) or any input variable an artificially large time step causes the variable to "deactivate", becoming stuck in a fixed quantized and continuous representation.
+The QSS time stepping logic looks at the magnitude of the highest order continuous representation derivative to set the next trigger time based on when the quantized and continuous representations will diverge by the selected quantum threshold. This does not always give a good indication of the divergence of the quantized representation from the actual/analytical value of QSS (ODE) state variables or input variables. For a QSS variable that is "isolated" (does not appear in many or any other variable's derivatives) or any input variable an artificially large time step causes the variable to "deactivate", becoming stuck in a fixed quantized and continuous representation.
+
+Some model variables may have intrinsic deactivation where derivatives above some order are zero. For example, the velocity of a falling object in a (drag-free) gravitational field is linear so its derivatives of order 2 and up are zero. Such variables are represented accurately without any requantization so any approach to addressing deactivation should avoid wasting significant effort requantizing them.
+
+Other variables might have zero derivatives at certain points, such as a variables with a derivative of `cos(t)` that has a zero second derivative at `t=0`. The situation of a zero derivative at model startup is probably not uncommon. Normally such variables will be observers of other variables that get requantized soon enough to avoid a solution glitch but this may not always be the case.
 
 Deactivation is more of an issue for LIQSS methods because they set the highest derivative to zero when an interior point quantized representation start value occurs.
 
-This appears to be a fairly serious flaw in the QSS approach. To address this a time step to use when deactivation occurs was added as an option (`dtInf`) and its use, especially for LIQSS methods is highly recommended. A more effective and efficient solution may be to fall back to a lower-order QSS method for computing the next requantization time: this will be explored.
+Deactivation appears to be a fairly serious flaw in the QSS approach. To address this a time step to use when deactivation occurs was added as an option (`dtInf`) and its use, especially for LIQSS methods is highly recommended. To minimize effort expended on intrinsically deactivated variables a "relaxation" approach is used where the `dtInf` time step is doubled on each successive call for the next requantization time that would otherwise give infinity. The concept of falling back to a lower-order QSS method for computing the next requantization time when deactivation occurs was found to be much less efficient and less effective.
+
+A related issue arises when the highest order derivative has a very small magnitude, causing a very large time step to the next requantization to be computed. The `dtMax` value can be used to limit such large time steps but comes at some performance cost when the small derivative magnitude is intrinsic and sustained over large time spans. A different time step option that is like `dtMax` but only active when the highest derivative is non-zero and also relaxes upon successive use would probably be an effective approach.
 
 ### LIQSS
 
@@ -128,7 +133,7 @@ With cyclic dependencies it is possible for an infinite cascade loop of such cha
 
 Input functions are external system "drivers" that do not depend on the state of other variables within the DAE system. The QSS solver implements input functions for continuous real-valued variables with QSS-like quantized and continuous representations and logic for selecting the next time at which to update these representations. Input variables using this approach are smoothly integrated with the QSS variable system.
 
-Discrete and integer valued input functions can also have discrete events at which their value changes. To provide accurate behavior with QSS solvers, where time steps can be large and variable, these discrete events are assumed predictable by the input functions. These predicted discrete events are placed in the QSS event queue to assure they are processed at their exact event time. We don't currently support discrete events for continuous input functions but this is easily added if needed.
+Input functions can also have discrete events at which their value changes. To provide accurate behavior with QSS solvers, where time steps can be large and variable, these discrete events are assumed predictable by the input functions. These predicted discrete events are placed in the QSS event queue to assure they are processed at their exact event time. We don't currently support discrete events for continuous input functions but this is easily added if needed.
 
 ## FMU Support
 
@@ -141,6 +146,7 @@ Notes:
 * Zero crossings are problematic because the FMI spec doesn't expose the dependency of variables that are modified when each zero crossing occurs. Until such information is added our approach is to add the dependencies to the xml file. A fallback strategy of assuming that any continuous or discrete variable may have been modified could be used, at some cost to efficiency.
 * QSS3 and LIQSS3 solvers can be added when they become more practical with the planned FMI Library FMI 2.0 API extensions.
 * Input function evaluations will be provided by JModelica when QSS is integrated. For stand-alone QSS testing purposes a few input functions are provided for use with FMUs.
+* Only SI units are supported in FMUs at this time as per LBNL specifications. Support for other units could be added in the future.
 
 ## Implementation
 
