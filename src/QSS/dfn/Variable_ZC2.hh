@@ -72,6 +72,7 @@ public: // Types
 
 	using Super::event;
 	using Super::has;
+	using Super::tE_infinity_tQ;
 
 protected: // Types
 

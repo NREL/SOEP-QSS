@@ -69,6 +69,8 @@ public: // Types
 	using Super::advance_observers;
 	using Super::event;
 	using Super::shrink_observers;
+	using Super::tE_infinity_tQ;
+	using Super::tE_infinity_tX;
 
 private: // Types
 
