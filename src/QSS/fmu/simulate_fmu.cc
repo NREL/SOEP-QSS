@@ -1268,15 +1268,17 @@ simulate_fmu()
 				}
 			} else if ( event.is_handler() ) { // Zero-crossing handler event
 
-				// Perform FMU event mode handler processing
-				fmi2_status_t fmistatus;
+				// Perform FMU event mode handler processing /////
+
+				// Advance FMU time to help it detect zero crossing event
+				fmu::set_time( t + options::dtZC );
 
 				{ // Swap event_indicators and event_indicators_prev so that we can get new indicators
 					fmi2_real_t * temp = event_indicators;
 					event_indicators = event_indicators_prev;
 					event_indicators_prev = temp;
 				}
-				fmistatus = fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
+				fmi2_status_t fmistatus = fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 
 				// Check if an event indicator has triggered
 				bool zero_crossing_event( false );
@@ -1294,9 +1296,13 @@ simulate_fmu()
 					fmistatus = fmi2_import_enter_continuous_time_mode( fmu );
 					fmistatus = fmi2_import_get_continuous_states( fmu, states, n_states );
 					fmistatus = fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
+					if ( options::output::d ) std::cout << "Zero-crossing triggers FMU event at t=" << t << std::endl;
 				} else {
-					std::cerr << "Warning: Expected zero-crossing event(s) not detected by FMU at t=" << t << std::endl;
+					if ( options::output::d ) std::cout << "Zero-crossing does not trigger FMU event at t=" << t << std::endl;
 				}
+
+				// Restore FMU simulation time
+				fmu::set_time( t );
 
 				// Perform handler operations on QSS side
 				if ( events.single() ) { // Single handler

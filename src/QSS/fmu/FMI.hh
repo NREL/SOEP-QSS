@@ -48,6 +48,7 @@ namespace fmu {
 
 using Time = double;
 using Value = double;
+using Integer = int;
 
 // Globals
 extern fmi2_import_t * fmu; // FMU instance
@@ -109,6 +110,47 @@ get_derivative( std::size_t const der_idx )
 {
 	assert( der_idx - 1 < n_ders );
 	return derivatives[ der_idx - 1 ];
+}
+
+// Get an Integer FMU Variable Value
+inline
+Integer
+get_integer( fmi2_value_reference_t const ref )
+{
+	assert( fmu != nullptr );
+	Integer val;
+	fmi2_import_get_integer( fmu, &ref, std::size_t( 1u ), &val ); //Do Check status returned
+	return val;
+}
+
+// Set an Integer FMU Variable Value
+inline
+void
+set_integer( fmi2_value_reference_t const ref, Integer const val )
+{
+	assert( fmu != nullptr );
+	fmi2_import_set_integer( fmu, &ref, std::size_t( 1u ), &val ); //Do Check status returned
+}
+
+// Get an Boolean FMU Variable Value
+inline
+bool
+get_boolean( fmi2_value_reference_t const ref )
+{
+	assert( fmu != nullptr );
+	int val; // FMI2 uses int for booleans
+	fmi2_import_get_boolean( fmu, &ref, std::size_t( 1u ), &val ); //Do Check status returned
+	return static_cast< bool >( val );
+}
+
+// Set an Boolean FMU Variable Value
+inline
+void
+set_boolean( fmi2_value_reference_t const ref, bool const val )
+{
+	assert( fmu != nullptr );
+	int const ival( static_cast< int >( val ) ); // FMI2 uses int for booleans
+	fmi2_import_set_boolean( fmu, &ref, std::size_t( 1u ), &ival ); //Do Check status returned
 }
 
 // Cleanup Allocations

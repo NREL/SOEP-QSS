@@ -760,6 +760,34 @@ public: // Methods: FMU
 		fmu::set_real( var.ref, sn( t ) );
 	}
 
+	// Get FMU Integer Variable Value
+	Integer
+	fmu_get_integer_value() const
+	{
+		return fmu::get_integer( var.ref );
+	}
+
+	// Set FMU Integer Variable to a Value
+	void
+	fmu_set_integer_value( Integer const v ) const
+	{
+		fmu::set_integer( var.ref, v );
+	}
+
+	// Get FMU Boolean Variable Value
+	bool
+	fmu_get_boolean_value() const
+	{
+		return fmu::get_boolean( var.ref );
+	}
+
+	// Set FMU Boolean Variable to a Value
+	void
+	fmu_set_boolean_value( bool const v ) const
+	{
+		fmu::set_boolean( var.ref, v );
+	}
+
 	// Set All Observee FMU Variables to Continuous Value at Time t
 	void
 	fmu_set_observees_x( Time const t ) const

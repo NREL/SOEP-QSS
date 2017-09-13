@@ -57,10 +57,11 @@ bool rTol_set( false ); // Relative tolerance set?
 double dtMin( 0.0 ); // Min time step (s)
 double dtMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Max time step (s)
 double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Inf time step (s)
-double dtOut( 1.0e-3 ); // Sampled & FMU output time step (s)  [1e-3]
+double dtZC( 1.0e-6 ); // Zero-crossing time step (s)  [1e-6]
 double dtNum( 1.0e-6 ); // Numeric differentiation time step (s)  [1e-6]
 double one_over_dtNum( 1.0e6 ); // 1 / dtNum  [computed]
 double one_half_over_dtNum( 5.0e5 ); // 0.5 / dtNum  [computed]
+double dtOut( 1.0e-3 ); // Sampled & FMU output time step (s)  [1e-3]
 double tEnd( 1.0 ); // End time (s)  [1|FMU]
 bool tEnd_set( false ); // End time set?
 std::string out; // Outputs: r, a, s, x, q, f  [rx]
@@ -198,8 +199,9 @@ help_display()
 	std::cout << " --dtMin=STEP  Min time step (s)  [0.0]" << '\n';
 	std::cout << " --dtMax=STEP  Max time step (s)  [infinity]" << '\n';
 	std::cout << " --dtInf=STEP  Inf alt time step (s)  [infinity]" << '\n';
-	std::cout << " --dtOut=STEP  Sampled & FMU output step (s)  [1e-3]" << '\n';
+	std::cout << " --dtZC=STEP   Zero-crossing step (s)  [1e-6]" << '\n';
 	std::cout << " --dtNum=STEP  Numeric differentiation step (s)  [1e-6]" << '\n';
+	std::cout << " --dtOut=STEP  Sampled & FMU output step (s)  [1e-3]" << '\n';
 	std::cout << " --tEnd=TIME   End time (s)  [1|FMU]" << '\n';
 	std::cout << " --out=OUTPUTS Outputs  [trfx]" << '\n';
 	std::cout << "       t       Time events" << '\n';
@@ -335,16 +337,16 @@ process_args( int argc, char * argv[] )
 				std::cerr << "Error: Nonnumeric dtInf: " << dtInf_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "dtOut" ) ) {
-			std::string const dtOut_str( arg_value( arg ) );
-			if ( is_double( dtOut_str ) ) {
-				dtOut = double_of( dtOut_str );
-				if ( dtOut < 0.0 ) {
-					std::cerr << "Error: Negative dtOut: " << dtOut_str << std::endl;
+		} else if ( has_value_option( arg, "dtZC" ) ) {
+			std::string const dtZC_str( arg_value( arg ) );
+			if ( is_double( dtZC_str ) ) {
+				dtZC = double_of( dtZC_str );
+				if ( dtZC < 0.0 ) {
+					std::cerr << "Error: Negative dtZC: " << dtZC_str << std::endl;
 					fatal = true;
 				}
 			} else {
-				std::cerr << "Error: Nonnumeric dtOut: " << dtOut_str << std::endl;
+				std::cerr << "Error: Nonnumeric dtZC: " << dtZC_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtNum" ) ) {
@@ -359,6 +361,18 @@ process_args( int argc, char * argv[] )
 				one_half_over_dtNum = 0.5 / dtNum;
 			} else {
 				std::cerr << "Error: Nonnumeric dtNum: " << dtNum_str << std::endl;
+				fatal = true;
+			}
+		} else if ( has_value_option( arg, "dtOut" ) ) {
+			std::string const dtOut_str( arg_value( arg ) );
+			if ( is_double( dtOut_str ) ) {
+				dtOut = double_of( dtOut_str );
+				if ( dtOut < 0.0 ) {
+					std::cerr << "Error: Negative dtOut: " << dtOut_str << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::cerr << "Error: Nonnumeric dtOut: " << dtOut_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "tEnd" ) ) {

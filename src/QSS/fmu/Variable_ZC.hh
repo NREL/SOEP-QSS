@@ -193,7 +193,7 @@ public: // Methods
 	shift_handlers()
 	{
 		assert( tZ != infinity );
-		fmu_set_observees_q( tZ + ( tZ - tX ) * 1.02 ); // Use slightly later time to let FMU detect the zero crossing: This may not be robust until output variable derivatives are analytical, not numeric
+		fmu_set_observees_q( tZ + options::dtZC ); // Use slightly later time to let FMU detect the zero crossing: This is not robust
 		for ( auto observer : observers_ ) {
 			observer->shift_handler( tZ );
 		}
