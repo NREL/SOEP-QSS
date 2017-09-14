@@ -40,10 +40,14 @@
 #include <QSS/fmu/Function_Inp_constant.hh>
 #include <QSS/fmu/Function_Inp_sin.hh>
 #include <QSS/fmu/Function_Inp_step.hh>
+#include <QSS/fmu/Function_Inp_toggle.hh>
 #include <QSS/fmu/globals_fmu.hh>
+#include <QSS/fmu/Variable_B.hh>
 #include <QSS/fmu/Variable_D.hh>
+#include <QSS/fmu/Variable_I.hh>
 #include <QSS/fmu/Variable_Inp1.hh>
 #include <QSS/fmu/Variable_Inp2.hh>
+#include <QSS/fmu/Variable_InpB.hh>
 #include <QSS/fmu/Variable_InpD.hh>
 #include <QSS/fmu/Variable_InpI.hh>
 #include <QSS/fmu/Variable_LIQSS1.hh>
@@ -80,9 +84,10 @@ void
 do_event_iteration( fmi2_import_t * fmu, fmi2_event_info_t * eventInfo );
 
 // FMU Variable Pointer Union
-union FMUVarPtr { // Support FMU real and integer variables
+union FMUVarPtr { // Support FMU real, integer, and boolean variables
 	fmi2_import_real_variable_t * rvr; // FMU real variable pointer
 	fmi2_import_integer_variable_t * ivr; // FMU integer variable pointer
+	fmi2_import_bool_variable_t * bvr; // FMU boolean variable pointer
 
 	FMUVarPtr( fmi2_import_real_variable_t * rvr ) :
 	 rvr( rvr )
@@ -90,6 +95,10 @@ union FMUVarPtr { // Support FMU real and integer variables
 
 	FMUVarPtr( fmi2_import_integer_variable_t * ivr ) :
 	 ivr( ivr )
+	{}
+
+	FMUVarPtr( fmi2_import_bool_variable_t * bvr ) :
+	 bvr( bvr )
 	{}
 
 	friend
@@ -360,14 +369,24 @@ simulate_fmu()
 			int const var_start( var_has_start ? fmi2_import_get_integer_variable_start( var_int ) : 0 );
 			if ( var_has_start ) std::cout << " Start: " << var_start << std::endl;
 			if ( var_variability == fmi2_variability_enu_discrete ) {
+				FMU_Variable const fmu_var( var, var_int, fmi2_import_get_variable_vr( var ), i+1 );
+				fmu_vars[ var_int ] = fmu_var;
 				if ( var_causality == fmi2_causality_enu_input ) {
 					std::cout << " Type: Integer: Discrete: Input" << std::endl;
-					FMU_Variable const fmu_var( var, var_int, fmi2_import_get_variable_vr( var ), i+1 );
-					fmu_vars[ var_int ] = fmu_var;
 //					Function inp_fxn = Function_Inp_constant( var_start ); // Constant start value
 					Function inp_fxn = Function_Inp_step( 1.0, 1.0, 0.1 ); // Step up by 1 every 0.1 s via discrete events
 					Variable_InpI * qss_var( new Variable_InpI( var_name, fmu_var, inp_fxn ) );
 					vars.push_back( qss_var ); // Add to QSS variables
+					fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
+					std::cout << " FMU idx: " << i+1 << " maps to QSS var: " << qss_var->name << std::endl;
+				} else {
+					std::cout << " Type: Integer: Discrete" << std::endl;
+					Variable_I * qss_var( new Variable_I( var_name, var_start, fmu_var ) );
+					vars.push_back( qss_var ); // Add to QSS variables
+					if ( var_causality == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
+						outs.push_back( qss_var );
+						fmu_outs.erase( var_int ); // Remove it from non-QSS FMU outputs
+					}
 					fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
 					std::cout << " FMU idx: " << i+1 << " maps to QSS var: " << qss_var->name << std::endl;
 				}
@@ -376,7 +395,33 @@ simulate_fmu()
 			break;
 		case fmi2_base_type_bool:
 			std::cout << " Type: Boolean" << std::endl;
-			if ( var_has_start ) std::cout << " Start: " << fmi2_import_get_boolean_variable_start( fmi2_import_get_variable_as_boolean( var ) ) << std::endl;
+			{
+			fmi2_import_bool_variable_t * var_bool( fmi2_import_get_variable_as_boolean( var ) );
+			bool const var_start( var_has_start ? fmi2_import_get_boolean_variable_start( var_bool ) : 0 );
+			if ( var_has_start ) std::cout << " Start: " << var_start << std::endl;
+			if ( var_variability == fmi2_variability_enu_discrete ) {
+				FMU_Variable const fmu_var( var, var_bool, fmi2_import_get_variable_vr( var ), i+1 );
+				fmu_vars[ var_bool ] = fmu_var;
+				if ( var_causality == fmi2_causality_enu_input ) {
+					std::cout << " Type: Boolean: Discrete: Input" << std::endl;
+					Function inp_fxn = Function_Inp_toggle( 1.0, 1.0, 0.1 ); // Toggle 0-1 every 0.1 s via discrete events
+					Variable_InpB * qss_var( new Variable_InpB( var_name, fmu_var, inp_fxn ) );
+					vars.push_back( qss_var ); // Add to QSS variables
+					fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
+					std::cout << " FMU idx: " << i+1 << " maps to QSS var: " << qss_var->name << std::endl;
+				} else {
+					std::cout << " Type: Boolean: Discrete" << std::endl;
+					Variable_B * qss_var( new Variable_B( var_name, var_start, fmu_var ) );
+					vars.push_back( qss_var ); // Add to QSS variables
+					if ( var_causality == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
+						outs.push_back( qss_var );
+						fmu_outs.erase( var_bool ); // Remove it from non-QSS FMU outputs
+					}
+					fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
+					std::cout << " FMU idx: " << i+1 << " maps to QSS var: " << qss_var->name << std::endl;
+				}
+			}
+			}
 			break;
 		case fmi2_base_type_str:
 			std::cout << " Type: String" << std::endl;
@@ -653,9 +698,19 @@ simulate_fmu()
 					break;
 				case fmi2_base_type_int:
 					std::cout << " Type: Integer" << std::endl;
+					{
+					fmi2_import_integer_variable_t * dis_int( fmi2_import_get_variable_as_integer( dis ) );
+					fmu_dis = &fmu_vars[ dis_int ];
+					std::cout << " FMU idx: " << fmu_dis->idx << " maps to QSS var: " << fmu_idxs[ fmu_dis->idx ]->name << std::endl;
+					}
 					break;
 				case fmi2_base_type_bool:
 					std::cout << " Type: Boolean" << std::endl;
+					{
+					fmi2_import_bool_variable_t * dis_bool( fmi2_import_get_variable_as_boolean( dis ) );
+					fmu_dis = &fmu_vars[ dis_bool ];
+					std::cout << " FMU idx: " << fmu_dis->idx << " maps to QSS var: " << fmu_idxs[ fmu_dis->idx ]->name << std::endl;
+					}
 					break;
 				case fmi2_base_type_str:
 					std::cout << " Type: String" << std::endl;

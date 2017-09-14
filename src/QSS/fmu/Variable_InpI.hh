@@ -162,7 +162,7 @@ public: // Methods
 	{
 		assert( observees_.empty() );
 		init_observers();
-		x_ = f_( tQ ).x_0;
+		x_ = static_cast< Integer >( f_( tQ ).x_0 );
 		tD = f_( tQ ).tD;
 		event( events.add_discrete( tD, this ) );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
@@ -172,7 +172,7 @@ public: // Methods
 	void
 	advance_discrete()
 	{
-		x_ = f_( tX = tQ = tD ).x_0;
+		x_ = static_cast< Integer >( f_( tX = tQ = tD ).x_0 );
 		advance_observers_1();
 		if ( observers_max_order_ >= 2 ) {
 			fmu::set_time( tN = tQ + options::dtNum );
@@ -190,7 +190,7 @@ public: // Methods
 	void
 	advance_discrete_0_1()
 	{
-		x_ = f_( tX = tQ = tD ).x_0;
+		x_ = static_cast< Integer >( f_( tX = tQ = tD ).x_0 );
 		tD = f_( tD ).tD;
 		event( events.shift_discrete( tD, event() ) );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';

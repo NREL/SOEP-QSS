@@ -1,4 +1,4 @@
-// Discrete Input Variable
+// Integer Input Variable
 //
 // Project: QSS Solver
 //
@@ -173,7 +173,7 @@ public: // Methods
 	init_0()
 	{
 		shrink_observers(); // Optional
-		x_ = f_.vs( tQ );
+		x_ = static_cast< Integer >( f_.vs( tQ ) );
 		tD = f_.tD( tQ );
 		event( events.add_discrete( tD, this ) );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
@@ -183,7 +183,7 @@ public: // Methods
 	void
 	advance_discrete()
 	{
-		x_ = f_.vs( tX = tQ = tD );
+		x_ = static_cast< Integer >( f_.vs( tX = tQ = tD ) );
 		tD = f_.tD( tQ );
 		event( events.shift_discrete( tD, event() ) );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
@@ -194,7 +194,7 @@ public: // Methods
 	void
 	advance_discrete_0_1()
 	{
-		x_ = f_.vs( tX = tQ = tD );
+		x_ = static_cast< Integer >( f_.vs( tX = tQ = tD ) );
 		tD = f_.tD( tD );
 		event( events.shift_discrete( tD, event() ) );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';

@@ -1,4 +1,4 @@
-// QSS FMU Variable Specifications
+// Toggle Input Function
 //
 // Project: QSS Solver
 //
@@ -33,88 +33,123 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_FMU_Variable_hh_INCLUDED
-#define QSS_fmu_FMU_Variable_hh_INCLUDED
+#ifndef QSS_fmu_Function_Inp_Toggle_hh_INCLUDED
+#define QSS_fmu_Function_Inp_Toggle_hh_INCLUDED
 
-// FMI Library Headers
-#include <FMI2/fmi2_import.h>
+// QSS Headers
+#include <QSS/fmu/SmoothToken.hh>
 
 // C++ Headers
-#include <cstddef>
+#include <cassert>
+#include <cstdint>
 
 namespace QSS {
 namespace fmu {
 
-// QSS FMU Variable Specifications
-class FMU_Variable
+// Toggle Input Function
+class Function_Inp_toggle
 {
 
 public: // Types
 
-	using size_type = std::size_t;
+	using Time = double;
+	using Value = double;
 
 public: // Creation
 
-	// Default Constructor
-	FMU_Variable()
-	{}
-
-	// Real Variable Constructor
-	FMU_Variable(
-	 fmi2_import_variable_t * const var,
-	 fmi2_import_real_variable_t * const rvr,
-	 fmi2_value_reference_t const ref,
-	 size_type const idx,
-	 size_type const ics = 0u
+	// Constructor
+	Function_Inp_toggle(
+	 Value const h_0 = 0.0,
+	 Value const h = 1.0,
+	 Value const d = 1.0
 	) :
-	 var( var ),
-	 rvr( rvr ),
-	 ref( ref ),
-	 idx( idx ),
-	 ics( ics )
-	{}
+	 s_( 0, h_0 ),
+	 h_0_( h_0 ),
+	 h_( h ),
+	 d_( d )
+	{
+		assert( d_ > 0.0 );
+		s_.tD = d_;
+	}
 
-	// Integer Variable Constructor
-	FMU_Variable(
-	 fmi2_import_variable_t * const var,
-	 fmi2_import_integer_variable_t * const ivr,
-	 fmi2_value_reference_t const ref,
-	 size_type const idx,
-	 size_type const ics = 0u
-	) :
-	 var( var ),
-	 ivr( ivr ),
-	 ref( ref ),
-	 idx( idx ),
-	 ics( ics )
-	{}
+public: // Properties
 
-	// Boolean Variable Constructor
-	FMU_Variable(
-	 fmi2_import_variable_t * const var,
-	 fmi2_import_bool_variable_t * const bvr,
-	 fmi2_value_reference_t const ref,
-	 size_type const idx,
-	 size_type const ics = 0u
-	) :
-	 var( var ),
-	 bvr( bvr ),
-	 ref( ref ),
-	 idx( idx ),
-	 ics( ics )
-	{}
+	// State at Time t
+	SmoothToken const &
+	operator ()( Time const t ) const
+	{
+		if ( t != s_.t ) { // Reevaluate state
+			s_.t = t;
+			s_.tD = tD( t );
+			s_.x_0 = v( t );
+		}
+		return s_;
+	}
 
-public: // Data
+	// State at Time t (Reevaluated)
+	SmoothToken const &
+	smooth_token( Time const t ) const
+	{
+		s_.t = t;
+		s_.tD = tD( t );
+		s_.x_0 = v( t );
+		return s_;
+	}
 
-	fmi2_import_variable_t * var{ nullptr }; // FMU variable pointer (non-owning)
-	union { // Support FMU real and integer variables
-		fmi2_import_real_variable_t * rvr{ nullptr }; // FMU real variable pointer (non-owning)
-		fmi2_import_integer_variable_t * ivr; // FMU integer variable pointer (non-owning)
-		fmi2_import_bool_variable_t * bvr; // FMU boolean variable pointer (non-owning)
-	};
-	fmi2_value_reference_t ref{ 0 }; // FMU variable value reference
-	size_type idx{ 0u }; // FMU variable index
-	size_type ics{ 0u }; // FMU continuous state index
+	// Value at Time t
+	Value
+	v( Time const t ) const
+	{
+		return h_0_ + ( h_ * ( step_number( t ) % 2 ) );
+	}
+
+	// First Derivative at Time t
+	Value
+	d1( Time const ) const
+	{
+		return 0.0;
+	}
+
+	// Second Derivative at Time t
+	Value
+	d2( Time const ) const
+	{
+		return 0.0;
+	}
+
+	// Third Derivative at Time t
+	Value
+	d3( Time const ) const
+	{
+		return 0.0;
+	}
+
+	// Discrete Event after Time t
+	Time
+	tD( Time const t ) const
+	{
+		Value const n_next( std::floor( t / d_ ) + 1.0 );
+		Value const t_next( d_ * n_next );
+		return ( t_next > t ? t_next : d_ * ( n_next + 1.0 ) );
+	}
+
+private: // Methods
+
+	// Step Number at Time t
+	std::int64_t
+	step_number( Time const t ) const
+	{
+		Value const ftd( std::floor( t / d_ ) );
+		return static_cast< std::int64_t >( d_ * ( ftd + 1.0 ) > t ? ftd : ftd + 1.0 );
+	}
+
+private: // Data
+
+	mutable SmoothToken s_; // Cached state
+
+	Value const h_0_{ 0.0 }; // Initial height
+	Value const h_{ 1.0 }; // Step height
+	Value const d_{ 1.0 }; // Step time delta
 
 };
 

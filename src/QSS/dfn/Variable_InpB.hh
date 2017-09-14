@@ -1,4 +1,4 @@
-// FMU-Based QSS Boolean Variable
+// Boolean Input Variable
 //
 // Project: QSS Solver
 //
@@ -33,45 +33,49 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_Variable_B_hh_INCLUDED
-#define QSS_fmu_Variable_B_hh_INCLUDED
+#ifndef QSS_dfn_Variable_InpB_hh_INCLUDED
+#define QSS_dfn_Variable_InpB_hh_INCLUDED
 
 // QSS Headers
-#include <QSS/fmu/Variable.hh>
+#include <QSS/dfn/Variable_Inp.hh>
+
+// C++ Headers
+#include <cstdint>
 
 namespace QSS {
-namespace fmu {
+namespace dfn {
 
-// FMU-Based QSS Boolean Variable
-class Variable_B final : public Variable
+// Boolean Input Variable
+template< class F >
+class Variable_InpB final : public Variable_Inp< F >
 {
 
 public: // Types
 
-	using Super = Variable;
-	using Boolean = bool;
-	using Integer = int;
+	using Super = Variable_Inp< F >;
+	using Time = Variable::Time;
+	using Value = Variable::Value;
+	using Integer = std::int64_t;
+
+	using Super::name;
+	using Super::tQ;
+	using Super::tX;
+	using Super::tD;
+
+	using Super::advance_observers;
+	using Super::event;
+	using Super::shrink_observers;
+
+private: // Types
+
+	using Super::f_;
 
 public: // Creation
 
-	// Name + Value Constructor
-	Variable_B(
-	 std::string const & name,
-	 Boolean const xIni,
-	 FMU_Variable const var = FMU_Variable()
-	) :
-	 Super( name, xIni, var ),
-	 x_( xIni )
-	{}
-
-	// Name Constructor
+	// Constructor
 	explicit
-	Variable_B(
-	 std::string const & name,
-	 FMU_Variable const var = FMU_Variable()
-	) :
-	 Super( name, var ),
-	 x_( static_cast< Boolean >( xIni ) )
+	Variable_InpB( std::string const & name ) :
+	 Super( name )
 	{}
 
 public: // Predicate
@@ -93,14 +97,14 @@ public: // Properties
 	}
 
 	// Boolean Value
-	Boolean
+	bool
 	b() const
 	{
 		return x_;
 	}
 
 	// Continuous Boolean Value at Time t
-	Boolean
+	bool
 	b( Time const ) const
 	{
 		return x_;
@@ -178,74 +182,45 @@ public: // Methods
 		init_0();
 	}
 
-	// Initialization to a Value
-	void
-	init( Value const x )
-	{
-		init_0( x );
-	}
-
 	// Initialization: Stage 0
 	void
 	init_0()
 	{
-		assert( observees_.empty() );
 		shrink_observers(); // Optional
-		sort_observers();
-		x_ = static_cast< Boolean >( xIni );
-		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+		x_ = static_cast< bool >( f_.vs( tQ ) );
+		tD = f_.tD( tQ );
+		event( events.add_discrete( tD, this ) );
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 	}
 
-	// Initialization to a Value: Stage 0
+	// Discrete Advance
 	void
-	init_0( Value const x )
+	advance_discrete()
 	{
-		assert( observees_.empty() );
-		shrink_observers(); // Optional
-		sort_observers();
-		x_ = static_cast< Boolean >( x );
-		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+		x_ = static_cast< bool >( f_.vs( tX = tQ = tD ) );
+		tD = f_.tD( tQ );
+		event( events.shift_discrete( tD, event() ) );
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
+		advance_observers();
 	}
 
-	// Handler Advance
+	// Discrete Advance: Stages 0 and 1
 	void
-	advance_handler( Time const t )
+	advance_discrete_0_1()
 	{
-		assert( tX <= t );
-		tX = tQ = t;
-		x_ = fmu_get_boolean_value(); // Assume FMU ran zero-crossing handler
-		advance_observers_1();
-		if ( observers_max_order_ >= 2 ) {
-			fmu::set_time( tN = tQ + options::dtNum );
-			advance_observers_2();
-		}
-		shift_handler();
-		if ( options::output::d ) {
-			std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
-			advance_observers_d();
-		}
-	}
-
-	// Handler Advance: Stage 0
-	void
-	advance_handler_0( Time const t )
-	{
-		assert( tX <= t );
-		tX = tQ = t;
-		x_ = fmu_get_boolean_value(); // Assume FMU ran zero-crossing handler
-		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+		x_ = static_cast< bool >( f_.vs( tX = tQ = tD ) );
+		tD = f_.tD( tD );
+		event( events.shift_discrete( tD, event() ) );
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 	}
 
 private: // Data
 
-	Boolean x_; // Value
+	bool x_; // Value
 
 };
 
-} // fmu
+} // dfn
 } // QSS
 
 #endif
