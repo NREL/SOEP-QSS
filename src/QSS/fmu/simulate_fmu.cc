@@ -211,7 +211,7 @@ simulate_fmu()
 	}
 
 	size_type const n_states( fmi2_import_get_number_of_continuous_states( fmu ) );
-	std::cout << n_states << " continuous variables" << std::endl;
+	std::cout << n_states << " continuous state variables" << std::endl;
 	size_type const n_event_indicators( fmi2_import_get_number_of_event_indicators( fmu ) );
 	std::cout << n_event_indicators << " event indicators" << std::endl;
 
@@ -276,6 +276,7 @@ simulate_fmu()
 
 	// Collections
 	Variable::Variables vars; // QSS variables collection
+	Variable::Variables state_vars; // FMU state QSS variables collection
 	Variable::Variables outs; // FMU output QSS variables collection
 	FMU_Vars fmu_vars;
 	FMU_Vars fmu_outs;
@@ -528,6 +529,7 @@ simulate_fmu()
 					std::exit( EXIT_FAILURE );
 				}
 				vars.push_back( qss_var ); // Add to QSS variables
+				state_vars.push_back( qss_var ); // Add to state variables
 				if ( fmi2_import_get_causality( fmu_var.var ) == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
 					outs.push_back( qss_var );
 					fmu_outs.erase( fmu_var.rvr ); // Remove it from non-QSS FMU outputs
@@ -863,8 +865,14 @@ simulate_fmu()
 
 	// Size setup
 	size_type const n_vars( vars.size() );
+	size_type const n_state_vars( state_vars.size() );
 	size_type const n_outs( outs.size() );
 	size_type const n_fmu_outs( fmu_outs.size() );
+
+	// Size checks
+	if ( n_state_vars != n_states ) {
+		std::cerr << "Error: Number of state variables found (" << n_state_vars << ") is not equal to number in FMU (" << n_states << ')' << std::endl;
+	}
 
 	// Variable-index map setup
 	Var_Idx var_idx;
@@ -978,7 +986,7 @@ simulate_fmu()
 					if ( n_fmu_outs > 0u ) { // FMU (non-QSS) variables
 						fmu::set_time( tOut );
 						for ( size_type i = 0; i < n_states; ++i ) {
-							states[ i ] = vars[ i ]->x( tOut );
+							states[ i ] = state_vars[ i ]->x( tOut );
 						}
 						fmi2_import_set_continuous_states( fmu, states, n_states );
 						size_type i( n_outs );
@@ -1538,7 +1546,7 @@ simulate_fmu()
 // Not sure we need to set continuous states: It would be a performance hit
 //		fmu::set_time( t );
 //		for ( size_type i = 0; i < n_states; ++i ) {
-//			states[ i ] = vars[ i ]->x( t );
+//			states[ i ] = state_vars[ i ]->x( t );
 //		}
 //		fmi2_import_set_continuous_states( fmu, states, n_states );
 		fmi2_import_completed_integrator_step( fmu, fmi2_true, &callEventUpdate, &terminateSimulation );
@@ -1574,7 +1582,7 @@ simulate_fmu()
 		if ( n_fmu_outs > 0u ) { // FMU (non-QSS) variable outputs
 			fmu::set_time( tE );
 			for ( size_type i = 0; i < n_states; ++i ) {
-				states[ i ] = vars[ i ]->x( tE );
+				states[ i ] = state_vars[ i ]->x( tE );
 			}
 			fmi2_import_set_continuous_states( fmu, states, n_states );
 			size_type i( n_outs );
