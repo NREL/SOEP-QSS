@@ -51,7 +51,7 @@ namespace mdl {
 
 // Linear Time-Invariant Function
 template< typename V > // Template to avoid cyclic inclusion with Variable
-class Function_LTI
+class Function_LTI final
 {
 
 public: // Types

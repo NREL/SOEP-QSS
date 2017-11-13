@@ -39,7 +39,7 @@
 namespace QSS {
 
 // Hashing for Enumerators
-struct EnumHash
+struct EnumHash final
 {
 	template< typename T >
 	std::size_t

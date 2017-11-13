@@ -47,7 +47,7 @@ namespace QSS {
 namespace fmu {
 
 // Toggle Input Function
-class Function_Inp_toggle
+class Function_Inp_toggle final
 {
 
 public: // Types

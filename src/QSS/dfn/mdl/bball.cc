@@ -55,7 +55,7 @@ namespace mdl {
 
 // Zero-Crossing Handler for Bouncing Ball Model
 template< typename V > // Template to avoid cyclic inclusion with Variable
-class Handler_bball
+class Handler_bball final
 {
 
 public: // Types

@@ -53,7 +53,7 @@ namespace mdl {
 //
 // Note: Not set up for use with LIQSS methods
 template< typename V > // Template to avoid cyclic inclusion with Variable
-class Function_LTI_ND
+class Function_LTI_ND final
 {
 
 public: // Types

@@ -87,7 +87,7 @@ namespace mdl {
 
 // Zero-Crossing Handler for StateEvent6 Model
 template< typename V > // Template to avoid cyclic inclusion with Variable
-class Handler_StateEvent6
+class Handler_StateEvent6 final
 {
 
 public: // Types
@@ -127,7 +127,7 @@ private: // Data
 
 // x1 Derivative Function
 template< typename V > // Template to avoid cyclic inclusion with Variable
-class Function_x1
+class Function_x1 final
 {
 
 public: // Types

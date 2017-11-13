@@ -43,7 +43,7 @@ namespace QSS {
 namespace fmu {
 
 // Input Function Mockup
-class Function_Inp
+class Function_Inp final
 {
 
 public: // Types

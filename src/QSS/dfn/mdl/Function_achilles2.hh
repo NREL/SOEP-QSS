@@ -45,7 +45,7 @@ namespace mdl {
 
 // Linear Time-Invariant Function
 template< typename V > // Template to avoid cyclic inclusion with Variable
-class Function_achilles2
+class Function_achilles2 final
 {
 
 public: // Types

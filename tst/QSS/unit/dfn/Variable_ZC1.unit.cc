@@ -51,7 +51,7 @@ using namespace QSS::dfn::mdl;
 
 // Zero-Crossing Handler
 template< typename V >
-class Handler_ZC1Test
+class Handler_ZC1Test final
 {
 
 public: // Types

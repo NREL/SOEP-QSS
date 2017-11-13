@@ -43,7 +43,7 @@ namespace QSS {
 namespace fmu {
 
 // Constant Input Function
-class Function_Inp_constant
+class Function_Inp_constant final
 {
 
 public: // Types

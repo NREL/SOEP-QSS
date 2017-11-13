@@ -441,6 +441,13 @@ public: // Methods
 		event_ = events.add_handler( this );
 	}
 
+	// Time Initialization
+	void
+	init_time( Time const t )
+	{
+		tQ = tX = tE = tN = t;
+	}
+
 	// Initialization
 	virtual
 	void

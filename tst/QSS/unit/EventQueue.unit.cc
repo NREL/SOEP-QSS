@@ -45,7 +45,7 @@
 using namespace QSS;
 
 // Variable Mock
-class V {};
+class V final {};
 
 // Types
 using EventQ = EventQueue< V >;

@@ -54,7 +54,7 @@ namespace mdl {
 
 // Derivative Function for Nonlinear Example: Numeric Differentiation
 template< typename V > // Template to avoid cyclic inclusion with Variable
-class Function_nonlinear_ND
+class Function_nonlinear_ND final
 {
 
 public: // Types

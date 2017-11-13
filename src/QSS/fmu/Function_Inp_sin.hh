@@ -47,7 +47,7 @@ namespace QSS {
 namespace fmu {
 
 // Sine Input Function
-class Function_Inp_sin
+class Function_Inp_sin final
 {
 
 public: // Types

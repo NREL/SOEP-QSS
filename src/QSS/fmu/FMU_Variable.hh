@@ -46,7 +46,7 @@ namespace QSS {
 namespace fmu {
 
 // QSS FMU Variable Specifications
-class FMU_Variable
+class FMU_Variable final
 {
 
 public: // Types

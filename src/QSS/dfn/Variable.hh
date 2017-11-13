@@ -80,14 +80,14 @@ public: // Types
 	 UpNP = +4  // Upward: Negative to positive
 	};
 
-	struct AdvanceSpecs_LIQSS1
+	struct AdvanceSpecs_LIQSS1 final
 	{
 		Value l;
 		Value u;
 		Value z;
 	};
 
-	struct AdvanceSpecs_LIQSS2
+	struct AdvanceSpecs_LIQSS2 final
 	{
 		Value l1;
 		Value u1;

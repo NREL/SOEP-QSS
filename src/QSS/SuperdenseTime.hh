@@ -46,7 +46,7 @@
 namespace QSS {
 
 // SuperdenseTime Representation
-class SuperdenseTime
+class SuperdenseTime final
 {
 
 public: // Types

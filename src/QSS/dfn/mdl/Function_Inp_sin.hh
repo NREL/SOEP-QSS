@@ -48,7 +48,7 @@ namespace dfn {
 namespace mdl {
 
 // Sine Function
-class Function_Inp_sin
+class Function_Inp_sin final
 {
 
 public: // Types

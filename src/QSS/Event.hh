@@ -43,7 +43,7 @@ namespace QSS {
 
 // QSS Event Class
 template< typename V >
-class Event
+class Event final
 {
 
 public: // Types
@@ -54,7 +54,7 @@ public: // Types
 	// Event Type
 	enum Type : std::size_t {
 	 Discrete, // Discrete
-	 Handler, // Zero-crossing handler
+	 Handler, // Handler
 	 ZC, // Zero-crossing
 	 QSS // Requantization
 	};

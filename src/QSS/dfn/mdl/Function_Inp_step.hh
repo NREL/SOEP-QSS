@@ -48,7 +48,7 @@ namespace dfn {
 namespace mdl {
 
 // Step Input Function
-class Function_Inp_step
+class Function_Inp_step final
 {
 
 public: // Types

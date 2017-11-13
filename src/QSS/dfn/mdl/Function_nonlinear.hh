@@ -53,7 +53,7 @@ namespace mdl {
 
 // Derivative Function for Nonlinear Example
 template< typename V > // Template to avoid cyclic inclusion with Variable
-class Function_nonlinear
+class Function_nonlinear final
 {
 
 public: // Types

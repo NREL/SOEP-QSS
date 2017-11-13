@@ -57,7 +57,7 @@ namespace QSS {
 
 // QSS Event Queue
 template< typename V >
-class EventQueue
+class EventQueue final
 {
 
 public: // Types
@@ -80,7 +80,7 @@ public: // Types
 	using reference = typename EventMap::reference;
 
 	// SuperdenseTime Index Offsets
-	struct Off {
+	struct Off final {
 		static SuperdenseTime::Index const Discrete{ 0 };
 		static SuperdenseTime::Index const Handler{ 1 };
 		static SuperdenseTime::Index const ZC{ 2 };

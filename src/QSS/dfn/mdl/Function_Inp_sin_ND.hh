@@ -49,7 +49,7 @@ namespace dfn {
 namespace mdl {
 
 // Sine Input Function Using Numeric Differentiation
-class Function_Inp_sin_ND
+class Function_Inp_sin_ND final
 {
 
 public: // Types

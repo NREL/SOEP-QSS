@@ -43,7 +43,7 @@ namespace QSS {
 namespace fmu {
 
 // SmoothToken Class
-class SmoothToken
+class SmoothToken final
 {
 
 public: // Types
