@@ -117,7 +117,10 @@ public: // Methods
 			std::cerr << "Error: Zero-crossing variable is self-observer: " << name << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
-		init_observers();
+		if ( ! observers_.empty() ) {
+			std::cerr << "Error: Zero-crossing variable has observers: " << name << std::endl;
+			std::exit( EXIT_FAILURE );
+		}
 		fmu_set_observees_q( tQ );
 		x_0_ = q_0_ = fmu_get_value();
 		set_qTol();
@@ -130,7 +133,7 @@ public: // Methods
 		x_1_ = fmu_get_deriv();
 		set_tE();
 		set_tZ();
-		event( tE < tZ ? events.add_QSS( tE, this ) : events.add_ZC( tZ, this ) );
+		tE < tZ ? add_QSS( tE ) : add_ZC( tZ );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
@@ -152,7 +155,7 @@ public: // Methods
 		x_1_ = fmu_get_deriv();
 		set_tE();
 		set_tZ();
-		event( tE < tZ ? events.shift_QSS( tE, event() ) : events.shift_ZC( tZ, event() ) );
+		tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
@@ -172,7 +175,7 @@ public: // Methods
 		x_1_ = fmu_get_deriv();
 		set_tE();
 		set_tZ();
-		event( tE < tZ ? events.shift_QSS( tE, event() ) : events.shift_ZC( tZ, event() ) );
+		tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
@@ -191,7 +194,7 @@ public: // Methods
 
 	// Observer Advance: Stage d
 	void
-	advance_observer_d()
+	advance_observer_d() const
 	{
 		std::cout << "  " << name << '(' << tX << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tZ=" << tZ <<  '\n';
 	}
@@ -200,10 +203,13 @@ public: // Methods
 	void
 	advance_ZC()
 	{
-		shift_handlers();
+		for ( typename If::Clause * clause : if_clauses ) clause->activity( tZ );
+		for ( typename When::Clause * clause : when_clauses ) clause->activity( tZ );
+		advance_observees();
 		if ( options::output::d ) std::cout << "Z " << name << '(' << tZ << ')' << '\n';
+		crossing_prev = crossing;
 		set_tZ( tZ_prev = tZ ); // Next zero-crossing: Might be in active segment
-		event( tE < tZ ? events.shift_QSS( tE, event() ) : events.shift_ZC( tZ, event() ) );
+		tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
 	}
 
 private: // Methods
@@ -280,14 +286,14 @@ private: // Methods
 			if ( has( crossing_check ) ) { // Crossing type is relevant
 				crossing = crossing_check;
 				tZ = tX;
-				event( events.shift_ZC( tZ, event() ) );
+				shift_ZC( tZ );
 			} else {
 				set_tZ();
-				event( tE < tZ ? events.shift_QSS( tE, event() ) : events.shift_ZC( tZ, event() ) );
+				tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
 			}
 		} else {
 			set_tZ();
-			event( tE < tZ ? events.shift_QSS( tE, event() ) : events.shift_ZC( tZ, event() ) );
+			tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
 		}
 	}
 

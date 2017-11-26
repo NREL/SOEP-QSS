@@ -33,16 +33,18 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#ifndef QSS_globals_hh_INCLUDED
+#define QSS_globals_hh_INCLUDED
+
 // QSS Headers
-#include <QSS/dfn/globals_dfn.hh>
-#include <QSS/dfn/Variable.hh>
 #include <QSS/EventQueue.hh>
+#include <QSS/Target.hh>
 
 namespace QSS {
-namespace dfn {
 
 // QSS Globals
-EventQueue< Variable > events;
+extern EventQueue< Target > events;
 
-} // dfn
 } // QSS
+
+#endif

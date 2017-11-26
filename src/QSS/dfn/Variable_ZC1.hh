@@ -43,18 +43,21 @@ namespace QSS {
 namespace dfn {
 
 // QSS1 Zero-Crossing Variable
-template< template< typename > class F, template< typename > class H >
-class Variable_ZC1 final : public Variable_ZC< F, H >
+template< template< typename > class F >
+class Variable_ZC1 final : public Variable_ZC< F >
 {
 
 public: // Types
 
-	using Super = Variable_ZC< F, H >;
+	using Super = Variable_ZC< F >;
 	using Time = Variable::Time;
 	using Value = Variable::Value;
 	using Crossing = Variable::Crossing;
+	using typename Super::If;
+	using typename Super::When;
 
 	using Super::crossing;
+	using Super::crossing_prev;
 	using Super::name;
 	using Super::rTol;
 	using Super::aTol;
@@ -69,14 +72,18 @@ public: // Types
 	using Super::dt_max;
 	using Super::dt_inf;
 	using Super::self_observer;
+	using Super::if_clauses;
+	using Super::when_clauses;
 
+	using Super::add_QSS;
+	using Super::add_ZC;
 	using Super::event;
 	using Super::has;
+	using Super::shift_QSS;
+	using Super::shift_ZC;
 	using Super::tE_infinity_tQ;
 
 protected: // Types
-
-	using Super::h_;
 
 	using Super::crossing_type;
 
@@ -153,7 +160,7 @@ public: // Methods
 		x_1_ = f_.q1( tQ );
 		set_tE();
 		set_tZ();
-		event( tE < tZ ? events.add_QSS( tE, this ) : events.add_ZC( tZ, this ) );
+		tE < tZ ? add_QSS( tE ) : add_ZC( tZ );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
@@ -200,10 +207,12 @@ public: // Methods
 	void
 	advance_ZC()
 	{
-		h_( tZ, crossing ); // Handler
+		for ( typename If::Clause * clause : if_clauses ) clause->activity( tZ );
+		for ( typename When::Clause * clause : when_clauses ) clause->activity( tZ );
 		if ( options::output::d ) std::cout << "Z " << name << '(' << tZ << ')' << '\n';
+		crossing_prev = crossing;
 		set_tZ( tZ_prev = tZ ); // Next zero-crossing: Might be in active segment
-		event( tE < tZ ? events.shift_QSS( tE, event() ) : events.shift_ZC( tZ, event() ) );
+		tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
 	}
 
 private: // Methods
@@ -217,7 +226,7 @@ private: // Methods
 		x_1_ = f_.q1( tE );
 		set_tE();
 		set_tZ();
-		event( tE < tZ ? events.shift_QSS( tE, event() ) : events.shift_ZC( tZ, event() ) );
+		tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
 	}
 
 	// Set End Time
@@ -292,14 +301,14 @@ private: // Methods
 			if ( has( crossing_check ) ) { // Crossing type is relevant
 				crossing = crossing_check;
 				tZ = tX;
-				event( events.shift_ZC( tZ, event() ) );
+				shift_ZC( tZ );
 			} else {
 				set_tZ();
-				event( tE < tZ ? events.shift_QSS( tE, event() ) : events.shift_ZC( tZ, event() ) );
+				tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
 			}
 		} else {
 			set_tZ();
-			event( tE < tZ ? events.shift_QSS( tE, event() ) : events.shift_ZC( tZ, event() ) );
+			tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
 		}
 	}
 

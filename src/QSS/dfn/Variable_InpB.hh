@@ -62,8 +62,10 @@ public: // Types
 	using Super::tX;
 	using Super::tD;
 
+	using Super::add_discrete;
 	using Super::advance_observers;
 	using Super::event;
+	using Super::shift_discrete;
 	using Super::shrink_observers;
 
 private: // Types
@@ -187,9 +189,9 @@ public: // Methods
 	init_0()
 	{
 		shrink_observers(); // Optional
-		x_ = static_cast< bool >( f_.vs( tQ ) );
+		x_ = ( f_.vs( tQ ) != 0.0 );
 		tD = f_.tD( tQ );
-		event( events.add_discrete( tD, this ) );
+		add_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 	}
 
@@ -197,9 +199,9 @@ public: // Methods
 	void
 	advance_discrete()
 	{
-		x_ = static_cast< bool >( f_.vs( tX = tQ = tD ) );
+		x_ = ( f_.vs( tX = tQ = tD ) != 0.0 );
 		tD = f_.tD( tQ );
-		event( events.shift_discrete( tD, event() ) );
+		shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 		advance_observers();
 	}
@@ -208,9 +210,9 @@ public: // Methods
 	void
 	advance_discrete_0_1()
 	{
-		x_ = static_cast< bool >( f_.vs( tX = tQ = tD ) );
+		x_ = ( f_.vs( tX = tQ = tD ) != 0.0 );
 		tD = f_.tD( tD );
-		event( events.shift_discrete( tD, event() ) );
+		shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 	}
 

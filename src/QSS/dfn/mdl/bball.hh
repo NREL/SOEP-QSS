@@ -38,6 +38,7 @@
 
 // QSS Headers
 #include <QSS/dfn/Variable.fwd.hh>
+#include <QSS/dfn/Conditional.fwd.hh>
 
 // C++ Headers
 #include <vector>
@@ -47,10 +48,11 @@ namespace dfn {
 namespace mdl {
 
 using Variables = std::vector< Variable * >;
+using Conditionals = std::vector< Conditional * >;
 
 // Bouncing Ball Example Setup
 void
-bball( Variables & vars );
+bball( Variables & vars, Conditionals & cons );
 
 } // mdl
 } // dfn

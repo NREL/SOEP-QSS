@@ -62,14 +62,16 @@ public: // Types
 	using Super::tQ;
 	using Super::tX;
 	using Super::tE;
-	using Super::sT;
+	using Super::st;
 	using Super::dt_min;
 	using Super::dt_max;
 	using Super::dt_inf;
 	using Super::self_observer;
 
+	using Super::add_QSS;
 	using Super::advance_observers;
 	using Super::event;
+	using Super::shift_QSS;
 	using Super::shrink_observers;
 	using Super::tE_infinity_tQ;
 	using Super::tE_infinity_tX;
@@ -132,14 +134,14 @@ public: // Properties
 	Value
 	s( Time const ) const
 	{
-		return ( sT == events.active_superdense_time() ? q_c_ : q_0_ );
+		return ( st == events.active_superdense_time() ? q_c_ : q_0_ );
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
 	Value
 	sn( Time const t ) const
 	{
-		return ( sT == events.active_superdense_time() ? q_c_ : q_0_ );
+		return ( st == events.active_superdense_time() ? q_c_ : q_0_ );
 	}
 
 public: // Methods
@@ -189,7 +191,7 @@ public: // Methods
 			q_0_ += signum( x_1_ ) * qTol;
 		}
 		set_tE_aligned();
-		event( events.add_QSS( tE, this ) );
+		add_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 	}
 
@@ -214,7 +216,7 @@ public: // Methods
 			q_0_ += signum( x_1_ ) * qTol;
 		}
 		set_tE_aligned();
-		event( events.shift_QSS( tE, event() ) );
+		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 		advance_observers();
 	}
@@ -239,7 +241,7 @@ public: // Methods
 			q_0_ += signum( x_1_ ) * qTol;
 		}
 		set_tE_aligned();
-		event( events.shift_QSS( tE, event() ) );
+		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 	}
 
@@ -251,7 +253,7 @@ public: // Methods
 		x_0_ = x_0_ + ( x_1_ * ( t - tX ) );
 		x_1_ = d_.q( tX = t );
 		set_tE_unaligned();
-		event( events.shift_QSS( tE, event() ) );
+		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "  " << name << '(' << t << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 	}
 
@@ -264,7 +266,7 @@ public: // Methods
 		set_qTol();
 		x_1_ = d_.q( tX = tQ = t );
 		set_tE_aligned();
-		event( events.shift_QSS( tE, event() ) );
+		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 		advance_observers();
 	}
@@ -285,7 +287,7 @@ public: // Methods
 	{
 		x_1_ = d_.q( tQ );
 		set_tE_aligned();
-		event( events.shift_QSS( tE, event() ) );
+		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 	}
 

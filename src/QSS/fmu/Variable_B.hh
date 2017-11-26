@@ -71,7 +71,7 @@ public: // Creation
 	 FMU_Variable const var = FMU_Variable()
 	) :
 	 Super( name, var ),
-	 x_( static_cast< Boolean >( xIni ) )
+	 x_( xIni != 0 )
 	{}
 
 public: // Predicate
@@ -99,7 +99,7 @@ public: // Properties
 		return x_;
 	}
 
-	// Continuous Boolean Value at Time t
+	// Boolean Value at Time t
 	Boolean
 	b( Time const ) const
 	{
@@ -192,7 +192,7 @@ public: // Methods
 		assert( observees_.empty() );
 		shrink_observers(); // Optional
 		sort_observers();
-		x_ = static_cast< Boolean >( xIni );
+		x_ = ( xIni != 0 );
 		add_handler();
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << '\n';
 	}
@@ -204,7 +204,7 @@ public: // Methods
 		assert( observees_.empty() );
 		shrink_observers(); // Optional
 		sort_observers();
-		x_ = static_cast< Boolean >( x );
+		x_ = ( x != 0 );
 		add_handler();
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << '\n';
 	}
@@ -215,17 +215,24 @@ public: // Methods
 	{
 		assert( tX <= t );
 		tX = tQ = t;
-		x_ = fmu_get_boolean_value(); // Assume FMU ran zero-crossing handler
-		advance_observers_1();
-		if ( observers_max_order_ >= 2 ) {
-			fmu::set_time( tN = tQ + options::dtNum );
-			advance_observers_2();
+		Boolean const x_new( fmu_get_boolean_value() ); // Assume FMU ran event handler
+		if ( x_ != x_new ) {
+			x_ = x_new;
+			advance_observers_1();
+			if ( observers_max_order_ >= 2 ) {
+				fmu::set_time( tN = tQ + options::dtNum );
+				advance_observers_2();
+			}
+			if ( options::output::d ) {
+				std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+				advance_observers_d();
+			}
+		} else {
+			if ( options::output::d ) {
+				std::cout << "# " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+			}
 		}
 		shift_handler();
-		if ( options::output::d ) {
-			std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
-			advance_observers_d();
-		}
 	}
 
 	// Handler Advance: Stage 0
@@ -234,7 +241,7 @@ public: // Methods
 	{
 		assert( tX <= t );
 		tX = tQ = t;
-		x_ = fmu_get_boolean_value(); // Assume FMU ran zero-crossing handler
+		x_ = fmu_get_boolean_value(); // Assume FMU ran event handler
 		shift_handler();
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
 	}

@@ -146,7 +146,7 @@ public: // Methods
 		init_observers();
 		x_ = f_( tQ ).x_0;
 		tD = f_( tQ ).tD;
-		event( events.add_discrete( tD, this ) );
+		add_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 	}
 
@@ -161,7 +161,7 @@ public: // Methods
 			advance_observers_2();
 		}
 		tD = f_( tD ).tD;
-		event( events.shift_discrete( tD, event() ) );
+		shift_discrete( tD );
 		if ( options::output::d ) {
 			std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 			advance_observers_d();
@@ -174,7 +174,7 @@ public: // Methods
 	{
 		x_ = f_( tX = tQ = tD ).x_0;
 		tD = f_( tD ).tD;
-		event( events.shift_discrete( tD, event() ) );
+		shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 	}
 

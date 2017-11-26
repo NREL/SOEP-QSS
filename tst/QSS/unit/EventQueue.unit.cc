@@ -66,10 +66,10 @@ TEST( EventQueueTest, Basic )
 
 	EXPECT_FALSE( events.empty() );
 	EXPECT_EQ( 10u, events.size() );
-	EXPECT_EQ( &vars[ 0 ], events.top_var() );
+	EXPECT_EQ( &vars[ 0 ], events.top_target() );
 	EXPECT_EQ( Time( 0.0 ), events.top_time() );
 	for ( Variables::size_type i = 0; i < 10; ++i ) {
-		SuperdenseTime const s( Time( i ), EventQ::Off::QSS );
+		SuperdenseTime const s( Time( i ), 0, EventQ::Off::QSS );
 		EXPECT_TRUE( events.has( s ) );
 		EXPECT_EQ( 1u, events.count( s ) );
 		EXPECT_EQ( Time( i ), events.find( s )->first.t );
@@ -78,10 +78,10 @@ TEST( EventQueueTest, Basic )
 
 	events.set_active_time();
 	events.shift_QSS( Time( 2.0 ), events.begin() );
-	SuperdenseTime const s( Time( 2.0 ), EventQ::Off::QSS );
-	EXPECT_EQ( &vars[ 1 ], events.top_var() );
+	SuperdenseTime const s( Time( 2.0 ), 0, EventQ::Off::QSS );
+	EXPECT_EQ( &vars[ 1 ], events.top_target() );
 	EXPECT_EQ( Time( 1.0 ), events.top_time() );
-	EXPECT_EQ( SuperdenseTime( Time( 1.0 ), EventQ::Off::QSS ), events.top_superdense_time() );
+	EXPECT_EQ( SuperdenseTime( Time( 1.0 ), 0, EventQ::Off::QSS ), events.top_superdense_time() );
 	EXPECT_EQ( 2u, events.count( s ) );
 	auto all( events.equal_range( s ) );
 	EXPECT_EQ( 2u, std::distance( all.first, all.second ) );

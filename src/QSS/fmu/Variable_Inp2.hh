@@ -165,7 +165,7 @@ public: // Methods
 		x_2_ = one_half * f_( tQ ).x_2;
 		set_tE();
 		tD = f_( tQ ).tD;
-		event( tE < tD ? events.add_QSS( tE, this ) : events.add_discrete( tD, this ) );
+		tE < tD ? add_QSS( tE ) : add_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
@@ -192,7 +192,7 @@ public: // Methods
 		}
 		set_tE();
 		tD = f_( tD ).tD;
-		event( tE < tD ? events.shift_QSS( tE, event() ) : events.shift_discrete( tD, event() ) );
+		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) {
 			std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << "   tD=" << tD << '\n';
 			advance_observers_d();
@@ -215,7 +215,7 @@ public: // Methods
 		x_2_ = one_half * f_( tD ).x_2;
 		set_tE();
 		tD = f_( tD ).tD;
-		event( tE < tD ? events.shift_QSS( tE, event() ) : events.shift_discrete( tD, event() ) );
+		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
@@ -234,7 +234,7 @@ public: // Methods
 		}
 		set_tE();
 		tD = f_( tQ ).tD;
-		event( tE < tD ? events.shift_QSS( tE, event() ) : events.shift_discrete( tD, event() ) );
+		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) {
 			std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << "   tD=" << tD << '\n';
 			advance_observers_d();
@@ -263,7 +263,7 @@ public: // Methods
 		x_2_ = one_half * f_( tE ).x_2;
 		set_tE();
 		tD = f_( tQ ).tD;
-		event( tE < tD ? events.shift_QSS( tE, event() ) : events.shift_discrete( tD, event() ) );
+		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << "   tD=" << tD << '\n';
 	}
 

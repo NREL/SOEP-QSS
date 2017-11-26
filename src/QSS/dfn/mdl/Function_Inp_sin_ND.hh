@@ -201,10 +201,6 @@ public: // Methods
 		dtn_inv_cb_2_ = 0.5 * ( dtn_inv_ * dtn_inv_ * dtn_inv_ );
 	}
 
-public: // Static Data
-
-	static int const max_order = 3; // Max QSS order supported
-
 private: // Data
 
 	Coefficient c_{ 1.0 }; // Value scaling

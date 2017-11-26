@@ -1,4 +1,4 @@
-// FMU-Based QSS Input Variable Abstract Base Class
+// QSS Globals
 //
 // Project: QSS Solver
 //
@@ -33,114 +33,12 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_Variable_Inp_hh_INCLUDED
-#define QSS_fmu_Variable_Inp_hh_INCLUDED
-
 // QSS Headers
-#include <QSS/fmu/Variable.hh>
-#include <QSS/fmu/SmoothToken.hh>
-
-// C++ Headers
-#include <functional>
+#include <QSS/globals.hh>
 
 namespace QSS {
-namespace fmu {
 
-// FMU-Based QSS Input Variable Abstract Base Class
-class Variable_Inp : public Variable
-{
+// QSS Globals
+EventQueue< Target > events;
 
-public: // Types
-
-	using Super = Variable;
-	using Function = std::function< SmoothToken const &( Time const ) >;
-
-protected: // Creation
-
-	// Name + Tolerance Constructor
-	Variable_Inp(
-	 std::string const & name,
-	 Value const rTol,
-	 Value const aTol,
-	 FMU_Variable const var = FMU_Variable(),
-	 Function f = Function()
-	) :
-	 Super( name, rTol, aTol, var ),
-	 f_( f )
-	{
-		xIni = f_( tQ ).x_0;
-		tD = f_( tQ ).tD;
-	}
-
-	// Name Constructor
-	explicit
-	Variable_Inp(
-	 std::string const & name,
-	 FMU_Variable const var = FMU_Variable(),
-	 Function f = Function()
-	) :
-	 Super( name, var ),
-	 f_( f )
-	{
-		xIni = f_( tQ ).x_0;
-		tD = f_( tQ ).tD;
-	}
-
-	// Copy Constructor
-	Variable_Inp( Variable_Inp const & ) = default;
-
-	// Move Constructor
-	Variable_Inp( Variable_Inp && ) noexcept = default;
-
-public: // Creation
-
-	// Destructor
-	virtual
-	~Variable_Inp()
-	{}
-
-protected: // Assignment
-
-	// Copy Assignment
-	Variable_Inp &
-	operator =( Variable_Inp const & ) = default;
-
-	// Move Assignment
-	Variable_Inp &
-	operator =( Variable_Inp && ) noexcept = default;
-
-public: // Predicate
-
-	// Input Variable?
-	bool
-	is_Input() const
-	{
-		return true;
-	}
-
-public: // Properties
-
-	// Function
-	Function const &
-	f() const
-	{
-		return f_;
-	}
-
-	// Function
-	Function &
-	f()
-	{
-		return f_;
-	}
-
-protected: // Data
-
-	Function f_; // Input function
-
-};
-
-} // fmu
 } // QSS
-
-#endif

@@ -62,7 +62,7 @@ public: // Creation
 	 std::string const & name,
 	 Integer const xIni = 0
 	) :
-	 Super( name, xIni ),
+	 Super( name, Value( xIni ) ),
 	 x_( xIni )
 	{}
 
@@ -102,14 +102,14 @@ public: // Properties
 	Value
 	x() const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 	// Continuous Value at Time t
 	Value
 	x( Time const ) const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 	// Continuous First Derivative at Time t
@@ -123,28 +123,28 @@ public: // Properties
 	Value
 	q() const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 	// Quantized Value at Time t
 	Value
 	q( Time const ) const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 	// Simultaneous Value at Time t
 	Value
 	s( Time const ) const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
 	Value
 	sn( Time const ) const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 public: // Methods
@@ -189,10 +189,15 @@ public: // Methods
 	{
 		assert( tX <= t );
 		tX = tQ = t;
-		x_ = static_cast< Integer >( x );
+		Integer const x_new( static_cast< Integer >( x ) );
+		if ( x_ != x_new ) {
+			x_ = x_new;
+			advance_observers();
+			if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+		} else {
+			if ( options::output::d ) std::cout << "# " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+		}
 		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
-		advance_observers();
 	}
 
 	// Handler Advance: Stage 0

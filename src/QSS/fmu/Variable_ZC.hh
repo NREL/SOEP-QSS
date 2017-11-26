@@ -105,12 +105,19 @@ public: // Predicate
 
 	// Has Crossing Type?
 	bool
-	has( Crossing const crossing )
+	has( Crossing const c )
 	{
-		return ( crossings.find( crossing ) != crossings.end() );
+		return ( crossings.find( c ) != crossings.end() );
 	}
 
 public: // Properties
+
+	// Boolean Value at Time t
+	bool
+	b( Time const t ) const
+	{
+		return ( t == tZ_prev );
+	}
 
 	// Zero-Crossing Time
 	Time
@@ -123,9 +130,9 @@ public: // Methods
 
 	// Add Crossing Type
 	Variable_ZC &
-	add( Crossing const crossing )
+	add( Crossing const c )
 	{
-		crossings.insert( crossing );
+		crossings.insert( c );
 		return *this;
 	}
 
@@ -188,15 +195,12 @@ public: // Methods
 		return *this;
 	}
 
-	// Shift Observers Events to Handlers
+	// Advance Observees Slightly Past Zero-Crossing Time for FMU Detection
 	void
-	shift_handlers()
+	advance_observees()
 	{
 		assert( tZ != infinity );
 		fmu_set_observees_q( tZ + options::dtZC ); // Use slightly later time to let FMU detect the zero crossing: This is not robust
-		for ( auto observer : observers_ ) {
-			observer->shift_handler( tZ );
-		}
 	}
 
 protected: // Methods
@@ -234,14 +238,14 @@ protected: // Methods
 	// Crossed Value for Signaling FMU Event Processing
 	static
 	Value
-	crossed( Crossing const crossing )
+	crossed( Crossing const c )
 	{
 		static Value const zc_eps( 1.0e-6 ); //Do Set this based on how FMU behaves wrt chattering prevention and tolerances
-		if ( ( crossing == Crossing::Dn ) || ( crossing == Crossing::DnPN ) || ( crossing == Crossing::DnZN ) ) {
+		if ( ( c == Crossing::Dn ) || ( c == Crossing::DnPN ) || ( c == Crossing::DnZN ) ) {
 			return -zc_eps;
-		} else if ( ( crossing == Crossing::DnPZ ) || ( crossing == Crossing::Flat ) || ( crossing == Crossing::UpNZ ) ) {
+		} else if ( ( c == Crossing::DnPZ ) || ( c == Crossing::Flat ) || ( c == Crossing::UpNZ ) ) {
 			return 0.0;
-		} else if ( ( crossing == Crossing::Up ) || ( crossing == Crossing::UpNP ) || ( crossing == Crossing::UpZP ) ) {
+		} else if ( ( c == Crossing::Up ) || ( c == Crossing::UpNP ) || ( c == Crossing::UpZP ) ) {
 			return +zc_eps;
 		} else {
 			assert( false ); return 0.0;
@@ -251,8 +255,9 @@ protected: // Methods
 public: // Data
 
 	Time tZ{ infinity }; // Zero-crossing time: tQ <= tZ and tX <= tZ
-	Time tZ_prev{ infinity }; // Previous zero-crossing time
+	Time tZ_prev{ infinity }; // Zero-crossing time of previous crossing
 	Crossing crossing{ Crossing::Flat }; // Zero-crossing type
+	Crossing crossing_prev{ Crossing::Flat }; // Zero-crossing type of previous crossing
 	Crossings crossings; // Zero-crossing types handled
 
 protected: // Data

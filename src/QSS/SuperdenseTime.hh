@@ -46,6 +46,22 @@
 namespace QSS {
 
 // SuperdenseTime Representation
+//
+// Model variable dependencies can create a cascade of events at the same clock time.
+// Rather than introduce artificial delays this implementation uses the notion of
+// superdense time to handle events at the same clock time by using a secondary time
+// index to group passes of simultaneous events.
+//
+// QSS simulations can have a number of different types of events: discrete,
+// requantization, zero-crossing, and conditional block handler. These can also
+// have interdependencies. To ensure a deterministic simulation these are handled
+// in sub-passes for each event type. Some computations, such as conditional block
+// evaluation, need to process all events from the same pass. To clearly and
+// efficiently order and process these sub-passes a second integer-valued offset
+// number is associated with each superdense time.
+//
+// Poorly defined models can create an infinite loop of simultaneous events. This
+// implementation will seek to detect such situations and terminate with an error.
 class SuperdenseTime final
 {
 
@@ -53,47 +69,40 @@ public: // Types
 
 	using Time = double;
 	using Index = std::size_t;
+	using Offset = std::size_t;
 
 public: // Creation
 
 	// Default Constructor
-	SuperdenseTime() :
-	 t( 0.0 ),
-	 i( 0 )
+	SuperdenseTime()
 	{}
 
 	// Time Constructor
 	SuperdenseTime( Time const t ) :
-	 t( t ),
-	 i( 0 )
+	 t( t )
 	{}
 
-	// Time + Index Constructor
+	// Time + Index + Offset Constructor
 	SuperdenseTime(
 	 Time const t,
-	 Index const i
+	 Index const i,
+	 Offset const o
 	) :
 	 t( t ),
-	 i( i )
+	 i( i ),
+	 o( o )
 	{}
 
 public: // Assignment
 
 	// SuperdenseTime = Time
 	SuperdenseTime &
-	operator =( Time const t_ )
+	operator =( Time const time )
 	{
-		t = t_;
+		t = time;
 		i = 0;
+		o = 0;
 		return *this;
-	}
-
-	// Time + Index Assignment
-	void
-	assign( Time const t_, Index const i_ )
-	{
-	    t = t_;
-	    i = i_;
 	}
 
 public: // Conversion
@@ -127,7 +136,7 @@ public: // Comparison: SuperdenseTime [?] SuperdenseTime
 	bool
 	operator ==( SuperdenseTime const & s1, SuperdenseTime const & s2 )
 	{
-		return ( s1.t == s2.t ) && ( s1.i == s2.i );
+		return ( s1.t == s2.t ) && ( s1.i == s2.i ) && ( s1.o == s2.o );
 	}
 
 	// SuperdenseTime != SuperdenseTime
@@ -135,7 +144,7 @@ public: // Comparison: SuperdenseTime [?] SuperdenseTime
 	bool
 	operator !=( SuperdenseTime const & s1, SuperdenseTime const & s2 )
 	{
-		return ( s1.t != s2.t ) || ( s1.i != s2.i );
+		return ( s1.t != s2.t ) || ( s1.i != s2.i ) || ( s1.o != s2.o );
 	}
 
 	// SuperdenseTime < SuperdenseTime
@@ -143,7 +152,7 @@ public: // Comparison: SuperdenseTime [?] SuperdenseTime
 	bool
 	operator <( SuperdenseTime const & s1, SuperdenseTime const & s2 )
 	{
-		return ( s1.t < s2.t ) || ( ( s1.t == s2.t ) && ( s1.i < s2.i ) );
+		return ( s1.t < s2.t ) || ( ( s1.t == s2.t ) && ( s1.i < s2.i ) ) || ( ( s1.t == s2.t ) && ( s1.i == s2.i ) && ( s1.o < s2.o ) );
 	}
 
 	// SuperdenseTime <= SuperdenseTime
@@ -151,7 +160,7 @@ public: // Comparison: SuperdenseTime [?] SuperdenseTime
 	bool
 	operator <=( SuperdenseTime const & s1, SuperdenseTime const & s2 )
 	{
-		return ( s1.t < s2.t ) || ( ( s1.t == s2.t ) && ( s1.i <= s2.i ) );
+		return ( s1.t < s2.t ) || ( ( s1.t == s2.t ) && ( s1.i <= s2.i ) ) || ( ( s1.t == s2.t ) && ( s1.i == s2.i ) && ( s1.o <= s2.o ) );
 	}
 
 	// SuperdenseTime >= SuperdenseTime
@@ -159,7 +168,7 @@ public: // Comparison: SuperdenseTime [?] SuperdenseTime
 	bool
 	operator >=( SuperdenseTime const & s1, SuperdenseTime const & s2 )
 	{
-		return ( s1.t > s2.t ) || ( ( s1.t == s2.t ) && ( s1.i >= s2.i ) );
+		return ( s1.t > s2.t ) || ( ( s1.t == s2.t ) && ( s1.i >= s2.i ) ) || ( ( s1.t == s2.t ) && ( s1.i == s2.i ) && ( s1.o >= s2.o ) );
 	}
 
 	// SuperdenseTime > SuperdenseTime
@@ -167,7 +176,31 @@ public: // Comparison: SuperdenseTime [?] SuperdenseTime
 	bool
 	operator >( SuperdenseTime const & s1, SuperdenseTime const & s2 )
 	{
-		return ( s1.t > s2.t ) || ( ( s1.t == s2.t ) && ( s1.i > s2.i ) );
+		return ( s1.t > s2.t ) || ( ( s1.t == s2.t ) && ( s1.i > s2.i ) ) || ( ( s1.t == s2.t ) && ( s1.i == s2.i ) && ( s1.o > s2.o ) );
+	}
+
+	// Same Time?
+	friend
+	bool
+	same_time( SuperdenseTime const & s1, SuperdenseTime const & s2 )
+	{
+		return ( s1.t == s2.t );
+	}
+
+	// Same Pass?
+	friend
+	bool
+	same_pass( SuperdenseTime const & s1, SuperdenseTime const & s2 )
+	{
+		return ( s1.t == s2.t ) && ( s1.i == s2.i );
+	}
+
+	// Same Type?
+	friend
+	bool
+	same_type( SuperdenseTime const & s1, SuperdenseTime const & s2 )
+	{
+		return ( s1.o == s2.o );
 	}
 
 public: // Comparison: SuperdenseTime [?] Time
@@ -270,17 +303,6 @@ public: // Comparison: Time [?] SuperdenseTime
 		return ( s1 > s2.t );
 	}
 
-public: // Generator
-
-	// Superdense Time with Index Increment
-	SuperdenseTime
-	up_indexed( Index const up = 1 )
-	{
-		assert( up < std::numeric_limits< Index >::max() );
-		assert( i < std::numeric_limits< Index >::max() - up );
-		return SuperdenseTime( t, i + up );
-	}
-
 public: // I/O
 
 	// Stream << SuperdenseTime
@@ -288,14 +310,15 @@ public: // I/O
 	std::ostream &
 	operator <<( std::ostream & stream, SuperdenseTime const & s )
 	{
-		stream << std::setprecision( 16 ) << '(' << s.t << ',' << s.i << ')';
+		stream << std::setprecision( 16 ) << '(' << s.t << ',' << s.i << ',' << s.o << ')';
 		return stream;
 	}
 
 public: // Data
 
-	Time t{ 0.0 };
-	Index i{ 0 };
+	Time t{ 0.0 }; // Time
+	Index i{ 0 }; // Pass
+	Offset o{ 0 }; // Type
 
 };
 

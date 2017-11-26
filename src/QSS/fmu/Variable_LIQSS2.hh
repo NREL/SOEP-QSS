@@ -119,21 +119,21 @@ public: // Properties
 	Value
 	s( Time const t ) const
 	{
-		return ( sT == events.active_superdense_time() ? q_c_ : q_0_ + ( q_1_ * ( t - tQ ) ) );
+		return ( st == events.active_superdense_time() ? q_c_ : q_0_ + ( q_1_ * ( t - tQ ) ) );
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
 	Value
 	sn( Time const t ) const
 	{
-		return ( sT == events.active_superdense_time() ? q_c_ + ( s_1_ * ( t - tQ ) ) : q_0_ + ( q_1_ * ( t - tQ ) ) );
+		return ( st == events.active_superdense_time() ? q_c_ + ( s_1_ * ( t - tQ ) ) : q_0_ + ( q_1_ * ( t - tQ ) ) );
 	}
 
 	// Simultaneous First Derivative at Time t
 	Value
 	s1( Time const ) const
 	{
-		return ( sT == events.active_superdense_time() ? s_1_ : q_1_ );
+		return ( st == events.active_superdense_time() ? s_1_ : q_1_ );
 	}
 
 public: // Methods
@@ -198,7 +198,7 @@ public: // Methods
 			q_0_ += signum( x_2_ ) * qTol;
 		}
 		set_tE_aligned();
-		event( events.add_QSS( tE, this ) );
+		add_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';
 	}
 
@@ -238,7 +238,7 @@ public: // Methods
 			advance_observers_2();
 		}
 		set_tE_aligned();
-		event( events.shift_QSS( tE, event() ) );
+		shift_QSS( tE );
 		if ( options::output::d ) {
 			std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';
 			advance_observers_d();
@@ -279,7 +279,7 @@ public: // Methods
 			q_0_ += signum( x_2_ ) * qTol;
 		}
 		set_tE_aligned();
-		event( events.shift_QSS( tE, event() ) );
+		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';
 	}
 
@@ -300,12 +300,12 @@ public: // Methods
 	{
 		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE_unaligned();
-		event( events.shift_QSS( tE, event() ) );
+		shift_QSS( tE );
 	}
 
 	// Observer Advance: Stage d
 	void
-	advance_observer_d()
+	advance_observer_d() const
 	{
 		std::cout << "  " << name << '(' << tX << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';
 	}
@@ -328,7 +328,7 @@ public: // Methods
 		if ( ( self_observer ) && ( observers_max_order_ <= 1 ) ) fmu_set_q( tN );
 		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
 		set_tE_aligned();
-		event( events.shift_QSS( tE, event() ) );
+		shift_QSS( tE );
 		if ( options::output::d ) {
 			std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';
 			advance_observers_d();
@@ -362,7 +362,7 @@ public: // Methods
 		if ( ( self_observer ) && ( observers_max_order_ <= 1 ) ) fmu_set_q( tN );
 		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
 		set_tE_aligned();
-		event( events.shift_QSS( tE, event() ) );
+		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';
 	}
 

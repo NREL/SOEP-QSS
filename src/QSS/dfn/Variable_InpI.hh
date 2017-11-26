@@ -62,8 +62,10 @@ public: // Types
 	using Super::tX;
 	using Super::tD;
 
+	using Super::add_discrete;
 	using Super::advance_observers;
 	using Super::event;
+	using Super::shift_discrete;
 	using Super::shrink_observers;
 
 private: // Types
@@ -114,14 +116,14 @@ public: // Properties
 	Value
 	x() const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 	// Continuous Value at Time t
 	Value
 	x( Time const ) const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 	// Continuous First Derivative at Time t
@@ -135,14 +137,14 @@ public: // Properties
 	Value
 	q() const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 	// Quantized Value at Time t
 	Value
 	q( Time const ) const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 	// Simultaneous Value at Time t
@@ -156,7 +158,7 @@ public: // Properties
 	Value
 	sn( Time const ) const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 public: // Methods
@@ -175,7 +177,7 @@ public: // Methods
 		shrink_observers(); // Optional
 		x_ = static_cast< Integer >( f_.vs( tQ ) );
 		tD = f_.tD( tQ );
-		event( events.add_discrete( tD, this ) );
+		add_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 	}
 
@@ -185,7 +187,7 @@ public: // Methods
 	{
 		x_ = static_cast< Integer >( f_.vs( tX = tQ = tD ) );
 		tD = f_.tD( tQ );
-		event( events.shift_discrete( tD, event() ) );
+		shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 		advance_observers();
 	}
@@ -196,7 +198,7 @@ public: // Methods
 	{
 		x_ = static_cast< Integer >( f_.vs( tX = tQ = tD ) );
 		tD = f_.tD( tD );
-		event( events.shift_discrete( tD, event() ) );
+		shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 	}
 

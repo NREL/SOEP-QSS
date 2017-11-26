@@ -91,7 +91,7 @@ public: // Properties
 		return x_;
 	}
 
-	// Continuous Boolean Value at Time t
+	// Boolean Value at Time t
 	bool
 	b( Time const ) const
 	{
@@ -182,7 +182,7 @@ public: // Methods
 	init_0()
 	{
 		shrink_observers(); // Optional
-		x_ = static_cast< bool >( xIni );
+		x_ = ( xIni != 0 );
 		add_handler();
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << '\n';
 	}
@@ -192,7 +192,7 @@ public: // Methods
 	init_0( Value const x )
 	{
 		shrink_observers(); // Optional
-		x_ = static_cast< bool >( x );
+		x_ = ( x != 0 );
 		add_handler();
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << '\n';
 	}
@@ -203,10 +203,15 @@ public: // Methods
 	{
 		assert( tX <= t );
 		tX = tQ = t;
-		x_ = static_cast< bool >( x );
+		bool const x_new( x != 0.0 );
+		if ( x_ != x_new ) {
+			x_ = x_new;
+			advance_observers();
+			if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+		} else {
+			if ( options::output::d ) std::cout << "# " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+		}
 		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
-		advance_observers();
 	}
 
 	// Handler Advance: Stage 0
@@ -215,7 +220,7 @@ public: // Methods
 	{
 		assert( tX <= t );
 		tX = tQ = t;
-		x_ = static_cast< bool >( x );
+		x_ = ( x != 0.0 );
 		shift_handler();
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
 	}

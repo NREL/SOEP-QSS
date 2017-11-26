@@ -212,10 +212,6 @@ private: // Methods
 		return ( d_ * ( ftd + 1.0 ) > t ? ftd : ftd + 1.0 );
 	}
 
-public: // Static Data
-
-	static int const max_order = 3; // Max QSS order supported
-
 private: // Data
 
 	Coefficient h_0_{ 0.0 }; // Initial height

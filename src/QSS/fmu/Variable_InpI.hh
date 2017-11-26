@@ -102,14 +102,14 @@ public: // Properties
 	Value
 	x() const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 	// Continuous Value at Time t
 	Value
 	x( Time const ) const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 	// Continuous First Derivative at Time t
@@ -123,14 +123,14 @@ public: // Properties
 	Value
 	q() const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 	// Quantized Value at Time t
 	Value
 	q( Time const ) const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 	// Simultaneous Value at Time t
@@ -144,7 +144,7 @@ public: // Properties
 	Value
 	sn( Time const ) const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 public: // Methods
@@ -164,7 +164,7 @@ public: // Methods
 		init_observers();
 		x_ = static_cast< Integer >( f_( tQ ).x_0 );
 		tD = f_( tQ ).tD;
-		event( events.add_discrete( tD, this ) );
+		add_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 	}
 
@@ -179,7 +179,7 @@ public: // Methods
 			advance_observers_2();
 		}
 		tD = f_( tD ).tD;
-		event( events.shift_discrete( tD, event() ) );
+		shift_discrete( tD );
 		if ( options::output::d ) {
 			std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 			advance_observers_d();
@@ -192,7 +192,7 @@ public: // Methods
 	{
 		x_ = static_cast< Integer >( f_( tX = tQ = tD ).x_0 );
 		tD = f_( tD ).tD;
-		event( events.shift_discrete( tD, event() ) );
+		shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 	}
 

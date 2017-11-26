@@ -39,7 +39,7 @@
 namespace QSS {
 
 // QSS Event Queue
-template< typename V >
+template< typename T >
 class EventQueue;
 
 } // QSS

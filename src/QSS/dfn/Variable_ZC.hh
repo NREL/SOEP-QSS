@@ -47,7 +47,7 @@ namespace QSS {
 namespace dfn {
 
 // QSS Zero-Crossing Variable Abstract Base Class
-template< template< typename > class F, template< typename > class H >
+template< template< typename > class F >
 class Variable_ZC : public Variable
 {
 
@@ -57,7 +57,6 @@ public: // Types
 	using Time = Variable::Time;
 	using Value = Variable::Value;
 	using Function = F< Variable >;
-	using Handler = H< Variable >;
 	using Crossing = Variable::Crossing;
 	using Crossings = std::unordered_set< Crossing, EnumHash >;
 
@@ -107,12 +106,19 @@ public: // Predicate
 
 	// Has Crossing Type?
 	bool
-	has( Crossing const crossing )
+	has( Crossing const c )
 	{
-		return ( crossings.find( crossing ) != crossings.end() );
+		return ( crossings.find( c ) != crossings.end() );
 	}
 
 public: // Properties
+
+	// Boolean Value at Time t
+	bool
+	b( Time const t ) const
+	{
+		return ( t == tZ_prev );
+	}
 
 	// Zero-Crossing Time
 	Time
@@ -135,27 +141,13 @@ public: // Properties
 		return f_;
 	}
 
-	// Handler
-	Handler const &
-	h() const
-	{
-		return h_;
-	}
-
-	// Handler
-	Handler &
-	h()
-	{
-		return h_;
-	}
-
 public: // Methods
 
 	// Add Crossing Type
 	Variable_ZC &
-	add( Crossing const crossing )
+	add( Crossing const c )
 	{
-		crossings.insert( crossing );
+		crossings.insert( c );
 		return *this;
 	}
 
@@ -253,14 +245,14 @@ protected: // Methods
 public: // Data
 
 	Time tZ{ infinity }; // Zero-crossing time: tQ <= tZ and tX <= tZ
-	Time tZ_prev{ infinity }; // Previous zero-crossing time
+	Time tZ_prev{ infinity }; // Zero-crossing time of previous crossing
 	Crossing crossing{ Crossing::Flat }; // Zero-crossing type
+	Crossing crossing_prev{ Crossing::Flat }; // Zero-crossing type of previous crossing
 	Crossings crossings; // Zero-crossing types handled
 
 protected: // Data
 
 	Function f_; // Zero-crossing function
-	Handler h_; // Handler function
 
 };
 

@@ -1,4 +1,4 @@
-// FMU-Based QSS Globals
+// QSS Event Target Abstract Base Class
 //
 // Project: QSS Solver
 //
@@ -33,16 +33,91 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#ifndef QSS_Target_hh_INCLUDED
+#define QSS_Target_hh_INCLUDED
+
 // QSS Headers
-#include <QSS/fmu/globals_fmu.hh>
-#include <QSS/fmu/Variable.hh>
-#include <QSS/EventQueue.hh>
+#include <QSS/Target.fwd.hh>
+#include <QSS/Event.hh>
+#include <QSS/SuperdenseTime.hh>
+
+// C++ Headers
+#include <cassert>
+#include <map>
+#include <string>
 
 namespace QSS {
-namespace fmu {
 
-// QSS Globals
-EventQueue< Variable > events;
+// QSS Event Target Abstract Base Class
+class Target
+{
 
-} // fmu
+public: // Types
+
+	using EventMap = std::multimap< SuperdenseTime, Event< Target > >;
+
+protected: // Creation
+
+	// Default Constructor
+	Target() = default;
+
+	// Name Constructor
+	explicit
+	Target( std::string const & name ) :
+	 name( name )
+	{}
+
+	// Copy Constructor
+	Target( Target const & ) = default;
+
+	// Move Constructor
+	Target( Target && ) noexcept = default;
+
+public: // Creation
+
+	// Destructor
+	virtual
+	~Target()
+	{}
+
+protected: // Assignment
+
+	// Copy Assignment
+	Target &
+	operator =( Target const & ) = default;
+
+	// Move Assignment
+	Target &
+	operator =( Target && ) noexcept = default;
+
+public: // Properties
+
+	// Event Queue Iterator
+	EventMap::iterator &
+	event()
+	{
+		return event_;
+	}
+
+	// Event Queue Iterator Assignment
+	void
+	event( EventMap::iterator const i )
+	{
+		event_ = i;
+		assert( event_->second.tar() == this );
+	}
+
+public: // Data
+
+	std::string name;
+	SuperdenseTime st; // Superdense time of latest event
+
+protected: // Data
+
+	EventMap::iterator event_; // Iterator into event queue
+
+};
+
 } // QSS
+
+#endif

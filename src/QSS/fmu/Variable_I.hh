@@ -59,7 +59,7 @@ public: // Creation
 	 Integer const xIni,
 	 FMU_Variable const var = FMU_Variable()
 	) :
-	 Super( name, xIni, var ),
+	 Super( name, Value( xIni ), var ),
 	 x_( xIni )
 	{}
 
@@ -109,14 +109,14 @@ public: // Properties
 	Value
 	x() const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 	// Continuous Value at Time t
 	Value
 	x( Time const ) const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 	// Continuous First Derivative at Time t
@@ -130,28 +130,28 @@ public: // Properties
 	Value
 	q() const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 	// Quantized Value at Time t
 	Value
 	q( Time const ) const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 	// Simultaneous Value at Time t
 	Value
 	s( Time const ) const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
 	Value
 	sn( Time const ) const
 	{
-		return x_;
+		return Value( x_ );
 	}
 
 public: // Methods
@@ -200,17 +200,24 @@ public: // Methods
 	{
 		assert( tX <= t );
 		tX = tQ = t;
-		x_ = fmu_get_integer_value(); // Assume FMU ran zero-crossing handler
-		advance_observers_1();
-		if ( observers_max_order_ >= 2 ) {
-			fmu::set_time( tN = tQ + options::dtNum );
-			advance_observers_2();
+		Integer const x_new( fmu_get_value() ); // Assume FMU ran event handler
+		if ( x_ != x_new ) {
+			x_ = x_new;
+			advance_observers_1();
+			if ( observers_max_order_ >= 2 ) {
+				fmu::set_time( tN = tQ + options::dtNum );
+				advance_observers_2();
+			}
+			if ( options::output::d ) {
+				std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+				advance_observers_d();
+			}
+		} else {
+			if ( options::output::d ) {
+				std::cout << "# " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+			}
 		}
 		shift_handler();
-		if ( options::output::d ) {
-			std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
-			advance_observers_d();
-		}
 	}
 
 	// Handler Advance: Stage 0
@@ -219,7 +226,7 @@ public: // Methods
 	{
 		assert( tX <= t );
 		tX = tQ = t;
-		x_ = fmu_get_integer_value(); // Assume FMU ran zero-crossing handler
+		x_ = fmu_get_integer_value(); // Assume FMU ran event handler
 		shift_handler();
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
 	}

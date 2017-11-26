@@ -38,43 +38,47 @@
 
 // QSS Headers
 #include <QSS/dfn/Variable.fwd.hh>
-#include <QSS/dfn/globals_dfn.hh>
-#include <QSS/EventQueue.hh>
+#include <QSS/dfn/Conditional.hh>
+#include <QSS/globals.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
+#include <QSS/Target.hh>
 
 // C++ Headers
 #include <algorithm>
-#include <cassert>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
-#include <string>
 #include <vector>
 
 namespace QSS {
 namespace dfn {
 
 // Variable Abstract Base Class
-class Variable
+class Variable : public Target
 {
 
 public: // Types
 
+	using Super = Target;
 	using Time = double;
 	using Value = double;
 	using Variables = std::vector< Variable * >;
-	using EventQ = EventQueue< Variable >;
 	using size_type = Variables::size_type;
+
+	using If = IfV< Variable >;
+	using When = WhenV< Variable >;
+	using If_Clauses = std::vector< If::Clause * >;
+	using When_Clauses = std::vector< When::Clause * >;
 
 	// Zero Crossing Type
 	enum class Crossing {
 	 DnPN = -4, // Downward: Positive to negative
 	 DnZN = -3, // Downward: Zero to negative
 	 DnPZ = -2, // Downward: Positive to zero
-	 Dn = -1,   // Downward
+	 Dn   = -1, // Downward
 	 Flat =  0, // Flat zero value
-	 Up = +1,   // Upward
+	 Up   = +1, // Upward
 	 UpNZ = +2, // Upward: Negative to zero
 	 UpZP = +3, // Upward: Zero to positive
 	 UpNP = +4  // Upward: Negative to positive
@@ -106,7 +110,7 @@ protected: // Creation
 	 Value const aTol,
 	 Value const xIni = 0.0
 	) :
-	 name( name ),
+	 Target( name ),
 	 rTol( std::max( rTol, 0.0 ) ),
 	 aTol( std::max( aTol, std::numeric_limits< Value >::min() ) ),
 	 xIni( xIni ),
@@ -122,7 +126,7 @@ protected: // Creation
 	 std::string const & name,
 	 Value const xIni = 0.0
 	) :
-	 name( name ),
+	 Target( name ),
 	 xIni( xIni ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
@@ -131,7 +135,7 @@ protected: // Creation
 	{}
 
 	// Copy Constructor
-	Variable( Variable const & ) = default;
+	Variable( Variable const & ) = delete;
 
 	// Move Constructor
 	Variable( Variable && ) noexcept = default;
@@ -147,7 +151,7 @@ protected: // Assignment
 
 	// Copy Assignment
 	Variable &
-	operator =( Variable const & ) = default;
+	operator =( Variable const & ) = delete;
 
 	// Move Assignment
 	Variable &
@@ -193,6 +197,15 @@ public: // Properties
 	virtual
 	int
 	order() const = 0;
+
+	// Boolean Value at Time t
+	virtual
+	bool
+	b( Time const ) const
+	{
+		assert( false ); // Missing override
+		return false;
+	}
 
 	// Continuous Value at Time t
 	virtual
@@ -289,21 +302,6 @@ public: // Properties
 		return observers_;
 	}
 
-	// Event Queue Iterator
-	EventQ::iterator &
-	event()
-	{
-		return event_;
-	}
-
-	// Event Queue Iterator Assignment
-	void
-	event( EventQ::iterator const i )
-	{
-		event_ = i;
-		assert( event_->second.var() == this );
-	}
-
 	// Zero-Crossing Time
 	virtual
 	Time
@@ -329,34 +327,6 @@ public: // Methods
 	{
 		assert( dt > 0.0 );
 		dt_max = dt;
-	}
-
-	// Add Observer
-	void
-	add_observer( Variable & v )
-	{
-		if ( &v != this ) observers_.push_back( &v ); // Don't need to self-observe: Observers called at the end of self requantization
-	}
-
-	// Add Observer
-	void
-	add_observer( Variable * v )
-	{
-		if ( v != this ) observers_.push_back( v ); // Don't need to self-observe: Observers called at the end of self requantization
-	}
-
-	// Shrink Observers Collection
-	void
-	shrink_observers()
-	{
-		observers_.shrink_to_fit();
-	}
-
-	// Add Handler Event
-	void
-	add_handler()
-	{
-		event_ = events.add_handler( this );
 	}
 
 	// Initialization
@@ -401,6 +371,20 @@ public: // Methods
 	init_3()
 	{}
 
+	// Discrete Add Event
+	void
+	add_discrete( Time const t )
+	{
+		event_ = events.add_discrete( t, this );
+	}
+
+	// Discrete Shift Event to Time t
+	void
+	shift_discrete( Time const t )
+	{
+		event_ = events.shift_discrete( t, event_ );
+	}
+
 	// Discrete Advance
 	virtual
 	void
@@ -428,6 +412,20 @@ public: // Methods
 	void
 	advance_discrete_3()
 	{}
+
+	// QSS Add Event
+	void
+	add_QSS( Time const t )
+	{
+		event_ = events.add_QSS( t, this );
+	}
+
+	// QSS Shift Event to Time t
+	void
+	shift_QSS( Time const t )
+	{
+		event_ = events.shift_QSS( t, event_ );
+	}
 
 	// QSS Advance
 	virtual
@@ -473,21 +471,18 @@ public: // Methods
 	advance_QSS_3()
 	{}
 
-	// Advance Observers
+	// Zero-Crossing Add Event
 	void
-	advance_observers()
+	add_ZC( Time const t )
 	{
-		for ( Variable * observer : observers_ ) {
-			observer->advance_observer( tQ );
-		}
+		event_ = events.add_ZC( t, this );
 	}
 
-	// Observer Advance
-	virtual
+	// Zero-Crossing Shift Event to Time t
 	void
-	advance_observer( Time const )
+	shift_ZC( Time const t )
 	{
-		assert( false ); // Not a QSS or ZC variable
+		event_ = events.shift_ZC( t, event_ );
 	}
 
 	// Zero-Crossing Advance
@@ -496,6 +491,27 @@ public: // Methods
 	advance_ZC()
 	{
 		assert( false ); // Not a ZC variable
+	}
+
+	// Handler Add Event
+	void
+	add_handler()
+	{
+		event_ = events.add_handler( this );
+	}
+
+	// Handler Shift Event to Time t
+	void
+	shift_handler( Time const t, Value const val )
+	{
+		event_ = events.shift_handler( t, val, event_ );
+	}
+
+	// Handler Shift Event to Time Infinity
+	void
+	shift_handler()
+	{
+		event_ = events.shift_handler( event_ );
 	}
 
 	// Handler Advance
@@ -538,18 +554,42 @@ public: // Methods
 		assert( false ); // Not a QSS variable
 	}
 
-	// Shift Handler to Time t
+	// Add Observer
 	void
-	shift_handler( Time const t, Value const val )
+	add_observer( Variable & v )
 	{
-		event_ = events.shift_handler( t, val, event_ );
+		if ( &v != this ) observers_.push_back( &v ); // Don't need to self-observe: Observers called at the end of self requantization
 	}
 
-	// Shift Handler to Time Infinity
+	// Add Observer
 	void
-	shift_handler()
+	add_observer( Variable * v )
 	{
-		event_ = events.shift_handler( event_ );
+		if ( v != this ) observers_.push_back( v ); // Don't need to self-observe: Observers called at the end of self requantization
+	}
+
+	// Shrink Observers Collection
+	void
+	shrink_observers()
+	{
+		observers_.shrink_to_fit();
+	}
+
+	// Advance Observers
+	void
+	advance_observers()
+	{
+		for ( Variable * observer : observers_ ) {
+			observer->advance_observer( tQ );
+		}
+	}
+
+	// Observer Advance
+	virtual
+	void
+	advance_observer( Time const )
+	{
+		assert( false ); // Not a QSS or ZC variable
 	}
 
 protected: // Methods
@@ -588,7 +628,6 @@ protected: // Methods
 
 public: // Data
 
-	std::string name;
 	Value rTol{ 1.0e-4 }; // Relative tolerance
 	Value aTol{ 1.0e-6 }; // Absolute tolerance
 	Value qTol{ 1.0e-6 }; // Quantization tolerance
@@ -601,13 +640,13 @@ public: // Data
 	Time dt_max{ infinity }; // Time step max
 	Time dt_inf{ infinity }; // Time step inf
 	Time dt_inf_rlx{ infinity }; // Relaxed time step inf
-	SuperdenseTime sT; // Trigger superdense time
 	bool self_observer{ false }; // Variable appears in its function/derivative?
+	If_Clauses if_clauses; // Clauses in conditional if blocks
+	When_Clauses when_clauses; // Clauses in conditional when blocks
 
 protected: // Data
 
 	Variables observers_; // Variables dependent on this one
-	EventQ::iterator event_; // Iterator to event queue entry
 
 };
 

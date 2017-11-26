@@ -171,10 +171,14 @@ public: // Methods
 	{
 		assert( tX <= t );
 		tX = tQ = t;
-		x_ = x;
+		if ( x_ != x ) {
+			x_ = x;
+			advance_observers();
+			if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+		} else {
+			if ( options::output::d ) std::cout << "# " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+		}
 		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
-		advance_observers();
 	}
 
 	// Handler Advance: Stage 0

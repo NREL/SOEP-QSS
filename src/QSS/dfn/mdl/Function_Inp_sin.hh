@@ -40,7 +40,6 @@
 #include <QSS/math.hh>
 
 // C++ Headers
-#include <cassert>
 #include <cmath>
 
 namespace QSS {
@@ -179,10 +178,6 @@ public: // Methods
 		s_ = s;
 		return *this;
 	}
-
-public: // Static Data
-
-	static int const max_order = 3; // Max QSS order supported
 
 private: // Data
 

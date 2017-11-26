@@ -38,20 +38,19 @@
 
 // QSS Headers
 #include <QSS/fmu/Variable.fwd.hh>
+#include <QSS/dfn/Conditional.hh>
 #include <QSS/fmu/FMI.hh>
 #include <QSS/fmu/FMU_Variable.hh>
-#include <QSS/fmu/globals_fmu.hh>
-#include <QSS/EventQueue.hh>
+#include <QSS/globals.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
+#include <QSS/Target.hh>
 
 // C++ Headers
 #include <algorithm>
-#include <cassert>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
-#include <string>
 #include <unordered_set>
 #include <vector>
 
@@ -59,25 +58,30 @@ namespace QSS {
 namespace fmu {
 
 // FMU-Based Variable Abstract Base Class
-class Variable
+class Variable : public Target
 {
 
 public: // Types
 
+	using Super = Target;
 	using Time = double;
 	using Value = double;
 	using Variables = std::vector< Variable * >;
-	using EventQ = EventQueue< Variable >;
 	using size_type = Variables::size_type;
+
+	using If = IfV< Variable >;
+	using When = WhenV< Variable >;
+	using If_Clauses = std::vector< If::Clause * >;
+	using When_Clauses = std::vector< When::Clause * >;
 
 	// Zero Crossing Type
 	enum class Crossing {
 	 DnPN = -4, // Downward: Positive to negative
 	 DnZN = -3, // Downward: Zero to negative
 	 DnPZ = -2, // Downward: Positive to zero
-	 Dn = -1,   // Downward
+	 Dn   = -1, // Downward
 	 Flat =  0, // Flat zero value
-	 Up = +1,   // Upward
+	 Up   = +1, // Upward
 	 UpNZ = +2, // Upward: Negative to zero
 	 UpZP = +3, // Upward: Zero to positive
 	 UpNP = +4  // Upward: Negative to positive
@@ -94,7 +98,7 @@ protected: // Creation
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
-	 name( name ),
+	 Target( name ),
 	 rTol( std::max( rTol, 0.0 ) ),
 	 aTol( std::max( aTol, std::numeric_limits< Value >::min() ) ),
 	 xIni( xIni ),
@@ -114,7 +118,7 @@ protected: // Creation
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
-	 name( name ),
+	 Target( name ),
 	 rTol( std::max( rTol, 0.0 ) ),
 	 aTol( std::max( aTol, std::numeric_limits< Value >::min() ) ),
 	 xIni( 0.0 ),
@@ -127,14 +131,13 @@ protected: // Creation
 	{}
 
 	// Name + Value Constructor
-	explicit
 	Variable(
 	 std::string const & name,
 	 Value const xIni,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
-	 name( name ),
+	 Target( name ),
 	 xIni( xIni ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
@@ -151,7 +154,7 @@ protected: // Creation
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
-	 name( name ),
+	 Target( name ),
 	 xIni( 0.0 ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
@@ -162,7 +165,7 @@ protected: // Creation
 	{}
 
 	// Copy Constructor
-	Variable( Variable const & ) = default;
+	Variable( Variable const & ) = delete;
 
 	// Move Constructor
 	Variable( Variable && ) noexcept = default;
@@ -178,7 +181,7 @@ protected: // Assignment
 
 	// Copy Assignment
 	Variable &
-	operator =( Variable const & ) = default;
+	operator =( Variable const & ) = delete;
 
 	// Move Assignment
 	Variable &
@@ -230,6 +233,15 @@ public: // Properties
 	observers_max_order() const
 	{
 		return observers_max_order_;
+	}
+
+	// Boolean Value at Time t
+	virtual
+	bool
+	b( Time const ) const
+	{
+		assert( false ); // Missing override
+		return false;
 	}
 
 	// Continuous Value at Time t
@@ -341,21 +353,6 @@ public: // Properties
 		return observees_;
 	}
 
-	// Event Queue Iterator
-	EventQ::iterator &
-	event()
-	{
-		return event_;
-	}
-
-	// Event Queue Iterator Assignment
-	void
-	event( EventQ::iterator const i )
-	{
-		event_ = i;
-		assert( event_->second.var() == this );
-	}
-
 	// Zero-Crossing Time
 	virtual
 	Time
@@ -381,6 +378,242 @@ public: // Methods
 	{
 		assert( dt > 0.0 );
 		dt_max = dt;
+	}
+
+	// Time Initialization
+	void
+	init_time( Time const t )
+	{
+		tQ = tX = tE = tN = t;
+	}
+
+	// Initialization
+	virtual
+	void
+	init()
+	{}
+
+	// Initialization to a Value
+	virtual
+	void
+	init( Value const )
+	{}
+
+	// Initialization: Observers
+	void
+	init_observers()
+	{
+		shrink_observers(); // Optional
+		shrink_observees(); // Optional
+		sort_observers();
+
+		// Observers observees setup
+		std::unordered_set< Variable * > oo2s; // Observees of observers of order 2+
+		for ( Variable * observer : observers_ ) {
+			if ( observer->order() >= 2 ) {
+				if ( observer->self_observer ) oo2s.insert( observer );
+				for ( auto observee : observer->observees_ ) {
+					oo2s.insert( observee );
+				}
+			}
+		}
+		std::unordered_set< Variable * > oo1s; // Observees of observers of order <=1 not in oo2s
+		for ( Variable * observer : observers_ ) {
+			if ( observer->order() <= 1 ) {
+				if ( ( observer->self_observer ) && ( oo2s.find( observer ) == oo2s.end() ) ) oo1s.insert( observer );
+				for ( auto observee : observer->observees_ ) {
+					if ( oo2s.find( observee ) == oo2s.end() ) oo1s.insert( observee );
+				}
+			}
+		}
+		observers_observees_.clear();
+		observers_observees_.reserve( oo1s.size() + oo2s.size() );
+		for ( auto observee : oo1s ) {
+			observers_observees_.push_back( observee );
+		}
+		for ( auto observee : oo2s ) {
+			observers_observees_.push_back( observee );
+		}
+		iBeg_observers_2_observees_ = oo1s.size();
+	}
+
+	// Initialization: Stage 0
+	virtual
+	void
+	init_0()
+	{}
+
+	// Initialization to a Value: Stage 0
+	virtual
+	void
+	init_0( Value const )
+	{}
+
+	// Initialization: Stage 1
+	virtual
+	void
+	init_1()
+	{}
+
+	// Initialization: Stage 2
+	virtual
+	void
+	init_2()
+	{}
+
+	// Discrete Add Event
+	void
+	add_discrete( Time const t )
+	{
+		event_ = events.add_discrete( t, this );
+	}
+
+	// Discrete Shift Event to Time t
+	void
+	shift_discrete( Time const t )
+	{
+		event_ = events.shift_discrete( t, event_ );
+	}
+
+	// Discrete Advance
+	virtual
+	void
+	advance_discrete()
+	{
+		assert( false );
+	}
+
+	// Discrete Advance: Stages 0 and 1
+	virtual
+	void
+	advance_discrete_0_1()
+	{
+		assert( false );
+	}
+
+	// Discrete Advance: Stage 2
+	virtual
+	void
+	advance_discrete_2()
+	{}
+
+	// QSS Add Event
+	void
+	add_QSS( Time const t )
+	{
+		event_ = events.add_QSS( t, this );
+	}
+
+	// QSS Shift Event to Time t
+	void
+	shift_QSS( Time const t )
+	{
+		event_ = events.shift_QSS( t, event_ );
+	}
+
+	// QSS Advance
+	virtual
+	void
+	advance_QSS()
+	{
+		assert( false );
+	}
+
+	// QSS Advance: Stage 0
+	virtual
+	void
+	advance_QSS_0()
+	{
+		assert( false );
+	}
+
+	// QSS Advance: Stage 1
+	virtual
+	void
+	advance_QSS_1()
+	{
+		assert( false );
+	}
+
+	// QSS Advance: Stage 2
+	virtual
+	void
+	advance_QSS_2()
+	{}
+
+	// Zero-Crossing Add Event
+	void
+	add_ZC( Time const t )
+	{
+		event_ = events.add_ZC( t, this );
+	}
+
+	// Zero-Crossing Shift Event to Time t
+	void
+	shift_ZC( Time const t )
+	{
+		event_ = events.shift_ZC( t, event_ );
+	}
+
+	// Zero-Crossing Advance
+	virtual
+	void
+	advance_ZC()
+	{
+		assert( false ); // Not a ZC variable
+	}
+
+	// Handler Add Event
+	void
+	add_handler()
+	{
+		event_ = events.add_handler( this );
+	}
+
+	// Handler Shift Event to Time t
+	void
+	shift_handler( Time const t )
+	{
+		event_ = events.shift_handler( t, event_ );
+	}
+
+	// Handler Shift Event to Time Infinity
+	void
+	shift_handler()
+	{
+		event_ = events.shift_handler( event_ );
+	}
+
+	// Handler Advance
+	virtual
+	void
+	advance_handler( Time const )
+	{
+		assert( false ); // Not a QSS or Discrete variable
+	}
+
+	// Handler Advance: Stage 0
+	virtual
+	void
+	advance_handler_0( Time const )
+	{
+		assert( false ); // Not a QSS or Discrete variable
+	}
+
+	// Handler Advance: Stage 1
+	virtual
+	void
+	advance_handler_1()
+	{
+		assert( false ); // Not a QSS variable
+	}
+
+	// Handler Advance: Stage 2
+	virtual
+	void
+	advance_handler_2()
+	{
+		assert( false ); // Not a QSS variable
 	}
 
 	// Add Observer
@@ -433,152 +666,6 @@ public: // Methods
 	{
 		observees_.shrink_to_fit();
 	}
-
-	// Add Handler Event
-	void
-	add_handler()
-	{
-		event_ = events.add_handler( this );
-	}
-
-	// Time Initialization
-	void
-	init_time( Time const t )
-	{
-		tQ = tX = tE = tN = t;
-	}
-
-	// Initialization
-	virtual
-	void
-	init()
-	{}
-
-	// Initialization to a Value
-	virtual
-	void
-	init( Value const )
-	{}
-
-	// Initialization: Observers
-	void
-	init_observers()
-	{
-		shrink_observers(); // Optional
-		shrink_observees(); // Optional
-		sort_observers();
-
-		// Observers observees setup
-		std::unordered_set< Variable * > oo2s; // Observees of observers of order 2+
-		for ( auto observer : observers_ ) {
-			if ( observer->order() >= 2 ) {
-				if ( observer->self_observer ) oo2s.insert( observer );
-				for ( auto observee : observer->observees_ ) {
-					oo2s.insert( observee );
-				}
-			}
-		}
-		std::unordered_set< Variable * > oo1s; // Observees of observers of order <=1 not in oo2s
-		for ( auto observer : observers_ ) {
-			if ( observer->order() <= 1 ) {
-				if ( ( observer->self_observer ) && ( oo2s.find( observer ) == oo2s.end() ) ) oo1s.insert( observer );
-				for ( auto observee : observer->observees_ ) {
-					if ( oo2s.find( observee ) == oo2s.end() ) oo1s.insert( observee );
-				}
-			}
-		}
-		observers_observees_.clear();
-		observers_observees_.reserve( oo1s.size() + oo2s.size() );
-		for ( auto observee : oo1s ) {
-			observers_observees_.push_back( observee );
-		}
-		for ( auto observee : oo2s ) {
-			observers_observees_.push_back( observee );
-		}
-		iBeg_observers_2_observees_ = oo1s.size();
-	}
-
-	// Initialization: Stage 0
-	virtual
-	void
-	init_0()
-	{}
-
-	// Initialization to a Value: Stage 0
-	virtual
-	void
-	init_0( Value const )
-	{}
-
-	// Initialization: Stage 1
-	virtual
-	void
-	init_1()
-	{}
-
-	// Initialization: LIQSS Stage 2
-	virtual
-	void
-	init_LIQSS_2()
-	{}
-
-	// Initialization: Stage 2
-	virtual
-	void
-	init_2()
-	{}
-
-	// Discrete Advance
-	virtual
-	void
-	advance_discrete()
-	{
-		assert( false );
-	}
-
-	// Discrete Advance: Stages 0 and 1
-	virtual
-	void
-	advance_discrete_0_1()
-	{
-		assert( false );
-	}
-
-	// Discrete Advance: Stage 2
-	virtual
-	void
-	advance_discrete_2()
-	{}
-
-	// QSS Advance
-	virtual
-	void
-	advance_QSS()
-	{
-		assert( false );
-	}
-
-	// QSS Advance: Stage 0
-	virtual
-	void
-	advance_QSS_0()
-	{
-		assert( false );
-	}
-
-	// QSS Advance: Stage 1
-	virtual
-	void
-	advance_QSS_1()
-	{
-		assert( false );
-	}
-
-	// QSS Advance: Stage 2
-	virtual
-	void
-	advance_QSS_2()
-	{}
 
 	// Advance Observers: Stage 1
 	void
@@ -657,63 +744,9 @@ public: // Methods
 	// Observer Advance: Stage d
 	virtual
 	void
-	advance_observer_d()
+	advance_observer_d() const
 	{
 		assert( false );
-	}
-
-	// Zero-Crossing Advance
-	virtual
-	void
-	advance_ZC()
-	{
-		assert( false ); // Not a ZC variable
-	}
-
-	// Handler Advance
-	virtual
-	void
-	advance_handler( Time const )
-	{
-		assert( false ); // Not a QSS or Discrete variable
-	}
-
-	// Handler Advance: Stage 0
-	virtual
-	void
-	advance_handler_0( Time const )
-	{
-		assert( false ); // Not a QSS or Discrete variable
-	}
-
-	// Handler Advance: Stage 1
-	virtual
-	void
-	advance_handler_1()
-	{
-		assert( false ); // Not a QSS variable
-	}
-
-	// Handler Advance: Stage 2
-	virtual
-	void
-	advance_handler_2()
-	{
-		assert( false ); // Not a QSS variable
-	}
-
-	// Shift Handler to Time t
-	void
-	shift_handler( Time const t )
-	{
-		event_ = events.shift_handler( t, event_ );
-	}
-
-	// Shift Handler to Time Infinity
-	void
-	shift_handler()
-	{
-		event_ = events.shift_handler( event_ );
 	}
 
 public: // Methods: FMU
@@ -884,13 +917,8 @@ protected: // Methods
 		}
 	}
 
-public: // Static Data
-
-	static int const max_order = 3; // Max QSS order supported
-
 public: // Data
 
-	std::string name;
 	Value rTol{ 1.0e-4 }; // Relative tolerance
 	Value aTol{ 1.0e-6 }; // Absolute tolerance
 	Value qTol{ 1.0e-6 }; // Quantization tolerance
@@ -904,8 +932,9 @@ public: // Data
 	Time dt_max{ infinity }; // Time step max
 	Time dt_inf{ infinity }; // Time step inf
 	Time dt_inf_rlx{ infinity }; // Relaxed time step inf
-	SuperdenseTime sT; // Trigger superdense time
 	bool self_observer{ false }; // Variable appears in its function/derivative?
+	If_Clauses if_clauses; // Clauses in conditional if blocks
+	When_Clauses when_clauses; // Clauses in conditional when blocks
 	FMU_Variable var; // FMU variables specs
 	FMU_Variable der; // FMU derivative specs
 
@@ -917,7 +946,6 @@ protected: // Data
 	Variables observees_; // Variables this one depends on
 	Variables observers_observees_; // Observers observees (including self-observing observers)
 	size_type iBeg_observers_2_observees_{ 0 }; // Index of first observee of observer of order 2+
-	EventQ::iterator event_; // Iterator to event queue entry
 
 };
 

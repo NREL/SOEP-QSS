@@ -37,26 +37,28 @@
 #define QSS_Event_hh_INCLUDED
 
 // C++ Headers
+#include <cassert>
 #include <cstddef>
 
 namespace QSS {
 
 // QSS Event Class
-template< typename V >
+template< typename T >
 class Event final
 {
 
 public: // Types
 
-	using Variable = V;
+	using Target = T;
 	using Value = double;
 
 	// Event Type
-	enum Type : std::size_t {
-	 Discrete, // Discrete
-	 Handler, // Handler
-	 ZC, // Zero-crossing
-	 QSS // Requantization
+	enum class Type : std::size_t {
+	 Discrete,
+	 ZC,
+	 Conditional,
+	 Handler,
+	 QSS
 	};
 
 public: // Creation
@@ -64,11 +66,11 @@ public: // Creation
 	// Constructor
 	Event(
 	 Type const typ,
-	 Variable * var = nullptr,
+	 Target * tar = nullptr,
 	 Value const val = 0.0
 	) :
 	 typ_( typ ),
-	 var_( var ),
+	 tar_( tar ),
 	 val_( val )
 	{}
 
@@ -78,28 +80,35 @@ public: // Properties
 	bool
 	is_discrete() const
 	{
-		return ( typ_ == Discrete );
-	}
-
-	// Handler Event?
-	bool
-	is_handler() const
-	{
-		return ( typ_ == Handler );
+		return ( typ_ == Type::Discrete );
 	}
 
 	// Zero-Crossing Event?
 	bool
 	is_ZC() const
 	{
-		return ( typ_ == ZC );
+		return ( typ_ == Type::ZC );
+	}
+
+	// Conditional Event?
+	bool
+	is_conditional() const
+	{
+		return ( typ_ == Type::Conditional );
+	}
+
+	// Handler Event?
+	bool
+	is_handler() const
+	{
+		return ( typ_ == Type::Handler );
 	}
 
 	// QSS Event?
 	bool
 	is_QSS() const
 	{
-		return ( typ_ == QSS );
+		return ( typ_ == Type::QSS );
 	}
 
 	// Event Type
@@ -109,18 +118,50 @@ public: // Properties
 		return typ_;
 	}
 
-	// Variable
-	Variable const *
-	var() const
+	// Target
+	Target const *
+	tar() const
 	{
-		return var_;
+		return tar_;
 	}
 
-	// Variable
-	Variable *
-	var()
+	// Target
+	Target *
+	tar()
 	{
-		return var_;
+		return tar_;
+	}
+
+	// Target
+	Target const *
+	target() const
+	{
+		return tar_;
+	}
+
+	// Target
+	Target *
+	target()
+	{
+		return tar_;
+	}
+
+	// Target Subtype
+	template< typename S >
+	S const *
+	sub() const
+	{
+		assert( dynamic_cast< S const * >( tar_ ) != nullptr );
+		return static_cast< S const * >( tar_ );
+	}
+
+	// Target Subtype
+	template< typename S >
+	S *
+	sub()
+	{
+		assert( dynamic_cast< S * >( tar_ ) != nullptr );
+		return static_cast< S * >( tar_ );
 	}
 
 	// Value
@@ -137,14 +178,28 @@ public: // Properties
 		return val_;
 	}
 
-public: // Comparison: SuperdenseTime [?] SuperdenseTime
+	// Value
+	Value
+	value() const
+	{
+		return val_;
+	}
+
+	// Value
+	Value &
+	value()
+	{
+		return val_;
+	}
+
+public: // Comparison
 
 	// Event == Event
 	friend
 	bool
 	operator ==( Event const & e1, Event const & e2 )
 	{
-		return ( e1.typ_ == e2.typ_ ) && ( e1.var_ == e2.var_ ) && ( ( e1.typ_ != Handler ) || ( e1.val_ == e2.val_ ) );
+		return ( e1.typ_ == e2.typ_ ) && ( e1.tar_ == e2.tar_ ) && ( ( e1.typ_ != Type::Handler ) || ( e1.val_ == e2.val_ ) );
 	}
 
 	// Event != Event
@@ -152,14 +207,14 @@ public: // Comparison: SuperdenseTime [?] SuperdenseTime
 	bool
 	operator !=( Event const & e1, Event const & e2 )
 	{
-		return ( e1.typ_ != e2.typ_ ) || ( e1.var_ != e2.var_ ) || ( ( e1.typ_ == Handler ) && ( e1.val_ != e2.val_ ) );
+		return ( e1.typ_ != e2.typ_ ) || ( e1.tar_ != e2.tar_ ) || ( ( e1.typ_ == Type::Handler ) && ( e1.val_ != e2.val_ ) );
 	}
 
 private: // Data
 
-	Type typ_;
-	Variable * var_{ nullptr };
-	Value val_{ 0.0 };
+	Type typ_; // Event type
+	Target * tar_{ nullptr }; // Event target
+	Value val_{ 0.0 }; // Event target value
 
 };
 

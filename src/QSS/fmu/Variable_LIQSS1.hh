@@ -104,14 +104,14 @@ public: // Properties
 	Value
 	s( Time const ) const
 	{
-		return ( sT == events.active_superdense_time() ? q_c_ : q_0_ );
+		return ( st == events.active_superdense_time() ? q_c_ : q_0_ );
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
 	Value
 	sn( Time const t ) const
 	{
-		return ( sT == events.active_superdense_time() ? q_c_ : q_0_ );
+		return ( st == events.active_superdense_time() ? q_c_ : q_0_ );
 	}
 
 public: // Methods
@@ -162,7 +162,7 @@ public: // Methods
 			q_0_ += signum( x_1_ ) * qTol;
 		}
 		set_tE_aligned();
-		event( events.add_QSS( tE, this ) );
+		add_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 	}
 
@@ -193,7 +193,7 @@ public: // Methods
 			advance_observers_2();
 		}
 		set_tE_aligned();
-		event( events.shift_QSS( tE, event() ) );
+		shift_QSS( tE );
 		if ( options::output::d ) {
 			std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 			advance_observers_d();
@@ -221,7 +221,7 @@ public: // Methods
 			q_0_ += signum( x_1_ ) * qTol;
 		}
 		set_tE_aligned();
-		event( events.shift_QSS( tE, event() ) );
+		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 	}
 
@@ -234,12 +234,12 @@ public: // Methods
 		tX = t;
 		x_1_ = fmu_get_deriv();
 		set_tE_unaligned();
-		event( events.shift_QSS( tE, event() ) );
+		shift_QSS( tE );
 	}
 
 	// Observer Advance: Stage d
 	void
-	advance_observer_d()
+	advance_observer_d() const
 	{
 		std::cout << "  " << name << '(' << tX << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 	}
@@ -261,7 +261,7 @@ public: // Methods
 			advance_observers_2();
 		}
 		set_tE_aligned();
-		event( events.shift_QSS( tE, event() ) );
+		shift_QSS( tE );
 		if ( options::output::d ) {
 			std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 			advance_observers_d();
@@ -286,7 +286,7 @@ public: // Methods
 		if ( ( self_observer ) && ( observers_.empty() ) ) fmu_set_value( q_0_ );
 		x_1_ = fmu_get_deriv();
 		set_tE_aligned();
-		event( events.shift_QSS( tE, event() ) );
+		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 	}
 

@@ -56,21 +56,23 @@
 namespace QSS {
 
 // QSS Event Queue
-template< typename V >
+template< typename T >
 class EventQueue final
 {
 
 public: // Types
 
-	using Type = typename Event< V >::Type;
-	using Value = typename Event< V >::Value;
+	using EventT = Event< T >;
+	using Type = typename EventT::Type;
+	using Value = typename EventT::Value;
 	using Time = SuperdenseTime::Time;
 	using Index = SuperdenseTime::Index;
-	using Var = V;
-	using Variables = std::vector< V * >;
-	using Events = std::vector< Event< V > >;
+	using Offset = SuperdenseTime::Offset;
+	using Target = T;
+	using Targets = std::vector< T * >;
+	using Events = std::vector< EventT >;
 
-	using EventMap = std::multimap< SuperdenseTime, Event< V > >;
+	using EventMap = std::multimap< SuperdenseTime, EventT >;
 	using size_type = typename EventMap::size_type;
 	using const_iterator = typename EventMap::const_iterator;
 	using iterator = typename EventMap::iterator;
@@ -79,12 +81,13 @@ public: // Types
 	using const_reference = typename EventMap::const_reference;
 	using reference = typename EventMap::reference;
 
-	// SuperdenseTime Index Offsets
+	// Event Type SuperdenseTime Offsets
 	struct Off final {
-		static SuperdenseTime::Index const Discrete{ 0 };
-		static SuperdenseTime::Index const Handler{ 1 };
-		static SuperdenseTime::Index const ZC{ 2 };
-		static SuperdenseTime::Index const QSS{ 5 }; // Process after handler events
+		static SuperdenseTime::Offset const Discrete{ 0 };
+		static SuperdenseTime::Offset const ZC{ 1 };
+		static SuperdenseTime::Offset const Conditional{ 2 };
+		static SuperdenseTime::Offset const Handler{ 3 };
+		static SuperdenseTime::Offset const QSS{ 4 };
 	};
 
 public: // Predicates
@@ -103,39 +106,7 @@ public: // Predicates
 		return ( m_.find( s ) != m_.end() );
 	}
 
-	// Top Event is Discrete?
-	bool
-	top_is_discrete() const
-	{
-		assert( ! m_.empty() );
-		return m_.begin()->second.is_discrete();
-	}
-
-	// Top Event is Handler?
-	bool
-	top_is_handler() const
-	{
-		assert( ! m_.empty() );
-		return m_.begin()->second.is_handler();
-	}
-
-	// Top Event is ZC?
-	bool
-	top_is_ZC() const
-	{
-		assert( ! m_.empty() );
-		return m_.begin()->second.is_ZC();
-	}
-
-	// Top Event is QSS?
-	bool
-	top_is_QSS() const
-	{
-		assert( ! m_.empty() );
-		return m_.begin()->second.is_QSS();
-	}
-
-	// Single Trigger Variable at Front of Queue?
+	// Single Trigger Target at Front of Queue?
 	bool
 	single() const
 	{
@@ -149,7 +120,7 @@ public: // Predicates
 		}
 	}
 
-	// Simultaneous Trigger Variables at Front of Queue?
+	// Simultaneous Trigger Targets at Front of Queue?
 	bool
 	simultaneous() const
 	{
@@ -222,7 +193,7 @@ public: // Properties
 	}
 
 	// Top Event Type
-	typename Event< V >::Type
+	Type
 	top_Event_Type() const
 	{
 		assert( ! m_.empty() );
@@ -230,7 +201,7 @@ public: // Properties
 	}
 
 	// Top Event
-	Event< V > const &
+	EventT const &
 	top() const
 	{
 		assert( ! m_.empty() );
@@ -238,27 +209,45 @@ public: // Properties
 	}
 
 	// Top Event
-	Event< V > &
+	EventT &
 	top()
 	{
 		assert( ! m_.empty() );
 		return m_.begin()->second;
 	}
 
-	// Top Event Variable
-	Var const *
-	top_var() const
+	// Top Event Target
+	Target const *
+	top_target() const
 	{
 		assert( ! m_.empty() );
-		return m_.begin()->second.var();
+		return m_.begin()->second.tar();
 	}
 
-	// Top Event Variable
-	Var *
-	top_var()
+	// Top Event Target
+	Target *
+	top_target()
 	{
 		assert( ! m_.empty() );
-		return m_.begin()->second.var();
+		return m_.begin()->second.tar();
+	}
+
+	// Top Event Target Subtype
+	template< typename S >
+	S const *
+	top_sub() const
+	{
+		assert( ! m_.empty() );
+		return m_.begin()->second.template sub< S >();
+	}
+
+	// Top Event Target
+	template< typename S >
+	S *
+	top_sub()
+	{
+		assert( ! m_.empty() );
+		return m_.begin()->second.template sub< S >();
 	}
 
 	// Top Event Time
@@ -339,23 +328,6 @@ public: // Iterators
 
 public: // Methods
 
-	// Simultaneous Trigger Variables at Front of Queue
-	Variables
-	top_vars()
-	{
-		Variables vars;
-		if ( ! m_.empty() ) {
-			iterator i( m_.begin() );
-			iterator e( m_.end() );
-			SuperdenseTime const & s( i->first );
-			while ( ( i != e ) && ( i->first == s ) ) {
-				vars.push_back( i->second.var() );
-				++i;
-			}
-		}
-		return vars;
-	}
-
 	// Simultaneous Events at Front of Queue
 	Events
 	top_events()
@@ -371,6 +343,41 @@ public: // Methods
 			}
 		}
 		return tops;
+	}
+
+	// Simultaneous Trigger Targets at Front of Queue
+	Targets
+	top_targets()
+	{
+		Targets targets;
+		if ( ! m_.empty() ) {
+			iterator i( m_.begin() );
+			iterator e( m_.end() );
+			SuperdenseTime const & s( i->first );
+			while ( ( i != e ) && ( i->first == s ) ) {
+				targets.push_back( i->second.tar() );
+				++i;
+			}
+		}
+		return targets;
+	}
+
+	// Simultaneous Trigger Target Subtypes at Front of Queue
+	template< typename S >
+	std::vector< S * >
+	top_subs()
+	{
+		std::vector< S * > subs;
+		if ( ! m_.empty() ) {
+			iterator i( m_.begin() );
+			iterator e( m_.end() );
+			SuperdenseTime const & s( i->first );
+			while ( ( i != e ) && ( i->first == s ) ) {
+				subs.push_back( i->second.template sub< S >() );
+				++i;
+			}
+		}
+		return subs;
 	}
 
 	// Set Active Time
@@ -394,10 +401,10 @@ public: // Discrete Event Methods
 	iterator
 	add_discrete(
 	 Time const t,
-	 Var * var
+	 Target * tar
 	)
 	{
-		return m_.emplace( SuperdenseTime( t, Off::Discrete ), Event< V >( Event< V >::Discrete, var ) );
+		return m_.emplace( SuperdenseTime( t, 0, Off::Discrete ), EventT( Type::Discrete, tar ) );
 	}
 
 	// Shift Discrete Event
@@ -407,29 +414,81 @@ public: // Discrete Event Methods
 	 iterator const i
 	)
 	{
-		Index const idx( t == t_ ? next_index() + Off::Discrete : Off::Discrete );
-		Var * var( i->second.var() );
+		assert( t_ = s_.t );
+		assert( t >= t_ );
+		Index const idx( t == t_ ? ( s_.o < Off::Discrete ? s_.i : s_.i + 1u ) : Index( 0 ) );
+		Target * tar( i->second.tar() );
 		m_.erase( i );
-		return m_.emplace( SuperdenseTime( t, idx ), Event< V >( Event< V >::Discrete, var ) );
+		return m_.emplace( SuperdenseTime( t, idx, Off::Discrete ), EventT( Type::Discrete, tar ) );
+	}
+
+public: // Zero-Crossing Event Methods
+
+	// Add Zero-Crossing Event
+	iterator
+	add_ZC(
+	 Time const t,
+	 Target * tar
+	)
+	{
+		return m_.emplace( SuperdenseTime( t, 0, Off::ZC ), EventT( Type::ZC, tar ) );
+	}
+
+	// Shift Zero-Crossing Event
+	iterator
+	shift_ZC(
+	 Time const t,
+	 iterator const i
+	)
+	{
+		assert( t_ = s_.t );
+		assert( t >= t_ );
+		Index const idx( t == t_ ? ( s_.o < Off::ZC ? s_.i : s_.i + 1u ) : Index( 0 ) );
+		Target * tar( i->second.tar() );
+		m_.erase( i );
+		return m_.emplace( SuperdenseTime( t, idx, Off::ZC ), EventT( Type::ZC, tar ) );
+	}
+
+public: // Conditional Event Methods
+
+	// Add Conditional Event at Time Infinity
+	iterator
+	add_conditional( Target * tar )
+	{
+		return m_.emplace( SuperdenseTime( infinity, 0, Off::Conditional ), EventT( Type::Conditional, tar ) );
+	}
+
+	// Shift Conditional Event: FMU Sets Value
+	iterator
+	shift_conditional(
+	 Time const t,
+	 iterator const i
+	)
+	{
+		assert( t_ = s_.t );
+		assert( t == t_ );
+		Index const idx( s_.o < Off::Conditional ? s_.i : s_.i + 1u );
+		Target * tar( i->second.tar() );
+		m_.erase( i );
+		return m_.emplace( SuperdenseTime( t, idx, Off::Conditional ), EventT( Type::Conditional, tar ) );
+	}
+
+	// Shift Conditional Event to Time Infinity
+	iterator
+	shift_conditional( iterator const i )
+	{
+		Target * tar( i->second.tar() );
+		m_.erase( i );
+		return m_.emplace( SuperdenseTime( infinity, 0, Off::Conditional ), EventT( Type::Conditional, tar ) );
 	}
 
 public: // Handler Event Methods
 
-	// Add Handler Event
-	iterator
-	add_handler(
-	 Time const t,
-	 Var * var
-	)
-	{
-		return m_.emplace( SuperdenseTime( t, Off::Handler ), Event< V >( Event< V >::Handler, var ) );
-	}
-
 	// Add Handler Event at Time Infinity
 	iterator
-	add_handler( Var * var )
+	add_handler( Target * tar )
 	{
-		return m_.emplace( SuperdenseTime( infinity, Off::Handler ), Event< V >( Event< V >::Handler, var ) );
+		return m_.emplace( SuperdenseTime( infinity, 0, Off::Handler ), EventT( Type::Handler, tar ) );
 	}
 
 	// Shift Handler Event
@@ -440,16 +499,18 @@ public: // Handler Event Methods
 	 iterator const i
 	)
 	{
+		assert( t_ = s_.t );
 		assert( t == t_ );
-		Index const idx( next_index() + Off::Handler );
-		Var * var( i->second.var() );
+		Index const idx( s_.o < Off::Handler ? s_.i : s_.i + 1u );
+		Target * tar( i->second.tar() );
 		SuperdenseTime const & s( i->first );
-		if ( ( s.t == t ) && ( s.i == idx ) ) { // Variable already has event at same superdense time
-			Event< V > const & e( i->second );
-			if ( ( e.is_handler() ) && ( e.val() != val ) ) std::cerr << "Error: Zero-crossing handler events at the same time but with different values occurred for: " << var->name << std::endl;
+		if ( ( s.t == t ) && ( s.i == idx ) && ( s.o == Off::Handler ) ) { // Target already has event in same pass
+			EventT const & e( i->second );
+			assert( e.is_handler() );
+			if ( e.val() != val ) std::cerr << "Error: Zero-crossing handler events at the same time but with different values occurred for: " << tar->name << std::endl;
 		}
 		m_.erase( i );
-		return m_.emplace( SuperdenseTime( t, idx ), Event< V >( Event< V >::Handler, var, val ) );
+		return m_.emplace( SuperdenseTime( t, idx, Off::Handler ), EventT( Type::Handler, tar, val ) );
 	}
 
 	// Shift Handler Event: FMU Sets Value
@@ -459,46 +520,21 @@ public: // Handler Event Methods
 	 iterator const i
 	)
 	{
+		assert( t_ = s_.t );
 		assert( t == t_ );
-		Index const idx( next_index() + Off::Handler );
-		Var * var( i->second.var() );
-		SuperdenseTime const & s( i->first );
+		Index const idx( s_.o < Off::Handler ? s_.i : s_.i + 1u );
+		Target * tar( i->second.tar() );
 		m_.erase( i );
-		return m_.emplace( SuperdenseTime( t, idx ), Event< V >( Event< V >::Handler, var ) );
+		return m_.emplace( SuperdenseTime( t, idx, Off::Handler ), EventT( Type::Handler, tar ) );
 	}
 
 	// Shift Handler Event to Time Infinity
 	iterator
 	shift_handler( iterator const i )
 	{
-		Var * var( i->second.var() );
+		Target * tar( i->second.tar() );
 		m_.erase( i );
-		return m_.emplace( SuperdenseTime( infinity, Off::Handler ), Event< V >( Event< V >::Handler, var ) );
-	}
-
-public: // Zero-Crossing Event Methods
-
-	// Add Zero-Crossing Event
-	iterator
-	add_ZC(
-	 Time const t,
-	 Var * var
-	)
-	{
-		return m_.emplace( SuperdenseTime( t, Off::ZC ), Event< V >( Event< V >::ZC, var ) );
-	}
-
-	// Shift Zero-Crossing Event
-	iterator
-	shift_ZC(
-	 Time const t,
-	 iterator const i
-	)
-	{
-		Index const idx( t == t_ ? next_index() + Off::ZC : Off::ZC );
-		Var * var( i->second.var() );
-		m_.erase( i );
-		return m_.emplace( SuperdenseTime( t, idx ), Event< V >( Event< V >::ZC, var ) );
+		return m_.emplace( SuperdenseTime( infinity, 0, Off::Handler ), EventT( Type::Handler, tar ) );
 	}
 
 public: // QSS Event Methods
@@ -507,10 +543,10 @@ public: // QSS Event Methods
 	iterator
 	add_QSS(
 	 Time const t,
-	 Var * var
+	 Target * tar
 	)
 	{
-		return m_.emplace( SuperdenseTime( t, Off::QSS ), Event< V >( Event< V >::QSS, var ) );
+		return m_.emplace( SuperdenseTime( t, 0, Off::QSS ), EventT( Type::QSS, tar ) );
 	}
 
 	// Shift QSS Event
@@ -520,10 +556,12 @@ public: // QSS Event Methods
 	 iterator const i
 	)
 	{
-		Index const idx( t == t_ ? next_index() + Off::QSS : Off::QSS );
-		Var * var( i->second.var() );
+		assert( t_ = s_.t );
+		assert( t >= t_ );
+		Index const idx( t == t_ ? ( s_.o < Off::QSS ? s_.i : s_.i + 1u ) : Index( 0 ) );
+		Target * tar( i->second.tar() );
 		m_.erase( i );
-		return m_.emplace( SuperdenseTime( t, idx ), Event< V >( Event< V >::QSS, var ) );
+		return m_.emplace( SuperdenseTime( t, idx, Off::QSS ), EventT( Type::QSS, tar ) );
 	}
 
 private: // Static Data
@@ -539,7 +577,7 @@ private: // Data
 };
 
 	// Static Data Member Template Definitions
-	template< typename V > SuperdenseTime const EventQueue< V >::sZero_ = SuperdenseTime();
+	template< typename T > SuperdenseTime const EventQueue< T >::sZero_ = SuperdenseTime();
 
 } // QSS
 

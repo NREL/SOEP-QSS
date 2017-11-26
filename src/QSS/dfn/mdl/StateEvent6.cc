@@ -64,9 +64,12 @@
 //
 //  end StateEvent6;
 
+// Note: x1 has "accidental" deactivation at t=0: Suggest --dtInf=0.001
+
 // QSS Headers
 #include <QSS/dfn/mdl/StateEvent6.hh>
 #include <QSS/dfn/mdl/Function_LTI.hh>
+#include <QSS/dfn/Conditional.hh>
 #include <QSS/dfn/Variable_D.hh>
 #include <QSS/dfn/Variable_LIQSS1.hh>
 #include <QSS/dfn/Variable_LIQSS2.hh>
@@ -79,6 +82,7 @@
 #include <QSS/options.hh>
 
 // C++ Headers
+#include <cassert>
 #include <cmath>
 
 namespace QSS {
@@ -96,13 +100,15 @@ public: // Types
 	using Time = typename Variable::Time;
 	using Value = typename Variable::Value;
 	using Crossing = typename Variable::Crossing;
+	using Variable_ZC_LTI = Variable_ZC< Function_LTI >;
 
 public: // Properties
 
 	// Apply at Time t
 	void
-	operator ()( Time const t, Crossing const crossing )
+	operator ()( Time const t )
 	{
+		Crossing const crossing( z_->crossing_prev );
 		if ( crossing >= Crossing::Up ) { // Upward crossing
 			y_->shift_handler( t, 1.0 );
 		} else if ( crossing <= Crossing::Dn ) { // Downward crossing
@@ -114,14 +120,19 @@ public: // Methods
 
 	// Set Variables
 	void
-	var( Variable_D * y )
+	var(
+	 Variable_D * y,
+	 Variable_ZC_LTI * z
+	)
 	{
 		y_ = y;
+		z_ = z;
 	}
 
 private: // Data
 
 	Variable_D * y_{ nullptr };
+	Variable_ZC_LTI * z_{ nullptr };
 
 };
 
@@ -292,15 +303,11 @@ public: // Static Methods
 		return c_;
 	}
 
-public: // Static Data
-
-	static int const max_order = 3; // Max QSS order supported
-
 };
 
 // StateEvent6 Example Setup
 void
-StateEvent6( Variables & vars )
+StateEvent6( Variables & vars, Conditionals & cons )
 {
 	using namespace options;
 
@@ -349,17 +356,63 @@ StateEvent6( Variables & vars )
 	Variable_D * y( new Variable_D( "y", 0 ) );
 	vars.push_back( y );
 
-	// Zero-crossing variable
-	using Z = Variable_ZC< Function_LTI, Handler_StateEvent6 >;
-	Z * z( nullptr );
+	// Zero-crossings
+	using Z = Variable_ZC< Function_LTI >;
+
+	// Zero-crossing variable: x1 > 1
+	Z * z1( nullptr );
 	if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) ) {
-		vars.push_back( z = new Variable_ZC1< Function_LTI, Handler_StateEvent6 >( "z", rTol, aTol ) );
+		vars.push_back( z1 = new Variable_ZC1< Function_LTI >( "z1", rTol, aTol ) );
 	} else { // Use QSS2
-		vars.push_back( z = new Variable_ZC2< Function_LTI, Handler_StateEvent6 >( "z", rTol, aTol ) );
+		vars.push_back( z1 = new Variable_ZC2< Function_LTI >( "z1", rTol, aTol ) );
 	}
-	z->add_crossings_non_Flat();
-	z->f().add( x1 ).add( -1.0 );
-	z->h().var( y );
+	z1->add_crossings_Up();
+	z1->f().add( x1 ).add( -1.0 );
+
+	// Zero-crossing variable: x1 <= 1
+	using Z = Variable_ZC< Function_LTI >;
+	Z * z2( nullptr );
+	if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) ) {
+		vars.push_back( z2 = new Variable_ZC1< Function_LTI >( "z2", rTol, aTol ) );
+	} else { // Use QSS2
+		vars.push_back( z2 = new Variable_ZC2< Function_LTI >( "z2", rTol, aTol ) );
+	}
+	z2->add_crossings_Dn();
+	z2->f().add( x1 ).add( -1.0 );
+
+	// Conditional
+	using When = WhenV< Variable >;
+	When * zc( new When() );
+	cons.push_back( zc );
+	// Using the same handler for both crossings but in general would need separate handlers
+	When::ClauseH< Handler_StateEvent6 > * zc1_clause( zc->add_clause< Handler_StateEvent6 >() );
+	zc1_clause->add( z1 );
+	zc1_clause->h.var( y, z1 );
+	When::ClauseH< Handler_StateEvent6 > * zc2_clause( zc->add_clause< Handler_StateEvent6 >() );
+	zc2_clause->add( z2 );
+	zc2_clause->h.var( y, z2 );
+
+// Alternative with one zero-crossing variable and clause
+//  Works because the zero-crossings have the same function and the handler processes by crossing type
+//  Two variable/clause method above shows use of an elsewhen clause for more general situations
+//
+//	// Zero-crossing variable: x1 - 1
+//	Z * z( nullptr );
+//	if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) ) {
+//		vars.push_back( z = new Variable_ZC1< Function_LTI >( "z", rTol, aTol ) );
+//	} else { // Use QSS2
+//		vars.push_back( z = new Variable_ZC2< Function_LTI >( "z", rTol, aTol ) );
+//	}
+//	z->add_crossings_non_Flat();
+//	z->f().add( x1 ).add( -1.0 );
+//
+//	// Conditional
+//	using When = WhenV< Variable >;
+//	When * zc( new When() );
+//	cons.push_back( zc );
+//	When::ClauseH< Handler_StateEvent6 > * zc_clause( zc->add_clause< Handler_StateEvent6 >() );
+//	zc_clause->add( z );
+//	zc_clause->h.var( y, z );
 }
 
 } // mdl

@@ -106,11 +106,11 @@ public: // Creation
 
 public: // Data
 
-	fmi2_import_variable_t * var{ nullptr }; // FMU variable pointer (non-owning)
+	fmi2_import_variable_t * var{ nullptr }; // FMU variable pointer
 	union { // Support FMU real and integer variables
-		fmi2_import_real_variable_t * rvr{ nullptr }; // FMU real variable pointer (non-owning)
-		fmi2_import_integer_variable_t * ivr; // FMU integer variable pointer (non-owning)
-		fmi2_import_bool_variable_t * bvr; // FMU boolean variable pointer (non-owning)
+		fmi2_import_real_variable_t * rvr{ nullptr }; // FMU real variable pointer
+		fmi2_import_integer_variable_t * ivr; // FMU integer variable pointer
+		fmi2_import_bool_variable_t * bvr; // FMU boolean variable pointer
 	};
 	fmi2_value_reference_t ref{ 0 }; // FMU variable value reference
 	size_type idx{ 0u }; // FMU variable index

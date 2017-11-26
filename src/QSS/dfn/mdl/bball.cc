@@ -36,6 +36,7 @@
 // QSS Headers
 #include <QSS/dfn/mdl/bball.hh>
 #include <QSS/dfn/mdl/Function_LTI.hh>
+#include <QSS/dfn/Conditional.hh>
 #include <QSS/dfn/Variable_D.hh>
 #include <QSS/dfn/Variable_LIQSS1.hh>
 #include <QSS/dfn/Variable_LIQSS2.hh>
@@ -64,17 +65,20 @@ public: // Types
 	using Time = typename Variable::Time;
 	using Value = typename Variable::Value;
 	using Crossing = typename Variable::Crossing;
+	using Variable_QSS_LTI = Variable_QSS< Function_LTI >;
+	using Variable_ZC_LTI = Variable_ZC< Function_LTI >;
 
 public: // Properties
 
 	// Apply at Time t
 	void
-	operator ()( Time const t, Crossing const crossing )
+	operator ()( Time const t )
 	{
+		Crossing const crossing( z_->crossing_prev );
 		if ( crossing <= Crossing::Flat ) { // Downward zero-crossing or stationary on floor
 			Value const v( v_->x( t ) );
 			if ( ( std::abs( v ) <= 0.01 ) && ( h_->x( t ) <= 0.0 ) ) { // Treat as stationary on floor
-				dynamic_cast< Variable_QSS< Function_LTI > * >( v_ )->d().add( 0.0 );
+				v_->d().add( 0.0 ); // Set velocity derivative to zero
 				v_->shift_handler( t, 0.0 );
 				h_->shift_handler( t, 0.0 );
 			} else {
@@ -90,27 +94,30 @@ public: // Methods
 	// Set Variables
 	void
 	var(
-	 Variable_QSS< Function_LTI >* h,
-	 Variable_QSS< Function_LTI >* v,
-	 Variable_D * b
+	 Variable_QSS_LTI * h,
+	 Variable_QSS_LTI * v,
+	 Variable_D * b,
+	 Variable_ZC_LTI * z
 	)
 	{
 		h_ = h;
 		v_ = v;
 		b_ = b;
+		z_ = z;
 	}
 
 private: // Data
 
-	Variable_QSS< Function_LTI > * h_{ nullptr };
-	Variable_QSS< Function_LTI > * v_{ nullptr };
+	Variable_QSS_LTI * h_{ nullptr };
+	Variable_QSS_LTI * v_{ nullptr };
 	Variable_D * b_{ nullptr };
+	Variable_ZC_LTI * z_{ nullptr };
 
 };
 
 // Bouncing Ball Example Setup
 void
-bball( Variables & vars )
+bball( Variables & vars, Conditionals & cons )
 {
 	using namespace options;
 
@@ -152,16 +159,23 @@ bball( Variables & vars )
 	vars.push_back( b );
 
 	// Zero-crossing variable
-	using Z = Variable_ZC< Function_LTI, Handler_bball >;
+	using Z = Variable_ZC< Function_LTI >;
 	Z * z( nullptr ); // Height (m) zero-crossing
 	if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) ) {
-		vars.push_back( z = new Variable_ZC1< Function_LTI, Handler_bball >( "z", rTol, aTol ) );
+		vars.push_back( z = new Variable_ZC1< Function_LTI >( "z", rTol, aTol ) );
 	} else { // Use QSS2
-		vars.push_back( z = new Variable_ZC2< Function_LTI, Handler_bball >( "z", rTol, aTol ) );
+		vars.push_back( z = new Variable_ZC2< Function_LTI >( "z", rTol, aTol ) );
 	}
 	z->add_crossings_Dn_Flat();
 	z->f().add( h );
-	z->h().var( h, v, b );
+
+	// Conditional
+	using When = WhenV< Variable >;
+	When * hit( new When() );
+	cons.push_back( hit );
+	When::ClauseH< Handler_bball > * hit_floor( hit->add_clause< Handler_bball >() );
+	hit_floor->add( z );
+	hit_floor->h.var( h, v, b, z );
 }
 
 } // mdl

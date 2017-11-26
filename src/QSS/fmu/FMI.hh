@@ -140,7 +140,7 @@ get_boolean( fmi2_value_reference_t const ref )
 	assert( fmu != nullptr );
 	int val; // FMI2 uses int for booleans
 	fmi2_import_get_boolean( fmu, &ref, std::size_t( 1u ), &val ); //Do Check status returned
-	return static_cast< bool >( val );
+	return ( val != 0 );
 }
 
 // Set an Boolean FMU Variable Value

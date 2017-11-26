@@ -35,9 +35,8 @@
 
 // QSS Headers
 #include <QSS/dfn/simulate_dfn.hh>
-#include <QSS/dfn/globals_dfn.hh>
+#include <QSS/dfn/Conditional.hh>
 #include <QSS/dfn/Variable.hh>
-#include <QSS/dfn/Variable_ZC.hh>
 #include <QSS/dfn/mdl/achilles.hh>
 #include <QSS/dfn/mdl/achilles2.hh>
 #include <QSS/dfn/mdl/achillesc.hh>
@@ -53,6 +52,7 @@
 #include <QSS/dfn/mdl/stiff.hh>
 #include <QSS/dfn/mdl/xy.hh>
 #include <QSS/dfn/mdl/xyz.hh>
+#include <QSS/globals.hh>
 #include <QSS/options.hh>
 
 // C++ Headers
@@ -77,11 +77,11 @@ simulate_dfn()
 	// Types
 	using Variables = Variable::Variables;
 	using size_type = Variables::size_type;
-	using Events = EventQueue< Variable >::Events;
 	using Time = Variable::Time;
 	using Var_Idx = std::unordered_map< Variable const *, size_type >; // Map from Variables to their indexes
 	using VariableLookup = std::unordered_set< Variable * >; // Fast Variable lookup container
 	using ObserversSet = std::unordered_set< Variable * >; // Simultaneous trigger observers collection
+	using Conditionals = std::vector< Conditional * >;
 
 	// I/o setup
 	std::cout << std::setprecision( 16 );
@@ -89,8 +89,9 @@ simulate_dfn()
 	std::vector< std::ofstream > x_streams; // Continuous output streams
 	std::vector< std::ofstream > q_streams; // Quantized output streams
 
-	// Variables collection
+	// Collections
 	Variables vars;
+	Conditionals cons;
 
 	// Model setup
 	if ( options::model == "achilles" ) {
@@ -102,7 +103,7 @@ simulate_dfn()
 	} else if ( options::model== "achilles_ND" ) {
 		mdl::achilles_ND( vars );
 	} else if ( options::model== "bball" ) {
-		mdl::bball( vars );
+		mdl::bball( vars, cons );
 	} else if ( options::model== "exponential_decay" ) {
 		mdl::exponential_decay( vars );
 	} else if ( options::model== "exponential_decay_sine" ) {
@@ -118,7 +119,7 @@ simulate_dfn()
 	} else if ( options::model== "stiff" ) {
 		mdl::stiff( vars );
 	} else if ( ( options::model== "StateEvent6" ) || ( options::model== "stateevent6" ) ) {
-		mdl::StateEvent6( vars );
+		mdl::StateEvent6( vars, cons );
 	} else if ( options::model== "xy" ) {
 		mdl::xy( vars );
 	} else if ( options::model== "xyz" ) {
@@ -218,14 +219,15 @@ simulate_dfn()
 			}
 		}
 		if ( t <= tE ) { // Perform event(s)
-			Event< Variable > & event( events.top() );
+			Event< Target > & event( events.top() );
 			SuperdenseTime const & s( events.top_superdense_time() );
 			events.set_active_time();
 			if ( event.is_discrete() ) { // Discrete event
 				++n_discrete_events;
 				if ( events.single() ) { // Single trigger
-					Variable * trigger( events.top_var() );
+					Variable * trigger( events.top_sub< Variable >() );
 					assert( trigger->tD == t );
+					trigger->st = s; // Set trigger superdense time
 					if ( doTOut ) { // Time event variable output: Before discontinuous discrete changes
 						if ( options::output::a ) { // All variables output
 							for ( size_type i = 0; i < n_vars; ++i ) {
@@ -286,10 +288,11 @@ simulate_dfn()
 						}
 					}
 				} else { // Simultaneous triggers
-					Variables triggers( events.top_vars() );
+					Variables triggers( events.top_subs< Variable >() );
 					std::sort( triggers.begin(), triggers.end(), []( Variable * v1, Variable * v2 ){ return v1->order() < v2->order(); } ); // Sort triggers by order
 					for ( Variable * trigger : triggers ) {
-						trigger->sT = s; // Set trigger superdense time
+						assert( trigger->tD == t );
+						trigger->st = s; // Set trigger superdense time
 					}
 					size_type const iBeg_triggers_2( static_cast< size_type >( std::distance( triggers.begin(), std::find_if( triggers.begin(), triggers.end(), []( Variable * v ){ return v->order() >= 2; } ) ) ) );
 					size_type const iBeg_triggers_3( static_cast< size_type >( std::distance( triggers.begin(), std::find_if( triggers.begin(), triggers.end(), []( Variable * v ){ return v->order() >= 3; } ) ) ) );
@@ -337,7 +340,6 @@ simulate_dfn()
 						}
 					}
 					for ( Variable * trigger : triggers ) {
-						assert( trigger->tD == t );
 						trigger->advance_discrete_0_1();
 					}
 					if ( order_max >= 2 ) { // 2nd order pass
@@ -385,131 +387,19 @@ simulate_dfn()
 						}
 					}
 				}
-			} else if ( event.is_QSS() ) { // QSS requantization event
-				++n_QSS_events;
-				if ( events.single() ) { // Single trigger
-					Variable * trigger( events.top_var() );
-					assert( trigger->tE == t );
-					trigger->advance_QSS();
-					if ( doROut ) { // Requantization output
-						if ( options::output::a ) { // All variables output
-							for ( size_type i = 0; i < n_vars; ++i ) {
-								if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
-							}
-						} else { // Requantization and/or observer variable output
-							if ( options::output::r ) { // Requantization variable output
-								size_type const i( var_idx[ trigger ] );
-								if ( options::output::x ) x_streams[ i ] << t << '\t' << trigger->x( t ) << '\n';
-								if ( options::output::q ) q_streams[ i ] << t << '\t' << trigger->q( t ) << '\n';
-								for ( Variable const * observer : trigger->observers() ) {
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										size_type const i( var_idx[ observer ] );
-										if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
-										if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
-									}
-								}
-							}
-							if ( ( options::output::o ) && ( options::output::x ) ) { // Observer variable output
-								for ( Variable const * observer : trigger->observers() ) { // Zero-crossing observer output
-									if ( ( ! options::output::r ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::r
-										size_type const i( var_idx[ observer ] );
-										x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
-									}
-								}
-							}
-						}
-					}
-				} else { // Simultaneous triggers
-					++n_QSS_simultaneous_events;
-					Variables triggers( events.top_vars() );
-					std::sort( triggers.begin(), triggers.end(), []( Variable * v1, Variable * v2 ){ return v1->order() < v2->order(); } ); // Sort triggers by order
-					Variables triggers_ZC;
-					Variables triggers_nonZC;
-					for ( Variable * trigger : triggers ) {
-						if ( trigger->is_ZC() ) { // ZC variable
-							triggers_ZC.push_back( trigger );
-						} else { // Non-ZC variable
-							triggers_nonZC.push_back( trigger );
-						}
-						trigger->sT = s; // Set trigger superdense time
-					}
-					size_type const iBeg_triggers_nonZC_2( static_cast< size_type >( std::distance( triggers_nonZC.begin(), std::find_if( triggers_nonZC.begin(), triggers_nonZC.end(), []( Variable * v ){ return v->order() >= 2; } ) ) ) );
-					size_type const iBeg_triggers_nonZC_3( static_cast< size_type >( std::distance( triggers_nonZC.begin(), std::find_if( triggers_nonZC.begin(), triggers_nonZC.end(), []( Variable * v ){ return v->order() >= 3; } ) ) ) );
-					int const triggers_nonZC_order_max( triggers_nonZC.empty() ? 0 : triggers_nonZC.back()->order() );
-					VariableLookup const var_lookup( triggers_nonZC.begin(), triggers_nonZC.end() );
-					ObserversSet observers_set;
-					for ( Variable * trigger : triggers_nonZC ) { // Collect observers to avoid duplicate advance calls
-						for ( Variable * observer : trigger->observers() ) {
-							if ( var_lookup.find( observer ) == var_lookup.end() ) observers_set.insert( observer ); // Skip triggers
-						}
-					}
-					Variables observers( observers_set.begin(), observers_set.end() );
-					std::sort( observers.begin(), observers.end(), []( Variable * v1, Variable * v2 ){ return v1->order() < v2->order(); } ); // Sort observers by order
-					size_type const iBeg_observers_2( static_cast< size_type >( std::distance( observers.begin(), std::find_if( observers.begin(), observers.end(), []( Variable * v ){ return v->order() >= 2; } ) ) ) );
-					int const nonZC_order_max( observers.empty() ? triggers_nonZC_order_max : std::max( triggers_nonZC_order_max, observers.back()->order() ) );
-					for ( Variable * trigger : triggers_nonZC ) {
-						assert( trigger->tE == t );
-						trigger->advance_QSS_0();
-					}
-					for ( Variable * trigger : triggers_nonZC ) {
-						trigger->advance_QSS_1();
-					}
-					if ( nonZC_order_max >= 2 ) { // 2nd order pass
-						for ( size_type i = iBeg_triggers_nonZC_2, n = triggers_nonZC.size(); i < n; ++i ) {
-							triggers_nonZC[ i ]->advance_QSS_2();
-						}
-						if ( nonZC_order_max >= 3 ) { // 3rd order pass
-							for ( size_type i = iBeg_triggers_nonZC_3, n = triggers_nonZC.size(); i < n; ++i ) {
-								triggers_nonZC[ i ]->advance_QSS_3();
-							}
-						}
-					}
-					for ( Variable * trigger : triggers_ZC ) {
-						assert( trigger->tE == t );
-						trigger->advance_QSS_simultaneous();
-					}
-					for ( Variable * observer : observers ) {
-						observer->advance_observer( t );
-					}
-					if ( doROut ) { // Requantization output
-						if ( options::output::a ) { // All variables output
-							for ( size_type i = 0; i < n_vars; ++i ) {
-								if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
-							}
-						} else { // Requantization and/or observer variable output
-							if ( options::output::r ) { // Requantization variable output
-								for ( Variable const * trigger : triggers ) { // Triggers
-									size_type const i( var_idx[ trigger ] );
-									if ( options::output::x ) x_streams[ i ] << t << '\t' << trigger->x( t ) << '\n';
-									if ( options::output::q ) q_streams[ i ] << t << '\t' << trigger->q( t ) << '\n';
-								}
-								for ( Variable const * observer : observers ) { // Zero-crossing observer output
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										size_type const i( var_idx[ observer ] );
-										if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
-										if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
-									}
-								}
-							}
-							if ( ( options::output::o ) && ( options::output::x ) ) { // Observer variable output
-								for ( Variable const * observer : observers ) { // Zero-crossing observer output
-									if ( ( ! options::output::r ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::r
-										size_type const i( var_idx[ observer ] );
-										x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
-									}
-								}
-							}
-						}
-					}
-				}
 			} else if ( event.is_ZC() ) { // Zero-crossing event
 				++n_ZC_events;
 				while ( events.top_superdense_time() == s ) {
-					Variable * trigger( events.top_var() );
+					Variable * trigger( events.top_sub< Variable >() );
 					assert( trigger->tZC() == t );
+					trigger->st = s; // Set trigger superdense time
 					trigger->advance_ZC();
+				}
+			} else if ( event.is_conditional() ) { // Conditional event
+				while ( events.top_superdense_time() == s ) {
+					Conditional * trigger( events.top_sub< Conditional >() );
+					trigger->st = s; // Set trigger superdense time
+					trigger->advance_conditional();
 				}
 			} else if ( event.is_handler() ) { // Zero-crossing handler event
 				if ( events.single() ) { // Single handler
@@ -520,7 +410,7 @@ simulate_dfn()
 								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
 							}
 						} else { // Requantization and/or observer variable output
-							Variable const * handler( event.var() );
+							Variable const * handler( event.sub< Variable >() );
 							if ( options::output::r ) { // Requantization variable output
 								size_type const i( var_idx[ handler ] );
 								if ( options::output::x ) x_streams[ i ] << t << '\t' << handler->x( t ) << '\n';
@@ -543,7 +433,7 @@ simulate_dfn()
 							}
 						}
 					}
-					event.var()->advance_handler( t, event.val() );
+					event.sub< Variable >()->advance_handler( t, event.val() );
 					if ( doROut ) { // Requantization output
 						if ( options::output::a ) { // All variables output
 							for ( size_type i = 0; i < n_vars; ++i ) {
@@ -551,7 +441,7 @@ simulate_dfn()
 								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
 							}
 						} else { // Requantization and/or observer variable output
-							Variable const * handler( event.var() );
+							Variable const * handler( event.sub< Variable >() );
 							if ( options::output::r ) { // Requantization variable output
 								size_type const i( var_idx[ handler ] );
 								if ( options::output::x ) x_streams[ i ] << t << '\t' << handler->x( t ) << '\n';
@@ -575,10 +465,7 @@ simulate_dfn()
 						}
 					}
 				} else { // Simultaneous handlers
-					Events tops( events.top_events() );
-					Variables handlers;
-					handlers.reserve( tops.size() );
-					for ( auto & e : tops ) handlers.push_back( e.var() );
+					Variables handlers( events.top_subs< Variable >() );
 					std::sort( handlers.begin(), handlers.end(), []( Variable * v1, Variable * v2 ){ return v1->order() < v2->order(); } ); // Sort handlers by order
 					size_type const iBeg_handlers_1( static_cast< size_type >( std::distance( handlers.begin(), std::find_if( handlers.begin(), handlers.end(), []( Variable * v ){ return v->order() >= 1; } ) ) ) );
 					size_type const iBeg_handlers_2( static_cast< size_type >( std::distance( handlers.begin(), std::find_if( handlers.begin(), handlers.end(), []( Variable * v ){ return v->order() >= 2; } ) ) ) );
@@ -624,8 +511,8 @@ simulate_dfn()
 							}
 						}
 					}
-					for ( auto & e : tops ) {
-						e.var()->advance_handler_0( t, e.val() );
+					for ( auto & e : events.top_events() ) {
+						e.sub< Variable >()->advance_handler_0( t, e.val() );
 					}
 					for ( size_type i = iBeg_handlers_1, n = handlers.size(); i < n; ++i ) {
 						handlers[ i ]->advance_handler_1();
@@ -655,6 +542,125 @@ simulate_dfn()
 									size_type const i( var_idx[ handler ] );
 									if ( options::output::x ) x_streams[ i ] << t << '\t' << handler->x( t ) << '\n';
 									if ( options::output::q ) q_streams[ i ] << t << '\t' << handler->q( t ) << '\n';
+								}
+								for ( Variable const * observer : observers ) { // Zero-crossing observer output
+									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+										size_type const i( var_idx[ observer ] );
+										if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+										if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
+									}
+								}
+							}
+							if ( ( options::output::o ) && ( options::output::x ) ) { // Observer variable output
+								for ( Variable const * observer : observers ) { // Zero-crossing observer output
+									if ( ( ! options::output::r ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::r
+										size_type const i( var_idx[ observer ] );
+										x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+									}
+								}
+							}
+						}
+					}
+				}
+			} else if ( event.is_QSS() ) { // QSS requantization event
+				++n_QSS_events;
+				if ( events.single() ) { // Single trigger
+					Variable * trigger( events.top_sub< Variable >() );
+					assert( trigger->tE == t );
+					trigger->st = s; // Set trigger superdense time
+					trigger->advance_QSS();
+					if ( doROut ) { // Requantization output
+						if ( options::output::a ) { // All variables output
+							for ( size_type i = 0; i < n_vars; ++i ) {
+								if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
+								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
+							}
+						} else { // Requantization and/or observer variable output
+							if ( options::output::r ) { // Requantization variable output
+								size_type const i( var_idx[ trigger ] );
+								if ( options::output::x ) x_streams[ i ] << t << '\t' << trigger->x( t ) << '\n';
+								if ( options::output::q ) q_streams[ i ] << t << '\t' << trigger->q( t ) << '\n';
+								for ( Variable const * observer : trigger->observers() ) {
+									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+										size_type const i( var_idx[ observer ] );
+										if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+										if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
+									}
+								}
+							}
+							if ( ( options::output::o ) && ( options::output::x ) ) { // Observer variable output
+								for ( Variable const * observer : trigger->observers() ) { // Zero-crossing observer output
+									if ( ( ! options::output::r ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::r
+										size_type const i( var_idx[ observer ] );
+										x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+									}
+								}
+							}
+						}
+					}
+				} else { // Simultaneous triggers
+					++n_QSS_simultaneous_events;
+					Variables triggers( events.top_subs< Variable >() );
+					std::sort( triggers.begin(), triggers.end(), []( Variable * v1, Variable * v2 ){ return v1->order() < v2->order(); } ); // Sort triggers by order
+					Variables triggers_ZC;
+					Variables triggers_nonZC;
+					for ( Variable * trigger : triggers ) {
+						assert( trigger->tE == t );
+						trigger->st = s; // Set trigger superdense time
+						if ( trigger->is_ZC() ) { // ZC variable
+							triggers_ZC.push_back( trigger );
+						} else { // Non-ZC variable
+							triggers_nonZC.push_back( trigger );
+						}
+					}
+					size_type const iBeg_triggers_nonZC_2( static_cast< size_type >( std::distance( triggers_nonZC.begin(), std::find_if( triggers_nonZC.begin(), triggers_nonZC.end(), []( Variable * v ){ return v->order() >= 2; } ) ) ) );
+					size_type const iBeg_triggers_nonZC_3( static_cast< size_type >( std::distance( triggers_nonZC.begin(), std::find_if( triggers_nonZC.begin(), triggers_nonZC.end(), []( Variable * v ){ return v->order() >= 3; } ) ) ) );
+					int const triggers_nonZC_order_max( triggers_nonZC.empty() ? 0 : triggers_nonZC.back()->order() );
+					VariableLookup const var_lookup( triggers_nonZC.begin(), triggers_nonZC.end() );
+					ObserversSet observers_set;
+					for ( Variable * trigger : triggers_nonZC ) { // Collect observers to avoid duplicate advance calls
+						for ( Variable * observer : trigger->observers() ) {
+							if ( var_lookup.find( observer ) == var_lookup.end() ) observers_set.insert( observer ); // Skip triggers
+						}
+					}
+					Variables observers( observers_set.begin(), observers_set.end() );
+					std::sort( observers.begin(), observers.end(), []( Variable * v1, Variable * v2 ){ return v1->order() < v2->order(); } ); // Sort observers by order
+					size_type const iBeg_observers_2( static_cast< size_type >( std::distance( observers.begin(), std::find_if( observers.begin(), observers.end(), []( Variable * v ){ return v->order() >= 2; } ) ) ) );
+					int const nonZC_order_max( observers.empty() ? triggers_nonZC_order_max : std::max( triggers_nonZC_order_max, observers.back()->order() ) );
+					for ( Variable * trigger : triggers_nonZC ) {
+						trigger->advance_QSS_0();
+					}
+					for ( Variable * trigger : triggers_nonZC ) {
+						trigger->advance_QSS_1();
+					}
+					if ( nonZC_order_max >= 2 ) { // 2nd order pass
+						for ( size_type i = iBeg_triggers_nonZC_2, n = triggers_nonZC.size(); i < n; ++i ) {
+							triggers_nonZC[ i ]->advance_QSS_2();
+						}
+						if ( nonZC_order_max >= 3 ) { // 3rd order pass
+							for ( size_type i = iBeg_triggers_nonZC_3, n = triggers_nonZC.size(); i < n; ++i ) {
+								triggers_nonZC[ i ]->advance_QSS_3();
+							}
+						}
+					}
+					for ( Variable * trigger : triggers_ZC ) {
+						trigger->advance_QSS_simultaneous();
+					}
+					for ( Variable * observer : observers ) {
+						observer->advance_observer( t );
+					}
+					if ( doROut ) { // Requantization output
+						if ( options::output::a ) { // All variables output
+							for ( size_type i = 0; i < n_vars; ++i ) {
+								if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
+								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
+							}
+						} else { // Requantization and/or observer variable output
+							if ( options::output::r ) { // Requantization variable output
+								for ( Variable const * trigger : triggers ) { // Triggers
+									size_type const i( var_idx[ trigger ] );
+									if ( options::output::x ) x_streams[ i ] << t << '\t' << trigger->x( t ) << '\n';
+									if ( options::output::q ) q_streams[ i ] << t << '\t' << trigger->q( t ) << '\n';
 								}
 								for ( Variable const * observer : observers ) { // Zero-crossing observer output
 									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
@@ -707,6 +713,7 @@ simulate_dfn()
 
 	// QSS cleanup
 	for ( auto & var : vars ) delete var;
+	for ( auto & con : cons ) delete con;
 }
 
 } // dfn

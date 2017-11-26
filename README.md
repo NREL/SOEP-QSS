@@ -16,9 +16,10 @@ Currently the code has:
 * A master algorithm with sampling and diagnostic output controls.
 * A few simple code-defined example cases.
 * Zero-crossing event support.
+* Conditional if and when block framework.
 
 Notes:
-* No Modelica input file processing is supported: test cases are code-defined or loaded from FMUs.
+* Modelica input file processing is not provided: test cases are code-defined or loaded from FMUs.
 
 ## Plan
 
@@ -118,13 +119,13 @@ At startup and simultaneous requantization trigger events the LIQSS approach def
 
 ### Zero-Crossing Functions
 
-So-called zero-crossing functions are the mechanism Modelica uses to introduce conditional behavior to a model. For each such behavior a corresponding function crosses zero when an event needs to be carried out. This might be, for instance, a thermostat control reaching a trigger temperature that needs to turn on an A/C system. Zero crossings cause (discontinuous) changes to (otherwise) continuous and discrete variables via "handler" functions.
+So-called zero-crossing functions are used by Modelica for conditional behavior: when the function crosses zero an event needs to be carried out. This might be, for instance, a thermostat control reaching a trigger temperature that needs to turn on an A/C system. Zero crossings cause (discontinuous) changes to (otherwise) continuous and discrete variables via "handler" functions.
 
 In traditional solvers a zero crossing is detected after it occurs and time backtracking may be used to find its precise time of crossing. With QSS we can do better by predicting the zero crossing using the QSS-style polynomial representation, optionally refining that prediction with an iterative root finder. The zero-crossing support is integrated with the QSS system as zero-crossing variables that are somewhat analogous to the QSS variables in their use of polynomial trajectories that requantize based on specified tolerances. The predicted zero crossings are events on the QSS event queue so they are handled efficiently without a need for backtracking.
 
 Zero crossings introduce the potential for cyclic dependencies and a cascade of updates that occur at the same time point. Zero crossing events change some variable values. Because those changes are discontinuous this acts like a requantization event that must update both the quantized and continuous representation of those modified variables, which, in turn, can cause zero-crossing variables to update, possibly triggering another round of zero crossings, and so on. All of these events happen at the same (clock) time but they are logically sequentially triggered so we cannot know or process them simultaneously. To create a deterministic simulation with zero crossings the following approach is used:
-* The phases of zero crossing, handler updates, and resulting requantizations are clustered together by the use of a sort of what is called superdense time, which is a time value paired with a sequencing index.
-* In any phase causing both new zero crossings and new requantizations the zero crossings are processed first (via superdense time indexing).
+* The phases of zero crossing, handler updates, and resulting requantizations are clustered together by the use of a "superdense time", which is a time value paired with a pass index and an event type ordering offset.
+* In any pass with both new zero crossings and new requantizations the zero crossings are processed first (via superdense time indexing).
 * In each phase multiple events of the same (zero crossing, handler, or requantization) type are handled together as simultaneous events: the processing for simultaneous events is phased so that the changes to interdependent variables are propagated deterministically.
 
 With cyclic dependencies it is possible for an infinite cascade loop of such changes to occur at the same (clock) time. Detecting such dependencies and the occurrence of these infinite loops is necessary with zero crossing support.
@@ -134,6 +135,10 @@ With cyclic dependencies it is possible for an infinite cascade loop of such cha
 Input functions are external system "drivers" that do not depend on the state of other variables within the DAE system. The QSS solver implements input functions for continuous real-valued variables with QSS-like quantized and continuous representations and logic for selecting the next time at which to update these representations. Input variables using this approach are smoothly integrated with the QSS variable system.
 
 Input functions can also have discrete events at which their value changes. To provide accurate behavior with QSS solvers, where time steps can be large and variable, these discrete events are assumed predictable by the input functions. These predicted discrete events are placed in the QSS event queue to assure they are processed at their exact event time. We don't currently support discrete events for continuous input functions but this is easily added if needed.
+
+### Conditionals
+
+Modelica supports conditional behavior via "if" and "when" blocks. The QSS solver has classes representing if and when conditional blocks to provide this behavior. Each conditional block has a sequence of clauses that represent the if/elseif/else and when/elsewhen structure of the corresponding Modelica conditional. Each clause (except the else clause) contains one or more boolean or zero-crossing variables. When fully realized clauses would be able to represent logical "trees" over their variables: for now only OR logic is supported.
 
 ## FMU Support
 
@@ -202,6 +207,16 @@ Notes:
 * Zero-crossing variables should not need and are required to have no observers (but they do have dependents: the variables modified by their handlers).
 * Zero-crossing variables must initialize and advance after other variables because their zero-order coefficients come from their function evaluation that depends on the zero-order coefficients of other variables being advanced.
 * Zero-crossing variables use the quantized, not continuous, representations of variables appearing in their functions. This is what the literature indicates and it prevents additional updating operations and potential event cascades. But it also provides a lower accuracy representation, making root finding and refinement more critical. It also means that QSS1 variables appearing linearly in zero-crossing functions only contribute a constant to the function at any time: if all variables are QSS1 and/or discrete then no zero crossings can be predicted so zero crossings will only occur as a result of observer updates of the zero-crossing variable. For this reason QSS1 is not suggested when zero crossings are in use.
+
+### Conditionals
+
+The QSS solver behavior for processing conditionals is:
+* At events when zero-crossing or boolean variables in clauses become true (and false for if block clauses) then notify their clauses to put the conditional event on the queue at that time.
+* When conditional events are processed the clauses are evaluated to see which of them are active at that time (and superdense time pass).
+* Active clauses place events for their handlers on the queue at the same time and pass.
+* Handler events are processed to make the necessary variable updates.
+
+Conditional handler functions can cause variable changes that cause other (zero-crossing, requantization, ...) events so the processing order can affect results. To assure deterministic results, each event type has an offset number that is used as an additional field in the superdense time to assure that discrete, zero-crossing, conditional, and handler events are processed in groups in that order in each pass. Variables modified inconsistently by handlers in the same pass are detected and warnings generated since this indicates a problematic model that can produce processing order-dependent results.
 
 ## Performance
 

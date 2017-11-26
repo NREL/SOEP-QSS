@@ -66,8 +66,10 @@ public: // Types
 	using Super::dt_inf;
 	using Super::self_observer;
 
+	using Super::add_QSS;
 	using Super::advance_observers;
 	using Super::event;
+	using Super::shift_QSS;
 	using Super::shrink_observers;
 	using Super::tE_infinity_tQ;
 	using Super::tE_infinity_tX;
@@ -246,7 +248,7 @@ public: // Methods
 	{
 		x_3_ = one_sixth * d_.s2( tQ );
 		set_tE_aligned();
-		event( events.add_QSS( tE, this ) );
+		add_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t+" << q_2_ << "*t^2 quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2+" << x_3_ << "*t^3 internal   tE=" << tE << '\n';
 	}
 
@@ -269,7 +271,7 @@ public: // Methods
 		x_2_ = q_2_ = one_half * d_.qc1( tE );
 		x_3_ = one_sixth * d_.qc2( tX = tE );
 		set_tE_aligned();
-		event( events.shift_QSS( tE, event() ) );
+		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t+" << q_2_ << "*t^2 quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2+" << x_3_ << "*t^3 internal   tE=" << tE << '\n';
 		advance_observers();
 	}
@@ -304,7 +306,7 @@ public: // Methods
 	{
 		x_3_ = one_sixth * d_.sc2( tE );
 		set_tE_aligned();
-		event( events.shift_QSS( tE, event() ) );
+		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t+" << q_2_ << "*t^2 quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2+" << x_3_ << "*t^3 internal   tE=" << tE << '\n';
 	}
 
@@ -319,7 +321,7 @@ public: // Methods
 		x_2_ = one_half * d_.qc1( t );
 		x_3_ = one_sixth * d_.qc2( tX = t );
 		set_tE_unaligned();
-		event( events.shift_QSS( tE, event() ) );
+		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "  " << name << '(' << t << ')' << " = " << q_0_ << "+" << q_1_ << "*t+" << q_2_ << "*t^2 quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2+" << x_3_ << "*t^3 internal   tE=" << tE << '\n';
 	}
 
@@ -335,7 +337,7 @@ public: // Methods
 		x_2_ = q_2_ = one_half * d_.qc1( t );
 		x_3_ = one_sixth * d_.qc2( t );
 		set_tE_aligned();
-		event( events.shift_QSS( tE, event() ) );
+		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t+" << q_2_ << "*t^2 quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2+" << x_3_ << "*t^3 internal   tE=" << tE << '\n';
 		advance_observers();
 	}
@@ -370,7 +372,7 @@ public: // Methods
 	{
 		x_3_ = one_sixth * d_.qc2( tQ );
 		set_tE_aligned();
-		event( events.shift_QSS( tE, event() ) );
+		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t+" << q_2_ << "*t^2 quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2+" << x_3_ << "*t^3 internal   tE=" << tE << '\n';
 	}
 

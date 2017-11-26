@@ -1,4 +1,4 @@
-// QSS Globals
+// FMU-Based Conditional Blocks Forward Declaration
 //
 // Project: QSS Solver
 //
@@ -33,20 +33,22 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_dfn_globals_dfn_hh_INCLUDED
-#define QSS_dfn_globals_dfn_hh_INCLUDED
-
-// QSS Headers
-#include <QSS/dfn/Variable.fwd.hh>
-#include <QSS/EventQueue.fwd.hh>
+#ifndef QSS_fmu_Conditional_fwd_hh_INCLUDED
+#define QSS_fmu_Conditional_fwd_hh_INCLUDED
 
 namespace QSS {
-namespace dfn {
+namespace fmu {
 
-// QSS Globals
-extern EventQueue< Variable > events;
+// Conditional Abstract Base Class
+class Conditional;
 
-} // dfn
+// Conditional If Block Template
+template< typename > class IfV;
+
+// Conditional When Block Template
+template< typename > class WhenV;
+
+} // fmu
 } // QSS
 
 #endif
