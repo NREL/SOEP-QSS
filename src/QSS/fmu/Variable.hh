@@ -38,7 +38,7 @@
 
 // QSS Headers
 #include <QSS/fmu/Variable.fwd.hh>
-#include <QSS/dfn/Conditional.hh>
+#include <QSS/fmu/Conditional.hh>
 #include <QSS/fmu/FMI.hh>
 #include <QSS/fmu/FMU_Variable.hh>
 #include <QSS/globals.hh>

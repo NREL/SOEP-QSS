@@ -111,11 +111,17 @@ At startup and simultaneous requantization trigger events the LIQSS approach def
 
 ### Function
 
-* Linear functions are provided for QSS and LIQSS solvers.
-* A numeric differentiating linear function is provided for QSS solvers.
-* Sample nonlinear functions are included.
-* Sample input variable functions with analytical and numeric derivatives are included.
-* We'll need a general purpose function approach for the JModelica-generated code: probably a function class that calls back to a provided function.
+For the code-defined modeling a few function types are provided:
+* Linear time-invariant functions for QSS and LIQSS solvers.
+* Numeric differentiating linear time-invariant functions for QSS solvers.
+* Sample nonlinear functions.
+* Sample input variable functions with analytical and numeric derivatives.
+
+### Input Functions
+
+Input functions are external system "drivers" that do not depend on the state of other variables within the DAE system. The QSS solver implements input functions for continuous real-valued variables with QSS-like quantized and continuous representations and logic for selecting the next time at which to update these representations. Input variables using this approach are smoothly integrated with the QSS variable system.
+
+Input functions can also have discrete events at which their value changes. To provide accurate behavior with QSS solvers, where time steps can be large and variable, these discrete events are assumed predictable by the input functions. These predicted discrete events are placed in the QSS event queue to assure they are processed at their exact event time. We don't currently support discrete events for continuous input functions but this is easily added if needed.
 
 ### Zero-Crossing Functions
 
@@ -123,18 +129,12 @@ So-called zero-crossing functions are used by Modelica for conditional behavior:
 
 In traditional solvers a zero crossing is detected after it occurs and time backtracking may be used to find its precise time of crossing. With QSS we can do better by predicting the zero crossing using the QSS-style polynomial representation, optionally refining that prediction with an iterative root finder. The zero-crossing support is integrated with the QSS system as zero-crossing variables that are somewhat analogous to the QSS variables in their use of polynomial trajectories that requantize based on specified tolerances. The predicted zero crossings are events on the QSS event queue so they are handled efficiently without a need for backtracking.
 
-Zero crossings introduce the potential for cyclic dependencies and a cascade of updates that occur at the same time point. Zero crossing events change some variable values. Because those changes are discontinuous this acts like a requantization event that must update both the quantized and continuous representation of those modified variables, which, in turn, can cause zero-crossing variables to update, possibly triggering another round of zero crossings, and so on. All of these events happen at the same (clock) time but they are logically sequentially triggered so we cannot know or process them simultaneously. To create a deterministic simulation with zero crossings the following approach is used:
+Zero crossings introduce the potential for cyclic dependencies to cause a cascade of updates that occur at the same time point. Zero crossing handler events change some variable values. Because those changes can be discontinuous this is treated like a requantization event that must update both the quantized and continuous representation of those modified variables, which, in turn, can cause zero-crossing variables to update, possibly triggering another round of zero crossings, and so on. All of these events happen at the same (clock) time but they are logically sequentially triggered so we cannot know or process them simultaneously. To create a deterministic simulation with zero crossings the following approach is used:
 * The phases of zero crossing, handler updates, and resulting requantizations are clustered together by the use of a "superdense time", which is a time value paired with a pass index and an event type ordering offset.
 * In any pass with both new zero crossings and new requantizations the zero crossings are processed first (via superdense time indexing).
 * In each phase multiple events of the same (zero crossing, handler, or requantization) type are handled together as simultaneous events: the processing for simultaneous events is phased so that the changes to interdependent variables are propagated deterministically.
 
-With cyclic dependencies it is possible for an infinite cascade loop of such changes to occur at the same (clock) time. Detecting such dependencies and the occurrence of these infinite loops is necessary with zero crossing support.
-
-### Input Functions
-
-Input functions are external system "drivers" that do not depend on the state of other variables within the DAE system. The QSS solver implements input functions for continuous real-valued variables with QSS-like quantized and continuous representations and logic for selecting the next time at which to update these representations. Input variables using this approach are smoothly integrated with the QSS variable system.
-
-Input functions can also have discrete events at which their value changes. To provide accurate behavior with QSS solvers, where time steps can be large and variable, these discrete events are assumed predictable by the input functions. These predicted discrete events are placed in the QSS event queue to assure they are processed at their exact event time. We don't currently support discrete events for continuous input functions but this is easily added if needed.
+With cyclic dependencies it is possible for an infinite cascade loop of such changes to occur at the same (clock) time. Detecting such dependencies and the occurrence of these infinite loops is necessary with zero crossing support. The `--cycles` option will cause the QSS solver to report cyclic dependencies among the variables, including dependencies created *via* conditional clause handlers.
 
 ### Conditionals
 
@@ -181,7 +181,7 @@ The time advance functions solve for the roots of polynomials of the QSS method 
 ### Zero-Crossing Support
 
 Zero crossing implementation must deal with some obstacles:
-* Some combinations of zero-crossing functions and QSS method orders cannot predict zero crossings, such as a zero-crossing function that is simply the value of a QSS1 variable (whose quantized representation is always a constant). The QSS system will detect zero crossings during observer updates of the zero-crossing variables but these will lag the precise zero crossing times.
+* Some combinations of zero-crossing functions and QSS method orders cannot predict zero crossings, such as a zero-crossing function that is simply the value of a QSS1 variable (whose quantized representation is always a constant). The QSS system will detect zero crossings during requantization and observer updates of the zero-crossing variables but these will lag the precise zero crossing times.
 
 Some of the tasks remaining for a robust, production-quality implementation are:
 * Detect and warn about cyclic dependencies that could lead to infinite update cascades.

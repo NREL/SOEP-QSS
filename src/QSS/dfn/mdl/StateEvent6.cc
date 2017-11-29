@@ -97,6 +97,7 @@ class Handler_StateEvent6 final
 public: // Types
 
 	using Variable = V;
+	using Variables = typename Variable::Variables;
 	using Time = typename Variable::Time;
 	using Value = typename Variable::Value;
 	using Crossing = typename Variable::Crossing;
@@ -116,6 +117,20 @@ public: // Properties
 		}
 	}
 
+	// Handler-Modified Variables
+	Variables const &
+	observers() const
+	{
+		return observers_;
+	}
+
+	// Handler-Modified Variables
+	Variables &
+	observers()
+	{
+		return observers_;
+	}
+
 public: // Methods
 
 	// Set Variables
@@ -127,12 +142,15 @@ public: // Methods
 	{
 		y_ = y;
 		z_ = z;
+
+		observers_.push_back( y );
 	}
 
 private: // Data
 
 	Variable_D * y_{ nullptr };
 	Variable_ZC_LTI * z_{ nullptr };
+	Variables observers_;
 
 };
 
@@ -370,7 +388,6 @@ StateEvent6( Variables & vars, Conditionals & cons )
 	z1->f().add( x1 ).add( -1.0 );
 
 	// Zero-crossing variable: x1 <= 1
-	using Z = Variable_ZC< Function_LTI >;
 	Z * z2( nullptr );
 	if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) ) {
 		vars.push_back( z2 = new Variable_ZC1< Function_LTI >( "z2", rTol, aTol ) );

@@ -35,6 +35,7 @@
 
 // QSS Headers
 #include <QSS/dfn/simulate_dfn.hh>
+#include <QSS/dfn/cycles_dfn.hh>
 #include <QSS/dfn/Conditional.hh>
 #include <QSS/dfn/Variable.hh>
 #include <QSS/dfn/mdl/achilles.hh>
@@ -125,7 +126,7 @@ simulate_dfn()
 	} else if ( options::model== "xyz" ) {
 		mdl::xyz( vars );
 	} else {
-		std::cerr << "Error: Unknown model: " << options::model << std::endl;
+		std::cerr << "\nError: Unknown model: " << options::model << std::endl;
 		std::exit( EXIT_FAILURE );
 	}
 
@@ -181,6 +182,9 @@ simulate_dfn()
 	for ( auto var : vars_ZC ) { // ZC variables after to get actual LIQSS2+ quantized reps
 		var->init();
 	}
+
+	// Dependency cycle detection: After init sets up observers
+	if ( options::cycles ) cycles( vars );
 
 	// Output stream initialization
 	bool const doSOut( options::output::s && ( options::output::x || options::output::q ) );

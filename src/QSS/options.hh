@@ -54,6 +54,7 @@ enum class QSS {
 
 extern QSS qss; // QSS method: (LI)QSS1|2|3  [QSS2]
 extern int qss_order; // QSS method order  [computed]
+extern bool cycles; // Report dependency cycles?  [F]
 extern bool inflection; // Requantize at inflections?  [F]
 extern double rTol; // Relative tolerance  [1e-4|FMU]
 extern double aTol; // Absolute tolerance  [1e-6]

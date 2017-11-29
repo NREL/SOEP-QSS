@@ -176,6 +176,9 @@ public: // Methods
 	advance_QSS()
 	{
 		fmu_set_observees_q( tX = tQ = tE );
+#ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
+		sign_old_ = ( tE == tZ_prev ? 0 : signum( x( tE ) ) ); // Treat as if exactly zero if tE is previous zero-crossing event time
+#endif
 		x_0_ = q_0_ = fmu_get_value();
 		set_qTol();
 		x_1_ = q_1_ = fmu_get_deriv();
@@ -183,8 +186,12 @@ public: // Methods
 		fmu_set_observees_q( tN );
 		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE();
+#ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
+		crossing_detect( sign_old_, signum( x_0_ ) );
+#else
 		set_tZ();
 		tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
+#endif
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
@@ -193,6 +200,7 @@ public: // Methods
 	advance_QSS_0()
 	{
 		fmu_set_observees_q( tX = tQ = tE );
+		sign_old_ = ( tE == tZ_prev ? 0 : signum( x( tE ) ) ); // Treat as if exactly zero if tE is previous zero-crossing event time
 		x_0_ = q_0_ = fmu_get_value();
 		set_qTol();
 	}
@@ -211,8 +219,7 @@ public: // Methods
 		fmu_set_observees_q( tN = tQ + options::dtNum );
 		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE();
-		set_tZ();
-		tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
+		crossing_detect( sign_old_, signum( x_0_ ) );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 

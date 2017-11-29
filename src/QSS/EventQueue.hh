@@ -414,7 +414,7 @@ public: // Discrete Event Methods
 	 iterator const i
 	)
 	{
-		assert( t_ = s_.t );
+		assert( t_ == s_.t );
 		assert( t >= t_ );
 		Index const idx( t == t_ ? ( s_.o < Off::Discrete ? s_.i : s_.i + 1u ) : Index( 0 ) );
 		Target * tar( i->second.tar() );
@@ -441,7 +441,7 @@ public: // Zero-Crossing Event Methods
 	 iterator const i
 	)
 	{
-		assert( t_ = s_.t );
+		assert( t_ == s_.t );
 		assert( t >= t_ );
 		Index const idx( t == t_ ? ( s_.o < Off::ZC ? s_.i : s_.i + 1u ) : Index( 0 ) );
 		Target * tar( i->second.tar() );
@@ -465,7 +465,7 @@ public: // Conditional Event Methods
 	 iterator const i
 	)
 	{
-		assert( t_ = s_.t );
+		assert( t_ == s_.t );
 		assert( t == t_ );
 		Index const idx( s_.o < Off::Conditional ? s_.i : s_.i + 1u );
 		Target * tar( i->second.tar() );
@@ -499,7 +499,7 @@ public: // Handler Event Methods
 	 iterator const i
 	)
 	{
-		assert( t_ = s_.t );
+		assert( t_ == s_.t );
 		assert( t == t_ );
 		Index const idx( s_.o < Off::Handler ? s_.i : s_.i + 1u );
 		Target * tar( i->second.tar() );
@@ -520,7 +520,7 @@ public: // Handler Event Methods
 	 iterator const i
 	)
 	{
-		assert( t_ = s_.t );
+		assert( t_ == s_.t );
 		assert( t == t_ );
 		Index const idx( s_.o < Off::Handler ? s_.i : s_.i + 1u );
 		Target * tar( i->second.tar() );
@@ -556,7 +556,7 @@ public: // QSS Event Methods
 	 iterator const i
 	)
 	{
-		assert( t_ = s_.t );
+		assert( t_ == s_.t );
 		assert( t >= t_ );
 		Index const idx( t == t_ ? ( s_.o < Off::QSS ? s_.i : s_.i + 1u ) : Index( 0 ) );
 		Target * tar( i->second.tar() );

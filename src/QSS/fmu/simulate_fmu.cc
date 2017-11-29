@@ -35,6 +35,7 @@
 
 // QSS Headers
 #include <QSS/fmu/simulate_fmu.hh>
+#include <QSS/fmu/cycles_fmu.hh>
 #include <QSS/fmu/Conditional.hh>
 #include <QSS/fmu/FMI.hh>
 #include <QSS/fmu/FMU_Variable.hh>
@@ -688,7 +689,7 @@ simulate_fmu()
 						} else {
 							std::cout << "  Var: " << dep->name << " has observer " << var->name << std::endl;
 							dep->add_observer( var );
-							if ( ! dep->is_ZC() ) var->add_observee( dep );
+							var->add_observee( dep );
 						}
 					} else {
 						//std::cout << "FMU derivative " << der_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
@@ -971,6 +972,9 @@ simulate_fmu()
 		}
 	}
 	fmu::set_time( t = t0 );
+
+	// Dependency cycle detection: After init sets up observers
+	if ( options::cycles ) cycles( vars );
 
 	// Output stream initialization
 	bool const doSOut( ( options::output::s && ( options::output::x || options::output::q ) ) || ( options::output::f && ( n_outs + n_fmu_outs > 0u ) ) );

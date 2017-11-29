@@ -158,13 +158,6 @@ public: // Nested Types
 			return vars.empty();
 		}
 
-		// One Variable?
-		bool
-		one() const
-		{
-			return ( vars.size() == 1u );
-		}
-
 	public: // Properties
 
 		// Size
@@ -173,6 +166,16 @@ public: // Nested Types
 		{
 			return vars.size();
 		}
+
+		// Handler-Modified Variables
+		virtual
+		Variables const &
+		observers() const = 0;
+
+		// Handler-Modified Variables
+		virtual
+		Variables &
+		observers() = 0;
 
 		// Boolean Value at SuperdenseTime s
 		bool
@@ -230,7 +233,7 @@ public: // Nested Types
 			conditional->shift_conditional( t );
 		}
 
-		// Handler
+		// Handler Call at Time t
 		virtual
 		void
 		handler( Time const t ) = 0;
@@ -269,6 +272,22 @@ public: // Nested Types
 		virtual
 		~ClauseH()
 		{}
+
+	public: // Properties
+
+		// Handler-Modified Variables
+		Variables const &
+		observers() const
+		{
+			return h.observers();
+		}
+
+		// Handler-Modified Variables
+		Variables &
+		observers()
+		{
+			return h.observers();
+		}
 
 	public: // Methods
 
@@ -462,13 +481,6 @@ public: // Nested Types
 			return vars.empty();
 		}
 
-		// One Variable?
-		bool
-		one() const
-		{
-			return ( vars.size() == 1u );
-		}
-
 	public: // Properties
 
 		// Size
@@ -477,6 +489,16 @@ public: // Nested Types
 		{
 			return vars.size();
 		}
+
+		// Handler-Modified Variables
+		virtual
+		Variables const &
+		observers() const = 0;
+
+		// Handler-Modified Variables
+		virtual
+		Variables &
+		observers() = 0;
 
 		// Boolean Value at SuperdenseTime s
 		bool
@@ -561,6 +583,22 @@ public: // Nested Types
 		virtual
 		~ClauseH()
 		{}
+
+	public: // Properties
+
+		// Handler-Modified Variables
+		Variables const &
+		observers() const
+		{
+			return h.observers();
+		}
+
+		// Handler-Modified Variables
+		Variables &
+		observers()
+		{
+			return h.observers();
+		}
 
 	public: // Methods
 

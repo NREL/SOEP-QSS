@@ -194,7 +194,20 @@ public: // Methods
 	void
 	advance_QSS()
 	{
-		advance_QSS_core();
+#ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
+		int const sign_old( tE == tZ_prev ? 0 : signum( x( tE ) ) ); // Treat as if exactly zero if tE is previous zero-crossing event time
+#endif
+		x_0_ = q_0_ = f_.q( tX = tQ = tE );
+		set_qTol();
+		x_1_ = q_1_ = f_.q1( tE );
+		x_2_ = one_half * f_.q2( tE );
+		set_tE();
+#ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
+		crossing_detect( sign_old, signum( x_0_ ) );
+#else
+		set_tZ();
+		tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
+#endif
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
@@ -202,7 +215,13 @@ public: // Methods
 	void
 	advance_QSS_simultaneous()
 	{
-		advance_QSS_core();
+		int const sign_old( tE == tZ_prev ? 0 : signum( x( tE ) ) ); // Treat as if exactly zero if tE is previous zero-crossing event time
+		x_0_ = q_0_ = f_.q( tX = tQ = tE );
+		set_qTol();
+		x_1_ = q_1_ = f_.q1( tE );
+		x_2_ = one_half * f_.q2( tE );
+		set_tE();
+		crossing_detect( sign_old, signum( x_0_ ) );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
@@ -213,12 +232,11 @@ public: // Methods
 		assert( ( tX <= t ) && ( t <= tE ) );
 		int const sign_old( t == tZ_prev ? 0 : signum( x( t ) ) ); // Treat as if exactly zero if t is previous zero-crossing event time
 		x_0_ = q_0_ = f_.q( tX = tQ = t );
-		int const sign_new( signum( x_0_ ) );
 		set_qTol();
 		x_1_ = q_1_ = f_.q1( t );
 		x_2_ = one_half * f_.q2( t );
 		set_tE();
-		crossing_detect( sign_old, sign_new );
+		crossing_detect( sign_old, signum( x_0_ ) );
 		if ( options::output::d ) std::cout << "  " << name << '(' << t << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << "   tZ=" << tZ <<  '\n';
 	}
 
@@ -241,19 +259,6 @@ private: // Methods
 	x1x( Time const t ) const
 	{
 		return x_1_ + ( two * x_2_ * ( t - tX ) ); // Allows t beyond tE for set_tZ use
-	}
-
-	// QSS Advance: Core
-	void
-	advance_QSS_core()
-	{
-		x_0_ = q_0_ = f_.q( tX = tQ = tE );
-		set_qTol();
-		x_1_ = q_1_ = f_.q1( tE );
-		x_2_ = one_half * f_.q2( tE );
-		set_tE();
-		set_tZ();
-		tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
 	}
 
 	// Set End Time

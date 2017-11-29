@@ -50,6 +50,7 @@ namespace options {
 
 QSS qss( QSS::QSS2 ); // QSS method: (LI)QSS1|2|3  [QSS2]
 int qss_order( 2 ); // QSS method order  [computed]
+bool cycles( false ); // Report dependency cycles?  [F]
 bool inflection( false ); // Requantize at inflections?  [F]
 double rTol( 1.0e-4 ); // Relative tolerance  [1e-4|FMU]
 double aTol( 1.0e-6 ); // Absolute tolerance  [1e-6]
@@ -193,6 +194,7 @@ help_display()
 	std::cout << '\n' << "QSS [options] [model|fmu]" << "\n\n";
 	std::cout << "Options:" << "\n\n";
 	std::cout << " --qss=METHOD  QSS method: (LI)QSS1|2|3  [QSS2]" << '\n';
+	std::cout << " --cycles      Report dependency cycles?  [F]" << '\n';
 	std::cout << " --inflection  Requantize at inflections?  [F]" << '\n';
 	std::cout << " --rTol=TOL    Relative tolerance  [1e-4|FMU]" << '\n';
 	std::cout << " --aTol=TOL    Absolute tolerance  [1e-6]" << '\n';
@@ -274,6 +276,8 @@ process_args( int argc, char * argv[] )
 				std::cerr << "Error: Unsupported QSS method: " << qss_name << std::endl;
 				fatal = true;
 			}
+		} else if ( has_option( arg, "cycles" ) ) {
+			cycles = true;
 		} else if ( has_option( arg, "inflection" ) ) {
 			inflection = true;
 		} else if ( has_value_option( arg, "rTol" ) ) {

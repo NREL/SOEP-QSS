@@ -131,13 +131,6 @@ public: // Nested Types
 			return vars.empty();
 		}
 
-		// One Variable?
-		bool
-		one() const
-		{
-			return ( vars.size() == 1u );
-		}
-
 	public: // Properties
 
 		// Size
@@ -193,6 +186,20 @@ public: // Nested Types
 			vars.push_back( &var );
 			var.if_clauses.push_back( this );
 			return *this;
+		}
+
+		// Add an Observer Variable
+		void
+		add_observer( Variable * v )
+		{
+			observers.push_back( v );
+		}
+
+		// Add an Observer Variable
+		void
+		add_observer( Variable & v )
+		{
+			observers.push_back( &v );
 		}
 
 		// Variable Activity Notifier
@@ -367,13 +374,6 @@ public: // Nested Types
 		empty() const
 		{
 			return vars.empty();
-		}
-
-		// One Variable?
-		bool
-		one() const
-		{
-			return ( vars.size() == 1u );
 		}
 
 	public: // Properties

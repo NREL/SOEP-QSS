@@ -62,6 +62,7 @@ class Handler_bball final
 public: // Types
 
 	using Variable = V;
+	using Variables = typename Variable::Variables;
 	using Time = typename Variable::Time;
 	using Value = typename Variable::Value;
 	using Crossing = typename Variable::Crossing;
@@ -89,6 +90,20 @@ public: // Properties
 		}
 	}
 
+	// Handler-Modified Variables
+	Variables const &
+	observers() const
+	{
+		return observers_;
+	}
+
+	// Handler-Modified Variables
+	Variables &
+	observers()
+	{
+		return observers_;
+	}
+
 public: // Methods
 
 	// Set Variables
@@ -104,6 +119,10 @@ public: // Methods
 		v_ = v;
 		b_ = b;
 		z_ = z;
+
+		observers_.push_back( h );
+		observers_.push_back( v );
+		observers_.push_back( b );
 	}
 
 private: // Data
@@ -112,6 +131,7 @@ private: // Data
 	Variable_QSS_LTI * v_{ nullptr };
 	Variable_D * b_{ nullptr };
 	Variable_ZC_LTI * z_{ nullptr };
+	Variables observers_;
 
 };
 
