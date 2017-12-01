@@ -38,12 +38,10 @@
 #include <QSS/math.hh>
 
 // C++ Headers
-#include <algorithm>
 #include <cctype>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include <limits>
 
 namespace QSS {
 namespace options {
@@ -52,19 +50,22 @@ QSS qss( QSS::QSS2 ); // QSS method: (LI)QSS1|2|3  [QSS2]
 int qss_order( 2 ); // QSS method order  [computed]
 bool cycles( false ); // Report dependency cycles?  [F]
 bool inflection( false ); // Requantize at inflections?  [F]
+bool refine( false ); // Refine FMU zero-crossing roots?  [F]
 double rTol( 1.0e-4 ); // Relative tolerance  [1e-4|FMU]
-double aTol( 1.0e-6 ); // Absolute tolerance  [1e-6]
 bool rTol_set( false ); // Relative tolerance set?
-double dtMin( 0.0 ); // Min time step (s)
-double dtMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Max time step (s)
-double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Inf time step (s)
-double dtZC( 1.0e-6 ); // Zero-crossing time step (s)  [1e-6]
+double aTol( 1.0e-6 ); // Absolute tolerance  [1e-6]
+double zTol( 0.0 ); // Zero-crossing anti-chatter tolerance  [0]
+double dtMin( 0.0 ); // Min time step (s)  [0]
+double dtMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Max time step (s)  [infinity]
+double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Inf time step (s)  [infinity]
+double dtZC( 1.0e-6 ); // FMU zero-crossing time step (s)  [1e-6]
 double dtNum( 1.0e-6 ); // Numeric differentiation time step (s)  [1e-6]
 double one_over_dtNum( 1.0e6 ); // 1 / dtNum  [computed]
 double one_half_over_dtNum( 5.0e5 ); // 0.5 / dtNum  [computed]
 double dtOut( 1.0e-3 ); // Sampled & FMU output time step (s)  [1e-3]
 double tEnd( 1.0 ); // End time (s)  [1|FMU]
 bool tEnd_set( false ); // End time set?
+std::size_t pass( 100 ); // Pass count limit  [100]
 std::string out; // Outputs: r, a, s, x, q, f  [rx]
 std::string model; // Name of model or FMU
 
@@ -101,6 +102,25 @@ is_tail( char * end )
 	if ( end == nullptr ) return false;
 	while ( std::isspace( *end ) ) ++end;
 	return ( *end == '\0' );
+}
+
+// string is Readable as a int?
+inline
+bool
+is_int( std::string const & s )
+{
+	char const * str( s.c_str() );
+	char * end;
+	long int const i( std::strtol( str, &end, 10 ) );
+	return ( ( end != str ) && is_tail( end ) && ( std::numeric_limits< int >::min() <= i ) && ( i <= std::numeric_limits< int >::max() ) );
+}
+
+// int of a string
+inline
+int
+int_of( std::string const & s )
+{
+	return std::stoi( s ); // Check is_int first
 }
 
 // string is Readable as a double?
@@ -196,15 +216,18 @@ help_display()
 	std::cout << " --qss=METHOD  QSS method: (LI)QSS1|2|3  [QSS2]" << '\n';
 	std::cout << " --cycles      Report dependency cycles?  [F]" << '\n';
 	std::cout << " --inflection  Requantize at inflections?  [F]" << '\n';
+	std::cout << " --refine      Refine FMU zero-crossing roots?  [F]" << '\n';
 	std::cout << " --rTol=TOL    Relative tolerance  [1e-4|FMU]" << '\n';
 	std::cout << " --aTol=TOL    Absolute tolerance  [1e-6]" << '\n';
-	std::cout << " --dtMin=STEP  Min time step (s)  [0.0]" << '\n';
+	std::cout << " --zTol=TOL    Zero-crossing anti-chatter tolerance  [0]" << '\n';
+	std::cout << " --dtMin=STEP  Min time step (s)  [0]" << '\n';
 	std::cout << " --dtMax=STEP  Max time step (s)  [infinity]" << '\n';
 	std::cout << " --dtInf=STEP  Inf alt time step (s)  [infinity]" << '\n';
-	std::cout << " --dtZC=STEP   Zero-crossing step (s)  [1e-6]" << '\n';
+	std::cout << " --dtZC=STEP   FMU zero-crossing step (s)  [1e-6]" << '\n';
 	std::cout << " --dtNum=STEP  Numeric differentiation step (s)  [1e-6]" << '\n';
 	std::cout << " --dtOut=STEP  Sampled & FMU output step (s)  [1e-3]" << '\n';
 	std::cout << " --tEnd=TIME   End time (s)  [1|FMU]" << '\n';
+	std::cout << " --pass=COUNT  Pass count limit  [100]" << '\n';
 	std::cout << " --out=OUTPUTS Outputs  [trfx]" << '\n';
 	std::cout << "       t       Time events" << '\n';
 	std::cout << "       r       Requantizations" << '\n';
@@ -280,6 +303,8 @@ process_args( int argc, char * argv[] )
 			cycles = true;
 		} else if ( has_option( arg, "inflection" ) ) {
 			inflection = true;
+		} else if ( has_option( arg, "refine" ) ) {
+			refine = true;
 		} else if ( has_value_option( arg, "rTol" ) ) {
 			std::string const rTol_str( arg_value( arg ) );
 			if ( is_double( rTol_str ) ) {
@@ -303,6 +328,18 @@ process_args( int argc, char * argv[] )
 				}
 			} else {
 				std::cerr << "Error: Nonnumeric aTol: " << aTol_str << std::endl;
+				fatal = true;
+			}
+		} else if ( has_value_option( arg, "zTol" ) ) {
+			std::string const zTol_str( arg_value( arg ) );
+			if ( is_double( zTol_str ) ) {
+				zTol = double_of( zTol_str );
+				if ( zTol < 0.0 ) {
+					std::cerr << "Error: Negative zTol: " << zTol_str << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::cerr << "Error: Nonnumeric zTol: " << zTol_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtMin" ) ) {
@@ -390,6 +427,19 @@ process_args( int argc, char * argv[] )
 				tEnd_set = true;
 			} else {
 				std::cerr << "Error: Nonnumeric tEnd: " << tEnd_str << std::endl;
+				fatal = true;
+			}
+		} else if ( has_value_option( arg, "pass" ) ) {
+			std::string const pass_str( arg_value( arg ) );
+			if ( is_int( pass_str ) ) {
+				int pass_int( int_of( pass_str ) );
+				if ( pass < 1 ) {
+					std::cerr << "Error: Nonpositive pass: " << pass_str << std::endl;
+					fatal = true;
+				}
+				pass = static_cast< std::size_t >( pass_int );
+			} else {
+				std::cerr << "Error: Nonintegral pass: " << pass_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "out" ) ) {

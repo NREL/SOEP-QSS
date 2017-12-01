@@ -40,7 +40,6 @@
 #include <QSS/math.hh>
 
 // C++ Headers
-//#include <algorithm> // std::stable_sort
 #include <cassert>
 //#include <numeric> // std::iota
 #include <vector>

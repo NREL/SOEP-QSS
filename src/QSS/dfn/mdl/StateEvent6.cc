@@ -83,7 +83,6 @@
 
 // C++ Headers
 #include <cassert>
-#include <cmath>
 
 namespace QSS {
 namespace dfn {
@@ -380,9 +379,9 @@ StateEvent6( Variables & vars, Conditionals & cons )
 	// Zero-crossing variable: x1 > 1
 	Z * z1( nullptr );
 	if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) ) {
-		vars.push_back( z1 = new Variable_ZC1< Function_LTI >( "z1", rTol, aTol ) );
+		vars.push_back( z1 = new Variable_ZC1< Function_LTI >( "z1", rTol, aTol, zTol ) );
 	} else { // Use QSS2
-		vars.push_back( z1 = new Variable_ZC2< Function_LTI >( "z1", rTol, aTol ) );
+		vars.push_back( z1 = new Variable_ZC2< Function_LTI >( "z1", rTol, aTol, zTol ) );
 	}
 	z1->add_crossings_Up();
 	z1->f().add( x1 ).add( -1.0 );
@@ -390,9 +389,9 @@ StateEvent6( Variables & vars, Conditionals & cons )
 	// Zero-crossing variable: x1 <= 1
 	Z * z2( nullptr );
 	if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) ) {
-		vars.push_back( z2 = new Variable_ZC1< Function_LTI >( "z2", rTol, aTol ) );
+		vars.push_back( z2 = new Variable_ZC1< Function_LTI >( "z2", rTol, aTol, zTol ) );
 	} else { // Use QSS2
-		vars.push_back( z2 = new Variable_ZC2< Function_LTI >( "z2", rTol, aTol ) );
+		vars.push_back( z2 = new Variable_ZC2< Function_LTI >( "z2", rTol, aTol, zTol ) );
 	}
 	z2->add_crossings_Dn();
 	z2->f().add( x1 ).add( -1.0 );
@@ -416,9 +415,9 @@ StateEvent6( Variables & vars, Conditionals & cons )
 //	// Zero-crossing variable: x1 - 1
 //	Z * z( nullptr );
 //	if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) ) {
-//		vars.push_back( z = new Variable_ZC1< Function_LTI >( "z", rTol, aTol ) );
+//		vars.push_back( z = new Variable_ZC1< Function_LTI >( "z", rTol, aTol, zTol ) );
 //	} else { // Use QSS2
-//		vars.push_back( z = new Variable_ZC2< Function_LTI >( "z", rTol, aTol ) );
+//		vars.push_back( z = new Variable_ZC2< Function_LTI >( "z", rTol, aTol, zTol ) );
 //	}
 //	z->add_crossings_non_Flat();
 //	z->f().add( x1 ).add( -1.0 );

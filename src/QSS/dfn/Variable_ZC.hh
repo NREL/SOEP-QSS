@@ -67,9 +67,12 @@ protected: // Creation
 	Variable_ZC(
 	 std::string const & name,
 	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6
+	 Value const aTol = 1.0e-6,
+	 Value const zTol = 0.0
 	) :
-	 Super( name, rTol, aTol )
+	 Super( name, rTol, aTol ),
+	 zTol( zTol ),
+	 zChatter_( zTol > 0.0 )
 	{}
 
 	// Copy Constructor
@@ -244,6 +247,7 @@ protected: // Methods
 
 public: // Data
 
+	Value zTol{ 0.0 }; // Zero-crossing anti-chatter tolerance
 	Time tZ{ infinity }; // Zero-crossing time: tQ <= tZ and tX <= tZ
 	Time tZ_prev{ infinity }; // Zero-crossing time of previous crossing
 	Crossing crossing{ Crossing::Flat }; // Zero-crossing type
@@ -252,6 +256,8 @@ public: // Data
 
 protected: // Data
 
+	bool zChatter_{ false }; // Zero-crossing chatter control active?
+	Value x_mag_{ 0.0 }; // Value max magnitude since last zero crossing
 	Function f_; // Zero-crossing function
 
 };

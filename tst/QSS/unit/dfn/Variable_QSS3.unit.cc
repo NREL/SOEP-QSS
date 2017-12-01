@@ -40,10 +40,6 @@
 #include <QSS/dfn/mdl/Function_LTI.hh>
 #include <QSS/dfn/Variable_QSS3.hh>
 
-// C++ Headers
-#include <algorithm>
-#include <cmath>
-
 using namespace QSS;
 using namespace QSS::dfn;
 using namespace QSS::dfn::mdl;

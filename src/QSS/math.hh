@@ -142,6 +142,24 @@ cube( T const & x )
 	return x * x * x;
 }
 
+// Max of 3 Values
+template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
+inline
+T
+max( T const x, T const y, T const z )
+{
+	return ( x < y ? ( y < z ? z : y ) : ( x < z ? z : x ) );
+}
+
+// Max of 3 Values
+template< typename T, class = typename std::enable_if< ! std::is_arithmetic< T >::value >::type >
+inline
+T const &
+max( T const & x, T const & y, T const & z )
+{
+	return ( x < y ? ( y < z ? z : y ) : ( x < z ? z : x ) );
+}
+
 // Min of 3 Values
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline

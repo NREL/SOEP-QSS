@@ -39,9 +39,6 @@
 // QSS Headers
 #include <QSS/math.hh>
 
-// C++ Headers
-#include <cmath>
-
 namespace QSS {
 namespace dfn {
 namespace mdl {

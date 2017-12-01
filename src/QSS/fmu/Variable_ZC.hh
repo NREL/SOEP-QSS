@@ -63,10 +63,13 @@ protected: // Creation
 	 std::string const & name,
 	 Value const rTol = 1.0e-4,
 	 Value const aTol = 1.0e-6,
+	 Value const zTol = 0.0,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
-	 Super( name, rTol, aTol, 0.0, var, der )
+	 Super( name, rTol, aTol, 0.0, var, der ),
+	 zTol( zTol ),
+	 zChatter_( zTol > 0.0 )
 	{
 		add_crossings_all(); // FMI API doesn't currently expose crossing information
 	}
@@ -199,8 +202,8 @@ public: // Methods
 	void
 	advance_observees()
 	{
-		assert( tZ != infinity );
-		fmu_set_observees_q( tZ + options::dtZC ); // Use slightly later time to let FMU detect the zero crossing: This is not robust
+		assert( tZ_prev != infinity );
+		fmu_set_observees_q( tZ_prev + options::dtZC ); // Use slightly later time to let FMU detect the zero crossing: This is not robust
 	}
 
 protected: // Methods
@@ -254,6 +257,7 @@ protected: // Methods
 
 public: // Data
 
+	Value zTol{ 0.0 }; // Zero-crossing anti-chatter tolerance
 	Time tZ{ infinity }; // Zero-crossing time: tQ <= tZ and tX <= tZ
 	Time tZ_prev{ infinity }; // Zero-crossing time of previous crossing
 	Crossing crossing{ Crossing::Flat }; // Zero-crossing type
@@ -262,6 +266,8 @@ public: // Data
 
 protected: // Data
 
+	bool zChatter_{ false }; // Zero-crossing chatter control active?
+	Value x_mag_{ 0.0 }; // Value max magnitude since last zero crossing
 	int sign_old_{ 0 }; // Sign of zero-crossing function before advance
 
 };

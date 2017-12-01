@@ -42,7 +42,6 @@
 
 // C++ Headers
 #include <cassert>
-#include <cmath>
 
 namespace QSS {
 namespace dfn {

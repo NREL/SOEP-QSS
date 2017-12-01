@@ -103,7 +103,6 @@ cycles( Variables const & vars )
 
 	// Types
 	using Nodes = std::vector< Node >;
-	using size_type = Nodes::size_type;
 	using If = IfV< Variable >;
 	using When = WhenV< Variable >;
 

@@ -40,9 +40,6 @@
 #include <QSS/fmu/SmoothToken.hh>
 #include <QSS/math.hh>
 
-// C++ Headers
-#include <cmath>
-
 namespace QSS {
 namespace fmu {
 

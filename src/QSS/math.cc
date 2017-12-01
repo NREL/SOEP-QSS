@@ -36,10 +36,6 @@
 // QSS Headers
 #include <QSS/math.hh>
 
-// C++ Headers
-#include <cmath>
-#include <limits>
-
 namespace QSS {
 
 // Globals

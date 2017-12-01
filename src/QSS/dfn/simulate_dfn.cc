@@ -156,7 +156,7 @@ simulate_dfn()
 
 	// Timing setup
 	Time const t0( 0.0 ); // Simulation start time
-	Time const tE( options::tEnd ); // Simulation end time
+	Time tE( options::tEnd ); // Simulation end time
 	Time t( t0 ); // Simulation current time
 	Time tOut( t0 + options::dtOut ); // Sampling time
 	size_type iOut( 1u ); // Output step index
@@ -225,6 +225,23 @@ simulate_dfn()
 		if ( t <= tE ) { // Perform event(s)
 			Event< Target > & event( events.top() );
 			SuperdenseTime const & s( events.top_superdense_time() );
+			if ( s.i >= options::pass ) { // Pass count limit reached
+				if ( s.i <= 100 * options::pass ) { // Use time step controls
+					if ( options::dtMin > 0.0 ) { // Double dtMin
+						options::dtMin = std::min( 2.0 * options::dtMin, 0.5 * options::dtMax );
+					} else { // Set dtMin
+						options::dtMin = std::min( std::max( 1.0e-9, tE * 1.0e-12 ), 0.5 * options::dtMax );
+					}
+					for ( auto var : vars ) {
+						var->dt_min = options::dtMin;
+					}
+					std::cerr << "\nError: Pass count limit reached at time: " << t << "  Min time step set to: " << options::dtMin << std::endl;
+				} else { // Time step control doesn't seem to be working: Abort
+					std::cerr << "\nError: 100 x pass count limit exceeded at time: " << t << "  Terminating simulation" << std::endl;
+					tE = t; // To avoid tE outputs well beyond actual simulation
+					break;
+				}
+			}
 			events.set_active_time();
 			if ( event.is_discrete() ) { // Discrete event
 				++n_discrete_events;

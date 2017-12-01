@@ -134,7 +134,11 @@ Zero crossings introduce the potential for cyclic dependencies to cause a cascad
 * In any pass with both new zero crossings and new requantizations the zero crossings are processed first (via superdense time indexing).
 * In each phase multiple events of the same (zero crossing, handler, or requantization) type are handled together as simultaneous events: the processing for simultaneous events is phased so that the changes to interdependent variables are propagated deterministically.
 
-With cyclic dependencies it is possible for an infinite cascade loop of such changes to occur at the same (clock) time. Detecting such dependencies and the occurrence of these infinite loops is necessary with zero crossing support. The `--cycles` option will cause the QSS solver to report cyclic dependencies among the variables, including dependencies created *via* conditional clause handlers.
+With cyclic dependencies it is possible for an infinite cascade loop of such changes to occur at the same (clock) time. Detecting such dependencies and the occurrence of these infinite loops is necessary with zero crossing support.
+* The `--cycles` option will cause the QSS solver to report cyclic dependencies among the variables, including dependencies created *via* conditional clause handlers.
+* The `--pass` option sets a limit for event passes at the same (clock) time after which increasing minimum time steps are used to advance the time and avoid a (possibly infinite) cascade of events preventing the simulation from advancing. If 100 times the pass limit is reached the simulation will terminate.
+
+Zero-crossing based conditional logic can also introduce "chattering" when their handlers change the model state such that another conditional is triggered almost immediately. In some models this occurs with the same zero-crossing function crossing in the opposite direction. This can cause many very small time steps that bog a simulation down. The best solution to chattering is to build the necessary "smooth" control logic and/or hysteresis into the model's conditional logic. Automatic chattering prevention can be effective in some cases, typically ignoring zero crossings until the variable's magnitude has reached some threshold level since the last zero crossing. The QSS solver implements this using the `--zTol` option that can set a global threshold value and the code-defined models can set per-variable thresholds. If FMU annotations include such threshold information per-variable thresholds can be readily enabled for FMU-based models. The threshold method is fairly simplistic and can cause meaningful zero crossings to be ignored and so should be used with care: more sophisticated approaches can be implemented in the QSS solver if/when needed.
 
 ### Conditionals
 
@@ -201,12 +205,20 @@ FMU zero crossing support has some additional complications and limitations:
 * The FMI API doesn't expose crossing directions of interest so we enable all of them. If this will never be available we should eliminate crossing check logic to avoid wasted effort.
 * When zero crossings occur a "handler" function within the FMU makes the required changes to state and discrete variables. The QSS solver needs to know the dependency of these modified variables on its zero-crossing variable to maintain its state but neither the FMI API nor the generated xml files expose these dependencies. We are adding such dependencies to `DiscreteStates` (dropped from FMI 2.0 but supported by FMI Library) of the xml for discrete variables and `InitialUnknowns` for continuous state variables.
 * There is no FMI API to trigger the zero-crossing handlers to run when the QSS solver reaches zero-crossing events. Instead we set the FMU variables to a time slightly beyond the zero-crossing time with the hope that the zero crossing will be detected by the FMU. The `dtZC` option allows control over this "step". This uniform step size is not robust as it doesn't adjust for solution behavior. This is also not highly robust because the output variables used to track the zero crossing derivatives are (at least for Dymola-generated FMUs) numerically, not analytically, based so the QSS zero-crossing function does not track the actual FMU zero-crossing function to high precision.
-* Zero-crossing root refinement is not practical with the current FMI limitations so it has been disabled. Once we have atomic variable get/set FMU operations root refinement should be enabled.
+* Zero-crossing root refinement is expensive due to the overhead of FMU operations so it is disabled by default (the `--refine` option enables it). Once atomic FMU variable get/set operations are provided the overhead will be lower.
 
 Notes:
 * Zero-crossing variables should not need and are required to have no observers (but they do have dependents: the variables modified by their handlers).
 * Zero-crossing variables must initialize and advance after other variables because their zero-order coefficients come from their function evaluation that depends on the zero-order coefficients of other variables being advanced.
 * Zero-crossing variables use the quantized, not continuous, representations of variables appearing in their functions. This is what the literature indicates and it prevents additional updating operations and potential event cascades. But it also provides a lower accuracy representation, making root finding and refinement more critical. It also means that QSS1 variables appearing linearly in zero-crossing functions only contribute a constant to the function at any time: if all variables are QSS1 and/or discrete then no zero crossings can be predicted so zero crossings will only occur as a result of observer updates of the zero-crossing variable. For this reason QSS1 is not suggested when zero crossings are in use.
+
+#### Root Refinement
+
+Finding accurate zero-crossing times is important for simulation correctness and efficiency. If the crossing time is not accurate the model may not carry out the correct logic in the conditional clause handler function or it may detect the same actual crossing multiple times. With FMU-based models there is the additional complication that the QSS solver needs to know the crossing time accurately so that it can tell the FMU when to check for crossing events.
+
+The QSS-style continuous trajectory of zero-crossing functions will give accurate crossing times when the QSS tolerance is small enough to make the trajectory very close to the actual zero-crossing function. With larger QSS tolerances or fast-changing variables this may not be accurate enough. With FMU-based models root refinement is more expensive: all observees (dependencies) of the zero-crossing variable must be set to the value at each iteration time and then the variable value and derivative must be evaluated by the FMU.
+
+The `--refine` option enables root refinement in FMU-based simulations.
 
 ### Conditionals
 

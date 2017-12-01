@@ -253,14 +253,11 @@ simulate_fmu()
 
 	// QSS time and tolerance run controls
 	Time const t0( tstart ); // Simulation start time
-	Time const tE( options::tEnd_set ? options::tEnd : tstop ); // Simulation end time
+	Time tE( options::tEnd_set ? options::tEnd : tstop ); // Simulation end time
 	Time t( t0 ); // Simulation current time
 	Time tOut( t0 + options::dtOut ); // Sampling time
 	size_type iOut( 1u ); // Output step index
-	if ( options::rTol_set ) {
-	} else {
-		options::rTol = relativeTolerance; // Quantization relative tolerance (FMU doesn't have an absolute tolerance)
-	}
+	if ( ! options::rTol_set ) options::rTol = relativeTolerance; // Quantization relative tolerance (FMU doesn't have an absolute tolerance)
 	std::cout << "Relative Tolerance: " << options::rTol << std::endl;
 	std::cout << "Absolute Tolerance: " << options::aTol << std::endl;
 
@@ -600,9 +597,9 @@ simulate_fmu()
 								fmu_dvrs[ der_real ] = fmu_var;
 								Variable_ZC * qss_var( nullptr );
 								if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) ) {
-									qss_var = new Variable_ZC1( var_name, options::rTol, options::aTol, fmu_var, fmu_der );
+									qss_var = new Variable_ZC1( var_name, options::rTol, options::aTol, options::zTol, fmu_var, fmu_der );
 								} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) ) {
-									qss_var = new Variable_ZC2( var_name, options::rTol, options::aTol, fmu_var, fmu_der );
+									qss_var = new Variable_ZC2( var_name, options::rTol, options::aTol, options::zTol, fmu_var, fmu_der );
 								} else {
 									std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 									std::exit( EXIT_FAILURE );
@@ -1049,6 +1046,23 @@ simulate_fmu()
 			fmu::set_time( t );
 			Event< Target > & event( events.top() );
 			SuperdenseTime const & s( events.top_superdense_time() );
+			if ( s.i >= options::pass ) { // Pass count limit reached
+				if ( s.i <= 100 * options::pass ) { // Use time step controls
+					if ( options::dtMin > 0.0 ) { // Double dtMin
+						options::dtMin = std::min( 2.0 * options::dtMin, 0.5 * options::dtMax );
+					} else { // Set dtMin
+						options::dtMin = std::min( std::max( 1.0e-9, tE * 1.0e-12 ), 0.5 * options::dtMax );
+					}
+					for ( auto var : vars ) {
+						var->dt_min = options::dtMin;
+					}
+					std::cerr << "\nError: Pass count limit reached at time: " << t << "  Min time step set to: " << options::dtMin << std::endl;
+				} else { // Time step control doesn't seem to be working: Abort
+					std::cerr << "\nError: 100 x pass count limit exceeded at time: " << t << "  Terminating simulation" << std::endl;
+					tE = t; // To avoid tE outputs well beyond actual simulation
+					break;
+				}
+			}
 			events.set_active_time();
 			if ( event.is_discrete() ) { // Discrete event
 				++n_discrete_events;

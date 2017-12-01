@@ -182,9 +182,9 @@ bball( Variables & vars, Conditionals & cons )
 	using Z = Variable_ZC< Function_LTI >;
 	Z * z( nullptr ); // Height (m) zero-crossing
 	if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) ) {
-		vars.push_back( z = new Variable_ZC1< Function_LTI >( "z", rTol, aTol ) );
+		vars.push_back( z = new Variable_ZC1< Function_LTI >( "z", rTol, aTol, zTol ) );
 	} else { // Use QSS2
-		vars.push_back( z = new Variable_ZC2< Function_LTI >( "z", rTol, aTol ) );
+		vars.push_back( z = new Variable_ZC2< Function_LTI >( "z", rTol, aTol, zTol ) );
 	}
 	z->add_crossings_Dn_Flat();
 	z->f().add( h );

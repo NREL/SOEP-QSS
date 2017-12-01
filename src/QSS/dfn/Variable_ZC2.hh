@@ -74,6 +74,9 @@ public: // Types
 	using Super::self_observer;
 	using Super::if_clauses;
 	using Super::when_clauses;
+	using Super::x_mag_;
+	using Super::zChatter_;
+	using Super::zTol;
 
 	using Super::add_QSS;
 	using Super::add_ZC;
@@ -100,9 +103,10 @@ public: // Creation
 	Variable_ZC2(
 	 std::string const & name,
 	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6
+	 Value const aTol = 1.0e-6,
+	 Value const zTol = 0.0
 	) :
-	 Super( name, rTol, aTol )
+	 Super( name, rTol, aTol, zTol )
 	{}
 
 public: // Properties
@@ -173,6 +177,7 @@ public: // Methods
 			std::exit( EXIT_FAILURE );
 		}
 		x_0_ = q_0_ = f_.q( tQ );
+		x_mag_ = std::abs( x_0_ );
 		set_qTol();
 		x_1_ = q_1_ = f_.q1( tQ );
 		x_2_ = one_half * f_.q2( tQ );
@@ -194,10 +199,12 @@ public: // Methods
 	void
 	advance_QSS()
 	{
+		Value const x_tE( zChatter_ ? x( tE ) : 0.0 );
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
-		int const sign_old( tE == tZ_prev ? 0 : signum( x( tE ) ) ); // Treat as if exactly zero if tE is previous zero-crossing event time
+		int const sign_old( tE == tZ_prev ? 0 : signum( zChatter_ ? x_tE : x( tE ) ) ); // Treat as if exactly zero if tE is previous zero-crossing event time
 #endif
 		x_0_ = q_0_ = f_.q( tX = tQ = tE );
+		if ( zChatter_ ) x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 		set_qTol();
 		x_1_ = q_1_ = f_.q1( tE );
 		x_2_ = one_half * f_.q2( tE );
@@ -215,8 +222,10 @@ public: // Methods
 	void
 	advance_QSS_simultaneous()
 	{
-		int const sign_old( tE == tZ_prev ? 0 : signum( x( tE ) ) ); // Treat as if exactly zero if tE is previous zero-crossing event time
+		Value const x_tE( zChatter_ ? x( tE ) : 0.0 );
+		int const sign_old( tE == tZ_prev ? 0 : signum( zChatter_ ? x_tE : x( tE ) ) ); // Treat as if exactly zero if tE is previous zero-crossing event time
 		x_0_ = q_0_ = f_.q( tX = tQ = tE );
+		if ( zChatter_ ) x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 		set_qTol();
 		x_1_ = q_1_ = f_.q1( tE );
 		x_2_ = one_half * f_.q2( tE );
@@ -230,8 +239,10 @@ public: // Methods
 	advance_observer( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		int const sign_old( t == tZ_prev ? 0 : signum( x( t ) ) ); // Treat as if exactly zero if t is previous zero-crossing event time
+		Value const x_t( zChatter_ ? x( t ) : 0.0 );
+		int const sign_old( t == tZ_prev ? 0 : signum( zChatter_ ? x_t : x( t ) ) ); // Treat as if exactly zero if t is previous zero-crossing event time
 		x_0_ = q_0_ = f_.q( tX = tQ = t );
+		if ( zChatter_ ) x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		set_qTol();
 		x_1_ = q_1_ = f_.q1( t );
 		x_2_ = one_half * f_.q2( t );
@@ -248,6 +259,7 @@ public: // Methods
 		for ( typename When::Clause * clause : when_clauses ) clause->activity( tZ );
 		if ( options::output::d ) std::cout << "Z " << name << '(' << tZ << ')' << '\n';
 		crossing_prev = crossing;
+		x_mag_ = 0.0;
 		set_tZ( tZ_prev = tZ ); // Next zero-crossing: Might be in active segment
 		tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
 	}
@@ -281,45 +293,45 @@ private: // Methods
 	void
 	set_tZ()
 	{
-		// Simple root search: Only robust for small active segments with continuous rep close to function //Do Make robust version
-		Time const dt( min_positive_root_quadratic( x_2_, x_1_, x_0_ ) ); // Root of continuous rep
-		assert( dt > 0.0 );
-		if ( dt != infinity ) { // Root found on (tX,tE]
-			tZ = tX + dt;
-			Crossing const crossing_check( x_0_ == 0.0 ?
-			 ( tZ == tX ? Crossing::Flat : crossing_type( -x_1_ ) ) :
-			 crossing_type( x_0_ > 0.0 ? std::min( x1x( tZ ), Value( 0.0 ) ) : std::max( x1x( tZ ), Value( 0.0 ) ) ) );
-			if ( has( crossing_check ) ) { // Crossing type is relevant
-				crossing = crossing_check;
-			} else { // Crossing type not relevant
-				tZ = infinity;
-				return;
-			}
-		} else { // Root not found
+		if ( zChatter_ && ( x_mag_ < zTol ) ) { // Chatter prevention
 			tZ = infinity;
-			return;
+		} else { // Use root of continuous rep: Only robust for small active segments with continuous rep close to function
+			Time const dt( min_positive_root_quadratic( x_2_, x_1_, x_0_ ) );
+			assert( dt > 0.0 );
+			if ( dt != infinity ) { // Root exists
+				tZ = tX + dt;
+				Crossing const crossing_check( x_0_ == 0.0 ?
+				 ( tZ == tX ? Crossing::Flat : crossing_type( -x_1_ ) ) :
+				 crossing_type( x_0_ > 0.0 ? std::min( x1x( tZ ), Value( 0.0 ) ) : std::max( x1x( tZ ), Value( 0.0 ) ) ) );
+				if ( has( crossing_check ) ) { // Crossing type is relevant
+					crossing = crossing_check;
+					// Refine root
+					Time t( tZ ), t_p( tZ );
+					Value const vZ( f_.q( tZ ) );
+					Value v( vZ ), v_p( vZ );
+					Value m( 1.0 ); // Multiplier
+					std::size_t i( 0 );
+					std::size_t const n( 10u ); // Max iterations
+					int const sign_0( signum( x_0_ ) );
+					while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
+						Value const d( f_.q1( t ) );
+						if ( d == 0.0 ) break;
+						//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
+						t -= m * ( v / d );
+						v = f_.q( t );
+						if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
+						t_p = t;
+						v_p = v;
+					}
+					if ( ( t >= tX ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
+					if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
+				} else { // Crossing type not relevant
+					tZ = infinity;
+				}
+			} else { // Root not found
+				tZ = infinity;
+			}
 		}
-
-		// Refine root
-		Time t( tZ ), t_p( t );
-		Value const vZ( f_.q( tZ ) );
-		Value v( vZ ), v_p( vZ );
-		Value m( 1.0 ); // Multiplier
-		std::size_t i( 0 );
-		std::size_t const n( 10u ); // Max iterations
-		int const sign_0( signum( x_0_ ) );
-		while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-			Value const d( f_.q1( t ) );
-			if ( d == 0.0 ) break;
-			if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
-			t -= m * ( v / d );
-			v = f_.q( t );
-			if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
-			t_p = t;
-			v_p = v;
-		}
-		if ( ( t >= tX ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
-		if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
 	}
 
 	// Set Zero-Crossing Time and Type on (tB,tE]
@@ -334,7 +346,10 @@ private: // Methods
 	void
 	crossing_detect( int const sign_old, int const sign_new )
 	{
-		if ( sign_old != sign_new ) { // Zero-crossing occurs at t
+		if ( zChatter_ && ( x_mag_ < zTol ) ) { // Chatter prevention
+			tZ = infinity;
+			shift_QSS( tE );
+		} else if ( sign_old != sign_new ) { // Zero-crossing occurs at t
 			Crossing const crossing_check( crossing_type( sign_old, sign_new ) );
 			if ( has( crossing_check ) ) { // Crossing type is relevant
 				crossing = crossing_check;

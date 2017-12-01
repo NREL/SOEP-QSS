@@ -37,6 +37,7 @@
 #define QSS_options_hh_INCLUDED
 
 // C++ Headers
+#include <cstddef>
 #include <string>
 
 namespace QSS {
@@ -52,37 +53,40 @@ enum class QSS {
  LIQSS3
 };
 
-extern QSS qss; // QSS method: (LI)QSS1|2|3  [QSS2]
-extern int qss_order; // QSS method order  [computed]
-extern bool cycles; // Report dependency cycles?  [F]
-extern bool inflection; // Requantize at inflections?  [F]
-extern double rTol; // Relative tolerance  [1e-4|FMU]
-extern double aTol; // Absolute tolerance  [1e-6]
+extern QSS qss; // QSS method: (LI)QSS1|2|3
+extern int qss_order; // QSS method order
+extern bool cycles; // Report dependency cycles?
+extern bool inflection; // Requantize at inflections?
+extern bool refine; // Refine FMU zero-crossing roots?
+extern double rTol; // Relative tolerance
 extern bool rTol_set; // Relative tolerance set?
+extern double aTol; // Absolute tolerance
+extern double zTol; // Zero-crossing anti-chatter tolerance
 extern double dtMin; // Min time step (s)
 extern double dtMax; // Max time step (s)
 extern double dtInf; // Inf time step (s)
-extern double dtZC; // Zero-crossing time step (s)  [1e-6]
-extern double dtNum; // Numeric differentiation time step (s)  [1e-6]
-extern double dtOut; // Sampled & FMU output time step (s)  [1e-3]
-extern double one_over_dtNum; // 1 / dtNum  [computed]
-extern double one_half_over_dtNum; // 0.5 / dtNum  [computed]
-extern double tEnd; // End time (s)  [1|FMU]
+extern double dtZC; // FMU zero-crossing time step (s)
+extern double dtNum; // Numeric differentiation time step (s)
+extern double dtOut; // Sampled & FMU output time step (s)
+extern double one_over_dtNum; // 1 / dtNum
+extern double one_half_over_dtNum; // 0.5 / dtNum
+extern double tEnd; // End time (s)
 extern bool tEnd_set; // End time set?
-extern std::string out; // Outputs: r, a, s, x, q, f  [rx]
+extern std::size_t pass; // Pass count limit
+extern std::string out; // Outputs: r, a, s, x, q, f
 extern std::string model; // Name of model or FMU
 
 namespace output { // Output selections
 
-extern bool t; // Time events?  [T]
-extern bool r; // Requantizations?  [T]
-extern bool o; // Observers?  [F]
-extern bool a; // All variables?  [F]
-extern bool s; // Sampled output?  [F]
-extern bool f; // FMU outputs?  [T]
-extern bool x; // Continuous trajectories?  [T]
-extern bool q; // Quantized trajectories?  [F]
-extern bool d; // Diagnostic output?  [F]
+extern bool t; // Time events?
+extern bool r; // Requantizations?
+extern bool o; // Observers?
+extern bool a; // All variables?
+extern bool s; // Sampled output?
+extern bool f; // FMU outputs?
+extern bool x; // Continuous trajectories?
+extern bool q; // Quantized trajectories?
+extern bool d; // Diagnostic output?
 
 } // output
 
