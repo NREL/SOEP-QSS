@@ -216,9 +216,19 @@ Notes:
 
 Finding accurate zero-crossing times is important for simulation correctness and efficiency. If the crossing time is not accurate the model may not carry out the correct logic in the conditional clause handler function or it may detect the same actual crossing multiple times. With FMU-based models there is the additional complication that the QSS solver needs to know the crossing time accurately so that it can tell the FMU when to check for crossing events.
 
-The QSS-style continuous trajectory of zero-crossing functions will give accurate crossing times when the QSS tolerance is small enough to make the trajectory very close to the actual zero-crossing function. With larger QSS tolerances or fast-changing variables this may not be accurate enough. With FMU-based models root refinement is more expensive: all observees (dependencies) of the zero-crossing variable must be set to the value at each iteration time and then the variable value and derivative must be evaluated by the FMU.
+The QSS-style continuous trajectory of zero-crossing functions will give accurate crossing times when the QSS tolerance is small enough to make the trajectory very close to the actual zero-crossing function. With larger QSS tolerances or fast-changing variables this may not be accurate enough. The current QSS solver uses Newton iterative refinement of zero-crossing roots, typically only requiring 1-2 iterations to converge. With FMU-based models root refinement is more expensive: all observees (dependencies) of the zero-crossing variable must be set to the value at each iteration time and then the variable value and derivative must be evaluated by the FMU: the `--refine` option enables root refinement in FMU-based simulations. This root refinement approach works well when the initial guess provided by the continuous trajectory tightly represents the actual zero-crossing function. When larger tolerances are in use this may not hold and a more robust approach will be needed.
 
-The `--refine` option enables root refinement in FMU-based simulations.
+A robust approach to large-tolerance zero-crossing root finding will probably have these characteristics:
+* Setting a dtZ time step for the zero-crossing variable that is sufficiently small to avoid missing zero crossings.
+* Sampling the function value out from the interval start time with dtZ steps until a crossing is localized or the trajectory-based root estimate is reached.
+* Refinement with a Newton or Brent type algorithm from the root estimate and restricted to the interval of localization/interest.
+* A option to enable the large-tolerance root finding either directly or when a specified tolerance level is exceeded.
+
+Since this process can be expensive, the alternative of depending on the modeler to use sufficiently small relative and absolute tolerances may be preferable. Robust root finding in hybrid continuous—discrete systems is challenging and further experimentation and literature review is needed.
+
+Some References:
+* [Zero-Crossing Location and Detection Algorithms For Hybrid System Simulation](https://pdfs.semanticscholar.org/08e4/53ea25b1fa44b4d550f552a9db41bbaa09ff.pdf)
+* [Non-standard semantics of hybrid systems modelers](http://www.irisa.fr/s4/download/papers/nsshs-jcss-2011.pdf)
 
 ### Conditionals
 

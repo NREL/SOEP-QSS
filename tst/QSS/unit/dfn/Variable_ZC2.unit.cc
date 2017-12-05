@@ -79,3 +79,22 @@ TEST( Variable_ZC2Test, Basic )
 
 	events.clear();
 }
+
+TEST( Variable_ZC2Test, Roots )
+{
+	Variable_QSS2< Function_LTI > x( "x" );
+	x.d().add( x ).add( -2.0 );
+	x.init( 1.0 );
+	// x' = x - 2, x(0) = 1 => x = 2 * e^t + 2
+
+	Variable_ZC2< Function_LTI > z( "z" );
+	z.add_crossings_Dn();
+	z.f().add( x );
+	z.init();
+	EXPECT_DOUBLE_EQ( 1.0, z.tZ );
+	z.tZ = 0.5;
+	z.advance_ZC();
+	EXPECT_DOUBLE_EQ( 1.0, z.tZ );
+
+	events.clear();
+}

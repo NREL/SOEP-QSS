@@ -350,8 +350,52 @@ private: // Methods
 	void
 	set_tZ( Time const tB )
 	{
-		set_tZ(); // Look at whole active segment for now: To be refined
-		tZ = ( tZ > tB ? tZ : infinity );
+		if ( zChatter_ && ( x_mag_ < zTol ) ) { // Chatter prevention
+			tZ = infinity;
+		} else { // Use root of continuous rep: Only robust for small active segments with continuous rep close to function
+			Time const dB( tB - tX );
+			assert( dB > 0.0 );
+			Value const x_0( x_0_ + ( x_1_ * dB ) + ( x_2_ * square( dB ) ) );
+			Value const x_1( x_1_ + ( two * x_2_ * dB ) );
+			Time const dt( min_positive_root_quadratic( x_2_, x_1, x_0 ) ); // Positive root using trajectory shifted to tB
+			assert( dt > 0.0 );
+			if ( dt != infinity ) { // Root exists
+				tZ = tB + dt;
+				Crossing const crossing_check( x_0 == 0.0 ?
+				 ( tZ == tB ? Crossing::Flat : crossing_type( -x_1 ) ) :
+				 crossing_type( x_0 > 0.0 ? std::min( x1x( tZ ), Value( 0.0 ) ) : std::max( x1x( tZ ), Value( 0.0 ) ) ) );
+				if ( has( crossing_check ) ) { // Crossing type is relevant
+					crossing = crossing_check;
+					if ( options::refine ) { // Refine root: Expensive!
+						Time t( tZ ), t_p( tZ );
+						fmu_set_observees_q( tZ );
+						Value const vZ( fmu_get_value() );
+						Value v( vZ ), v_p( vZ );
+						Value m( 1.0 ); // Multiplier
+						std::size_t i( 0 );
+						std::size_t const n( 10u ); // Max iterations
+						int const sign_0( signum( x_0 ) );
+						while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
+							Value const d( fmu_get_deriv() );
+							if ( d == 0.0 ) break;
+							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
+							t -= m * ( v / d );
+							fmu_set_observees_q( t );
+							v = fmu_get_value();
+							if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
+							t_p = t;
+							v_p = v;
+						}
+						if ( ( t >= tB ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
+						if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
+					}
+				} else { // Crossing type not relevant
+					tZ = infinity;
+				}
+			} else { // Root not found
+				tZ = infinity;
+			}
+		}
 	}
 
 	// Crossing Detection
