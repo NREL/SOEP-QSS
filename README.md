@@ -224,7 +224,7 @@ A robust approach to large-tolerance zero-crossing root finding will probably ha
 * Refinement with a Newton or Brent type algorithm from the root estimate and restricted to the interval of localization/interest.
 * A option to enable the large-tolerance root finding either directly or when a specified tolerance level is exceeded.
 
-Since this process can be expensive, the alternative of depending on the modeler to use sufficiently small relative and absolute tolerances may be preferable. Robust root finding in hybrid continuous—discrete systems is challenging and further experimentation and literature review is needed.
+Since this process can be expensive, the alternative of depending on the modeler to use sufficiently small relative and absolute tolerances may be preferable. Robust root finding in hybrid continuous-discrete systems is challenging and further experimentation and literature review is needed.
 
 Some References:
 * [Zero-Crossing Location and Detection Algorithms For Hybrid System Simulation](https://pdfs.semanticscholar.org/08e4/53ea25b1fa44b4d550f552a9db41bbaa09ff.pdf)
