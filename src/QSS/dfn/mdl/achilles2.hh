@@ -1,4 +1,4 @@
-// Achilles and the Tortoise Symmetric Example Setup
+// Achilles and the Tortoise Symmetric Example
 //
 // Project: QSS Solver
 //

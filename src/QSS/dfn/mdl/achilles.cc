@@ -1,4 +1,4 @@
-// Achilles and the Tortoise Example Setup
+// Achilles and the Tortoise Example
 //
 // Project: QSS Solver
 //

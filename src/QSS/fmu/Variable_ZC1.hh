@@ -295,7 +295,7 @@ private: // Methods
 	void
 	set_tZ( Time const tB )
 	{
-		set_tZ(); // Look at whole active segment for now: To be refined
+		set_tZ();
 		tZ = ( tZ > tB ? tZ : infinity );
 	}
 

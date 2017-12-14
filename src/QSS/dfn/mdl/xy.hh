@@ -1,4 +1,4 @@
-// Simple xy Example Setup
+// Simple xy Example
 //
 // Project: QSS Solver
 //

@@ -36,12 +36,11 @@
 // QSS Headers
 #include <QSS/options.hh>
 #include <QSS/math.hh>
+#include <QSS/string.hh>
 
 // C++ Headers
-#include <cctype>
-#include <cstdlib>
-#include <cstring>
 #include <iostream>
+#include <limits>
 
 namespace QSS {
 namespace options {
@@ -82,130 +81,6 @@ bool q( false ); // Quantized trajectories?  [F]
 bool d( false ); // Diagnostic output?  [F]
 
 } // output
-
-// Uppercased string
-std::string
-uppercased( std::string const & s )
-{
-	std::string u( s.length(), ' ' );
-	for ( std::string::size_type i = 0, e = s.length(); i < e; ++i ) {
-		u[ i ] = std::toupper( s[ i ] );
-	}
-	return u;
-}
-
-// Is char Pointer Pointing to String Whitespace Tail
-inline
-bool
-is_tail( char * end )
-{
-	if ( end == nullptr ) return false;
-	while ( std::isspace( *end ) ) ++end;
-	return ( *end == '\0' );
-}
-
-// string is Readable as a int?
-inline
-bool
-is_int( std::string const & s )
-{
-	char const * str( s.c_str() );
-	char * end;
-	long int const i( std::strtol( str, &end, 10 ) );
-	return ( ( end != str ) && is_tail( end ) && ( std::numeric_limits< int >::min() <= i ) && ( i <= std::numeric_limits< int >::max() ) );
-}
-
-// int of a string
-inline
-int
-int_of( std::string const & s )
-{
-	return std::stoi( s ); // Check is_int first
-}
-
-// string is Readable as a double?
-inline
-bool
-is_double( std::string const & s )
-{
-	char const * str( s.c_str() );
-	char * end;
-	static_cast< void >( std::strtod( str, &end ) );
-	return ( ( end != str ) && is_tail( end ) );
-}
-
-// double of a string
-inline
-double
-double_of( std::string const & s )
-{
-	return std::stod( s ); // Check is_double first
-}
-
-// Has an Option (Case-Insensitive)?
-bool
-has_option( std::string const & s, char const * const option )
-{
-	std::string const opt( "--" + std::string( option ) );
-	std::string::size_type const opt_len( opt.length() );
-	if ( s.length() != opt_len ) {
-		return false;
-	} else {
-		for ( std::string::size_type i = 0; i < opt_len; ++i ) {
-			if ( std::tolower( s[ i ] ) != std::tolower( opt[ i ] ) ) return false;
-		}
-		return true;
-	}
-}
-
-// Has a Value Option (Case-Insensitive)?
-bool
-has_value_option( std::string const & s, char const * const option )
-{
-	std::string const opt( "--" + std::string( option ) );
-	std::string::size_type const opt_len( opt.length() );
-	if ( s.length() <= opt_len ) {
-		return false;
-	} else {
-		for ( std::string::size_type i = 0; i < opt_len; ++i ) {
-			if ( std::tolower( s[ i ] ) != std::tolower( opt[ i ] ) ) return false;
-		}
-		return ( s[ opt_len ] == '=' ) || ( s[ opt_len ] == ':' );
-	}
-}
-
-// Has a Character Case-Insensitively?
-bool
-has( std::string const & s, char const c )
-{
-	char const b( std::tolower( c ) );
-	for ( char const a : s ) {
-		if ( std::tolower( a ) == b ) return true;
-	}
-	return false;
-}
-
-// Has any Character not in a String Case-Insensitively?
-bool
-has_any_not_of( std::string const & s, std::string const & t ) // Pass lowercase t
-{
-	for ( char const a : s ) {
-		if ( t.find( std::tolower( a ) ) == std::string::npos ) return true;
-	}
-	return false;
-}
-
-// Argument Value
-std::string
-arg_value( std::string const & arg )
-{
-	std::string::size_type const i( arg.find_first_of( "=:" ) );
-	if ( i != std::string::npos ) {
-		return arg.substr( i + 1 );
-	} else {
-		return std::string();
-	}
-}
 
 // Help Display
 void
@@ -322,8 +197,11 @@ process_args( int argc, char * argv[] )
 			std::string const aTol_str( arg_value( arg ) );
 			if ( is_double( aTol_str ) ) {
 				aTol = double_of( aTol_str );
-				if ( aTol <= 0.0 ) {
-					std::cerr << "Error: Nonpositive aTol: " << aTol_str << std::endl;
+				if ( aTol == 0.0 ) {
+					aTol = std::numeric_limits< double >::min();
+					std::cerr << "Warning: aTol set to: " << aTol << std::endl;
+				} else if ( aTol < 0.0 ) {
+					std::cerr << "Error: Negative aTol: " << aTol_str << std::endl;
 					fatal = true;
 				}
 			} else {
@@ -431,13 +309,12 @@ process_args( int argc, char * argv[] )
 			}
 		} else if ( has_value_option( arg, "pass" ) ) {
 			std::string const pass_str( arg_value( arg ) );
-			if ( is_int( pass_str ) ) {
-				int pass_int( int_of( pass_str ) );
+			if ( is_size( pass_str ) ) {
+				std::size_t const pass( size_of( pass_str ) );
 				if ( pass < 1 ) {
 					std::cerr << "Error: Nonpositive pass: " << pass_str << std::endl;
 					fatal = true;
 				}
-				pass = static_cast< std::size_t >( pass_int );
 			} else {
 				std::cerr << "Error: Nonintegral pass: " << pass_str << std::endl;
 				fatal = true;

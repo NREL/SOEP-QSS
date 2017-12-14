@@ -1,4 +1,4 @@
-// Stiff System Example Setup
+// Stiff System Example
 //
 // Project: QSS Solver
 //

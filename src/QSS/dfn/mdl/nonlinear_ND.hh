@@ -1,4 +1,4 @@
-// Nonlinear Derivative with Numeric Differentiation Example Setup
+// Nonlinear Derivative with Numeric Differentiation Example
 //
 // Project: QSS Solver
 //

@@ -1,4 +1,4 @@
-// StateEvent6 Example Setup
+// StateEvent6 Example
 //
 // Project: QSS Solver
 //

@@ -1,4 +1,4 @@
-// QSS Math Utilities
+// QSS Solver Math Support
 //
 // Project: QSS Solver
 //

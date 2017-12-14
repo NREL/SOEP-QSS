@@ -355,7 +355,7 @@ private: // Methods
 		} else { // Use root of continuous rep: Only robust for small active segments with continuous rep close to function
 			Time const dB( tB - tX );
 			assert( dB > 0.0 );
-			Value const x_0( x_0_ + ( x_1_ * dB ) + ( x_2_ * square( dB ) ) );
+			Value const x_0( tB == tZ_prev ? 0.0 : x_0_ + ( x_1_ * dB ) + ( x_2_ * square( dB ) ) );
 			Value const x_1( x_1_ + ( two * x_2_ * dB ) );
 			Time const dt( min_positive_root_quadratic( x_2_, x_1, x_0 ) ); // Positive root using trajectory shifted to tB
 			assert( dt > 0.0 );

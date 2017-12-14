@@ -1,4 +1,4 @@
-// Nonlinear Derivative Example Setup
+// Nonlinear Derivative Example
 //
 // Project: QSS Solver
 //

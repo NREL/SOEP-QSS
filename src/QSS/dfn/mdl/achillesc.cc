@@ -1,4 +1,4 @@
-// Achilles and the Tortoise Custom Function Example Setup
+// Achilles and the Tortoise Custom Function Example
 //
 // Project: QSS Solver
 //

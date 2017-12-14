@@ -1,4 +1,4 @@
-// Exponential Decay with Sine Input Example Setup
+// Exponential Decay with Sine Input Example
 //
 // Project: QSS Solver
 //

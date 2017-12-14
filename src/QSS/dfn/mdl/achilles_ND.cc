@@ -1,4 +1,4 @@
-// Achilles and the Tortoise Numeric Differentiation Example Setup
+// Achilles and the Tortoise Numeric Differentiation Example
 //
 // Project: QSS Solver
 //

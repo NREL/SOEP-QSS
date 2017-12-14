@@ -1,4 +1,4 @@
-// Exponential Decay Example Setup
+// Exponential Decay Example
 //
 // Project: QSS Solver
 //

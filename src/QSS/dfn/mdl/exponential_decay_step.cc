@@ -1,4 +1,4 @@
-// Exponential Decay with Step Input Example Setup
+// Exponential Decay with Step Input Example
 //
 // Project: QSS Solver
 //

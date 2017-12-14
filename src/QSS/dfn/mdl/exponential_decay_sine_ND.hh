@@ -1,4 +1,4 @@
-// Exponential Decay with Sine Input and Numeric Differentiation Example Setup
+// Exponential Decay with Sine Input and Numeric Differentiation Example
 //
 // Project: QSS Solver
 //

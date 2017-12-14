@@ -1,4 +1,4 @@
-// Bouncing Ball Example Setup
+// Bouncing Ball Example
 //
 // Project: QSS Solver
 //
