@@ -40,6 +40,8 @@
 #include <QSS/globals.hh>
 
 // C++ Headers
+#include <algorithm>
+#include <cassert>
 #include <vector>
 
 namespace QSS {
@@ -211,6 +213,7 @@ public: // Nested Types
 		Clause &
 		add( Variable * var )
 		{
+			assert( std::find( vars.begin(), vars.end(), var ) == vars.end() );
 			vars.push_back( var );
 			var->if_clauses.push_back( this );
 			return *this;
@@ -220,6 +223,7 @@ public: // Nested Types
 		Clause &
 		add( Variable & var )
 		{
+			assert( std::find( vars.begin(), vars.end(), &var ) == vars.end() );
 			vars.push_back( &var );
 			var.if_clauses.push_back( this );
 			return *this;
@@ -319,6 +323,14 @@ public: // Creation
 	// Default Constructor
 	IfV() :
 	 Conditional( "If" )
+	{
+		add_conditional();
+	}
+
+	// Name Constructor
+	explicit
+	IfV( std::string const & name ) :
+	 Conditional( name )
 	{
 		add_conditional();
 	}
@@ -522,6 +534,7 @@ public: // Nested Types
 		Clause &
 		add( Variable * var )
 		{
+			assert( std::find( vars.begin(), vars.end(), var ) == vars.end() );
 			vars.push_back( var );
 			var->when_clauses.push_back( this );
 			return *this;
@@ -531,6 +544,7 @@ public: // Nested Types
 		Clause &
 		add( Variable & var )
 		{
+			assert( std::find( vars.begin(), vars.end(), &var ) == vars.end() );
 			vars.push_back( &var );
 			var.when_clauses.push_back( this );
 			return *this;
@@ -630,6 +644,14 @@ public: // Creation
 	// Default Constructor
 	WhenV() :
 	 Conditional( "When" )
+	{
+		add_conditional();
+	}
+
+	// Name Constructor
+	explicit
+	WhenV( std::string const & name ) :
+	 Conditional( name )
 	{
 		add_conditional();
 	}

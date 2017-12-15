@@ -57,7 +57,7 @@ public: // Types
 	using typename Super::When;
 
 	using Super::crossing;
-	using Super::crossing_prev;
+	using Super::crossing_last;
 	using Super::name;
 	using Super::rTol;
 	using Super::aTol;
@@ -67,7 +67,7 @@ public: // Types
 	using Super::tX;
 	using Super::tE;
 	using Super::tZ;
-	using Super::tZ_prev;
+	using Super::tZ_last;
 	using Super::dt_min;
 	using Super::dt_max;
 	using Super::dt_inf;
@@ -183,7 +183,7 @@ public: // Methods
 	{
 		Value const x_tE( zChatter_ ? x( tE ) : 0.0 );
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
-		int const sign_old( tE == tZ_prev ? 0 : signum( zChatter_ ? x_tE : x( tE ) ) ); // Treat as if exactly zero if tE is previous zero-crossing event time
+		int const sign_old( tE == tZ_last ? 0 : signum( zChatter_ ? x_tE : x( tE ) ) ); // Treat as if exactly zero if tE is last zero-crossing event time
 #endif
 		x_0_ = q_0_ = f_.q( tX = tQ = tE );
 		if ( zChatter_ ) x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
@@ -204,7 +204,7 @@ public: // Methods
 	advance_QSS_simultaneous()
 	{
 		Value const x_tE( zChatter_ ? x( tE ) : 0.0 );
-		int const sign_old( tE == tZ_prev ? 0 : signum( zChatter_ ? x_tE : x( tE ) ) ); // Treat as if exactly zero if tE is previous zero-crossing event time
+		int const sign_old( tE == tZ_last ? 0 : signum( zChatter_ ? x_tE : x( tE ) ) ); // Treat as if exactly zero if tE is last zero-crossing event time
 		x_0_ = q_0_ = f_.q( tX = tQ = tE );
 		if ( zChatter_ ) x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 		set_qTol();
@@ -220,7 +220,7 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		Value const x_t( zChatter_ ? x( t ) : 0.0 );
-		int const sign_old( t == tZ_prev ? 0 : signum( zChatter_ ? x_t : x( t ) ) ); // Treat as if exactly zero if t is previous zero-crossing event time
+		int const sign_old( t == tZ_last ? 0 : signum( zChatter_ ? x_t : x( t ) ) ); // Treat as if exactly zero if t is last zero-crossing event time
 		x_0_ = q_0_ = f_.q( tX = tQ = t );
 		if ( zChatter_ ) x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		set_qTol();
@@ -237,9 +237,9 @@ public: // Methods
 		for ( typename If::Clause * clause : if_clauses ) clause->activity( tZ );
 		for ( typename When::Clause * clause : when_clauses ) clause->activity( tZ );
 		if ( options::output::d ) std::cout << "Z " << name << '(' << tZ << ')' << '\n';
-		crossing_prev = crossing;
+		crossing_last = crossing;
 		x_mag_ = 0.0;
-		set_tZ( tZ_prev = tZ ); // Next zero-crossing: Might be in active segment
+		set_tZ( tZ_last = tZ ); // Next zero-crossing: Might be in active segment
 		tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
 	}
 
@@ -306,6 +306,7 @@ private: // Methods
 	void
 	set_tZ( Time const tB )
 	{
+		assert( tB >= tX );
 		set_tZ();
 		tZ = ( tZ > tB ? tZ : infinity );
 	}
@@ -321,8 +322,7 @@ private: // Methods
 			Crossing const crossing_check( crossing_type( sign_old, sign_new ) );
 			if ( has( crossing_check ) ) { // Crossing type is relevant
 				crossing = crossing_check;
-				tZ = tX;
-				shift_ZC( tZ );
+				shift_ZC( tZ = tX );
 			} else {
 				set_tZ();
 				tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );

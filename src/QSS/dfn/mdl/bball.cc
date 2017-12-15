@@ -75,7 +75,7 @@ public: // Properties
 	void
 	operator ()( Time const t )
 	{
-		Crossing const crossing( z_->crossing_prev );
+		Crossing const crossing( z_->crossing_last );
 		if ( crossing <= Crossing::Flat ) { // Downward zero-crossing or stationary on floor
 			Value const v( v_->x( t ) );
 			if ( ( std::abs( v ) <= 0.01 ) && ( h_->x( t ) <= 0.0 ) ) { // Treat as stationary on floor

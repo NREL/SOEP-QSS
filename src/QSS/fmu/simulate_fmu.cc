@@ -228,7 +228,7 @@ simulate_fmu()
 	fmi2_real_t * const states( (fmi2_real_t*)std::calloc( n_states, sizeof( double ) ) );
 	fmi2_real_t * const states_der( (fmi2_real_t*)std::calloc( n_states, sizeof( double ) ) );
 	fmi2_real_t * event_indicators( (fmi2_real_t*)std::calloc( n_event_indicators, sizeof( double ) ) );
-	fmi2_real_t * event_indicators_prev( (fmi2_real_t*)std::calloc( n_event_indicators, sizeof( double ) ) );
+	fmi2_real_t * event_indicators_last( (fmi2_real_t*)std::calloc( n_event_indicators, sizeof( double ) ) );
 
 	if ( fmi2_import_instantiate( fmu, "FMU ME model instance", fmi2_model_exchange, 0, 0 ) == jm_status_error ) {
 		std::cerr << "\nError: fmi2_import_instantiate failed" << std::endl;
@@ -1045,7 +1045,7 @@ simulate_fmu()
 		if ( t <= tE ) { // Perform event(s)
 			fmu::set_time( t );
 			Event< Target > & event( events.top() );
-			SuperdenseTime const & s( events.top_superdense_time() );
+			SuperdenseTime const s( events.top_superdense_time() );
 			if ( s.i >= options::pass ) { // Pass count limit reached
 				if ( s.i <= 100 * options::pass ) { // Use time step controls
 					if ( options::dtMin > 0.0 ) { // Double dtMin
@@ -1260,17 +1260,17 @@ simulate_fmu()
 				// Advance FMU time to help it detect zero crossing event
 				fmu::set_time( t + options::dtZC );
 
-				{ // Swap event_indicators and event_indicators_prev so that we can get new indicators
+				{ // Swap event_indicators and event_indicators_last so that we can get new indicators
 					fmi2_real_t * temp = event_indicators;
-					event_indicators = event_indicators_prev;
-					event_indicators_prev = temp;
+					event_indicators = event_indicators_last;
+					event_indicators_last = temp;
 				}
 				fmi2_status_t fmistatus = fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 
 				// Check if an event indicator has triggered
 				bool zero_crossing_event( false );
 				for ( size_type k = 0; k < n_event_indicators; ++k ) {
-					if ( ( event_indicators[ k ] > 0 ) != ( event_indicators_prev[ k ] > 0 ) ) {
+					if ( ( event_indicators[ k ] > 0 ) != ( event_indicators_last[ k ] > 0 ) ) {
 						zero_crossing_event = true;
 						break;
 					}
@@ -1675,7 +1675,7 @@ simulate_fmu()
 	std::free( states );
 	std::free( states_der );
 	std::free( event_indicators );
-	std::free( event_indicators_prev );
+	std::free( event_indicators_last );
 	std::free( var_list );
 	std::free( der_list );
 	fmi2_import_destroy_dllfmu( fmu );

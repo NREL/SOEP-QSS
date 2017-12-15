@@ -108,7 +108,7 @@ public: // Properties
 	void
 	operator ()( Time const t )
 	{
-		Crossing const crossing( z_->crossing_prev );
+		Crossing const crossing( z_->crossing_last );
 		if ( crossing >= Crossing::Up ) { // Upward crossing
 			y_->shift_handler( t, 1.0 );
 		} else if ( crossing <= Crossing::Dn ) { // Downward crossing

@@ -180,7 +180,7 @@ public: // Methods
 		fmu_set_observees_q( tX = tQ = tE );
 		Value const x_tE( zChatter_ ? x( tE ) : 0.0 );
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
-		sign_old_ = ( tE == tZ_prev ? 0 : signum( zChatter_ ? x_tE : x( tE ) ) ); // Treat as if exactly zero if tE is previous zero-crossing event time
+		sign_old_ = ( tE == tZ_last ? 0 : signum( zChatter_ ? x_tE : x( tE ) ) ); // Treat as if exactly zero if tE is last zero-crossing event time
 #endif
 		x_0_ = q_0_ = fmu_get_value();
 		if ( zChatter_ ) x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
@@ -205,7 +205,7 @@ public: // Methods
 	{
 		fmu_set_observees_q( tX = tQ = tE );
 		Value const x_tE( zChatter_ ? x( tE ) : 0.0 );
-		sign_old_ = ( tE == tZ_prev ? 0 : signum( zChatter_ ? x_tE : x( tE ) ) ); // Treat as if exactly zero if tE is previous zero-crossing event time
+		sign_old_ = ( tE == tZ_last ? 0 : signum( zChatter_ ? x_tE : x( tE ) ) ); // Treat as if exactly zero if tE is last zero-crossing event time
 		x_0_ = q_0_ = fmu_get_value();
 		if ( zChatter_ ) x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 		set_qTol();
@@ -236,7 +236,7 @@ public: // Methods
 		assert( ( tX <= t ) && ( t <= tE ) );
 		tX = tQ = t;
 		Value const x_t( zChatter_ ? x( t ) : 0.0 );
-		sign_old_ = ( t == tZ_prev ? 0 : signum( zChatter_ ? x_t : x( t ) ) ); // Treat as if exactly zero if t is previous zero-crossing event time
+		sign_old_ = ( t == tZ_last ? 0 : signum( zChatter_ ? x_t : x( t ) ) ); // Treat as if exactly zero if t is last zero-crossing event time
 		x_0_ = q_0_ = fmu_get_value();
 		if ( zChatter_ ) x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		set_qTol();
@@ -266,9 +266,9 @@ public: // Methods
 		for ( typename If::Clause * clause : if_clauses ) clause->activity( tZ );
 		for ( typename When::Clause * clause : when_clauses ) clause->activity( tZ );
 		if ( options::output::d ) std::cout << "Z " << name << '(' << tZ << ')' << '\n';
-		crossing_prev = crossing;
+		crossing_last = crossing;
 		x_mag_ = 0.0;
-		set_tZ( tZ_prev = tZ ); // Next zero-crossing: Might be in active segment
+		set_tZ( tZ_last = tZ ); // Next zero-crossing: Might be in active segment
 		tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
 		advance_observees(); // set_tZ refinement sets observees so we do this after
 	}
@@ -354,8 +354,8 @@ private: // Methods
 			tZ = infinity;
 		} else { // Use root of continuous rep: Only robust for small active segments with continuous rep close to function
 			Time const dB( tB - tX );
-			assert( dB > 0.0 );
-			Value const x_0( tB == tZ_prev ? 0.0 : x_0_ + ( x_1_ * dB ) + ( x_2_ * square( dB ) ) );
+			assert( dB >= 0.0 );
+			Value const x_0( tB == tZ_last ? 0.0 : x_0_ + ( x_1_ * dB ) + ( x_2_ * square( dB ) ) );
 			Value const x_1( x_1_ + ( two * x_2_ * dB ) );
 			Time const dt( min_positive_root_quadratic( x_2_, x_1, x_0 ) ); // Positive root using trajectory shifted to tB
 			assert( dt > 0.0 );
@@ -409,8 +409,7 @@ private: // Methods
 			Crossing const crossing_check( crossing_type( sign_old, sign_new ) );
 			if ( has( crossing_check ) ) { // Crossing type is relevant
 				crossing = crossing_check;
-				tZ = tX;
-				shift_ZC( tZ );
+				shift_ZC( tZ = tX );
 			} else {
 				set_tZ();
 				tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );

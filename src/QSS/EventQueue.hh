@@ -507,7 +507,7 @@ public: // Handler Event Methods
 		if ( ( s.t == t ) && ( s.i == idx ) && ( s.o == Off::Handler ) ) { // Target already has event in same pass
 			EventT const & e( i->second );
 			assert( e.is_handler() );
-			if ( e.val() != val ) std::cerr << "Error: Zero-crossing handler events at the same time but with different values occurred for: " << tar->name << std::endl;
+			if ( e.val() != val ) std::cerr << "Error: Conditional handler events in the same pass but with different values occurred for: " << tar->name << std::endl;
 		}
 		m_.erase( i );
 		return m_.emplace( SuperdenseTime( t, idx, Off::Handler ), EventT( Type::Handler, tar, val ) );

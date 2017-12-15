@@ -119,7 +119,7 @@ public: // Properties
 	bool
 	b( Time const t ) const
 	{
-		return ( t == tZ_prev );
+		return ( t == tZ_last );
 	}
 
 	// Zero-Crossing Time
@@ -202,8 +202,8 @@ public: // Methods
 	void
 	advance_observees()
 	{
-		assert( tZ_prev != infinity );
-		fmu_set_observees_q( tZ_prev + options::dtZC ); // Use slightly later time to let FMU detect the zero crossing: This is not robust
+		assert( tZ_last != infinity );
+		fmu_set_observees_q( tZ_last + options::dtZC ); // Use slightly later time to let FMU detect the zero crossing: This is not robust
 	}
 
 protected: // Methods
@@ -259,9 +259,9 @@ public: // Data
 
 	Value zTol{ 0.0 }; // Zero-crossing anti-chatter tolerance
 	Time tZ{ infinity }; // Zero-crossing time: tQ <= tZ and tX <= tZ
-	Time tZ_prev{ infinity }; // Zero-crossing time of previous crossing
+	Time tZ_last{ infinity }; // Zero-crossing time of last crossing
 	Crossing crossing{ Crossing::Flat }; // Zero-crossing type
-	Crossing crossing_prev{ Crossing::Flat }; // Zero-crossing type of previous crossing
+	Crossing crossing_last{ Crossing::Flat }; // Zero-crossing type of last crossing
 	Crossings crossings; // Zero-crossing types handled
 
 protected: // Data

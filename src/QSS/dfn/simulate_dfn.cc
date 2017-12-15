@@ -224,7 +224,7 @@ simulate_dfn()
 		}
 		if ( t <= tE ) { // Perform event(s)
 			Event< Target > & event( events.top() );
-			SuperdenseTime const & s( events.top_superdense_time() );
+			SuperdenseTime const s( events.top_superdense_time() );
 			if ( s.i >= options::pass ) { // Pass count limit reached
 				if ( s.i <= 100 * options::pass ) { // Use time step controls
 					if ( options::dtMin > 0.0 ) { // Double dtMin
