@@ -130,9 +130,13 @@ help_display()
 	std::cout << "  stiff : Stiff system from literature" << '\n';
 	std::cout << "  xy : Simple 2 variable model" << '\n';
 	std::cout << "  xyz : Simple 3 variable model" << '\n';
-	std::cout << "  gen:nQSS,nZC : Generated model with nQSS QSS variables and nZC zero-crossing " << '\n';
-	std::cout << "      nQSS       Number of QSS variables  [9]" << '\n';
-	std::cout << "           nZC   Number of zero-crossing variables  [3]" << '\n';
+	std::cout << "  gen:nQSS,nZC,SEED : Generated model with optional specs:" << '\n';
+	std::cout << "      nQSS            Number of QSS variables  [9]" << '\n';
+	std::cout << "           nZC        Number of zero-crossing variables  [3]" << '\n';
+	std::cout << "               SEED   Random generator seed (T|F|#)  [F]" << '\n';
+	std::cout << "                       T: Use current time as seed" << '\n';
+	std::cout << "                       F: Use default (deterministic) seed" << '\n';
+	std::cout << "                       #: Integer to use as seed" << '\n';
 	std::cout << '\n';
 }
 

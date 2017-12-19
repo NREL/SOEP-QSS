@@ -135,23 +135,38 @@ simulate_dfn()
 		std::istringstream n_stream( options::model.substr( 4 ) );
 		std::string nQSS_string;
 		std::string nZC_string;
+		std::string seed_string;
 		std::getline( n_stream, nQSS_string, ',' );
 		std::getline( n_stream, nZC_string, ',' );
+		std::getline( n_stream, seed_string, ',' );
+		size_type nQSS( 9 );
+		size_type nZC( 3 );
+		size_type seed( 0 );
+		bool do_seed( false );
 		if ( is_size( nQSS_string ) ) {
-			size_type const nQSS( size_of( nQSS_string ) );
-			if ( is_size( nZC_string ) ) {
-				size_type const nZC( size_of( nZC_string ) );
-				mdl::gen( vars, cons, nQSS, nZC );
-			} else if ( ! nZC_string.empty() ) {
-				std::cerr << "\nError: gen model specifier not in gen:nQSS or gen:nQSS,nZC format: " << options::model << std::endl;
-				std::exit( EXIT_FAILURE );
-			} else {
-				mdl::gen( vars, cons, nQSS );
-			}
-		} else {
-			std::cerr << "\nError: gen model specifier not in gen:nQSS or gen:nQSS,nZC format: " << options::model << std::endl;
+			nQSS = size_of( nQSS_string );
+		} else if ( ! nQSS_string.empty() ) {
+			std::cerr << "\nError: gen model specifier not in gen:nQSS or gen:nQSS,nZC,SEED format: " << options::model << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
+		if ( is_size( nZC_string ) ) {
+			nZC = size_of( nZC_string );
+		} else if ( ! nZC_string.empty() ) {
+			std::cerr << "\nError: gen model specifier not in gen:nQSS or gen:nQSS,nZC,SEED format: " << options::model << std::endl;
+			std::exit( EXIT_FAILURE );
+		}
+		if ( is_size( seed_string ) ) {
+			seed = size_of( seed_string );
+			do_seed = true;
+		} else if ( seed_string == "T" ) {
+			do_seed = true;
+		} else if ( seed_string == "F" ) {
+			do_seed = false;
+		} else if ( ! seed_string.empty() ) {
+			std::cerr << "\nError: gen model specifier not in gen:nQSS or gen:nQSS,nZC,SEED format: " << options::model << std::endl;
+			std::exit( EXIT_FAILURE );
+		}
+		mdl::gen( vars, cons, nQSS, nZC, seed, do_seed );
 	} else {
 		std::cerr << "\nError: Unknown model: " << options::model << std::endl;
 		std::exit( EXIT_FAILURE );

@@ -53,7 +53,7 @@ using size_type = Variables::size_type;
 
 // Generated Example Setup
 void
-gen( Variables & vars, Conditionals & cons, size_type const nQSS = 9, size_type const nZC = 3 );
+gen( Variables & vars, Conditionals & cons, size_type const nQSS = 9, size_type const nZC = 3, size_type const seed = 0, bool const do_seed = false );
 
 } // mdl
 } // dfn

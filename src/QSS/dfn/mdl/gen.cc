@@ -172,14 +172,13 @@ private: // Data
 
 // Generated Example Setup
 void
-gen( Variables & vars, Conditionals & cons, size_type const nQSS, size_type const nZC )
+gen( Variables & vars, Conditionals & cons, size_type const nQSS, size_type const nZC, size_type const seed, bool const do_seed )
 {
 	using namespace options;
 	using Value = Variable::Value;
 	using Indexes = std::unordered_set< size_type >;
 
 	// Parameters
-	bool const seed( false ); // Seed the random generator?
 	Value const x_mag( 100.0 ); // Variable initial value range
 	Value const c_mag( 0.5 ); // Derivative coefficient range
 	Value const h_mag( x_mag ); // Handler value range
@@ -188,7 +187,13 @@ gen( Variables & vars, Conditionals & cons, size_type const nQSS, size_type cons
 	size_type const deg_handler( static_cast< size_type >( 4 ) ); // Conditional handler dependency out-degree range
 
 	// Initialization
-	if ( seed ) random_generator.seed( std::chrono::system_clock::now().time_since_epoch().count() );
+	if ( do_seed ) {
+		if ( seed == 0u ) { // Use time as seed
+			random_generator.seed( std::chrono::system_clock::now().time_since_epoch().count() );
+		} else { // Use specified seed
+			random_generator.seed( seed );
+		}
+	}
 	vars.clear();
 	vars.reserve( nQSS + nZC );
 
