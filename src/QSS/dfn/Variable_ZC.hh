@@ -159,16 +159,20 @@ public: // Methods
 	add_crossings_all()
 	{
 		add_crossings_Dn();
+		crossings.insert( Crossing::DnZN );
 		crossings.insert( Crossing::Flat );
+		crossings.insert( Crossing::UpZP );
 		add_crossings_Up();
 		return *this;
 	}
 
-	// Add All non-Flat Crossing Types
+	// Add All Non-Flat Crossing Types
 	Variable_ZC &
 	add_crossings_non_Flat()
 	{
 		add_crossings_Dn();
+		crossings.insert( Crossing::DnZN );
+		crossings.insert( Crossing::UpZP );
 		add_crossings_Up();
 		return *this;
 	}
@@ -179,16 +183,16 @@ public: // Methods
 	{
 		crossings.insert( Crossing::DnPN );
 		crossings.insert( Crossing::DnPZ );
-		crossings.insert( Crossing::DnZN );
 		crossings.insert( Crossing::Dn );
 		return *this;
 	}
 
-	// Add All Downward and Flat Crossing Types
+	// Add All Downward to Flat Crossing Types
 	Variable_ZC &
 	add_crossings_Dn_Flat()
 	{
 		add_crossings_Dn();
+		crossings.insert( Crossing::DnZN );
 		crossings.insert( Crossing::Flat );
 		return *this;
 	}
@@ -198,7 +202,6 @@ public: // Methods
 	add_crossings_Up()
 	{
 		crossings.insert( Crossing::Up );
-		crossings.insert( Crossing::UpZP );
 		crossings.insert( Crossing::UpNZ );
 		crossings.insert( Crossing::UpNP );
 		return *this;
@@ -209,6 +212,16 @@ public: // Methods
 	add_crossings_Up_Flat()
 	{
 		crossings.insert( Crossing::Flat );
+		crossings.insert( Crossing::UpZP );
+		add_crossings_Up();
+		return *this;
+	}
+
+	// Add All Downward and Upward Crossing Types
+	Variable_ZC &
+	add_crossings_Dn_Up()
+	{
+		add_crossings_Dn();
 		add_crossings_Up();
 		return *this;
 	}

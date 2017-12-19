@@ -138,8 +138,8 @@ simulate_fmu()
 	using Function = std::function< SmoothToken const &( Time const ) >;
 
 	// I/o setup
-	std::cout << std::setprecision( 16 );
-	std::cerr << std::setprecision( 16 );
+	std::cout << std::setprecision( 18 );
+	std::cerr << std::setprecision( 18 );
 	std::vector< std::ofstream > x_streams; // Continuous output streams
 	std::vector< std::ofstream > q_streams; // Quantized output streams
 	std::vector< std::ofstream > f_streams; // FMU output streams
@@ -1003,10 +1003,13 @@ simulate_fmu()
 
 	// Simulation loop
 	std::cout << "\nSimulation Loop =====" << std::endl;
+	size_type const max_pass_count_multiplier( 2 );
 	size_type n_discrete_events( 0 );
 	size_type n_QSS_events( 0 );
 	size_type n_QSS_simultaneous_events( 0 );
 	size_type n_ZC_events( 0 );
+	double sim_dtMin( options::dtMin );
+	bool pass_warned( false );
 	while ( t <= tE ) {
 		t = events.top_time();
 		if ( doSOut ) { // Sampled and/or FMU outputs
@@ -1047,19 +1050,28 @@ simulate_fmu()
 			Event< Target > & event( events.top() );
 			SuperdenseTime const s( events.top_superdense_time() );
 			if ( s.i >= options::pass ) { // Pass count limit reached
-				if ( s.i <= 100 * options::pass ) { // Use time step controls
-					if ( options::dtMin > 0.0 ) { // Double dtMin
-						options::dtMin = std::min( 2.0 * options::dtMin, 0.5 * options::dtMax );
+				if ( s.i <= max_pass_count_multiplier * options::pass ) { // Use time step controls
+					if ( sim_dtMin > 0.0 ) { // Double dtMin
+						if ( sim_dtMin < std::min( 0.5 * infinity, 0.25 * options::dtMax ) ) {
+							sim_dtMin = std::min( 2.0 * sim_dtMin, 0.5 * options::dtMax );
+						} else {
+							std::cerr << "\nError: Pass count limit exceeded at time: " << t << "  Min time step limit reached: Terminating simulation" << std::endl;
+							tE = t; // To avoid tE outputs beyond actual simulation
+							break;
+						}
 					} else { // Set dtMin
-						options::dtMin = std::min( std::max( 1.0e-9, tE * 1.0e-12 ), 0.5 * options::dtMax );
+						sim_dtMin = std::min( std::max( 1.0e-9, tE * 1.0e-12 ), 0.5 * options::dtMax );
 					}
 					for ( auto var : vars ) {
-						var->dt_min = options::dtMin;
+						var->dt_min = sim_dtMin;
 					}
-					std::cerr << "\nError: Pass count limit reached at time: " << t << "  Min time step set to: " << options::dtMin << std::endl;
+					if ( ! pass_warned ) {
+						std::cerr << "\nWarning: Pass count limit reached at time: " << t << "  Min time step control activated" << std::endl;
+						pass_warned = true;
+					}
 				} else { // Time step control doesn't seem to be working: Abort
-					std::cerr << "\nError: 100 x pass count limit exceeded at time: " << t << "  Terminating simulation" << std::endl;
-					tE = t; // To avoid tE outputs well beyond actual simulation
+					std::cerr << "\nError: " << max_pass_count_multiplier << " x pass count limit exceeded at time: " << t << "  Terminating simulation" << std::endl;
+					tE = t; // To avoid tE outputs beyond actual simulation
 					break;
 				}
 			}

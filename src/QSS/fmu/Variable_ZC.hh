@@ -71,7 +71,7 @@ protected: // Creation
 	 zTol( zTol ),
 	 zChatter_( zTol > 0.0 )
 	{
-		add_crossings_all(); // FMI API doesn't currently expose crossing information
+		add_crossings_Dn_Up(); // FMI API doesn't currently expose crossing information
 	}
 
 	// Copy Constructor
@@ -144,16 +144,20 @@ public: // Methods
 	add_crossings_all()
 	{
 		add_crossings_Dn();
+		crossings.insert( Crossing::DnZN );
 		crossings.insert( Crossing::Flat );
+		crossings.insert( Crossing::UpZP );
 		add_crossings_Up();
 		return *this;
 	}
 
-	// Add All non-Flat Crossing Types
+	// Add All Non-Flat Crossing Types
 	Variable_ZC &
 	add_crossings_non_Flat()
 	{
 		add_crossings_Dn();
+		crossings.insert( Crossing::DnZN );
+		crossings.insert( Crossing::UpZP );
 		add_crossings_Up();
 		return *this;
 	}
@@ -164,16 +168,16 @@ public: // Methods
 	{
 		crossings.insert( Crossing::DnPN );
 		crossings.insert( Crossing::DnPZ );
-		crossings.insert( Crossing::DnZN );
 		crossings.insert( Crossing::Dn );
 		return *this;
 	}
 
-	// Add All Downward and Flat Crossing Types
+	// Add All Downward to Flat Crossing Types
 	Variable_ZC &
 	add_crossings_Dn_Flat()
 	{
 		add_crossings_Dn();
+		crossings.insert( Crossing::DnZN );
 		crossings.insert( Crossing::Flat );
 		return *this;
 	}
@@ -183,7 +187,6 @@ public: // Methods
 	add_crossings_Up()
 	{
 		crossings.insert( Crossing::Up );
-		crossings.insert( Crossing::UpZP );
 		crossings.insert( Crossing::UpNZ );
 		crossings.insert( Crossing::UpNP );
 		return *this;
@@ -194,6 +197,16 @@ public: // Methods
 	add_crossings_Up_Flat()
 	{
 		crossings.insert( Crossing::Flat );
+		crossings.insert( Crossing::UpZP );
+		add_crossings_Up();
+		return *this;
+	}
+
+	// Add All Downward and Upward Crossing Types
+	Variable_ZC &
+	add_crossings_Dn_Up()
+	{
+		add_crossings_Dn();
 		add_crossings_Up();
 		return *this;
 	}
@@ -238,23 +251,6 @@ protected: // Methods
 		}
 	}
 
-	// Crossed Value for Signaling FMU Event Processing
-	static
-	Value
-	crossed( Crossing const c )
-	{
-		static Value const zc_eps( 1.0e-6 ); //Do Set this based on how FMU behaves wrt chattering prevention and tolerances
-		if ( ( c == Crossing::Dn ) || ( c == Crossing::DnPN ) || ( c == Crossing::DnZN ) ) {
-			return -zc_eps;
-		} else if ( ( c == Crossing::DnPZ ) || ( c == Crossing::Flat ) || ( c == Crossing::UpNZ ) ) {
-			return 0.0;
-		} else if ( ( c == Crossing::Up ) || ( c == Crossing::UpNP ) || ( c == Crossing::UpZP ) ) {
-			return +zc_eps;
-		} else {
-			assert( false ); return 0.0;
-		}
-	}
-
 public: // Data
 
 	Value zTol{ 0.0 }; // Zero-crossing anti-chatter tolerance
@@ -268,6 +264,7 @@ protected: // Data
 
 	bool zChatter_{ false }; // Zero-crossing chatter control active?
 	Value x_mag_{ 0.0 }; // Value max magnitude since last zero crossing
+	bool check_crossing_{ false }; // Check for zero crossing?
 	int sign_old_{ 0 }; // Sign of zero-crossing function before advance
 
 };

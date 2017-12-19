@@ -47,6 +47,7 @@
 #include <QSS/dfn/mdl/exponential_decay_sine.hh>
 #include <QSS/dfn/mdl/exponential_decay_sine_ND.hh>
 #include <QSS/dfn/mdl/exponential_decay_step.hh>
+#include <QSS/dfn/mdl/gen.hh>
 #include <QSS/dfn/mdl/nonlinear.hh>
 #include <QSS/dfn/mdl/nonlinear_ND.hh>
 #include <QSS/dfn/mdl/StateEvent6.hh>
@@ -54,7 +55,9 @@
 #include <QSS/dfn/mdl/xy.hh>
 #include <QSS/dfn/mdl/xyz.hh>
 #include <QSS/globals.hh>
+#include <QSS/math.hh>
 #include <QSS/options.hh>
+#include <QSS/string.hh>
 
 // C++ Headers
 #include <algorithm>
@@ -64,6 +67,7 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <sstream>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -85,8 +89,8 @@ simulate_dfn()
 	using Conditionals = std::vector< Conditional * >;
 
 	// I/o setup
-	std::cout << std::setprecision( 16 );
-	std::cerr << std::setprecision( 16 );
+	std::cout << std::setprecision( 18 );
+	std::cerr << std::setprecision( 18 );
 	std::vector< std::ofstream > x_streams; // Continuous output streams
 	std::vector< std::ofstream > q_streams; // Quantized output streams
 
@@ -125,6 +129,29 @@ simulate_dfn()
 		mdl::xy( vars );
 	} else if ( options::model== "xyz" ) {
 		mdl::xyz( vars );
+	} else if ( options::model== "gen" ) {
+		mdl::gen( vars, cons );
+	} else if ( options::model.substr( 0, 4 ) == "gen:" ) {
+		std::istringstream n_stream( options::model.substr( 4 ) );
+		std::string nQSS_string;
+		std::string nZC_string;
+		std::getline( n_stream, nQSS_string, ',' );
+		std::getline( n_stream, nZC_string, ',' );
+		if ( is_size( nQSS_string ) ) {
+			size_type const nQSS( size_of( nQSS_string ) );
+			if ( is_size( nZC_string ) ) {
+				size_type const nZC( size_of( nZC_string ) );
+				mdl::gen( vars, cons, nQSS, nZC );
+			} else if ( ! nZC_string.empty() ) {
+				std::cerr << "\nError: gen model specifier not in gen:nQSS or gen:nQSS,nZC format: " << options::model << std::endl;
+				std::exit( EXIT_FAILURE );
+			} else {
+				mdl::gen( vars, cons, nQSS );
+			}
+		} else {
+			std::cerr << "\nError: gen model specifier not in gen:nQSS or gen:nQSS,nZC format: " << options::model << std::endl;
+			std::exit( EXIT_FAILURE );
+		}
 	} else {
 		std::cerr << "\nError: Unknown model: " << options::model << std::endl;
 		std::exit( EXIT_FAILURE );
@@ -205,10 +232,13 @@ simulate_dfn()
 
 	// Simulation loop
 	std::cout << "\nSimulation Loop =====" << std::endl;
+	size_type const max_pass_count_multiplier( 2 );
 	size_type n_discrete_events( 0 );
 	size_type n_QSS_events( 0 );
 	size_type n_QSS_simultaneous_events( 0 );
 	size_type n_ZC_events( 0 );
+	double sim_dtMin( options::dtMin );
+	bool pass_warned( false );
 	while ( t <= tE ) {
 		t = events.top_time();
 		if ( doSOut ) { // Sampled outputs
@@ -226,19 +256,28 @@ simulate_dfn()
 			Event< Target > & event( events.top() );
 			SuperdenseTime const s( events.top_superdense_time() );
 			if ( s.i >= options::pass ) { // Pass count limit reached
-				if ( s.i <= 100 * options::pass ) { // Use time step controls
-					if ( options::dtMin > 0.0 ) { // Double dtMin
-						options::dtMin = std::min( 2.0 * options::dtMin, 0.5 * options::dtMax );
+				if ( s.i <= max_pass_count_multiplier * options::pass ) { // Use time step controls
+					if ( sim_dtMin > 0.0 ) { // Double dtMin
+						if ( sim_dtMin < std::min( 0.5 * infinity, 0.25 * options::dtMax ) ) {
+							sim_dtMin = std::min( 2.0 * sim_dtMin, 0.5 * options::dtMax );
+						} else {
+							std::cerr << "\nError: Pass count limit exceeded at time: " << t << "  Min time step limit reached: Terminating simulation" << std::endl;
+							tE = t; // To avoid tE outputs beyond actual simulation
+							break;
+						}
 					} else { // Set dtMin
-						options::dtMin = std::min( std::max( 1.0e-9, tE * 1.0e-12 ), 0.5 * options::dtMax );
+						sim_dtMin = std::min( std::max( 1.0e-9, tE * 1.0e-12 ), 0.5 * options::dtMax );
 					}
 					for ( auto var : vars ) {
-						var->dt_min = options::dtMin;
+						var->dt_min = sim_dtMin;
 					}
-					std::cerr << "\nError: Pass count limit reached at time: " << t << "  Min time step set to: " << options::dtMin << std::endl;
+					if ( ! pass_warned ) {
+						std::cerr << "\nWarning: Pass count limit reached at time: " << t << "  Min time step control activated" << std::endl;
+						pass_warned = true;
+					}
 				} else { // Time step control doesn't seem to be working: Abort
-					std::cerr << "\nError: 100 x pass count limit exceeded at time: " << t << "  Terminating simulation" << std::endl;
-					tE = t; // To avoid tE outputs well beyond actual simulation
+					std::cerr << "\nError: " << max_pass_count_multiplier << " x pass count limit exceeded at time: " << t << "  Terminating simulation" << std::endl;
+					tE = t; // To avoid tE outputs beyond actual simulation
 					break;
 				}
 			}

@@ -64,7 +64,7 @@ double one_half_over_dtNum( 5.0e5 ); // 0.5 / dtNum  [computed]
 double dtOut( 1.0e-3 ); // Sampled & FMU output time step (s)  [1e-3]
 double tEnd( 1.0 ); // End time (s)  [1|FMU]
 bool tEnd_set( false ); // End time set?
-std::size_t pass( 100 ); // Pass count limit  [100]
+std::size_t pass( 20 ); // Pass count limit  [20]
 std::string out; // Outputs: r, a, s, x, q, f  [rx]
 std::string model; // Name of model or FMU
 
@@ -102,7 +102,7 @@ help_display()
 	std::cout << " --dtNum=STEP  Numeric differentiation step (s)  [1e-6]" << '\n';
 	std::cout << " --dtOut=STEP  Sampled & FMU output step (s)  [1e-3]" << '\n';
 	std::cout << " --tEnd=TIME   End time (s)  [1|FMU]" << '\n';
-	std::cout << " --pass=COUNT  Pass count limit  [100]" << '\n';
+	std::cout << " --pass=COUNT  Pass count limit  [20]" << '\n';
 	std::cout << " --out=OUTPUTS Outputs  [trfx]" << '\n';
 	std::cout << "       t       Time events" << '\n';
 	std::cout << "       r       Requantizations" << '\n';
@@ -130,6 +130,9 @@ help_display()
 	std::cout << "  stiff : Stiff system from literature" << '\n';
 	std::cout << "  xy : Simple 2 variable model" << '\n';
 	std::cout << "  xyz : Simple 3 variable model" << '\n';
+	std::cout << "  gen:nQSS,nZC : Generated model with nQSS QSS variables and nZC zero-crossing " << '\n';
+	std::cout << "      nQSS       Number of QSS variables  [9]" << '\n';
+	std::cout << "           nZC   Number of zero-crossing variables  [3]" << '\n';
 	std::cout << '\n';
 }
 

@@ -178,12 +178,13 @@ public: // Methods
 	advance_QSS()
 	{
 		fmu_set_observees_q( tX = tQ = tE );
-		Value const x_tE( zChatter_ ? x( tE ) : 0.0 );
+		Value const x_tE( zChatter_ ? x( tE ) : Value( 0.0 ) );
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
-		sign_old_ = ( tE == tZ_last ? 0 : signum( zChatter_ ? x_tE : x( tE ) ) ); // Treat as if exactly zero if tE is last zero-crossing event time
+		check_crossing_ = ( tE > tZ_last ) || ( x_mag_ != 0.0 );
+		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_tE : x( tE ) ) : 0 );
 #endif
 		x_0_ = q_0_ = fmu_get_value();
-		if ( zChatter_ ) x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
+		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 		set_qTol();
 		x_1_ = q_1_ = fmu_get_deriv();
 		fmu::set_time( tN = tQ + options::dtNum );
@@ -191,7 +192,7 @@ public: // Methods
 		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE();
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
-		crossing_detect( sign_old_, signum( x_0_ ) );
+		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
 #else
 		set_tZ();
 		tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
@@ -204,10 +205,11 @@ public: // Methods
 	advance_QSS_0()
 	{
 		fmu_set_observees_q( tX = tQ = tE );
-		Value const x_tE( zChatter_ ? x( tE ) : 0.0 );
-		sign_old_ = ( tE == tZ_last ? 0 : signum( zChatter_ ? x_tE : x( tE ) ) ); // Treat as if exactly zero if tE is last zero-crossing event time
+		Value const x_tE( zChatter_ ? x( tE ) : Value( 0.0 ) );
+		check_crossing_ = ( tE > tZ_last ) || ( x_mag_ != 0.0 );
+		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_tE : x( tE ) ) : 0 );
 		x_0_ = q_0_ = fmu_get_value();
-		if ( zChatter_ ) x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
+		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 		set_qTol();
 	}
 
@@ -225,7 +227,7 @@ public: // Methods
 		fmu_set_observees_q( tN = tQ + options::dtNum );
 		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE();
-		crossing_detect( sign_old_, signum( x_0_ ) );
+		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
@@ -235,10 +237,11 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		tX = tQ = t;
-		Value const x_t( zChatter_ ? x( t ) : 0.0 );
-		sign_old_ = ( t == tZ_last ? 0 : signum( zChatter_ ? x_t : x( t ) ) ); // Treat as if exactly zero if t is last zero-crossing event time
+		Value const x_t( zChatter_ ? x( t ) : Value( 0.0 ) );
+		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
+		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
 		x_0_ = q_0_ = fmu_get_value();
-		if ( zChatter_ ) x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
+		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		set_qTol();
 		x_1_ = q_1_ = fmu_get_deriv();
 	}
@@ -249,7 +252,7 @@ public: // Methods
 	{
 		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE();
-		crossing_detect( sign_old_, signum( x_0_ ) );
+		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
 	}
 
 	// Observer Advance: Stage d
@@ -400,12 +403,15 @@ private: // Methods
 
 	// Crossing Detection
 	void
-	crossing_detect( int const sign_old, int const sign_new )
+	crossing_detect( int const sign_old, int const sign_new, bool const check_crossing = true )
 	{
 		if ( zChatter_ && ( x_mag_ < zTol ) ) { // Chatter prevention
 			tZ = infinity;
 			shift_QSS( tE );
-		} else if ( sign_old != sign_new ) { // Zero-crossing occurs at t
+		} else if ( ( ! check_crossing ) || ( sign_old == sign_new ) ) {
+			set_tZ();
+			tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
+		} else { // Check zero-crossing
 			Crossing const crossing_check( crossing_type( sign_old, sign_new ) );
 			if ( has( crossing_check ) ) { // Crossing type is relevant
 				crossing = crossing_check;
@@ -414,9 +420,6 @@ private: // Methods
 				set_tZ();
 				tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
 			}
-		} else {
-			set_tZ();
-			tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
 		}
 	}
 
