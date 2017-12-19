@@ -138,8 +138,8 @@ simulate_fmu()
 	using Function = std::function< SmoothToken const &( Time const ) >;
 
 	// I/o setup
-	std::cout << std::setprecision( 18 );
-	std::cerr << std::setprecision( 18 );
+	std::cout << std::setprecision( 16 );
+	std::cerr << std::setprecision( 16 );
 	std::vector< std::ofstream > x_streams; // Continuous output streams
 	std::vector< std::ofstream > q_streams; // Quantized output streams
 	std::vector< std::ofstream > f_streams; // FMU output streams
