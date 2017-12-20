@@ -52,6 +52,7 @@
 #include <cassert>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <ctime>
 #include <iostream>
 #include <random>
@@ -191,7 +192,7 @@ gen( Variables & vars, Conditionals & cons, size_type const nQSS, size_type cons
 		if ( seed == 0u ) { // Use time as seed
 			random_generator.seed( std::chrono::system_clock::now().time_since_epoch().count() );
 		} else { // Use specified seed
-			random_generator.seed( seed );
+			random_generator.seed( static_cast< uint_fast32_t >( seed ) );
 		}
 	}
 	vars.clear();
