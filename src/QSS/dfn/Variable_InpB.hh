@@ -39,9 +39,6 @@
 // QSS Headers
 #include <QSS/dfn/Variable_Inp.hh>
 
-// C++ Headers
-#include <cstdint>
-
 namespace QSS {
 namespace dfn {
 

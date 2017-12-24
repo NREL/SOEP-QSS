@@ -56,8 +56,10 @@ public: // Types
 	using typename Super::If;
 	using typename Super::When;
 
+	using Super::check_crossing_;
 	using Super::crossing;
 	using Super::crossing_last;
+	using Super::if_clauses;
 	using Super::name;
 	using Super::rTol;
 	using Super::aTol;
@@ -72,7 +74,7 @@ public: // Types
 	using Super::dt_max;
 	using Super::dt_inf;
 	using Super::self_observer;
-	using Super::if_clauses;
+	using Super::sign_old_;
 	using Super::when_clauses;
 	using Super::x_mag_;
 	using Super::zChatter_;
@@ -231,6 +233,29 @@ public: // Methods
 		set_tE();
 		crossing_detect( sign_old, signum( x_0_ ), check_crossing );
 		if ( options::output::d ) std::cout << "  " << name << '(' << t << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tZ=" << tZ <<  '\n';
+	}
+
+	// Observer Advance: Parallel
+	void
+	advance_observer_parallel( Time const t )
+	{
+		assert( ( tX <= t ) && ( t <= tE ) );
+		Value const x_t( zChatter_ ? x( t ) : Value( 0.0 ) );
+		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
+		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
+		x_0_ = q_0_ = f_.q( tX = tQ = t );
+		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
+		set_qTol();
+		x_1_ = f_.q1( t );
+		set_tE();
+	}
+
+	// Observer Advance: Sequential
+	void
+	advance_observer_sequential()
+	{
+		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
+		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tZ=" << tZ <<  '\n';
 	}
 
 	// Zero-Crossing Advance

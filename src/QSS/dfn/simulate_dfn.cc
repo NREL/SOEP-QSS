@@ -91,8 +91,8 @@ simulate_dfn()
 	// I/o setup
 	std::cout << std::setprecision( 16 );
 	std::cerr << std::setprecision( 16 );
-	std::vector< std::ofstream > x_streams; // Continuous output streams
-	std::vector< std::ofstream > q_streams; // Quantized output streams
+	std::vector< std::stringstream > x_streams; // Continuous rep output
+	std::vector< std::stringstream > q_streams; // Quantized rep output
 
 	// Collections
 	Variables vars;
@@ -235,11 +235,11 @@ simulate_dfn()
 	if ( ( options::output::t || options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) { // t0 QSS outputs
 		for ( auto var : vars ) { // QSS outputs
 			if ( options::output::x ) {
-				x_streams.push_back( std::ofstream( var->name + ".x.out", std::ios_base::binary | std::ios_base::out ) );
+				x_streams.push_back( std::stringstream( std::ios_base::binary | std::ios_base::in | std::ios_base::out ) );
 				x_streams.back() << std::setprecision( 16 ) << t << '\t' << var->x( t ) << '\n';
 			}
 			if ( options::output::q ) {
-				q_streams.push_back( std::ofstream( var->name + ".q.out", std::ios_base::binary | std::ios_base::out ) );
+				q_streams.push_back( std::stringstream( std::ios_base::binary | std::ios_base::in | std::ios_base::out ) );
 				q_streams.back() << std::setprecision( 16 ) << t << '\t' << var->q( t ) << '\n';
 			}
 		}
@@ -427,9 +427,7 @@ simulate_dfn()
 							}
 						}
 					}
-					for ( Variable * observer : observers ) {
-						observer->advance_observer( t );
-					}
+					Variable::advance_observers( observers, t );
 					if ( doTOut ) { // Time event output
 						if ( options::output::a ) { // All variables output
 							for ( size_type i = 0; i < n_vars; ++i ) {
@@ -602,9 +600,7 @@ simulate_dfn()
 							}
 						}
 					}
-					for ( Variable * observer : observers ) {
-						observer->advance_observer( t );
-					}
+					Variable::advance_observers( observers, t );
 					if ( doROut ) { // Requantization output
 						if ( options::output::a ) { // All variables output
 							for ( size_type i = 0; i < n_vars; ++i ) {
@@ -721,9 +717,7 @@ simulate_dfn()
 					for ( Variable * trigger : triggers_ZC ) {
 						trigger->advance_QSS_simultaneous();
 					}
-					for ( Variable * observer : observers ) {
-						observer->advance_observer( t );
-					}
+					Variable::advance_observers( observers, t );
 					if ( doROut ) { // Requantization output
 						if ( options::output::a ) { // All variables output
 							for ( size_type i = 0; i < n_vars; ++i ) {
@@ -762,19 +756,34 @@ simulate_dfn()
 		}
 	}
 
-	// End time outputs and streams close
+	// End time outputs
 	if ( ( options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) {
 		for ( size_type i = 0; i < n_vars; ++i ) {
 			Variable const * var( vars[ i ] );
 			if ( var->tQ < tE ) {
 				if ( options::output::x ) {
 					x_streams[ i ] << tE << '\t' << var->x( tE ) << '\n';
-					x_streams[ i ].close();
 				}
 				if ( options::output::q ) {
 					q_streams[ i ] << tE << '\t' << var->q( tE ) << '\n';
-					q_streams[ i ].close();
 				}
+			}
+		}
+	}
+
+	// Write output streams to files
+	if ( ( options::output::t || options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) {
+		for ( size_type i = 0; i < n_vars; ++i ) {
+			Variable const * var( vars[ i ] );
+			if ( options::output::x ) {
+				std::ofstream x_stream( var->name + ".x.out", std::ios_base::binary | std::ios_base::out );
+				x_stream << x_streams[ i ].rdbuf();
+				x_stream.close();
+			}
+			if ( options::output::q ) {
+				std::ofstream q_stream( var->name + ".q.out", std::ios_base::binary | std::ios_base::out );
+				q_stream << q_streams[ i ].rdbuf();
+				q_stream.close();
 			}
 		}
 	}

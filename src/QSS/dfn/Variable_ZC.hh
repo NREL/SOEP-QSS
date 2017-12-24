@@ -271,6 +271,8 @@ protected: // Data
 
 	bool zChatter_{ false }; // Zero-crossing chatter control active?
 	Value x_mag_{ 0.0 }; // Value max magnitude since last zero crossing
+	bool check_crossing_{ false }; // Check for zero crossing?
+	int sign_old_{ 0 }; // Sign of zero-crossing function before advance
 	Function f_; // Zero-crossing function
 
 };

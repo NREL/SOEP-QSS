@@ -242,17 +242,35 @@ Conditional handler functions can cause variable changes that cause other (zero-
 
 ## Performance
 
-Once the code capabilities are sufficient and larger models are built some performance assessments will be carried out. Run time comparisons _vs._ [Qss Solver](https://sourceforge.net/projects/qssengine/), [Ptolemy](http://ptolemy.eecs.berkeley.edu/), and other implementations will be performed. Profiling will be used to identify bottlenecks in performance and in scalability as problem size grows. Performance tuning and experimentation with alternative implementation designs are anticipated. Specifically, evaluation of alternative event queue designs is likely to be worthwhile, especially once parallel processing is added.
+Performance assessments are ongoing as larger-scale models become available. Preliminary profiling, tuning, and parallelization findings are described here.
 
 ### Performance Findings
 
-Performance findings and observations:
+#### Code-Defined Model Performance
+
+The code-defined model simulation provides a good platform for looking at the QSS performance without the additional overhead and complexity required to run FMU-based models with the current FMI API support.
+
+A scalable, algorithmically generated model was developed to allow assessment of performance on large-scale models with varying levels of coupling between variables. This `gen` model can be specified with numbers of QSS and zero-crossing variables and an optional random generator seed value. The dependency out-degree range and value ranges are currently hard-coded but easily altered. These `gen` models with up to 5000 QSS variables were used to profile and experiment with performance improvements, some of which are now incorporated into the QSS code. The core findings are:
+* The hot spot operations are mostly in tight code that does not have much room for optimization.
+* Virtual calls appear for processing different types of Variables. It would be possible to avoid these virtual calls through Variable type groupings but the code complexity is unlikely to be worth the small performance gains.
+* The `advance_observers` operations are good candidates for parallelization since they can be significant hot spots and, other than event queue updates and diagnostic output, they are decoupled.
+* The initial OpenMP parallelization of the `advance_observers` operation yields a 27% speedup for a large-scale (5,000 QSS variable) generated (`gen`) model. Some experimentation was used to tune the OpenMP thread count and schedule controls: further experimentation on many-core systems is recommended to improve scalability.
+* Parallelization of additional operations is worth exploring.
+* Event queue operations are not dominant but can be significant for performance such that incorporation of a faster, concurrent queue could be worth exploring.
+* Keeping event queue operations out of the parallel loops incurs some complexity cost but trying to mutex lock the queue is not likely to be beneficial.
+
+#### FMU Model Performance
+
+* FMU model performance is currently dominated by operations inside the FMU: no QSS solver function registers even 1% in the profile. This performance is severely hobbled by the FMI 2.0 API that is ill-suited to QSS simulation and by the need for numeric differentiation. Once the planned "atomic" (per-variable) API and higher derivatives become available via FMI extensions this performance profile should significantly improve.
+* The `advance_observers` operation is also a candidate for performance gains in the FMU models.
+  * The first approach is to used pooled lookup operations for the observers' derivatives (and, for zero-crossing variables, value) to reduce the FMU call overhead. This was done as a first pass for the `advance_observers` first phase operation. This provided a 15% speedup for the 4-zone ScaleTest model but no speedup for the Case600 room air model. There are other places in the code that could be refactored to use pooled FMU calls: this should improve performance but these are non-trivial code changes.
+  * FMUs are not thread-safe, inhibiting parallelization, but by pooling the observer FMU calls we can explore parallelizing the rest of the `advance_observers` operation. This was tried for the same 4-zone ScaleTest model and results with OpenMP controls tried to date yielded slowdowns, indicating that the OpenMP threading overhead dominates the loop time, so this code has been commented out for now. More FMU model parallelization experimentation is warranted.
+
+### Performance: Future
+
+* Run time comparisons _vs._ [Qss Solver](https://sourceforge.net/projects/qssengine/), [Ptolemy](http://ptolemy.eecs.berkeley.edu/), and other implementations will be useful.
+* Evaluation of alternative event queue designs is likely to be worthwhile, especially once parallel processing is added.
 * Simultaneous requantization triggering: Could skip continuous representation update if a variable is not an observer of any of the requantizing variables. This would save assignments but more importantly evaluation of the highest derivative. There is some overhead in determining whether a variable qualifies. Testing so far doesn't show a significant benefit for this optimization but it should be reevaluated with real-world cases where simultaneous triggering is common.
-
-### Performance Notes
-
-* Variable hierarchy virtual calls can be reduced via some refactoring.
-* FMU performance is currently severely hobbled by the FMI 2.0 API that is ill-suited to QSS simulation and the need for numeric differentiation until higher derivatives become available via FMI extensions.
 
 ## Testing
 

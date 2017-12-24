@@ -285,13 +285,13 @@ public: // Methods
 
 	// Observer Advance: Stage 1
 	void
-	advance_observer_1( Time const t )
+	advance_observer_1( Time const t, Value const d )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		Time const tDel( t - tX );
 		tX = t;
 		x_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
-		x_1_ = fmu_get_deriv();
+		x_1_ = d;
 	}
 
 	// Observer Advance: Stage 2

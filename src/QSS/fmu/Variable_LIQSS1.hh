@@ -227,12 +227,12 @@ public: // Methods
 
 	// Observer Advance: Stage 1
 	void
-	advance_observer_1( Time const t )
+	advance_observer_1( Time const t, Value const d )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		x_0_ = x_0_ + ( x_1_ * ( t - tX ) );
 		tX = t;
-		x_1_ = fmu_get_deriv();
+		x_1_ = d;
 		set_tE_unaligned();
 		shift_QSS( tE );
 	}

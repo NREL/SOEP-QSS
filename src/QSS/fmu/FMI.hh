@@ -85,6 +85,15 @@ get_real( fmi2_value_reference_t const ref )
 	return val;
 }
 
+// Get Real FMU Variable Values
+inline
+void
+get_reals( std::size_t const n, fmi2_value_reference_t const refs[], Value vals[] )
+{
+	assert( fmu != nullptr );
+	fmi2_import_get_real( fmu, refs, n, vals ); //Do Check status returned
+}
+
 // Set a Real FMU Variable Value
 inline
 void

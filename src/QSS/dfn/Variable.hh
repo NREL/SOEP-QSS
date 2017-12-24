@@ -45,6 +45,7 @@
 #include <QSS/Target.hh>
 
 // C++ Headers
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <vector>
@@ -577,8 +578,44 @@ public: // Methods
 	void
 	advance_observers()
 	{
+#ifdef _OPENMP
+		std::int64_t const n( static_cast< std::int64_t > ( observers_.size() ) );
+		if ( n >= 4u ) { // Tuned on 4-core/8-thread CPU: Should tune on 8+ core systems
+			#pragma omp parallel for schedule(guided) num_threads(4)
+			for ( std::int64_t i = 0; i < n; ++i ) { // Visual C++ requires signed index type
+				observers_[ i ]->advance_observer_parallel( tQ );
+			}
+			for ( Variable * observer : observers_ ) {
+				observer->advance_observer_sequential();
+			}
+			return;
+		}
+#endif
 		for ( Variable * observer : observers_ ) {
 			observer->advance_observer( tQ );
+		}
+	}
+
+	// Advance Given Observers
+	static
+	void
+	advance_observers( Variables & observers, Time const t )
+	{
+#ifdef _OPENMP
+		std::int64_t const n( static_cast< std::int64_t > ( observers.size() ) );
+		if ( n >= 4u ) { // Tuned on 4-core/8-thread CPU: Should tune on 8+ core systems
+			#pragma omp parallel for schedule(guided) num_threads(4)
+			for ( std::int64_t i = 0; i < n; ++i ) { // Visual C++ requires signed index type
+				observers[ i ]->advance_observer_parallel( t );
+			}
+			for ( Variable * observer : observers ) {
+				observer->advance_observer_sequential();
+			}
+			return;
+		}
+#endif
+		for ( Variable * observer : observers ) {
+			observer->advance_observer( t );
 		}
 	}
 
@@ -586,6 +623,22 @@ public: // Methods
 	virtual
 	void
 	advance_observer( Time const )
+	{
+		assert( false ); // Not a QSS or ZC variable
+	}
+
+	// Observer Advance: Parallel
+	virtual
+	void
+	advance_observer_parallel( Time const t )
+	{
+		assert( false ); // Not a QSS or ZC variable
+	}
+
+	// Observer Advance: Sequential
+	virtual
+	void
+	advance_observer_sequential()
 	{
 		assert( false ); // Not a QSS or ZC variable
 	}

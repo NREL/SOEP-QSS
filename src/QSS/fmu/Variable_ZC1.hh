@@ -196,7 +196,7 @@ public: // Methods
 
 	// Observer Advance: Stage 1
 	void
-	advance_observer_1( Time const t )
+	advance_observer_1( Time const t, Value const d )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		tX = tQ = t;
@@ -206,7 +206,24 @@ public: // Methods
 		x_0_ = q_0_ = fmu_get_value();
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		set_qTol();
-		x_1_ = fmu_get_deriv();
+		x_1_ = d;
+		set_tE();
+		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
+	}
+
+	// Observer Advance: Stage 1
+	void
+	advance_ZC_observer_1( Time const t, Value const d, Value const v )
+	{
+		assert( ( tX <= t ) && ( t <= tE ) );
+		tX = tQ = t;
+		Value const x_t( zChatter_ ? x( t ) : Value( 0.0 ) );
+		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
+		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
+		x_0_ = q_0_ = v;
+		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
+		set_qTol();
+		x_1_ = d;
 		set_tE();
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
 	}

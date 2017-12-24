@@ -239,6 +239,24 @@ public: // Methods
 		if ( options::output::d ) std::cout << "  " << name << '(' << t << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 	}
 
+	// Observer Advance: Parallel
+	void
+	advance_observer_parallel( Time const t )
+	{
+		assert( ( tX <= t ) && ( t <= tE ) );
+		x_0_ = x_0_ + ( x_1_ * ( t - tX ) );
+		x_1_ = d_.q( tX = t );
+		set_tE_unaligned();
+	}
+
+	// Observer Advance: Sequential
+	void
+	advance_observer_sequential()
+	{
+		shift_QSS( tE );
+		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
+	}
+
 	// Handler Advance
 	void
 	advance_handler( Time const t, Value const x )

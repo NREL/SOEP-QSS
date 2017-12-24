@@ -300,6 +300,26 @@ public: // Methods
 		if ( options::output::d ) std::cout << "  " << name << '(' << t << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';
 	}
 
+	// Observer Advance: Parallel
+	void
+	advance_observer_parallel( Time const t )
+	{
+		assert( ( tX <= t ) && ( t <= tE ) );
+		Time const tDel( t - tX );
+		x_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		x_1_ = d_.qs( t );
+		x_2_ = one_half * d_.qf1( tX = t );
+		set_tE_unaligned();
+	}
+
+	// Observer Advance: Sequential
+	void
+	advance_observer_sequential()
+	{
+		shift_QSS( tE );
+		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << " = " << q_0_ << "+" << q_1_ << "*t quantized, " << x_0_ << "+" << x_1_ << "*t+" << x_2_ << "*t^2 internal   tE=" << tE << '\n';
+	}
+
 	// Handler Advance
 	void
 	advance_handler( Time const t, Value const x )

@@ -72,7 +72,7 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
-#include <string>
+#include <sstream>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -140,9 +140,9 @@ simulate_fmu()
 	// I/o setup
 	std::cout << std::setprecision( 16 );
 	std::cerr << std::setprecision( 16 );
-	std::vector< std::ofstream > x_streams; // Continuous output streams
-	std::vector< std::ofstream > q_streams; // Quantized output streams
-	std::vector< std::ofstream > f_streams; // FMU output streams
+	std::vector< std::stringstream > x_streams; // Continuous rep output
+	std::vector< std::stringstream > q_streams; // Quantized rep output
+	std::vector< std::stringstream > f_streams; // FMU output
 
 	// FMI Library setup /////
 
@@ -980,23 +980,23 @@ simulate_fmu()
 	if ( ( options::output::t || options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) { // t0 QSS outputs
 		for ( auto var : vars ) { // QSS outputs
 			if ( options::output::x ) {
-				x_streams.push_back( std::ofstream( var->name + ".x.out", std::ios_base::binary | std::ios_base::out ) );
+				x_streams.push_back( std::stringstream( std::ios_base::binary | std::ios_base::in | std::ios_base::out ) );
 				x_streams.back() << std::setprecision( 16 ) << t << '\t' << var->x( t ) << '\n';
 			}
 			if ( options::output::q ) {
-				q_streams.push_back( std::ofstream( var->name + ".q.out", std::ios_base::binary | std::ios_base::out ) );
+				q_streams.push_back( std::stringstream( std::ios_base::binary | std::ios_base::in | std::ios_base::out ) );
 				q_streams.back() << std::setprecision( 16 ) << t << '\t' << var->q( t ) << '\n';
 			}
 		}
 	}
 	if ( options::output::f && ( n_outs + n_fmu_outs > 0u ) ) { // t0 FMU outputs
 		for ( auto const & var : outs ) { // FMU QSS variable outputs
-			f_streams.push_back( std::ofstream( std::string( fmi2_import_get_variable_name( var->var.var ) ) + ".f.out", std::ios_base::binary | std::ios_base::out ) );
+			f_streams.push_back( std::stringstream( std::ios_base::binary | std::ios_base::in | std::ios_base::out ) );
 			f_streams.back() << std::setprecision( 16 ) << t << '\t' << var->x( t ) << '\n';
 		}
 		for ( auto const & e : fmu_outs ) { // FMU (non-QSS) variable (non-QSS) outputs
 			FMU_Variable const & var( e.second );
-			f_streams.push_back( std::ofstream( std::string( fmi2_import_get_variable_name( var.var ) ) + ".f.out", std::ios_base::binary | std::ios_base::out ) );
+			f_streams.push_back( std::stringstream( std::ios_base::binary | std::ios_base::in | std::ios_base::out ) );
 			f_streams.back() << std::setprecision( 16 ) << t << '\t' << fmu::get_real( var.ref ) << '\n';
 		}
 	}
@@ -1513,6 +1513,8 @@ simulate_fmu()
 					Variables triggers_ZC;
 					Variables triggers_nonZC;
 					for ( Variable * trigger : triggers ) {
+						assert( trigger->tE == t );
+						trigger->st = s; // Set trigger superdense time
 						if ( trigger->is_ZC() ) { // ZC variable
 							triggers_ZC.push_back( trigger );
 						} else { // Non-ZC variable
@@ -1628,30 +1630,25 @@ simulate_fmu()
 		if ( eventInfo.terminateSimulation || terminateSimulation ) break;
 	}
 
-	// End time outputs and streams close
+	// End time outputs
 	if ( ( options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) {
 		for ( size_type i = 0; i < n_vars; ++i ) {
 			Variable const * var( vars[ i ] );
 			if ( var->tQ < tE ) {
 				if ( options::output::x ) {
 					x_streams[ i ] << tE << '\t' << var->x( tE ) << '\n';
-					x_streams[ i ].close();
 				}
 				if ( options::output::q ) {
 					q_streams[ i ] << tE << '\t' << var->q( tE ) << '\n';
-					q_streams[ i ].close();
 				}
 			}
 		}
 	}
-
-	// tE FMU outputs and streams close
 	if ( options::output::f ) {
 		if ( n_outs > 0u ) { // FMU QSS variable outputs
 			for ( size_type i = 0; i < n_outs; ++i ) {
 				Variable * var( outs[ i ] );
 				f_streams[ i ] << tE << '\t' << var->x( tE ) << '\n';
-				f_streams[ i ].close();
 			}
 		}
 		if ( n_fmu_outs > 0u ) { // FMU (non-QSS) variable outputs
@@ -1663,9 +1660,39 @@ simulate_fmu()
 			size_type i( n_outs );
 			for ( auto const & e : fmu_outs ) {
 				FMU_Variable const & var( e.second );
-				f_streams[ i ] << tE << '\t' << fmu::get_real( var.ref ) << '\n';
-				f_streams[ i++ ].close();
+				f_streams[ i++ ] << tE << '\t' << fmu::get_real( var.ref ) << '\n';
 			}
+		}
+	}
+
+	// Write output streams to files
+	if ( ( options::output::t || options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) {
+		for ( size_type i = 0; i < n_vars; ++i ) {
+			Variable const * var( vars[ i ] );
+			if ( options::output::x ) {
+				std::ofstream x_stream( var->name + ".x.out", std::ios_base::binary | std::ios_base::out );
+				x_stream << x_streams[ i ].rdbuf();
+				x_stream.close();
+			}
+			if ( options::output::q ) {
+				std::ofstream q_stream( var->name + ".q.out", std::ios_base::binary | std::ios_base::out );
+				q_stream << q_streams[ i ].rdbuf();
+				q_stream.close();
+			}
+		}
+	}
+	if ( options::output::f && ( n_outs + n_fmu_outs > 0u ) ) { // FMU outputs
+		size_type i( 0 );
+		for ( auto const & var : outs ) { // FMU QSS variable outputs
+			std::ofstream f_stream( std::string( fmi2_import_get_variable_name( var->var.var ) ) + ".f.out", std::ios_base::binary | std::ios_base::out );
+			f_stream << f_streams[ i++ ].rdbuf();
+			f_stream.close();
+		}
+		for ( auto const & e : fmu_outs ) { // FMU (non-QSS) variable (non-QSS) outputs
+			FMU_Variable const & var( e.second );
+			std::ofstream f_stream( std::string( fmi2_import_get_variable_name( var.var ) ) + ".f.out", std::ios_base::binary | std::ios_base::out );
+			f_stream << f_streams[ i++ ].rdbuf();
+			f_stream.close();
 		}
 	}
 

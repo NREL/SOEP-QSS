@@ -47,6 +47,7 @@
 #include <QSS/Target.hh>
 
 // C++ Headers
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <unordered_set>
@@ -65,7 +66,10 @@ public: // Types
 	using Time = double;
 	using Value = double;
 	using Variables = std::vector< Variable * >;
+	using VariableRefs = std::vector< fmi2_value_reference_t >;
+	using Values = std::vector< Value >;
 	using size_type = Variables::size_type;
+	using Indexes = std::vector< size_type >;
 
 	using If = IfV< Variable >;
 	using When = WhenV< Variable >;
@@ -405,6 +409,34 @@ public: // Methods
 		shrink_observees(); // Optional
 		sort_observers();
 
+		// Observer derivative setup
+		observers_der_refs_.clear();
+		observers_der_vals_.clear();
+		observers_der_refs_.reserve( observers_.size() );
+		observers_der_vals_.reserve( observers_.size() );
+		for ( Variable const * observer : observers_ ) {
+			observers_der_refs_.push_back( observer->der.ref );
+			observers_der_vals_.push_back( 0.0 );
+		}
+
+		// Observer zero-crossing setup
+		observers_ZC_refs_.clear();
+		observers_ZC_vals_.clear();
+		observers_ZC_idxs_.clear();
+		size_type j( 0 );
+		for ( Variable const * observer : observers_ ) {
+			if ( observer->is_ZC() ) {
+				observers_ZC_refs_.push_back( observer->var.ref );
+				observers_ZC_vals_.push_back( 0.0 );
+				observers_ZC_idxs_.push_back( j++ );
+			} else {
+				observers_ZC_idxs_.push_back( j );
+			}
+		}
+		observers_ZC_refs_.shrink_to_fit();
+		observers_ZC_vals_.shrink_to_fit();
+		observers_ZC_idxs_.shrink_to_fit();
+
 		// Observers observees setup
 		std::unordered_set< Variable * > oo2s; // Observees of observers of order 2+
 		for ( Variable * observer : observers_ ) {
@@ -670,8 +702,32 @@ public: // Methods
 	advance_observers_1()
 	{
 		fmu_set_observers_observees_q( tQ );
-		for ( Variable * observer : observers_ ) {
-			observer->advance_observer_1( tQ );
+		fmu_get_observer_derivs();
+		if ( ! observers_ZC_refs_.empty() ) fmu_get_observer_ZC_values();
+// OpenMP is giving slower runs so far
+//#ifdef _OPENMP
+//		std::int64_t const n( static_cast< std::int64_t > ( observers_.size() ) );
+//		if ( n > 1u ) {
+//			std::int64_t const nt( std::min( n, std::int64_t( 6 ) ) );
+//			#pragma omp parallel for schedule(guided) num_threads(nt)
+//			for ( std::int64_t i = 0; i < n; ++i ) { // Visual C++ requires signed index type
+//				Variable * observer( observers_[ i ] );
+//				if ( observer->is_ZC() ) {
+//					observer->advance_ZC_observer_1( tQ, observers_der_vals_[ i ], observers_ZC_vals_[ observers_ZC_idxs_[ i ] ] );
+//				} else {
+//					observer->advance_observer_1( tQ, observers_der_vals_[ i ] );
+//				}
+//			}
+//			return;
+//		}
+//#endif
+		for ( size_type i = 0, n = observers_.size(); i < n; ++i ) {
+			Variable * observer( observers_[ i ] );
+			if ( observer->is_ZC() ) {
+				observer->advance_ZC_observer_1( tQ, observers_der_vals_[ i ], observers_ZC_vals_[ observers_ZC_idxs_[ i ] ] );
+			} else {
+				observer->advance_observer_1( tQ, observers_der_vals_[ i ] );
+			}
 		}
 	}
 
@@ -707,7 +763,15 @@ public: // Methods
 	// Observer Advance: Stage 1
 	virtual
 	void
-	advance_observer_1( Time const )
+	advance_observer_1( Time const, Value const )
+	{
+		assert( false );
+	}
+
+	// Zero-Crossing Observer Advance: Stage 1
+	virtual
+	void
+	advance_ZC_observer_1( Time const, Value const, Value const )
 	{
 		assert( false );
 	}
@@ -726,7 +790,7 @@ public: // Methods
 	{
 		fmu_set_observees_q( t );
 		if ( self_observer ) fmu_set_q( t );
-		advance_observer_1( t );
+		advance_observer_1( t, fmu_get_deriv() );
 	}
 
 	// Observer Advance: Simultaneous Stage 2
@@ -761,6 +825,20 @@ public: // Methods: FMU
 	fmu_get_deriv() const
 	{
 		return fmu::get_real( der.ref );
+	}
+
+	// Get FMU Variable Observer Derivatives
+	void
+	fmu_get_observer_derivs()
+	{
+		fmu::get_reals( observers_.size(), &observers_der_refs_[ 0 ], &observers_der_vals_[ 0 ] );
+	}
+
+	// Get FMU Variable Zero-Crossing Observer Values
+	void
+	fmu_get_observer_ZC_values()
+	{
+		fmu::get_reals( observers_ZC_refs_.size(), &observers_ZC_refs_[ 0 ], &observers_ZC_vals_[ 0 ] );
 	}
 
 	// Set FMU Variable to a Value
@@ -944,6 +1022,11 @@ protected: // Data
 	Variables observees_; // Variables this one depends on
 	Variables observers_observees_; // Observers observees (including self-observing observers)
 	size_type iBeg_observers_2_observees_{ 0 }; // Index of first observee of observer of order 2+
+	VariableRefs observers_der_refs_; // Observer FMU derivative refs
+	Values observers_der_vals_; // Observer FMU derivative values
+	VariableRefs observers_ZC_refs_; // Observer FMU zero-crossing variable refs
+	Values observers_ZC_vals_; // Observer FMU zero-crossing variable values
+	Indexes observers_ZC_idxs_; // Observer FMU zero-crossing variable index map
 
 };
 
