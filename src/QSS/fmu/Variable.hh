@@ -408,12 +408,13 @@ public: // Methods
 		shrink_observers(); // Optional
 		shrink_observees(); // Optional
 		sort_observers();
+		size_type const n_observers( observers_.size() );
 
 		// Observer derivative setup
 		observers_der_refs_.clear();
 		observers_der_vals_.clear();
-		observers_der_refs_.reserve( observers_.size() );
-		observers_der_vals_.reserve( observers_.size() );
+		observers_der_refs_.reserve( n_observers );
+		observers_der_vals_.reserve( n_observers );
 		for ( Variable const * observer : observers_ ) {
 			observers_der_refs_.push_back( observer->der.ref );
 			observers_der_vals_.push_back( 0.0 );
@@ -423,6 +424,7 @@ public: // Methods
 		observers_ZC_refs_.clear();
 		observers_ZC_vals_.clear();
 		observers_ZC_idxs_.clear();
+		observers_ZC_idxs_.reserve( n_observers );
 		size_type j( 0 );
 		for ( Variable const * observer : observers_ ) {
 			if ( observer->is_ZC() ) {
@@ -435,7 +437,6 @@ public: // Methods
 		}
 		observers_ZC_refs_.shrink_to_fit();
 		observers_ZC_vals_.shrink_to_fit();
-		observers_ZC_idxs_.shrink_to_fit();
 
 		// Observers observees setup
 		std::unordered_set< Variable * > oo2s; // Observees of observers of order 2+
@@ -703,7 +704,7 @@ public: // Methods
 	{
 		fmu_set_observers_observees_q( tQ );
 		fmu_get_observer_derivs();
-		if ( ! observers_ZC_refs_.empty() ) fmu_get_observer_ZC_values();
+		fmu_get_observer_ZC_values();
 // OpenMP is giving slower runs so far
 //#ifdef _OPENMP
 //		std::int64_t const n( static_cast< std::int64_t > ( observers_.size() ) );
@@ -831,14 +832,18 @@ public: // Methods: FMU
 	void
 	fmu_get_observer_derivs()
 	{
-		fmu::get_reals( observers_.size(), &observers_der_refs_[ 0 ], &observers_der_vals_[ 0 ] );
+		if ( ! observers_der_refs_.empty() ) {
+			fmu::get_reals( observers_der_refs_.size(), &observers_der_refs_[ 0 ], &observers_der_vals_[ 0 ] );
+		}
 	}
 
 	// Get FMU Variable Zero-Crossing Observer Values
 	void
 	fmu_get_observer_ZC_values()
 	{
-		fmu::get_reals( observers_ZC_refs_.size(), &observers_ZC_refs_[ 0 ], &observers_ZC_vals_[ 0 ] );
+		if ( ! observers_ZC_refs_.empty() ) {
+			fmu::get_reals( observers_ZC_refs_.size(), &observers_ZC_refs_[ 0 ], &observers_ZC_vals_[ 0 ] );
+		}
 	}
 
 	// Set FMU Variable to a Value

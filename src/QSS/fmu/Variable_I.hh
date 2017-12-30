@@ -175,8 +175,7 @@ public: // Methods
 	init_0()
 	{
 		assert( observees_.empty() );
-		shrink_observers(); // Optional
-		sort_observers();
+		init_observers();
 		x_ = static_cast< Integer >( xIni );
 		add_handler();
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << '\n';
@@ -187,8 +186,7 @@ public: // Methods
 	init_0( Value const x )
 	{
 		assert( observees_.empty() );
-		shrink_observers(); // Optional
-		sort_observers();
+		init_observers();
 		x_ = static_cast< Integer >( x );
 		add_handler();
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << '\n';
