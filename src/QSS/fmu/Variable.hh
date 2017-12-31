@@ -47,6 +47,7 @@
 #include <QSS/Target.hh>
 
 // C++ Headers
+#include <algorithm>
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
@@ -405,9 +406,8 @@ public: // Methods
 	void
 	init_observers()
 	{
-		shrink_observers(); // Optional
-		shrink_observees(); // Optional
 		sort_observers();
+		shrink_observees();
 		size_type const n_observers( observers_.size() );
 
 		// Observer derivative setup
@@ -661,18 +661,20 @@ public: // Methods
 		if ( v != this ) observers_.push_back( v ); // Don't need to self-observe: Observers called at the end of self requantization
 	}
 
-	// Shrink Observers Collection
-	void
-	shrink_observers()
-	{
-		observers_.shrink_to_fit();
-	}
-
 	// Sort Observers Collection by Order
 	void
 	sort_observers()
 	{
+		// Use set to remove any duplicates
+		std::unordered_set< Variable * > os( observers_.begin(), observers_.end() ); // Remove duplicates
+		observers_.clear();
+		observers_.reserve( os.size() );
+		observers_.assign( os.begin(), os.end() );
+
+		// Sort
 		std::sort( observers_.begin(), observers_.end(), []( Variable * v1, Variable * v2 ){ return v1->order() < v2->order(); } );
+
+		// Save useful specs
 		iBeg_observers_2_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return v->order() >= 2; } ) ) );
 		observers_max_order_ = ( observers_.empty() ? 0 : observers_.back()->order() );
 	}
@@ -693,9 +695,13 @@ public: // Methods
 
 	// Shrink Observees Collection
 	void
-	shrink_observees() // May be worth calling after all observees added to improve memory and cache use
+	shrink_observees()
 	{
-		observees_.shrink_to_fit();
+		// Use set to remove any duplicates
+		std::unordered_set< Variable * > os( observees_.begin(), observees_.end() ); // Remove duplicates
+		observees_.clear();
+		observees_.reserve( os.size() );
+		observees_.assign( os.begin(), os.end() );
 	}
 
 	// Advance Observers: Stage 1

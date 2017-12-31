@@ -140,6 +140,7 @@ public: // Methods
 			std::cerr << "Error: Zero-crossing variable has observers: " << name << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
+		shrink_observees();
 		fmu_set_observees_q( tQ );
 		x_0_ = q_0_ = fmu_get_value();
 		x_mag_ = std::abs( x_0_ );

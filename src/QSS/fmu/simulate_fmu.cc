@@ -571,6 +571,7 @@ simulate_fmu()
 			break;
 		}
 	}
+	size_type const n_state_vars( state_vars.size() );
 
 	// Process FMU zero-crossing variables
 	std::cout << "\nFMU Zero Crossing Processing =====" << std::endl;
@@ -627,6 +628,9 @@ simulate_fmu()
 			}
 		}
 	}
+	size_type const n_vars( vars.size() );
+	size_type const n_outs( outs.size() );
+	size_type const n_fmu_outs( fmu_outs.size() );
 	if ( fmu_generator == FMU_Generator::Dymola ) {
 		if ( n_event_indicators != 2 * n_ZC_vars ) { // Dymola has 2x as many event indicators
 			std::cerr << "\nWarning: Number of FMU event indicators (" << n_event_indicators << ") is not equal to twice the number of zero-crossing variables found (" << n_ZC_vars << ") as expected for Dymola FMUs" << std::endl;
@@ -635,13 +639,13 @@ simulate_fmu()
 		std::cerr << "\nWarning: Number of FMU event indicators (" << n_event_indicators << ") is not equal to the number of zero-crossing variables found (" << n_ZC_vars << ')' << std::endl;
 	}
 
-	{ // QSS observer setup: Continuous variables
-		std::cout << "\nObserver Setup: Continuous Variables =====" << std::endl;
+	{ // QSS observer setup: Continuous variables: Derivatives
+		std::cout << "\nObserver Setup: Continuous Variables: Derivatives =====" << std::endl;
 		size_type * startIndex( nullptr );
 		size_type * dependency( nullptr );
 		char * factorKind( nullptr );
 		fmi2_import_get_derivatives_dependencies( fmu, &startIndex, &dependency, &factorKind );
-		if ( startIndex != nullptr ) { // Derivative dependency info present in XML
+		if ( startIndex != nullptr ) { // Derivatives dependency info present in XML
 			for ( size_type i = 0; i < n_ders; ++i ) {
 				std::cout << "\nDerivative  Ref: " << drs[ i ] << std::endl;
 				fmi2_import_variable_t * der( fmi2_import_get_variable( der_list, i ) );
@@ -649,28 +653,27 @@ simulate_fmu()
 				std::cout << " Name: " << der_name << std::endl;
 				fmi2_import_real_variable_t * der_real( fmi2_import_get_variable_as_real( der ) );
 				size_type const idx( fmu_dvrs[ der_real ].idx );
-				std::cout << " Var Index: " << idx << std::endl;
 				Variable * var( fmu_idxs[ idx ] );
-				std::cout << " Var: " << var->name << std::endl;
+				std::cout << " Var: " << var->name << "  Index: " << idx << std::endl;
 				for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
 					size_type const dep_idx( dependency[ j ] );
-					fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
-					std::cout << "  Dep Index: " << dep_idx << "  Kind: " << kind << std::endl;
+					std::cout << "  Dep Index: " << dep_idx << std::endl;
 					if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
 						std::cerr << "\n   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
 					} else { // Process based on kind of dependent
+						fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
 						if ( kind == fmi2_dependency_factor_kind_dependent ) {
-							std::cout << "  Kind: Dependent" << std::endl;
+							std::cout << "  Kind: Dependent (" << kind << ')' << std::endl;
 						} else if ( kind == fmi2_dependency_factor_kind_constant ) {
-							std::cout << "  Kind: Constant" << std::endl;
+							std::cout << "  Kind: Constant (" << kind << ')' << std::endl;
 						} else if ( kind == fmi2_dependency_factor_kind_fixed ) {
-							std::cout << "  Kind: Fixed" << std::endl;
+							std::cout << "  Kind: Fixed (" << kind << ')' << std::endl;
 						} else if ( kind == fmi2_dependency_factor_kind_tunable ) {
-							std::cout << "  Kind: Tunable" << std::endl;
+							std::cout << "  Kind: Tunable (" << kind << ')' << std::endl;
 						} else if ( kind == fmi2_dependency_factor_kind_discrete ) {
-							std::cout << "  Kind: Discrete" << std::endl;
+							std::cout << "  Kind: Discrete (" << kind << ')' << std::endl;
 						} else if ( kind == fmi2_dependency_factor_kind_num ) {
-							std::cout << "  Kind: Num" << std::endl;
+							std::cout << "  Kind: Num (" << kind << ')' << std::endl;
 						}
 					}
 					auto idep( fmu_idxs.find( dep_idx ) ); //Do Add support for input variable dependents
@@ -694,7 +697,81 @@ simulate_fmu()
 				}
 			}
 		} else { // Assume no observers in model (this may not be true: FMI spec says no dependencies => dependent on all)
-			std::cout << "No derivative dependency info in FMU XML" << std::endl;
+			std::cout << "No Derivatives dependency info in FMU XML" << std::endl;
+		}
+	}
+
+	{ // QSS observer setup: Continuous variables: InitialUnknowns
+		std::cout << "\nObserver Setup: Continuous Variables: InitialUnknowns =====" << std::endl;
+		size_type * startIndex( nullptr );
+		size_type * dependency( nullptr );
+		char * factorKind( nullptr );
+		fmi2_import_variable_list_t * inu_list( fmi2_import_get_initial_unknowns_list( fmu ) ); // InitialUnknowns variables
+		size_type const n_inu_vars( fmi2_import_get_variable_list_size( inu_list ) );
+		std::cout << n_inu_vars << " variables found in InitialUnknowns" << std::endl;
+		fmi2_value_reference_t const * inu_vrs( fmi2_import_get_value_referece_list( inu_list ) ); // reference is spelled wrong in FMIL API
+		fmi2_import_get_initial_unknowns_dependencies( fmu, &startIndex, &dependency, &factorKind );
+		if ( startIndex != nullptr ) { // InitialUnknowns dependency info present in XML
+			for ( size_type i = 0; i < n_inu_vars; ++i ) {
+				std::cout << "\nInitialUnknown Variable  Ref: " << inu_vrs[ i ] << std::endl;
+				fmi2_import_variable_t * inu( fmi2_import_get_variable( inu_list, i ) );
+				if ( fmi2_import_get_variability( inu ) != fmi2_variability_enu_continuous ) {
+					std::cout << " Skipping: Not continuous variable" << std::endl;
+					continue; // Only look at continuous variables
+				}
+				std::string const inu_name( fmi2_import_get_variable_name( inu ) );
+				std::cout << " Name: " << inu_name << std::endl;
+				fmi2_import_real_variable_t * inu_real( fmi2_import_get_variable_as_real( inu ) );
+				FMU_Variable & fmu_inu( fmu_vars[ inu_real ] );
+				size_type const idx( fmu_inu.idx );
+				auto ivar( fmu_idxs.find( idx ) );
+				if ( ivar != fmu_idxs.end() ) {
+					Variable * var( fmu_idxs[ idx ] );
+					std::cout << " Var: " << var->name << "  Index: " << idx << std::endl;
+					for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
+						size_type const dep_idx( dependency[ j ] );
+						std::cout << "  Dep Index: " << dep_idx << std::endl;
+						if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
+							std::cerr << "\n   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
+						} else { // Process based on kind of dependent
+							fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
+							if ( kind == fmi2_dependency_factor_kind_dependent ) {
+								std::cout << "  Kind: Dependent (" << kind << ')' << std::endl;
+							} else if ( kind == fmi2_dependency_factor_kind_constant ) {
+								std::cout << "  Kind: Constant (" << kind << ')' << std::endl;
+							} else if ( kind == fmi2_dependency_factor_kind_fixed ) {
+								std::cout << "  Kind: Fixed (" << kind << ')' << std::endl;
+							} else if ( kind == fmi2_dependency_factor_kind_tunable ) {
+								std::cout << "  Kind: Tunable (" << kind << ')' << std::endl;
+							} else if ( kind == fmi2_dependency_factor_kind_discrete ) {
+								std::cout << "  Kind: Discrete (" << kind << ')' << std::endl;
+							} else if ( kind == fmi2_dependency_factor_kind_num ) {
+								std::cout << "  Kind: Num (" << kind << ')' << std::endl;
+							}
+						}
+						auto idep( fmu_idxs.find( dep_idx ) ); //Do Add support for input variable dependents
+						if ( idep != fmu_idxs.end() ) {
+							Variable * dep( idep->second );
+							if ( dep == var ) {
+								std::cout << "  Var: " << dep->name << " is self-observer" << std::endl;
+								var->self_observer = true;
+							} else if ( dep->is_ZC() ) {
+								std::cout << "  Zero Crossing Var: " << dep->name << " handler modifies " << var->name << std::endl;
+								assert( dep->when_clauses.size() == 1u ); // Should just be one clause for now
+								for ( auto * when_clause : dep->when_clauses ) when_clause->add_observer( var );
+							} else {
+								std::cout << "  Var: " << dep->name << " has observer " << var->name << std::endl;
+								dep->add_observer( var );
+								var->add_observee( dep );
+							}
+						} else {
+							//std::cout << "FMU variable " << var_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
+						}
+					}
+				}
+			}
+		} else { // Assume no observers in model (this may not be true: FMI spec says no dependencies => dependent on all)
+			std::cout << "No InitialUknowns dependency info in FMU XML" << std::endl;
 		}
 	}
 
@@ -710,7 +787,7 @@ simulate_fmu()
 		fmi2_import_get_discrete_states_dependencies( fmu, &startIndex, &dependency, &factorKind );
 		if ( startIndex != nullptr ) { // Discrete dependency info present in XML
 			for ( size_type i = 0; i < n_dis_vars; ++i ) {
-				std::cout << "\nDiscrete Variable  Index: " << i+1 << " Ref: " << dis_vrs[ i ] << std::endl;
+				std::cout << "\nDiscrete Variable  Ref: " << dis_vrs[ i ] << std::endl;
 				fmi2_import_variable_t * dis( fmi2_import_get_variable( dis_list, i ) );
 				assert( fmi2_import_get_variability( dis ) == fmi2_variability_enu_discrete );
 				std::string const dis_name( fmi2_import_get_variable_name( dis ) );
@@ -758,23 +835,23 @@ simulate_fmu()
 					assert( dis_var->is_Discrete() );
 					for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
 						size_type const dep_idx( dependency[ j ] );
-						fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
-						std::cout << "  Dep Index: " << dep_idx << "  Kind: " << kind << std::endl;
+						std::cout << "  Dep Index: " << dep_idx << std::endl;
 						if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
 							std::cerr << "\n   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
 						} else { // Process based on kind of dependent
+							fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
 							if ( kind == fmi2_dependency_factor_kind_dependent ) {
-								std::cout << "  Kind: Dependent" << std::endl;
+								std::cout << "  Kind: Dependent (" << kind << ')' << std::endl;
 							} else if ( kind == fmi2_dependency_factor_kind_constant ) {
-								std::cout << "  Kind: Constant" << std::endl;
+								std::cout << "  Kind: Constant (" << kind << ')' << std::endl;
 							} else if ( kind == fmi2_dependency_factor_kind_fixed ) {
-								std::cout << "  Kind: Fixed" << std::endl;
+								std::cout << "  Kind: Fixed (" << kind << ')' << std::endl;
 							} else if ( kind == fmi2_dependency_factor_kind_tunable ) {
-								std::cout << "  Kind: Tunable" << std::endl;
+								std::cout << "  Kind: Tunable (" << kind << ')' << std::endl;
 							} else if ( kind == fmi2_dependency_factor_kind_discrete ) {
-								std::cout << "  Kind: Discrete" << std::endl;
+								std::cout << "  Kind: Discrete (" << kind << ')' << std::endl;
 							} else if ( kind == fmi2_dependency_factor_kind_num ) {
-								std::cout << "  Kind: Num" << std::endl;
+								std::cout << "  Kind: Num (" << kind << ')' << std::endl;
 							}
 						}
 						auto idep( fmu_idxs.find( dep_idx ) ); //Do Add support for input variable dependents
@@ -814,7 +891,7 @@ simulate_fmu()
 		fmi2_import_get_outputs_dependencies( fmu, &startIndex, &dependency, &factorKind );
 		if ( startIndex != nullptr ) { // Dependency info present in XML
 			for ( size_type i = 0; i < n_out_vars; ++i ) {
-				std::cout << "\nOutput Variable  Index: " << i+1 << " Ref: " << out_vrs[ i ] << std::endl;
+				std::cout << "\nOutput Variable  Ref: " << out_vrs[ i ] << std::endl;
 				fmi2_import_variable_t * out( fmi2_import_get_variable( out_list, i ) );
 				assert( fmi2_import_get_causality( out ) == fmi2_causality_enu_output );
 				std::string const out_name( fmi2_import_get_variable_name( out ) );
@@ -852,23 +929,23 @@ simulate_fmu()
 					if ( ! out_var->is_ZC() ) continue; // Don't worry about dependencies of non-ZC output variables on the QSS side
 					for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
 						size_type const dep_idx( dependency[ j ] );
-						fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
-						std::cout << "  Dep Index: " << dep_idx << "  Kind: " << kind << std::endl;
+						std::cout << "  Dep Index: " << dep_idx << std::endl;
 						if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
 							std::cerr << "\n   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
 						} else { // Process based on kind of dependent
+							fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
 							if ( kind == fmi2_dependency_factor_kind_dependent ) {
-								std::cout << "  Kind: Dependent" << std::endl;
+								std::cout << "  Kind: Dependent (" << kind << ')' << std::endl;
 							} else if ( kind == fmi2_dependency_factor_kind_constant ) {
-								std::cout << "  Kind: Constant" << std::endl;
+								std::cout << "  Kind: Constant (" << kind << ')' << std::endl;
 							} else if ( kind == fmi2_dependency_factor_kind_fixed ) {
-								std::cout << "  Kind: Fixed" << std::endl;
+								std::cout << "  Kind: Fixed (" << kind << ')' << std::endl;
 							} else if ( kind == fmi2_dependency_factor_kind_tunable ) {
-								std::cout << "  Kind: Tunable" << std::endl;
+								std::cout << "  Kind: Tunable (" << kind << ')' << std::endl;
 							} else if ( kind == fmi2_dependency_factor_kind_discrete ) {
-								std::cout << "  Kind: Discrete" << std::endl;
+								std::cout << "  Kind: Discrete (" << kind << ')' << std::endl;
 							} else if ( kind == fmi2_dependency_factor_kind_num ) {
-								std::cout << "  Kind: Num" << std::endl;
+								std::cout << "  Kind: Num (" << kind << ')' << std::endl;
 							}
 						}
 						auto idep( fmu_idxs.find( dep_idx ) ); //Do Add support for input variable dependents
@@ -896,12 +973,6 @@ simulate_fmu()
 			std::cout << "No output variable dependency info in FMU XML" << std::endl;
 		}
 	}
-
-	// Size setup
-	size_type const n_vars( vars.size() );
-	size_type const n_state_vars( state_vars.size() );
-	size_type const n_outs( outs.size() );
-	size_type const n_fmu_outs( fmu_outs.size() );
 
 	// Size checks
 	if ( n_state_vars != n_states ) {
