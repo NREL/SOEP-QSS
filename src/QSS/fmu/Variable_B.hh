@@ -244,6 +244,13 @@ public: // Methods
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
 	}
 
+	// Handler No-Advance
+	void
+	no_advance_handler()
+	{
+		shift_handler();
+	}
+
 private: // Data
 
 	Boolean x_; // Value

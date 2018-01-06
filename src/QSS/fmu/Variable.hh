@@ -620,7 +620,7 @@ public: // Methods
 	void
 	advance_handler( Time const )
 	{
-		assert( false ); // Not a QSS or Discrete variable
+		assert( false ); // Not a QSS or discrete variable
 	}
 
 	// Handler Advance: Stage 0
@@ -628,7 +628,7 @@ public: // Methods
 	void
 	advance_handler_0( Time const )
 	{
-		assert( false ); // Not a QSS or Discrete variable
+		assert( false ); // Not a QSS or discrete variable
 	}
 
 	// Handler Advance: Stage 1
@@ -645,6 +645,14 @@ public: // Methods
 	advance_handler_2()
 	{
 		assert( false ); // Not a QSS variable
+	}
+
+	// Handler No-Advance
+	virtual
+	void
+	no_advance_handler()
+	{
+		assert( false ); // Not a QSS or discrete variable
 	}
 
 	// Add Observer

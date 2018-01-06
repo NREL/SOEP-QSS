@@ -1375,169 +1375,179 @@ simulate_fmu()
 				fmu::set_time( t );
 
 				// Perform handler operations on QSS side
-				if ( events.single() ) { // Single handler
-					if ( doROut ) { // Requantization output: Before discontinuous handler changes
-						if ( options::output::a ) { // All variables output
-							for ( size_type i = 0; i < n_vars; ++i ) {
-								if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
-							}
-						} else { // Requantization and/or observer variable output
-							Variable const * handler( event.sub< Variable >() );
-							if ( options::output::r ) { // Requantization variable output
-								size_type const i( var_idx[ handler ] );
-								if ( options::output::x ) x_streams[ i ] << t << '\t' << handler->x( t ) << '\n';
-								if ( options::output::q ) q_streams[ i ] << t << '\t' << handler->q( t ) << '\n';
-								for ( Variable const * observer : handler->observers() ) {
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										size_type const i( var_idx[ observer ] );
-										if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
-										if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
-									}
+				if ( callEventUpdate || zero_crossing_event ) {
+					if ( events.single() ) { // Single handler
+						if ( doROut ) { // Requantization output: Before discontinuous handler changes
+							if ( options::output::a ) { // All variables output
+								for ( size_type i = 0; i < n_vars; ++i ) {
+									if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
+									if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
 								}
-							}
-							if ( ( options::output::o ) && ( options::output::x ) ) { // Observer variable output
-								for ( Variable const * observer : handler->observers() ) { // Zero-crossing observer output
-									if ( ( ! options::output::r ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::r
-										size_type const i( var_idx[ observer ] );
-										x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
-									}
-								}
-							}
-						}
-					}
-					event.sub< Variable >()->advance_handler( t );
-					if ( doROut ) { // Requantization output
-						if ( options::output::a ) { // All variables output
-							for ( size_type i = 0; i < n_vars; ++i ) {
-								if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
-							}
-						} else { // Requantization and/or observer variable output
-							Variable const * handler( event.sub< Variable >() );
-							if ( options::output::r ) { // Requantization variable output
-								size_type const i( var_idx[ handler ] );
-								if ( options::output::x ) x_streams[ i ] << t << '\t' << handler->x( t ) << '\n';
-								if ( options::output::q ) q_streams[ i ] << t << '\t' << handler->q( t ) << '\n';
-								for ( Variable const * observer : handler->observers() ) {
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										size_type const i( var_idx[ observer ] );
-										if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
-										if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
-									}
-								}
-							}
-							if ( ( options::output::o ) && ( options::output::x ) ) { // Observer variable output
-								for ( Variable const * observer : handler->observers() ) { // Zero-crossing observer output
-									if ( ( ! options::output::r ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::r
-										size_type const i( var_idx[ observer ] );
-										x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
-									}
-								}
-							}
-						}
-					}
-				} else { // Simultaneous handlers
-					Variables handlers( events.top_subs< Variable >() );
-					std::sort( handlers.begin(), handlers.end(), []( Variable * v1, Variable * v2 ){ return v1->order() < v2->order(); } ); // Sort handlers by order
-					size_type const iBeg_handlers_1( static_cast< size_type >( std::distance( handlers.begin(), std::find_if( handlers.begin(), handlers.end(), []( Variable * v ){ return v->order() >= 1; } ) ) ) );
-					size_type const iBeg_handlers_2( static_cast< size_type >( std::distance( handlers.begin(), std::find_if( handlers.begin(), handlers.end(), []( Variable * v ){ return v->order() >= 2; } ) ) ) );
-					int const handlers_order_max( handlers.empty() ? 0 : handlers.back()->order() );
-					VariableLookup const var_lookup( handlers.begin(), handlers.end() );
-					ObserversSet observers_set;
-					for ( Variable * handler : handlers ) { // Collect observers to avoid duplicate advance calls
-						for ( Variable * observer : handler->observers() ) {
-							if ( var_lookup.find( observer ) == var_lookup.end() ) observers_set.insert( observer ); // Skip handlers
-						}
-					}
-					Variables observers( observers_set.begin(), observers_set.end() );
-					std::sort( observers.begin(), observers.end(), []( Variable * v1, Variable * v2 ){ return v1->order() < v2->order(); } ); // Sort observers by order
-					size_type const iBeg_observers_2( static_cast< size_type >( std::distance( observers.begin(), std::find_if( observers.begin(), observers.end(), []( Variable * v ){ return v->order() >= 2; } ) ) ) );
-					int const ho_order_max( observers.empty() ? handlers_order_max : std::max( handlers_order_max, observers.back()->order() ) );
-					if ( doROut ) { // Requantization output: Before discontinuous handler changes
-						if ( options::output::a ) { // All variables output
-							for ( size_type i = 0; i < n_vars; ++i ) {
-								if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
-							}
-						} else { // Requantization and/or observer variable output
-							if ( options::output::r ) { // Requantization variable output
-								for ( Variable const * handler : handlers ) {
+							} else { // Requantization and/or observer variable output
+								Variable const * handler( event.sub< Variable >() );
+								if ( options::output::r ) { // Requantization variable output
 									size_type const i( var_idx[ handler ] );
 									if ( options::output::x ) x_streams[ i ] << t << '\t' << handler->x( t ) << '\n';
 									if ( options::output::q ) q_streams[ i ] << t << '\t' << handler->q( t ) << '\n';
+									for ( Variable const * observer : handler->observers() ) {
+										if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+											size_type const i( var_idx[ observer ] );
+											if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+											if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
+										}
+									}
 								}
-								for ( Variable const * observer : observers ) { // Zero-crossing observer output
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										size_type const i( var_idx[ observer ] );
-										if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
-										if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
+								if ( ( options::output::o ) && ( options::output::x ) ) { // Observer variable output
+									for ( Variable const * observer : handler->observers() ) { // Zero-crossing observer output
+										if ( ( ! options::output::r ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::r
+											size_type const i( var_idx[ observer ] );
+											x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+										}
 									}
 								}
 							}
-							if ( ( options::output::o ) && ( options::output::x ) ) { // Observer variable output
-								for ( Variable const * observer : observers ) { // Zero-crossing observer output
-									if ( ( ! options::output::r ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::r
-										size_type const i( var_idx[ observer ] );
-										x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+						}
+						event.sub< Variable >()->advance_handler( t );
+						if ( doROut ) { // Requantization output
+							if ( options::output::a ) { // All variables output
+								for ( size_type i = 0; i < n_vars; ++i ) {
+									if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
+									if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
+								}
+							} else { // Requantization and/or observer variable output
+								Variable const * handler( event.sub< Variable >() );
+								if ( options::output::r ) { // Requantization variable output
+									size_type const i( var_idx[ handler ] );
+									if ( options::output::x ) x_streams[ i ] << t << '\t' << handler->x( t ) << '\n';
+									if ( options::output::q ) q_streams[ i ] << t << '\t' << handler->q( t ) << '\n';
+									for ( Variable const * observer : handler->observers() ) {
+										if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+											size_type const i( var_idx[ observer ] );
+											if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+											if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
+										}
+									}
+								}
+								if ( ( options::output::o ) && ( options::output::x ) ) { // Observer variable output
+									for ( Variable const * observer : handler->observers() ) { // Zero-crossing observer output
+										if ( ( ! options::output::r ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::r
+											size_type const i( var_idx[ observer ] );
+											x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+										}
 									}
 								}
 							}
 						}
-					}
-					for ( auto & e : events.top_events() ) {
-						e.sub< Variable >()->advance_handler_0( t );
-					}
-					for ( Variable * observer : observers ) {
-						observer->advance_observer_simultaneous_1( t );
-					}
-					for ( size_type i = iBeg_handlers_1, n = handlers.size(); i < n; ++i ) {
-						handlers[ i ]->advance_handler_1();
-					}
-					if ( ho_order_max >= 2 ) { // 2nd order pass
-						Time const tN( t + options::dtNum ); // Advance time to t + delta for numeric differentiation
-						fmu::set_time( tN );
-						for ( size_type i = iBeg_observers_2, n = observers.size(); i < n; ++i ) {
-							observers[ i ]->advance_observer_simultaneous_2( tN );
+					} else { // Simultaneous handlers
+						Variables handlers( events.top_subs< Variable >() );
+						std::sort( handlers.begin(), handlers.end(), []( Variable * v1, Variable * v2 ){ return v1->order() < v2->order(); } ); // Sort handlers by order
+						size_type const iBeg_handlers_1( static_cast< size_type >( std::distance( handlers.begin(), std::find_if( handlers.begin(), handlers.end(), []( Variable * v ){ return v->order() >= 1; } ) ) ) );
+						size_type const iBeg_handlers_2( static_cast< size_type >( std::distance( handlers.begin(), std::find_if( handlers.begin(), handlers.end(), []( Variable * v ){ return v->order() >= 2; } ) ) ) );
+						int const handlers_order_max( handlers.empty() ? 0 : handlers.back()->order() );
+						VariableLookup const var_lookup( handlers.begin(), handlers.end() );
+						ObserversSet observers_set;
+						for ( Variable * handler : handlers ) { // Collect observers to avoid duplicate advance calls
+							for ( Variable * observer : handler->observers() ) {
+								if ( var_lookup.find( observer ) == var_lookup.end() ) observers_set.insert( observer ); // Skip handlers
+							}
 						}
-						for ( size_type i = iBeg_handlers_2, n = handlers.size(); i < n; ++i ) {
-							handlers[ i ]->advance_handler_2();
+						Variables observers( observers_set.begin(), observers_set.end() );
+						std::sort( observers.begin(), observers.end(), []( Variable * v1, Variable * v2 ){ return v1->order() < v2->order(); } ); // Sort observers by order
+						size_type const iBeg_observers_2( static_cast< size_type >( std::distance( observers.begin(), std::find_if( observers.begin(), observers.end(), []( Variable * v ){ return v->order() >= 2; } ) ) ) );
+						int const ho_order_max( observers.empty() ? handlers_order_max : std::max( handlers_order_max, observers.back()->order() ) );
+						if ( doROut ) { // Requantization output: Before discontinuous handler changes
+							if ( options::output::a ) { // All variables output
+								for ( size_type i = 0; i < n_vars; ++i ) {
+									if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
+									if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
+								}
+							} else { // Requantization and/or observer variable output
+								if ( options::output::r ) { // Requantization variable output
+									for ( Variable const * handler : handlers ) {
+										size_type const i( var_idx[ handler ] );
+										if ( options::output::x ) x_streams[ i ] << t << '\t' << handler->x( t ) << '\n';
+										if ( options::output::q ) q_streams[ i ] << t << '\t' << handler->q( t ) << '\n';
+									}
+									for ( Variable const * observer : observers ) { // Zero-crossing observer output
+										if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+											size_type const i( var_idx[ observer ] );
+											if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+											if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
+										}
+									}
+								}
+								if ( ( options::output::o ) && ( options::output::x ) ) { // Observer variable output
+									for ( Variable const * observer : observers ) { // Zero-crossing observer output
+										if ( ( ! options::output::r ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::r
+											size_type const i( var_idx[ observer ] );
+											x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+										}
+									}
+								}
+							}
 						}
-					}
-					if ( options::output::d ) {
+						for ( auto & e : events.top_events() ) {
+							e.sub< Variable >()->advance_handler_0( t );
+						}
 						for ( Variable * observer : observers ) {
-							observer->advance_observer_d();
+							observer->advance_observer_simultaneous_1( t );
+						}
+						for ( size_type i = iBeg_handlers_1, n = handlers.size(); i < n; ++i ) {
+							handlers[ i ]->advance_handler_1();
+						}
+						if ( ho_order_max >= 2 ) { // 2nd order pass
+							Time const tN( t + options::dtNum ); // Advance time to t + delta for numeric differentiation
+							fmu::set_time( tN );
+							for ( size_type i = iBeg_observers_2, n = observers.size(); i < n; ++i ) {
+								observers[ i ]->advance_observer_simultaneous_2( tN );
+							}
+							for ( size_type i = iBeg_handlers_2, n = handlers.size(); i < n; ++i ) {
+								handlers[ i ]->advance_handler_2();
+							}
+						}
+						if ( options::output::d ) {
+							for ( Variable * observer : observers ) {
+								observer->advance_observer_d();
+							}
+						}
+						if ( doROut ) { // Requantization output
+							if ( options::output::a ) { // All variables output
+								for ( size_type i = 0; i < n_vars; ++i ) {
+									if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
+									if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
+								}
+							} else { // Requantization and/or observer variable output
+								if ( options::output::r ) { // Requantization variable output
+									for ( Variable const * handler : handlers ) {
+										size_type const i( var_idx[ handler ] );
+										if ( options::output::x ) x_streams[ i ] << t << '\t' << handler->x( t ) << '\n';
+										if ( options::output::q ) q_streams[ i ] << t << '\t' << handler->q( t ) << '\n';
+									}
+									for ( Variable const * observer : observers ) { // Zero-crossing observer output
+										if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+											size_type const i( var_idx[ observer ] );
+											if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+											if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
+										}
+									}
+								}
+								if ( ( options::output::o ) && ( options::output::x ) ) { // Observer variable output
+									for ( Variable const * observer : observers ) { // Zero-crossing observer output
+										if ( ( ! options::output::r ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::r
+											size_type const i( var_idx[ observer ] );
+											x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+										}
+									}
+								}
+							}
 						}
 					}
-					if ( doROut ) { // Requantization output
-						if ( options::output::a ) { // All variables output
-							for ( size_type i = 0; i < n_vars; ++i ) {
-								if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
-							}
-						} else { // Requantization and/or observer variable output
-							if ( options::output::r ) { // Requantization variable output
-								for ( Variable const * handler : handlers ) {
-									size_type const i( var_idx[ handler ] );
-									if ( options::output::x ) x_streams[ i ] << t << '\t' << handler->x( t ) << '\n';
-									if ( options::output::q ) q_streams[ i ] << t << '\t' << handler->q( t ) << '\n';
-								}
-								for ( Variable const * observer : observers ) { // Zero-crossing observer output
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										size_type const i( var_idx[ observer ] );
-										if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
-										if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
-									}
-								}
-							}
-							if ( ( options::output::o ) && ( options::output::x ) ) { // Observer variable output
-								for ( Variable const * observer : observers ) { // Zero-crossing observer output
-									if ( ( ! options::output::r ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::r
-										size_type const i( var_idx[ observer ] );
-										x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
-									}
-								}
-							}
+				} else { // Update event queue entries for no-action handler event
+					if ( events.single() ) { // Single handler
+						event.sub< Variable >()->no_advance_handler();
+					} else { // Simultaneous handlers
+						for ( auto & e : events.top_events() ) {
+							e.sub< Variable >()->no_advance_handler();
 						}
 					}
 				}

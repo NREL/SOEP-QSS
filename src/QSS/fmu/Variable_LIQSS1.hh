@@ -290,6 +290,13 @@ public: // Methods
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
 	}
 
+	// Handler No-Advance
+	void
+	no_advance_handler()
+	{
+		shift_QSS( tE );
+	}
+
 private: // Methods
 
 	// Set End Time: Quantized and Continuous Aligned
