@@ -45,28 +45,28 @@
 namespace QSS {
 namespace options {
 
-QSS qss( QSS::QSS2 ); // QSS method: (LI)QSS1|2|3  [QSS2]
+QSS qss( QSS::QSS2 ); // QSS method: (LI)QSS1|2|3
 int qss_order( 2 ); // QSS method order  [computed]
-bool cycles( false ); // Report dependency cycles?  [F]
-bool inflection( false ); // Requantize at inflections?  [F]
-bool refine( false ); // Refine FMU zero-crossing roots?  [F]
+bool cycles( false ); // Report dependency cycles?
+bool inflection( false ); // Requantize at inflections?
+bool refine( false ); // Refine FMU zero-crossing roots?
 double rTol( 1.0e-4 ); // Relative tolerance  [1e-4|FMU]
 bool rTol_set( false ); // Relative tolerance set?
-double aTol( 1.0e-6 ); // Absolute tolerance  [1e-6]
-double zTol( 0.0 ); // Zero-crossing anti-chatter tolerance  [0]
-double dtMin( 0.0 ); // Min time step (s)  [0]
-double dtMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Max time step (s)  [infinity]
-double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Inf time step (s)  [infinity]
-double dtZC( 1.0e-6 ); // FMU zero-crossing time step (s)  [1e-6]
-double dtNum( 1.0e-6 ); // Numeric differentiation time step (s)  [1e-6]
+double aTol( 1.0e-6 ); // Absolute tolerance
+double zTol( 0.0 ); // Zero-crossing anti-chatter tolerance
+double dtMin( 0.0 ); // Min time step (s)
+double dtMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Max time step (s)
+double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Inf time step (s)
+double dtZC( 1.0e-9 ); // FMU zero-crossing time step (s)
+double dtNum( 1.0e-6 ); // Numeric differentiation time step (s)
 double one_over_dtNum( 1.0e6 ); // 1 / dtNum  [computed]
 double one_half_over_dtNum( 5.0e5 ); // 0.5 / dtNum  [computed]
-double dtOut( 1.0e-3 ); // Sampled & FMU output time step (s)  [1e-3]
+double dtOut( 1.0e-3 ); // Sampled & FMU output time step (s)
 double tEnd( 1.0 ); // End time (s)  [1|FMU]
 bool tEnd_set( false ); // End time set?
-std::size_t pass( 20 ); // Pass count limit  [20]
-std::string out; // Outputs: r, a, s, x, q, f  [rx]
-std::string model; // Name of model or FMU
+std::size_t pass( 20 ); // Pass count limit
+std::string out; // Outputs
+std::string model; // Model|FMU name
 
 namespace output { // Output selections
 
@@ -98,7 +98,7 @@ help_display()
 	std::cout << " --dtMin=STEP  Min time step (s)  [0]" << '\n';
 	std::cout << " --dtMax=STEP  Max time step (s)  [infinity]" << '\n';
 	std::cout << " --dtInf=STEP  Inf alt time step (s)  [infinity]" << '\n';
-	std::cout << " --dtZC=STEP   FMU zero-crossing step (s)  [1e-6]" << '\n';
+	std::cout << " --dtZC=STEP   FMU zero-crossing step (s)  [1e-9]" << '\n';
 	std::cout << " --dtNum=STEP  Numeric differentiation step (s)  [1e-6]" << '\n';
 	std::cout << " --dtOut=STEP  Sampled & FMU output step (s)  [1e-3]" << '\n';
 	std::cout << " --tEnd=TIME   End time (s)  [1|FMU]" << '\n';
