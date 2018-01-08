@@ -896,7 +896,8 @@ simulate_fmu()
 				assert( fmi2_import_get_causality( out ) == fmi2_causality_enu_output );
 				std::string const out_name( fmi2_import_get_variable_name( out ) );
 				std::cout << " Name: " << out_name << std::endl;
-				FMU_Variable * fmu_out( nullptr );
+				FMU_Variable * fmu_out( nullptr ); // Output FMU variable
+				FMU_Variable * fmu_var( nullptr ); // FMU variable that output variable is derivative of
 				fmi2_base_type_enu_t out_base_type( fmi2_import_get_variable_base_type( out ) );
 				switch ( out_base_type ) {
 				case fmi2_base_type_real:
@@ -904,6 +905,8 @@ simulate_fmu()
 					{
 					fmi2_import_real_variable_t * out_real( fmi2_import_get_variable_as_real( out ) );
 					fmu_out = &fmu_vars[ out_real ];
+					auto const ider( fmu_dvrs.find( out_real ) );
+					if ( ider != fmu_dvrs.end() ) fmu_var = &(ider->second);
 					}
 					break;
 				case fmi2_base_type_int:
@@ -923,9 +926,10 @@ simulate_fmu()
 					break;
 				}
 				auto iout( fmu_idxs.find( fmu_out->idx ) ); //Do Add support for input variable dependents
+				if ( ( iout == fmu_idxs.end() ) && ( fmu_var != nullptr ) ) iout = fmu_idxs.find( fmu_var->idx ); // Use variable that output variable is derivative of
 				if ( iout != fmu_idxs.end() ) {
-					std::cout << " FMU idx: " << fmu_out->idx << " maps to QSS var: " << fmu_idxs[ fmu_out->idx ]->name << std::endl;
 					Variable * out_var( iout->second );
+					std::cout << " FMU idx: " << fmu_out->idx << " -> QSS var: " << out_var->name << std::endl;
 					if ( ! out_var->is_ZC() ) continue; // Don't worry about dependencies of non-ZC output variables on the QSS side
 					for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
 						size_type const dep_idx( dependency[ j ] );
