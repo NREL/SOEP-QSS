@@ -43,6 +43,7 @@
 
 // C++ Headers
 #include <algorithm>
+#include <cmath>
 
 using namespace QSS;
 using namespace QSS::dfn;
@@ -83,18 +84,16 @@ TEST( Variable_ZC2Test, Basic )
 TEST( Variable_ZC2Test, Roots )
 {
 	Variable_QSS2< Function_LTI > x( "x" );
-	x.d().add( x ).add( -2.0 );
-	x.init( 1.0 );
-	// x' = x - 2, x(0) = 1 => x = 2 * e^t + 2
+	x.d().add( x ).add( -2.0 * M_E );
+	x.init( 2.0 * ( M_E - 1.0 ) );
+	// x' = x - 2, x(0) = 2(e-1) => x = -2 e^t + 2 e with a downward zero crossing at t=1
+	// At t=0 x rep is: x_0 = q_0 = 2(e-1), x_1 = q_1 = -2, x_2 = -2
 
 	Variable_ZC2< Function_LTI > z( "z" );
 	z.add_crossings_Dn();
 	z.f().add( x );
 	z.init();
-	EXPECT_DOUBLE_EQ( 1.0, z.tZ );
-	z.tZ = 0.5;
-	z.advance_ZC();
-	EXPECT_DOUBLE_EQ( 1.0, z.tZ );
+	EXPECT_DOUBLE_EQ( M_E - 1.0, z.tZ ); // z rep is x's q_0 + q_1 t => tZ = e-1
 
 	events.clear();
 }
