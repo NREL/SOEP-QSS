@@ -247,7 +247,7 @@ public: // Methods
 		x_1_ = q_1_ = d;
 	}
 
-	// Observer Advance: Stage 1
+	// Zero-Crossing Observer Advance: Stage 1
 	void
 	advance_ZC_observer_1( Time const t, Value const d, Value const v )
 	{

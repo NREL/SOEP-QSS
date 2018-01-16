@@ -687,7 +687,7 @@ simulate_dfn()
 					size_type const iBeg_triggers_nonZC_2( static_cast< size_type >( std::distance( triggers_nonZC.begin(), std::find_if( triggers_nonZC.begin(), triggers_nonZC.end(), []( Variable * v ){ return v->order() >= 2; } ) ) ) );
 					size_type const iBeg_triggers_nonZC_3( static_cast< size_type >( std::distance( triggers_nonZC.begin(), std::find_if( triggers_nonZC.begin(), triggers_nonZC.end(), []( Variable * v ){ return v->order() >= 3; } ) ) ) );
 					int const triggers_nonZC_order_max( triggers_nonZC.empty() ? 0 : triggers_nonZC.back()->order() );
-					VariableLookup const var_lookup( triggers_nonZC.begin(), triggers_nonZC.end() );
+					VariableLookup const var_lookup( triggers.begin(), triggers.end() );
 					ObserversSet observers_set;
 					for ( Variable * trigger : triggers_nonZC ) { // Collect observers to avoid duplicate advance calls
 						for ( Variable * observer : trigger->observers() ) {

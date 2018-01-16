@@ -212,7 +212,7 @@ public: // Methods
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
 	}
 
-	// Observer Advance: Stage 1
+	// Zero-Crossing Observer Advance: Stage 1
 	void
 	advance_ZC_observer_1( Time const t, Value const d, Value const v )
 	{
