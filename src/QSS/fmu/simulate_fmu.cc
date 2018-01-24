@@ -59,6 +59,7 @@
 #include <QSS/fmu/Variable_ZC2.hh>
 #include <QSS/globals.hh>
 #include <QSS/options.hh>
+#include <QSS/Output.hh>
 
 // FMI Library Headers
 #include <fmilib.h>
@@ -67,12 +68,11 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
-#include <fstream>
 #include <functional>
 #include <iomanip>
 #include <iostream>
 #include <limits>
-#include <sstream>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -140,9 +140,9 @@ simulate_fmu()
 	// I/o setup
 	std::cout << std::setprecision( 16 );
 	std::cerr << std::setprecision( 16 );
-	std::vector< std::stringstream > x_streams; // Continuous rep output
-	std::vector< std::stringstream > q_streams; // Quantized rep output
-	std::vector< std::stringstream > f_streams; // FMU output
+	std::vector< Output > x_outs; // Continuous rep outputs
+	std::vector< Output > q_outs; // Quantized rep outputs
+	std::vector< Output > f_outs; // FMU outputs
 
 	// FMI Library setup /////
 
@@ -282,12 +282,12 @@ simulate_fmu()
 	std::cout << "Model identifier: " << fmi2_import_get_model_identifier_ME( fmu ) << std::endl;
 
 	// Collections
-	Variable::Variables vars; // QSS variables collection
-	Variable::Variables state_vars; // FMU state QSS variables collection
-	Variable::Variables outs; // FMU output QSS variables collection
+	Variables vars; // QSS variables collection
+	Variables state_vars; // FMU state QSS variables collection
+	Variables outs; // FMU output QSS variables collection
 	Conditionals cons;
-	FMU_Vars fmu_vars;
-	FMU_Vars fmu_outs;
+	FMU_Vars fmu_vars; // FMU variables
+	FMU_Vars fmu_outs; // FMU output variables
 	FMU_Vars fmu_ders; // FMU variable to derivative map
 	FMU_Vars fmu_dvrs; // FMU derivative to variable map
 	FMU_Idxs fmu_idxs; // Map from FMU variable index to QSS variable
@@ -631,6 +631,7 @@ simulate_fmu()
 	size_type const n_vars( vars.size() );
 	size_type const n_outs( outs.size() );
 	size_type const n_fmu_outs( fmu_outs.size() );
+	size_type const n_all_outs( n_outs + n_fmu_outs );
 	if ( fmu_generator == FMU_Generator::Dymola ) {
 		if ( n_event_indicators != 2 * n_ZC_vars ) { // Dymola has 2x as many event indicators
 			std::cerr << "\nWarning: Number of FMU event indicators (" << n_event_indicators << ") is not equal to twice the number of zero-crossing variables found (" << n_ZC_vars << ") as expected for Dymola FMUs" << std::endl;
@@ -1048,31 +1049,34 @@ simulate_fmu()
 	// Dependency cycle detection: After init sets up observers
 	if ( options::cycles ) cycles( vars );
 
-	// Output stream initialization
-	bool const doSOut( ( options::output::s && ( options::output::x || options::output::q ) ) || ( options::output::f && ( n_outs + n_fmu_outs > 0u ) ) );
+	// Output initialization
+	bool const doSOut( ( options::output::s && ( options::output::x || options::output::q ) ) || ( options::output::f && ( n_all_outs > 0u ) ) );
 	bool const doTOut( options::output::t && ( options::output::x || options::output::q ) );
 	bool const doROut( options::output::r && ( options::output::x || options::output::q ) );
 	if ( ( options::output::t || options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) { // t0 QSS outputs
+		if ( options::output::x ) x_outs.reserve( vars.size() );
+		if ( options::output::q ) q_outs.reserve( vars.size() );
 		for ( auto var : vars ) { // QSS outputs
 			if ( options::output::x ) {
-				x_streams.push_back( std::stringstream( std::ios_base::binary | std::ios_base::in | std::ios_base::out ) );
-				x_streams.back() << std::setprecision( 16 ) << t << '\t' << var->x( t ) << '\n';
+				x_outs.push_back( Output( var->name, 'x' ) );
+				x_outs.back().append( t, var->x( t ) );
 			}
 			if ( options::output::q ) {
-				q_streams.push_back( std::stringstream( std::ios_base::binary | std::ios_base::in | std::ios_base::out ) );
-				q_streams.back() << std::setprecision( 16 ) << t << '\t' << var->q( t ) << '\n';
+				q_outs.push_back( Output( var->name, 'q' ) );
+				q_outs.back().append( t, var->q( t ) );
 			}
 		}
 	}
-	if ( options::output::f && ( n_outs + n_fmu_outs > 0u ) ) { // t0 FMU outputs
+	if ( options::output::f && ( n_all_outs > 0u ) ) {
+		f_outs.reserve( n_all_outs );
 		for ( auto const & var : outs ) { // FMU QSS variable outputs
-			f_streams.push_back( std::stringstream( std::ios_base::binary | std::ios_base::in | std::ios_base::out ) );
-			f_streams.back() << std::setprecision( 16 ) << t << '\t' << var->x( t ) << '\n';
+			f_outs.push_back( Output( fmi2_import_get_variable_name( var->var.var ), 'f' ) );
+			f_outs.back().append( t, var->x( t ) );
 		}
 		for ( auto const & e : fmu_outs ) { // FMU (non-QSS) variable (non-QSS) outputs
 			FMU_Variable const & var( e.second );
-			f_streams.push_back( std::stringstream( std::ios_base::binary | std::ios_base::in | std::ios_base::out ) );
-			f_streams.back() << std::setprecision( 16 ) << t << '\t' << fmu::get_real( var.ref ) << '\n';
+			f_outs.push_back( Output( fmi2_import_get_variable_name( var.var ), 'f' ) );
+			f_outs.back().append( t, fmu::get_real( var.ref ) );
 		}
 	}
 
@@ -1092,15 +1096,15 @@ simulate_fmu()
 			while ( tOut < tStop ) {
 				if ( options::output::s ) { // QSS variable outputs
 					for ( size_type i = 0; i < n_vars; ++i ) {
-						if ( options::output::x ) x_streams[ i ] << tOut << '\t' << vars[ i ]->x( tOut ) << '\n';
-						if ( options::output::q ) q_streams[ i ] << tOut << '\t' << vars[ i ]->q( tOut ) << '\n';
+						if ( options::output::x ) x_outs[ i ].append( tOut, vars[ i ]->x( tOut ) );
+						if ( options::output::q ) q_outs[ i ].append( tOut, vars[ i ]->q( tOut ) );
 					}
 				}
 				if ( options::output::f ) {	// FMU variable outputs
 					if ( n_outs > 0u ) { // FMU QSS variables
 						for ( size_type i = 0; i < n_outs; ++i ) {
 							Variable * var( outs[ i ] );
-							f_streams[ i ] << tOut << '\t' << var->x( tOut ) << '\n';
+							f_outs[ i ].append( tOut, var->x( tOut ) );
 						}
 					}
 					if ( n_fmu_outs > 0u ) { // FMU (non-QSS) variables
@@ -1112,7 +1116,7 @@ simulate_fmu()
 						size_type i( n_outs );
 						for ( auto const & e : fmu_outs ) {
 							FMU_Variable const & var( e.second );
-							f_streams[ i++ ] << tOut << '\t' << fmu::get_real( var.ref ) << '\n';
+							f_outs[ i++ ].append( tOut, fmu::get_real( var.ref ) );
 						}
 					}
 				}
@@ -1160,19 +1164,19 @@ simulate_fmu()
 					if ( doTOut ) { // Time event variable output: Before discontinuous discrete changes
 						if ( options::output::a ) { // All variables output
 							for ( size_type i = 0; i < n_vars; ++i ) {
-								if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
+								if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
+								if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
 							}
 						} else { // Time event and/or observer variable output
 							if ( options::output::t ) { // Time event variable output
 								size_type const i( var_idx[ trigger ] );
-								if ( options::output::x ) x_streams[ i ] << t << '\t' << trigger->x( t ) << '\n';
-								if ( options::output::q ) q_streams[ i ] << t << '\t' << trigger->q( t ) << '\n';
+								if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
+								if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
 								for ( Variable const * observer : trigger->observers() ) {
 									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
 										size_type const i( var_idx[ observer ] );
-										if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
-										if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
+										if ( options::output::x ) x_outs[ i ].append( t, observer->x( t ) );
+										if ( options::output::q ) q_outs[ i ].append( t, observer->q( t ) );
 									}
 								}
 							}
@@ -1180,7 +1184,7 @@ simulate_fmu()
 								for ( Variable const * observer : trigger->observers() ) { // Zero-crossing observer output
 									if ( ( ! options::output::t ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::t
 										size_type const i( var_idx[ observer ] );
-										x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+										x_outs[ i ].append( t, observer->x( t ) );
 									}
 								}
 							}
@@ -1190,19 +1194,19 @@ simulate_fmu()
 					if ( doTOut ) { // Time event variable output
 						if ( options::output::a ) { // All variables output
 							for ( size_type i = 0; i < n_vars; ++i ) {
-								if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
+								if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
+								if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
 							}
 						} else { // Time event and/or observer variable output
 							if ( options::output::t ) { // Time event variable output
 								size_type const i( var_idx[ trigger ] );
-								if ( options::output::x ) x_streams[ i ] << t << '\t' << trigger->x( t ) << '\n';
-								if ( options::output::q ) q_streams[ i ] << t << '\t' << trigger->q( t ) << '\n';
+								if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
+								if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
 								for ( Variable const * observer : trigger->observers() ) {
 									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
 										size_type const i( var_idx[ observer ] );
-										if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
-										if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
+										if ( options::output::x ) x_outs[ i ].append( t, observer->x( t ) );
+										if ( options::output::q ) q_outs[ i ].append( t, observer->q( t ) );
 									}
 								}
 							}
@@ -1210,7 +1214,7 @@ simulate_fmu()
 								for ( Variable const * observer : trigger->observers() ) { // Zero-crossing observer output
 									if ( ( ! options::output::t ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::t
 										size_type const i( var_idx[ observer ] );
-										x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+										x_outs[ i ].append( t, observer->x( t ) );
 									}
 								}
 							}
@@ -1239,21 +1243,21 @@ simulate_fmu()
 					if ( doTOut ) { // Time event output: Before discontinuous discrete changes
 						if ( options::output::a ) { // All variables output
 							for ( size_type i = 0; i < n_vars; ++i ) {
-								if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
+								if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
+								if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
 							}
 						} else { // Time event and/or observer variable output
 							if ( options::output::t ) { // Time event variable output
 								for ( Variable const * trigger : triggers ) { // Triggers
 									size_type const i( var_idx[ trigger ] );
-									if ( options::output::x ) x_streams[ i ] << t << '\t' << trigger->x( t ) << '\n';
-									if ( options::output::q ) q_streams[ i ] << t << '\t' << trigger->q( t ) << '\n';
+									if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
+									if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
 								}
 								for ( Variable const * observer : observers ) { // Zero-crossing observer output
 									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
 										size_type const i( var_idx[ observer ] );
-										if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
-										if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
+										if ( options::output::x ) x_outs[ i ].append( t, observer->x( t ) );
+										if ( options::output::q ) q_outs[ i ].append( t, observer->q( t ) );
 									}
 								}
 							}
@@ -1261,7 +1265,7 @@ simulate_fmu()
 								for ( Variable const * observer : observers ) { // Zero-crossing observer output
 									if ( ( ! options::output::t ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::t
 										size_type const i( var_idx[ observer ] );
-										x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+										x_outs[ i ].append( t, observer->x( t ) );
 									}
 								}
 							}
@@ -1297,21 +1301,21 @@ simulate_fmu()
 					if ( doTOut ) { // Time event output
 						if ( options::output::a ) { // All variables output
 							for ( size_type i = 0; i < n_vars; ++i ) {
-								if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
+								if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
+								if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
 							}
 						} else { // Time event and/or observer variable output
 							if ( options::output::t ) { // Time event variable output
 								for ( Variable const * trigger : triggers ) { // Triggers
 									size_type const i( var_idx[ trigger ] );
-									if ( options::output::x ) x_streams[ i ] << t << '\t' << trigger->x( t ) << '\n';
-									if ( options::output::q ) q_streams[ i ] << t << '\t' << trigger->q( t ) << '\n';
+									if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
+									if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
 								}
 								for ( Variable const * observer : observers ) { // Zero-crossing observer output
 									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
 										size_type const i( var_idx[ observer ] );
-										if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
-										if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
+										if ( options::output::x ) x_outs[ i ].append( t, observer->x( t ) );
+										if ( options::output::q ) q_outs[ i ].append( t, observer->q( t ) );
 									}
 								}
 							}
@@ -1319,7 +1323,7 @@ simulate_fmu()
 								for ( Variable const * observer : observers ) { // Zero-crossing observer output
 									if ( ( ! options::output::t ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::t
 										size_type const i( var_idx[ observer ] );
-										x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+										x_outs[ i ].append( t, observer->x( t ) );
 									}
 								}
 							}
@@ -1384,20 +1388,20 @@ simulate_fmu()
 						if ( doROut ) { // Requantization output: Before discontinuous handler changes
 							if ( options::output::a ) { // All variables output
 								for ( size_type i = 0; i < n_vars; ++i ) {
-									if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-									if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
+									if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
+									if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
 								}
 							} else { // Requantization and/or observer variable output
 								Variable const * handler( event.sub< Variable >() );
 								if ( options::output::r ) { // Requantization variable output
 									size_type const i( var_idx[ handler ] );
-									if ( options::output::x ) x_streams[ i ] << t << '\t' << handler->x( t ) << '\n';
-									if ( options::output::q ) q_streams[ i ] << t << '\t' << handler->q( t ) << '\n';
+									if ( options::output::x ) x_outs[ i ].append( t, handler->x( t ) );
+									if ( options::output::q ) q_outs[ i ].append( t, handler->q( t ) );
 									for ( Variable const * observer : handler->observers() ) {
 										if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
 											size_type const i( var_idx[ observer ] );
-											if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
-											if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
+											if ( options::output::x ) x_outs[ i ].append( t, observer->x( t ) );
+											if ( options::output::q ) q_outs[ i ].append( t, observer->q( t ) );
 										}
 									}
 								}
@@ -1405,7 +1409,7 @@ simulate_fmu()
 									for ( Variable const * observer : handler->observers() ) { // Zero-crossing observer output
 										if ( ( ! options::output::r ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::r
 											size_type const i( var_idx[ observer ] );
-											x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+											x_outs[ i ].append( t, observer->x( t ) );
 										}
 									}
 								}
@@ -1415,20 +1419,20 @@ simulate_fmu()
 						if ( doROut ) { // Requantization output
 							if ( options::output::a ) { // All variables output
 								for ( size_type i = 0; i < n_vars; ++i ) {
-									if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-									if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
+									if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
+									if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
 								}
 							} else { // Requantization and/or observer variable output
 								Variable const * handler( event.sub< Variable >() );
 								if ( options::output::r ) { // Requantization variable output
 									size_type const i( var_idx[ handler ] );
-									if ( options::output::x ) x_streams[ i ] << t << '\t' << handler->x( t ) << '\n';
-									if ( options::output::q ) q_streams[ i ] << t << '\t' << handler->q( t ) << '\n';
+									if ( options::output::x ) x_outs[ i ].append( t, handler->x( t ) );
+									if ( options::output::q ) q_outs[ i ].append( t, handler->q( t ) );
 									for ( Variable const * observer : handler->observers() ) {
 										if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
 											size_type const i( var_idx[ observer ] );
-											if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
-											if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
+											if ( options::output::x ) x_outs[ i ].append( t, observer->x( t ) );
+											if ( options::output::q ) q_outs[ i ].append( t, observer->q( t ) );
 										}
 									}
 								}
@@ -1436,7 +1440,7 @@ simulate_fmu()
 									for ( Variable const * observer : handler->observers() ) { // Zero-crossing observer output
 										if ( ( ! options::output::r ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::r
 											size_type const i( var_idx[ observer ] );
-											x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+											x_outs[ i ].append( t, observer->x( t ) );
 										}
 									}
 								}
@@ -1462,21 +1466,21 @@ simulate_fmu()
 						if ( doROut ) { // Requantization output: Before discontinuous handler changes
 							if ( options::output::a ) { // All variables output
 								for ( size_type i = 0; i < n_vars; ++i ) {
-									if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-									if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
+									if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
+									if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
 								}
 							} else { // Requantization and/or observer variable output
 								if ( options::output::r ) { // Requantization variable output
 									for ( Variable const * handler : handlers ) {
 										size_type const i( var_idx[ handler ] );
-										if ( options::output::x ) x_streams[ i ] << t << '\t' << handler->x( t ) << '\n';
-										if ( options::output::q ) q_streams[ i ] << t << '\t' << handler->q( t ) << '\n';
+										if ( options::output::x ) x_outs[ i ].append( t, handler->x( t ) );
+										if ( options::output::q ) q_outs[ i ].append( t, handler->q( t ) );
 									}
 									for ( Variable const * observer : observers ) { // Zero-crossing observer output
 										if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
 											size_type const i( var_idx[ observer ] );
-											if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
-											if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
+											if ( options::output::x ) x_outs[ i ].append( t, observer->x( t ) );
+											if ( options::output::q ) q_outs[ i ].append( t, observer->q( t ) );
 										}
 									}
 								}
@@ -1484,7 +1488,7 @@ simulate_fmu()
 									for ( Variable const * observer : observers ) { // Zero-crossing observer output
 										if ( ( ! options::output::r ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::r
 											size_type const i( var_idx[ observer ] );
-											x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+											x_outs[ i ].append( t, observer->x( t ) );
 										}
 									}
 								}
@@ -1517,21 +1521,21 @@ simulate_fmu()
 						if ( doROut ) { // Requantization output
 							if ( options::output::a ) { // All variables output
 								for ( size_type i = 0; i < n_vars; ++i ) {
-									if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-									if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
+									if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
+									if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
 								}
 							} else { // Requantization and/or observer variable output
 								if ( options::output::r ) { // Requantization variable output
 									for ( Variable const * handler : handlers ) {
 										size_type const i( var_idx[ handler ] );
-										if ( options::output::x ) x_streams[ i ] << t << '\t' << handler->x( t ) << '\n';
-										if ( options::output::q ) q_streams[ i ] << t << '\t' << handler->q( t ) << '\n';
+										if ( options::output::x ) x_outs[ i ].append( t, handler->x( t ) );
+										if ( options::output::q ) q_outs[ i ].append( t, handler->q( t ) );
 									}
 									for ( Variable const * observer : observers ) { // Zero-crossing observer output
 										if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
 											size_type const i( var_idx[ observer ] );
-											if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
-											if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
+											if ( options::output::x ) x_outs[ i ].append( t, observer->x( t ) );
+											if ( options::output::q ) q_outs[ i ].append( t, observer->q( t ) );
 										}
 									}
 								}
@@ -1539,7 +1543,7 @@ simulate_fmu()
 									for ( Variable const * observer : observers ) { // Zero-crossing observer output
 										if ( ( ! options::output::r ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::r
 											size_type const i( var_idx[ observer ] );
-											x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+											x_outs[ i ].append( t, observer->x( t ) );
 										}
 									}
 								}
@@ -1565,19 +1569,19 @@ simulate_fmu()
 					if ( doROut ) { // Requantization output
 						if ( options::output::a ) { // All variables output
 							for ( size_type i = 0; i < n_vars; ++i ) {
-								if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
+								if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
+								if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
 							}
 						} else { // Requantization and/or observer variable output
 							if ( options::output::r ) { // Requantization variable output
 								size_type const i( var_idx[ trigger ] );
-								if ( options::output::x ) x_streams[ i ] << t << '\t' << trigger->x( t ) << '\n';
-								if ( options::output::q ) q_streams[ i ] << t << '\t' << trigger->q( t ) << '\n';
+								if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
+								if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
 								for ( Variable const * observer : trigger->observers() ) {
 									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
 										size_type const i( var_idx[ observer ] );
-										if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
-										if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
+										if ( options::output::x ) x_outs[ i ].append( t, observer->x( t ) );
+										if ( options::output::q ) q_outs[ i ].append( t, observer->q( t ) );
 									}
 								}
 							}
@@ -1585,7 +1589,7 @@ simulate_fmu()
 								for ( Variable const * observer : trigger->observers() ) { // Zero-crossing observer output
 									if ( ( ! options::output::r ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::r
 										size_type const i( var_idx[ observer ] );
-										x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+										x_outs[ i ].append( t, observer->x( t ) );
 									}
 								}
 							}
@@ -1670,21 +1674,21 @@ simulate_fmu()
 					if ( doROut ) { // Requantization output
 						if ( options::output::a ) { // All variables output
 							for ( size_type i = 0; i < n_vars; ++i ) {
-								if ( options::output::x ) x_streams[ i ] << t << '\t' << vars[ i ]->x( t ) << '\n';
-								if ( options::output::q ) q_streams[ i ] << t << '\t' << vars[ i ]->q( t ) << '\n';
+								if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
+								if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
 							}
 						} else { // Requantization and/or observer variable output
 							if ( options::output::r ) { // Requantization variable output
 								for ( Variable const * trigger : triggers ) { // Triggers
 									size_type const i( var_idx[ trigger ] );
-									if ( options::output::x ) x_streams[ i ] << t << '\t' << trigger->x( t ) << '\n';
-									if ( options::output::q ) q_streams[ i ] << t << '\t' << trigger->q( t ) << '\n';
+									if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
+									if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
 								}
 								for ( Variable const * observer : observers ) { // Zero-crossing observer output
 									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
 										size_type const i( var_idx[ observer ] );
-										if ( options::output::x ) x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
-										if ( options::output::q ) q_streams[ i ] << t << '\t' << observer->q( t ) << '\n';
+										if ( options::output::x ) x_outs[ i ].append( t, observer->x( t ) );
+										if ( options::output::q ) q_outs[ i ].append( t, observer->q( t ) );
 									}
 								}
 							}
@@ -1692,7 +1696,7 @@ simulate_fmu()
 								for ( Variable const * observer : observers ) { // Zero-crossing observer output
 									if ( ( ! options::output::r ) || ( ! observer->is_ZC() ) ) { // ZC observers output above if options::output::r
 										size_type const i( var_idx[ observer ] );
-										x_streams[ i ] << t << '\t' << observer->x( t ) << '\n';
+										x_outs[ i ].append( t, observer->x( t ) );
 									}
 								}
 							}
@@ -1721,10 +1725,10 @@ simulate_fmu()
 			Variable const * var( vars[ i ] );
 			if ( var->tQ < tE ) {
 				if ( options::output::x ) {
-					x_streams[ i ] << tE << '\t' << var->x( tE ) << '\n';
+					x_outs[ i ].append( tE, var->x( tE ) );
 				}
 				if ( options::output::q ) {
-					q_streams[ i ] << tE << '\t' << var->q( tE ) << '\n';
+					q_outs[ i ].append( tE, var->q( tE ) );
 				}
 			}
 		}
@@ -1733,7 +1737,7 @@ simulate_fmu()
 		if ( n_outs > 0u ) { // FMU QSS variable outputs
 			for ( size_type i = 0; i < n_outs; ++i ) {
 				Variable * var( outs[ i ] );
-				f_streams[ i ] << tE << '\t' << var->x( tE ) << '\n';
+				f_outs[ i ].append( tE, var->x( tE ) );
 			}
 		}
 		if ( n_fmu_outs > 0u ) { // FMU (non-QSS) variable outputs
@@ -1745,39 +1749,8 @@ simulate_fmu()
 			size_type i( n_outs );
 			for ( auto const & e : fmu_outs ) {
 				FMU_Variable const & var( e.second );
-				f_streams[ i++ ] << tE << '\t' << fmu::get_real( var.ref ) << '\n';
+				f_outs[ i++ ].append( tE, fmu::get_real( var.ref ) );
 			}
-		}
-	}
-
-	// Write output streams to files
-	if ( ( options::output::t || options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) {
-		for ( size_type i = 0; i < n_vars; ++i ) {
-			Variable const * var( vars[ i ] );
-			if ( options::output::x ) {
-				std::ofstream x_stream( var->name + ".x.out", std::ios_base::binary | std::ios_base::out );
-				x_stream << x_streams[ i ].rdbuf();
-				x_stream.close();
-			}
-			if ( options::output::q ) {
-				std::ofstream q_stream( var->name + ".q.out", std::ios_base::binary | std::ios_base::out );
-				q_stream << q_streams[ i ].rdbuf();
-				q_stream.close();
-			}
-		}
-	}
-	if ( options::output::f && ( n_outs + n_fmu_outs > 0u ) ) { // FMU outputs
-		size_type i( 0 );
-		for ( auto const & var : outs ) { // FMU QSS variable outputs
-			std::ofstream f_stream( std::string( fmi2_import_get_variable_name( var->var.var ) ) + ".f.out", std::ios_base::binary | std::ios_base::out );
-			f_stream << f_streams[ i++ ].rdbuf();
-			f_stream.close();
-		}
-		for ( auto const & e : fmu_outs ) { // FMU (non-QSS) variable (non-QSS) outputs
-			FMU_Variable const & var( e.second );
-			std::ofstream f_stream( std::string( fmi2_import_get_variable_name( var.var ) ) + ".f.out", std::ios_base::binary | std::ios_base::out );
-			f_stream << f_streams[ i++ ].rdbuf();
-			f_stream.close();
 		}
 	}
 
