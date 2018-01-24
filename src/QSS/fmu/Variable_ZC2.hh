@@ -335,19 +335,22 @@ private: // Methods
 					crossing = crossing_check;
 					if ( options::refine ) { // Refine root: Expensive!
 						Time t( tZ ), t_p( tZ );
-						fmu_set_observees_q( tZ );
+						Time const t_fmu( fmu::get_time() );
+						fmu::set_time( tZ ); // Don't seem to need this
+						fmu_set_observees_x( tZ );
 						Value const vZ( fmu_get_value() );
 						Value v( vZ ), v_p( vZ );
 						Value m( 1.0 ); // Multiplier
 						std::size_t i( 0 );
 						std::size_t const n( 10u ); // Max iterations
-						int const sign_0( signum( x_0_ ) );
+						//int const sign_0( signum( x_0_ ) );
 						while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
 							Value const d( fmu_get_deriv() );
 							if ( d == 0.0 ) break;
 							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 							t -= m * ( v / d );
-							fmu_set_observees_q( t );
+							fmu::set_time( t ); // Don't seem to need this
+							fmu_set_observees_x( t );
 							v = fmu_get_value();
 							if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
 							t_p = t;
@@ -355,6 +358,7 @@ private: // Methods
 						}
 						if ( ( t >= tX ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
 						if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
+						fmu::set_time( t_fmu ); // Don't seem to need this
 					}
 				} else { // Crossing type not relevant
 					tZ = infinity;
@@ -387,19 +391,22 @@ private: // Methods
 					crossing = crossing_check;
 					if ( options::refine ) { // Refine root: Expensive!
 						Time t( tZ ), t_p( tZ );
-						fmu_set_observees_q( tZ );
+						Time const t_fmu( fmu::get_time() );
+						fmu::set_time( tZ ); // Don't seem to need this
+						fmu_set_observees_x( tZ );
 						Value const vZ( fmu_get_value() );
 						Value v( vZ ), v_p( vZ );
 						Value m( 1.0 ); // Multiplier
 						std::size_t i( 0 );
 						std::size_t const n( 10u ); // Max iterations
-						int const sign_0( signum( x_0 ) );
+						//int const sign_0( signum( x_0 ) );
 						while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
 							Value const d( fmu_get_deriv() );
 							if ( d == 0.0 ) break;
 							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 							t -= m * ( v / d );
-							fmu_set_observees_q( t );
+							fmu::set_time( t ); // Don't seem to need this
+							fmu_set_observees_x( t );
 							v = fmu_get_value();
 							if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
 							t_p = t;
@@ -407,6 +414,7 @@ private: // Methods
 						}
 						if ( ( t >= tB ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
 						if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
+						fmu::set_time( t_fmu ); // Don't seem to need this
 					}
 				} else { // Crossing type not relevant
 					tZ = infinity;

@@ -54,6 +54,15 @@ using Integer = int;
 extern fmi2_import_t * fmu; // FMU instance
 extern std::size_t n_ders; // Number of derivatives
 extern fmi2_real_t * derivatives; // Derivatives
+extern Time t_fmu; // FMU time
+
+// Get FMU Time
+inline
+Time
+get_time()
+{
+	return t_fmu;
+}
 
 // Set FMU Time
 inline
@@ -61,7 +70,7 @@ void
 set_time( Time const t )
 {
 	assert( fmu != nullptr );
-	fmi2_import_set_time( fmu, t ); //Do Check status returned
+	fmi2_import_set_time( fmu, t_fmu = t ); //Do Check status returned
 }
 
 // Initialize Derivatives Array Size

@@ -341,7 +341,7 @@ private: // Methods
 					Value m( 1.0 ); // Multiplier
 					std::size_t i( 0 );
 					std::size_t const n( 10u ); // Max iterations
-					int const sign_0( signum( x_0_ ) );
+					//int const sign_0( signum( x_0_ ) );
 					while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
 						Value const d( f_.q1( t ) );
 						if ( d == 0.0 ) break;
@@ -390,7 +390,7 @@ private: // Methods
 					Value m( 1.0 ); // Multiplier
 					std::size_t i( 0 );
 					std::size_t const n( 10u ); // Max iterations
-					int const sign_0( signum( x_0 ) );
+					//int const sign_0( signum( x_0 ) );
 					while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
 						Value const d( f_.q1( t ) );
 						if ( d == 0.0 ) break;

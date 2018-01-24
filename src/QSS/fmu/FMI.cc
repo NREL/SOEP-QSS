@@ -43,6 +43,7 @@ namespace fmu {
 fmi2_import_t * fmu( nullptr ); // FMU instance
 std::size_t n_ders( 0 ); // Number of derivatives
 fmi2_real_t * derivatives( nullptr ); // Derivatives
+Time t_fmu( 0.0 ); // FMU time
 
 } // fmu
 } // QSS
