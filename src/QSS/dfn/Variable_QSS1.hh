@@ -184,7 +184,7 @@ public: // Methods
 		x_1_ = d_.s( tQ );
 		set_tE_aligned();
 		add_QSS( tE );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << '\n';
 	}
 
 	// Set Current Tolerance
@@ -204,7 +204,7 @@ public: // Methods
 		x_1_ = d_.q( tX = tE );
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << '\n';
 		advance_observers();
 	}
 
@@ -224,7 +224,7 @@ public: // Methods
 		x_1_ = d_.s( tE );
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << '\n';
 	}
 
 	// Observer Advance
@@ -236,7 +236,7 @@ public: // Methods
 		x_1_ = d_.q( tX = t );
 		set_tE_unaligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "  " << name << '(' << t << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "  " << name << '(' << t << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << '\n';
 	}
 
 	// Observer Advance: Parallel
@@ -254,7 +254,7 @@ public: // Methods
 	advance_observer_sequential()
 	{
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << '\n';
 	}
 
 	// Handler Advance
@@ -268,7 +268,7 @@ public: // Methods
 		x_1_ = d_.q( t );
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << '\n';
 		advance_observers();
 	}
 
@@ -289,7 +289,7 @@ public: // Methods
 		x_1_ = d_.q( tQ );
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << '\n';
 	}
 
 private: // Methods

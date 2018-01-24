@@ -137,7 +137,7 @@ public: // Methods
 		set_tE();
 		set_tZ();
 		tE < tZ ? add_QSS( tE ) : add_ZC( tZ );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tZ=" << tZ << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ << '\n';
 	}
 
 	// Set Current Tolerance
@@ -169,7 +169,7 @@ public: // Methods
 		set_tZ();
 		tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
 #endif
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tZ=" << tZ << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ << '\n';
 	}
 
 	// QSS Advance: Stage 0
@@ -192,7 +192,7 @@ public: // Methods
 		x_1_ = fmu_get_deriv();
 		set_tE();
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
-		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tZ=" << tZ << '\n';
+		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ << '\n';
 	}
 
 	// Observer Advance: Stage 1
@@ -233,7 +233,7 @@ public: // Methods
 	void
 	advance_observer_d() const
 	{
-		std::cout << "  " << name << '(' << tX << ')' << " = " << q_0_ << " quantized, " << x_0_ << "+" << x_1_ << "*t internal   tE=" << tE << "   tZ=" << tZ <<  '\n';
+		std::cout << "  " << name << '(' << tX << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ <<  '\n';
 	}
 
 	// Zero-Crossing Advance

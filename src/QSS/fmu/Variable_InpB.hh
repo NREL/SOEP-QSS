@@ -177,7 +177,7 @@ public: // Methods
 		x_ = ( f_( tQ ).x_0 != 0.0 );
 		tD = f_( tQ ).tD;
 		add_discrete( tD );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << "   tD=" << tD << '\n';
 	}
 
 	// Discrete Advance
@@ -193,7 +193,7 @@ public: // Methods
 		tD = f_( tD ).tD;
 		shift_discrete( tD );
 		if ( options::output::d ) {
-			std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
+			std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << "   tD=" << tD << '\n';
 			advance_observers_d();
 		}
 	}
@@ -205,7 +205,7 @@ public: // Methods
 		x_ = ( f_( tX = tQ = tD ).x_0 != 0.0 );
 		tD = f_( tD ).tD;
 		shift_discrete( tD );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << "   tD=" << tD << '\n';
 	}
 
 private: // Data

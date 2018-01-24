@@ -167,7 +167,7 @@ public: // Methods
 		shrink_observers(); // Optional
 		x_ = static_cast< Integer >( xIni );
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
 	}
 
 	// Initialization to a Value: Stage 0
@@ -177,7 +177,7 @@ public: // Methods
 		shrink_observers(); // Optional
 		x_ = static_cast< Integer >( x );
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
 	}
 
 	// Handler Advance
@@ -190,9 +190,9 @@ public: // Methods
 		if ( x_ != x_new ) {
 			x_ = x_new;
 			advance_observers();
-			if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+			if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
 		} else {
-			if ( options::output::d ) std::cout << "# " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+			if ( options::output::d ) std::cout << "# " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
 		}
 		shift_handler();
 	}
@@ -205,7 +205,7 @@ public: // Methods
 		tX = tQ = t;
 		x_ = static_cast< Integer >( x );
 		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
 	}
 
 private: // Data

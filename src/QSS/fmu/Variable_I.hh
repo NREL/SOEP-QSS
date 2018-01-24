@@ -178,7 +178,7 @@ public: // Methods
 		init_observers();
 		x_ = static_cast< Integer >( xIni );
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
 	}
 
 	// Initialization to a Value: Stage 0
@@ -189,7 +189,7 @@ public: // Methods
 		init_observers();
 		x_ = static_cast< Integer >( x );
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
 	}
 
 	// Handler Advance
@@ -207,12 +207,12 @@ public: // Methods
 				advance_observers_2();
 			}
 			if ( options::output::d ) {
-				std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+				std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
 				advance_observers_d();
 			}
 		} else {
 			if ( options::output::d ) {
-				std::cout << "# " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+				std::cout << "# " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
 			}
 		}
 		shift_handler();
@@ -226,7 +226,7 @@ public: // Methods
 		tX = tQ = t;
 		x_ = fmu_get_integer_value(); // Assume FMU ran event handler
 		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
 	}
 
 	// Handler No-Advance
