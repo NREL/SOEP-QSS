@@ -91,8 +91,8 @@ xy( Variables & vars )
 	}
 
 	// Derivatives
-	x->d().add( -1.0, y );
-	y->d().add( 1.0, x );
+	x->add( -1.0, y );
+	y->add( +1.0, x );
 }
 
 } // mdl

@@ -80,7 +80,6 @@ namespace output { // Output selections
 
 extern bool t; // Time events?
 extern bool r; // Requantizations?
-extern bool o; // Observers?
 extern bool a; // All variables?
 extern bool s; // Sampled output?
 extern bool f; // FMU outputs?

@@ -185,7 +185,8 @@ public: // Methods
 	void
 	init_0()
 	{
-		shrink_observers(); // Optional
+		assert( Super::observees_.empty() );
+		shrink_observers();
 		x_ = ( f_.vs( tQ ) != 0.0 );
 		tD = f_.tD( tQ );
 		add_discrete( tD );

@@ -51,7 +51,7 @@ using namespace QSS::dfn::mdl;
 TEST( Variable_ZC1Test, Basic )
 {
 	Variable_QSS2< Function_LTI > x( "x" );
-	x.d().add( -1.0 );
+	x.add( -1.0 );
 	x.init( 1.0 );
 	EXPECT_EQ( 1.0e-4, x.rTol );
 	EXPECT_EQ( 1.0e-6, x.aTol );
@@ -63,7 +63,7 @@ TEST( Variable_ZC1Test, Basic )
 
 	Variable_ZC1< Function_LTI > z( "z", 2.0, 2.0 ); // Big tolerances to make tE > tZ
 	z.add_crossings_Dn();
-	z.f().add( x );
+	z.add( &x );
 	z.init();
 	EXPECT_EQ( 2.0, z.rTol );
 	EXPECT_EQ( 2.0, z.aTol );

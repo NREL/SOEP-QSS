@@ -48,6 +48,7 @@
 class V {};
 
 // Types
+using namespace QSS;
 using EventQ = EventQueue< V >;
 using Variables = std::vector< V >;
 using Time = double;

@@ -330,34 +330,11 @@ public: // Properties
 
 public: // Methods
 
-	// Set Variable
+	// Add Variable
 	void
-	var( Variable & y )
-	{
-		y_ = &y;
-	}
-
-	// Set Variable
-	void
-	var( Variable * y )
+	add( Variable * y, Variable * = nullptr )
 	{
 		y_ = y;
-	}
-
-	// Finalize Function Representation
-	bool
-	finalize( Variable * v )
-	{
-		assert( v != nullptr );
-		assert( v == y_ );
-		return true; // Self-observer
-	}
-
-	// Finalize Function Representation
-	bool
-	finalize( Variable & v )
-	{
-		return finalize( &v );
 	}
 
 private: // Static Methods

@@ -87,8 +87,8 @@ stiff( Variables & vars )
 	}
 
 	// Derivatives
-	x1->d().add( 0.01, x2 );
-	x2->d().add( 2020.0 ).add( -100.0, x1 ).add( -100.0, x2 );
+	x1->add( 0.01, x2 );
+	x2->add( 2020.0 ).add( -100.0, x1 ).add( -100.0, x2 );
 }
 
 } // mdl

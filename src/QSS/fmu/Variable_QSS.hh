@@ -71,13 +71,6 @@ protected: // Creation
 	// Move Constructor
 	Variable_QSS( Variable_QSS && ) noexcept = default;
 
-public: // Creation
-
-	// Destructor
-	virtual
-	~Variable_QSS()
-	{}
-
 protected: // Assignment
 
 	// Copy Assignment

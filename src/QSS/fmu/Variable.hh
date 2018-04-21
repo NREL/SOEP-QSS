@@ -51,6 +51,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
+#include <iterator>
 #include <unordered_set>
 #include <vector>
 
@@ -172,13 +173,6 @@ protected: // Creation
 
 	// Move Constructor
 	Variable( Variable && ) noexcept = default;
-
-public: // Creation
-
-	// Destructor
-	virtual
-	~Variable()
-	{}
 
 protected: // Assignment
 
@@ -383,24 +377,44 @@ public: // Methods
 		dt_max = dt;
 	}
 
-	// Time Initialization
+	// Add Observee and its Observer
 	void
-	init_time( Time const t )
+	observe( Variable * v )
 	{
-		tQ = tX = tE = tN = t;
+		if ( v == this ) { // Don't need to self-observe
+			self_observer = true;
+		} else {
+			observees_.push_back( v );
+			v->observers_.push_back( this );
+		}
 	}
 
-	// Initialization
-	virtual
+	// Sort Observers Collection by Order
 	void
-	init()
-	{}
+	sort_observers()
+	{
+		// Remove duplicates
+		std::sort( observers_.begin(), observers_.end() );
+		observers_.resize( std::distance( observers_.begin(), std::unique( observers_.begin(), observers_.end() ) ) );
+		observers_.shrink_to_fit();
 
-	// Initialization to a Value
-	virtual
+		// Sort by order
+		std::sort( observers_.begin(), observers_.end(), []( Variable const * v1, Variable const * v2 ){ return v1->order() < v2->order(); } );
+
+		// Save useful specs
+		iBeg_observers_2_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return v->order() >= 2; } ) ) );
+		observers_max_order_ = ( observers_.empty() ? 0 : observers_.back()->order() );
+	}
+
+	// Shrink Observees Collection
 	void
-	init( Value const )
-	{}
+	shrink_observees()
+	{
+		// Remove duplicates
+		std::sort( observees_.begin(), observees_.end() );
+		observees_.resize( std::distance( observees_.begin(), std::unique( observees_.begin(), observees_.end() ) ) );
+		observees_.shrink_to_fit();
+	}
 
 	// Initialization: Observers
 	void
@@ -467,6 +481,25 @@ public: // Methods
 		}
 		iBeg_observers_2_observees_ = oo1s.size();
 	}
+
+	// Time Initialization
+	void
+	init_time( Time const t )
+	{
+		tQ = tX = tE = tN = t;
+	}
+
+	// Initialization
+	virtual
+	void
+	init()
+	{}
+
+	// Initialization to a Value
+	virtual
+	void
+	init( Value const )
+	{}
 
 	// Initialization: Stage 0
 	virtual
@@ -540,6 +573,20 @@ public: // Methods
 	shift_QSS( Time const t )
 	{
 		event_ = events.shift_QSS( t, event_ );
+	}
+
+	// QSS ZC Add Event
+	void
+	add_QSS_ZC( Time const t )
+	{
+		event_ = events.add_QSS_ZC( t, this );
+	}
+
+	// QSS ZC Shift Event to Time t
+	void
+	shift_QSS_ZC( Time const t )
+	{
+		event_ = events.shift_QSS_ZC( t, event_ );
 	}
 
 	// QSS Advance
@@ -655,63 +702,6 @@ public: // Methods
 		assert( false ); // Not a QSS or discrete variable
 	}
 
-	// Add Observer
-	void
-	add_observer( Variable & v )
-	{
-		if ( &v != this ) observers_.push_back( &v ); // Don't need to self-observe: Observers called at the end of self requantization
-	}
-
-	// Add Observer
-	void
-	add_observer( Variable * v )
-	{
-		if ( v != this ) observers_.push_back( v ); // Don't need to self-observe: Observers called at the end of self requantization
-	}
-
-	// Sort Observers Collection by Order
-	void
-	sort_observers()
-	{
-		// Use set to remove any duplicates
-		std::unordered_set< Variable * > os( observers_.begin(), observers_.end() ); // Remove duplicates
-		observers_.clear();
-		observers_.reserve( os.size() );
-		observers_.assign( os.begin(), os.end() );
-
-		// Sort
-		std::sort( observers_.begin(), observers_.end(), []( Variable * v1, Variable * v2 ){ return v1->order() < v2->order(); } );
-
-		// Save useful specs
-		iBeg_observers_2_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return v->order() >= 2; } ) ) );
-		observers_max_order_ = ( observers_.empty() ? 0 : observers_.back()->order() );
-	}
-
-	// Add Observee
-	void
-	add_observee( Variable & v )
-	{
-		if ( &v != this ) observees_.push_back( &v ); // Don't need to self-observe
-	}
-
-	// Add Observee
-	void
-	add_observee( Variable * v )
-	{
-		if ( v != this ) observees_.push_back( v ); // Don't need to self-observe
-	}
-
-	// Shrink Observees Collection
-	void
-	shrink_observees()
-	{
-		// Use set to remove any duplicates
-		std::unordered_set< Variable * > os( observees_.begin(), observees_.end() ); // Remove duplicates
-		observees_.clear();
-		observees_.reserve( os.size() );
-		observees_.assign( os.begin(), os.end() );
-	}
-
 	// Advance Observers: Stage 1
 	void
 	advance_observers_1()
@@ -721,7 +711,7 @@ public: // Methods
 		fmu_get_observer_ZC_values();
 // OpenMP is giving slower runs so far
 //#ifdef _OPENMP
-//		std::int64_t const n( static_cast< std::int64_t > ( observers_.size() ) );
+//		std::int64_t const n( static_cast< std::int64_t >( observers_.size() ) );
 //		if ( n > 1u ) {
 //			std::int64_t const nt( std::min( n, std::int64_t( 6 ) ) );
 //			#pragma omp parallel for schedule(guided) num_threads(nt)
@@ -1035,11 +1025,11 @@ public: // Data
 
 protected: // Data
 
-	int observers_max_order_{ 0 }; // Max QSS order of observers
 	Variables observers_; // Variables dependent on this one
-	size_type iBeg_observers_2_{ 0 }; // Index of first observer of order 2+
 	Variables observees_; // Variables this one depends on
 	Variables observers_observees_; // Observers observees (including self-observing observers)
+	int observers_max_order_{ 0 }; // Max QSS order of observers
+	size_type iBeg_observers_2_{ 0 }; // Index of first observer of order 2+
 	size_type iBeg_observers_2_observees_{ 0 }; // Index of first observee of observer of order 2+
 	VariableRefs observers_der_refs_; // Observer FMU derivative refs
 	Values observers_der_vals_; // Observer FMU derivative values

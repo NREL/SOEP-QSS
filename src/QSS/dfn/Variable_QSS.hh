@@ -74,13 +74,6 @@ protected: // Creation
 	// Move Constructor
 	Variable_QSS( Variable_QSS && ) noexcept = default;
 
-public: // Creation
-
-	// Destructor
-	virtual
-	~Variable_QSS()
-	{}
-
 protected: // Assignment
 
 	// Copy Assignment
@@ -114,6 +107,37 @@ public: // Properties
 	d()
 	{
 		return d_;
+	}
+
+public: // Function Methods
+
+	// Add Constant
+	Variable_QSS &
+	add( Coefficient const c0 )
+	{
+		d_.add( c0 );
+		return *this;
+	}
+
+	// Add a Variable
+	Variable_QSS &
+	add( Variable * v )
+	{
+		d_.add( v, this );
+		observe( v );
+		return *this;
+	}
+
+	// Add a Coefficient * Variable
+	Variable_QSS &
+	add(
+	 Coefficient const c,
+	 Variable * v
+	)
+	{
+		d_.add( c, v, this );
+		observe( v );
+		return *this;
 	}
 
 protected: // Data

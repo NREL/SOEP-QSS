@@ -71,6 +71,7 @@ public: // Types
 	using Super::event;
 	using Super::shift_discrete;
 	using Super::shift_QSS;
+	using Super::shrink_observees;
 	using Super::shrink_observers;
 	using Super::tE_infinity_tQ;
 
@@ -197,7 +198,8 @@ public: // Methods
 	void
 	init_0()
 	{
-		shrink_observers(); // Optional
+		shrink_observers();
+		shrink_observees();
 		x_0_ = q_0_ = f_.vs( tQ );
 		set_qTol();
 	}

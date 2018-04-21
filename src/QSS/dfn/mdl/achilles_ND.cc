@@ -85,8 +85,8 @@ achilles_ND( Variables & vars )
 	}
 
 	// Derivatives
-	x1->d().add( -0.5, x1 ).add( 1.5, x2 );
-	x2->d().add( -1.0, x1 );
+	x1->add( -0.5, x1 ).add( 1.5, x2 );
+	x2->add( -1.0, x1 );
 }
 
 } // mdl

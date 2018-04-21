@@ -149,7 +149,8 @@ public: // Methods
 	void
 	init_0()
 	{
-		shrink_observers(); // Optional
+		assert( Super::observees_.empty() );
+		shrink_observers();
 		x_ = xIni;
 		add_handler();
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
@@ -159,7 +160,8 @@ public: // Methods
 	void
 	init_0( Value const x )
 	{
-		shrink_observers(); // Optional
+		assert( Super::observees_.empty() );
+		shrink_observers();
 		x_ = x;
 		add_handler();
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';

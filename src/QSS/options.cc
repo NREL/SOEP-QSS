@@ -72,7 +72,6 @@ namespace output { // Output selections
 
 bool t( true ); // Time events?  [T]
 bool r( true ); // Requantizations?  [T]
-bool o( false ); // Observers?  [F]
 bool a( false ); // All variables?  [F]
 bool s( false ); // Sampled output?  [F]
 bool f( true ); // FMU outputs?  [T]
@@ -106,7 +105,6 @@ help_display()
 	std::cout << " --out=OUTPUTS Outputs  [trfx]" << '\n';
 	std::cout << "       t       Time events" << '\n';
 	std::cout << "       r       Requantizations" << '\n';
-	std::cout << "       o       Observers" << '\n';
 	std::cout << "       a       All variables" << '\n';
 	std::cout << "       s       Sampled time steps" << '\n';
 	std::cout << "       f       FMU outputs" << '\n';
@@ -279,8 +277,8 @@ process_args( int argc, char * argv[] )
 			std::string const dtNum_str( arg_value( arg ) );
 			if ( is_double( dtNum_str ) ) {
 				dtNum = double_of( dtNum_str );
-				if ( dtNum < 0.0 ) {
-					std::cerr << "Error: Negative dtNum: " << dtNum_str << std::endl;
+				if ( dtNum <= 0.0 ) {
+					std::cerr << "Error: Nonpositive dtNum: " << dtNum_str << std::endl;
 					fatal = true;
 				}
 				one_over_dtNum = 1.0 / dtNum;
@@ -328,20 +326,18 @@ process_args( int argc, char * argv[] )
 			}
 		} else if ( has_value_option( arg, "out" ) ) {
 			out = arg_value( arg );
-			if ( has_any_not_of( out, "troasfxqd" ) ) {
-				std::cerr << "Error: Output flag not in troasfxqd: " << out << std::endl;
+			if ( has_any_not_of( out, "trasfxqd" ) ) {
+				std::cerr << "Error: Output flag not in trasfxqd: " << out << std::endl;
 				fatal = true;
 			}
 			output::t = has( out, 't' );
 			output::r = has( out, 'r' );
-			output::o = has( out, 'o' );
 			output::a = has( out, 'a' );
 			output::s = has( out, 's' );
 			output::f = has( out, 'f' );
 			output::x = has( out, 'x' );
 			output::q = has( out, 'q' );
 			output::d = has( out, 'd' );
-			if ( output::a ) output::o = true; // a => o
 		} else if ( arg[ 0 ] == '-' ) {
 			std::cerr << "Error: Unsupported option: " << arg << std::endl;
 			fatal = true;

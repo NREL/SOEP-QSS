@@ -87,8 +87,8 @@ achillesc( Variables & vars )
 	}
 
 	// Derivatives
-	x1->d().var( x1, x2 );
-	x2->d().var( x1 );
+	x1->add( x1 ).add( x2 );
+	x2->add( x1 );
 }
 
 } // mdl

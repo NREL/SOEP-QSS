@@ -40,8 +40,9 @@
 #include <QSS/math.hh>
 
 // C++ Headers
+#include <algorithm>
 #include <cassert>
-//#include <numeric> // std::iota
+#include <utility>
 #include <vector>
 
 namespace QSS {
@@ -49,6 +50,8 @@ namespace dfn {
 namespace mdl {
 
 // Linear Time-Invariant Function
+//
+// Note: Adding many terms into a sorted vector could be a performance issue
 template< typename V > // Template to avoid cyclic inclusion with Variable
 class Function_LTI final
 {
@@ -56,33 +59,29 @@ class Function_LTI final
 public: // Types
 
 	using Coefficient = double;
-	using Coefficients = std::vector< Coefficient >;
-
 	using Variable = V;
-	using Variables = typename V::Variables;
+
+	struct Term
+	{
+		Coefficient c;
+		Variable * v;
+
+		// Term < Term: Partial ordering by Variable order
+		friend
+		bool
+		operator <( Term const & l, Term const & r )
+		{
+			return ( l.v->order() < r.v->order() );
+		}
+
+	}; // Term
+	using Terms = std::vector< Term >;
+	using size_type = typename Terms::size_type;
 
 	using Time = typename Variable::Time;
 	using Value = typename Variable::Value;
 	using AdvanceSpecs_LIQSS1 = typename Variable::AdvanceSpecs_LIQSS1;
 	using AdvanceSpecs_LIQSS2 = typename Variable::AdvanceSpecs_LIQSS2;
-	using size_type = Coefficients::size_type;
-
-public: // Creation
-
-	// Default Constructor
-	Function_LTI()
-	{}
-
-	// Constructor
-	Function_LTI(
-	 Coefficients const & c,
-	 Variables const & x
-	) :
-	 c_( c ),
-	 x_( x )
-	{
-		assert( c_.size() == x_.size() );
-	}
 
 public: // Properties
 
@@ -90,84 +89,80 @@ public: // Properties
 	Value
 	operator ()( Time const t ) const
 	{
-		assert( c_.size() == x_.size() );
-		Value v( c0_ );
-		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
-			v += c_[ i ] * x_[ i ]->x( t );
+		Value r( c0_ );
+		for ( Term const & term : terms_ ) {
+			r += term.c * term.v->x( t );
 		}
-		return v;
+		return r;
 	}
 
 	// Continuous Value at Time t
 	Value
 	x( Time const t ) const
 	{
-		assert( c_.size() == x_.size() );
-		Value v( c0_ );
-		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
-			v += c_[ i ] * x_[ i ]->x( t );
+		Value r( c0_ );
+		for ( Term const & term : terms_ ) {
+			r += term.c * term.v->x( t );
 		}
-		return v;
+		return r;
 	}
 
 	// Continuous First Derivative at Time t
 	Value
 	x1( Time const t ) const
 	{
-		assert( c_.size() == x_.size() );
-		Value s( 0.0 );
-		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
-			s += c_[ i ] * x_[ i ]->x1( t );
+		Value r( 0.0 );
+		for ( Term const & term : terms_ ) {
+			r += term.c * term.v->x1( t );
 		}
-		return s;
+		return r;
 	}
 
 	// Continuous Second Derivative at Time t
 	Value
 	x2( Time const t ) const
 	{
-		assert( c_.size() == x_.size() );
-		Value s( 0.0 );
-		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
-			s += c_[ i ] * x_[ i ]->x2( t );
+		Value r( 0.0 );
+		for ( size_type i = iBeg2, n = terms_.size(); i < n; ++i ) {
+			Term const & term( terms_[ i ] );
+			r += term.c * term.v->x2( t );
 		}
-		return s;
+		return r;
 	}
 
 	// Quantized Value at Time t
 	Value
 	q( Time const t ) const
 	{
-		assert( c_.size() == x_.size() );
-		Value v( c0_ );
-		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
-			v += c_[ i ] * x_[ i ]->q( t );
+		Value r( c0_ );
+		for ( Term const & term : terms_ ) {
+			r += term.c * term.v->q( t );
 		}
-		return v;
+		return r;
 	}
 
 	// Quantized First Derivative at Time t
 	Value
 	q1( Time const t ) const
 	{
-		assert( c_.size() == x_.size() );
-		Value s( 0.0 );
-		for ( size_type i = iBeg[ 2 ], n = c_.size(); i < n; ++i ) {
-			s += c_[ i ] * x_[ i ]->q1( t );
+		Value r( 0.0 );
+		for ( size_type i = iBeg2, n = terms_.size(); i < n; ++i ) {
+			Term const & term( terms_[ i ] );
+			r += term.c * term.v->q1( t );
 		}
-		return s;
+		return r;
 	}
 
 	// Quantized Second Derivative at Time t
 	Value
 	q2( Time const t ) const
 	{
-		assert( c_.size() == x_.size() );
-		Value c( 0.0 );
-		for ( size_type i = iBeg[ 3 ], n = c_.size(); i < n; ++i ) {
-			c += c_[ i ] * x_[ i ]->q2( t );
+		Value r( 0.0 );
+		for ( size_type i = iBeg3, n = terms_.size(); i < n; ++i ) {
+			Term const & term( terms_[ i ] );
+			r += term.c * term.v->q2( t );
 		}
-		return c;
+		return r;
 	}
 
 	// Quantized Sequential Value at Time t
@@ -202,36 +197,35 @@ public: // Properties
 	Value
 	s( Time const t ) const
 	{
-		assert( c_.size() == x_.size() );
-		Value v( c0_ );
-		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
-			v += c_[ i ] * x_[ i ]->s( t );
+		Value r( c0_ );
+		for ( Term const & term : terms_ ) {
+			r += term.c * term.v->s( t );
 		}
-		return v;
+		return r;
 	}
 
 	// Simultaneous First Derivative at Time t
 	Value
 	s1( Time const t ) const
 	{
-		assert( c_.size() == x_.size() );
-		Value s( 0.0 );
-		for ( size_type i = iBeg[ 2 ], n = c_.size(); i < n; ++i ) {
-			s += c_[ i ] * x_[ i ]->s1( t );
+		Value r( 0.0 );
+		for ( size_type i = iBeg2, n = terms_.size(); i < n; ++i ) {
+			Term const & term( terms_[ i ] );
+			r += term.c * term.v->s1( t );
 		}
-		return s;
+		return r;
 	}
 
 	// Simultaneous Second Derivative at Time t
 	Value
 	s2( Time const t ) const
 	{
-		assert( c_.size() == x_.size() );
-		Value s( 0.0 );
-		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
-			s += c_[ i ] * x_[ i ]->s2( t );
+		Value r( 0.0 );
+		for ( size_type i = iBeg3, n = terms_.size(); i < n; ++i ) {
+			Term const & term( terms_[ i ] );
+			r += term.c * term.v->s2( t );
 		}
-		return s;
+		return r;
 	}
 
 	// Simultaneous Sequential Value at Time t
@@ -266,14 +260,12 @@ public: // Properties
 	AdvanceSpecs_LIQSS1
 	xlu1( Time const t, Value const del ) const
 	{
-		assert( co_.size() == xo_.size() );
-
 		// Value at +/- del
 		Value v( c0_ );
-		for ( size_type i = 0, n = co_.size(); i < n; ++i ) {
-			v += co_[ i ] * xo_[ i ]->x( t );
+		for ( Term const & term : termso_ ) {
+			v += term.c * term.v->x( t );
 		}
-		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * xv_->x( t ) ) );
+		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * v_->x( t ) ) );
 		Value const cv_del( cv_ * del );
 		Value const vl( vc - cv_del );
 		Value const vu( vc + cv_del );
@@ -288,14 +280,12 @@ public: // Properties
 	AdvanceSpecs_LIQSS1
 	qlu1( Time const t, Value const del ) const
 	{
-		assert( co_.size() == xo_.size() );
-
 		// Value at +/- del
 		Value v( c0_ );
-		for ( size_type i = 0, n = co_.size(); i < n; ++i ) {
-			v += co_[ i ] * xo_[ i ]->q( t );
+		for ( Term const & term : termso_ ) {
+			v += term.c * term.v->q( t );
 		}
-		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * xv_->q( t ) ) );
+		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * v_->q( t ) ) );
 		Value const cv_del( cv_ * del );
 		Value const vl( vc - cv_del );
 		Value const vu( vc + cv_del );
@@ -310,14 +300,12 @@ public: // Properties
 	AdvanceSpecs_LIQSS1
 	slu1( Time const t, Value const del ) const
 	{
-		assert( co_.size() == xo_.size() );
-
 		// Value at +/- del
 		Value v( c0_ );
-		for ( size_type i = 0, n = co_.size(); i < n; ++i ) {
-			v += co_[ i ] * xo_[ i ]->s( t );
+		for ( Term const & term : termso_ ) {
+			v += term.c * term.v->s( t );
 		}
-		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * xv_->x( t ) ) );
+		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * v_->x( t ) ) );
 		Value const cv_del( cv_ * del );
 		Value const vl( vc - cv_del );
 		Value const vu( vc + cv_del );
@@ -332,22 +320,20 @@ public: // Properties
 	AdvanceSpecs_LIQSS2
 	xlu2( Time const t, Value const del ) const
 	{
-		assert( co_.size() == xo_.size() );
-
 		// Value at +/- del
 		Value v( c0_ );
-		for ( size_type i = 0, n = co_.size(); i < n; ++i ) {
-			v += co_[ i ] * xo_[ i ]->x( t );
+		for ( Term const & term : termso_ ) {
+			v += term.c * term.v->x( t );
 		}
-		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * xv_->x( t ) ) );
+		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * v_->x( t ) ) );
 		Value const cv_del( cv_ * del );
 		Value const vl( vc - cv_del );
 		Value const vu( vc + cv_del );
 
 		// Derivative at +/- del
 		Value s( 0.0 );
-		for ( size_type i = ioBeg[ 2 ], n = co_.size(); i < n; ++i ) {
-			s += co_[ i ] * xo_[ i ]->x1( t );
+		for ( Term const & term : termso_ ) {
+			s += term.c * term.v->x1( t );
 		}
 		Value const sl( s + ( cv_ * vl ) );
 		Value const su( s + ( cv_ * vu ) );
@@ -364,22 +350,21 @@ public: // Properties
 	AdvanceSpecs_LIQSS2
 	qlu2( Time const t, Value const del ) const
 	{
-		assert( co_.size() == xo_.size() );
-
 		// Value at +/- del
 		Value v( c0_ );
-		for ( size_type i = 0, n = co_.size(); i < n; ++i ) {
-			v += co_[ i ] * xo_[ i ]->q( t );
+		for ( Term const & term : termso_ ) {
+			v += term.c * term.v->q( t );
 		}
-		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * xv_->q( t ) ) );
+		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * v_->q( t ) ) );
 		Value const cv_del( cv_ * del );
 		Value const vl( vc - cv_del );
 		Value const vu( vc + cv_del );
 
 		// Derivative at +/- del
 		Value s( 0.0 );
-		for ( size_type i = ioBeg[ 2 ], n = co_.size(); i < n; ++i ) {
-			s += co_[ i ] * xo_[ i ]->q1( t );
+		for ( size_type i = ioBeg2, n = termso_.size(); i < n; ++i ) {
+			Term const & term( termso_[ i ] );
+			s += term.c * term.v->q1( t );
 		}
 		Value const sl( s + ( cv_ * vl ) );
 		Value const su( s + ( cv_ * vu ) );
@@ -396,22 +381,21 @@ public: // Properties
 	AdvanceSpecs_LIQSS2
 	slu2( Time const t, Value const del ) const
 	{
-		assert( co_.size() == xo_.size() );
-
 		// Value at +/- del
 		Value v( c0_ );
-		for ( size_type i = 0, n = co_.size(); i < n; ++i ) {
-			v += co_[ i ] * xo_[ i ]->s( t );
+		for ( Term const & term : termso_ ) {
+			v += term.c * term.v->s( t );
 		}
-		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * xv_->x( t ) ) );
+		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * v_->x( t ) ) );
 		Value const cv_del( cv_ * del );
 		Value const vl( vc - cv_del );
 		Value const vu( vc + cv_del );
 
 		// Derivative at +/- del
 		Value s( 0.0 );
-		for ( size_type i = ioBeg[ 2 ], n = co_.size(); i < n; ++i ) {
-			s += co_[ i ] * xo_[ i ]->s1( t );
+		for ( size_type i = ioBeg2, n = termso_.size(); i < n; ++i ) {
+			Term const & term( termso_[ i ] );
+			s += term.c * term.v->s1( t );
 		}
 		Value const sl( s + ( cv_ * vl ) );
 		Value const su( s + ( cv_ * vu ) );
@@ -427,165 +411,114 @@ public: // Properties
 public: // Methods
 
 	// Add Constant
-	Function_LTI &
+	void
 	add( Coefficient const c0 )
 	{
 		c0_ = c0;
-		return *this;
 	}
 
-	// Add a Variable
-	Function_LTI &
-	add( Variable * x )
-	{
-		assert( c_.size() == x_.size() );
-		c_.push_back( 1.0 );
-		x_.push_back( x );
-		assert( c_.size() == x_.size() );
-		return *this;
-	}
-
-	// Add a Variable
-	Function_LTI &
-	add( Variable & x )
-	{
-		assert( c_.size() == x_.size() );
-		c_.push_back( 1.0 );
-		x_.push_back( &x );
-		assert( c_.size() == x_.size() );
-		return *this;
-	}
-
-	// Add a Coefficient + Variable
-	Function_LTI &
-	add(
-	 Coefficient const c,
-	 Variable & x
-	)
-	{
-		assert( c_.size() == x_.size() );
-		c_.push_back( c );
-		x_.push_back( &x );
-		assert( c_.size() == x_.size() );
-		return *this;
-	}
-
-	// Add a Variable + Coefficient
-	Function_LTI &
-	add(
-	 Variable & x,
-	 Coefficient const c
-	)
-	{
-		assert( c_.size() == x_.size() );
-		c_.push_back( c );
-		x_.push_back( &x );
-		assert( c_.size() == x_.size() );
-		return *this;
-	}
-
-	// Add a Coefficient + Variable
-	Function_LTI &
-	add(
-	 Coefficient const c,
-	 Variable * x
-	)
-	{
-		assert( c_.size() == x_.size() );
-		c_.push_back( c );
-		x_.push_back( x );
-		assert( c_.size() == x_.size() );
-		return *this;
-	}
-
-	// Add a Variable + Coefficient
-	Function_LTI &
-	add(
-	 Variable * x,
-	 Coefficient const c
-	)
-	{
-		assert( c_.size() == x_.size() );
-		c_.push_back( c );
-		x_.push_back( x );
-		assert( c_.size() == x_.size() );
-		return *this;
-	}
-
-	// Finalize Function Representation
-	bool
-	finalize( Variable * v )
+	// Add Variable
+	void
+	add( Variable * v, Variable * self = nullptr )
 	{
 		assert( v != nullptr );
-		assert( c_.size() == x_.size() );
-		size_type n( c_.size() );
-
-		// Sort elements by QSS method order (not max efficiency!)
-		Coefficients c;
-		c.reserve( n );
-		Variables x;
-		x.reserve( n );
-		for ( int order = 0; order <= max_order; ++order ) {
-			iBeg[ order ] = c.size();
-			ioBeg[ order ] = co_.size();
-			for ( size_type i = 0; i < n; ++i ) {
-				if ( x_[ i ]->order() == order ) {
-					c.push_back( c_[ i ] );
-					x.push_back( x_[ i ] );
-					if ( x_[ i ] == v ) {
-						cv_ = c_[ i ];
-						cv_inv_ = ( cv_ != 0.0 ? 1.0 / cv_ : infinity );
-					} else {
-						co_.push_back( c_[ i ] );
-						xo_.push_back( x_[ i ] );
-					}
-				}
+		Term term{ 1.0, v };
+		if ( v == self ) { // Self Variable
+			v_ = v; // Register self Variable
+			terms_.insert( std::upper_bound( terms_.begin(), terms_.end(), term ), std::move( term ) );
+			switch ( v->order() ) {
+			case 0: case 1:
+				++iBeg2;
+#if __cplusplus >= 201703L //C++17
+				[[fallthrough]];
+#elif defined(__clang__)
+				[[clang::fallthrough]];
+#elif defined(__GNUC__)
+				[[gnu::fallthrough]];
+#endif
+			case 2:
+				++iBeg3;
+			}
+			cv_ = cv_inv_ = 1.0;
+		} else { // Non-self Variable
+			terms_.insert( std::upper_bound( terms_.begin(), terms_.end(), term ), term );
+			termso_.insert( std::upper_bound( termso_.begin(), termso_.end(), term ), std::move( term ) );
+			switch ( v->order() ) {
+			case 0: case 1:
+				++iBeg2;
+				++ioBeg2;
+#if __cplusplus >= 201703L //C++17
+				[[fallthrough]];
+#elif defined(__clang__)
+				[[clang::fallthrough]];
+#elif defined(__GNUC__)
+				[[gnu::fallthrough]];
+#endif
+			case 2:
+				++iBeg3;
 			}
 		}
-		xv_ = v;
-		c_.swap( c );
-		x_.swap( x );
-// Consider doing an in-place permutation if this is a bottleneck
-//		std::vector< size_type > p( n ); // Permutation
-//		std::iota( p.begin(), p.end(), 0u );
-//		std::stable_sort( p.begin(), p.end(), [&]( size_type i, size_type j ){ return x_[ i ]->order() < x_[ j ]->order() } );
-//		...
-
-		// Add variables as observees of self variable
-		bool self_observer( false );
-		for ( Variable * x : x_ ) {
-			if ( x == v ) {
-				self_observer = true;
-			} else {
-				x->add_observer( v );
-			}
-		}
-		return self_observer;
 	}
 
-	// Finalize Function Representation
-	bool
-	finalize( Variable & v )
+	// Add Coefficient * Variable
+	void
+	add(
+	 Coefficient const c,
+	 Variable * v,
+	 Variable * self = nullptr
+	)
 	{
-		return finalize( &v );
+		assert( v != nullptr );
+		Term term{ c, v };
+		if ( v == self ) { // Self Variable
+			v_ = v; // Register self Variable
+			terms_.insert( std::upper_bound( terms_.begin(), terms_.end(), term ), std::move( term ) );
+			switch ( v->order() ) {
+			case 0: case 1:
+				++iBeg2;
+#if __cplusplus >= 201703L //C++17
+				[[fallthrough]];
+#elif defined(__clang__)
+				[[clang::fallthrough]];
+#elif defined(__GNUC__)
+				[[gnu::fallthrough]];
+#endif
+			case 2:
+				++iBeg3;
+			}
+			cv_ = c;
+			cv_inv_ = ( cv_ != 0.0 ? 1.0 / cv_ : infinity );
+		} else { // Non-self Variable
+			terms_.insert( std::upper_bound( terms_.begin(), terms_.end(), term ), term );
+			termso_.insert( std::upper_bound( termso_.begin(), termso_.end(), term ), std::move( term ) );
+			switch ( v->order() ) {
+			case 0: case 1:
+				++iBeg2;
+				++ioBeg2;
+#if __cplusplus >= 201703L //C++17
+				[[fallthrough]];
+#elif defined(__clang__)
+				[[clang::fallthrough]];
+#elif defined(__GNUC__)
+				[[gnu::fallthrough]];
+#endif
+			case 2:
+				++iBeg3;
+			}
+		}
 	}
-
-public: // Static Data
-
-	static int const max_order = 3; // Max QSS order supported
 
 private: // Data
 
-	size_type iBeg[ max_order + 1 ]; // Index of first Variable of each QSS order
-	size_type ioBeg[ max_order + 1 ]; // Index of first non-self Variable of each QSS order
 	Coefficient c0_{ 0.0 }; // Constant term
-	Coefficients c_; // Coefficients
-	Variables x_; // Variables
+	Terms terms_; // Coefficient * Variable terms
+	size_type iBeg2{ 0 }, iBeg3{ 0 }; // Index of first Variable of QSS orders 2+
+	size_type ioBeg2{ 0 }; // Index of first non-self Variable of QSS order 2
+
+	Variable * v_{ nullptr }; // Self Variable
 	Coefficient cv_{ 0.0 }; // Coefficient of self Variable
 	Coefficient cv_inv_{ 0.0 }; // Inverse of coefficient of self Variable
-	Variable * xv_{ nullptr }; // Self Variable
-	Coefficients co_; // Coefficients for Variables other than self Variable
-	Variables xo_; // Variables other than self Variable
+	Terms termso_; // Coefficient * Variable terms for non-self Variables
 
 };
 

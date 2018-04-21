@@ -38,10 +38,6 @@
 
 // QSS Headers
 #include <QSS/dfn/Variable.hh>
-#include <QSS/EnumHash.hh> // GCC 5.x needs this
-
-// C++ Headers
-#include <unordered_set>
 
 namespace QSS {
 namespace dfn {
@@ -58,7 +54,9 @@ public: // Types
 	using Value = Variable::Value;
 	using Function = F< Variable >;
 	using Crossing = Variable::Crossing;
-	using Crossings = std::unordered_set< Crossing, EnumHash >;
+	using Crossings = std::vector< Crossing >;
+
+	using Super::shrink_observees;
 
 protected: // Creation
 
@@ -80,13 +78,6 @@ protected: // Creation
 
 	// Move Constructor
 	Variable_ZC( Variable_ZC && ) noexcept = default;
-
-public: // Creation
-
-	// Destructor
-	virtual
-	~Variable_ZC()
-	{}
 
 protected: // Assignment
 
@@ -111,7 +102,7 @@ public: // Predicate
 	bool
 	has( Crossing const c )
 	{
-		return ( crossings.find( c ) != crossings.end() );
+		return ( std::find( crossings.begin(), crossings.end(), c ) != crossings.end() );
 	}
 
 public: // Properties
@@ -146,11 +137,66 @@ public: // Properties
 
 public: // Methods
 
+	// Initialization: Stage 0
+	void
+	init_0()
+	{
+		// Check no observers
+		if ( ! observers_.empty() ) {
+			std::cerr << "Error: Zero-crossing variable has observers: " << name << std::endl;
+			std::exit( EXIT_FAILURE );
+		}
+
+		// Add drill-through observees
+		for ( size_type i = 0, n = Super::observees_.size(); i < n; ++i ) {
+			Variable * vo( Super::observees_[ i ] );
+			for ( Variable * voo : vo->observees() ) {
+				observe( voo );
+			}
+		}
+
+		// Shrink observees
+		shrink_observees();
+	}
+
+public: // Function Methods
+
+	// Add Constant
+	Variable_ZC &
+	add( Coefficient const c0 )
+	{
+		f_.add( c0 );
+		return *this;
+	}
+
+	// Add a Variable
+	Variable_ZC &
+	add( Variable * v )
+	{
+		f_.add( v );
+		observe( v );
+		return *this;
+	}
+
+	// Add a Coefficient * Variable
+	Variable_ZC &
+	add(
+	 Coefficient const c,
+	 Variable * v
+	)
+	{
+		f_.add( c, v );
+		observe( v );
+		return *this;
+	}
+
+public: // Crossing Methods
+
 	// Add Crossing Type
 	Variable_ZC &
 	add( Crossing const c )
 	{
-		crossings.insert( c );
+		crossings.push_back( c );
 		return *this;
 	}
 
@@ -159,9 +205,9 @@ public: // Methods
 	add_crossings_all()
 	{
 		add_crossings_Dn();
-		crossings.insert( Crossing::DnZN );
-		crossings.insert( Crossing::Flat );
-		crossings.insert( Crossing::UpZP );
+		crossings.push_back( Crossing::DnZN );
+		crossings.push_back( Crossing::Flat );
+		crossings.push_back( Crossing::UpZP );
 		add_crossings_Up();
 		return *this;
 	}
@@ -171,8 +217,8 @@ public: // Methods
 	add_crossings_non_Flat()
 	{
 		add_crossings_Dn();
-		crossings.insert( Crossing::DnZN );
-		crossings.insert( Crossing::UpZP );
+		crossings.push_back( Crossing::DnZN );
+		crossings.push_back( Crossing::UpZP );
 		add_crossings_Up();
 		return *this;
 	}
@@ -181,9 +227,9 @@ public: // Methods
 	Variable_ZC &
 	add_crossings_Dn()
 	{
-		crossings.insert( Crossing::DnPN );
-		crossings.insert( Crossing::DnPZ );
-		crossings.insert( Crossing::Dn );
+		crossings.push_back( Crossing::DnPN );
+		crossings.push_back( Crossing::DnPZ );
+		crossings.push_back( Crossing::Dn );
 		return *this;
 	}
 
@@ -192,8 +238,8 @@ public: // Methods
 	add_crossings_Dn_Flat()
 	{
 		add_crossings_Dn();
-		crossings.insert( Crossing::DnZN );
-		crossings.insert( Crossing::Flat );
+		crossings.push_back( Crossing::DnZN );
+		crossings.push_back( Crossing::Flat );
 		return *this;
 	}
 
@@ -201,9 +247,9 @@ public: // Methods
 	Variable_ZC &
 	add_crossings_Up()
 	{
-		crossings.insert( Crossing::Up );
-		crossings.insert( Crossing::UpNZ );
-		crossings.insert( Crossing::UpNP );
+		crossings.push_back( Crossing::Up );
+		crossings.push_back( Crossing::UpNZ );
+		crossings.push_back( Crossing::UpNP );
 		return *this;
 	}
 
@@ -211,8 +257,8 @@ public: // Methods
 	Variable_ZC &
 	add_crossings_Up_Flat()
 	{
-		crossings.insert( Crossing::Flat );
-		crossings.insert( Crossing::UpZP );
+		crossings.push_back( Crossing::Flat );
+		crossings.push_back( Crossing::UpZP );
 		add_crossings_Up();
 		return *this;
 	}
@@ -262,7 +308,7 @@ public: // Data
 
 	Value zTol{ 0.0 }; // Zero-crossing anti-chatter tolerance
 	Time tZ{ infinity }; // Zero-crossing time: tQ <= tZ and tX <= tZ
-	Time tZ_last{ infinity }; // Zero-crossing time of last crossing
+	Time tZ_last{ 0.0 }; // Zero-crossing time of last crossing
 	Crossing crossing{ Crossing::Flat }; // Zero-crossing type
 	Crossing crossing_last{ Crossing::Flat }; // Zero-crossing type of last crossing
 	Crossings crossings; // Zero-crossing types handled

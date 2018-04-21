@@ -171,8 +171,8 @@ bball( Variables & vars, Conditionals & cons )
 	}
 
 	// Derivatives
-	h->d().add( v );
-	v->d().add( -9.80665 ); // g = 9.80665 m/s^2
+	h->add( v );
+	v->add( -9.80665 ); // g = 9.80665 m/s^2
 
 	// Discrete variable
 	Variable_D * b( new Variable_D( "b", 0 ) ); // Bounce counter (to demo discrete variables)
@@ -187,7 +187,7 @@ bball( Variables & vars, Conditionals & cons )
 		vars.push_back( z = new Variable_ZC2< Function_LTI >( "z", rTol, aTol, zTol ) );
 	}
 	z->add_crossings_Dn_Flat();
-	z->f().add( h );
+	z->add( h );
 
 	// Conditional
 	using When = WhenV< Variable >;

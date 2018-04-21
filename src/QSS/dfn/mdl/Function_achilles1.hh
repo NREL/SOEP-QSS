@@ -187,49 +187,16 @@ public: // Properties
 
 public: // Methods
 
-	// Set Variables
+	// Add Variable
 	void
-	var(
-	 Variable & x1,
-	 Variable & x2
-	)
+	add( Variable * v, Variable * = nullptr )
 	{
-		x1_ = &x1;
-		x2_ = &x2;
-	}
-
-	// Set Variables
-	void
-	var(
-	 Variable * x1,
-	 Variable * x2
-	)
-	{
-		x1_ = x1;
-		x2_ = x2;
-	}
-
-	// Finalize Function Representation
-	bool
-	finalize( Variable * v )
-	{
-		assert( v != nullptr );
-		assert( v == x1_ );
-		assert( v != x2_ );
-		x2_->add_observer( v ); // Add self variable as observer of non-self variable
-		return true; // Self-observer
-	}
-
-	// Finalize Function Representation
-	bool
-	finalize( Variable & v )
-	{
-		return finalize( &v );
+		( x1_ == nullptr ? x1_ : x2_ ) = v;
 	}
 
 private: // Data
 
-	Coefficient c0_{ 0.0 }, c1_{ -0.5 }, c2_{ 1.5 };
+	Coefficient const c0_{ 0.0 }, c1_{ -0.5 }, c2_{ 1.5 };
 	Variable * x1_{ nullptr };
 	Variable * x2_{ nullptr };
 

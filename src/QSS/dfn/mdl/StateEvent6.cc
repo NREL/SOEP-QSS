@@ -292,23 +292,6 @@ public: // Properties
 		return s2( t );
 	}
 
-public: // Methods
-
-	// Finalize Function Representation
-	bool
-	finalize( Variable * v )
-	{
-		assert( v != nullptr );
-		return false; // Not self-observer
-	}
-
-	// Finalize Function Representation
-	bool
-	finalize( Variable & v )
-	{
-		return finalize( &v );
-	}
-
 public: // Static Methods
 
 	// Time factor
@@ -366,8 +349,8 @@ StateEvent6( Variables & vars, Conditionals & cons )
 	}
 
 	// Derivatives
-	x2->d().add( +1.0 );
-	x3->d().add( -2.0 );
+	x2->add( +1.0 );
+	x3->add( -2.0 );
 
 	// Discrete variable
 	Variable_D * y( new Variable_D( "y", 0 ) );
@@ -384,7 +367,7 @@ StateEvent6( Variables & vars, Conditionals & cons )
 		vars.push_back( z1 = new Variable_ZC2< Function_LTI >( "z1", rTol, aTol, zTol ) );
 	}
 	z1->add_crossings_Up();
-	z1->f().add( x1 ).add( -1.0 );
+	z1->add( x1 ).add( -1.0 );
 
 	// Zero-crossing variable: x1 <= 1
 	Z * z2( nullptr );
@@ -394,7 +377,7 @@ StateEvent6( Variables & vars, Conditionals & cons )
 		vars.push_back( z2 = new Variable_ZC2< Function_LTI >( "z2", rTol, aTol, zTol ) );
 	}
 	z2->add_crossings_Dn();
-	z2->f().add( x1 ).add( -1.0 );
+	z2->add( x1 ).add( -1.0 );
 
 	// Conditional
 	using When = WhenV< Variable >;
@@ -420,7 +403,7 @@ StateEvent6( Variables & vars, Conditionals & cons )
 //		vars.push_back( z = new Variable_ZC2< Function_LTI >( "z", rTol, aTol, zTol ) );
 //	}
 //	z->add_crossings_non_Flat();
-//	z->f().add( x1 ).add( -1.0 );
+//	z->add( x1 ).add( -1.0 );
 //
 //	// Conditional
 //	using When = WhenV< Variable >;

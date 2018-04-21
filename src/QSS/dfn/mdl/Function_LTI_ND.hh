@@ -40,9 +40,9 @@
 #include <QSS/options.hh>
 
 // C++ Headers
-//#include <algorithm> // std::stable_sort
+#include <algorithm>
 #include <cassert>
-//#include <numeric> // std::iota
+#include <utility>
 #include <vector>
 
 namespace QSS {
@@ -50,6 +50,8 @@ namespace dfn {
 namespace mdl {
 
 // Linear Time-Invariant Function Using Numeric Differentiation
+//
+// Note: Adding many terms into a sorted vector could be a performance issue
 //
 // Note: Not set up for use with LIQSS methods
 template< typename V > // Template to avoid cyclic inclusion with Variable
@@ -59,31 +61,27 @@ class Function_LTI_ND final
 public: // Types
 
 	using Coefficient = double;
-	using Coefficients = std::vector< Coefficient >;
-
 	using Variable = V;
-	using Variables = typename V::Variables;
+
+	struct Term
+	{
+		Coefficient c;
+		Variable * v;
+
+		// Term < Term: Partial ordering by Variable order
+		friend
+		bool
+		operator <( Term const & l, Term const & r )
+		{
+			return ( l.v->order() < r.v->order() );
+		}
+
+	}; // Term
+	using Terms = std::vector< Term >;
+	using size_type = typename Terms::size_type;
 
 	using Time = typename Variable::Time;
 	using Value = typename Variable::Value;
-	using size_type = Coefficients::size_type;
-
-public: // Creation
-
-	// Default Constructor
-	Function_LTI_ND()
-	{}
-
-	// Constructor
-	Function_LTI_ND(
-	 Coefficients const & c,
-	 Variables const & x
-	) :
-	 c_( c ),
-	 x_( x )
-	{
-		assert( c_.size() == x_.size() );
-	}
 
 public: // Properties
 
@@ -91,24 +89,22 @@ public: // Properties
 	Value
 	operator ()( Time const t ) const
 	{
-		assert( c_.size() == x_.size() );
-		Value v( c0_ );
-		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
-			v += c_[ i ] * x_[ i ]->x( t );
+		Value r( c0_ );
+		for ( Term const & term : terms_ ) {
+			r += term.c * term.v->x( t );
 		}
-		return v;
+		return r;
 	}
 
 	// Continuous Value at Time t
 	Value
 	x( Time const t ) const
 	{
-		assert( c_.size() == x_.size() );
-		Value v( c0_ );
-		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
-			v += c_[ i ] * x_[ i ]->x( t );
+		Value r( c0_ );
+		for ( Term const & term : terms_ ) {
+			r += term.c * term.v->x( t );
 		}
-		return v;
+		return r;
 	}
 
 	// Continuous First Derivative at Time t
@@ -129,12 +125,11 @@ public: // Properties
 	Value
 	q( Time const t ) const
 	{
-		assert( c_.size() == x_.size() );
-		Value v( c0_ );
-		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
-			v += c_[ i ] * x_[ i ]->q( t );
+		Value r( c0_ );
+		for ( Term const & term : terms_ ) {
+			r += term.c * term.v->q( t );
 		}
-		return v;
+		return r;
 	}
 
 	// Quantized First Derivative at Time t
@@ -183,24 +178,22 @@ public: // Properties
 	Value
 	s( Time const t ) const
 	{
-		assert( c_.size() == x_.size() );
-		Value v( c0_ );
-		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
-			v += c_[ i ] * x_[ i ]->s( t );
+		Value r( c0_ );
+		for ( Term const & term : terms_ ) {
+			r += term.c * term.v->s( t );
 		}
-		return v;
+		return r;
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
 	Value
 	sn( Time const t ) const
 	{
-		assert( c_.size() == x_.size() );
-		Value v( c0_ );
-		for ( size_type i = 0, n = c_.size(); i < n; ++i ) {
-			v += c_[ i ] * x_[ i ]->sn( t );
+		Value r( c0_ );
+		for ( Term const & term : terms_ ) {
+			r += term.c * term.v->sn( t );
 		}
-		return v;
+		return r;
 	}
 
 	// Simultaneous First Derivative at Time t
@@ -255,138 +248,31 @@ public: // Properties
 public: // Methods
 
 	// Add Constant
-	Function_LTI_ND &
+	void
 	add( Coefficient const c0 )
 	{
 		c0_ = c0;
-		return *this;
 	}
 
-	// Add a Variable
-	Function_LTI_ND &
-	add( Variable * x )
-	{
-		assert( c_.size() == x_.size() );
-		c_.push_back( 1.0 );
-		x_.push_back( x );
-		assert( c_.size() == x_.size() );
-		return *this;
-	}
-
-	// Add a Variable
-	Function_LTI_ND &
-	add( Variable & x )
-	{
-		assert( c_.size() == x_.size() );
-		c_.push_back( 1.0 );
-		x_.push_back( &x );
-		assert( c_.size() == x_.size() );
-		return *this;
-	}
-
-	// Add a Coefficient + Variable
-	Function_LTI_ND &
-	add(
-	 Coefficient const c,
-	 Variable & x
-	)
-	{
-		assert( c_.size() == x_.size() );
-		c_.push_back( c );
-		x_.push_back( &x );
-		assert( c_.size() == x_.size() );
-		return *this;
-	}
-
-	// Add a Variable + Coefficient
-	Function_LTI_ND &
-	add(
-	 Variable & x,
-	 Coefficient const c
-	)
-	{
-		assert( c_.size() == x_.size() );
-		c_.push_back( c );
-		x_.push_back( &x );
-		assert( c_.size() == x_.size() );
-		return *this;
-	}
-
-	// Add a Coefficient + Variable
-	Function_LTI_ND &
-	add(
-	 Coefficient const c,
-	 Variable * x
-	)
-	{
-		assert( c_.size() == x_.size() );
-		c_.push_back( c );
-		x_.push_back( x );
-		assert( c_.size() == x_.size() );
-		return *this;
-	}
-
-	// Add a Variable + Coefficient
-	Function_LTI_ND &
-	add(
-	 Variable * x,
-	 Coefficient const c
-	)
-	{
-		assert( c_.size() == x_.size() );
-		c_.push_back( c );
-		x_.push_back( x );
-		assert( c_.size() == x_.size() );
-		return *this;
-	}
-
-	// Finalize Function Representation
-	bool
-	finalize( Variable * v )
+	// Add Variable
+	void
+	add( Variable * v, Variable * = nullptr )
 	{
 		assert( v != nullptr );
-		assert( c_.size() == x_.size() );
-		size_type n( c_.size() );
-
-		// Sort elements by QSS method order (not max efficiency!)
-		Coefficients c;
-		c.reserve( n );
-		Variables x;
-		x.reserve( n );
-		for ( int order = 0; order <= max_order; ++order ) {
-			iBeg[ order ] = c.size();
-			for ( size_type i = 0; i < n; ++i ) {
-				if ( x_[ i ]->order() == order ) {
-					c.push_back( c_[ i ] );
-					x.push_back( x_[ i ] );
-				}
-			}
-		}
-		c_.swap( c );
-		x_.swap( x );
-// Consider doing an in-place permutation if this is a bottleneck
-//		std::vector< size_type > p( n ); // Permutation
-//		std::iota( p.begin(), p.end(), 0u );
-//		std::stable_sort( p.begin(), p.end(), [&]( size_type i, size_type j ){ return x_[ i ]->order() < x_[ j ]->order() } );
-//		...
-
-		// Add variables as observees of self variable
-		bool self_observer( false );
-		for ( Variable * x : x_ ) {
-			if ( x == v ) {
-				self_observer = true;
-			} else {
-				x->add_observer( v );
-			}
-		}
-		return self_observer;
+		Term term{ 1.0, v };
+		terms_.insert( std::upper_bound( terms_.begin(), terms_.end(), term ), std::move( term ) );
 	}
 
-	// Finalize Function Representation
-	bool
-	finalize( Variable & v )
+	// Add Coefficient * Variable
+	void
+	add(
+	 Coefficient const c,
+	 Variable * v,
+	 Variable * = nullptr
+	)
 	{
-		return finalize( &v );
+		Term term{ c, v };
+		terms_.insert( std::upper_bound( terms_.begin(), terms_.end(), term ), std::move( term ) );
 	}
 
 	// Set Differentiation Time Step
@@ -400,19 +286,15 @@ public: // Methods
 		dtn_inv_sq_ = dtn_inv_ * dtn_inv_;
 	}
 
-public: // Static Data
-
-	static int const max_order = 3; // Max QSS order supported
-
 private: // Data
 
-	size_type iBeg[ max_order + 1 ]; // Index of first Variable of each QSS order
 	Coefficient c0_{ 0.0 }; // Constant term
-	Coefficients c_; // Coefficients
-	Variables x_; // Variables
+	Terms terms_; // Coefficient * Variable terms
+
 	mutable Value v_t_; // Last value(t) computed
 	mutable Value v_p_; // Last value(t+dtn) computed
 	mutable Value v_m_; // Last value(t-dtn) computed
+
 	Time dtn_{ options::dtNum }; // Differentiation time step
 	Time dtn_inv_{ 1.0 / options::dtNum }; // Differentiation time step inverse
 	Time dtn_inv_2_{ 0.5 / options::dtNum }; // Differentiation time step half inverse

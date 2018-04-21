@@ -94,7 +94,7 @@ exponential_decay_sine( Variables & vars )
 	u->f().c( 0.05 ).s( 0.5 );
 
 	// Derivatives
-	x->d().add( -1.0, x ).add( u );
+	x->add( -1.0, x ).add( u );
 }
 
 } // mdl

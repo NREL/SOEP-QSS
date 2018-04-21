@@ -78,7 +78,6 @@ uniform_random_real( T const l = T( 0 ), T const u = T( 1 ) )
 	return ( distribution( random_generator ) * ( u - l ) ) + l; // Shift from [0,1] to [l,u]
 }
 
-
 // Uniform-Random Integer on [0,(2^15)-1]
 template< typename T >
 T
@@ -226,7 +225,7 @@ gen( Variables & vars, Conditionals & cons, size_type const nQSS, size_type cons
 	for ( size_type i = 0; i < nQSS; ++i ) {
 		V * x( static_cast< V * >( vars[ i ] ) );
 		Value const c0( uniform_random_real( -c_mag, c_mag ) ); // Constant
-		x->d().add( c0 );
+		x->add( c0 );
 		std::cout << '\n' << x->name << "\n der = " << c0;
 		size_type const n_deps( uniform_random_integer( size_type( 1 ), deg_QSS ) ); // Number of QSS derivative dependencies
 		Indexes ks;
@@ -236,7 +235,7 @@ gen( Variables & vars, Conditionals & cons, size_type const nQSS, size_type cons
 			while ( ks.find( k ) != ks.end() ) k = uniform_random_integer( size_type( 0 ), nQSS - 1 ); // Avoid duplicates
 			assert( k < nQSS );
 			ks.insert( k );
-			x->d().add( c, vars[ k ] );
+			x->add( c, vars[ k ] );
 			std::cout << "\n     + ( " << c << " * " << vars[ k ]->name << " )";
 		}
 		std::cout << '\n';
@@ -258,7 +257,7 @@ gen( Variables & vars, Conditionals & cons, size_type const nQSS, size_type cons
 
 		// Function
 		Value const c0( uniform_random_real( -c_mag, c_mag ) ); // Constant
-		z->f().add( c0 );
+		z->add( c0 );
 		std::cout << '\n' << z->name << "\n fxn = " << c0;
 		size_type const n_deps( uniform_random_integer( size_type( 1 ), deg_ZC ) ); // Number of ZC dependencies
 		Indexes ks;
@@ -268,7 +267,7 @@ gen( Variables & vars, Conditionals & cons, size_type const nQSS, size_type cons
 			while ( ks.find( k ) != ks.end() ) k = uniform_random_integer( size_type( 0 ), nQSS - 1 ); // Avoid duplicates
 			assert( k < nQSS );
 			ks.insert( k );
-			z->f().add( c, vars[ k ] );
+			z->add( c, vars[ k ] );
 			std::cout << "\n     + ( " << c << " * " << vars[ k ]->name << " )";
 		}
 		std::cout << '\n';

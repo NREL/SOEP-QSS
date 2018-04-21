@@ -45,9 +45,11 @@
 #include <QSS/Target.hh>
 
 // C++ Headers
+#include <algorithm>
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
+#include <iterator>
 #include <vector>
 
 namespace QSS {
@@ -64,6 +66,7 @@ public: // Types
 	using Value = double;
 	using Variables = std::vector< Variable * >;
 	using size_type = Variables::size_type;
+	using Coefficient = double;
 
 	using If = IfV< Variable >;
 	using When = WhenV< Variable >;
@@ -138,13 +141,6 @@ protected: // Creation
 
 	// Move Constructor
 	Variable( Variable && ) noexcept = default;
-
-public: // Creation
-
-	// Destructor
-	virtual
-	~Variable()
-	{}
 
 protected: // Assignment
 
@@ -301,6 +297,20 @@ public: // Properties
 		return observers_;
 	}
 
+	// Observees
+	Variables const &
+	observees() const
+	{
+		return observees_;
+	}
+
+	// Observees
+	Variables &
+	observees()
+	{
+		return observees_;
+	}
+
 	// Zero-Crossing Time
 	virtual
 	Time
@@ -326,6 +336,56 @@ public: // Methods
 	{
 		assert( dt > 0.0 );
 		dt_max = dt;
+	}
+
+	// Add Observee and its Observer
+	void
+	observe( Variable * v )
+	{
+		if ( v == this ) { // Don't need to self-observe
+			self_observer = true;
+		} else {
+			observees_.push_back( v );
+			v->observers_.push_back( this );
+		}
+	}
+
+	// Shrink Observers Collection
+	void
+	shrink_observers()
+	{
+		// Remove duplicates
+		std::sort( observers_.begin(), observers_.end() );
+		observers_.resize( std::distance( observers_.begin(), std::unique( observers_.begin(), observers_.end() ) ) );
+		observers_.shrink_to_fit();
+
+		// Put ZC variables at end for correct observer updates since they use observee x reps
+		std::sort( observers_.begin(), observers_.end(), []( Variable const * v1, Variable const * v2 ){ return !( v1->is_ZC() ) && ( v2->is_ZC() ); } );
+
+		// Set index to first ZC observer
+		if ( ! observers_.empty() ) {
+			Variable const * front( observers_.front() );
+			if ( front->is_ZC() ) {
+				i_beg_ZC_observers_ = 0;
+			} else {
+				i_beg_ZC_observers_ = std::distance( observers_.begin(), std::upper_bound( observers_.begin(), observers_.end(), front, []( Variable const * v1, Variable const * v2 ){ return !( v1->is_ZC() ) && ( v2->is_ZC() ); } ) );
+			}
+		} else { // No ZC observers
+			i_beg_ZC_observers_ = observers_.size();
+		}
+	}
+
+	// Shrink Observees Collection
+	void
+	shrink_observees()
+	{
+		// Remove duplicates
+		std::sort( observees_.begin(), observees_.end() );
+		observees_.resize( std::distance( observees_.begin(), std::unique( observees_.begin(), observees_.end() ) ) );
+		observees_.shrink_to_fit();
+
+		// Put ZC variables at end
+		std::sort( observees_.begin(), observees_.end(), []( Variable const * v1, Variable const * v2 ){ return !( v1->is_ZC() ) && ( v2->is_ZC() ); } );
 	}
 
 	// Initialization
@@ -426,18 +486,24 @@ public: // Methods
 		event_ = events.shift_QSS( t, event_ );
 	}
 
+	// QSS ZC Add Event
+	void
+	add_QSS_ZC( Time const t )
+	{
+		event_ = events.add_QSS_ZC( t, this );
+	}
+
+	// QSS ZC Shift Event to Time t
+	void
+	shift_QSS_ZC( Time const t )
+	{
+		event_ = events.shift_QSS_ZC( t, event_ );
+	}
+
 	// QSS Advance
 	virtual
 	void
 	advance_QSS()
-	{
-		assert( false );
-	}
-
-	// QSS Advance: Simultaneous
-	virtual
-	void
-	advance_QSS_simultaneous()
 	{
 		assert( false );
 	}
@@ -553,36 +619,22 @@ public: // Methods
 		assert( false ); // Not a QSS variable
 	}
 
-	// Add Observer
-	void
-	add_observer( Variable & v )
-	{
-		if ( &v != this ) observers_.push_back( &v ); // Don't need to self-observe: Observers called at the end of self requantization
-	}
-
-	// Add Observer
-	void
-	add_observer( Variable * v )
-	{
-		if ( v != this ) observers_.push_back( v ); // Don't need to self-observe: Observers called at the end of self requantization
-	}
-
-	// Shrink Observers Collection
-	void
-	shrink_observers()
-	{
-		observers_.shrink_to_fit();
-	}
-
 	// Advance Observers
 	void
 	advance_observers()
 	{
 #ifdef _OPENMP
-		std::int64_t const n( static_cast< std::int64_t > ( observers_.size() ) );
+		std::int64_t const n( static_cast< std::int64_t >( observers_.size() ) );
 		if ( n >= 4u ) { // Tuned on 4-core/8-thread CPU: Should tune on 8+ core systems
-			#pragma omp parallel for schedule(guided) num_threads(4)
-			for ( std::int64_t i = 0; i < n; ++i ) { // Visual C++ requires signed index type
+			std::int64_t const iZC( static_cast< std::int64_t >( i_beg_ZC_observers_ ) );
+			#pragma omp parallel for schedule(guided)
+			for ( std::int64_t i = 0; i < iZC; ++i ) { // Non-ZC
+				assert( ! observers[ i ]->is_ZC() );
+				observers_[ i ]->advance_observer_parallel( tQ );
+			}
+			#pragma omp parallel for schedule(guided)
+			for ( std::int64_t i = iZC; i < n; ++i ) { // ZC
+				assert( observers[ i ]->is_ZC() );
 				observers_[ i ]->advance_observer_parallel( tQ );
 			}
 			for ( Variable * observer : observers_ ) {
@@ -602,10 +654,25 @@ public: // Methods
 	advance_observers( Variables & observers, Time const t )
 	{
 #ifdef _OPENMP
-		std::int64_t const n( static_cast< std::int64_t > ( observers.size() ) );
+		std::int64_t const n( static_cast< std::int64_t >( observers.size() ) );
 		if ( n >= 4u ) { // Tuned on 4-core/8-thread CPU: Should tune on 8+ core systems
-			#pragma omp parallel for schedule(guided) num_threads(4)
-			for ( std::int64_t i = 0; i < n; ++i ) { // Visual C++ requires signed index type
+			std::int64_t iZC( 0 );
+			if ( ! observers.empty() ) {
+				Variable const * front( observers.front() );
+				if ( ! front->is_ZC() ) { // Some non-ZC observers
+					iZC = std::distance( observers.begin(), std::upper_bound( observers.begin(), observers.end(), front, []( Variable const * v1, Variable const * v2 ){ return !( v1->is_ZC() ) && ( v2->is_ZC() ); } ) );
+				}
+			} else { // No ZC observers
+				iZC = observers.size();
+			}
+			#pragma omp parallel for schedule(guided)
+			for ( std::int64_t i = 0; i < iZC; ++i ) { // Non-ZC
+				assert( ! observers[ i ]->is_ZC() );
+				observers[ i ]->advance_observer_parallel( t );
+			}
+			#pragma omp parallel for schedule(guided)
+			for ( std::int64_t i = iZC; i < n; ++i ) { // ZC
+				assert( observers[ i ]->is_ZC() );
 				observers[ i ]->advance_observer_parallel( t );
 			}
 			for ( Variable * observer : observers ) {
@@ -698,6 +765,8 @@ public: // Data
 protected: // Data
 
 	Variables observers_; // Variables dependent on this one
+	Variables observees_; // Variables this one depends on
+	size_type i_beg_ZC_observers_{ 0u }; // Index of first ZC observer
 
 };
 

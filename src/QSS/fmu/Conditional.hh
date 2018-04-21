@@ -72,13 +72,6 @@ protected: // Creation
 	// Move Constructor
 	Conditional( Conditional && ) noexcept = default;
 
-public: // Creation
-
-	// Destructor
-	virtual
-	~Conditional()
-	{}
-
 protected: // Assignment
 
 	// Copy Assignment
@@ -105,7 +98,7 @@ class IfV final : public Conditional
 
 public: // Nested Types
 
-	// Clause Abstract Base Class
+	// Clause Class
 	class Clause
 	{
 
@@ -182,28 +175,11 @@ public: // Nested Types
 			return *this;
 		}
 
-		// Add a Variable
-		Clause &
-		add( Variable & var )
-		{
-			assert( std::find( vars.begin(), vars.end(), &var ) == vars.end() );
-			vars.push_back( &var );
-			var.if_clauses.push_back( this );
-			return *this;
-		}
-
 		// Add an Observer Variable
 		void
 		add_observer( Variable * v )
 		{
 			observers.push_back( v );
-		}
-
-		// Add an Observer Variable
-		void
-		add_observer( Variable & v )
-		{
-			observers.push_back( &v );
 		}
 
 		// Variable Activity Notifier
@@ -360,7 +336,7 @@ class WhenV final : public Conditional
 
 public: // Nested Types
 
-	// Clause Abstract Base Class
+	// Clause Class
 	class Clause
 	{
 
@@ -425,28 +401,11 @@ public: // Nested Types
 			return *this;
 		}
 
-		// Add a Variable
-		Clause &
-		add( Variable & var )
-		{
-			assert( std::find( vars.begin(), vars.end(), &var ) == vars.end() );
-			vars.push_back( &var );
-			var.when_clauses.push_back( this );
-			return *this;
-		}
-
 		// Add an Observer Variable
 		void
 		add_observer( Variable * v )
 		{
 			observers.push_back( v );
-		}
-
-		// Add an Observer Variable
-		void
-		add_observer( Variable & v )
-		{
-			observers.push_back( &v );
 		}
 
 		// Variable Activity Notifier

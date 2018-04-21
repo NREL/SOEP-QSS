@@ -91,9 +91,9 @@ xyz( Variables & vars )
 	}
 
 	// Derivatives
-	x->d().add( 1.0 );
-	y->d().add( 1.0, x );
-	z->d().add( 1.0, y );
+	x->add( 1.0 );
+	y->add( 1.0, x );
+	z->add( 1.0, y );
 }
 
 } // mdl

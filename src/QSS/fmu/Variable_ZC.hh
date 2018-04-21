@@ -38,10 +38,6 @@
 
 // QSS Headers
 #include <QSS/fmu/Variable.hh>
-#include <QSS/EnumHash.hh> // GCC 5.x needs this
-
-// C++ Headers
-#include <unordered_set>
 
 namespace QSS {
 namespace fmu {
@@ -53,7 +49,7 @@ class Variable_ZC : public Variable
 public: // Types
 
 	using Super = Variable;
-	using Crossings = std::unordered_set< Crossing, EnumHash >;
+	using Crossings = std::vector< Crossing >;
 
 protected: // Creation
 
@@ -80,13 +76,6 @@ protected: // Creation
 	// Move Constructor
 	Variable_ZC( Variable_ZC && ) noexcept = default;
 
-public: // Creation
-
-	// Destructor
-	virtual
-	~Variable_ZC()
-	{}
-
 protected: // Assignment
 
 	// Copy Assignment
@@ -110,7 +99,7 @@ public: // Predicate
 	bool
 	has( Crossing const c )
 	{
-		return ( crossings.find( c ) != crossings.end() );
+		return ( std::find( crossings.begin(), crossings.end(), c ) != crossings.end() );
 	}
 
 public: // Properties
@@ -131,11 +120,21 @@ public: // Properties
 
 public: // Methods
 
+	// Advance Observees Slightly Past Zero-Crossing Time for FMU Detection
+	void
+	advance_observees()
+	{
+		assert( tZ_last != infinity );
+		fmu_set_observees_q( tZ_last + options::dtZC ); // Use slightly later time to let FMU detect the zero crossing: This is not robust
+	}
+
+public: // Crossing Methods
+
 	// Add Crossing Type
 	Variable_ZC &
 	add( Crossing const c )
 	{
-		crossings.insert( c );
+		crossings.push_back( c );
 		return *this;
 	}
 
@@ -144,9 +143,9 @@ public: // Methods
 	add_crossings_all()
 	{
 		add_crossings_Dn();
-		crossings.insert( Crossing::DnZN );
-		crossings.insert( Crossing::Flat );
-		crossings.insert( Crossing::UpZP );
+		crossings.push_back( Crossing::DnZN );
+		crossings.push_back( Crossing::Flat );
+		crossings.push_back( Crossing::UpZP );
 		add_crossings_Up();
 		return *this;
 	}
@@ -156,8 +155,8 @@ public: // Methods
 	add_crossings_non_Flat()
 	{
 		add_crossings_Dn();
-		crossings.insert( Crossing::DnZN );
-		crossings.insert( Crossing::UpZP );
+		crossings.push_back( Crossing::DnZN );
+		crossings.push_back( Crossing::UpZP );
 		add_crossings_Up();
 		return *this;
 	}
@@ -166,9 +165,9 @@ public: // Methods
 	Variable_ZC &
 	add_crossings_Dn()
 	{
-		crossings.insert( Crossing::DnPN );
-		crossings.insert( Crossing::DnPZ );
-		crossings.insert( Crossing::Dn );
+		crossings.push_back( Crossing::DnPN );
+		crossings.push_back( Crossing::DnPZ );
+		crossings.push_back( Crossing::Dn );
 		return *this;
 	}
 
@@ -177,8 +176,8 @@ public: // Methods
 	add_crossings_Dn_Flat()
 	{
 		add_crossings_Dn();
-		crossings.insert( Crossing::DnZN );
-		crossings.insert( Crossing::Flat );
+		crossings.push_back( Crossing::DnZN );
+		crossings.push_back( Crossing::Flat );
 		return *this;
 	}
 
@@ -186,9 +185,9 @@ public: // Methods
 	Variable_ZC &
 	add_crossings_Up()
 	{
-		crossings.insert( Crossing::Up );
-		crossings.insert( Crossing::UpNZ );
-		crossings.insert( Crossing::UpNP );
+		crossings.push_back( Crossing::Up );
+		crossings.push_back( Crossing::UpNZ );
+		crossings.push_back( Crossing::UpNP );
 		return *this;
 	}
 
@@ -196,8 +195,8 @@ public: // Methods
 	Variable_ZC &
 	add_crossings_Up_Flat()
 	{
-		crossings.insert( Crossing::Flat );
-		crossings.insert( Crossing::UpZP );
+		crossings.push_back( Crossing::Flat );
+		crossings.push_back( Crossing::UpZP );
 		add_crossings_Up();
 		return *this;
 	}
@@ -209,14 +208,6 @@ public: // Methods
 		add_crossings_Dn();
 		add_crossings_Up();
 		return *this;
-	}
-
-	// Advance Observees Slightly Past Zero-Crossing Time for FMU Detection
-	void
-	advance_observees()
-	{
-		assert( tZ_last != infinity );
-		fmu_set_observees_q( tZ_last + options::dtZC ); // Use slightly later time to let FMU detect the zero crossing: This is not robust
 	}
 
 protected: // Methods

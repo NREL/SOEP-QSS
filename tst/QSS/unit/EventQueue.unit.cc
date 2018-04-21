@@ -40,6 +40,7 @@
 #include <QSS/EventQueue.hh>
 
 // C++ Headers
+#include <iterator>
 #include <vector>
 
 using namespace QSS;

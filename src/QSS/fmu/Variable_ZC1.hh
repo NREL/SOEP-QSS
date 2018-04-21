@@ -97,7 +97,7 @@ public: // Properties
 	{
 		assert( ( tQ <= t ) && ( t <= tE ) );
 		(void)t; // Suppress unused parameter warning
-		return q_0_;
+		return x_0_;
 	}
 
 public: // Methods
@@ -114,17 +114,18 @@ public: // Methods
 	void
 	init_0()
 	{
-		if ( self_observer ) {
-			std::cerr << "Error: Zero-crossing variable is self-observer: " << name << std::endl;
-			std::exit( EXIT_FAILURE );
-		}
+		// Check no observers
 		if ( ! observers_.empty() ) {
 			std::cerr << "Error: Zero-crossing variable has observers: " << name << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
+
+		// Shrink observees
 		shrink_observees();
+
+		// Initialize trajectory specs
 		fmu_set_observees_q( tQ );
-		x_0_ = q_0_ = fmu_get_value();
+		x_0_ = fmu_get_value();
 		x_mag_ = std::abs( x_0_ );
 		set_qTol();
 	}
@@ -136,15 +137,15 @@ public: // Methods
 		x_1_ = fmu_get_deriv();
 		set_tE();
 		set_tZ();
-		tE < tZ ? add_QSS( tE ) : add_ZC( tZ );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ << '\n';
+		tE < tZ ? add_QSS_ZC( tE ) : add_ZC( tZ );
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ << '\n';
 	}
 
 	// Set Current Tolerance
 	void
 	set_qTol()
 	{
-		qTol = std::max( rTol * std::abs( q_0_ ), aTol );
+		qTol = std::max( rTol * std::abs( x_0_ ), aTol );
 		assert( qTol > 0.0 );
 	}
 
@@ -158,7 +159,7 @@ public: // Methods
 		check_crossing_ = ( tE > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_tE : x( tE ) ) : 0 );
 #endif
-		x_0_ = q_0_ = fmu_get_value();
+		x_0_ = fmu_get_value();
 		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 		set_qTol();
 		x_1_ = fmu_get_deriv();
@@ -167,32 +168,9 @@ public: // Methods
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
 #else
 		set_tZ();
-		tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
+		tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 #endif
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ << '\n';
-	}
-
-	// QSS Advance: Stage 0
-	void
-	advance_QSS_0()
-	{
-		fmu_set_observees_q( tX = tQ = tE );
-		Value const x_tE( zChatter_ ? x( tE ) : Value( 0.0 ) );
-		check_crossing_ = ( tE > tZ_last ) || ( x_mag_ != 0.0 );
-		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_tE : x( tE ) ) : 0 );
-		x_0_ = q_0_ = fmu_get_value();
-		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
-		set_qTol();
-	}
-
-	// QSS Advance: Stage 1
-	void
-	advance_QSS_1()
-	{
-		x_1_ = fmu_get_deriv();
-		set_tE();
-		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
-		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ << '\n';
 	}
 
 	// Observer Advance: Stage 1
@@ -204,7 +182,7 @@ public: // Methods
 		Value const x_t( zChatter_ ? x( t ) : Value( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = q_0_ = fmu_get_value();
+		x_0_ = fmu_get_value();
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		set_qTol();
 		x_1_ = d;
@@ -221,7 +199,7 @@ public: // Methods
 		Value const x_t( zChatter_ ? x( t ) : Value( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = q_0_ = v;
+		x_0_ = v;
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		set_qTol();
 		x_1_ = d;
@@ -233,7 +211,7 @@ public: // Methods
 	void
 	advance_observer_d() const
 	{
-		std::cout << "  " << name << '(' << tX << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ <<  '\n';
+		std::cout << "  " << name << '(' << tX << ')' << std::showpos << " = " << x_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ <<  '\n';
 	}
 
 	// Zero-Crossing Advance
@@ -246,7 +224,7 @@ public: // Methods
 		crossing_last = crossing;
 		x_mag_ = 0.0;
 		set_tZ( tZ_last = tZ ); // Next zero-crossing: Might be in active segment
-		tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
+		tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 		advance_observees(); // set_tZ refinement sets observees so we do this after
 	}
 
@@ -331,10 +309,10 @@ private: // Methods
 	{
 		if ( zChatter_ && ( x_mag_ < zTol ) ) { // Chatter prevention
 			tZ = infinity;
-			shift_QSS( tE );
+			shift_QSS_ZC( tE );
 		} else if ( ( ! check_crossing ) || ( sign_old == sign_new ) ) {
 			set_tZ();
-			tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
+			tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 		} else { // Check zero-crossing
 			Crossing const crossing_check( crossing_type( sign_old, sign_new ) );
 			if ( has( crossing_check ) ) { // Crossing type is relevant
@@ -342,7 +320,7 @@ private: // Methods
 				shift_ZC( tZ = tX );
 			} else {
 				set_tZ();
-				tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
+				tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 			}
 		}
 	}
@@ -350,7 +328,6 @@ private: // Methods
 private: // Data
 
 	Value x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
-	Value q_0_{ 0.0 }; // Quantized rep coefficients
 
 };
 

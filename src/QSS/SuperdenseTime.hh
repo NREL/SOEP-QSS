@@ -318,7 +318,7 @@ public: // Data
 
 	Time t{ 0.0 }; // Time
 	Index i{ 0 }; // Pass
-	Offset o{ 0 }; // Type
+	Offset o{ 0 }; // Offset
 
 };
 

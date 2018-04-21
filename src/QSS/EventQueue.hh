@@ -88,6 +88,7 @@ public: // Types
 		static SuperdenseTime::Offset const Conditional{ 2 };
 		static SuperdenseTime::Offset const Handler{ 3 };
 		static SuperdenseTime::Offset const QSS{ 4 };
+		static SuperdenseTime::Offset const QSS_ZC{ 5 };
 	};
 
 public: // Predicates
@@ -562,6 +563,33 @@ public: // QSS Event Methods
 		Target * tar( i->second.tar() );
 		m_.erase( i );
 		return m_.emplace( SuperdenseTime( t, idx, Off::QSS ), EventT( Type::QSS, tar ) );
+	}
+
+public: // QSS ZC Event Methods
+
+	// Add QSS ZC Event
+	iterator
+	add_QSS_ZC(
+	 Time const t,
+	 Target * tar
+	)
+	{
+		return m_.emplace( SuperdenseTime( t, 0, Off::QSS_ZC ), EventT( Type::QSS_ZC, tar ) );
+	}
+
+	// Shift QSS ZC Event
+	iterator
+	shift_QSS_ZC(
+	 Time const t,
+	 iterator const i
+	)
+	{
+		assert( t_ == s_.t );
+		assert( t >= t_ );
+		Index const idx( t == t_ ? ( s_.o < Off::QSS_ZC ? s_.i : s_.i + 1u ) : Index( 0 ) );
+		Target * tar( i->second.tar() );
+		m_.erase( i );
+		return m_.emplace( SuperdenseTime( t, idx, Off::QSS_ZC ), EventT( Type::QSS_ZC, tar ) );
 	}
 
 private: // Static Data

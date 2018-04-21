@@ -83,7 +83,7 @@ nonlinear_ND( Variables & vars )
 	}
 
 	// Derivatives
-	y->d().var( y );
+	y->add( y );
 
 	// Analytical solution output
 	std::ofstream e_stream( "y.e.out" );

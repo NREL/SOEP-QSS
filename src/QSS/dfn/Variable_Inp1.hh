@@ -148,7 +148,8 @@ public: // Methods
 	void
 	init_0()
 	{
-		shrink_observers(); // Optional
+		assert( Super::observees_.empty() );
+		shrink_observers();
 		x_0_ = q_0_ = f_.vs( tQ );
 		set_qTol();
 	}

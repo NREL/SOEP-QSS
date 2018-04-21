@@ -92,13 +92,6 @@ protected: // Creation
 	// Move Constructor
 	Variable_Inp( Variable_Inp && ) noexcept = default;
 
-public: // Creation
-
-	// Destructor
-	virtual
-	~Variable_Inp()
-	{}
-
 protected: // Assignment
 
 	// Copy Assignment

@@ -72,13 +72,6 @@ protected: // Creation
 	// Move Constructor
 	Conditional( Conditional && ) noexcept = default;
 
-public: // Creation
-
-	// Destructor
-	virtual
-	~Conditional()
-	{}
-
 protected: // Assignment
 
 	// Copy Assignment
@@ -219,16 +212,6 @@ public: // Nested Types
 			return *this;
 		}
 
-		// Add a Variable
-		Clause &
-		add( Variable & var )
-		{
-			assert( std::find( vars.begin(), vars.end(), &var ) == vars.end() );
-			vars.push_back( &var );
-			var.if_clauses.push_back( this );
-			return *this;
-		}
-
 		// Variable Activity Notifier
 		void
 		activity( Time const t )
@@ -270,11 +253,6 @@ public: // Nested Types
 		// Constructor
 		ClauseH( If * conditional ) :
 		 Clause( conditional )
-		{}
-
-		// Destructor
-		virtual
-		~ClauseH()
 		{}
 
 	public: // Properties
@@ -540,16 +518,6 @@ public: // Nested Types
 			return *this;
 		}
 
-		// Add a Variable
-		Clause &
-		add( Variable & var )
-		{
-			assert( std::find( vars.begin(), vars.end(), &var ) == vars.end() );
-			vars.push_back( &var );
-			var.when_clauses.push_back( this );
-			return *this;
-		}
-
 		// Variable Activity Notifier
 		void
 		activity( Time const t )
@@ -591,11 +559,6 @@ public: // Nested Types
 		// Constructor
 		ClauseH( When * conditional ) :
 		 Clause( conditional )
-		{}
-
-		// Destructor
-		virtual
-		~ClauseH()
 		{}
 
 	public: // Properties

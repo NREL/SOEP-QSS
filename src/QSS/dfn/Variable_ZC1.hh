@@ -80,11 +80,11 @@ public: // Types
 	using Super::zChatter_;
 	using Super::zTol;
 
-	using Super::add_QSS;
+	using Super::add_QSS_ZC;
 	using Super::add_ZC;
 	using Super::event;
 	using Super::has;
-	using Super::shift_QSS;
+	using Super::shift_QSS_ZC;
 	using Super::shift_ZC;
 	using Super::tE_infinity_tQ;
 
@@ -143,7 +143,7 @@ public: // Properties
 	{
 		assert( ( tQ <= t ) && ( t <= tE ) );
 		(void)t; // Suppress unused parameter warning
-		return q_0_;
+		return x_0_;
 	}
 
 public: // Methods
@@ -152,30 +152,22 @@ public: // Methods
 	void
 	init()
 	{
-		self_observer = f_.finalize( this );
-		if ( self_observer ) {
-			std::cerr << "Error: Zero-crossing variable is self-observer: " << name << std::endl;
-			std::exit( EXIT_FAILURE );
-		}
-		if ( ! observers_.empty() ) {
-			std::cerr << "Error: Zero-crossing variable has observers: " << name << std::endl;
-			std::exit( EXIT_FAILURE );
-		}
-		x_0_ = q_0_ = f_.q( tQ );
+		// Initialize trajectory specs
+		x_0_ = f_.x( tQ );
 		x_mag_ = std::abs( x_0_ );
 		set_qTol();
-		x_1_ = f_.q1( tQ );
+		x_1_ = f_.x1( tQ );
 		set_tE();
 		set_tZ();
-		tE < tZ ? add_QSS( tE ) : add_ZC( tZ );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ << '\n';
+		tE < tZ ? add_QSS_ZC( tE ) : add_ZC( tZ );
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ << '\n';
 	}
 
 	// Set Current Tolerance
 	void
 	set_qTol()
 	{
-		qTol = std::max( rTol * std::abs( q_0_ ), aTol );
+		qTol = std::max( rTol * std::abs( x_0_ ), aTol );
 		assert( qTol > 0.0 );
 	}
 
@@ -188,34 +180,18 @@ public: // Methods
 		bool const check_crossing( ( tE > tZ_last ) || ( x_mag_ != 0.0 ) );
 		int const sign_old( check_crossing ? signum( zChatter_ ? x_tE : x( tE ) ) : 0 );
 #endif
-		x_0_ = q_0_ = f_.q( tX = tQ = tE );
+		x_0_ = f_.x( tX = tQ = tE );
 		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 		set_qTol();
-		x_1_ = f_.q1( tE );
+		x_1_ = f_.x1( tE );
 		set_tE();
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
 		crossing_detect( sign_old, signum( x_0_ ), check_crossing );
 #else
 		set_tZ();
-		tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
+		tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 #endif
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ << '\n';
-	}
-
-	// QSS Advance: Simultaneous
-	void
-	advance_QSS_simultaneous()
-	{
-		Value const x_tE( zChatter_ ? x( tE ) : Value( 0.0 ) );
-		bool const check_crossing( ( tE > tZ_last ) || ( x_mag_ != 0.0 ) );
-		int const sign_old( check_crossing ? signum( zChatter_ ? x_tE : x( tE ) ) : 0 );
-		x_0_ = q_0_ = f_.q( tX = tQ = tE );
-		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
-		set_qTol();
-		x_1_ = f_.q1( tE );
-		set_tE();
-		crossing_detect( sign_old, signum( x_0_ ), check_crossing );
-		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ << '\n';
 	}
 
 	// Observer Advance
@@ -226,13 +202,13 @@ public: // Methods
 		Value const x_t( zChatter_ ? x( t ) : Value( 0.0 ) );
 		bool const check_crossing( ( t > tZ_last ) || ( x_mag_ != 0.0 ) );
 		int const sign_old( check_crossing ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = q_0_ = f_.q( tX = tQ = t );
+		x_0_ = f_.x( tX = tQ = t );
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		set_qTol();
-		x_1_ = f_.q1( t );
+		x_1_ = f_.x1( t );
 		set_tE();
 		crossing_detect( sign_old, signum( x_0_ ), check_crossing );
-		if ( options::output::d ) std::cout << "  " << name << '(' << t << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ <<  '\n';
+		if ( options::output::d ) std::cout << "  " << name << '(' << t << ')' << std::showpos << " = " << x_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ <<  '\n';
 	}
 
 	// Observer Advance: Parallel
@@ -243,10 +219,10 @@ public: // Methods
 		Value const x_t( zChatter_ ? x( t ) : Value( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = q_0_ = f_.q( tX = tQ = t );
+		x_0_ = f_.x( tX = tQ = t );
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		set_qTol();
-		x_1_ = f_.q1( t );
+		x_1_ = f_.x1( t );
 		set_tE();
 	}
 
@@ -255,7 +231,7 @@ public: // Methods
 	advance_observer_sequential()
 	{
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
-		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ <<  '\n';
+		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << std::showpos << " = " << x_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ <<  '\n';
 	}
 
 	// Zero-Crossing Advance
@@ -268,7 +244,7 @@ public: // Methods
 		crossing_last = crossing;
 		x_mag_ = 0.0;
 		set_tZ( tZ_last = tZ ); // Next zero-crossing: Might be in active segment
-		tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
+		tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 	}
 
 private: // Methods
@@ -302,25 +278,26 @@ private: // Methods
 					tZ = tX - ( x_0_ / x_1_ ); // Root of continuous rep
 					assert( tX < tZ );
 					crossing = crossing_check;
-					// Refine root
-					Time t( tZ ), t_p( tZ );
-					Value const vZ( f_.q( tZ ) );
-					Value v( vZ ), v_p( vZ );
-					Value m( 1.0 ); // Multiplier
-					std::size_t i( 0 );
-					std::size_t const n( 10u ); // Max iterations
-					while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-						Value const d( f_.q1( t ) );
-						if ( d == 0.0 ) break;
-						//if ( ( signum( d ) != sign_old ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
-						t -= m * ( v / d );
-						v = f_.q( t );
-						if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
-						t_p = t;
-						v_p = v;
+					if ( options::refine ) { // Refine root: Expensive!
+						Time t( tZ ), t_p( tZ );
+						Value const vZ( f_.x( tZ ) );
+						Value v( vZ ), v_p( vZ );
+						Value m( 1.0 ); // Multiplier
+						std::size_t i( 0 );
+						std::size_t const n( 10u ); // Max iterations
+						while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
+							Value const d( f_.x1( t ) );
+							if ( d == 0.0 ) break;
+							//if ( ( signum( d ) != sign_old ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
+							t -= m * ( v / d );
+							v = f_.x( t );
+							if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
+							t_p = t;
+							v_p = v;
+						}
+						if ( ( t >= tX ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
+						if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
 					}
-					if ( ( t >= tX ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
-					if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
 				} else { // Heading away from zero
 					tZ = infinity;
 				}
@@ -345,10 +322,10 @@ private: // Methods
 	{
 		if ( zChatter_ && ( x_mag_ < zTol ) ) { // Chatter prevention
 			tZ = infinity;
-			shift_QSS( tE );
+			shift_QSS_ZC( tE );
 		} else if ( ( ! check_crossing ) || ( sign_old == sign_new ) ) {
 			set_tZ();
-			tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
+			tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 		} else { // Check zero-crossing
 			Crossing const crossing_check( crossing_type( sign_old, sign_new ) );
 			if ( has( crossing_check ) ) { // Crossing type is relevant
@@ -356,7 +333,7 @@ private: // Methods
 				shift_ZC( tZ = tX );
 			} else {
 				set_tZ();
-				tE < tZ ? shift_QSS( tE ) : shift_ZC( tZ );
+				tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 			}
 		}
 	}
@@ -364,7 +341,6 @@ private: // Methods
 private: // Data
 
 	Value x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
-	Value q_0_{ 0.0 }; // Quantized rep coefficients
 
 };
 

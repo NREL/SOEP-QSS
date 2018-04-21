@@ -70,6 +70,7 @@ public: // Types
 	using Super::advance_observers;
 	using Super::event;
 	using Super::shift_QSS;
+	using Super::shrink_observees;
 	using Super::shrink_observers;
 	using Super::tE_infinity_tQ;
 	using Super::tE_infinity_tX;
@@ -230,8 +231,8 @@ public: // Methods
 	void
 	init_1()
 	{
-		self_observer = d_.finalize( this );
-		shrink_observers(); // Optional
+		shrink_observers();
+		shrink_observees();
 		x_1_ = q_1_ = d_.s( tQ );
 	}
 

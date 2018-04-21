@@ -87,7 +87,7 @@ exponential_decay_step( Variables & vars )
 	u->f().h_0( 0.0 ).h( 0.1 ).d( 10.0 ); // Step up by 0.1 every 10 s
 
 	// Derivatives
-	x->d().add( -1.0, x ).add( u );
+	x->add( -1.0, x ).add( u );
 }
 
 } // mdl

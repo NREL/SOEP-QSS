@@ -58,7 +58,8 @@ public: // Types
 	 ZC,
 	 Conditional,
 	 Handler,
-	 QSS
+	 QSS,
+	 QSS_ZC
 	};
 
 public: // Creation
@@ -109,6 +110,13 @@ public: // Properties
 	is_QSS() const
 	{
 		return ( typ_ == Type::QSS );
+	}
+
+	// QSS ZC Event?
+	bool
+	is_QSS_ZC() const
+	{
+		return ( typ_ == Type::QSS_ZC );
 	}
 
 	// Event Type

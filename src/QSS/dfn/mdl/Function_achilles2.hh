@@ -180,40 +180,16 @@ public: // Properties
 
 public: // Methods
 
-	// Set Variables
+	// Add Variable
 	void
-	var( Variable & x1 )
+	add( Variable * v, Variable * = nullptr )
 	{
-		x1_ = &x1;
-	}
-
-	// Set Variables
-	void
-	var( Variable * x1 )
-	{
-		x1_ = x1;
-	}
-
-	// Finalize Function Representation
-	bool
-	finalize( Variable * v )
-	{
-		assert( v != nullptr );
-		assert( v != x1_ );
-		x1_->add_observer( v ); // Add self variable as observer of non-self variable
-		return false; // Not a self-observer
-	}
-
-	// Finalize Function Representation
-	bool
-	finalize( Variable & v )
-	{
-		return finalize( &v );
+		x1_ = v;
 	}
 
 private: // Data
 
-	Coefficient c0_{ 0.0 }, c1_{ -1.0 };
+	Coefficient const c0_{ 0.0 }, c1_{ -1.0 };
 	Variable * x1_{ nullptr };
 
 };

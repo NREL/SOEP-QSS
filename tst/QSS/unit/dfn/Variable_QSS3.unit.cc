@@ -47,7 +47,7 @@ using namespace QSS::dfn::mdl;
 TEST( Variable_QSS3Test, Basic )
 {
 	Variable_QSS3< Function_LTI > x1( "x1" );
-	x1.d().add( 12.0 ).add( 2.0, x1 );
+	x1.add( 12.0 ).add( 2.0, &x1 );
 	x1.init( 2.5 );
 	EXPECT_EQ( 1.0e-4, x1.rTol );
 	EXPECT_EQ( 1.0e-6, x1.aTol );
@@ -61,7 +61,7 @@ TEST( Variable_QSS3Test, Basic )
 	EXPECT_EQ( x1_tE, x1.tQ );
 
 	Variable_QSS3< Function_LTI > x2( "x2", 1.0e-4, 1.0e-3 );
-	x2.d().add( 12.0 ).add( 2.0, x2 );
+	x2.add( 12.0 ).add( 2.0, &x2 );
 	x2.init( 2.5 );
 	EXPECT_EQ( 1.0e-4, x2.rTol );
 	EXPECT_EQ( 1.0e-3, x2.aTol );
