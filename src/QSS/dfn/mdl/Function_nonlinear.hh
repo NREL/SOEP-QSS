@@ -46,9 +46,21 @@ namespace QSS {
 namespace dfn {
 namespace mdl {
 
-// Problem:  y'( t ) = ( 1 + 2 t ) / ( y + 2 ), y( 0 ) = 2
+// Problem:  y'(t) = ( 1 + 2 t ) / ( y + 2 ), y( 0 ) = 2
 // Solution: y = sqrt( 2 t^2 + 2 t + 16 ) - 2
-// Note:     y''( t ) = ( 2 / ( y + 2 ) ) - ( ( 1 + 2 t )^2 / ( y + 2 )^3 )
+// Notes:
+//  y'(t) = ( 1 + 2 t ) / sqrt( 2 t^2 + 2 t + 16 )
+//
+//  y''(t) = ( 2 / ( y + 2 ) ) - ( ( 1 + 2 t )^2 / ( y + 2 )^3 )
+//         = ( 2 / ( y + 2 ) ) - ( ( 1 + 2 t ) / ( y + 2 )^2 ) y'
+//         = 31 / ( 2 t^2 + 2 t + 16 )^(3/2)
+//
+//  y'''(t) = 3 ( 1 + 2 t )^3 / ( y + 2 )^5 - 6 ( 1 + 2 t ) / ( y + 2 )^3
+//          = ( -4 / ( y + 2 )^2 ) y' + 2 ( ( 1 + 2 t ) / ( y + 2 )^3 ) y'^2 - ( ( 1 + 2 t ) / ( y + 2 )^2 ) y''
+//          = -( 93 + 186 t ) / ( 2 t^2 + 2 t + 16 )^(5/2)
+//
+//  y''''(t) = ( 4 ( y + 2 ) ( 2 + y' ) y' - 6 ( 1 + 2 t ) y'^3 + ( 2 ( 1 + 2 t ) - 6 ( y + 2 ) ) ( y + 2 ) y'' + ( ( 1 + 2 t ) ( y + 2 )^2 y''' ) ) / ( y + 2 )^4
+//           = ( 1488 t^2 + 1488 t - 2511 ) / ( 2 t^2 + 2 t + 16 )^(7/2)
 
 // Derivative Function for Nonlinear Example
 template< typename V > // Template to avoid cyclic inclusion with Variable
@@ -84,17 +96,34 @@ public: // Properties
 	Value
 	x1( Time const t ) const
 	{
-		Value const v( y_->x( t ) + 2.0 );
-		return ( ( 2.0 * v ) - ( y_->x1( t ) * ( 1.0 + ( 2.0 * t ) ) ) ) / square( v );
+		Value const yp2( y_->x( t ) + 2.0 );
+		return ( ( 2.0 * yp2 ) - ( y_->x1( t ) * ( 1.0 + ( 2.0 * t ) ) ) ) / square( yp2 );
 	}
 
 	// Continuous Second Derivative at Time t
 	Value
 	x2( Time const t ) const
 	{
-		Value const v( y_->x( t ) + 2.0 );
+		Value const yp2( y_->x( t ) + 2.0 );
 		Value const w( 1.0 + 2.0 * t );
-		return ( ( 2.0 * square( y_->x1( t ) ) * w ) - ( v * ( ( y_->x2( t ) * w ) + ( 4.0 * y_->x1( t ) ) ) ) ) / cube( v );
+		return ( ( 2.0 * square( y_->x1( t ) ) * w ) - ( yp2 * ( ( y_->x2( t ) * w ) + ( 4.0 * y_->x1( t ) ) ) ) ) / cube( yp2 );
+	}
+
+	// Continuous Third Derivative at Time t
+	Value
+	x3( Time const t ) const
+	{
+		Value const yp2( y_->x( t ) + 2.0 );
+		Value const y1( y_->x1( t ) );
+		Value const y2( y_->x2( t ) );
+		Value const y3( y_->x3( t ) );
+		Value const w( 1.0 + 2.0 * t );
+		return (
+		 ( 4.0 * yp2 * ( 2.0 + y1 ) * y1 ) -
+		 ( 6.0 * w * cube( y1 ) ) +
+		 ( ( ( 2.0 * w ) - ( 6.0 * yp2 ) ) * yp2 * y2 ) +
+		 ( w * square( yp2 ) * y3 )
+		 ) / quad( yp2 );
 	}
 
 	// Quantized Value at Time t
@@ -108,17 +137,17 @@ public: // Properties
 	Value
 	q1( Time const t ) const
 	{
-		Value const v( y_->q( t ) + 2.0 );
-		return ( ( 2.0 * v ) - ( y_->q1( t ) * ( 1.0 + ( 2.0 * t ) ) ) ) / square( v );
+		Value const yp2( y_->q( t ) + 2.0 );
+		return ( ( 2.0 * yp2 ) - ( y_->q1( t ) * ( 1.0 + ( 2.0 * t ) ) ) ) / square( yp2 );
 	}
 
 	// Quantized Second Derivative at Time t
 	Value
 	q2( Time const t ) const
 	{
-		Value const v( y_->q( t ) + 2.0 );
+		Value const yp2( y_->q( t ) + 2.0 );
 		Value const w( 1.0 + 2.0 * t );
-		return ( ( 2.0 * square( y_->q1( t ) ) * w ) - ( v * ( ( y_->q2( t ) * w ) + ( 4.0 * y_->q1( t ) ) ) ) ) / cube( v );
+		return ( ( 2.0 * square( y_->q1( t ) ) * w ) - ( yp2 * ( ( y_->q2( t ) * w ) + ( 4.0 * y_->q1( t ) ) ) ) ) / cube( yp2 );
 	}
 
 	// Quantized Sequential Value at Time t
@@ -160,17 +189,17 @@ public: // Properties
 	Value
 	s1( Time const t ) const
 	{
-		Value const v( y_->s( t ) + 2.0 );
-		return ( ( 2.0 * v ) - ( y_->s1( t ) * ( 1.0 + ( 2.0 * t ) ) ) ) / square( v );
+		Value const yp2( y_->s( t ) + 2.0 );
+		return ( ( 2.0 * yp2 ) - ( y_->s1( t ) * ( 1.0 + ( 2.0 * t ) ) ) ) / square( yp2 );
 	}
 
 	// Simultaneous Second Derivative at Time t
 	Value
 	s2( Time const t ) const
 	{
-		Value const v( y_->s( t ) + 2.0 );
+		Value const yp2( y_->s( t ) + 2.0 );
 		Value const w( 1.0 + 2.0 * t );
-		return ( ( 2.0 * square( y_->s1( t ) ) * w ) - ( v * ( ( y_->s2( t ) * w ) + ( 4.0 * y_->s1( t ) ) ) ) ) / cube( v );
+		return ( ( 2.0 * square( y_->s1( t ) ) * w ) - ( yp2 * ( ( y_->s2( t ) * w ) + ( 4.0 * y_->s1( t ) ) ) ) ) / cube( yp2 );
 	}
 
 	// Simultaneous Sequential Value at Time t

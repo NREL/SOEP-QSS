@@ -79,29 +79,11 @@ sgn( T const x )
 	return ( x < T( 0 ) ? T( -1 ) : ( x > T( 0 ) ? T( +1 ) : T( 0 ) ) );
 }
 
-// Signum: Returns Passed Type
-template< typename T, class = typename std::enable_if< ! std::is_arithmetic< T >::value >::type >
-inline
-T
-sgn( T const & x )
-{
-	return ( x < T( 0 ) ? T( -1 ) : ( x > T( 0 ) ? T( +1 ) : T( 0 ) ) );
-}
-
 // Signum: Returns int
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 int
 signum( T const x )
-{
-	return ( x < T( 0 ) ? -1 : ( x > T( 0 ) ? +1 : 0 ) );
-}
-
-// Signum: Returns int
-template< typename T, class = typename std::enable_if< ! std::is_arithmetic< T >::value >::type >
-inline
-int
-signum( T const & x )
 {
 	return ( x < T( 0 ) ? -1 : ( x > T( 0 ) ? +1 : 0 ) );
 }
@@ -115,15 +97,6 @@ square( T const x )
 	return x * x;
 }
 
-// Square
-template< typename T, class = typename std::enable_if< ! std::is_arithmetic< T >::value >::type >
-inline
-T
-square( T const & x )
-{
-	return x * x;
-}
-
 // Cube
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
@@ -133,13 +106,13 @@ cube( T const x )
 	return x * x * x;
 }
 
-// Cube
-template< typename T, class = typename std::enable_if< ! std::is_arithmetic< T >::value >::type >
+// Quad (4th Power)
+template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
-cube( T const & x )
+quad( T const x )
 {
-	return x * x * x;
+	return square( x * x );
 }
 
 // Max of 3 Values
@@ -147,15 +120,6 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 inline
 T
 max( T const x, T const y, T const z )
-{
-	return ( x < y ? ( y < z ? z : y ) : ( x < z ? z : x ) );
-}
-
-// Max of 3 Values
-template< typename T, class = typename std::enable_if< ! std::is_arithmetic< T >::value >::type >
-inline
-T const &
-max( T const & x, T const & y, T const & z )
 {
 	return ( x < y ? ( y < z ? z : y ) : ( x < z ? z : x ) );
 }
@@ -169,115 +133,24 @@ min( T const x, T const y, T const z )
 	return ( x < y ? ( x < z ? x : z ) : ( y < z ? y : z ) );
 }
 
-// Min of 3 Values
-template< typename T, class = typename std::enable_if< ! std::is_arithmetic< T >::value >::type >
-inline
-T const &
-min( T const & x, T const & y, T const & z )
-{
-	return ( x < y ? ( x < z ? x : z ) : ( y < z ? y : z ) );
-}
-
-// Min Positive of Two Nonnegative Values
+// Min Positive of Two Values or Infinity
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
 min_positive( T const x, T const y )
 {
-	assert( x >= 0.0 );
-	assert( y >= 0.0 );
-	if ( x > 0.0 ) {
-		if ( y > 0.0 ) {
-			return std::min( x, y );
-		} else {
-			return x;
-		}
-	} else {
-		return y;
-	}
+	return ( x > 0.0 ? ( y > 0.0 ? std::min( x, y ) : x ) : ( y > 0.0 ? y : infinity ) );
 }
 
-// Min Positive of Two Nonnegative Values
-template< typename T, class = typename std::enable_if< ! std::is_arithmetic< T >::value >::type >
-inline
-T const &
-min_positive( T const & x, T const & y )
-{
-	assert( x >= 0.0 );
-	assert( y >= 0.0 );
-	if ( x > 0.0 ) {
-		if ( y > 0.0 ) {
-			return std::min( x, y );
-		} else {
-			return x;
-		}
-	} else {
-		return y;
-	}
-}
-
-// Min Positive of Three Nonnegative Values
+// Min Positive of Three Values or Infinity
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
 min_positive( T const x, T const y, T const z )
 {
-	assert( x >= 0.0 );
-	assert( y >= 0.0 );
-	assert( z >= 0.0 );
-	if ( x > 0.0 ) {
-		if ( y > 0.0 ) {
-			if ( z > 0.0 ) {
-				return min( x, y, z );
-			} else {
-				return std::min( x, y );
-			}
-		} else if ( z > 0.0 ) {
-			return std::min( x, z );
-		} else {
-			return x;
-		}
-	} else if ( y > 0.0 ) {
-		if ( z > 0.0 ) {
-			return std::min( y, z );
-		} else {
-			return y;
-		}
-	} else {
-		return z;
-	}
-}
-
-// Min Positive of Three Nonnegative Values
-template< typename T, class = typename std::enable_if< ! std::is_arithmetic< T >::value >::type >
-inline
-T const &
-min_positive( T const & x, T const & y, T const & z )
-{
-	assert( x >= 0.0 );
-	assert( y >= 0.0 );
-	assert( z >= 0.0 );
-	if ( x > 0.0 ) {
-		if ( y > 0.0 ) {
-			if ( z > 0.0 ) {
-				return min( x, y, z );
-			} else {
-				return std::min( x, y );
-			}
-		} else if ( z > 0.0 ) {
-			return std::min( x, z );
-		} else {
-			return x;
-		}
-	} else if ( y > 0.0 ) {
-		if ( z > 0.0 ) {
-			return std::min( y, z );
-		} else {
-			return y;
-		}
-	} else {
-		return z;
-	}
+	return ( x > 0.0 ?
+	 ( y > 0.0 ? ( z > 0.0 ? min( x, y, z ) : std::min( x, y ) ) : ( z > 0.0 ? std::min( x, z ) : x ) ) : // x > 0
+	 ( y > 0.0 ? ( z > 0.0 ? std::min( y, z ) : y ) : ( z > 0.0 ? z : infinity ) ) ); // x < 0
 }
 
 // Value if Positive or Infinity

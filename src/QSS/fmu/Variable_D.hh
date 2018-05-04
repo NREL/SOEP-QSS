@@ -163,7 +163,7 @@ public: // Methods
 		init_observers();
 		x_ = xIni;
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Initialization to a Value: Stage 0
@@ -174,7 +174,7 @@ public: // Methods
 		init_observers();
 		x_ = x;
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Handler Advance
@@ -183,24 +183,12 @@ public: // Methods
 	{
 		assert( tX <= t );
 		tX = tQ = t;
-		Value const x_new( fmu_get_value() ); // Assume FMU ran event handler
-		if ( x_ != x_new ) {
-			x_ = x_new;
-			advance_observers_1();
-			if ( observers_max_order_ >= 2 ) {
-				fmu::set_time( tN = tQ + options::dtNum );
-				advance_observers_2();
-			}
-			if ( options::output::d ) {
-				std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
-				advance_observers_d();
-			}
-		} else {
-			if ( options::output::d ) {
-				std::cout << "# " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
-			}
-		}
 		shift_handler();
+		Value const x_new( fmu_get_value() ); // Assume FMU ran event handler
+		bool const chg( x_ != x_new );
+		if ( chg ) x_ = x_new;
+		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( chg && have_observers_ ) advance_observers();
 	}
 
 	// Handler Advance: Stage 0
@@ -209,9 +197,11 @@ public: // Methods
 	{
 		assert( tX <= t );
 		tX = tQ = t;
-		x_ = fmu_get_value(); // Assume FMU ran event handler
 		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
+		Value const x_new( fmu_get_value() ); // Assume FMU ran event handler
+		bool const chg( x_ != x_new );
+		if ( chg ) x_ = x_new;
+		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Handler No-Advance

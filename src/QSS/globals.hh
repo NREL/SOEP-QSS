@@ -43,7 +43,8 @@
 namespace QSS {
 
 // QSS Globals
-extern EventQueue< Target > events;
+extern int const max_rep_order; // Max representation order
+extern EventQueue< Target > events; // Event queue
 
 } // QSS
 

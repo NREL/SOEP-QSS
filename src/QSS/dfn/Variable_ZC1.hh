@@ -160,7 +160,7 @@ public: // Methods
 		set_tE();
 		set_tZ();
 		tE < tZ ? add_QSS_ZC( tE ) : add_ZC( tZ );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
 	// Set Current Tolerance
@@ -191,7 +191,7 @@ public: // Methods
 		set_tZ();
 		tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 #endif
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
 	// Observer Advance
@@ -208,7 +208,7 @@ public: // Methods
 		x_1_ = f_.x1( t );
 		set_tE();
 		crossing_detect( sign_old, signum( x_0_ ), check_crossing );
-		if ( options::output::d ) std::cout << "  " << name << '(' << t << ')' << std::showpos << " = " << x_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ <<  '\n';
+		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ <<  '\n';
 	}
 
 	// Observer Advance: Parallel
@@ -231,7 +231,7 @@ public: // Methods
 	advance_observer_sequential()
 	{
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
-		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << std::showpos << " = " << x_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ <<  '\n';
+		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ <<  '\n';
 	}
 
 	// Zero-Crossing Advance
@@ -276,27 +276,30 @@ private: // Methods
 			if ( has( crossing_check ) ) { // Crossing type is relevant
 				if ( ( x_1_ != 0.0 ) && ( sign_old != sign_new ) ) { // Heading towards zero
 					tZ = tX - ( x_0_ / x_1_ ); // Root of continuous rep
-					assert( tX < tZ );
-					crossing = crossing_check;
-					if ( options::refine ) { // Refine root: Expensive!
-						Time t( tZ ), t_p( tZ );
-						Value const vZ( f_.x( tZ ) );
-						Value v( vZ ), v_p( vZ );
-						Value m( 1.0 ); // Multiplier
-						std::size_t i( 0 );
-						std::size_t const n( 10u ); // Max iterations
-						while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-							Value const d( f_.x1( t ) );
-							if ( d == 0.0 ) break;
-							//if ( ( signum( d ) != sign_old ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
-							t -= m * ( v / d );
-							v = f_.x( t );
-							if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
-							t_p = t;
-							v_p = v;
+					if ( tZ > tX ) {
+						crossing = crossing_check;
+						if ( options::refine ) { // Refine root: Expensive!
+							Time t( tZ ), t_p( tZ );
+							Value const vZ( f_.x( tZ ) );
+							Value v( vZ ), v_p( vZ );
+							Value m( 1.0 ); // Multiplier
+							std::size_t i( 0 );
+							std::size_t const n( 10u ); // Max iterations
+							while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
+								Value const d( f_.x1( t ) );
+								if ( d == 0.0 ) break;
+								//if ( ( signum( d ) != sign_old ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
+								t -= m * ( v / d );
+								v = f_.x( t );
+								if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
+								t_p = t;
+								v_p = v;
+							}
+							if ( ( t >= tX ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
+							if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
 						}
-						if ( ( t >= tX ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
-						if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
+					} else { // Essentially flat
+						tZ = infinity;
 					}
 				} else { // Heading away from zero
 					tZ = infinity;

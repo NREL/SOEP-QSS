@@ -162,35 +162,32 @@ public: // Methods
 		x_ = static_cast< Integer >( f_( tQ ).x_0 );
 		tD = f_( tQ ).tD;
 		add_discrete( tD );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
 	}
 
 	// Discrete Advance
 	void
 	advance_discrete()
 	{
-		x_ = static_cast< Integer >( f_( tX = tQ = tD ).x_0 );
-		advance_observers_1();
-		if ( observers_max_order_ >= 2 ) {
-			fmu::set_time( tN = tQ + options::dtNum );
-			advance_observers_2();
-		}
+		Integer const x_new( static_cast< Integer >( f_( tX = tQ = tD ).x_0 ) );
 		tD = f_( tD ).tD;
 		shift_discrete( tD );
-		if ( options::output::d ) {
-			std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << "   tD=" << tD << '\n';
-			advance_observers_d();
-		}
+		bool const chg( x_ != x_new );
+		if ( chg ) x_ = x_new;
+		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
+		if ( chg && have_observers_ ) advance_observers();
 	}
 
 	// Discrete Advance: Stages 0 and 1
 	void
 	advance_discrete_0_1()
 	{
-		x_ = static_cast< Integer >( f_( tX = tQ = tD ).x_0 );
+		Integer const x_new( static_cast< Integer >( f_( tX = tQ = tD ).x_0 ) );
 		tD = f_( tD ).tD;
 		shift_discrete( tD );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << "   tD=" << tD << '\n';
+		bool const chg( x_ != x_new );
+		if ( chg ) x_ = x_new;
+		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
 	}
 
 private: // Data

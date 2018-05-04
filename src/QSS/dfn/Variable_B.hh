@@ -182,7 +182,7 @@ public: // Methods
 		shrink_observers();
 		x_ = ( xIni != 0 );
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Initialization to a Value: Stage 0
@@ -193,7 +193,7 @@ public: // Methods
 		shrink_observers();
 		x_ = ( x != 0 );
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Handler Advance
@@ -202,15 +202,12 @@ public: // Methods
 	{
 		assert( tX <= t );
 		tX = tQ = t;
-		bool const x_new( x != 0.0 );
-		if ( x_ != x_new ) {
-			x_ = x_new;
-			advance_observers();
-			if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
-		} else {
-			if ( options::output::d ) std::cout << "# " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
-		}
 		shift_handler();
+		bool const x_new( x != 0.0 );
+		bool const chg( x_ != x_new );
+		if ( chg ) x_ = x;
+		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( chg ) advance_observers();
 	}
 
 	// Handler Advance: Stage 0
@@ -219,9 +216,11 @@ public: // Methods
 	{
 		assert( tX <= t );
 		tX = tQ = t;
-		x_ = ( x != 0.0 );
 		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
+		bool const x_new( x != 0.0 );
+		bool const chg( x_ != x_new );
+		if ( chg ) x_ = x_new;
+		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 private: // Data

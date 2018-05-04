@@ -42,7 +42,7 @@
 
 namespace QSS {
 
-// QSS Event Class
+// QSS Event
 template< typename T >
 class Event final
 {

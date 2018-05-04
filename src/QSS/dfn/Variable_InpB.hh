@@ -190,28 +190,32 @@ public: // Methods
 		x_ = ( f_.vs( tQ ) != 0.0 );
 		tD = f_.tD( tQ );
 		add_discrete( tD );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
 	}
 
 	// Discrete Advance
 	void
 	advance_discrete()
 	{
-		x_ = ( f_.vs( tX = tQ = tD ) != 0.0 );
+		bool const x_new( f_.vs( tX = tQ = tD ) != 0.0 );
 		tD = f_.tD( tQ );
 		shift_discrete( tD );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << "   tD=" << tD << '\n';
-		advance_observers();
+		bool const chg( x_ != x_new );
+		if ( chg ) x_ = x_new;
+		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
+		if ( chg ) advance_observers();
 	}
 
 	// Discrete Advance: Stages 0 and 1
 	void
 	advance_discrete_0_1()
 	{
-		x_ = ( f_.vs( tX = tQ = tD ) != 0.0 );
+		bool const x_new( f_.vs( tX = tQ = tD ) != 0.0 );
 		tD = f_.tD( tD );
 		shift_discrete( tD );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << "   tD=" << tD << '\n';
+		bool const chg( x_ != x_new );
+		if ( chg ) x_ = x_new;
+		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
 	}
 
 private: // Data

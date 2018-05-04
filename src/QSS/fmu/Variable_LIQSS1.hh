@@ -163,7 +163,7 @@ public: // Methods
 		}
 		set_tE_aligned();
 		add_QSS( tE );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// Set Current Tolerance
@@ -187,17 +187,10 @@ public: // Methods
 			x_1_ = fmu_get_deriv();
 			q_0_ += signum( x_1_ ) * qTol;
 		}
-		advance_observers_1();
-		if ( observers_max_order_ >= 2 ) {
-			fmu::set_time( tN = tQ + options::dtNum );
-			advance_observers_2();
-		}
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) {
-			std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << '\n';
-			advance_observers_d();
-		}
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( have_observers_ ) advance_observers();
 	}
 
 	// QSS Advance: Stage 0
@@ -222,7 +215,21 @@ public: // Methods
 		}
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << '\n';
+		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+	}
+
+	// Observer Advance: Stage 1
+	void
+	advance_observer_1( Time const t )
+	{
+		assert( ( tX <= t ) && ( t <= tE ) );
+		fmu_set_observees_q( t );
+		if ( self_observer ) fmu_set_q( t );
+		x_0_ = x_0_ + ( x_1_ * ( t - tX ) );
+		tX = t;
+		x_1_ = fmu_get_deriv();
+		set_tE_unaligned();
+		shift_QSS( tE );
 	}
 
 	// Observer Advance: Stage 1
@@ -230,6 +237,7 @@ public: // Methods
 	advance_observer_1( Time const t, Value const d )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
+		assert( d == fmu_get_deriv() );
 		x_0_ = x_0_ + ( x_1_ * ( t - tX ) );
 		tX = t;
 		x_1_ = d;
@@ -241,7 +249,7 @@ public: // Methods
 	void
 	advance_observer_d() const
 	{
-		std::cout << "  " << name << '(' << tX << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << '\n';
+		std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// Handler Advance
@@ -249,23 +257,15 @@ public: // Methods
 	advance_handler( Time const t )
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
-		tX = tQ = t;
 		x_0_ = q_c_ = q_0_ = fmu_get_value(); // Assume FMU ran zero-crossing handler
 		set_qTol();
-		advance_observers_1();
-		fmu_set_observees_q( tQ );
-		if ( ( self_observer ) && ( observers_.empty() ) ) fmu_set_value( q_0_ );
+		fmu_set_observees_q( tX = tQ = t );
+		if ( self_observer ) fmu_set_value( q_0_ );
 		x_1_ = fmu_get_deriv();
-		if ( observers_max_order_ >= 2 ) {
-			fmu::set_time( tN = tQ + options::dtNum );
-			advance_observers_2();
-		}
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) {
-			std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << '\n';
-			advance_observers_d();
-		}
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( have_observers_ ) advance_observers();
 	}
 
 	// Handler Advance: Stage 0
@@ -287,7 +287,7 @@ public: // Methods
 		x_1_ = fmu_get_deriv();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << '\n';
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// Handler No-Advance
@@ -332,6 +332,8 @@ private: // Methods
 	{
 		assert( qTol > 0.0 );
 		assert( self_observer );
+		assert( q_c_ == q_0_ );
+		assert( x_0_ == q_0_ );
 
 		// Value at +/- qTol
 		Value const q_l( q_c_ - qTol );
@@ -352,6 +354,9 @@ private: // Methods
 		} else if ( ( d_l_s == +1 ) && ( d_u_s == +1 ) ) { // Upward trajectory
 			q_0_ += qTol;
 			x_1_ = d_u;
+		} else if ( ( d_l_s == 0 ) && ( d_u_s == 0 ) ) { // Flat trajectory
+			// Keep q_0_ == q_c_
+			x_1_ = 0.0;
 		} else { // Flat trajectory
 			q_0_ = std::min( std::max( ( ( q_l * d_u ) - ( q_u * d_l ) ) / ( d_u - d_l ), q_l ), q_u ); // Value where deriv is ~ 0 // Clipped in case of roundoff
 			x_1_ = 0.0;

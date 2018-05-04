@@ -1,4 +1,4 @@
-// QSS Globals
+// QSS::dfn::Variable_ZC3 Unit Tests
 //
 // Project: QSS Solver
 //
@@ -33,13 +33,69 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#define _USE_MATH_DEFINES // For M_E
+
+// Google Test Headers
+#include <gtest/gtest.h>
+
 // QSS Headers
-#include <QSS/globals.hh>
+#include <QSS/dfn/mdl/Function_LTI.hh>
+#include <QSS/dfn/Variable_ZC3.hh>
+#include <QSS/dfn/Variable_QSS3.hh>
 
-namespace QSS {
+// C++ Headers
+#include <algorithm>
+#include <cmath>
 
-// QSS Globals
-int const max_rep_order( 3 ); // Max representation order
-EventQueue< Target > events; // Event queue
+using namespace QSS;
+using namespace QSS::dfn;
+using namespace QSS::dfn::mdl;
 
-} // QSS
+TEST( Variable_ZC3Test, Basic )
+{
+	Variable_QSS3< Function_LTI > x( "x" );
+	x.add( -1.0 );
+	x.init( 1.0 );
+	EXPECT_EQ( 1.0e-4, x.rTol );
+	EXPECT_EQ( 1.0e-6, x.aTol );
+	EXPECT_EQ( 1.0, x.x( 0.0 ) );
+	EXPECT_EQ( 1.0, x.q( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 1.0 - 1.0e-7, x.x( 1.0e-7 ) );
+	EXPECT_DOUBLE_EQ( 1.0 - 1.0e-7, x.q( 1.0e-7 ) );
+	EXPECT_EQ( infinity, x.tE );
+
+	Variable_ZC3< Function_LTI > z( "z" );
+	z.add_crossings_Dn();
+	z.add( &x );
+	z.init();
+	EXPECT_EQ( 1.0e-4, z.rTol );
+	EXPECT_EQ( 1.0e-6, z.aTol );
+	EXPECT_EQ( 1.0, z.x( 0.0 ) );
+	EXPECT_EQ( 1.0, z.q( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 1.0 - 1.0e-7, z.x( 1.0e-7 ) );
+	EXPECT_DOUBLE_EQ( 1.0 - 1.0e-7, z.q( 1.0e-7 ) );
+	EXPECT_EQ( infinity, z.tE );
+	EXPECT_DOUBLE_EQ( 1.0, z.tZ );
+	EXPECT_EQ( Variable::Crossing::DnPN, z.crossing );
+	EXPECT_DOUBLE_EQ( 0.0, x.x( 1.0 ) );
+	EXPECT_DOUBLE_EQ( 0.0, x.q( 1.0 ) );
+
+	events.clear();
+}
+
+TEST( Variable_ZC3Test, Roots )
+{
+	Variable_QSS3< Function_LTI > x( "x" );
+	x.add( &x ).add( -2.0 * M_E );
+	x.init( 2.0 * ( M_E - 1.0 ) );
+	// x' = x - 2 e, x(0) = 2(e-1) => x = -2 e^t + 2 e with a downward zero crossing at t=1
+	// At t=0 x rep is: x_0 = q_0 = 2(e-1), x_1 = q_1 = -2, x_2 = -1, x_3 = -1/3
+
+	Variable_ZC3< Function_LTI > z( "z" );
+	z.add_crossings_Dn();
+	z.add( &x );
+	z.init();
+	EXPECT_DOUBLE_EQ( 1.0204777568328333243, z.tZ ); // Positive root of t^3 + 3 t^2 + 6 t + 6(1-e) ~ 1.0204777568328333243
+
+	events.clear();
+}

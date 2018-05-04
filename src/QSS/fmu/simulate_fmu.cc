@@ -37,6 +37,7 @@
 #include <QSS/fmu/simulate_fmu.hh>
 #include <QSS/fmu/cycles_fmu.hh>
 #include <QSS/fmu/Conditional.hh>
+#include <QSS/fmu/container.hh>
 #include <QSS/fmu/FMI.hh>
 #include <QSS/fmu/FMU_Variable.hh>
 #include <QSS/fmu/Function_Inp_constant.hh>
@@ -75,7 +76,6 @@
 #include <limits>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 namespace QSS {
@@ -131,8 +131,6 @@ simulate_fmu()
 	using Time = Variable::Time;
 	using Value = Variable::Value;
 	using Var_Idx = std::unordered_map< Variable const *, size_type >; // Map from Variables to their indexes
-	using VariableLookup = std::unordered_set< Variable * >; // Fast Variable lookup container
-	using ObserversSet = std::unordered_set< Variable * >; // Simultaneous trigger observers collection
 	using Conditionals = std::vector< Conditional * >;
 	using FMU_Vars = std::unordered_map< FMUVarPtr, FMU_Variable, FMUVarPtrHash >; // Map from FMU variables to FMU_Variable objects
 	using FMU_Idxs = std::unordered_map< size_type, Variable * >; // Map from FMU variable indexes to QSS Variables
@@ -1012,6 +1010,9 @@ simulate_fmu()
 			var->init_time( t0 );
 		}
 	}
+	for ( auto var : vars_ZC ) {
+		var->init_0_ZC(); // Adds drill-through observees
+	}
 	for ( auto var : vars_NZ ) {
 		var->init_0();
 	}
@@ -1019,7 +1020,7 @@ simulate_fmu()
 		var->init_1();
 	}
 	if ( QSS_order_max >= 2 ) {
-		fmu::set_time( t = t0 + options::dtNum );
+		fmu::set_time( t = t0 + options::dtNum ); // Set time to t0 + delta for numeric differentiation
 		for ( auto var : vars_NZ ) {
 			if ( ! var->is_Discrete() ) var->fmu_set_sn( t );
 		}
@@ -1027,7 +1028,7 @@ simulate_fmu()
 			var->init_2();
 		}
 	}
-	if ( ! vars_ZC.empty() ) { // ZC variables after to get actual LIQSS2+ quantized reps
+	if ( ! vars_ZC.empty() ) {
 		if ( QSS_order_max >= 2 ) fmu::set_time( t0 );
 		for ( auto var : vars_ZC ) {
 			var->init_0();
@@ -1087,6 +1088,7 @@ simulate_fmu()
 	size_type n_ZC_events( 0 );
 	double sim_dtMin( options::dtMin );
 	bool pass_warned( false );
+	Variables observers;
 	while ( t <= tE ) {
 		t = events.top_time();
 		if ( doSOut ) { // Sampled and/or FMU outputs
@@ -1156,9 +1158,11 @@ simulate_fmu()
 			if ( event.is_discrete() ) { // Discrete event
 				++n_discrete_events;
 				if ( events.single() ) { // Single trigger
-					Variable * trigger( events.top_sub< Variable >() );
+					Variable * trigger( event.sub< Variable >() );
 					assert( trigger->tD == t );
+
 					trigger->st = s; // Set trigger superdense time
+
 					if ( doTOut ) { // Time event output: before discrete changes
 						if ( options::output::a ) { // All variables output
 							for ( size_type i = 0; i < n_vars; ++i ) {
@@ -1180,7 +1184,9 @@ simulate_fmu()
 							}
 						}
 					}
+
 					trigger->advance_discrete();
+
 					if ( doTOut ) { // Time event output: after discrete changes
 						if ( options::output::a ) { // All variables output
 							for ( size_type i = 0; i < n_vars; ++i ) {
@@ -1204,24 +1210,10 @@ simulate_fmu()
 					}
 				} else { // Simultaneous triggers
 					Variables triggers( events.top_subs< Variable >() );
-					std::sort( triggers.begin(), triggers.end(), []( Variable const * v1, Variable const * v2 ){ return v1->order() < v2->order(); } ); // Sort triggers by order
-					for ( Variable * trigger : triggers ) {
-						assert( trigger->tD == t );
-						trigger->st = s; // Set trigger superdense time
-					}
-					size_type const iBeg_triggers_2( static_cast< size_type >( std::distance( triggers.begin(), std::find_if( triggers.begin(), triggers.end(), []( Variable const * v ){ return v->order() >= 2; } ) ) ) );
+					variables_observers( triggers, observers );
+					size_type const iBeg_triggers_2( begin_order_index( triggers, 2 ) );
 					int const triggers_order_max( triggers.back()->order() );
-					VariableLookup const var_lookup( triggers.begin(), triggers.end() );
-					ObserversSet observers_set;
-					for ( Variable * trigger : triggers ) { // Collect observers to avoid duplicate advance calls
-						for ( Variable * observer : trigger->observers() ) {
-							if ( var_lookup.find( observer ) == var_lookup.end() ) observers_set.insert( observer ); // Skip triggers
-						}
-					}
-					Variables observers( observers_set.begin(), observers_set.end() );
-					std::sort( observers.begin(), observers.end(), []( Variable const * v1, Variable const * v2 ){ return v1->order() < v2->order(); } ); // Sort observers by order
-					size_type const iBeg_observers_2( static_cast< size_type >( std::distance( observers.begin(), std::find_if( observers.begin(), observers.end(), []( Variable const * v ){ return v->order() >= 2; } ) ) ) );
-					int const observers_order_max( observers.empty() ? 0 : observers.back()->order() );
+
 					if ( doTOut ) { // Time event output: before discrete changes
 						if ( options::output::a ) { // All variables output
 							for ( size_type i = 0; i < n_vars; ++i ) {
@@ -1245,33 +1237,24 @@ simulate_fmu()
 							}
 						}
 					}
+
 					for ( Variable * trigger : triggers ) {
+						assert( trigger->tD == t );
+						trigger->st = s; // Set trigger superdense time
 						trigger->advance_discrete_0_1();
 					}
 					if ( triggers_order_max >= 2 ) { // 2nd order pass
-						//fmu::set_time( t + options::dtNum ); // Set time to t + delta for numeric differentiation // Need this if we enable discrete events on QSS variables
+						// fmu::set_time( t + options::dtNum ); // Set time to t + delta for numeric differentiation // Need this if we enable discrete events on QSS variables
 						for ( size_type i = iBeg_triggers_2, n = triggers.size(); i < n; ++i ) {
 							triggers[ i ]->advance_discrete_2();
 						}
 					}
-					if ( ! observers.empty() ) { // Observer advance
-						//if ( triggers_order_max >= 2 ) fmu::set_time( t ); // Need this if we enable discrete events on QSS variables
-						for ( Variable * observer : observers ) {
-							observer->advance_observer_simultaneous_1( t );
-						}
-						if ( observers_order_max >= 2 ) { // 2nd order pass
-							Time const tN( t + options::dtNum ); // Set time to t + delta for numeric differentiation
-							fmu::set_time( tN );
-							for ( size_type i = iBeg_observers_2, n = observers.size(); i < n; ++i ) {
-								observers[ i ]->advance_observer_simultaneous_2( tN );
-							}
-						}
-						if ( options::output::d ) {
-							for ( Variable * observer : observers ) {
-								observer->advance_observer_d();
-							}
-						}
+
+					if ( ! observers.empty() ) { // Advance observers
+						// if ( triggers_order_max >= 2 ) fmu::set_time( t ); // Need this if we enable discrete events on QSS variables
+						Variable::advance_observers( observers, t );
 					}
+
 					if ( doTOut ) { // Time event output: after discrete changes
 						if ( options::output::a ) { // All variables output
 							for ( size_type i = 0; i < n_vars; ++i ) {
@@ -1322,7 +1305,7 @@ simulate_fmu()
 					event_indicators = event_indicators_last;
 					event_indicators_last = temp;
 				}
-				fmi2_status_t fmistatus = fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
+				fmi2_status_t fmi_status = fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 
 				// Check if an event indicator has triggered
 				bool zero_crossing_event( false );
@@ -1335,11 +1318,11 @@ simulate_fmu()
 
 				// Handle zero-crossing events
 				if ( callEventUpdate || zero_crossing_event ) {
-					fmistatus = fmi2_import_enter_event_mode( fmu );
+					fmi_status = fmi2_import_enter_event_mode( fmu );
 					do_event_iteration( fmu, &eventInfo );
-					fmistatus = fmi2_import_enter_continuous_time_mode( fmu );
-					fmistatus = fmi2_import_get_continuous_states( fmu, states, n_states );
-					fmistatus = fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
+					fmi_status = fmi2_import_enter_continuous_time_mode( fmu );
+					fmi_status = fmi2_import_get_continuous_states( fmu, states, n_states );
+					fmi_status = fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 					if ( options::output::d ) std::cout << "Zero-crossing triggers FMU event at t=" << t << std::endl;
 				} else {
 					if ( options::output::d ) std::cout << "Zero-crossing does not trigger FMU event at t=" << t << std::endl;
@@ -1351,6 +1334,8 @@ simulate_fmu()
 				// Perform handler operations on QSS side
 				if ( callEventUpdate || zero_crossing_event ) {
 					if ( events.single() ) { // Single handler
+						Variable * handler( event.sub< Variable >() );
+
 						if ( doROut ) { // Requantization output: before handler changes
 							if ( options::output::a ) { // All variables output
 								for ( size_type i = 0; i < n_vars; ++i ) {
@@ -1358,7 +1343,6 @@ simulate_fmu()
 									if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
 								}
 							} else { // Requantization and observer output
-								Variable const * handler( event.sub< Variable >() );
 								if ( options::output::r ) { // Requantization output
 									size_type const i( var_idx[ handler ] );
 									if ( options::output::x ) x_outs[ i ].append( t, handler->x( t ) );
@@ -1373,7 +1357,9 @@ simulate_fmu()
 								}
 							}
 						}
-						event.sub< Variable >()->advance_handler( t );
+
+						handler->advance_handler( t );
+
 						if ( doROut ) { // Requantization output: after handler changes
 							if ( options::output::a ) { // All variables output
 								for ( size_type i = 0; i < n_vars; ++i ) {
@@ -1381,7 +1367,6 @@ simulate_fmu()
 									if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
 								}
 							} else { // Requantization and observer output
-								Variable const * handler( event.sub< Variable >() );
 								if ( options::output::r ) { // Requantization output
 									size_type const i( var_idx[ handler ] );
 									if ( options::output::x ) x_outs[ i ].append( t, handler->x( t ) );
@@ -1398,21 +1383,11 @@ simulate_fmu()
 						}
 					} else { // Simultaneous handlers
 						Variables handlers( events.top_subs< Variable >() );
-						std::sort( handlers.begin(), handlers.end(), []( Variable const * v1, Variable const * v2 ){ return v1->order() < v2->order(); } ); // Sort handlers by order
-						size_type const iBeg_handlers_1( static_cast< size_type >( std::distance( handlers.begin(), std::find_if( handlers.begin(), handlers.end(), []( Variable const * v ){ return v->order() >= 1; } ) ) ) );
-						size_type const iBeg_handlers_2( static_cast< size_type >( std::distance( handlers.begin(), std::find_if( handlers.begin(), handlers.end(), []( Variable const * v ){ return v->order() >= 2; } ) ) ) );
+						variables_observers( handlers, observers );
+						size_type const iBeg_handlers_1( begin_order_index( handlers, 1 ) );
+						size_type const iBeg_handlers_2( begin_order_index( handlers, 2 ) );
 						int const handlers_order_max( handlers.back()->order() );
-						VariableLookup const var_lookup( handlers.begin(), handlers.end() );
-						ObserversSet observers_set;
-						for ( Variable * handler : handlers ) { // Collect observers to avoid duplicate advance calls
-							for ( Variable * observer : handler->observers() ) {
-								if ( var_lookup.find( observer ) == var_lookup.end() ) observers_set.insert( observer ); // Skip handlers
-							}
-						}
-						Variables observers( observers_set.begin(), observers_set.end() );
-						std::sort( observers.begin(), observers.end(), []( Variable const * v1, Variable const * v2 ){ return v1->order() < v2->order(); } ); // Sort observers by order
-						size_type const iBeg_observers_2( static_cast< size_type >( std::distance( observers.begin(), std::find_if( observers.begin(), observers.end(), []( Variable const * v ){ return v->order() >= 2; } ) ) ) );
-						int const ho_order_max( observers.empty() ? handlers_order_max : std::max( handlers_order_max, observers.back()->order() ) );
+
 						if ( doROut ) { // Requantization output: before handler changes
 							if ( options::output::a ) { // All variables output
 								for ( size_type i = 0; i < n_vars; ++i ) {
@@ -1436,30 +1411,25 @@ simulate_fmu()
 								}
 							}
 						}
-						for ( auto & e : events.top_events() ) {
-							e.sub< Variable >()->advance_handler_0( t );
-						}
-						for ( Variable * observer : observers ) {
-							observer->advance_observer_simultaneous_1( t );
+
+						for ( Variable * handler : handlers ) {
+							handler->advance_handler_0( t );
 						}
 						for ( size_type i = iBeg_handlers_1, n = handlers.size(); i < n; ++i ) {
 							handlers[ i ]->advance_handler_1();
 						}
-						if ( ho_order_max >= 2 ) { // 2nd order pass
-							Time const tN( t + options::dtNum ); // Advance time to t + delta for numeric differentiation
-							fmu::set_time( tN );
-							for ( size_type i = iBeg_observers_2, n = observers.size(); i < n; ++i ) {
-								observers[ i ]->advance_observer_simultaneous_2( tN );
-							}
+						if ( handlers_order_max >= 2 ) { // 2nd order pass
+							fmu::set_time( t + options::dtNum ); // Advance time to t + delta for numeric differentiation
 							for ( size_type i = iBeg_handlers_2, n = handlers.size(); i < n; ++i ) {
 								handlers[ i ]->advance_handler_2();
 							}
 						}
-						if ( options::output::d ) {
-							for ( Variable * observer : observers ) {
-								observer->advance_observer_d();
-							}
+
+						if ( ! observers.empty() ) { // Advance observers
+							if ( handlers_order_max >= 2 ) fmu::set_time( t );
+							Variable::advance_observers( observers, t );
 						}
+
 						if ( doROut ) { // Requantization output: after handler changes
 							if ( options::output::a ) { // All variables output
 								for ( size_type i = 0; i < n_vars; ++i ) {
@@ -1486,21 +1456,24 @@ simulate_fmu()
 					}
 				} else { // Update event queue entries for no-action handler event
 					if ( events.single() ) { // Single handler
-						event.sub< Variable >()->no_advance_handler();
+						Variable * handler( event.sub< Variable >() );
+						handler->no_advance_handler();
 					} else { // Simultaneous handlers
-						for ( auto & e : events.top_events() ) {
-							e.sub< Variable >()->no_advance_handler();
+						for ( Variable * handler : events.top_subs< Variable >() ) {
+							handler->no_advance_handler();
 						}
 					}
 				}
 			} else if ( event.is_QSS() ) { // QSS requantization event
 				++n_QSS_events;
 				if ( events.single() ) { // Single trigger
-					Variable * trigger( events.top_sub< Variable >() );
+					Variable * trigger( event.sub< Variable >() );
 					assert( trigger->tE == t );
 					assert( ! trigger->is_ZC() ); // ZC variable requantizations are QSS_ZC events
 					trigger->st = s; // Set trigger superdense time
+
 					trigger->advance_QSS();
+
 					if ( doROut ) { // Requantization output
 						if ( options::output::a ) { // All variables output
 							for ( size_type i = 0; i < n_vars; ++i ) {
@@ -1525,26 +1498,14 @@ simulate_fmu()
 				} else { // Simultaneous triggers
 					++n_QSS_simultaneous_events;
 					Variables triggers( events.top_subs< Variable >() );
-					std::sort( triggers.begin(), triggers.end(), []( Variable const * v1, Variable const * v2 ){ return v1->order() < v2->order(); } ); // Sort triggers by order
+					variables_observers( triggers, observers );
+					size_type const iBeg_triggers_2( begin_order_index( triggers, 2 ) );
+					int const triggers_order_max( triggers.back()->order() );
+
 					for ( Variable * trigger : triggers ) {
 						assert( trigger->tE == t );
 						assert( ! trigger->is_ZC() ); // ZC variable requantizations are QSS_ZC events
 						trigger->st = s; // Set trigger superdense time
-					}
-					size_type const iBeg_triggers_2( static_cast< size_type >( std::distance( triggers.begin(), std::find_if( triggers.begin(), triggers.end(), []( Variable const * v ){ return v->order() >= 2; } ) ) ) );
-					int const triggers_order_max( triggers.back()->order() );
-					VariableLookup const var_lookup( triggers.begin(), triggers.end() );
-					ObserversSet observers_set;
-					for ( Variable * trigger : triggers ) { // Collect observers to avoid duplicate advance calls
-						for ( Variable * observer : trigger->observers() ) {
-							if ( var_lookup.find( observer ) == var_lookup.end() ) observers_set.insert( observer ); // Skip triggers
-						}
-					}
-					Variables observers( observers_set.begin(), observers_set.end() );
-					std::sort( observers.begin(), observers.end(), []( Variable const * v1, Variable const * v2 ){ return v1->order() < v2->order(); } ); // Sort observers by order
-					size_type const iBeg_observers_2( static_cast< size_type >( std::distance( observers.begin(), std::find_if( observers.begin(), observers.end(), []( Variable const * v ){ return v->order() >= 2; } ) ) ) );
-					int const observers_order_max( observers.empty() ? 0 : observers.back()->order() );
-					for ( Variable * trigger : triggers ) {
 						trigger->advance_QSS_0();
 					}
 					for ( Variable * trigger : triggers ) {
@@ -1556,24 +1517,12 @@ simulate_fmu()
 							triggers[ i ]->advance_QSS_2();
 						}
 					}
-					if ( ! observers.empty() ) { // Observer advance
+
+					if ( ! observers.empty() ) { // Advance observers
 						if ( triggers_order_max >= 2 ) fmu::set_time( t );
-						for ( Variable * observer : observers ) {
-							observer->advance_observer_simultaneous_1( t );
-						}
-						if ( observers_order_max >= 2 ) { // 2nd order pass
-							Time const tN( t + options::dtNum ); // Set time to t + delta for numeric differentiation
-							fmu::set_time( tN );
-							for ( size_type i = iBeg_observers_2, n = observers.size(); i < n; ++i ) {
-								observers[ i ]->advance_observer_simultaneous_2( tN );
-							}
-						}
-						if ( options::output::d ) {
-							for ( Variable * observer : observers ) {
-								observer->advance_observer_d();
-							}
-						}
+						Variable::advance_observers( observers, t );
 					}
+
 					if ( doROut ) { // Requantization output
 						if ( options::output::a ) { // All variables output
 							for ( size_type i = 0; i < n_vars; ++i ) {
@@ -1600,11 +1549,13 @@ simulate_fmu()
 				}
 			} else if ( event.is_QSS_ZC() ) { // QSS ZC requantization event
 				++n_QSS_events;
-				Variable * trigger( events.top_sub< Variable >() );
+				Variable * trigger( event.sub< Variable >() );
 				assert( trigger->tE == t );
 				assert( trigger->is_ZC() ); // ZC variable requantizations are QSS_ZC events
 				trigger->st = s; // Set trigger superdense time
+
 				trigger->advance_QSS();
+
 				if ( doROut ) { // Requantization output
 					if ( options::output::a ) { // All variables output
 						for ( size_type i = 0; i < n_vars; ++i ) {

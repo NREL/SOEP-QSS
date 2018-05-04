@@ -98,6 +98,13 @@ public: // Predicate
 		return true;
 	}
 
+	// Non-Zero-Crossing Variable?
+	bool
+	not_ZC() const
+	{
+		return false;
+	}
+
 	// Has Crossing Type?
 	bool
 	has( Crossing const c )
@@ -151,7 +158,7 @@ public: // Methods
 		for ( size_type i = 0, n = Super::observees_.size(); i < n; ++i ) {
 			Variable * vo( Super::observees_[ i ] );
 			for ( Variable * voo : vo->observees() ) {
-				observe( voo );
+				observe_ZC( voo ); // Only need back-observer to force observer updates when observees update since ZC variable value doesn't depend on these 2nd level observees
 			}
 		}
 

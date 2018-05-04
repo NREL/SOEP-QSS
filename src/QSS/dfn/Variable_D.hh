@@ -153,7 +153,7 @@ public: // Methods
 		shrink_observers();
 		x_ = xIni;
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Initialization to a Value: Stage 0
@@ -164,7 +164,7 @@ public: // Methods
 		shrink_observers();
 		x_ = x;
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Handler Advance
@@ -173,14 +173,11 @@ public: // Methods
 	{
 		assert( tX <= t );
 		tX = tQ = t;
-		if ( x_ != x ) {
-			x_ = x;
-			advance_observers();
-			if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
-		} else {
-			if ( options::output::d ) std::cout << "# " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
-		}
 		shift_handler();
+		bool const chg( x_ != x );
+		if ( chg ) x_ = x;
+		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( chg ) advance_observers();
 	}
 
 	// Handler Advance: Stage 0
@@ -189,9 +186,10 @@ public: // Methods
 	{
 		assert( tX <= t );
 		tX = tQ = t;
-		x_ = x;
 		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
+		bool const chg( x_ != x );
+		if ( chg ) x_ = x;
+		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 private: // Data

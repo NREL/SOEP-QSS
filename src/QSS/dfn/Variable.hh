@@ -186,6 +186,14 @@ public: // Predicate
 		return false;
 	}
 
+	// Non-Zero-Crossing Variable?
+	virtual
+	bool
+	not_ZC() const
+	{ // Default implementation
+		return true;
+	}
+
 public: // Properties
 
 	// Order of Method
@@ -348,6 +356,15 @@ public: // Methods
 			observees_.push_back( v );
 			v->observers_.push_back( this );
 		}
+	}
+
+	// Add Zero-Crossing Variable as an Observer
+	void
+	observe_ZC( Variable * v )
+	{
+		assert( is_ZC() );
+		assert( v != this );
+		v->observers_.push_back( this );
 	}
 
 	// Shrink Observers Collection

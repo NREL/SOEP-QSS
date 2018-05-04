@@ -136,7 +136,7 @@ public: // Methods
 		set_tE();
 		tD = f_( tQ ).tD;
 		tE < tD ? add_QSS( tE ) : add_discrete( tD );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
 	// Set Current Tolerance
@@ -154,18 +154,11 @@ public: // Methods
 		x_0_ = q_0_ = f_( tX = tQ = tD ).x_0;
 		set_qTol();
 		x_1_ = f_( tD ).x_1;
-		advance_observers_1();
-		if ( observers_max_order_ >= 2 ) {
-			fmu::set_time( tN = tD + options::dtNum );
-			advance_observers_2();
-		}
 		set_tE();
 		tD = f_( tD ).tD;
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
-		if ( options::output::d ) {
-			std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tD=" << tD << '\n';
-			advance_observers_d();
-		}
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
+		if ( have_observers_ ) advance_observers();
 	}
 
 	// Discrete Advance: Stages 0 and 1
@@ -178,7 +171,7 @@ public: // Methods
 		set_tE();
 		tD = f_( tD ).tD;
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
 	// QSS Advance
@@ -188,18 +181,11 @@ public: // Methods
 		x_0_ = q_0_ = f_( tX = tQ = tE ).x_0;
 		set_qTol();
 		x_1_ = f_( tQ ).x_1;
-		advance_observers_1();
-		if ( observers_max_order_ >= 2 ) {
-			fmu::set_time( tN = tQ + options::dtNum );
-			advance_observers_2();
-		}
 		set_tE();
 		tD = f_( tQ ).tD;
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
-		if ( options::output::d ) {
-			std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tD=" << tD << '\n';
-			advance_observers_d();
-		}
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
+		if ( have_observers_ ) advance_observers();
 	}
 
 	// QSS Advance: Stage 0
@@ -214,11 +200,11 @@ public: // Methods
 	void
 	advance_QSS_1()
 	{
-		x_1_ = f_( tE ).x_1;
+		x_1_ = f_( tQ ).x_1;
 		set_tE();
 		tD = f_( tQ ).tD;
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
-		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
 private: // Methods

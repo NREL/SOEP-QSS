@@ -192,7 +192,7 @@ public: // Methods
 		set_tE();
 		tD = f_.tD( tQ );
 		tE < tD ? add_QSS( tE ) : add_discrete( tD );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << q_1_ << "*t quantized, " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2 internal   tE=" << std::noshowpos << tE << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
 	// Set Current Tolerance
@@ -214,7 +214,7 @@ public: // Methods
 		set_tE();
 		tD = f_.tD( tD );
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << q_1_ << "*t quantized, " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2 internal   tE=" << std::noshowpos << tE << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 		advance_observers();
 	}
 
@@ -235,7 +235,7 @@ public: // Methods
 		set_tE();
 		tD = f_.tD( tD );
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << q_1_ << "*t quantized, " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2 internal   tE=" << std::noshowpos << tE << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
 	// QSS Advance
@@ -249,7 +249,7 @@ public: // Methods
 		set_tE();
 		tD = f_.tD( tQ );
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << q_1_ << "*t quantized, " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2 internal   tE=" << std::noshowpos << tE << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 		advance_observers();
 	}
 
@@ -276,7 +276,7 @@ public: // Methods
 		set_tE();
 		tD = f_.tD( tQ );
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
-		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << q_1_ << "*t quantized, " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2 internal   tE=" << std::noshowpos << tE << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
 private: // Methods

@@ -124,7 +124,7 @@ public: // Methods
 		shrink_observees();
 
 		// Initialize trajectory specs
-		fmu_set_observees_q( tQ );
+		fmu_set_observees_x( tQ );
 		x_0_ = fmu_get_value();
 		x_mag_ = std::abs( x_0_ );
 		set_qTol();
@@ -138,7 +138,7 @@ public: // Methods
 		set_tE();
 		set_tZ();
 		tE < tZ ? add_QSS_ZC( tE ) : add_ZC( tZ );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
 	// Set Current Tolerance
@@ -153,7 +153,7 @@ public: // Methods
 	void
 	advance_QSS()
 	{
-		fmu_set_observees_q( tX = tQ = tE );
+		fmu_set_observees_x( tX = tQ = tE );
 		Value const x_tE( zChatter_ ? x( tE ) : Value( 0.0 ) );
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
 		check_crossing_ = ( tE > tZ_last ) || ( x_mag_ != 0.0 );
@@ -170,7 +170,24 @@ public: // Methods
 		set_tZ();
 		tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 #endif
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
+	}
+
+	// Observer Advance: Stage 1
+	void
+	advance_observer_1( Time const t )
+	{
+		assert( ( tX <= t ) && ( t <= tE ) );
+		fmu_set_observees_x( tX = tQ = t );
+		Value const x_t( zChatter_ ? x( t ) : Value( 0.0 ) );
+		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
+		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
+		x_0_ = fmu_get_value();
+		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
+		set_qTol();
+		x_1_ = fmu_get_deriv();
+		set_tE();
+		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
 	}
 
 	// Observer Advance: Stage 1
@@ -178,6 +195,7 @@ public: // Methods
 	advance_observer_1( Time const t, Value const d )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
+		assert( d == fmu_get_deriv() );
 		tX = tQ = t;
 		Value const x_t( zChatter_ ? x( t ) : Value( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
@@ -192,9 +210,11 @@ public: // Methods
 
 	// Zero-Crossing Observer Advance: Stage 1
 	void
-	advance_ZC_observer_1( Time const t, Value const d, Value const v )
+	advance_observer_ZC_1( Time const t, Value const d, Value const v )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
+		assert( d == fmu_get_deriv() );
+		assert( v == fmu_get_value() );
 		tX = tQ = t;
 		Value const x_t( zChatter_ ? x( t ) : Value( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
@@ -211,7 +231,7 @@ public: // Methods
 	void
 	advance_observer_d() const
 	{
-		std::cout << "  " << name << '(' << tX << ')' << std::showpos << " = " << x_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << "   tZ=" << tZ <<  '\n';
+		std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ <<  '\n';
 	}
 
 	// Zero-Crossing Advance
@@ -257,33 +277,36 @@ private: // Methods
 			if ( has( crossing_check ) ) { // Crossing type is relevant
 				if ( ( x_1_ != 0.0 ) && ( sign_old != sign_new ) ) { // Heading towards zero
 					tZ = tX - ( x_0_ / x_1_ ); // Root of continuous rep
-					assert( tX < tZ );
-					crossing = crossing_check;
-					if ( options::refine ) { // Refine root: Expensive!
-						Time t( tZ ), t_p( tZ );
-						Time const t_fmu( fmu::get_time() );
-						fmu::set_time( tZ ); // Don't seem to need this
-						fmu_set_observees_x( tZ );
-						Value const vZ( fmu_get_value() );
-						Value v( vZ ), v_p( vZ );
-						Value m( 1.0 ); // Multiplier
-						std::size_t i( 0 );
-						std::size_t const n( 10u ); // Max iterations
-						while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-							Value const d( fmu_get_deriv() );
-							if ( d == 0.0 ) break;
-							//if ( ( signum( d ) != sign_old ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
-							t -= m * ( v / d );
-							fmu::set_time( t ); // Don't seem to need this
-							fmu_set_observees_x( t );
-							v = fmu_get_value();
-							if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
-							t_p = t;
-							v_p = v;
+					if ( tZ > tX ) {
+						crossing = crossing_check;
+						if ( options::refine ) { // Refine root: Expensive!
+							Time t( tZ ), t_p( tZ );
+							Time const t_fmu( fmu::get_time() );
+							fmu::set_time( tZ ); // Don't seem to need this
+							fmu_set_observees_x( tZ );
+							Value const vZ( fmu_get_value() );
+							Value v( vZ ), v_p( vZ );
+							Value m( 1.0 ); // Multiplier
+							std::size_t i( 0 );
+							std::size_t const n( 10u ); // Max iterations
+							while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
+								Value const d( fmu_get_deriv() );
+								if ( d == 0.0 ) break;
+								//if ( ( signum( d ) != sign_old ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
+								t -= m * ( v / d );
+								fmu::set_time( t ); // Don't seem to need this
+								fmu_set_observees_x( t );
+								v = fmu_get_value();
+								if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
+								t_p = t;
+								v_p = v;
+							}
+							if ( ( t >= tX ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
+							if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
+							fmu::set_time( t_fmu ); // Don't seem to need this
 						}
-						if ( ( t >= tX ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
-						if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
-						fmu::set_time( t_fmu ); // Don't seem to need this
+					} else { // Essentially flat
+						tZ = infinity;
 					}
 				} else { // Heading away from zero
 					tZ = infinity;

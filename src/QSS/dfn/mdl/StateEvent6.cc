@@ -78,6 +78,7 @@
 #include <QSS/dfn/Variable_QSS3.hh>
 #include <QSS/dfn/Variable_ZC1.hh>
 #include <QSS/dfn/Variable_ZC2.hh>
+#include <QSS/dfn/Variable_ZC3.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
 
@@ -363,8 +364,10 @@ StateEvent6( Variables & vars, Conditionals & cons )
 	Z * z1( nullptr );
 	if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) ) {
 		vars.push_back( z1 = new Variable_ZC1< Function_LTI >( "z1", rTol, aTol, zTol ) );
-	} else { // Use QSS2
+	} else if ( ( qss == QSS::QSS2 ) || ( qss == QSS::LIQSS2 ) ) {
 		vars.push_back( z1 = new Variable_ZC2< Function_LTI >( "z1", rTol, aTol, zTol ) );
+	} else {
+		vars.push_back( z1 = new Variable_ZC3< Function_LTI >( "z1", rTol, aTol, zTol ) );
 	}
 	z1->add_crossings_Up();
 	z1->add( x1 ).add( -1.0 );
@@ -373,8 +376,10 @@ StateEvent6( Variables & vars, Conditionals & cons )
 	Z * z2( nullptr );
 	if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) ) {
 		vars.push_back( z2 = new Variable_ZC1< Function_LTI >( "z2", rTol, aTol, zTol ) );
-	} else { // Use QSS2
+	} else if ( ( qss == QSS::QSS2 ) || ( qss == QSS::LIQSS2 ) ) {
 		vars.push_back( z2 = new Variable_ZC2< Function_LTI >( "z2", rTol, aTol, zTol ) );
+	} else {
+		vars.push_back( z2 = new Variable_ZC3< Function_LTI >( "z2", rTol, aTol, zTol ) );
 	}
 	z2->add_crossings_Dn();
 	z2->add( x1 ).add( -1.0 );
@@ -399,8 +404,10 @@ StateEvent6( Variables & vars, Conditionals & cons )
 //	Z * z( nullptr );
 //	if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) ) {
 //		vars.push_back( z = new Variable_ZC1< Function_LTI >( "z", rTol, aTol, zTol ) );
-//	} else { // Use QSS2
+//	} else if ( ( qss == QSS::QSS2 ) || ( qss == QSS::LIQSS2 ) ) {
 //		vars.push_back( z = new Variable_ZC2< Function_LTI >( "z", rTol, aTol, zTol ) );
+//	} else {
+//		vars.push_back( z = new Variable_ZC3< Function_LTI >( "z", rTol, aTol, zTol ) );
 //	}
 //	z->add_crossings_non_Flat();
 //	z->add( x1 ).add( -1.0 );

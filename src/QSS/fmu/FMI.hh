@@ -42,6 +42,8 @@
 // C++ Headers
 #include <cassert>
 #include <cstddef>
+#include <iostream>
+#include <string>
 
 namespace QSS {
 namespace fmu {
@@ -55,6 +57,34 @@ extern fmi2_import_t * fmu; // FMU instance
 extern std::size_t n_ders; // Number of derivatives
 extern fmi2_real_t * derivatives; // Derivatives
 extern Time t_fmu; // FMU time
+
+// FMI Status Check/Report
+inline
+bool
+status_check( std::string const & fxn_name, fmi2_status_t const status )
+{
+	switch ( status ) {
+	case fmi2_status_ok:
+		return true;
+	case fmi2_status_warning:
+		std::cerr << fxn_name << " FMI status = warning" << std::endl;
+		return false;
+	case fmi2_status_discard:
+		std::cerr << fxn_name << " FMI status = discard" << std::endl;
+		return false;
+	case fmi2_status_error:
+		std::cerr << fxn_name << " FMI status = error" << std::endl;
+		return false;
+	case fmi2_status_fatal:
+		std::cerr << fxn_name << " FMI status = fatal" << std::endl;
+		return false;
+	case fmi2_status_pending:
+		std::cerr << fxn_name << " FMI status = pending" << std::endl;
+		return false;
+	default:
+		return false;
+	}
+}
 
 // Get FMU Time
 inline
@@ -70,7 +100,8 @@ void
 set_time( Time const t )
 {
 	assert( fmu != nullptr );
-	fmi2_import_set_time( fmu, t_fmu = t ); //Do Check status returned
+	fmi2_status_t const fmi_status = fmi2_import_set_time( fmu, t_fmu = t );
+	assert( status_check( "set_time", fmi_status ) );
 }
 
 // Initialize Derivatives Array Size
@@ -90,7 +121,8 @@ get_real( fmi2_value_reference_t const ref )
 {
 	assert( fmu != nullptr );
 	Value val;
-	fmi2_import_get_real( fmu, &ref, std::size_t( 1u ), &val ); //Do Check status returned
+	fmi2_status_t const fmi_status = fmi2_import_get_real( fmu, &ref, std::size_t( 1u ), &val );
+	assert( status_check( "get_real", fmi_status ) );
 	return val;
 }
 
@@ -100,7 +132,8 @@ void
 get_reals( std::size_t const n, fmi2_value_reference_t const refs[], Value vals[] )
 {
 	assert( fmu != nullptr );
-	fmi2_import_get_real( fmu, refs, n, vals ); //Do Check status returned
+	fmi2_status_t const fmi_status = fmi2_import_get_real( fmu, refs, n, vals );
+	assert( status_check( "get_reals", fmi_status ) );
 }
 
 // Set a Real FMU Variable Value
@@ -109,7 +142,8 @@ void
 set_real( fmi2_value_reference_t const ref, Value const val )
 {
 	assert( fmu != nullptr );
-	fmi2_import_set_real( fmu, &ref, std::size_t( 1u ), &val ); //Do Check status returned
+	fmi2_status_t const fmi_status = fmi2_import_set_real( fmu, &ref, std::size_t( 1u ), &val );
+	assert( status_check( "set_real", fmi_status ) );
 }
 
 // Get All Derivatives Array: FMU Time and Variable Values Must be Set First
@@ -118,7 +152,8 @@ void
 get_derivatives()
 {
 	assert( derivatives != nullptr );
-	fmi2_import_get_derivatives( fmu, derivatives, n_ders );
+	fmi2_status_t const fmi_status = fmi2_import_get_derivatives( fmu, derivatives, n_ders );
+	assert( status_check( "get_derivatives", fmi_status ) );
 }
 
 // Get a Derivative: First call get_derivatives
@@ -137,7 +172,8 @@ get_integer( fmi2_value_reference_t const ref )
 {
 	assert( fmu != nullptr );
 	Integer val;
-	fmi2_import_get_integer( fmu, &ref, std::size_t( 1u ), &val ); //Do Check status returned
+	fmi2_status_t const fmi_status = fmi2_import_get_integer( fmu, &ref, std::size_t( 1u ), &val );
+	assert( status_check( "get_integer", fmi_status ) );
 	return val;
 }
 
@@ -147,7 +183,8 @@ void
 set_integer( fmi2_value_reference_t const ref, Integer const val )
 {
 	assert( fmu != nullptr );
-	fmi2_import_set_integer( fmu, &ref, std::size_t( 1u ), &val ); //Do Check status returned
+	fmi2_status_t const fmi_status = fmi2_import_set_integer( fmu, &ref, std::size_t( 1u ), &val );
+	assert( status_check( "set_integer", fmi_status ) );
 }
 
 // Get an Boolean FMU Variable Value
@@ -157,7 +194,8 @@ get_boolean( fmi2_value_reference_t const ref )
 {
 	assert( fmu != nullptr );
 	int val; // FMI2 uses int for booleans
-	fmi2_import_get_boolean( fmu, &ref, std::size_t( 1u ), &val ); //Do Check status returned
+	fmi2_status_t const fmi_status = fmi2_import_get_boolean( fmu, &ref, std::size_t( 1u ), &val );
+	assert( status_check( "get_boolean", fmi_status ) );
 	return ( val != 0 );
 }
 
@@ -168,7 +206,8 @@ set_boolean( fmi2_value_reference_t const ref, bool const val )
 {
 	assert( fmu != nullptr );
 	int const ival( static_cast< int >( val ) ); // FMI2 uses int for booleans
-	fmi2_import_set_boolean( fmu, &ref, std::size_t( 1u ), &ival ); //Do Check status returned
+	fmi2_status_t const fmi_status = fmi2_import_set_boolean( fmu, &ref, std::size_t( 1u ), &ival );
+	assert( status_check( "set_boolean", fmi_status ) );
 }
 
 // Cleanup Allocations

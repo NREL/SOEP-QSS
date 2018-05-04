@@ -95,6 +95,13 @@ public: // Predicate
 		return true;
 	}
 
+	// Non-Zero-Crossing Variable?
+	bool
+	not_ZC() const
+	{
+		return false;
+	}
+
 	// Has Crossing Type?
 	bool
 	has( Crossing const c )
@@ -120,12 +127,25 @@ public: // Properties
 
 public: // Methods
 
+	// Initialization: Stage 0 ZC
+	void
+	init_0_ZC()
+	{
+		// Add drill-through observees
+		for ( size_type i = 0, n = observees_.size(); i < n; ++i ) {
+			Variable * vo( observees_[ i ] );
+			for ( Variable * voo : vo->observees() ) {
+				observe_ZC( voo ); // Only need back-observer to force observer updates when observees update since ZC variable value doesn't depend on these 2nd level observees
+			}
+		}
+	}
+
 	// Advance Observees Slightly Past Zero-Crossing Time for FMU Detection
 	void
 	advance_observees()
 	{
 		assert( tZ_last != infinity );
-		fmu_set_observees_q( tZ_last + options::dtZC ); // Use slightly later time to let FMU detect the zero crossing: This is not robust
+		fmu_set_observees_x( tZ_last + options::dtZC ); // Use slightly later time to let FMU detect the zero crossing: This is not robust
 	}
 
 public: // Crossing Methods

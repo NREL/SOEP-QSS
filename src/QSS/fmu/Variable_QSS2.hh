@@ -187,7 +187,7 @@ public: // Methods
 		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE_aligned();
 		add_QSS( tE );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << q_1_ << "*t quantized, " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2 internal   tE=" << std::noshowpos << tE << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// Set Current Tolerance
@@ -206,26 +206,16 @@ public: // Methods
 		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 		set_qTol();
 		fmu_set_observees_q( tX = tQ );
-		if ( observers_.empty() ) {
-			if ( self_observer ) fmu_set_value( q_0_ );
-		} else {
-			advance_observers_1();
-		}
+		if ( self_observer ) fmu_set_value( q_0_ );
 		x_1_ = q_1_ = fmu_get_deriv();
 		fmu::set_time( tN = tQ + options::dtNum );
 		fmu_set_observees_q( tN );
-		if ( observers_max_order_ <= 1 ) {
-			if ( self_observer ) fmu_set_q( tN );
-		} else {
-			advance_observers_2();
-		}
+		if ( self_observer ) fmu_set_q( tN );
 		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) {
-			std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << q_1_ << "*t quantized, " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2 internal   tE=" << std::noshowpos << tE << '\n';
-			advance_observers_d();
-		}
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( have_observers_ ) advance_observers_tQ();
 	}
 
 	// QSS Advance: Stage 0
@@ -256,7 +246,20 @@ public: // Methods
 		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << q_1_ << "*t quantized, " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2 internal   tE=" << std::noshowpos << tE << '\n';
+		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+	}
+
+	// Observer Advance: Stage 1
+	void
+	advance_observer_1( Time const t )
+	{
+		assert( ( tX <= t ) && ( t <= tE ) );
+		fmu_set_observees_q( t );
+		if ( self_observer ) fmu_set_q( t );
+		Time const tDel( t - tX );
+		tX = t;
+		x_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		x_1_ = fmu_get_deriv();
 	}
 
 	// Observer Advance: Stage 1
@@ -264,6 +267,7 @@ public: // Methods
 	advance_observer_1( Time const t, Value const d )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
+		assert( d == fmu_get_deriv() );
 		Time const tDel( t - tX );
 		tX = t;
 		x_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
@@ -272,9 +276,24 @@ public: // Methods
 
 	// Observer Advance: Stage 2
 	void
-	advance_observer_2()
+	advance_observer_2( Time const t )
 	{
+		assert( tX <= t );
+		fmu_set_observees_q( t );
+		if ( self_observer ) fmu_set_q( t );
 		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+		set_tE_unaligned();
+		shift_QSS( tE );
+	}
+
+	// Observer Advance: Stage 2
+	void
+	advance_observer_2( Time const t, Value const d )
+	{
+		assert( tX <= t );
+		assert( d == fmu_get_deriv() );
+		(void)t; // Suppress unused parameter warning
+		x_2_ = options::one_half_over_dtNum * ( d - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE_unaligned();
 		shift_QSS( tE );
 	}
@@ -283,7 +302,7 @@ public: // Methods
 	void
 	advance_observer_d() const
 	{
-		std::cout << "  " << name << '(' << tX << ')' << std::showpos << " = " << q_0_ << q_1_ << "*t quantized, " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2 internal   tE=" << std::noshowpos << tE << '\n';
+		std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << '(' << std::noshowpos << tQ << std::showpos << ')' << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// Handler Advance
@@ -291,24 +310,19 @@ public: // Methods
 	advance_handler( Time const t )
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
-		tX = tQ = t;
 		x_0_ = q_0_ = fmu_get_value(); // Assume FMU ran zero-crossing handler
 		set_qTol();
-		advance_observers_1();
-		fmu_set_observees_q( tQ );
-		if ( ( self_observer ) && ( observers_.empty() ) ) fmu_set_value( q_0_ );
+		fmu_set_observees_q( tX = tQ = t );
+		if ( self_observer ) fmu_set_value( q_0_ );
 		x_1_ = q_1_ = fmu_get_deriv();
 		fmu::set_time( tN = tQ + options::dtNum );
-		if ( observers_max_order_ >= 2 ) advance_observers_2();
 		fmu_set_observees_q( tN );
-		if ( ( self_observer ) && ( observers_max_order_ <= 1 ) ) fmu_set_q( tN );
+		if ( self_observer ) fmu_set_q( tN );
 		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) {
-			std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << q_1_ << "*t quantized, " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2 internal   tE=" << std::noshowpos << tE << '\n';
-			advance_observers_d();
-		}
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( have_observers_ ) advance_observers_tQ();
 	}
 
 	// Handler Advance: Stage 0
@@ -326,7 +340,7 @@ public: // Methods
 	advance_handler_1()
 	{
 		fmu_set_observees_q( tQ );
-		if ( ( self_observer ) && ( observers_.empty() ) ) fmu_set_value( q_0_ );
+		if ( self_observer ) fmu_set_value( q_0_ );
 		x_1_ = q_1_ = fmu_get_deriv();
 	}
 
@@ -335,11 +349,11 @@ public: // Methods
 	advance_handler_2()
 	{
 		fmu_set_observees_q( tN = tQ + options::dtNum );
-		if ( ( self_observer ) && ( observers_max_order_ <= 1 ) ) fmu_set_q( tN );
+		if ( self_observer ) fmu_set_q( tN );
 		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << q_1_ << "*t quantized, " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2 internal   tE=" << std::noshowpos << tE << '\n';
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// Handler No-Advance

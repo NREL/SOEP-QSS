@@ -193,7 +193,7 @@ public: // Methods
 		}
 		set_tE_aligned();
 		add_QSS( tE );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// Set Current Tolerance
@@ -218,7 +218,7 @@ public: // Methods
 		}
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 		advance_observers();
 	}
 
@@ -243,7 +243,7 @@ public: // Methods
 		}
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << '\n';
+		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// Observer Advance
@@ -255,7 +255,7 @@ public: // Methods
 		x_1_ = d_.q( tX = t );
 		set_tE_unaligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "  " << name << '(' << t << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << '\n';
+		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// Observer Advance: Parallel
@@ -273,7 +273,7 @@ public: // Methods
 	advance_observer_sequential()
 	{
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << '\n';
+		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// Handler Advance
@@ -286,7 +286,7 @@ public: // Methods
 		x_1_ = d_.q( tX = tQ = t );
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << '\n';
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 		advance_observers();
 	}
 
@@ -307,7 +307,7 @@ public: // Methods
 		x_1_ = d_.q( tQ );
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << q_0_ << " quantized, " << x_0_ << x_1_ << "*t internal   tE=" << std::noshowpos << tE << '\n';
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 private: // Methods
@@ -345,6 +345,8 @@ private: // Methods
 	{
 		assert( qTol > 0.0 );
 		assert( self_observer );
+		assert( q_c_ == q_0_ );
+		assert( x_0_ == q_0_ );
 
 		// Set coefficients based on derivative signs
 		int const dls( signum( specs.l ) );
@@ -355,6 +357,9 @@ private: // Methods
 		} else if ( ( dls == +1 ) && ( dus == +1 ) ) { // Upward trajectory
 			q_0_ += qTol;
 			x_1_ = specs.u;
+		} else if ( ( dls == 0 ) && ( dus == 0 ) ) { // Flat trajectory
+			// Keep q_0_ == q_c_
+			x_1_ = 0.0;
 		} else { // Flat trajectory
 			q_0_ = std::min( std::max( specs.z, q_0_ - qTol ), q_0_ + qTol ); // Clipped in case of roundoff
 			x_1_ = 0.0;

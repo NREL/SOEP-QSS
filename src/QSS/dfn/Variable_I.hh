@@ -168,7 +168,7 @@ public: // Methods
 		shrink_observers();
 		x_ = static_cast< Integer >( xIni );
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Initialization to a Value: Stage 0
@@ -179,7 +179,7 @@ public: // Methods
 		shrink_observers();
 		x_ = static_cast< Integer >( x );
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Handler Advance
@@ -188,15 +188,12 @@ public: // Methods
 	{
 		assert( tX <= t );
 		tX = tQ = t;
-		Integer const x_new( static_cast< Integer >( x ) );
-		if ( x_ != x_new ) {
-			x_ = x_new;
-			advance_observers();
-			if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
-		} else {
-			if ( options::output::d ) std::cout << "# " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
-		}
 		shift_handler();
+		Integer const x_new( static_cast< Integer >( x ) );
+		bool const chg( x_ != x_new );
+		if ( chg ) x_ = x;
+		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( chg ) advance_observers();
 	}
 
 	// Handler Advance: Stage 0
@@ -205,9 +202,11 @@ public: // Methods
 	{
 		assert( tX <= t );
 		tX = tQ = t;
-		x_ = static_cast< Integer >( x );
 		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << std::showpos << " = " << x_ << std::noshowpos << '\n';
+		Integer const x_new( static_cast< Integer >( x ) );
+		bool const chg( x_ != x_new );
+		if ( chg ) x_ = x_new;
+		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 private: // Data

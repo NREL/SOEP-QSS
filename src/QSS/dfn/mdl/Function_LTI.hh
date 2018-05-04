@@ -130,6 +130,18 @@ public: // Properties
 		return r;
 	}
 
+	// Continuous Third Derivative at Time t
+	Value
+	x3( Time const t ) const
+	{
+		Value r( 0.0 );
+		for ( size_type i = iBeg3, n = terms_.size(); i < n; ++i ) {
+			Term const & term( terms_[ i ] );
+			r += term.c * term.v->x3( t );
+		}
+		return r;
+	}
+
 	// Quantized Value at Time t
 	Value
 	q( Time const t ) const

@@ -95,6 +95,13 @@ public: // Properties
 		return dtn_inv_sq_ * ( x( t + dtn_ ) - ( 2.0 * x( t ) ) + x( t - dtn_ ) );
 	}
 
+	// Continuous Third Derivative at Time t
+	Value
+	x3( Time const t ) const
+	{
+		return dtn_inv_cb_2_ * ( x( t + dtn_2_ ) - x( t - dtn_2_ ) - ( 2.0 * ( x( t + dtn_ ) - x( t - dtn_ ) ) ) );
+	}
+
 	// Quantized Value at Time t
 	Value
 	q( Time const t ) const
@@ -380,9 +387,11 @@ private: // Data
 	mutable Value v_p_; // Last value(t+dtn) computed
 	mutable Value v_m_; // Last value(t-dtn) computed
 	Time dtn_{ options::dtNum }; // Differentiation time step
+	Time dtn_2_{ 2.0 * options::dtNum }; // Differentiation time step x 2
 	Time dtn_inv_{ 1.0 / options::dtNum }; // Differentiation time step inverse
 	Time dtn_inv_2_{ 0.5 / options::dtNum }; // Differentiation time step half inverse
 	Time dtn_inv_sq_{ 1.0 / ( options::dtNum * options::dtNum ) }; // Differentiation time step inverse squared
+	Time dtn_inv_cb_2_{ 0.5 / ( options::dtNum * options::dtNum * options::dtNum ) }; // Differentiation time step half inverse cubed
 
 };
 

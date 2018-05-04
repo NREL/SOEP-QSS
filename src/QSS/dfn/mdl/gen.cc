@@ -45,6 +45,7 @@
 #include <QSS/dfn/Variable_QSS3.hh>
 #include <QSS/dfn/Variable_ZC1.hh>
 #include <QSS/dfn/Variable_ZC2.hh>
+#include <QSS/dfn/Variable_ZC3.hh>
 #include <QSS/options.hh>
 
 // C++ Headers
@@ -250,8 +251,10 @@ gen( Variables & vars, Conditionals & cons, size_type const nQSS, size_type cons
 		std::string const z_nam( "z" + i_stream.str() );
 		if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) ) {
 			vars.push_back( z = new Variable_ZC1< Function_LTI >( z_nam, rTol, aTol, zTol ) );
-		} else { // Use QSS2
+		} else if ( ( qss == QSS::QSS2 ) || ( qss == QSS::LIQSS2 ) ) {
 			vars.push_back( z = new Variable_ZC2< Function_LTI >( z_nam, rTol, aTol, zTol ) );
+		} else {
+			vars.push_back( z = new Variable_ZC3< Function_LTI >( z_nam, rTol, aTol, zTol ) );
 		}
 		z->add_crossings_non_Flat();
 
