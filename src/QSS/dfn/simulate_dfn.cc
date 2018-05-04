@@ -433,6 +433,20 @@ simulate_dfn()
 					assert( trigger->tZC() == t );
 					trigger->st = s; // Set trigger superdense time
 					trigger->advance_ZC();
+					if ( doTOut ) { // Time event output: after discrete changes
+						if ( options::output::a ) { // All variables output
+							for ( size_type i = 0; i < n_vars; ++i ) {
+								if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
+								if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
+							}
+						} else { // Time event and observer output
+							if ( options::output::t ) { // Time event output
+								size_type const i( var_idx[ trigger ] );
+								if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
+								if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
+							}
+						}
+					}
 				}
 			} else if ( event.is_conditional() ) { // Conditional event
 				while ( events.top_superdense_time() == s ) {
