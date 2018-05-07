@@ -58,18 +58,14 @@ clear :
 clean :
 	-rm -f *.d *.obj $(subst \,/,$(SLB)) $(subst \,/,$(EXE)) $(subst \,/,$(BIN_PATH))/$(TAR).ilk $(subst \,/,$(BIN_PATH))/$(TAR).pdb
 
-# Library from objects
 $(SLB) : $(filter-out QSS.obj,$(OBJ))
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.obj)) # Prune obs objs
 	$(AR) $(ARFLAGS) /out:$@ $?
 
-# Executable from objects
-$(EXE) : $(OBJ)
-	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
-	@-rm -f $(filter-out $(OBJ),$(wildcard *.obj)) # Prune obs objs
-	$(CXX) $(LDFLAGS) /Fe:$@ $^ $(LINKFLAGS) $(FMIL_HOME)\lib\fmilib.lib
-	rm -f $(subst \,/,$(BIN_PATH))/$(TAR).exp $(subst \,/,$(BIN_PATH))/$(TAR).lib
+$(EXE) : QSS.obj $(SLB)
+	$(CXX) $(LDFLAGS) /Fe:$@ $< $(LINKFLAGS) $(SLB) $(FMIL_HOME)\lib\fmilib.lib
+	@-rm -f $(subst \,/,$(BIN_PATH))/$(TAR).exp $(subst \,/,$(BIN_PATH))/$(TAR).lib
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)

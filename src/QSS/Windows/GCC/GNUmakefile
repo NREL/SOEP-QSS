@@ -58,17 +58,13 @@ clear :
 clean :
 	-rm -f *.d *.o $(subst \,/,$(SLB)) $(subst \,/,$(EXE))
 
-# Library from objects
 $(SLB) : $(filter-out QSS.o,$(OBJ))
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.o)) # Prune obs objs
 	$(AR) $(ARFLAGS) $@ $?
 
-# Executable from objects
-$(EXE) : $(OBJ)
-	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
-	@-rm -f $(filter-out $(OBJ),$(wildcard *.o)) # Prune obs objs
-	$(CXX) $(LDFLAGS) -o $@ $^ $(FMIL_HOME)\lib\fmilib.lib
+$(EXE) : QSS.o $(SLB)
+	$(CXX) $(LDFLAGS) -o $@ $< $(SLB) $(FMIL_HOME)\lib\fmilib.lib
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)

@@ -58,21 +58,13 @@ clear :
 clean :
 	-rm -f *.d *.o $(SLB) $(EXE)
 
-# Library from objects
 $(SLB) : $(filter-out QSS.o,$(OBJ))
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.o)) # Prune obs objs
 	$(AR) $(ARFLAGS) $@ $?
 
-# Executable from libraries
 $(EXE) : QSS.o $(SLB)
 	$(CXX) $(LDFLAGS) -o $@ $^ -lpthread -ldl $(LDLIBS)
-
-# Executable from objects
-#$(EXE) : $(OBJ)
-#	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
-#	@-rm -f $(filter-out $(OBJ),$(wildcard *.o)) # Prune obs objs
-#	$(CXX) $(LDFLAGS) -o $@ $^ -lpthread -ldl $(LDLIBS)
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)

@@ -10,7 +10,6 @@ export PlatformCompiler=Linux/Clang
 
 export PATH=$PATH:$QSS/bin/$PlatformCompiler
 
-source setFMIL
 export CPATH=.:$QSS/src:$FMIL_HOME/include:$FMIL_HOME/include/FMI:$FMIL_HOME/include/FMI2:$FMIL_HOME/include/JM:$CPATH
 
 source setGTest
