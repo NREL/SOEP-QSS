@@ -27,8 +27,9 @@
 .project
 .cproject
 .idea
-.se
-.vscode
+.se/*.vpwhist*
+.se/*.vtg
+.vscode/*.code-workspace
 
 *.asc
 *.csv
@@ -36,7 +37,6 @@
 *.mo
 *.xml
 perf.data
-src/QSS/Room/*
 
 bin/Linux/**/QSS*
 bin/Linux/**/*.unit
