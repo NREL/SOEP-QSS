@@ -79,7 +79,7 @@ namespace dfn {
 
 // Simulate a Defined Model
 void
-simulate_dfn()
+simulate()
 {
 	// Types
 	using Variables = Variable::Variables;

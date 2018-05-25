@@ -41,7 +41,7 @@ namespace fmu {
 
 // Simulate an FMU Model
 void
-simulate_fmu();
+simulate();
 
 } // fmu
 } // QSS

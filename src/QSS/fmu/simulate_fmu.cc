@@ -123,7 +123,7 @@ struct FMUVarPtrHash final
 
 // Simulate an FMU Model
 void
-simulate_fmu()
+simulate()
 {
 	// Types
 	using Variables = Variable::Variables;

@@ -56,8 +56,8 @@ main( int argc, char * argv[] )
 		std::cerr << "Error: No model name or FMU file specified" << std::endl;
 		std::exit( EXIT_FAILURE );
 	} else if ( ( options::model.length() >= 5 ) && ( options::model.rfind( ".fmu" ) == options::model.length() - 4u ) ) { // FMU
-		fmu::simulate_fmu();
+		fmu::simulate();
 	} else { // Example
-		dfn::simulate_dfn();
+		dfn::simulate();
 	}
 }

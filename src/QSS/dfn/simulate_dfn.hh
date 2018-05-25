@@ -41,7 +41,7 @@ namespace dfn {
 
 // Simulate an Example Model
 void
-simulate_dfn();
+simulate();
 
 } // dfn
 } // QSS
