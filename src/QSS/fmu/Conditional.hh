@@ -42,6 +42,7 @@
 // C++ Headers
 #include <algorithm>
 #include <cassert>
+#include <string>
 #include <vector>
 
 namespace QSS {

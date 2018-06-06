@@ -11,7 +11,7 @@ set PlatformCompiler=Windows\GCC
 
 set Path=%Path%;%QSS%\bin\%PlatformCompiler%
 
-call setFMIL.bat
-set CPATH=.;%QSS%\src;%FMIL_HOME%\include;%FMIL_HOME%\include\FMI;%FMIL_HOME%\include\FMI2;%FMIL_HOME%\include\JM;%CPATH%
+set CPATH=.;%QSS%\src
+if not (%FMIL_HOME%) == () set CPATH=%CPATH%;%FMIL_HOME%\include;%FMIL_HOME%\include\FMI;%FMIL_HOME%\include\FMI2;%FMIL_HOME%\include\JM
 
 %~dp0..\setProject.bat

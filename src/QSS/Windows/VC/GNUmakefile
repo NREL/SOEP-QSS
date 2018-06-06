@@ -61,7 +61,7 @@ clean :
 $(SLB) : $(filter-out QSS.obj,$(OBJ))
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.obj)) # Prune obs objs
-	$(AR) $(ARFLAGS) /out:$@ $?
+	$(AR) $(ARFLAGS) /out:$@ $^
 
 $(EXE) : QSS.obj $(SLB)
 	$(CXX) $(LDFLAGS) /Fe:$@ $< $(LINKFLAGS) $(SLB) $(FMIL_HOME)\lib\fmilib.lib

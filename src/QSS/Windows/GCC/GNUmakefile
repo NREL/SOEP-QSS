@@ -64,7 +64,7 @@ $(SLB) : $(filter-out QSS.o,$(OBJ))
 	$(AR) $(ARFLAGS) $@ $?
 
 $(EXE) : QSS.o $(SLB)
-	$(CXX) $(LDFLAGS) -o $@ $< $(SLB) $(FMIL_HOME)\lib\fmilib.lib
+	$(CXX) $(LDFLAGS) -o $@ $< $(SLB) $(FMIL_HOME)\lib\libfmilib.a
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)
