@@ -38,5 +38,6 @@
 *.xml
 perf.data
 
+fmu-uuid
 bin/Linux/**/QSS*
 bin/Linux/**/*.unit

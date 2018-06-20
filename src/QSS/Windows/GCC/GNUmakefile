@@ -15,10 +15,7 @@ include $(QSS_bin)/GNUmakeinit.mk
 
 # Variables
 TAR := QSS
-SRC := $(filter-out %.in.cc,$(notdir $(wildcard $(SRC_PATH)/*.cc)))
-SRC += $(filter-out %.in.cc,$(notdir $(wildcard $(SRC_PATH)/dfn/*.cc)))
-SRC += $(filter-out %.in.cc,$(notdir $(wildcard $(SRC_PATH)/dfn/mdl/*.cc)))
-SRC += $(filter-out %.in.cc,$(notdir $(wildcard $(SRC_PATH)/fmu/*.cc)))
+SRC := $(filter-out %.in.cc,$(notdir $(call rwildcard,$(SRC_PATH)/,*.cc)))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .o,$(basename $(SRC)))
 SLB := $(BIN_PATH)\lib$(TAR).a
@@ -64,7 +61,8 @@ $(SLB) : $(filter-out QSS.o,$(OBJ))
 	$(AR) $(ARFLAGS) $@ $?
 
 $(EXE) : QSS.o $(SLB)
-	$(CXX) $(LDFLAGS) -o $@ $< $(SLB) $(FMIL_HOME)\lib\libfmilib.a
+	$(CXX) $(LDFLAGS) -o $@ $< $(SLB) $(FMIL_HOME)\lib\libfmilib_shared.dll.a # Links
+#	$(CXX) $(LDFLAGS) -o $@ $< $(SLB) $(FMIL_HOME)\lib\libfmilib.a # Lots of undefined references because static lib is tiny/empty for some reason
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)

@@ -1,4 +1,4 @@
-// FMI API Wrappers
+// FMU Lookup Functions
 //
 // Project: QSS Solver
 //
@@ -34,7 +34,7 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // QSS Headers
-#include <QSS/fmu/FMI.hh>
+#include <QSS/fmu/FMU.hh>
 
 namespace QSS {
 namespace fmu {

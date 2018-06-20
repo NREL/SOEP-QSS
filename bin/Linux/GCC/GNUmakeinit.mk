@@ -16,6 +16,7 @@ CXX := g++
 C := gcc
 AR := gcc-ar
 MAKEDEPEND := makedep.py
+rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2)$(filter $(subst *,%,$2),$d))
 
 # Paths
 OBJ_PATH := .

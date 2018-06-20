@@ -15,7 +15,8 @@ ARFLAGS := /nologo
 CXX := cl
 AR := lib
 LD := link
-MAKEDEPEND := makedep.py
+MAKEDEPEND := makedep.py --inc=INCLUDE
+rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2)$(filter $(subst *,%,$2),$d))
 
 # Paths
 OBJ_PATH := .

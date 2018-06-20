@@ -10,7 +10,7 @@ export PlatformCompiler=Linux/GCC
 
 export PATH=$PATH:$QSS/bin/$PlatformCompiler
 
-export CPATH=.:$QSS/src:$FMIL_HOME/include:$FMIL_HOME/include/FMI:$FMIL_HOME/include/FMI2:$FMIL_HOME/include/JM:$CPATH
+export CPATH=.:$QSS/src:$FMIL_HOME/include:$FMIL_HOME/include/FMI:$FMIL_HOME/include/FMI1:$FMIL_HOME/include/FMI2:$FMIL_HOME/include/JM
 
 source setGTest
 

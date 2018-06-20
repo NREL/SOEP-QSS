@@ -1,4 +1,4 @@
-// FMI API Wrappers
+// FMU Lookup Functions
 //
 // Project: QSS Solver
 //
@@ -33,8 +33,8 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_FMI_hh_INCLUDED
-#define QSS_fmu_FMI_hh_INCLUDED
+#ifndef QSS_fmu_FMU_hh_INCLUDED
+#define QSS_fmu_FMU_hh_INCLUDED
 
 // FMI Library Headers
 #include <fmilib.h>
@@ -208,6 +208,18 @@ set_boolean( fmi2_value_reference_t const ref, bool const val )
 	int const ival( static_cast< int >( val ) ); // FMI2 uses int for booleans
 	fmi2_status_t const fmi_status = fmi2_import_set_boolean( fmu, &ref, std::size_t( 1u ), &ival );
 	assert( status_check( "set_boolean", fmi_status ) );
+}
+
+// Discrete Event Processing
+inline
+void
+do_event_iteration( fmi2_import_t * fmu, fmi2_event_info_t * eventInfo )
+{
+	eventInfo->newDiscreteStatesNeeded = fmi2_true;
+	eventInfo->terminateSimulation     = fmi2_false;
+	while ( eventInfo->newDiscreteStatesNeeded && !eventInfo->terminateSimulation ) {
+		fmi2_import_new_discrete_states( fmu, eventInfo );
+	}
 }
 
 // Cleanup Allocations

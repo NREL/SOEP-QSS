@@ -40,6 +40,7 @@
 #include <cassert>
 #include <cctype>
 #include <cstdlib>
+#include <cstring>
 #include <limits>
 #include <string>
 
@@ -145,6 +146,28 @@ has_any_not_of( std::string const & s, std::string const & t ) // Pass lowercase
 		if ( t.find( std::tolower( a ) ) == std::string::npos ) return true;
 	}
 	return false;
+}
+
+// Has a Suffix?
+inline
+bool
+has_suffix( std::string const & s, char const * const suf )
+{
+	std::string::size_type const suf_len( std::strlen( suf ) );
+	if ( suf_len == 0 ) {
+		return false;
+	} else {
+		std::string::size_type const s_len( s.length() );
+		if ( s_len < suf_len ) {
+			return false;
+		} else {
+			std::string::size_type const del_len( s_len - suf_len );
+			for ( std::string::size_type i = 0; i < suf_len; ++i ) {
+				if ( s[ del_len + i ] != suf[ i ] ) return false;
+			}
+			return true;
+		}
+	}
 }
 
 // Has an Option (Case-Insensitive)?

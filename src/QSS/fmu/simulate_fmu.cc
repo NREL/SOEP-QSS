@@ -38,7 +38,7 @@
 #include <QSS/fmu/cycles_fmu.hh>
 #include <QSS/fmu/Conditional.hh>
 #include <QSS/fmu/container.hh>
-#include <QSS/fmu/FMI.hh>
+#include <QSS/fmu/FMU.hh>
 #include <QSS/fmu/FMU_Variable.hh>
 #include <QSS/fmu/Function_Inp_constant.hh>
 #include <QSS/fmu/Function_Inp_sin.hh>
@@ -80,10 +80,6 @@
 
 namespace QSS {
 namespace fmu {
-
-// Forward
-void
-do_event_iteration( fmi2_import_t * fmu, fmi2_event_info_t * eventInfo );
 
 // FMU Variable Pointer Union
 union FMUVarPtr { // Support FMU real, integer, and boolean variables
@@ -1659,17 +1655,6 @@ simulate()
 	fmi2_import_destroy_dllfmu( fmu );
 	fmi2_import_free( fmu );
 	fmi_import_free_context( context );
-}
-
-// Discrete Event Processing
-void
-do_event_iteration( fmi2_import_t * fmu, fmi2_event_info_t * eventInfo )
-{
-	eventInfo->newDiscreteStatesNeeded = fmi2_true;
-	eventInfo->terminateSimulation     = fmi2_false;
-	while ( eventInfo->newDiscreteStatesNeeded && !eventInfo->terminateSimulation ) {
-		fmi2_import_new_discrete_states( fmu, eventInfo );
-	}
 }
 
 } // fmu

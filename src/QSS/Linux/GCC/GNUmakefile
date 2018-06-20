@@ -15,10 +15,7 @@ include $(QSS_bin)/GNUmakeinit.mk
 
 # Variables
 TAR := QSS
-SRC := $(filter-out %.in.cc,$(notdir $(wildcard $(SRC_PATH)/*.cc)))
-SRC += $(filter-out %.in.cc,$(notdir $(wildcard $(SRC_PATH)/dfn/*.cc)))
-SRC += $(filter-out %.in.cc,$(notdir $(wildcard $(SRC_PATH)/dfn/mdl/*.cc)))
-SRC += $(filter-out %.in.cc,$(notdir $(wildcard $(SRC_PATH)/fmu/*.cc)))
+SRC := $(filter-out %.in.cc,$(notdir $(call rwildcard,$(SRC_PATH)/,*.cc)))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .o,$(basename $(SRC)))
 SLB := $(BIN_PATH)/lib$(TAR).a

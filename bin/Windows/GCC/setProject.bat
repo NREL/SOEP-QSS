@@ -12,6 +12,6 @@ set PlatformCompiler=Windows\GCC
 set Path=%Path%;%QSS%\bin\%PlatformCompiler%
 
 set CPATH=.;%QSS%\src
-if not (%FMIL_HOME%) == () set CPATH=%CPATH%;%FMIL_HOME%\include;%FMIL_HOME%\include\FMI;%FMIL_HOME%\include\FMI2;%FMIL_HOME%\include\JM
+if not (%FMIL_HOME%) == () set CPATH=%CPATH%;%FMIL_HOME%\include;%FMIL_HOME%\include\FMI;%FMIL_HOME%\include\FMI1;%FMIL_HOME%\include\FMI2;;%FMIL_HOME%\include\JM
 
 %~dp0..\setProject.bat

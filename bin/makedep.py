@@ -23,7 +23,7 @@ import argparse, os, re
 C_ext = re.compile( '(c|cc|cpp|cxx|c\+\+|h|hh|hpp|hxx|h\+\+|ii|ipp|ixx|i\+\+)', re.I )
 C_inc = re.compile( '\s*#\s*include +<([^<>]+\.[^<>]+)>' ) # Exclude <name> C++ Standard Library headers
 C_inq = re.compile( '\s*#\s*include +"([^"]+)"' )
-C_sys = re.compile( 'sys/' ) # Exclude <sys/header> C++ system headers
+C_sys = re.compile( 'sys/' ) # Exclude <sys/header> C/C++ system headers
 C_path = None
 
 # Main
@@ -104,10 +104,9 @@ def C_deps( fname, fdeps = None, par_dir = None, quoted = False, add = True ):
             par_dir.insert( 0, par_new )
         else: # Flag not to pop since didn't push
             par_new = None
-        C_file = fname.endswith( ( '.c', '.h' ) ) # C file?
         for line in dfile:
             m = C_inc.match( line ) # #include <header> form
-            if m and not C_file:
+            if m :
                 dep = m.group( 1 )
                 if dep and ( dep not in fdeps ) and ( not C_sys.match( dep ) ):
                     C_deps( dep, fdeps, par_dir ) # Recurse
@@ -115,7 +114,7 @@ def C_deps( fname, fdeps = None, par_dir = None, quoted = False, add = True ):
                 m = C_inq.match( line ) # #include "header" form
                 if m:
                     dep = m.group( 1 )
-                    if dep and ( dep not in fdeps ):
+                    if dep and ( dep not in fdeps ) and ( not C_sys.match( dep ) ):
                         C_deps( dep, fdeps, par_dir, quoted = True ) # Recurse
         dfile.close()
         if par_new: del par_dir[ 0 ] # Pop parent dir from front of list

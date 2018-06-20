@@ -1,25 +1,39 @@
 #!/bin/bash
-# Clang C++ Wrapped Header Compile for Syntax-Checking
+# Clang C/C++ Wrapped Header Compile for Syntax-Checking
 
-if   [ -f $1     ]; then HeaderSource=$1
-elif [ -f $1.h   ]; then HeaderSource=$1.h
-elif [ -f $1.hh  ]; then HeaderSource=$1.hh
-elif [ -f $1.hpp ]; then HeaderSource=$1.hpp
-elif [ -f $1.hxx ]; then HeaderSource=$1.hxx
-elif [ -f $1.ii  ]; then HeaderSource=$1.ii
+if   [ -f $1     ]; then
+  case $1 in
+  *.h)
+    CHeader=$1
+    ;;
+  *)
+    CxxHeader=$1
+    ;;
+  esac
+elif [ -f $1.h   ]; then CHeader=$1.h
+elif [ -f $1.hh  ]; then CxxHeader=$1.hh
+elif [ -f $1.hpp ]; then CxxHeader=$1.hpp
+elif [ -f $1.hxx ]; then CxxHeader=$1.hxx
+elif [ -f $1.ii  ]; then CxxHeader=$1.ii
 fi
 
-if [ -z $HeaderSource ]; then
+if [[ $CxxHeader ]]; then
+  cchHeader=$CxxHeader
+  cchSource=$CxxHeader.cc
+elif [[ $CHeader ]]; then
+  cchHeader=$CHeader
+  cchSource=$CHeader.c
+else
   echo ERROR: Header file with that name not found
   exit 1
 fi
 
-if [ -f $HeaderSource.cc ]; then
-  echo ERROR: Target source file exists: $HeaderSource.cc
+if [ -f $cchSource ]; then
+  echo ERROR: Target source file exists: $cchSource
   exit 1
 fi
 
-echo -e \#include \"$HeaderSource\" > $HeaderSource.cc
+echo -e \#include \"$cchHeader\" > $cchSource
 shift
-ccs $HeaderSource.cc $@
-rm -f $HeaderSource.cc
+ccs $cchSource $@
+rm -f $cchSource
