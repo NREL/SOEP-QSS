@@ -37,7 +37,7 @@
 #define QSS_fmu_Function_Inp_hh_INCLUDED
 
 // QSS Headers
-#include <QSS/fmu/SmoothToken.hh>
+#include <QSS/SmoothToken.hh>
 
 namespace QSS {
 namespace fmu {
@@ -58,7 +58,7 @@ public: // Creation
 	 Value const x_0 = 0.0,
 	 Value const x_1 = 0.0,
 	 Value const x_2 = 0.0,
-	 Value const x_3 = 0.0,
+	 Value const x_3 = 0.0
 	) :
 	 s_( 3, x_0, x_1, x_2, x_3 )
 	{}

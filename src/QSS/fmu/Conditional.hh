@@ -136,6 +136,20 @@ public: // Nested Types
 			return vars.size();
 		}
 
+		// Handler-Modified Variables
+		Variables const &
+		observers() const
+		{
+			return observers_;
+		}
+
+		// Handler-Modified Variables
+		Variables &
+		observers()
+		{
+			return observers_;
+		}
+
 		// Boolean Value at SuperdenseTime s
 		bool
 		b( SuperdenseTime const & s ) const
@@ -180,7 +194,7 @@ public: // Nested Types
 		void
 		add_observer( Variable * v )
 		{
-			observers.push_back( v );
+			observers_.push_back( v );
 		}
 
 		// Variable Activity Notifier
@@ -195,7 +209,7 @@ public: // Nested Types
 		void
 		handler( Time const t )
 		{
-			for ( Variable * observer : observers ) {
+			for ( Variable * observer : observers_ ) {
 				observer->shift_handler( t );
 			}
 		}
@@ -204,7 +218,10 @@ public: // Nested Types
 
 		If * conditional{ nullptr }; // Containing If
 		Variables vars; // Variables in Clause
-		Variables observers; // Variables dependent on this one (modified by handler)
+
+	private: // Data
+
+		Variables observers_; // Variables dependent on this one (modified by handler)
 
 	}; // Clause
 
@@ -374,6 +391,20 @@ public: // Nested Types
 			return vars.size();
 		}
 
+		// Handler-Modified Variables
+		Variables const &
+		observers() const
+		{
+			return observers_;
+		}
+
+		// Handler-Modified Variables
+		Variables &
+		observers()
+		{
+			return observers_;
+		}
+
 		// Boolean Value at SuperdenseTime s
 		bool
 		b( SuperdenseTime const & s ) const
@@ -406,7 +437,7 @@ public: // Nested Types
 		void
 		add_observer( Variable * v )
 		{
-			observers.push_back( v );
+			observers_.push_back( v );
 		}
 
 		// Variable Activity Notifier
@@ -421,7 +452,7 @@ public: // Nested Types
 		void
 		handler( Time const t )
 		{
-			for ( Variable * observer : observers ) {
+			for ( Variable * observer : observers_ ) {
 				observer->shift_handler( t );
 			}
 		}
@@ -430,7 +461,10 @@ public: // Nested Types
 
 		When * conditional{ nullptr }; // Containing When
 		Variables vars; // Variables in Clause
-		Variables observers; // Variables dependent on this one (modified by handler)
+
+	private: // Data
+
+		Variables observers_; // Variables dependent on this one (modified by handler)
 
 	}; // Clause
 

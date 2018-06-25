@@ -1,7 +1,7 @@
 @echo off
 
 rem Build all QSS builds from a repository root
-rem Usage:   bldall [make args]
+rem Usage: bldall [make args]
 rem Example: bldall -j8
 
 call %~dp0\bld.bat GCC d %*

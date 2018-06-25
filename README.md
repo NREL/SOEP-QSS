@@ -1,6 +1,6 @@
 # QSS Solver Prototype/Experimental Code with FMU Support
 
-This is a stand-alone QSS solver being developed for integration into JModelica as part of the "Spawn of EnergyPlus" project.
+This is a QSS solver being developed for integration into JModelica as part of the "Spawn of EnergyPlus" project.
 
 ## Status
 
@@ -10,16 +10,20 @@ Currently the code has:
 * Input variables/functions.
 * Discrete-valued variables.
 * Numeric differentiation support.
+* Zero-crossing event support.
+* Conditional if and when block framework.
 * A simple "baseline" event queue built on `std::multimap`.
 * Simultaneous event support.
 * Numeric bulletproofing of root solvers.
 * A master algorithm with sampling and diagnostic output controls.
 * A few simple code-defined example cases.
-* Zero-crossing event support.
-* Conditional if and when block framework.
+* FMU for Model Exchange simulation support.
+* FMU-QSS generation and simulation support.
 
 Notes:
 * Modelica input file processing is not provided: test cases are code-defined or loaded from FMUs.
+* Modelica models need zero-crossing variables with names of the form \_\_zc\_*name*.
+* FMU XML files need to be customized for now with zero-crossing dependencies.
 
 ## Plan
 
@@ -36,7 +40,8 @@ Planned development in anticipated sequence order are:
 * Modular, object-oriented code.
 * API suitable for JModelica integration.
 * Define FMI extensions for efficient QSS support.
-* FMU support.
+* FMU simulation support.
+* FMU-QSS generation and simulation of FMU-ME.
 * Support a mix of different QSS solvers.
 * Support traditional discrete-time solvers.
 
@@ -159,11 +164,15 @@ Notes:
 * Input function evaluations will be provided by JModelica when QSS is integrated. For stand-alone QSS testing purposes a few input functions are provided for use with FMUs.
 * Only SI units are supported in FMUs at this time as per LBNL specifications. Support for other units could be added in the future.
 
+## FMU-QSS
+
+An FMU-QSS is an FMU that wraps an FMU for Model Exchange (FMU-ME) and only exposes inputs and outputs (including FMU-ME integrated state variables) using "SmoothToken" objects that contain values and necessary derivatives.
+
 ## Implementation
 
 ### Code Structure
 
-Much of the source code is split into separate directories for the code-defined example models (`/dfn`) and FMU-based models (`/fmu`). While there is significant overlap between these codes there are a number of fundamental differences.
+Much of the source code is split into separate directories for the code-defined example models (`dfn`) and FMU-based models (`fmu`). While there is significant overlap between these codes there are a number of fundamental differences.
 
 ### Numeric Differentiation
 
@@ -218,7 +227,7 @@ Notes:
 
 Finding accurate zero-crossing times is important for simulation correctness and efficiency. If the crossing time is not accurate the model may not carry out the correct logic in the conditional clause handler function or it may detect the same actual crossing multiple times. With FMU-based models there is the additional complication that the QSS solver needs to know the crossing time accurately so that it can tell the FMU when to check for crossing events.
 
-The QSS-style continuous trajectory of zero-crossing functions will give accurate crossing times when the QSS tolerance is small enough to make the trajectory very close to the actual zero-crossing function. With larger QSS tolerances or fast-changing variables this may not be accurate enough. The current QSS solver uses Newton iterative refinement of zero-crossing roots, typically only requiring 1-2 iterations to converge. With FMU-based models root refinement is more expensive: all observees (dependencies) of the zero-crossing variable must be set to the value at each iteration time and then the variable value and derivative must be evaluated by the FMU: the `--refine` option enables root refinement in FMU-based simulations. This root refinement approach works well when the initial guess provided by the continuous trajectory tightly represents the actual zero-crossing function. When larger tolerances are in use this may not hold and a more robust approach will be needed.
+The QSS-style continuous trajectory of zero-crossing functions will give accurate crossing times when the QSS tolerance is small enough to make the trajectory very close to the actual zero-crossing function. With larger QSS tolerances or fast-changing variables this may not be accurate enough. The current QSS solver can perform Newton iterative refinement of zero-crossing roots (using the `--refine` option), typically only requiring 1-2 iterations to converge. Root refinement is expensive and is probably not needed with most models. With FMU-based models root refinement is even more expensive: all observees (dependencies) of the zero-crossing variable must be set to the value at each iteration time and then the variable value and derivative must be evaluated by the FMU. This root refinement approach works well when the initial guess provided by the continuous trajectory tightly represents the actual zero-crossing function. When larger tolerances are in use this may not hold and a more robust approach will be needed.
 
 A robust approach to large-tolerance zero-crossing root finding will probably have these characteristics:
 * Setting a dtZ time step for the zero-crossing variable that is sufficiently small to avoid missing zero crossings.
@@ -279,46 +288,74 @@ A scalable, algorithmically generated model was developed to allow assessment of
 * Case runs are being compared with results from [Qss Solver](https://sourceforge.net/projects/qssengine/) and [Ptolemy](http://ptolemy.eecs.berkeley.edu/) for now.
 * Unit tests are included and will be extended for wider coverage as the code progresses.
 
-## Building
+## Building QSS
 
-Instructions for building on different platforms follows.
+Instructions for building the QSS application on different platforms follows.
 
 ### Linux
 
-Preparation:
+FMIL:
 * You will need a build of the latest [FMI Library](http://www.jmodelica.org/FMILibrary).
-* Copy `bin/Linux/<compiler>/setFMIL` to a directory in your PATH and adapt it to the location of you FMI Library installation.
-* The unit tests use googletest. The `setGTest` scripts under `\bin\Windows` set up the necessary environment variables to find googletest: put a custom version of `setGTest` in your `PATH` to adapt it to your system.
+* If your FMI Library is not installed to directories the `setFMIL` scripts expect (such as `/opt/FMIL.GCC.r`) copy the corresponding `bin/Linux/<compiler>/setFMIL` to a directory in your PATH and adapt it to the location of you FMI Library installation.
+* FMU-QSS support needs extra FMIL headers added to the FMIL installation. For Linux this would be installed with commands of the form (adjusted for your configuration):
+  * `sudo cp /Projects/FMIL/trunk/src/CAPI/include/FMI2/fmi2_capi.h /opt/FMIL.<Compiler>.<Build>/include/FMI2`
+  * `sudo cp /Projects/FMIL/trunk/src/CAPI/src/FMI2/fmi2_capi_impl.h /opt/FMIL.<Compiler>.<Build>/include/src/FMI2`
+  * `sudo cp /Projects/FMIL/trunk/src/Import/src/FMI/fmi_import_context_impl.h /opt/FMIL.<Compiler>.<Build>/include/FMI`
+  * `sudo cp /Projects/FMIL/trunk/src/Import/src/FMI2/fmi2_import_impl.h /opt/FMIL.<Compiler>.<Build>/include/FMI2`
+  * `sudo cp /Projects/FMIL/trunk/src/XML/include/FMI/*.h /opt/FMIL.<Compiler>.<Build>/include/FMI`
+  * `sudo cp /Projects/FMIL/trunk/src/XML/include/FMI1/*.h /opt/FMIL.<Compiler>.<Build>/include/FMI1`
+  * `sudo cp /Projects/FMIL/trunk/src/XML/include/FMI2/*.h /opt/FMIL.<Compiler>.<Build>/include/FMI2`
 
-To build the QSS prototype on Linux:
-* `cd <path_to_repository>`
+Googletest:
+* The unit tests use googletest. The `setGTest` scripts under `bin` set up the necessary environment variables to find googletest: put a custom version of `setGTest` in your `PATH` to adapt it to your system.
+
+To build the QSS application on Linux:
+* `cd <repository_directory>`
 * `source bin/Linux/GCC/64/r/setProject` for release builds or `source bin/Linux/GCC/64/d/setProject` for debug builds
-* `cd src/QSS`
-* `mak` to build the demo from the QSS.cc main (add a -j*N* make argument to override the number of parallel compile jobs)
-* `./QSS` to run the demo
+* `cd src/QSS/app`
+* `mak` (add a -j*N* make argument to override the number of parallel compile jobs)
+* Note that `-fPIC` is used to compile with GCC on Linux to share the build configuration with the FMU-QSS shared/dynamic library generation: this may add a small performance penalty for the QSS application and should not be used for production application builds.
 
-To run the unit tests on Linux:
+To run the QSS application:
+* `QSS` from any directory with a console configured with `setProject`
+* `QSS --help` will show the command line usage/options.
+
+To build and run the unit tests on Linux:
 * The unit tests are in the `tst/QSS/unit` directory and can be built and run with the command `mak run`.
 
 ### Windows
 
-Preparation:
-* Copy `bin\Windows\<compiler>\setFMIL.bat` to a directory in your PATH and adapt it to the location of you FMI Library installation.
+FMIL:
+* You will need a build of the latest [FMI Library](http://www.jmodelica.org/FMILibrary).
+* If your FMI Library is not installed to directories the `setFMIL` scripts expect (such as `C:\FMIL.VC.r`) copy the corresponding `bin\Windows\<compiler>\setFMIL.bat` to a directory in your PATH and adapt it to the location of you FMI Library installation.
+* FMU-QSS support needs extra FMIL headers added to the FMIL installation. For Linux this would be installed with commands of the form (adjusted for your configuration):
+  * `copy \Projects\FMIL\trunk\src\CAPI\include\FMI2\fmi2_capi.h C:\FMIL.<Compiler>.<Build>\include\FMI2`
+  * `copy \Projects\FMIL\trunk\src\CAPI\src\FMI2\fmi2_capi_impl.h C:\FMIL.<Compiler>.<Build>\include\src\FMI2`
+  * `copy \Projects\FMIL\trunk\src\Import\src\FMI\fmi_import_context_impl.h C:\FMIL.<Compiler>.<Build>\include\FMI`
+  * `copy \Projects\FMIL\trunk\src\Import\src\FMI2\fmi2_import_impl.h C:\FMIL.<Compiler>.<Build>\include\FMI2`
+  * `copy \Projects\FMIL\trunk\src\XML\include\FMI\*.h C:\FMIL.<Compiler>.<Build>\include\FMI`
+  * `copy \Projects\FMIL\trunk\src\XML\include\FMI1\*.h C:\FMIL.<Compiler>.<Build>\include\FMI1`
+  * `copy \Projects\FMIL\trunk\src\XML\include\FMI2\*.h C:\FMIL.<Compiler>.<Build>\include\FMI2`
+
+Googletest:
 * The unit tests use googletest so you will need to have a googletest build for your complier available. The `setGTest.bat` scripts under `\bin\Windows` set up the necessary environment variables to find googletest: put a custom version of `setGTest.bat` in your `PATH` to adapt it to your system.
 
-To build the QSS prototype on Windows:
-* `cd <path_to_repository>`
-* `bin\Windows\VC\64\r\setProject` for VC++ release builds or `bin\Windows\VC\64\d\setProject` for VC++ debug builds (or similarly for GCC or IC for Intel C++)
-* `cd src\QSS`
-* `mak` to build the demo from the QSS.cc main (add a -j*N* make argument to override the number of parallel compile jobs)
-* `QSS` to run the demo
+To build the QSS application on Windows:
+* `cd <repository_directory>`
+* `bin\Windows\VC\64\r\setProject` for VC++ release builds or `bin\Windows\VC\64\d\setProject` for VC++ debug builds (or similarly with GCC or with IC for Intel C++)
+* `cd src\QSS\app`
+* `mak` (add a -j*N* make argument to override the number of parallel compile jobs)
 
-To run the unit tests on Windows:
+To run the QSS application:
+* `QSS` from any directory with a console configured with `setProject`
+* `QSS --help` will show the command line usage/options.
+
+To build and run the unit tests on Windows:
 * The unit tests are in the `tst\QSS\unit` directory and can be built and run with the command `mak run`.
 
-## Running
+## Running QSS
 
-The QSS solver code can run both code-defined and FMU-based test cases.
+The QSS solver application can run both code-defined and FMU-based test cases. FMU for Model Exchange .fmu files can be run if properly adapted for QSS with respect to zero-crossing variables and dependencies. FMU-QSS .fmu files can also be run but they must have names of the form `<FMU=ME_name>_QSS.fmu` to be recognized as FMU-QSS FMUs.
 
 There are command line options to select the QSS method, set quantization tolerances, output and differentiation time steps, and output selection controls.
 * Relative tolerance is taken from the FMU if available by default but can be overridden with a command line option.
@@ -328,3 +365,21 @@ There are command line options to select the QSS method, set quantization tolera
 * Diagnostic output can be enabled, which includes a line for each quantization-related variable update.
 
 Run `QSS --help` to see the command line usage.
+
+## Building an FMU-QSS
+
+Instructions for building an FMU-QSS from an FMU-ME (FMU for Model Exchange) follows.
+* The [fmu-uuid](https://github.com/viproma/fmu-uuid) application must be on your PATH to generate and FMU-QSS with GUID checking.
+* The same FMIL setup and `setProject` console configuration as for the QSS application is assumed.
+* The `bin/FMU-QSS.gen.py` (Python 2.7 or 3.x) script generates the FMU-QSS from an FMU-ME adapted for QSS use.
+* From a console configured with `setProject` move to an empty working directory and copy in the FMU-ME .fmu file.
+* Run `FMU-QSS.gen.py <FMU-ME_name>.fmu` to start the generation process.
+  * Additional options can be seen by running `FMU-QSS.gen.py --help`.
+* This will generate the FMU-QSS `modelDescription.xml` file, build the FMU-QSS shared/dynamic library, and zip the FMU-QSS into a file with a name of the form `<FMU=ME_name>_QSS.fmu`. The FMU-ME fmu is embedded in the `resources` folder within the FMU-QSS .fmu zip file.
+
+## Running an FMU-QSS
+
+To run an FMU-QSS:
+* `QSS <FMU-QSS_name>.fmu`
+
+FMU-QSS support is basic at this point. Support for connecting inputs and outputs and for inputs with discrete events will be added before or during JModelica integration.

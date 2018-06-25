@@ -38,7 +38,7 @@
 
 // QSS Headers
 #include <QSS/fmu/Variable.hh>
-#include <QSS/fmu/SmoothToken.hh>
+#include <QSS/SmoothToken.hh>
 
 // C++ Headers
 #include <functional>

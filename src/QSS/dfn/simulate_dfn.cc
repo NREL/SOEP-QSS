@@ -35,7 +35,6 @@
 
 // QSS Headers
 #include <QSS/dfn/simulate_dfn.hh>
-#include <QSS/dfn/cycles_dfn.hh>
 #include <QSS/dfn/Conditional.hh>
 #include <QSS/dfn/container.hh>
 #include <QSS/dfn/Variable.hh>
@@ -55,6 +54,7 @@
 #include <QSS/dfn/mdl/stiff.hh>
 #include <QSS/dfn/mdl/xy.hh>
 #include <QSS/dfn/mdl/xyz.hh>
+#include <QSS/cycles.hh>
 #include <QSS/globals.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
@@ -226,7 +226,7 @@ simulate()
 	}
 
 	// Dependency cycle detection: After init sets up observers
-	if ( options::cycles ) cycles( vars );
+	if ( options::cycles ) cycles< Variable >( vars );
 
 	// Output initialization
 	bool const doSOut( options::output::s && ( options::output::x || options::output::q ) );

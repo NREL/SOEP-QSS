@@ -23,7 +23,7 @@ OBJ_PATH := .
 BIN_PATH := $(QSS_bin)
 
 # Search Paths
-vpath %.cc  $(SRC_PATH) $(SRC_PATH)/dfn $(SRC_PATH)/dfn/mdl $(SRC_PATH)/fmu
+vpath %.cc  $(SRC_PATH) $(SRC_PATH)\dfn $(SRC_PATH)\dfn\mdl $(SRC_PATH)\fmu
 vpath %.cpp $(SRC_PATH)
 vpath %.c   $(SRC_PATH)
 vpath %.hh  $(INC_PATH)
@@ -62,6 +62,9 @@ vpath %.dll $(BIN_PATH)
 
 %.lib : %.o
 	$(AR) $(ARFLAGS) $@ $?
+
+%.dll : %.o
+	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) -o $@ $^
 
 # Directives
 .DELETE_ON_ERROR : # Delete a target if error occurs during command execution

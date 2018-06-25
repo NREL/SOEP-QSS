@@ -37,7 +37,7 @@
 #define QSS_fmu_Function_Inp_constant_hh_INCLUDED
 
 // QSS Headers
-#include <QSS/fmu/SmoothToken.hh>
+#include <QSS/SmoothToken.hh>
 
 namespace QSS {
 namespace fmu {

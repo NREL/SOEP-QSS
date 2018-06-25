@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Build QSS from a repository root
-# Usage:   bld <compiler> <build> [make args]
+# Usage: bld <compiler> <build> [make args]
 # Example: bld GCC r -j8
 
 source bin/Linux/$1/64/$2/setProject
 
 # QSS
-cd src/QSS
-../../bin/Linux/mak $3 $4 $5 $6 $7 $8 $9
+cd src/QSS/app
+mak $3 $4 $5 $6 $7 $8 $9

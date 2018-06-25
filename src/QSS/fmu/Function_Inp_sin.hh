@@ -37,7 +37,7 @@
 #define QSS_fmu_Function_Inp_sin_hh_INCLUDED
 
 // QSS Headers
-#include <QSS/fmu/SmoothToken.hh>
+#include <QSS/SmoothToken.hh>
 #include <QSS/math.hh>
 
 namespace QSS {

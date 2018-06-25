@@ -60,5 +60,8 @@ vpath %.so  $(BIN_PATH)
 %.a : %.o
 	$(AR) $(ARFLAGS) $@ $?
 
+%.so : %.o
+	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) -shared -o $@ $^
+
 # Directives
 .DELETE_ON_ERROR : # Delete a target if error occurs during command execution

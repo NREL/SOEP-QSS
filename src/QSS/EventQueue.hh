@@ -459,7 +459,7 @@ public: // Conditional Event Methods
 		return m_.emplace( SuperdenseTime( infinity, 0, Off::Conditional ), EventT( Type::Conditional, tar ) );
 	}
 
-	// Shift Conditional Event: FMU Sets Value
+	// Shift Conditional Event
 	iterator
 	shift_conditional(
 	 Time const t,
@@ -514,7 +514,7 @@ public: // Handler Event Methods
 		return m_.emplace( SuperdenseTime( t, idx, Off::Handler ), EventT( Type::Handler, tar, val ) );
 	}
 
-	// Shift Handler Event: FMU Sets Value
+	// Shift Handler Event
 	iterator
 	shift_handler(
 	 Time const t,

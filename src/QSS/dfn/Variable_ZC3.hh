@@ -381,26 +381,27 @@ private: // Methods
 				 crossing_type( x_0 > 0.0 ? std::min( x1x( tZ ), Value( 0.0 ) ) : std::max( x1x( tZ ), Value( 0.0 ) ) ) );
 				if ( has( crossing_check ) ) { // Crossing type is relevant
 					crossing = crossing_check;
-					// Refine root
-					Time t( tZ ), t_p( tZ );
-					Value const vZ( f_.x( tZ ) );
-					Value v( vZ ), v_p( vZ );
-					Value m( 1.0 ); // Multiplier
-					std::size_t i( 0 );
-					std::size_t const n( 10u ); // Max iterations
-					//int const sign_0( signum( x_0 ) );
-					while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-						Value const d( f_.x1( t ) );
-						if ( d == 0.0 ) break;
-						//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
-						t -= m * ( v / d );
-						v = f_.x( t );
-						if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
-						t_p = t;
-						v_p = v;
+					if ( options::refine ) { // Refine root: Expensive!
+						Time t( tZ ), t_p( tZ );
+						Value const vZ( f_.x( tZ ) );
+						Value v( vZ ), v_p( vZ );
+						Value m( 1.0 ); // Multiplier
+						std::size_t i( 0 );
+						std::size_t const n( 10u ); // Max iterations
+						//int const sign_0( signum( x_0 ) );
+						while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
+							Value const d( f_.x1( t ) );
+							if ( d == 0.0 ) break;
+							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
+							t -= m * ( v / d );
+							v = f_.x( t );
+							if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
+							t_p = t;
+							v_p = v;
+						}
+						if ( ( t >= tB ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
+						if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
 					}
-					if ( ( t >= tB ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
-					if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
 				} else { // Crossing type not relevant
 					tZ = infinity;
 				}
