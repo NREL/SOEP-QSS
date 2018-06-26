@@ -64,7 +64,7 @@ $(LIB) : $(OBJ)
 	$(AR) $(ARFLAGS) $@ $?
 
 $(EXE) : $(LIB)
-	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) $(SRC_PATH)\app\QSS.cc -o $@ $< $^ $(FMIL_HOME)\lib\libfmilib_shared.dll.a # libfmilib.a gives undefined references
+	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) $(SRC_PATH)\app\QSS.cc -o $@ $^ $(FMIL_HOME)\lib\libfmilib_shared.dll.a # libfmilib.a gives undefined references
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)

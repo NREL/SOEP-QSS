@@ -65,7 +65,7 @@ $(LIB) : $(OBJ)
 
 $(EXE) : $(LIB)
 	$(CXX) $(CXXFLAGS) $(PGO) -c $(SRC_PATH)\app\QSS.cc
-	$(LD) $(LDFLAGS) /out:$@ $^ QSS.obj $(FMIL_HOME)\lib\fmilib.lib
+	$(LD) $(LDFLAGS) /out:$@ QSS.obj $^ $(FMIL_HOME)\lib\fmilib.lib
 	@-rm -f $(subst \,/,$(BIN_PATH))/$(TAR).exp $(subst \,/,$(BIN_PATH))/$(TAR).lib
 
 # Dependencies
