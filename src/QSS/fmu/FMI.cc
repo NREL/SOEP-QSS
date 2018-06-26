@@ -37,7 +37,6 @@
 #include <QSS/fmu/FMI.hh>
 #include <QSS/fmu/FMU_ME.hh>
 #include <QSS/fmu/FMU_QSS.hh>
-#include <QSS/fmu/FMU_QSS_GUID.hh>
 #include <QSS/fmu/FMU_QSS_GUID_ok.hh>
 #include <QSS/fmu/FMU_QSS_defines.hh>
 

@@ -64,7 +64,7 @@ $(LIB) : $(OBJ)
 	$(AR) $(ARFLAGS) /out:$@ $^
 
 $(EXE) : $(LIB)
-	$(CXX) $(CXXFLAGS) -c $(PGO) $(SRC_PATH)\app\QSS.cc
+	$(CXX) $(CXXFLAGS) $(PGO) -c $(SRC_PATH)\app\QSS.cc
 	$(CXX) $(LDFLAGS) /Fe:$@ $< $(LINKFLAGS) $(LIB) $(FMIL_HOME)\lib\fmilib.lib
 	@-rm -f $(subst \,/,$(BIN_PATH))/$(TAR).exp $(subst \,/,$(BIN_PATH))/$(TAR).lib
 

@@ -64,7 +64,7 @@ vpath %.dll $(BIN_PATH)
 	$(AR) $(ARFLAGS) $@ $?
 
 %.dll : %.o
-	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) -shared -o $@ $^
 
 # Directives
 .DELETE_ON_ERROR : # Delete a target if error occurs during command execution
