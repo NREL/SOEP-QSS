@@ -5,7 +5,7 @@
             "includePath": [
                 "/usr/include",
                 "/usr/local/include",
-                "${workspaceRoot}"
+                "${workspaceFolder}"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",
@@ -13,7 +13,7 @@
                 "path": [
                     "/usr/include",
                     "/usr/local/include",
-                    "${workspaceRoot}"
+                    "${workspaceFolder}"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
@@ -28,8 +28,8 @@
             "includePath": [
                 "/usr/include",
                 "/usr/local/include",
-                "${workspaceRoot}",
-                "${workspaceRoot}/src",
+                "${workspaceFolder}",
+                "${workspaceFolder}/src",
                 "/opt/FMIL.GCC.r/include"
             ],
             "defines": [],
@@ -38,7 +38,7 @@
                 "path": [
                     "/usr/include",
                     "/usr/local/include",
-                    "${workspaceRoot}",
+                    "${workspaceFolder}",
                     "/opt/FMIL.GCC.r/include"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
@@ -50,8 +50,8 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceRoot}",
-                "${workspaceRoot}/src",
+                "${workspaceFolder}",
+                "${workspaceFolder}/src",
                 "C:/FMIL.VC.r/include",
                 "C:/gtest/include"
             ],
@@ -62,7 +62,7 @@
             "intelliSenseMode": "msvc-x64",
             "browse": {
                 "path": [
-                    "${workspaceRoot}",
+                    "${workspaceFolder}",
                     "C:/FMIL.VC.r/include",
                     "C:/gtest/include"
                 ],

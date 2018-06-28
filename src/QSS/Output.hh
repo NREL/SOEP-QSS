@@ -45,14 +45,14 @@
 
 namespace QSS {
 
-// QSS Output Signal Class
-class Output
+// QSS Output Signal Class Template
+template< typename Value = double >
+class Output_T
 {
 
 public: // Types
 
 	using Time = double;
-	using Value = double;
 	using Times = std::vector< Time >;
 	using Values = std::vector< Value >;
 	using size_type = Times::size_type;
@@ -60,7 +60,7 @@ public: // Types
 public: // Creation
 
 	// Name + Type Constructor
-	Output(
+	Output_T(
 	 std::string const & name,
 	 char const type
 	) :
@@ -74,7 +74,7 @@ public: // Creation
 	}
 
 	// Destructor
-	~Output()
+	~Output_T()
 	{
 		assert( t_.size() == v_.size() );
 		assert( t_.size() < capacity_ );
@@ -106,7 +106,7 @@ private: // Methods
 		assert( t_.size() == v_.size() );
 		assert( t_.size() <= capacity_ );
 		std::ofstream s( file_, std::ios_base::binary | std::ios_base::out | std::ios_base::app );
-		s << std::setprecision( 16 );
+		s << std::setprecision( 15 );
 		for ( size_type i = 0, e = t_.size(); i < e; ++i ) {
 			s << t_[ i ] << '\t' << v_[ i ] << '\n';
 		}
@@ -124,6 +124,9 @@ private: // Data
 	size_type const capacity_{ 2048 }; // Buffer capacities
 
 };
+
+// Types
+using Output = Output_T< double >;
 
 } // QSS
 

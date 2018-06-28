@@ -89,10 +89,24 @@ simulate()
 	using Conditionals = std::vector< Conditional * >;
 
 	// I/o setup
-	std::cout << std::setprecision( 16 );
-	std::cerr << std::setprecision( 16 );
+	std::cout << std::setprecision( 15 );
+	std::cerr << std::setprecision( 15 );
 	std::vector< Output > x_outs; // Continuous rep outputs
 	std::vector< Output > q_outs; // Quantized rep outputs
+
+	// Report QSS method
+	if ( options::qss == options::QSS::QSS1 ) {
+		std::cout << "\nQSS Method: QSS1" << std::endl;
+	} else if ( options::qss == options::QSS::QSS2 ) {
+		std::cout << "\nQSS Method: QSS2" << std::endl;
+	} else if ( options::qss == options::QSS::LIQSS1 ) {
+		std::cout << "\nQSS Method: LIQSS1" << std::endl;
+	} else if ( options::qss == options::QSS::LIQSS2 ) {
+		std::cout << "\nQSS Method: LIQSS2" << std::endl;
+	} else {
+		std::cerr << "\nError: Unsupported QSS method" << std::endl;
+		std::exit( EXIT_FAILURE );
+	}
 
 	// Collections
 	Variables vars;

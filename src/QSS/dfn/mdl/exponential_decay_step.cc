@@ -58,7 +58,7 @@ exponential_decay_step( Variables & vars )
 	using namespace options;
 
 	// Timing
-	if ( ! options::tEnd_set ) options::tEnd = 50.0;
+	if ( ! options::specified::tEnd ) options::tEnd = 50.0;
 
 	// Variables
 	using V = Variable_QSS< Function_LTI >;

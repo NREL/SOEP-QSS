@@ -67,6 +67,50 @@ public: // Creation
 	 x_3( x_3 )
 	{}
 
+	// Order-0 Constructor
+	SmoothToken(
+	 Value const x_0
+	) :
+	 order( 0 ),
+	 x_0( x_0 )
+	{}
+
+	// Order-1 Constructor
+	SmoothToken(
+	 Value const x_0,
+	 Value const x_1
+	) :
+	 order( 1 ),
+	 x_0( x_0 ),
+	 x_1( x_1 )
+	{}
+
+	// Order-2 Constructor
+	SmoothToken(
+	 Value const x_0,
+	 Value const x_1,
+	 Value const x_2
+	) :
+	 order( 2 ),
+	 x_0( x_0 ),
+	 x_1( x_1 ),
+	 x_2( x_2 )
+	{}
+
+	// Order-3 Constructor
+	SmoothToken(
+	 Value const x_0,
+	 Value const x_1,
+	 Value const x_2,
+	 Value const x_3
+	) :
+	 order( 3 ),
+	 x_0( x_0 ),
+	 x_1( x_1 ),
+	 x_2( x_2 ),
+	 x_3( x_3 )
+	{}
+
 public: // Properties
 
 	// Has a Discrete Event?
@@ -74,6 +118,20 @@ public: // Properties
 	has_discrete() const
 	{
 		return tD < infinity;
+	}
+
+public: // I/O
+
+	// Stream << SuperdenseTime
+	friend
+	std::ostream &
+	operator <<( std::ostream & stream, SmoothToken const & s )
+	{
+		stream << std::setprecision( 15 ) << s.x_0;
+		if ( s.order >=1 ) stream << '\t' << s.x_1;
+		if ( s.order >=2 ) stream << '\t' << s.x_2;
+		if ( s.order >=3 ) stream << '\t' << s.x_3;
+		return stream;
 	}
 
 public: // Data

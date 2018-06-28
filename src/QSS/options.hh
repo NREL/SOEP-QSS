@@ -54,12 +54,7 @@ enum class QSS {
 };
 
 extern QSS qss; // QSS method: (LI)QSS1|2|3
-extern int qss_order; // QSS method order
-extern bool cycles; // Report dependency cycles?
-extern bool inflection; // Requantize at inflections?
-extern bool refine; // Refine FMU zero-crossing roots?
 extern double rTol; // Relative tolerance
-extern bool rTol_set; // Relative tolerance set?
 extern double aTol; // Absolute tolerance
 extern double zTol; // Zero-crossing anti-chatter tolerance
 extern double dtMin; // Min time step (s)
@@ -71,10 +66,21 @@ extern double dtOut; // Sampled & FMU output time step (s)
 extern double one_over_dtNum; // 1 / dtNum
 extern double one_half_over_dtNum; // 0.5 / dtNum
 extern double tEnd; // End time (s)
-extern bool tEnd_set; // End time set?
 extern std::size_t pass; // Pass count limit
+extern bool cycles; // Report dependency cycles?
+extern bool inflection; // Requantize at inflections?
+extern bool refine; // Refine FMU zero-crossing roots?
 extern std::string out; // Outputs: r, a, s, x, q, f
 extern std::string model; // Name of model or FMU
+
+namespace specified {
+
+extern bool qss; // QSS method specified?
+extern bool rTol; // Relative tolerance specified?
+extern bool aTol; // Absolute tolerance specified?
+extern bool tEnd; // End time specified?
+
+} // specified
 
 namespace output { // Output selections
 
@@ -83,6 +89,7 @@ extern bool r; // Requantizations?
 extern bool a; // All variables?
 extern bool s; // Sampled output?
 extern bool f; // FMU outputs?
+extern bool k; // FMU-QSS smooth tokens?
 extern bool x; // Continuous trajectories?
 extern bool q; // Quantized trajectories?
 extern bool d; // Diagnostic output?

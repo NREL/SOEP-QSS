@@ -140,11 +140,25 @@ simulate_fmu_me()
 	}
 
 	// I/o setup
-	std::cout << std::setprecision( 16 );
-	std::cerr << std::setprecision( 16 );
+	std::cout << std::setprecision( 15 );
+	std::cerr << std::setprecision( 15 );
 	std::vector< Output > x_outs; // Continuous rep outputs
 	std::vector< Output > q_outs; // Quantized rep outputs
 	std::vector< Output > f_outs; // FMU outputs
+
+	// Report QSS method
+	if ( options::qss == options::QSS::QSS1 ) {
+		std::cout << "\nQSS Method: QSS1" << std::endl;
+	} else if ( options::qss == options::QSS::QSS2 ) {
+		std::cout << "\nQSS Method: QSS2" << std::endl;
+	} else if ( options::qss == options::QSS::LIQSS1 ) {
+		std::cout << "\nQSS Method: LIQSS1" << std::endl;
+	} else if ( options::qss == options::QSS::LIQSS2 ) {
+		std::cout << "\nQSS Method: LIQSS2" << std::endl;
+	} else {
+		std::cerr << "\nError: Unsupported QSS method" << std::endl;
+		std::exit( EXIT_FAILURE );
+	}
 
 	// FMU-ME Setup /////
 
@@ -263,11 +277,11 @@ simulate_fmu_me()
 
 	// QSS time and tolerance run controls
 	Time const t0( tstart ); // Simulation start time
-	Time tE( options::tEnd_set ? options::tEnd : tstop ); // Simulation end time
+	Time tE( options::specified::tEnd ? options::tEnd : tstop ); // Simulation end time
 	Time t( t0 ); // Simulation current time
 	Time tOut( t0 + options::dtOut ); // Sampling time
 	size_type iOut( 1u ); // Output step index
-	if ( ! options::rTol_set ) options::rTol = relativeTolerance; // Quantization relative tolerance (FMU doesn't have an absolute tolerance)
+	if ( ! options::specified::rTol ) options::rTol = relativeTolerance; // Quantization relative tolerance (FMU doesn't have an absolute tolerance)
 	std::cout << "Relative Tolerance: " << options::rTol << std::endl;
 	std::cout << "Absolute Tolerance: " << options::aTol << std::endl;
 
@@ -1063,7 +1077,7 @@ simulate_fmu_me()
 	bool const doSOut( ( options::output::s && ( options::output::x || options::output::q ) ) || ( options::output::f && ( n_all_outs > 0u ) ) );
 	bool const doTOut( options::output::t && ( options::output::x || options::output::q ) );
 	bool const doROut( options::output::r && ( options::output::x || options::output::q ) );
-	if ( ( options::output::t || options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) { // t0 outputs
+	if ( ( options::output::t || options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) { // QSS t0 outputs
 		if ( options::output::x ) x_outs.reserve( vars.size() );
 		if ( options::output::q ) q_outs.reserve( vars.size() );
 		for ( auto var : vars ) {
@@ -1077,13 +1091,13 @@ simulate_fmu_me()
 			}
 		}
 	}
-	if ( options::output::f && ( n_all_outs > 0u ) ) {
+	if ( options::output::f && ( n_all_outs > 0u ) ) { // FMU t0 outputs
 		f_outs.reserve( n_all_outs );
-		for ( auto const & var : outs ) { // FMU QSS variable outputs
-			f_outs.push_back( Output( fmi2_import_get_variable_name( var->var.var ), 'f' ) );
+		for ( auto const & var : outs ) { // FMU QSS variables
+			f_outs.push_back( Output( var->name, 'f' ) );
 			f_outs.back().append( t, var->x( t ) );
 		}
-		for ( auto const & e : fmu_outs ) { // FMU (non-QSS) variable (non-QSS) outputs
+		for ( auto const & e : fmu_outs ) { // FMU (non-QSS) variables
 			FMU_Variable const & var( e.second );
 			f_outs.push_back( Output( fmi2_import_get_variable_name( var.var ), 'f' ) );
 			f_outs.back().append( t, fmu::get_real( var.ref ) );
@@ -1107,13 +1121,13 @@ simulate_fmu_me()
 		if ( doSOut ) { // Sampled and/or FMU outputs
 			Time const tStop( std::min( t, tE ) );
 			while ( tOut < tStop ) {
-				if ( options::output::s ) { // QSS variable outputs
+				if ( options::output::s ) { // QSS outputs
 					for ( size_type i = 0; i < n_vars; ++i ) {
 						if ( options::output::x ) x_outs[ i ].append( tOut, vars[ i ]->x( tOut ) );
 						if ( options::output::q ) q_outs[ i ].append( tOut, vars[ i ]->q( tOut ) );
 					}
 				}
-				if ( options::output::f ) {	// FMU variable outputs
+				if ( options::output::f ) { // FMU outputs
 					if ( n_outs > 0u ) { // FMU QSS variables
 						for ( size_type i = 0; i < n_outs; ++i ) {
 							Variable * var( outs[ i ] );
@@ -1614,7 +1628,7 @@ simulate_fmu_me()
 	}
 
 	// End time outputs
-	if ( ( options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) {
+	if ( ( options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) { // QSS tEnd outputs
 		for ( size_type i = 0; i < n_vars; ++i ) {
 			Variable const * var( vars[ i ] );
 			if ( var->tQ < tE ) {
@@ -1627,14 +1641,14 @@ simulate_fmu_me()
 			}
 		}
 	}
-	if ( options::output::f ) {
-		if ( n_outs > 0u ) { // FMU QSS variable outputs
+	if ( options::output::f ) { // FMU tEnd  outputs
+		if ( n_outs > 0u ) { // FMU QSS variables
 			for ( size_type i = 0; i < n_outs; ++i ) {
 				Variable * var( outs[ i ] );
 				f_outs[ i ].append( tE, var->x( tE ) );
 			}
 		}
-		if ( n_fmu_outs > 0u ) { // FMU (non-QSS) variable outputs
+		if ( n_fmu_outs > 0u ) { // FMU (non-QSS) variables
 			fmu::set_time( tE );
 			for ( size_type i = 0; i < n_states; ++i ) {
 				states[ i ] = state_vars[ i ]->x( tE );

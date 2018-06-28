@@ -313,7 +313,7 @@ StateEvent6( Variables & vars, Conditionals & cons )
 	using namespace options;
 
 	// Timing
-	if ( ! options::tEnd_set ) options::tEnd = 10.0;
+	if ( ! options::specified::tEnd ) options::tEnd = 10.0;
 
 	vars.clear();
 	vars.reserve( 5 );

@@ -46,12 +46,7 @@ namespace QSS {
 namespace options {
 
 QSS qss( QSS::QSS2 ); // QSS method: (LI)QSS1|2|3
-int qss_order( 2 ); // QSS method order  [computed]
-bool cycles( false ); // Report dependency cycles?
-bool inflection( false ); // Requantize at inflections?
-bool refine( false ); // Refine FMU zero-crossing roots?
 double rTol( 1.0e-4 ); // Relative tolerance  [1e-4|FMU]
-bool rTol_set( false ); // Relative tolerance set?
 double aTol( 1.0e-6 ); // Absolute tolerance
 double zTol( 0.0 ); // Zero-crossing anti-chatter tolerance
 double dtMin( 0.0 ); // Min time step (s)
@@ -63,21 +58,33 @@ double one_over_dtNum( 1.0e6 ); // 1 / dtNum  [computed]
 double one_half_over_dtNum( 5.0e5 ); // 0.5 / dtNum  [computed]
 double dtOut( 1.0e-3 ); // Sampled & FMU output time step (s)
 double tEnd( 1.0 ); // End time (s)  [1|FMU]
-bool tEnd_set( false ); // End time set?
 std::size_t pass( 20 ); // Pass count limit
+bool cycles( false ); // Report dependency cycles?
+bool inflection( false ); // Requantize at inflections?
+bool refine( false ); // Refine FMU zero-crossing roots?
 std::string out; // Outputs
 std::string model; // Model|FMU name
 
+namespace specified {
+
+bool qss( false ); // QSS method specified?
+bool rTol( false ); // Relative tolerance specified?
+bool aTol( false ); // Absolute tolerance specified?
+bool tEnd( false ); // End time specified?
+
+} // specified
+
 namespace output { // Output selections
 
-bool t( true ); // Time events?  [T]
-bool r( true ); // Requantizations?  [T]
-bool a( false ); // All variables?  [F]
-bool s( false ); // Sampled output?  [F]
-bool f( true ); // FMU outputs?  [T]
-bool x( true ); // Continuous trajectories?  [T]
-bool q( false ); // Quantized trajectories?  [F]
-bool d( false ); // Diagnostic output?  [F]
+bool t( true ); // Time events?
+bool r( true ); // Requantizations?
+bool a( false ); // All variables?
+bool s( false ); // Sampled output?
+bool f( true ); // FMU outputs?
+bool k( true ); // FMU-QSS smooth tokens?
+bool x( true ); // Continuous trajectories?
+bool q( false ); // Quantized trajectories?
+bool d( false ); // Diagnostic output?
 
 } // output
 
@@ -87,10 +94,7 @@ help_display()
 {
 	std::cout << '\n' << "QSS [options] [model|fmu]" << "\n\n";
 	std::cout << "Options:" << "\n\n";
-	std::cout << " --qss=METHOD  QSS method: (LI)QSS1|2|3  [QSS2]" << '\n';
-	std::cout << " --cycles      Report dependency cycles?  [F]" << '\n';
-	std::cout << " --inflection  Requantize at inflections?  [F]" << '\n';
-	std::cout << " --refine      Refine FMU zero-crossing roots?  [F]" << '\n';
+	std::cout << " --qss=METHOD  QSS method: (LI)QSS1|2|3  [QSS2|FMU-QSS]" << '\n';
 	std::cout << " --rTol=TOL    Relative tolerance  [1e-4|FMU]" << '\n';
 	std::cout << " --aTol=TOL    Absolute tolerance  [1e-6]" << '\n';
 	std::cout << " --zTol=TOL    Zero-crossing anti-chatter tolerance  [0]" << '\n';
@@ -102,12 +106,16 @@ help_display()
 	std::cout << " --dtOut=STEP  Sampled & FMU output step (s)  [1e-3]" << '\n';
 	std::cout << " --tEnd=TIME   End time (s)  [1|FMU]" << '\n';
 	std::cout << " --pass=COUNT  Pass count limit  [20]" << '\n';
-	std::cout << " --out=OUTPUTS Outputs  [trfx]" << '\n';
+	std::cout << " --cycles      Report dependency cycles?  [F]" << '\n';
+	std::cout << " --inflection  Requantize at inflections?  [F]" << '\n';
+	std::cout << " --refine      Refine FMU zero-crossing roots?  [F]" << '\n';
+	std::cout << " --out=OUTPUTS Outputs  [trfkx]" << '\n';
 	std::cout << "       t       Time events" << '\n';
 	std::cout << "       r       Requantizations" << '\n';
 	std::cout << "       a       All variables" << '\n';
 	std::cout << "       s       Sampled time steps" << '\n';
 	std::cout << "       f       FMU outputs" << '\n';
+	std::cout << "       k       FMU-QSS smooth tokens" << '\n';
 	std::cout << "       x       Continuous trajectories" << '\n';
 	std::cout << "       q       Quantized trajectories" << '\n';
 	std::cout << "       d       Diagnostic output" << '\n';
@@ -154,25 +162,20 @@ process_args( int argc, char * argv[] )
 			help_display();
 			help = true;
 		} else if ( has_value_option( arg, "qss" ) || has_value_option( arg, "QSS" ) ) {
+			specified::qss = true;
 			std::string const qss_name( uppercased( arg_value( arg ) ) );
 			if ( qss_name == "QSS1" ) {
 				qss = QSS::QSS1;
-				qss_order = 1;
 			} else if ( qss_name == "QSS2" ) {
 				qss = QSS::QSS2;
-				qss_order = 2;
 			} else if ( qss_name == "QSS3" ) {
 				qss = QSS::QSS3;
-				qss_order = 3;
 			} else if ( qss_name == "LIQSS1" ) {
 				qss = QSS::LIQSS1;
-				qss_order = 1;
 			} else if ( qss_name == "LIQSS2" ) {
 				qss = QSS::LIQSS2;
-				qss_order = 2;
 			} else if ( qss_name == "LIQSS3" ) {
 				qss = QSS::LIQSS3;
-				qss_order = 3;
 				std::cerr << "Error: The LIQSS3 method is not yet implemented" << std::endl;
 				fatal = true;
 			} else {
@@ -186,6 +189,7 @@ process_args( int argc, char * argv[] )
 		} else if ( has_option( arg, "refine" ) ) {
 			refine = true;
 		} else if ( has_value_option( arg, "rTol" ) ) {
+			specified::rTol = true;
 			std::string const rTol_str( arg_value( arg ) );
 			if ( is_double( rTol_str ) ) {
 				rTol = double_of( rTol_str );
@@ -193,12 +197,12 @@ process_args( int argc, char * argv[] )
 					std::cerr << "Error: Negative rTol: " << rTol_str << std::endl;
 					fatal = true;
 				}
-				rTol_set = true;
 			} else {
 				std::cerr << "Error: Nonnumeric rTol: " << rTol_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "aTol" ) ) {
+			specified::aTol = true;
 			std::string const aTol_str( arg_value( arg ) );
 			if ( is_double( aTol_str ) ) {
 				aTol = double_of( aTol_str );
@@ -300,6 +304,7 @@ process_args( int argc, char * argv[] )
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "tEnd" ) ) {
+			specified::tEnd = true;
 			std::string const tEnd_str( arg_value( arg ) );
 			if ( is_double( tEnd_str ) ) {
 				tEnd = double_of( tEnd_str );
@@ -307,7 +312,6 @@ process_args( int argc, char * argv[] )
 					std::cerr << "Error: Negative tEnd: " << tEnd_str << std::endl;
 					fatal = true;
 				}
-				tEnd_set = true;
 			} else {
 				std::cerr << "Error: Nonnumeric tEnd: " << tEnd_str << std::endl;
 				fatal = true;
@@ -326,8 +330,8 @@ process_args( int argc, char * argv[] )
 			}
 		} else if ( has_value_option( arg, "out" ) ) {
 			out = arg_value( arg );
-			if ( has_any_not_of( out, "trasfxqd" ) ) {
-				std::cerr << "Error: Output flag not in trasfxqd: " << out << std::endl;
+			if ( has_any_not_of( out, "trasfkxqd" ) ) {
+				std::cerr << "Error: Output flag not in trasfkxqd: " << out << std::endl;
 				fatal = true;
 			}
 			output::t = has( out, 't' );
@@ -335,6 +339,7 @@ process_args( int argc, char * argv[] )
 			output::a = has( out, 'a' );
 			output::s = has( out, 's' );
 			output::f = has( out, 'f' );
+			output::k = has( out, 'k' );
 			output::x = has( out, 'x' );
 			output::q = has( out, 'q' );
 			output::d = has( out, 'd' );

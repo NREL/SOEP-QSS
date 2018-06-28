@@ -67,12 +67,12 @@ simulate_fmu_qss()
 
 	// Time initialization
 	Time const tStart( 0.0 );
-	Time const tEnd( options::tEnd_set ? options::tEnd : fmi2_import_get_default_experiment_stop( fmu_qss.fmu ) ); // No FMI API for getting stop time from FMU
+	Time const tEnd( options::specified::tEnd ? options::tEnd : fmi2_import_get_default_experiment_stop( fmu_qss.fmu ) ); // No FMI API for getting stop time from FMU
 	Time const tNext( tEnd ); // This can be a varying next step stop time to do output to another FMU
 	Time time( tStart );
 
 	// Initialization
-	if ( fmi2SetupExperiment( c, options::rTol_set, options::rTol, tStart, options::tEnd_set, tEnd ) != fmi2OK ) {
+	if ( fmi2SetupExperiment( c, options::specified::rTol, options::rTol, tStart, options::specified::tEnd, tEnd ) != fmi2OK ) {
 		std::cerr << "\nError: fmi2SetupExperiment failed: " << std::endl;
 		std::exit( EXIT_FAILURE );
 	}

@@ -63,16 +63,20 @@ def fmu_qss_gen():
     parser.add_argument( '--qss', help = 'QSS method  (LI|QSS1|2)  [QSS2]', default = 'QSS2' )
     parser.add_argument( '--rTol', help = 'relative tolerance  [FMU]', type = float )
     parser.add_argument( '--aTol', help = 'absolute tolerance  [1e-6]', type = float, default = 1.0e-6 )
+    parser.add_argument( '--tEnd', help = 'simulation end time  [FMU]', type = float )
     args = parser.parse_args()
     args.qss = args.qss.upper()
     if args.qss not in ( 'QSS1', 'QSS2', 'LIQSS1', 'LIQSS2' ):
         print( '\nUnsupported QSS method: ' + args.qss + ': Must be one of QSS1, QSS2, LIQSS1, LIQSS2' )
         sys.exit( 1 )
     if ( args.rTol is not None ) and ( args.rTol < 0.0 ):
-        print( '\nNegative rTol: ' + str( args.rTol ) )
+        print( '\nNegative rTol: ' + "{:.16f}".format( args.rTol ) )
         sys.exit( 1 )
     if args.aTol <= 0.0:
-        print( '\nNonpositive aTol: ' + str( args.aTol ) )
+        print( '\nNonpositive aTol: ' +"{:.16f}".format( args.aTol ) )
+        sys.exit( 1 )
+    if ( args.tEnd is not None ) and ( args.tEnd < 0.0 ):
+        print( '\nNegative tEnd: ' +"{:.16f}".format( args.tEnd ) )
         sys.exit( 1 )
     ME_lower = args.ME.lower()
     if ME_lower.endswith( '.xml' ): # XML input
@@ -139,9 +143,39 @@ def fmu_qss_gen():
     QSS = etree.SubElement( VendorAnnotations, 'Tool', attrib = { 'name': 'QSS' } )
     Annotations = etree.SubElement( QSS, 'Annotations' )
     etree.SubElement( Annotations, 'Annotation', attrib = OrderedDict( [ ( 'name', 'qss' ), ( 'value', args.qss ) ] ) )
-    if args.rTol is not None: etree.SubElement( Annotations, 'Annotation', attrib = OrderedDict( [ ( 'name', 'rTol' ), ( 'value', str( args.rTol ) ) ] ) )
-    etree.SubElement( Annotations, 'Annotation', attrib = OrderedDict( [ ( 'name', 'aTol' ), ( 'value', str( args.aTol ) ) ] ) )
+    if args.rTol is not None: etree.SubElement( Annotations, 'Annotation', attrib = OrderedDict( [ ( 'name', 'rTol' ), ( 'value', "{:.16f}".format( args.rTol ) ) ] ) )
+    etree.SubElement( Annotations, 'Annotation', attrib = OrderedDict( [ ( 'name', 'aTol' ), ( 'value', "{:.16f}".format( args.aTol ) ) ] ) )
+    if args.tEnd is not None: etree.SubElement( Annotations, 'Annotation', attrib = OrderedDict( [ ( 'name', 'tEnd' ), ( 'value', "{:.16f}".format( args.tEnd ) ) ] ) )
     #Do Add other annotations as needed
+
+    # Generate model-specific QSS header
+    try: # Create QSS options header
+        QSS_option_name = 'FMU_QSS_options.hh'
+        if sys.version_info >= ( 3, 0 ):
+            QSS_option_file = open( QSS_option_name, 'w', newline = '\n' )
+        else:
+            QSS_option_file = open( QSS_option_name, 'wb' )
+    except:
+        print( '\nQSS options header open failed: ' + QSS_option_name )
+        sys.exit( 1 )
+    try: # Write QSS_option header
+        QSS_option_file.write( '#ifndef FMU_QSS_options_hh_INCLUDED\n' )
+        QSS_option_file.write( '#define FMU_QSS_options_hh_INCLUDED\n' )
+        QSS_option_file.write( 'QSS::options::QSS const fmu_qss_qss( QSS::options::QSS::' + args.qss + ' );\n' )
+        if args.rTol is not None:
+            QSS_option_file.write( 'double const fmu_qss_rTol( ' + "{:.16f}".format( args.rTol ) + ' );\n' )
+        else:
+            QSS_option_file.write( 'double const fmu_qss_rTol( -1.0 ); // Negative => Unspecified\n' )
+        QSS_option_file.write( 'double const fmu_qss_aTol( ' + "{:.16f}".format( args.aTol ) + ' );\n' )
+        if args.tEnd is not None:
+            QSS_option_file.write( 'double const fmu_qss_tEnd( ' + "{:.16f}".format( args.tEnd ) + ' );\n' )
+        else:
+            QSS_option_file.write( 'double const fmu_qss_tEnd( -1.0 ); // Negative => Unspecified\n' )
+        QSS_option_file.write( '#endif\n' )
+        QSS_option_file.close()
+    except Exception as err:
+        print( '\nQSS options header write failed: ' + QSS_option_name + ': ' + str( err ) )
+        sys.exit( 1 )
 
     # Find ScalarVariables
     ScalarVariables = ModelVariables.findall( 'ScalarVariable' ) # List of ScalarVariable

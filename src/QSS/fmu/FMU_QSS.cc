@@ -168,6 +168,30 @@ namespace fmu {
 		event_indicators_last = (fmi2_real_t*)std::calloc( n_event_indicators, sizeof( double ) );
 	}
 
+	// Pre-Simulation Setup
+	void
+	FMU_QSS::
+	pre_simulate()
+	{
+		// Create collections of variables and their value references
+		var_list = fmi2_import_get_variable_list( fmu, 0 ); // sort order = 0 for original order
+		size_type const n_vars( fmi2_import_get_variable_list_size( var_list ) );
+		fmi2_value_reference_t const * vrs( fmi2_import_get_value_referece_list( var_list ) ); // reference is misspelled in FMIL API
+		var_refs.clear();
+		inp_var_refs.clear();
+		out_var_refs.clear();
+		for ( size_type i = 0; i < n_vars; ++i ) {
+			fmi2_import_variable_t * var( fmi2_import_get_variable( var_list, i ) );
+			fmi2_causality_enu_t const var_causality( fmi2_import_get_causality( var ) );
+			var_refs.push_back( vrs[ i ] );
+			if ( var_causality == fmi2_causality_enu_input ) {
+				inp_var_refs.push_back( vrs[ i ] );
+			} else if ( var_causality == fmi2_causality_enu_output ) {
+				out_var_refs.push_back( vrs[ i ] );
+			}
+		}
+	}
+
 // Globals
 FMU_QSS fmu_qss;
 

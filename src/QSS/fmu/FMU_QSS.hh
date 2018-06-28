@@ -42,6 +42,7 @@
 // C++ Headers
 #include <cstdlib>
 #include <string>
+#include <vector>
 
 namespace QSS {
 namespace fmu {
@@ -84,11 +85,14 @@ public: // Methods
 	void
 	instantiate();
 
+	// Pre-Simulation Setup
+	void
+	pre_simulate();
+
 public: // Data
 
 	std::string name;
 	std::string unzip_dir;
-
 	fmi2_import_t * fmu = nullptr; // FMU pointer
 	fmi2_real_t * states = nullptr;
 	fmi2_real_t * states_der = nullptr;
@@ -97,6 +101,9 @@ public: // Data
 	fmi_import_context_t * context = nullptr;
 	fmi2_import_variable_list_t * var_list = nullptr;
 	fmi2_import_variable_list_t * der_list = nullptr;
+	std::vector< fmi2_value_reference_t > var_refs;
+	std::vector< fmi2_value_reference_t > inp_var_refs;
+	std::vector< fmi2_value_reference_t > out_var_refs;
 
 	FMU_Generator fmu_generator;
 

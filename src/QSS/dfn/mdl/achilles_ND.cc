@@ -56,7 +56,7 @@ achilles_ND( Variables & vars )
 	using namespace options;
 
 	// Timing
-	if ( ! options::tEnd_set ) options::tEnd = 10.0;
+	if ( ! options::specified::tEnd ) options::tEnd = 10.0;
 
 	// Variables
 	using V = Variable_QSS< Function_LTI_ND >;

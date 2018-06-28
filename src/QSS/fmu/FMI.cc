@@ -39,6 +39,8 @@
 #include <QSS/fmu/FMU_QSS.hh>
 #include <QSS/fmu/FMU_QSS_GUID_ok.hh>
 #include <QSS/fmu/FMU_QSS_defines.hh>
+#include <QSS/options.hh> // Before FMU_QSS_options.hh
+#include <QSS/fmu/FMU_QSS_options.hh>
 
 // FMIL Headers
 #include <FMI2/fmi2_import_impl.h>
@@ -194,19 +196,44 @@ fmi2SetupExperiment(
 {
 	assert( c == fmu_qss.fmu->capi->c );
 
-//	return fmi2_setup_experiment( c, toleranceDefined, tolerance, startTime, stopTimeDefined, stopTime );
-//Do Enable when FMU-QSS lib present in place of above
-//	fmi2Status const fmi_status( fmi2_setup_experiment( c, toleranceDefined, tolerance, startTime, stopTimeDefined, stopTime ) );
-//	if ( fmi_status != fmi2OK ) return fmi_status;
-//	return fmi2_setup_experiment( fmu_me->capi->c, toleranceDefined, tolerance, startTime, stopTimeDefined, stopTime );
+	// Merge any command line options specified with FMU-QSS QSS options
+	if ( ! options::specified::qss ) {
+		options::qss = fmu_qss_qss;
+		options::specified::qss = true;
+	}
+	if ( toleranceDefined ) {
+		options::rTol = tolerance;
+		options::specified::rTol = true;
+	} else if ( ( ! options::specified::rTol ) && ( fmu_qss_rTol >= 0.0 ) ) {
+		options::rTol = fmu_qss_rTol;
+		options::specified::rTol = true;
+		toleranceDefined = true;
+	}
+	if ( ! options::specified::aTol ) {
+		options::aTol = fmu_qss_aTol;
+		options::specified::aTol = true;
+	}
+	if ( stopTimeDefined ) {
+		options::tEnd = stopTime;
+		options::specified::tEnd = true;
+	} else if ( ( ! options::specified::tEnd ) && ( fmu_qss_tEnd >= 0.0 ) ) {
+		options::tEnd = fmu_qss_tEnd;
+		options::specified::tEnd = true;
+		stopTimeDefined = true;
+	}
 
+	// FMU-QSS setup
+//	fmi2Status const fmi_status( fmi2_setup_experiment( c, toleranceDefined, tolerance, startTime, stopTimeDefined, stopTime ) );
+//	if ( fmi_status >= fmi2Error ) return fmi_status;
+
+	// FMU-ME setup
 	fmi2_import_t * fmu( fmu_me.fmu );
 	fmi2_real_t const tstart( fmi2_import_get_default_experiment_start( fmu ) ); // [0.0]
 	assert( startTime == tstart ); // No control for overriding this
 	fmi2_real_t const tstop( stopTimeDefined ? stopTime : fmi2_import_get_default_experiment_stop( fmu ) ); // [1.0]
 	std::cout << "\nSimulation Time Range (s):  Start: " << tstart << "  Stop: " << tstop << std::endl;
 	fmi2_real_t const rTolerance( toleranceDefined ? tolerance : fmi2_import_get_default_experiment_tolerance( fmu ) ); // [0.0001]
-	fmu_me.pre_simulate( tstart, tstop, rTolerance ); // Setup FMU-ME for simulation
+	fmu_me.set_options( tstart, tstop, rTolerance );
 	return (fmi2Status)fmi2_import_setup_experiment( fmu, toleranceDefined, tolerance, startTime, stopTimeDefined, stopTime );
 }
 
@@ -221,7 +248,10 @@ fmi2Status
 fmi2ExitInitializationMode( fmi2Component c )
 {
 	assert( c == fmu_qss.fmu->capi->c );
-	return (fmi2Status)fmi2_import_exit_initialization_mode( fmu_me.fmu );
+	fmi2Status const fmi_status( (fmi2Status)fmi2_import_exit_initialization_mode( fmu_me.fmu ) );
+	fmu_qss.pre_simulate();
+	fmu_me.pre_simulate( fmu_qss.out_var_refs );
+	return fmi_status;
 }
 
 fmi2Status

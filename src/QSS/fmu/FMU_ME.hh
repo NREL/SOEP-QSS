@@ -40,6 +40,7 @@
 #include <QSS/fmu/Variable.hh>
 #include <QSS/fmu/FMU_Variable.hh>
 #include <QSS/Output.hh>
+#include <QSS/SmoothToken.hh>
 
 // FMI Library Headers
 #include <fmilib.h>
@@ -103,10 +104,12 @@ public: // Types
 	using Time = double;
 	using Value = double;
 	using Variables = std::vector< Variable * >;
+	using FMU_Variables = std::vector< FMU_Variable >;
 	using Var_Idx = std::unordered_map< Variable const *, size_type >; // Map from Variables to their indexes
 	using Conditionals = std::vector< Conditional * >;
 	using FMU_Vars = std::unordered_map< FMUVarPtr, FMU_Variable, FMUVarPtrHash >; // Map from FMU variables to FMU_Variable objects
 	using FMU_Idxs = std::unordered_map< size_type, Variable * >; // Map from FMU variable indexes to QSS Variables
+	using SmoothTokenOutput = Output_T< SmoothToken >;
 
 	enum class FMU_Generator { JModelica, Dymola, Other };
 
@@ -135,13 +138,17 @@ public: // Methods
 	void
 	init( std::string const & path );
 
-	// Pre-Simulation Setup
+	// Options Setup
 	void
-	pre_simulate(
+	set_options(
 	 Value const tBeg,
 	 Value const tEnd,
 	 Value const rTolerance
 	);
+
+	// Pre-Simulation Setup
+	void
+	pre_simulate( std::vector< fmi2_value_reference_t > const & fmu_qss_out_var_refs );
 
 	// Simulation Pass
 	void
@@ -189,11 +196,14 @@ public: // Data
 	size_type n_outs = 0;
 	size_type n_fmu_outs = 0;
 	size_type n_all_outs = 0;
+	size_type n_fmu_qss_qss_outs = 0;
 
 	// Collections
 	Variables vars; // QSS variables
 	Variables state_vars; // FMU state QSS variables
 	Variables outs; // FMU output QSS variables
+	Variables fmu_qss_qss_outs; // FMU-QSS output QSS variables
+//	FMU_Variables fmu_qss_fmu_outs; // FMU-QSS output FMU (non-QSS) variables
 	Var_Idx var_idx;
 	Conditionals cons; // Conditionals
 	FMU_Vars fmu_vars; // FMU variables
@@ -204,6 +214,7 @@ public: // Data
 	std::vector< Output > x_outs; // Continuous rep outputs
 	std::vector< Output > q_outs; // Quantized rep outputs
 	std::vector< Output > f_outs; // FMU outputs
+	std::vector< SmoothTokenOutput > k_qss_outs; // FMU-QSS QSS variable smooth token outputs
 
 	// Output controls
 	bool doSOut = false;
