@@ -74,6 +74,21 @@
 namespace QSS {
 namespace fmu {
 
+	// Destructor
+	FMU_ME::
+	~FMU_ME()
+	{
+		fmu::cleanup();
+		std::free( states );
+		std::free( states_der );
+		std::free( event_indicators );
+		std::free( event_indicators_last );
+		std::free( var_list );
+		std::free( der_list );
+		if ( fmu ) fmi2_import_free( fmu );
+		if ( context ) fmi_import_free_context( context );
+	}
+
 	// Initialize
 	void
 	FMU_ME::
@@ -84,6 +99,7 @@ namespace fmu {
 			std::exit( EXIT_FAILURE );
 		}
 
+		// Set up callbacks and context
 		callbacks.malloc = std::malloc;
 		callbacks.calloc = std::calloc;
 		callbacks.realloc = std::realloc;
@@ -93,6 +109,7 @@ namespace fmu {
 		callbacks.context = 0;
 		context = fmi_import_allocate_context( &callbacks );
 
+		// Unzip the FMU-ME in the resources directory
 		name = path::base( path );
 		unzip_dir = path::dir( path );
 		fmi_version_enu_t const fmi_version( fmi_import_get_fmi_version( context, path.c_str(), unzip_dir.c_str() ) );
@@ -101,12 +118,15 @@ namespace fmu {
 			std::exit( EXIT_FAILURE );
 		}
 
+		// Parse the XML
 		fmi2_xml_callbacks_t * xml_callbacks( nullptr );
 		fmu = fmi2_import_parse_xml( context, unzip_dir.c_str(), xml_callbacks );
 		if ( !fmu ) {
 			std::cerr << "\nError: FMU-ME XML parsing error" << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
+
+		// Check FMU-ME is ME
 		fmu::fmu = fmu;
 		if ( fmi2_import_get_fmu_kind( fmu ) == fmi2_fmu_kind_cs ) {
 			std::cerr << "\nError: FMU-ME is CS not ME" << std::endl;
@@ -221,6 +241,8 @@ namespace fmu {
 		eventInfo.nextEventTimeDefined = fmi2_false;
 		eventInfo.nextEventTime = -0.0;
 
+		fmi2_import_enter_continuous_time_mode( fmu );
+		fmi2_import_enter_event_mode( fmu );
 		do_event_iteration( fmu, &eventInfo );
 		fmi2_import_enter_continuous_time_mode( fmu );
 		fmi2_import_get_continuous_states( fmu, states, n_states ); // Should get initial values
@@ -1335,7 +1357,7 @@ namespace fmu {
 						event_indicators = event_indicators_last;
 						event_indicators_last = temp;
 					}
-					fmi2_status_t fmi_status = fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
+					fmi2_status_t fmi_status( fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators ) );
 
 					// Check if an event indicator has triggered
 					bool zero_crossing_event( false );
@@ -1668,17 +1690,17 @@ namespace fmu {
 					k_qss_outs[ i ].append( tE, SmoothToken( var->x( tE ), var->x1( tE ), var->x2( tE ), var->x3( tE ) ) );
 				}
 			}
-//						if ( fmu_qss_fmu_outs.size() > 0u ) {
-//							fmu::set_time( tE );
-//							for ( size_type i = 0; i < n_states; ++i ) {
-//								states[ i ] = state_vars[ i ]->x( tE );
-//							}
-//							fmi2_import_set_continuous_states( fmu, states, n_states );
-//							size_type i( n_fmu_qss_qss_outs );
-//							for ( FMU_Variable const & fmu_var : fmu_qss_qss_outs ) {
-//								k_fmu_outs[ i++ ].append( tE, fmu::get_real( fmu_var.ref ) ); //Do SmoothToken once we can get derivatives
-//							}
-//						}
+//			if ( fmu_qss_fmu_outs.size() > 0u ) {
+//				fmu::set_time( tE );
+//				for ( size_type i = 0; i < n_states; ++i ) {
+//					states[ i ] = state_vars[ i ]->x( tE );
+//				}
+//				fmi2_import_set_continuous_states( fmu, states, n_states );
+//				size_type i( n_fmu_qss_qss_outs );
+//				for ( FMU_Variable const & fmu_var : fmu_qss_qss_outs ) {
+//					k_fmu_outs[ i++ ].append( tE, fmu::get_real( fmu_var.ref ) ); //Do SmoothToken once we can get derivatives
+//				}
+//			}
 		}
 
 		// Reporting
@@ -1693,22 +1715,6 @@ namespace fmu {
 		vars.clear();
 		for ( auto & con : cons ) delete con;
 		cons.clear();
-
-		// FMU cleanup
-		// fmu::cleanup();
-		// fmi2_import_terminate( fmu );
-		// fmi2_import_free_instance( fmu );
-		// std::free( states );
-		// std::free( states_der );
-		// std::free( event_indicators );
-		// std::free( event_indicators_last );
-		// std::free( var_list );
-		// std::free( der_list );
-		// fmi2_import_destroy_dllfmu( fmu );
-		// fmi2_import_free( fmu );
-		// fmi_import_free_context( context );
-		// fmu = nullptr;
-		// context = nullptr;
 }
 
 // Globals

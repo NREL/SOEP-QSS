@@ -60,26 +60,23 @@ public: // Types
 public: // Creation
 
 	// Destructor
-	~FMU_QSS()
-	{
-//		if ( fmu ) fmi2_import_terminate( fmu );
-//		if ( fmu ) fmi2_import_free_instance( fmu );
-		std::free( states );
-		std::free( states_der );
-		std::free( event_indicators );
-		std::free( event_indicators_last );
-		std::free( var_list );
-		std::free( der_list );
-//		if ( fmu ) fmi2_import_destroy_dllfmu( fmu );
-//		if ( fmu ) fmi2_import_free( fmu );
-//		if ( context ) fmi_import_free_context( context );
-	}
+	~FMU_QSS();
+
+public: // Properties
+
+	// FMU Resource Location URI
+	std::string
+	fmuResourceLocation() const;
 
 public: // Methods
 
 	// Initialize
 	void
 	init( std::string const & path );
+
+	// Pre-Instantiation for 3rd-Party Master Algorithms
+	void
+	pre_instantiate( std::string const & fmuLocation );
 
 	// Instantiation
 	void
@@ -88,6 +85,13 @@ public: // Methods
 	// Pre-Simulation Setup
 	void
 	pre_simulate();
+
+public: // Static Metods
+
+	// Unzip Location from FMU Resource Location URI
+	static
+	std::string
+	unzip_loc( std::string const & uri );
 
 public: // Data
 

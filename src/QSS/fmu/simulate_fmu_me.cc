@@ -296,6 +296,8 @@ simulate_fmu_me()
 	eventInfo.nextEventTimeDefined = fmi2_false;
 	eventInfo.nextEventTime = -0.0;
 
+	fmi2_import_enter_continuous_time_mode( fmu );
+	fmi2_import_enter_event_mode( fmu );
 	do_event_iteration( fmu, &eventInfo );
 	fmi2_import_enter_continuous_time_mode( fmu );
 	fmi2_import_get_continuous_states( fmu, states, n_states ); // Should get initial values
@@ -1346,7 +1348,7 @@ simulate_fmu_me()
 					event_indicators = event_indicators_last;
 					event_indicators_last = temp;
 				}
-				fmi2_status_t fmi_status = fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
+				fmi2_status_t fmi_status( fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators ) );
 
 				// Check if an event indicator has triggered
 				bool zero_crossing_event( false );
@@ -1683,7 +1685,6 @@ simulate_fmu_me()
 	std::free( event_indicators_last );
 	std::free( var_list );
 	std::free( der_list );
-	fmi2_import_destroy_dllfmu( fmu );
 	fmi2_import_free( fmu );
 	fmi_import_free_context( context );
 }

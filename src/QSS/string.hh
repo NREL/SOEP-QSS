@@ -148,6 +148,27 @@ has_any_not_of( std::string const & s, std::string const & t ) // Pass lowercase
 	return false;
 }
 
+// Has a Prefix?
+inline
+bool
+has_prefix( std::string const & s, char const * const pre )
+{
+	std::string::size_type const pre_len( std::strlen( pre ) );
+	if ( pre_len == 0 ) {
+		return false;
+	} else {
+		std::string::size_type const s_len( s.length() );
+		if ( s_len < pre_len ) {
+			return false;
+		} else {
+			for ( std::string::size_type i = 0; i < pre_len; ++i ) {
+				if ( s[ i ] != pre[ i ] ) return false;
+			}
+			return true;
+		}
+	}
+}
+
 // Has a Suffix?
 inline
 bool

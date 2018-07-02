@@ -35,9 +35,11 @@
 
 // QSS  Headers
 #include <QSS/path.hh>
+#include <QSS/string.hh>
 
 // C++ Headers
 #include <cctype>
+#include <regex>
 #ifdef _WIN32
 #include <direct.h>
 #include <errno.h>
@@ -54,11 +56,11 @@ std::string
 base( std::string const & path )
 {
 #ifdef _WIN32
-	char const path_sep( '\\' );
+	char const sep( '\\' );
 #else
-	char const path_sep( '/' );
+	char const sep( '/' );
 #endif
-	std::size_t ibeg( path.rfind( path_sep ) );
+	std::size_t ibeg( path.rfind( sep ) );
 	if ( ibeg == std::string::npos ) {
 		ibeg = 0;
 	} else {
@@ -78,14 +80,14 @@ std::string
 dir( std::string const & path )
 {
 #ifdef _WIN32
-	char const path_sep( '\\' );
+	char const sep( '\\' );
 #else
-	char const path_sep( '/' );
+	char const sep( '/' );
 #endif
 	std::size_t l( path.length() ); // Length to search up to
-	while ( ( l > 0u ) && ( path[ l - 1 ] == path_sep ) ) --l; // Skip trailing path separators
-	while ( ( l > 0u ) && ( path[ l - 1 ] != path_sep ) ) --l; // Skip dir/file name
-	if ( ( l > 0u ) && ( path[ l - 1 ] == path_sep ) ) --l; // Skip trailing path separator
+	while ( ( l > 0u ) && ( path[ l - 1 ] == sep ) ) --l; // Skip trailing path separators
+	while ( ( l > 0u ) && ( path[ l - 1 ] != sep ) ) --l; // Skip dir/file name
+	if ( ( l > 0u ) && ( path[ l - 1 ] == sep ) ) --l; // Skip trailing path separator
 	if ( l > 0u ) {
 		return path.substr( 0, l );
 	} else {
@@ -159,6 +161,130 @@ make_path( std::string const & path )
 		return true;
 	}
 #endif
+}
+
+// URI of a Path
+std::string
+uri( std::string const & path )
+{
+	std::string uri;
+	for ( char c : path ) {
+		switch ( c ) {
+		case '%':
+			uri += "%25";
+			break;
+		case ' ':
+			uri += "%20";
+			break;
+		case '!':
+			uri += "%21";
+			break;
+		case '#':
+			uri += "%23";
+			break;
+		case '$':
+			uri += "%24";
+			break;
+		case '&':
+			uri += "%26";
+			break;
+		case '\'':
+			uri += "%27";
+			break;
+		case '(':
+			uri += "%28";
+			break;
+		case ')':
+			uri += "%29";
+			break;
+		case '*':
+			uri += "%2A";
+			break;
+		case '+':
+			uri += "%2B";
+			break;
+		case ',':
+			uri += "%2C";
+			break;
+		case ':':
+			uri += "%3A";
+			break;
+		case ';':
+			uri += "%3B";
+			break;
+		case '=':
+			uri += "%3D";
+			break;
+		case '?':
+			uri += "%3F";
+			break;
+		case '@':
+			uri += "%40";
+			break;
+		case '[':
+			uri += "%5B";
+			break;
+		case ']':
+			uri += "%5D";
+			break;
+		case '^':
+			uri += "%5E";
+			break;
+		case '`':
+			uri += "%60";
+			break;
+		case '{':
+			uri += "%7B";
+			break;
+		case '}':
+			uri += "%7D";
+			break;
+#ifdef _WIN32
+		case '\\':
+			uri += '/';
+			break;
+#endif
+		default:
+			uri += c;
+			break;
+		}
+	}
+	return uri;
+}
+
+// Path of a URI
+std::string
+un_uri( std::string const & uri )
+{
+	std::string path( uri );
+	if ( has_prefix( path, "file://" ) ) path.erase( 0, 7 );
+	path = std::regex_replace( path, std::regex( "%20" ), " " );
+	path = std::regex_replace( path, std::regex( "%21" ), "!" );
+	path = std::regex_replace( path, std::regex( "%23" ), "#" );
+	path = std::regex_replace( path, std::regex( "%24" ), "$" );
+	path = std::regex_replace( path, std::regex( "%26" ), "&" );
+	path = std::regex_replace( path, std::regex( "%27" ), "'" );
+	path = std::regex_replace( path, std::regex( "%28" ), "(" );
+	path = std::regex_replace( path, std::regex( "%29" ), ")" );
+	path = std::regex_replace( path, std::regex( "%2A" ), "*" );
+	path = std::regex_replace( path, std::regex( "%2B" ), "+" );
+	path = std::regex_replace( path, std::regex( "%2C" ), "," );
+	path = std::regex_replace( path, std::regex( "%3A" ), ":" );
+	path = std::regex_replace( path, std::regex( "%3B" ), ";" );
+	path = std::regex_replace( path, std::regex( "%3D" ), "=" );
+	path = std::regex_replace( path, std::regex( "%3F" ), "?" );
+	path = std::regex_replace( path, std::regex( "%40" ), "@" );
+	path = std::regex_replace( path, std::regex( "%5B" ), "[" );
+	path = std::regex_replace( path, std::regex( "%5D" ), "]" );
+	path = std::regex_replace( path, std::regex( "%5E" ), "^" );
+	path = std::regex_replace( path, std::regex( "%60" ), "`" );
+	path = std::regex_replace( path, std::regex( "%7B" ), "{" );
+	path = std::regex_replace( path, std::regex( "%7D" ), "}" );
+#ifdef _WIN32
+	path = std::regex_replace( path, std::regex( "/" ), "\\" );
+#endif
+	path = std::regex_replace( path, std::regex( "%25" ), "%" );
+	return path;
 }
 
 } // path

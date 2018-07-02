@@ -116,21 +116,7 @@ public: // Types
 public: // Creation
 
 	// Destructor
-	~FMU_ME()
-	{
-		fmu::cleanup();
-		if ( fmu ) fmi2_import_terminate( fmu );
-		if ( fmu ) fmi2_import_free_instance( fmu );
-		std::free( states );
-		std::free( states_der );
-		std::free( event_indicators );
-		std::free( event_indicators_last );
-		std::free( var_list );
-		std::free( der_list );
-//		if ( fmu ) fmi2_import_destroy_dllfmu( fmu );
-//		if ( fmu ) fmi2_import_free( fmu );
-//		if ( context ) fmi_import_free_context( context );
-	}
+	~FMU_ME();
 
 public: // Methods
 
@@ -203,7 +189,6 @@ public: // Data
 	Variables state_vars; // FMU state QSS variables
 	Variables outs; // FMU output QSS variables
 	Variables fmu_qss_qss_outs; // FMU-QSS output QSS variables
-//	FMU_Variables fmu_qss_fmu_outs; // FMU-QSS output FMU (non-QSS) variables
 	Var_Idx var_idx;
 	Conditionals cons; // Conditionals
 	FMU_Vars fmu_vars; // FMU variables

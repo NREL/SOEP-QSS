@@ -53,13 +53,14 @@ namespace fmu {
 void
 simulate_fmu_qss()
 {
+	// Types
 	using Time = double;
 
 	// Initialize the FMUs
 	fmu_qss.init( options::model ); // Need to load FMU-QSS for guid arg to fmi2Instantiate
 
 	// Instantiation
-	fmi2Component c( fmi2Instantiate( "FMU-QSS model instance", fmi2ModelExchange, fmi2_import_get_GUID( fmu_qss.fmu ), 0, (fmi2CallbackFunctions*)&fmu_qss.callBackFunctions, 0, 0 ) );
+	fmi2Component c( fmi2Instantiate( "FMU-QSS model instance", fmi2ModelExchange, fmi2_import_get_GUID( fmu_qss.fmu ), fmu_qss.fmuResourceLocation().c_str(), (fmi2CallbackFunctions*)&fmu_qss.callBackFunctions, 0, 0 ) );
 	if ( c == nullptr ) {
 		std::cerr << "\nError: fmi2Instantiate failed: " << std::endl;
 		std::exit( EXIT_FAILURE );
@@ -93,6 +94,7 @@ simulate_fmu_qss()
 	eventInfo.valuesOfContinuousStatesChanged = fmi2_false;
 	eventInfo.nextEventTimeDefined = fmi2_false;
 	eventInfo.nextEventTime = -0.0; // We are using this to signal time in/out of FMU-ME!!!
+	fmi2EnterEventMode( c );
 	fmi2EnterContinuousTimeMode( c );
 	eventInfo.nextEventTimeDefined = fmi2_true;
 	while ( time <= tEnd ) {
@@ -108,6 +110,8 @@ simulate_fmu_qss()
 			if ( eventInfo.terminateSimulation ) break;
 		}
 	}
+	fmi2Terminate( c );
+	fmi2FreeInstance( c );
 }
 
 } // fmu

@@ -112,6 +112,12 @@ fmi2GetVersion()
 	return "2.0";
 }
 
+char const *
+fmi2GetTypesPlatform()
+{
+	return fmi2_get_types_platform();
+}
+
 fmi2Component
 fmu_qss_fmi_instantiate(
  fmi2String instanceName,
@@ -149,6 +155,10 @@ fmi2Instantiate(
  fmi2Boolean loggingOn
 )
 {
+	if ( fmu_qss.fmu == nullptr ) { // 3rd-party master algorithm
+		assert( fmuResourceLocation != nullptr );
+		fmu_qss.pre_instantiate( FMU_QSS::unzip_loc( fmuResourceLocation ) );
+	}
 	if ( ! FMU_QSS_GUID_ok( GUID ) ) {
 		std::cerr << "\nError: Incorrect GUID found in FMU-QSS modelDescription.xml" << std::endl;
 		std::exit( EXIT_FAILURE );
@@ -222,10 +232,6 @@ fmi2SetupExperiment(
 		stopTimeDefined = true;
 	}
 
-	// FMU-QSS setup
-//	fmi2Status const fmi_status( fmi2_setup_experiment( c, toleranceDefined, tolerance, startTime, stopTimeDefined, stopTime ) );
-//	if ( fmi_status >= fmi2Error ) return fmi_status;
-
 	// FMU-ME setup
 	fmi2_import_t * fmu( fmu_me.fmu );
 	fmi2_real_t const tstart( fmi2_import_get_default_experiment_start( fmu ) ); // [0.0]
@@ -265,6 +271,7 @@ fmi2Status
 fmi2EnterContinuousTimeMode( fmi2Component c )
 {
 	assert( c == fmu_qss.fmu->capi->c );
+	fmi2_import_enter_event_mode( fmu_me.fmu ); //? Keep FMUChecker happy
 	return (fmi2Status)fmi2_import_enter_continuous_time_mode( fmu_me.fmu );
 }
 
@@ -281,14 +288,10 @@ fmi2NewDiscreteStates(
 		fmu_me.post_simulate();
 	}
 	return fmi2OK;
-
-//	fmi2_import_t * fmu( fmu_me.fmu );
-//	assert( c == fmu->capi->c );
-//	return (fmi2Status)fmi2_import_new_discrete_states( fmu, (fmi2_event_info_t *)eventInfo );
 }
 
 fmi2Status
-fmi2SetInputDerivatives(
+fmi2SetRealInputDerivatives(
  fmi2Component c,
  fmi2ValueReference const vr[],
  size_t nvr,
@@ -297,7 +300,7 @@ fmi2SetInputDerivatives(
 )
 {
 	assert( c == fmu_qss.fmu->capi->c );
-	return fmi2OK; ///////////////////////////////////////////
+	return (fmi2Status)fmi2_import_set_real_input_derivatives( fmu_me.fmu, vr, nvr, order, value );
 }
 
 fmi2Status
@@ -310,7 +313,7 @@ fmi2GetRealOutputDerivatives(
 )
 {
 	assert( c == fmu_qss.fmu->capi->c );
-	return fmi2OK; //////////////////////////////////////////
+	return (fmi2Status)fmi2_import_get_real_output_derivatives( fmu_me.fmu, vr, nvr, order, value );
 }
 
 fmi2Status
@@ -467,22 +470,20 @@ fmi2GetDerivatives(
 	return fmi2OK;
 }
 
-// fmi2Status
-// fmi2GetDirectionalDerivative(
-//  fmi2Component c,
-//  fmi2ValueReference const vUnknown_ref[],
-//  size_t nUnknown,
-//  fmi2ValueReference const vKnown_ref[],
-//  size_t nKnown,
-//  fmi2Real const dvKnown[],
-//  fmi2Real dvUnknown[]
-// )
-// {
-// 	assert( c == fmu_qss.fmu->capi->c );
-// 	assert( nUnknown == 0u ); // No unknowns in FMU-QSS
-// 	assert( nKnown == 0u ); // No knowns in FMU-QSS
-// 	return fmi2OK;
-// }
+fmi2Status
+fmi2GetDirectionalDerivative(
+ fmi2Component c,
+ fmi2ValueReference const vUnknown_ref[],
+ size_t nUnknown,
+ fmi2ValueReference const vKnown_ref[],
+ size_t nKnown,
+ fmi2Real const dvKnown[],
+ fmi2Real dvUnknown[]
+)
+{
+	assert( c == fmu_qss.fmu->capi->c );
+	return (fmi2Status)fmi2_import_get_directional_derivative( fmu_me.fmu, vKnown_ref, nKnown, vUnknown_ref, nUnknown, dvKnown, dvUnknown ); // Note arg order switch
+}
 
 fmi2Status
 fmi2GetEventIndicators(
@@ -497,16 +498,6 @@ fmi2GetEventIndicators(
 }
 
 fmi2Status
-fmi2GetFMUstate(
- fmi2Component c,
- fmi2FMUstate * FMUstate
-)
-{
-	assert( c == fmu_qss.fmu->capi->c );
-	return (fmi2Status)fmi2_import_get_fmu_state( fmu_me.fmu, FMUstate );
-}
-
-fmi2Status
 fmi2GetNominalsOfContinuousStates(
  fmi2Component c,
  fmi2Real x_nominal[],
@@ -518,10 +509,59 @@ fmi2GetNominalsOfContinuousStates(
 	return fmi2OK;
 }
 
-char const *
-fmi2GetTypesPlatform()
+fmi2Status
+fmi2GetFMUstate(
+ fmi2Component c,
+ fmi2FMUstate * FMUstate
+)
 {
-	return fmi2_get_types_platform();
+	assert( c == fmu_qss.fmu->capi->c );
+	return (fmi2Status)fmi2_import_get_fmu_state( fmu_me.fmu, FMUstate );
+}
+
+fmi2Status
+fmi2SetFMUstate(
+ fmi2Component c,
+ fmi2FMUstate FMUstate
+)
+{
+	assert( c == fmu_qss.fmu->capi->c );
+	return (fmi2Status)fmi2_import_set_fmu_state( fmu_me.fmu, FMUstate );
+}
+
+fmi2Status
+fmi2SerializeFMUstate(
+ fmi2Component c,
+ fmi2FMUstate FMUstate,
+ fmi2Byte serializedState[],
+ size_t size
+)
+{
+	assert( c == fmu_qss.fmu->capi->c );
+	return (fmi2Status)fmi2_import_serialize_fmu_state( fmu_me.fmu, FMUstate, serializedState, size );
+}
+
+fmi2Status
+fmi2SerializedFMUstateSize(
+ fmi2Component c,
+ fmi2FMUstate FMUstate,
+ size_t * size
+)
+{
+	assert( c == fmu_qss.fmu->capi->c );
+	return (fmi2Status)fmi2_import_serialized_fmu_state_size( fmu_me.fmu, FMUstate, size );
+}
+
+fmi2Status
+fmi2DeSerializeFMUstate(
+ fmi2Component c,
+ fmi2Byte const serializedState[],
+ size_t size,
+ fmi2FMUstate * FMUstate
+)
+{
+	assert( c == fmu_qss.fmu->capi->c );
+	return (fmi2Status)fmi2_import_de_serialize_fmu_state( fmu_me.fmu, serializedState, size, FMUstate );
 }
 
 fmi2Status
@@ -530,63 +570,6 @@ fmi2Reset( fmi2Component c )
 	assert( c == fmu_qss.fmu->capi->c );
 	return (fmi2Status)fmi2_import_reset( fmu_me.fmu );
 }
-
-// fmi2Status
-// fmi2SerializeFMUstate(
-//  fmi2Component c,
-//  fmi2FMUstate FMUstate,
-//  fmi2Byte serializedState[],
-//  size_t size
-// )
-// {
-// 	assert( c == fmu_qss.fmu->capi->c );
-// 	return (fmi2Status)fmi2_import_serialize_fmu_state( c, FMUstate, serializedState, size );
-// }
-
-// fmi2Status
-// fmi2SerializedFMUstateSize(
-//  fmi2Component c,
-//  fmi2FMUstate FMUstate,
-//  size_t * size
-// )
-// {
-// 	assert( c == fmu_qss.fmu->capi->c );
-// 	return (fmi2Status)fmi2_import_serialized_fmu_state_size( c, FMUstate, size );
-// }
-
-// fmi2Status
-// fmi2SetDebugLogging(
-//  fmi2Component c,
-//  fmi2Boolean loggingOn,
-//  size_t nCategories,
-//  fmi2String const categories[]
-// )
-// {
-// 	assert( c == fmu_qss.fmu->capi->c );
-// 	return (fmi2Status)fmi2_import_set_debug_logging( c, loggingOn, nCategories, const_cast< fmi2String * >( categories ) );
-// }
-
-// fmi2Status
-// fmi2SetFMUstate(
-//  fmi2Component c,
-//  fmi2FMUstate FMUstate
-// )
-// {
-// 	assert( c == fmu_qss.fmu->capi->c );
-// 	return (fmi2Status)fmi2_import_set_fmu_state( c, FMUstate );
-// }
-
-// fmi2Status
-// fmi2DeSerializeFMUstate(
-//  fmi2Component c,
-//  fmi2Byte const serializedState[],
-//  size_t size,
-//  fmi2FMUstate * FMUstate
-// )
-// {
-// 	assert( c == fmu_qss.fmu->capi->c );
-// 	return fmi2OK; /////
-// }
 
 fmi2Status
 fmi2Terminate( fmi2Component c )
@@ -599,8 +582,8 @@ void
 fmi2FreeInstance( fmi2Component c )
 {
 	assert( c == fmu_qss.fmu->capi->c );
-	fmi2_import_t * fmu( fmu_me.fmu );
-	if ( fmu ) fmi2_import_free_instance( fmu );
+	if ( ( fmu_qss.fmu != nullptr ) && ( fmu_qss.fmu->capi != nullptr ) ) fmu_qss.fmu->capi->c = nullptr;
+	fmi2_import_free_instance( fmu_me.fmu );
 }
 
 fmi2Status
@@ -610,5 +593,6 @@ fmi2FreeFMUstate(
 )
 {
 	assert( c == fmu_qss.fmu->capi->c );
-	return (fmi2Status)fmi2_import_free_fmu_state( fmu_me.fmu, FMUstate );
+//	return (fmi2Status)fmi2_import_free_fmu_state( fmu_me.fmu, FMUstate ) : fmi2OK );
+	return fmi2OK; //? Don't have state pointer for FMU-ME
 }

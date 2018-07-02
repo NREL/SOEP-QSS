@@ -216,7 +216,7 @@ void
 do_event_iteration( fmi2_import_t * fmu, fmi2_event_info_t * eventInfo )
 {
 	eventInfo->newDiscreteStatesNeeded = fmi2_true;
-	eventInfo->terminateSimulation     = fmi2_false;
+	eventInfo->terminateSimulation = fmi2_false;
 	while ( eventInfo->newDiscreteStatesNeeded && !eventInfo->terminateSimulation ) {
 		fmi2_import_new_discrete_states( fmu, eventInfo );
 	}

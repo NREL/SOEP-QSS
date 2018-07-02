@@ -58,6 +58,14 @@ make_dir( std::string const & dir );
 bool
 make_path( std::string const & path );
 
+// URI of a Path
+std::string
+uri( std::string const & path );
+
+// Path of a URI
+std::string
+un_uri( std::string const & uri );
+
 } // path
 } // QSS
 

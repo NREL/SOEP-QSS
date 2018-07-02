@@ -62,6 +62,10 @@ char const *
 fmi2GetVersion();
 
 FMI2_Export
+char const *
+fmi2GetTypesPlatform();
+
+FMI2_Export
 fmi2Component
 fmi2Instantiate(
  fmi2String instanceName,
@@ -118,7 +122,7 @@ fmi2NewDiscreteStates(
 
 FMI2_Export
 fmi2Status
-fmi2SetInputDerivatives(
+fmi2SetRealInputDerivatives(
  fmi2Component c,
  fmi2ValueReference const vr[],
  size_t nvr,
@@ -270,13 +274,6 @@ fmi2GetEventIndicators(
 
 FMI2_Export
 fmi2Status
-fmi2GetFMUstate(
- fmi2Component c,
- fmi2FMUstate * FMUstate
-);
-
-FMI2_Export
-fmi2Status
 fmi2GetNominalsOfContinuousStates(
  fmi2Component c,
  fmi2Real x_nominal[],
@@ -284,12 +281,18 @@ fmi2GetNominalsOfContinuousStates(
 );
 
 FMI2_Export
-char const *
-fmi2GetTypesPlatform();
+fmi2Status
+fmi2GetFMUstate(
+ fmi2Component c,
+ fmi2FMUstate * FMUstate
+);
 
 FMI2_Export
 fmi2Status
-fmi2Reset( fmi2Component c );
+fmi2SetFMUstate(
+ fmi2Component c,
+ fmi2FMUstate FMUstate
+);
 
 FMI2_Export
 fmi2Status
@@ -310,28 +313,16 @@ fmi2SerializedFMUstateSize(
 
 FMI2_Export
 fmi2Status
-fmi2SetDebugLogging(
- fmi2Component c,
- fmi2Boolean loggingOn,
- size_t nCategories,
- fmi2String const categories[]
-);
-
-FMI2_Export
-fmi2Status
-fmi2SetFMUstate(
- fmi2Component c,
- fmi2FMUstate FMUstate
-);
-
-FMI2_Export
-fmi2Status
 fmi2DeSerializeFMUstate(
  fmi2Component c,
  fmi2Byte const serializedState[],
  size_t size,
  fmi2FMUstate * FMUstate
 );
+
+FMI2_Export
+fmi2Status
+fmi2Reset( fmi2Component c );
 
 FMI2_Export
 fmi2Status
