@@ -284,9 +284,11 @@ fmi2NewDiscreteStates(
 	assert( c == fmu_qss.fmu->capi->c );
 	fmu_me.simulate( (fmi2_event_info_t *)eventInfo );
 	if ( ( fmu_me.t >= fmu_me.tE ) || ( eventInfo->terminateSimulation ) ) {
+		eventInfo->terminateSimulation = fmi2_true;
 		eventInfo->newDiscreteStatesNeeded = fmi2_false;
 		fmu_me.post_simulate();
 	}
+	((component_ptr_t)c)->fmitime = fmu_me.t;
 	return fmi2OK;
 }
 
@@ -323,6 +325,7 @@ fmi2SetTime(
 )
 {
 	assert( c == fmu_qss.fmu->capi->c );
+	((component_ptr_t)c)->fmitime = fmitime;
 	return (fmi2Status)fmi2_import_set_time( fmu_me.fmu, fmitime );
 }
 
@@ -432,6 +435,7 @@ fmi2CompletedIntegratorStep(
 {
 	assert( c == fmu_qss.fmu->capi->c );
 	return (fmi2Status)fmi2_import_completed_integrator_step( fmu_me.fmu, fmi2_true, enterEventMode, terminateSimulation );
+	((component_ptr_t)c)->fmitime = fmu_me.t;
 }
 
 fmi2Status

@@ -37,7 +37,6 @@
 #include <QSS/fmu/FMU_ME.hh>
 #include <QSS/fmu/Conditional.hh>
 #include <QSS/fmu/container.hh>
-#include <QSS/fmu/FMU.hh>
 #include <QSS/fmu/Function_Inp_constant.hh>
 #include <QSS/fmu/Function_Inp_sin.hh>
 #include <QSS/fmu/Function_Inp_step.hh>
