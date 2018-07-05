@@ -104,6 +104,43 @@ struct component_t
 };
 using component_ptr_t = component_t *;
 
+} // <unnamed>
+
+inline
+void
+simulate()
+{
+	fmi2Component c( fmu_qss.fmu->capi->c );
+	fmi2Real const fmu_time( ((component_ptr_t)(fmu_me.fmu->capi->c))->fmitime );
+	if ( fmu_me.t < fmu_time ) { // Advance simulation to FMU time
+		fmi2EventInfo eventInfo;
+		eventInfo.newDiscreteStatesNeeded = fmi2_true;
+		eventInfo.terminateSimulation = fmi2_false;
+		eventInfo.nominalsOfContinuousStatesChanged = fmi2_false;
+		eventInfo.valuesOfContinuousStatesChanged = fmi2_false;
+		eventInfo.nextEventTimeDefined = fmi2_false;
+		eventInfo.nextEventTime = -0.0; // We are using this to signal time in/out of FMU-ME!!!
+		fmi2EnterEventMode( c );
+		fmi2EnterContinuousTimeMode( c );
+		eventInfo.nextEventTimeDefined = fmi2_true;
+		Time time( fmu_me.t );
+		Time const tNext( fmu_time ); // This can be a varying next step stop time to do output to another FMU
+		while ( time <= fmu_time ) {
+			while ( time <= fmu_time ) {
+				while ( ( eventInfo.newDiscreteStatesNeeded == fmi2_true ) && ( eventInfo.terminateSimulation == fmi2_false ) && ( eventInfo.nextEventTime < tNext ) ) {
+					eventInfo.nextEventTime = tNext; // Signal QSS simulation pass when to stop
+					fmu_me.simulate( (fmi2_event_info_t *)(&eventInfo) );
+					if ( ( fmu_me.t >= fmu_me.tE ) || ( eventInfo.terminateSimulation ) ) {
+						eventInfo.terminateSimulation = fmi2_true;
+						eventInfo.newDiscreteStatesNeeded = fmi2_false;
+						fmu_me.post_simulate();
+					}
+				}
+				time = eventInfo.nextEventTime;
+				if ( eventInfo.terminateSimulation ) break;
+			}
+		}
+	}
 }
 
 char const *
@@ -338,6 +375,7 @@ fmi2GetReal(
 )
 {
 	assert( c == fmu_qss.fmu->capi->c );
+	simulate(); // Advance simulation to FMU time
 	return (fmi2Status)fmi2_import_get_real( fmu_me.fmu, vr, nvr, value );
 }
 
@@ -362,6 +400,7 @@ fmi2GetInteger(
 )
 {
 	assert( c == fmu_qss.fmu->capi->c );
+	simulate(); // Advance simulation to FMU time
 	return (fmi2Status)fmi2_import_get_integer( fmu_me.fmu, vr, nvr, value );
 }
 
@@ -386,6 +425,7 @@ fmi2GetBoolean(
 )
 {
 	assert( c == fmu_qss.fmu->capi->c );
+	simulate(); // Advance simulation to FMU time
 	return (fmi2Status)fmi2_import_get_boolean( fmu_me.fmu, vr, nvr, value );
 }
 
@@ -410,6 +450,7 @@ fmi2GetString(
 )
 {
 	assert( c == fmu_qss.fmu->capi->c );
+	simulate(); // Advance simulation to FMU time
 	return (fmi2Status)fmi2_import_get_string( fmu_me.fmu, vr, nvr, value );
 }
 
