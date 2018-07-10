@@ -17,7 +17,7 @@
 #   . C/C++: CPATH then CPLUS_INCLUDE_PATH then INCLUDE
 
 # Imports
-import argparse, os, re
+import argparse, os, re, sys
 
 # Globals
 C_ext = re.compile( '(c|cc|cpp|cxx|c\+\+|h|hh|hpp|hxx|h\+\+|ii|ipp|ixx|i\+\+)', re.I )
@@ -96,7 +96,10 @@ def C_deps( fname, fdeps = None, par_dir = None, quoted = False, add = True ):
                         if not ' ' in tname: gname = tname # Skip dependencies in paths with spaces for GNU Make compatibility
                         break
         if gname is None: gname = fname
-        dfile = open( gname, 'rU' )
+        if sys.version_info >= ( 3, 0 ):
+            dfile = open( gname, 'r', newline = None )
+        else:
+            dfile = open( gname, 'rU' )
         if add: fdeps.add( fname ) # Only add dependency if it is found
         par_new = os.path.dirname( os.path.abspath( gname ) )
         if ( not par_dir ) or ( par_dir[ 0 ] != par_new ): # Push parent dir onto front of list
