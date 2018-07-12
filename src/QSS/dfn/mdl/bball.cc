@@ -37,7 +37,8 @@
 #include <QSS/dfn/mdl/bball.hh>
 #include <QSS/dfn/mdl/Function_LTI.hh>
 #include <QSS/dfn/Conditional.hh>
-#include <QSS/dfn/Variable_D.hh>
+//#include <QSS/dfn/Variable_D.hh>
+#include <QSS/dfn/Variable_I.hh>
 #include <QSS/dfn/Variable_LIQSS1.hh>
 #include <QSS/dfn/Variable_LIQSS2.hh>
 #include <QSS/dfn/Variable_QSS1.hh>
@@ -86,7 +87,8 @@ public: // Properties
 			} else {
 				if ( v < 0.0 ) v_->shift_handler( t, -0.7 * v ); // Coefficient of restitution = 0.7
 				h_->shift_handler( t, 0.0 );
-				b_->shift_handler( t, b_->x() + 1 ); // Add to bounce count
+//				b_->shift_handler( t, b_->x() + 1 ); // Add to bounce count
+				b_->shift_handler( t, b_->i() + 1 ); // Add to bounce count
 			}
 		}
 	}
@@ -112,7 +114,8 @@ public: // Methods
 	var(
 	 Variable_QSS_LTI * h,
 	 Variable_QSS_LTI * v,
-	 Variable_D * b,
+//	 Variable_D * b,
+	 Variable_I * b,
 	 Variable_ZC_LTI * z
 	)
 	{
@@ -130,7 +133,8 @@ private: // Data
 
 	Variable_QSS_LTI * h_{ nullptr };
 	Variable_QSS_LTI * v_{ nullptr };
-	Variable_D * b_{ nullptr };
+//	Variable_D * b_{ nullptr };
+	Variable_I * b_{ nullptr };
 	Variable_ZC_LTI * z_{ nullptr };
 	Variables observers_;
 
@@ -176,7 +180,8 @@ bball( Variables & vars, Conditionals & cons )
 	v->add( -9.80665 ); // g = 9.80665 m/s^2
 
 	// Discrete variable
-	Variable_D * b( new Variable_D( "b", 0 ) ); // Bounce counter (to demo discrete variables)
+//	Variable_D * b( new Variable_D( "b", 0 ) ); // Bounce counter (to demo discrete variables)
+	Variable_I * b( new Variable_I( "b", 0 ) ); // Bounce counter (to demo integer variables)
 	vars.push_back( b );
 
 	// Zero-crossing variable
