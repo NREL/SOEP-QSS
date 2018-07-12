@@ -15,8 +15,8 @@ include $(QSS_bin)/GNUmakeinit.mk
 
 # Variables
 TAR := FMU-QSS
-SRC := $(notdir $(wildcard $(SRC_PATH)\*.cc))
-SRC += $(filter-out simulate_fmu_%.cc,$(notdir $(wildcard $(SRC_PATH)\fmu\*.cc)))
+SRC := $(notdir $(wildcard $(SRC_PATH)/*.cc))
+SRC += $(filter-out simulate_fmu_%.cc,$(notdir $(wildcard $(SRC_PATH)/fmu/*.cc)))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .o,$(basename $(SRC)))
 LIB := $(BIN_PATH)\lib$(TAR).dll
