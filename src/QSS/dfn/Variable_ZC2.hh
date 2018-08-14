@@ -309,7 +309,8 @@ private: // Methods
 				if ( has( crossing_check ) ) { // Crossing type is relevant
 					crossing = crossing_check;
 					if ( options::refine ) { // Refine root: Expensive!
-						Time t( tZ ), t_p( tZ );
+						Time t( tZ );
+						//Time t_p( tZ );
 						Value const vZ( f_.x( tZ ) );
 						Value v( vZ ), v_p( vZ );
 						Value m( 1.0 ); // Multiplier
@@ -323,7 +324,7 @@ private: // Methods
 							t -= m * ( v / d );
 							v = f_.x( t );
 							if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
-							t_p = t;
+							//t_p = t;
 							v_p = v;
 						}
 						if ( ( t >= tX ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
@@ -359,7 +360,8 @@ private: // Methods
 				if ( has( crossing_check ) ) { // Crossing type is relevant
 					crossing = crossing_check;
 					if ( options::refine ) { // Refine root: Expensive!
-						Time t( tZ ), t_p( tZ );
+						Time t( tZ );
+						//Time t_p( tZ );
 						Value const vZ( f_.x( tZ ) );
 						Value v( vZ ), v_p( vZ );
 						Value m( 1.0 ); // Multiplier
@@ -373,7 +375,7 @@ private: // Methods
 							t -= m * ( v / d );
 							v = f_.x( t );
 							if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
-							t_p = t;
+							//t_p = t;
 							v_p = v;
 						}
 						if ( ( t >= tB ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;

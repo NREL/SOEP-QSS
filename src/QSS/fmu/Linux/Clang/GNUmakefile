@@ -54,7 +54,7 @@ clean :
 $(LIB) : $(OBJ)
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.o)) # Prune obs objs
-	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) -shared -o $@ $^ -L$(FMIL_HOME)/lib -lfmilib -ldl -lomp
+	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) -shared -o $@ $^ -L$(FMIL_HOME)/lib -lfmilib -ldl
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)

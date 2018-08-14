@@ -127,7 +127,7 @@ public: // Properties
 
 	// Discrete Event after Time t
 	Time
-	tD( Time const t ) const
+	tD( Time const ) const
 	{
 		return infinity;
 	}

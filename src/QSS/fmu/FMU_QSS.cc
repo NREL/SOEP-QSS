@@ -228,7 +228,7 @@ namespace fmu {
 		if ( unit_defs != nullptr ) {
 			size_type const n_units( fmi2_import_get_unit_definitions_number( unit_defs ) );
 			std::cout << n_units << " units defined" << std::endl;
-			bool units_error( false );
+			//bool units_error( false );
 			for ( size_type i = 0; i < n_units; ++i ) {
 				fmi2_import_unit_t * unit( fmi2_import_get_unit( unit_defs, static_cast< unsigned >( i ) ) );
 				if ( unit != nullptr ) {
@@ -236,7 +236,7 @@ namespace fmu {
 					double const del( fmi2_import_get_SI_unit_offset( unit ) );
 					if ( ( scl != 1.0 ) || ( del != 0.0 ) ) {
 						std::cerr << "\nError: Non-SI unit present: " << fmi2_import_get_unit_name( unit ) << std::endl;
-						units_error = true;
+						//units_error = true;
 					}
 				}
 			}

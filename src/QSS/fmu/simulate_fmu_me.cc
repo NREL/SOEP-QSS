@@ -227,7 +227,7 @@ simulate_fmu_me()
 	if ( unit_defs != nullptr ) {
 		size_type const n_units( fmi2_import_get_unit_definitions_number( unit_defs ) );
 		std::cout << n_units << " units defined" << std::endl;
-		bool units_error( false );
+		//bool units_error( false );
 		for ( size_type i = 0; i < n_units; ++i ) {
 			fmi2_import_unit_t * unit( fmi2_import_get_unit( unit_defs, static_cast< unsigned >( i ) ) );
 			if ( unit != nullptr ) {
@@ -235,7 +235,7 @@ simulate_fmu_me()
 				double const del( fmi2_import_get_SI_unit_offset( unit ) );
 				if ( ( scl != 1.0 ) || ( del != 0.0 ) ) {
 					std::cerr << "\nError: Non-SI unit present: " << fmi2_import_get_unit_name( unit ) << std::endl;
-					units_error = true;
+					//units_error = true;
 				}
 			}
 		}
@@ -603,14 +603,12 @@ simulate_fmu_me()
 	size_type n_ZC_vars( 0 );
 	for ( size_type i = 0; i < n_fmu_vars; ++i ) {
 		fmi2_import_variable_t * var( fmi2_import_get_variable( var_list, i ) );
-		fmi2_base_type_enu_t var_base_type( fmi2_import_get_variable_base_type( var ) );
 		if ( ( fmi2_import_get_variability( var ) == fmi2_variability_enu_continuous ) && ( fmi2_import_get_variable_base_type( var ) == fmi2_base_type_real ) ) {
 			std::string const var_name( fmi2_import_get_variable_name( var ) );
 			if ( ( var_name.find( "__zc_" ) == 0 ) && ( var_name.length() > 5 ) ) { // Zero-crossing variable by convention (temporary work-around)
 				std::string const der_name( "__zc_der_" + var_name.substr( 5 ) );
 				for ( size_type j = 0; j < n_fmu_vars; ++j ) { // Scan FMU variables for matching derivative
 					fmi2_import_variable_t * der( fmi2_import_get_variable( var_list, j ) );
-					fmi2_base_type_enu_t der_base_type( fmi2_import_get_variable_base_type( der ) );
 					if ( ( fmi2_import_get_variability( der ) == fmi2_variability_enu_continuous ) && ( fmi2_import_get_variable_base_type( der ) == fmi2_base_type_real ) ) {
 						if ( fmi2_import_get_variable_name( der ) == der_name ) { // Found derivative
 							fmi2_import_real_variable_t * var_real( fmi2_import_get_variable_as_real( var ) );
@@ -1347,7 +1345,7 @@ simulate_fmu_me()
 					event_indicators = event_indicators_last;
 					event_indicators_last = temp;
 				}
-				fmi2_status_t fmi_status( fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators ) );
+				fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 
 				// Check if an event indicator has triggered
 				bool zero_crossing_event( false );
@@ -1360,11 +1358,11 @@ simulate_fmu_me()
 
 				// Handle zero-crossing events
 				if ( callEventUpdate || zero_crossing_event ) {
-					fmi_status = fmi2_import_enter_event_mode( fmu );
+					fmi2_import_enter_event_mode( fmu );
 					do_event_iteration( fmu, &eventInfo );
-					fmi_status = fmi2_import_enter_continuous_time_mode( fmu );
-					fmi_status = fmi2_import_get_continuous_states( fmu, states, n_states );
-					fmi_status = fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
+					fmi2_import_enter_continuous_time_mode( fmu );
+					fmi2_import_get_continuous_states( fmu, states, n_states );
+					fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 					if ( options::output::d ) std::cout << "Zero-crossing triggers FMU-ME event at t=" << t << std::endl;
 				} else {
 					if ( options::output::d ) std::cout << "Zero-crossing does not trigger FMU-ME event at t=" << t << std::endl;

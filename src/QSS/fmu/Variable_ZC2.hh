@@ -335,7 +335,8 @@ private: // Methods
 				if ( has( crossing_check ) ) { // Crossing type is relevant
 					crossing = crossing_check;
 					if ( options::refine ) { // Refine root: Expensive!
-						Time t( tZ ), t_p( tZ );
+						Time t( tZ );
+						//Time t_p( tZ );
 						Time const t_fmu( fmu::get_time() );
 						fmu::set_time( tZ ); // Don't seem to need this
 						fmu_set_observees_x( tZ );
@@ -354,7 +355,7 @@ private: // Methods
 							fmu_set_observees_x( t );
 							v = fmu_get_value();
 							if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
-							t_p = t;
+							//t_p = t;
 							v_p = v;
 						}
 						if ( ( t >= tX ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
@@ -390,7 +391,8 @@ private: // Methods
 				if ( has( crossing_check ) ) { // Crossing type is relevant
 					crossing = crossing_check;
 					if ( options::refine ) { // Refine root: Expensive!
-						Time t( tZ ), t_p( tZ );
+						Time t( tZ );
+						//Time t_p( tZ );
 						Time const t_fmu( fmu::get_time() );
 						fmu::set_time( tZ ); // Don't seem to need this
 						fmu_set_observees_x( tZ );
@@ -409,7 +411,7 @@ private: // Methods
 							fmu_set_observees_x( t );
 							v = fmu_get_value();
 							if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
-							t_p = t;
+							//t_p = t;
 							v_p = v;
 						}
 						if ( ( t >= tB ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;

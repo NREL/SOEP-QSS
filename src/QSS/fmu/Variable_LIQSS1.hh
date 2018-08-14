@@ -109,7 +109,7 @@ public: // Properties
 
 	// Simultaneous Numeric Differentiation Value at Time t
 	Value
-	sn( Time const t ) const
+	sn( Time const ) const
 	{
 		return ( st == events.active_superdense_time() ? q_c_ : q_0_ );
 	}

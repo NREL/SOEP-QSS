@@ -64,7 +64,7 @@ $(LIB) : $(OBJ)
 	$(AR) $(ARFLAGS) $@ $?
 
 $(EXE) : $(LIB)
-	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) $(SRC_PATH)/app/QSS.cc -o $@ $^ -L$(FMIL_HOME)/lib -lfmilib -ldl -lgomp
+	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) $(SRC_PATH)/app/QSS.cc -o $@ $^ -L$(FMIL_HOME)/lib -lfmilib -ldl
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)
