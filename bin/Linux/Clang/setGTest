@@ -1,7 +1,10 @@
 #!/bin/bash
-# Google Test Linux Setup
+# Google Test Linux Clang Setup
 
-# Ubuntu doesn't provide a binary distribution so this is where we assume gtest was installed
-# Should not hurt to have this on platforms that install gtest to standard directories
-export GTEST_BIN=/opt/gtest/bin/Clang
-export GTEST_INC=/opt/gtest/include
+# Custom build location
+#export GTEST_BIN=/opt/gtest/bin/Clang
+#export GTEST_INC=/opt/gtest/include
+
+# Fedora package locations
+export GTEST_BIN=/usr/lib64
+export GTEST_INC=/usr/include

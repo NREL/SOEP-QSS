@@ -19,8 +19,8 @@ fi
 
 if [[ $CxxSource ]]; then
   shift
-  g++ -pipe -std=c++11 -pedantic -Wall -Wextra -Wno-unused-parameter -Wno-unused-but-set-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-function -Wno-unknown-pragmas -ffor-scope -fsyntax-only -x c++ -c $@ $CxxSource
+  clang++ -pipe -std=c++11 -pedantic -Wall -Wextra -Wno-unknown-pragmas -fsyntax-only -x c++ -c $@ $CxxSource
 elif [[ $CSource ]]; then
   shift
-  gcc -pipe -std=c11 -pedantic -Wall -Wextra -Wno-unused-parameter -Wno-unused-but-set-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-label -Wno-unused-function -Wno-unknown-pragmas -fsyntax-only -x c -c $@ $CSource
+  clang -pipe -std=c11 -pedantic -Wall -Wextra -Wno-unknown-pragmas -fsyntax-only -x c -c $@ $CSource
 fi

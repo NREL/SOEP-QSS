@@ -143,7 +143,7 @@ public: // Properties
 
 	// Centered-Difference Sequential Second Derivative at Time t
 	Value
-	dc2( Time const t ) const
+	dc2( Time const ) const
 	{
 		return dtn_inv_sq_ * ( v_p_ - ( 2.0 * v_t_ ) + v_m_ );
 	}

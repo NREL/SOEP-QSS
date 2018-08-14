@@ -714,7 +714,7 @@ public: // Methods
 	// Observer Advance: Parallel
 	virtual
 	void
-	advance_observer_parallel( Time const t )
+	advance_observer_parallel( Time const )
 	{
 		assert( false ); // Not a QSS or ZC variable
 	}
