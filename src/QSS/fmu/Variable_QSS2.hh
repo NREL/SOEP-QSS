@@ -387,18 +387,18 @@ private: // Methods
 	{
 		assert( tQ <= tX );
 		assert( dt_min <= dt_max );
-		Value const d0( x_0_ - ( q_0_ + ( q_1_ * ( tX - tQ ) ) ) );
-		Value const d1( x_1_ - q_1_ );
+		Value const d_0( x_0_ - ( q_0_ + ( q_1_ * ( tX - tQ ) ) ) );
+		Value const d_1( x_1_ - q_1_ );
 		Time dt;
-		if ( ( d1 >= 0.0 ) && ( x_2_ >= 0.0 ) ) { // Upper boundary crossing
-			dt = min_root_quadratic_upper( x_2_, d1, d0 - qTol );
-		} else if ( ( d1 <= 0.0 ) && ( x_2_ <= 0.0 ) ) { // Lower boundary crossing
-			dt = min_root_quadratic_lower( x_2_, d1, d0 + qTol );
+		if ( ( d_1 >= 0.0 ) && ( x_2_ >= 0.0 ) ) { // Upper boundary crossing
+			dt = min_root_quadratic_upper( x_2_, d_1, d_0 - qTol );
+		} else if ( ( d_1 <= 0.0 ) && ( x_2_ <= 0.0 ) ) { // Lower boundary crossing
+			dt = min_root_quadratic_lower( x_2_, d_1, d_0 + qTol );
 		} else { // Both boundaries can have crossings
-			dt = min_root_quadratic_both( x_2_, d1, d0 + qTol, d0 - qTol );
+			dt = min_root_quadratic_both( x_2_, d_1, d_0 + qTol, d_0 - qTol );
 		}
 		dt = std::min( std::max( dt, dt_min ), dt_max );
-		tE = ( dt == infinity ? infinity : tX + dt );
+		tE = ( dt != infinity ? tX + dt : infinity );
 		if ( ( options::inflection ) && ( x_2_ != 0.0 ) && ( signum( x_1_ ) != signum( x_2_ ) ) && ( signum( x_1_ ) == signum( q_1_ ) ) ) {
 			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
 			if ( tX < tI ) tE = std::min( tE, tI );

@@ -99,6 +99,8 @@ simulate()
 		std::cout << "\nQSS Method: QSS1" << std::endl;
 	} else if ( options::qss == options::QSS::QSS2 ) {
 		std::cout << "\nQSS Method: QSS2" << std::endl;
+	} else if ( options::qss == options::QSS::QSS3 ) {
+		std::cout << "\nQSS Method: QSS3" << std::endl;
 	} else if ( options::qss == options::QSS::LIQSS1 ) {
 		std::cout << "\nQSS Method: LIQSS1" << std::endl;
 	} else if ( options::qss == options::QSS::LIQSS2 ) {
@@ -600,6 +602,15 @@ simulate()
 					assert( ! trigger->is_ZC() ); // ZC variable requantizations are QSS_ZC events
 					trigger->st = s; // Set trigger superdense time
 
+					if ( doROut ) { // Requantization output: Quantized rep before to capture its discrete change
+						if ( ( options::output::a ) || ( options::output::r ) ) { // Requantization output
+							if ( options::output::q ) {
+								size_type const i( var_idx[ trigger ] );
+								q_outs[ i ].append( t, trigger->q( t ) );
+							}
+						}
+					}
+
 					trigger->advance_QSS();
 
 					if ( doROut ) { // Requantization output
@@ -630,6 +641,17 @@ simulate()
 					size_type const iBeg_triggers_2( begin_order_index( triggers, 2 ) );
 					size_type const iBeg_triggers_3( begin_order_index( triggers, 3 ) );
 					int const triggers_order_max( triggers.back()->order() );
+
+					if ( doROut ) { // Requantization output: Quantized rep before to capture its discrete change
+						if ( ( options::output::a ) || ( options::output::r ) ) { // Requantization output
+							if ( options::output::q ) {
+								for ( Variable const * trigger : triggers ) { // Triggers
+									size_type const i( var_idx[ trigger ] );
+									q_outs[ i ].append( t, trigger->q( t ) );
+								}
+							}
+						}
+					}
 
 					for ( Variable * trigger : triggers ) {
 						assert( trigger->tE == t );

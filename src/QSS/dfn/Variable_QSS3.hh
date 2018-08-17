@@ -423,19 +423,19 @@ private: // Methods
 		assert( tQ <= tX );
 		assert( dt_min <= dt_max );
 		Time const tXQ( tX - tQ );
-		Value const d0( x_0_ - ( q_0_ + ( q_1_ + ( q_2_ * tXQ ) ) * tXQ ) );
-		Value const d1( x_1_ - ( q_1_ + ( two * q_2_ * tXQ ) ) );
-		Value const d2( x_2_ - q_2_ );
+		Value const d_0( x_0_ - ( q_0_ + ( q_1_ + ( q_2_ * tXQ ) ) * tXQ ) );
+		Value const d_1( x_1_ - ( q_1_ + ( two * q_2_ * tXQ ) ) );
+		Value const d_2( x_2_ - q_2_ );
 		Time dt;
-		if ( ( x_3_ >= 0.0 ) && ( d2 >= 0.0 ) && ( d1 >= 0.0 ) ) { // Upper boundary crossing
-			dt = min_root_cubic_upper( x_3_, d2, d1, d0 - qTol );
-		} else if ( ( x_3_ <= 0.0 ) && ( d2 <= 0.0 ) && ( d1 <= 0.0 ) ) { // Lower boundary crossing
-			dt = min_root_cubic_lower( x_3_, d2, d1, d0 + qTol );
+		if ( ( x_3_ >= 0.0 ) && ( d_2 >= 0.0 ) && ( d_1 >= 0.0 ) ) { // Upper boundary crossing
+			dt = min_root_cubic_upper( x_3_, d_2, d_1, d_0 - qTol );
+		} else if ( ( x_3_ <= 0.0 ) && ( d_2 <= 0.0 ) && ( d_1 <= 0.0 ) ) { // Lower boundary crossing
+			dt = min_root_cubic_lower( x_3_, d_2, d_1, d_0 + qTol );
 		} else { // Both boundaries can have crossings
-			dt = min_root_cubic_both( x_3_, d2, d1, d0 + qTol, d0 - qTol );
+			dt = min_root_cubic_both( x_3_, d_2, d_1, d_0 + qTol, d_0 - qTol );
 		}
 		dt = std::min( std::max( dt, dt_min ), dt_max );
-		tE = ( dt == infinity ? infinity : tX + dt );
+		tE = ( dt != infinity ? tX + dt : infinity );
 		if ( ( options::inflection ) && ( x_3_ != 0.0 ) && ( signum( x_2_ ) != signum( x_3_ ) ) && ( signum( x_2_ ) == signum( q_2_ ) ) ) {
 			Time const tI( tX - ( x_2_ / ( three * x_3_ ) ) );
 			if ( tX < tI ) tE = std::min( tE, tI );
