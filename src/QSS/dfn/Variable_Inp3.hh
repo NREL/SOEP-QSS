@@ -105,7 +105,7 @@ public: // Properties
 	x( Time const t ) const
 	{
 		Time const tDel( t - tX );
-		return x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
+		return x_0_ + ( ( x_1_ + ( ( x_2_ + ( x_3_ * tDel ) ) * tDel ) ) * tDel );
 	}
 
 	// Continuous First Derivative at Time t

@@ -1,4 +1,4 @@
-// QSS::dfn::Variable_QSS3 Unit Tests
+// All-Variable Convenience Header
 //
 // Project: QSS Solver
 //
@@ -33,55 +33,32 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// Google Test Headers
-#include <gtest/gtest.h>
+#ifndef QSS_dfn_Variable_all_hh_INCLUDED
+#define QSS_dfn_Variable_all_hh_INCLUDED
 
-// QSS Headers
-#include <QSS/dfn/mdl/Function_LTI.hh>
+// QSS Discrete Variable Headers
+#include <QSS/dfn/Variable_B.hh>
+#include <QSS/dfn/Variable_D.hh>
+#include <QSS/dfn/Variable_I.hh>
+
+// QSS Input Variable Headers
+#include <QSS/dfn/Variable_Inp1.hh>
+#include <QSS/dfn/Variable_Inp2.hh>
+#include <QSS/dfn/Variable_Inp3.hh>
+#include <QSS/dfn/Variable_InpB.hh>
+#include <QSS/dfn/Variable_InpD.hh>
+#include <QSS/dfn/Variable_InpI.hh>
+
+// QSS State Variable Headers
+#include <QSS/dfn/Variable_LIQSS1.hh>
+#include <QSS/dfn/Variable_LIQSS2.hh>
+#include <QSS/dfn/Variable_QSS1.hh>
+#include <QSS/dfn/Variable_QSS2.hh>
 #include <QSS/dfn/Variable_QSS3.hh>
 
-using namespace QSS;
-using namespace QSS::dfn;
-using namespace QSS::dfn::mdl;
+// QSS Zero-Crossing Variable Headers
+#include <QSS/dfn/Variable_ZC1.hh>
+#include <QSS/dfn/Variable_ZC2.hh>
+#include <QSS/dfn/Variable_ZC3.hh>
 
-TEST( Variable_QSS3Test, Basic )
-{
-	Variable_QSS3< Function_LTI > x1( "x1" );
-	x1.add( 12.0 ).add( 2.0, &x1 );
-	x1.init( 2.5 );
-	EXPECT_EQ( 1.0e-4, x1.rTol );
-	EXPECT_EQ( 1.0e-6, x1.aTol );
-
-	EXPECT_EQ( 2.5, x1.x( 0.0 ) );
-	EXPECT_EQ( 2.5, x1.q( 0.0 ) );
-	EXPECT_DOUBLE_EQ( 2.5 + 17.0 + 17.0 + (68.0/6.0), x1.x( 1.0 ) );
-	EXPECT_EQ( 2.5 + 17.0 + 17.0, x1.q( 1.0 ) );
-	EXPECT_EQ( 17.0, x1.x1( 0.0 ) );
-	EXPECT_EQ( 17.0, x1.q1( 0.0 ) );
-	EXPECT_EQ( 17.0 + 34.0 + 34.0, x1.x1( 1.0 ) );
-	EXPECT_EQ( 17.0 + 34.0, x1.q1( 1.0 ) );
-	EXPECT_EQ( 34.0, x1.x2( 0.0 ) );
-	EXPECT_EQ( 34.0, x1.q2( 0.0 ) );
-	EXPECT_EQ( 34.0 + 68.0, x1.x2( 1.0 ) );
-	EXPECT_EQ( 34.0, x1.q2( 1.0 ) );
-	EXPECT_EQ( 68.0, x1.x3( 0.0 ) );
-	EXPECT_EQ( 0.0, x1.q3( 0.0 ) );
-	EXPECT_EQ( 68.0, x1.x3( 1.0 ) );
-	EXPECT_EQ( 0.0, x1.q3( 1.0 ) );
-	EXPECT_EQ( 0.0, x1.tQ );
-	EXPECT_DOUBLE_EQ( std::cbrt( std::max( x1.rTol * 2.5, x1.aTol ) / ( 34.0 / 3.0 ) ), x1.tE );
-	double const x1_tE( x1.tE );
-	x1.advance_QSS();
-	EXPECT_EQ( x1_tE, x1.tQ );
-
-	Variable_QSS3< Function_LTI > x2( "x2", 1.0e-4, 1.0e-3 );
-	x2.add( 12.0 ).add( 2.0, &x2 );
-	x2.init( 2.5 );
-	EXPECT_EQ( 1.0e-4, x2.rTol );
-	EXPECT_EQ( 1.0e-3, x2.aTol );
-	EXPECT_EQ( 0.0, x2.tQ );
-	EXPECT_DOUBLE_EQ( std::cbrt( std::max( x2.rTol * 2.5, x2.aTol ) / ( 34.0 / 3.0 ) ), x2.tE );
-
-	EXPECT_EQ( 2U, events.size() );
-	events.clear();
-}
+#endif
