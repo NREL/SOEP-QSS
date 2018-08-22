@@ -37,14 +37,7 @@
 #include <QSS/dfn/mdl/exponential_decay_sine.hh>
 #include <QSS/dfn/mdl/Function_Inp_sin.hh>
 #include <QSS/dfn/mdl/Function_LTI.hh>
-#include <QSS/dfn/Variable_Inp1.hh>
-#include <QSS/dfn/Variable_Inp2.hh>
-#include <QSS/dfn/Variable_Inp3.hh>
-#include <QSS/dfn/Variable_LIQSS1.hh>
-#include <QSS/dfn/Variable_LIQSS2.hh>
-#include <QSS/dfn/Variable_QSS1.hh>
-#include <QSS/dfn/Variable_QSS2.hh>
-#include <QSS/dfn/Variable_QSS3.hh>
+#include <QSS/dfn/Variable_all.hh>
 #include <QSS/options.hh>
 
 namespace QSS {

@@ -36,11 +36,7 @@
 // QSS Headers
 #include <QSS/dfn/mdl/nonlinear.hh>
 #include <QSS/dfn/mdl/Function_nonlinear.hh>
-#include <QSS/dfn/Variable_LIQSS1.hh>
-#include <QSS/dfn/Variable_LIQSS2.hh>
-#include <QSS/dfn/Variable_QSS1.hh>
-#include <QSS/dfn/Variable_QSS2.hh>
-#include <QSS/dfn/Variable_QSS3.hh>
+#include <QSS/dfn/Variable_all.hh>
 #include <QSS/options.hh>
 
 // C++ Headers

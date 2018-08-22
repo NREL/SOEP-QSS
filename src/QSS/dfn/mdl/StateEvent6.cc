@@ -70,15 +70,7 @@
 #include <QSS/dfn/mdl/StateEvent6.hh>
 #include <QSS/dfn/mdl/Function_LTI.hh>
 #include <QSS/dfn/Conditional.hh>
-#include <QSS/dfn/Variable_D.hh>
-#include <QSS/dfn/Variable_LIQSS1.hh>
-#include <QSS/dfn/Variable_LIQSS2.hh>
-#include <QSS/dfn/Variable_QSS1.hh>
-#include <QSS/dfn/Variable_QSS2.hh>
-#include <QSS/dfn/Variable_QSS3.hh>
-#include <QSS/dfn/Variable_ZC1.hh>
-#include <QSS/dfn/Variable_ZC2.hh>
-#include <QSS/dfn/Variable_ZC3.hh>
+#include <QSS/dfn/Variable_all.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
 

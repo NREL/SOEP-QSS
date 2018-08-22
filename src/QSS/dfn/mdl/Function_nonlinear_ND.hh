@@ -214,22 +214,6 @@ public: // Properties
 		return dtn_;
 	}
 
-	// Continuous Values at Time t and at Variable +/- Delta
-	AdvanceSpecs_LIQSS1
-	xlu1( Time const t, Value const del ) const
-	{
-		// Value at +/- del
-		Value const num( 1.0 + ( 2.0 * t ) );
-		Value const y2( y_->x( t ) + 2.0 );
-		Value const vl( num / ( y2 - del ) );
-		Value const vu( num / ( y2 + del ) );
-
-		// Zero point: No y gives zero function value at any t >= 0
-		Value const z( 0.0 );
-
-		return AdvanceSpecs_LIQSS1{ vl, vu, z };
-	}
-
 	// Quantized Values at Time t and at Variable +/- Delta
 	AdvanceSpecs_LIQSS1
 	qlu1( Time const t, Value const del ) const
@@ -262,33 +246,6 @@ public: // Properties
 		return AdvanceSpecs_LIQSS1{ vl, vu, z };
 	}
 
-	// Continuous Values and Derivatives at Time t and at Variable +/- Delta
-	AdvanceSpecs_LIQSS2
-	xlu2( Time const t, Value const del ) const
-	{
-		// Value at +/- del
-		Value const num( 1.0 + ( 2.0 * t ) );
-		Value const y2( y_->x( t ) + 2.0 );
-		Value const vl( num / ( y2 - del ) );
-		Value const vu( num / ( y2 + del ) );
-
-		// Derivative at +/- del
-		Time const tm( t - dtn_ );
-		Time const tp( t + dtn_ );
-		Value const y2m( y_->x( tm ) + 2.0 );
-		Value const y2p( y_->x( tp ) + 2.0 );
-		Value const sl( dtn_inv_2_ * ( ndv( tp, y2p, -del ) - ndv( tm, y2m, -del ) ) );
-		Value const su( dtn_inv_2_ * ( ndv( tp, y2p, +del ) - ndv( tm, y2m, +del ) ) );
-
-		// Zero point: No solution points have zero function derivative
-		assert( signum( sl ) == signum( su ) );
-		assert( signum( sl ) != 0 );
-		Value const z1( 0.0 );
-		Value const z2( 0.0 );
-
-		return AdvanceSpecs_LIQSS2{ vl, vu, z1, sl, su, z2 };
-	}
-
 	// Quantized Values and Derivatives at Time t and at Variable +/- Delta
 	AdvanceSpecs_LIQSS2
 	qlu2( Time const t, Value const del ) const
@@ -318,7 +275,7 @@ public: // Properties
 
 	// Simultaneous Values and Derivatives at Time t and at Variable +/- Delta
 	AdvanceSpecs_LIQSS2
-	slu2( Time const t, Value const del ) const
+	slu2( Time const t, Value const del, Value const ) const
 	{
 		// Value at +/- del
 		Value const num( 1.0 + ( 2.0 * t ) );

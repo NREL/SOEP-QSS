@@ -150,6 +150,7 @@ public: // Properties
 	Value
 	s( Time const t ) const
 	{
+		assert( ( st != events.active_superdense_time() ) || ( t == tQ ) );
 		return ( st == events.active_superdense_time() ? q_c_ : q_0_ + ( q_1_ * ( t - tQ ) ) );
 	}
 
@@ -245,7 +246,7 @@ public: // Methods
 		if ( self_observer ) {
 			advance_q( tX = tE );
 		} else {
-			x_1_ = q_1_ = s_1_ = d_.q( tE );
+			x_1_ = q_1_ = d_.q( tE );
 			x_2_ = one_half * d_.q1( tX = tE );
 			q_0_ += signum( x_2_ ) * qTol;
 		}
@@ -328,7 +329,7 @@ public: // Methods
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		x_0_ = q_c_ = q_0_ = x;
 		set_qTol();
-		x_1_ = q_1_ = s_1_ = d_.qs( tX = tQ = t );
+		x_1_ = q_1_ = d_.qs( tX = tQ = t );
 		x_2_ = one_half * d_.qf1( t );
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -350,7 +351,7 @@ public: // Methods
 	void
 	advance_handler_1()
 	{
-		x_1_ = q_1_ = s_1_ = d_.qs( tQ );
+		x_1_ = q_1_ = d_.qs( tQ );
 	}
 
 	// Handler Advance: Stage 2
@@ -420,29 +421,21 @@ private: // Methods
 		int const dus( signum( specs.u2 ) );
 		if ( ( dls == -1 ) && ( dus == -1 ) ) { // Downward curving trajectory
 			q_0_ -= qTol;
-			x_1_ = q_1_ = specs.l1; // s_1_ is not changed
+			x_1_ = q_1_ = specs.l1;
 			x_2_ = one_half * specs.l2;
 		} else if ( ( dls == +1 ) && ( dus == +1 ) ) { // Upward curving trajectory
 			q_0_ += qTol;
-			x_1_ = q_1_ = specs.u1; // s_1_ is not changed
+			x_1_ = q_1_ = specs.u1;
 			x_2_ = one_half * specs.u2;
 		} else if ( ( dls == 0 ) && ( dus == 0 ) ) { // Non-curving trajectory
 			// Keep q_0_ == q_c_
-			x_1_ = q_1_ = one_half * ( specs.l1 + specs.u1 ); // Interpolated 1st deriv at q_0_ == q_c_ // s_1_ is not changed
+			x_1_ = q_1_ = one_half * ( specs.l1 + specs.u1 ); // Interpolated 1st deriv at q_0_ == q_c_
 			x_2_ = 0.0;
 		} else { // Straight trajectory
 			q_0_ = std::min( std::max( specs.z2, q_c_ - qTol ), q_c_ + qTol ); // Clipped in case of roundoff
-			x_1_ = q_1_ = specs.z1; // s_1_ is not changed
+			x_1_ = q_1_ = specs.z1;
 			x_2_ = 0.0;
 		}
-	}
-
-	// Advance Self-Observing Trigger using Continuous Derivative
-	void
-	advance_x( Time const t )
-	{
-		advance_LIQSS( d_.xlu2( t, qTol ) );
-		s_1_ = q_1_;
 	}
 
 	// Advance Self-Observing Trigger using Quantized Derivative
@@ -450,14 +443,13 @@ private: // Methods
 	advance_q( Time const t )
 	{
 		advance_LIQSS( d_.qlu2( t, qTol ) );
-		s_1_ = q_1_;
 	}
 
 	// Advance Self-Observing Trigger using Simultaneous Derivative
 	void
 	advance_s( Time const t )
 	{
-		advance_LIQSS( d_.slu2( t, qTol ) );
+		advance_LIQSS( d_.slu2( t, qTol, s_1_ ) );
 	}
 
 private: // Data

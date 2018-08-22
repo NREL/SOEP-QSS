@@ -268,26 +268,6 @@ public: // Properties
 		return s2( t );
 	}
 
-	// Continuous Values at Time t and at Variable +/- Delta
-	AdvanceSpecs_LIQSS1
-	xlu1( Time const t, Value const del ) const
-	{
-		// Value at +/- del
-		Value v( c0_ );
-		for ( Term const & term : termso_ ) {
-			v += term.c * term.v->x( t );
-		}
-		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * v_->x( t ) ) );
-		Value const cv_del( cv_ * del );
-		Value const vl( vc - cv_del );
-		Value const vu( vc + cv_del );
-
-		// Zero point
-		Value const z( signum( vl ) != signum( vu ) ? -( v * cv_inv_ ) : 0.0 );
-
-		return AdvanceSpecs_LIQSS1{ vl, vu, z };
-	}
-
 	// Quantized Values at Time t and at Variable +/- Delta
 	AdvanceSpecs_LIQSS1
 	qlu1( Time const t, Value const del ) const
@@ -328,36 +308,6 @@ public: // Properties
 		return AdvanceSpecs_LIQSS1{ vl, vu, z };
 	}
 
-	// Continuous Values and Derivatives at Time t and at Variable +/- Delta
-	AdvanceSpecs_LIQSS2
-	xlu2( Time const t, Value const del ) const
-	{
-		// Value at +/- del
-		Value v( c0_ );
-		for ( Term const & term : termso_ ) {
-			v += term.c * term.v->x( t );
-		}
-		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * v_->x( t ) ) );
-		Value const cv_del( cv_ * del );
-		Value const vl( vc - cv_del );
-		Value const vu( vc + cv_del );
-
-		// Derivative at +/- del
-		Value s( 0.0 );
-		for ( Term const & term : termso_ ) {
-			s += term.c * term.v->x1( t );
-		}
-		Value const sl( s + ( cv_ * vl ) );
-		Value const su( s + ( cv_ * vu ) );
-
-		// Zero point
-		bool const signs_differ( signum( sl ) != signum( su ) );
-		Value const z1( signs_differ ? -( s * cv_inv_ ) : 0.0 );
-		Value const z2( signs_differ ? ( z1 - v ) * cv_inv_ : 0.0 );
-
-		return AdvanceSpecs_LIQSS2{ vl, vu, z1, sl, su, z2 };
-	}
-
 	// Quantized Values and Derivatives at Time t and at Variable +/- Delta
 	AdvanceSpecs_LIQSS2
 	qlu2( Time const t, Value const del ) const
@@ -391,14 +341,10 @@ public: // Properties
 
 	// Simultaneous Values and Derivatives at Time t and at Variable +/- Delta
 	AdvanceSpecs_LIQSS2
-	slu2( Time const t, Value const del ) const
+	slu2( Time const t, Value const del, Value const vc ) const
 	{
 		// Value at +/- del
-		Value v( c0_ );
-		for ( Term const & term : termso_ ) {
-			v += term.c * term.v->s( t );
-		}
-		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * v_->x( t ) ) );
+		Value const v( cv_ == 0.0 ? vc : vc - ( cv_ * v_->x( t ) ) );
 		Value const cv_del( cv_ * del );
 		Value const vl( vc - cv_del );
 		Value const vu( vc + cv_del );

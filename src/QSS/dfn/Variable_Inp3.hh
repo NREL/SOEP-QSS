@@ -287,7 +287,7 @@ public: // Methods
 		set_qTol();
 		x_1_ = q_1_ = f_.dc1( tE );
 		x_2_ = q_2_ = one_half * f_.dc2( tE );
-		x_3_ = one_sixth * f_.dc3( tX = tE );
+		x_3_ = one_sixth * f_.dc3( tE );
 		set_tE();
 		tD = f_.tD( tQ );
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );

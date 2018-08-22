@@ -37,11 +37,7 @@
 #include <QSS/dfn/mdl/achillesc.hh>
 #include <QSS/dfn/mdl/Function_achilles1.hh>
 #include <QSS/dfn/mdl/Function_achilles2.hh>
-//#include <QSS/dfn/Variable_LIQSS1.hh>
-//#include <QSS/dfn/Variable_LIQSS2.hh>
-#include <QSS/dfn/Variable_QSS1.hh>
-#include <QSS/dfn/Variable_QSS2.hh>
-#include <QSS/dfn/Variable_QSS3.hh>
+#include <QSS/dfn/Variable_all.hh>
 #include <QSS/options.hh>
 
 namespace QSS {

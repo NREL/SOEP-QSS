@@ -183,7 +183,7 @@ public: // Methods
 	void
 	advance_discrete()
 	{
-		Integer const x_new( static_cast< Integer >( f_.vs( tX = tQ = tD ) );
+		Integer const x_new( static_cast< Integer >( f_.vs( tX = tQ = tD ) ) );
 		tD = f_.tD( tQ );
 		shift_discrete( tD );
 		bool const chg( x_ != x_new );
@@ -196,7 +196,7 @@ public: // Methods
 	void
 	advance_discrete_0_1()
 	{
-		Integer const x_new( static_cast< Integer >( f_.vs( tX = tQ = tD ) );
+		Integer const x_new( static_cast< Integer >( f_.vs( tX = tQ = tD ) ) );
 		tD = f_.tD( tD );
 		shift_discrete( tD );
 		bool const chg( x_ != x_new );

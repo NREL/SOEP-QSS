@@ -257,6 +257,14 @@ public: // Properties
 		return 0.0;
 	}
 
+	// Quantized Third Derivative at Time t
+	virtual
+	Value
+	q3( Time const ) const
+	{
+		return 0.0;
+	}
+
 	// Simultaneous Value at Time t
 	virtual
 	Value
@@ -287,6 +295,14 @@ public: // Properties
 	virtual
 	Value
 	s2( Time const ) const
+	{
+		return 0.0;
+	}
+
+	// Simultaneous Third Derivative at Time t
+	virtual
+	Value
+	s3( Time const ) const
 	{
 		return 0.0;
 	}

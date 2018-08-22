@@ -119,6 +119,7 @@ public: // Properties
 	Value
 	s( Time const t ) const
 	{
+		assert( ( st != events.active_superdense_time() ) || ( t == tQ ) );
 		return ( st == events.active_superdense_time() ? q_c_ : q_0_ + ( q_1_ * ( t - tQ ) ) );
 	}
 
@@ -223,9 +224,8 @@ public: // Methods
 			fmu::set_time( tN = tQ + options::dtNum );
 			fmu_set_observees_q( tN );
 			advance_LIQSS_2();
-			s_1_ = q_1_;
 		} else {
-			x_1_ = q_1_ = s_1_ = fmu_get_deriv();
+			x_1_ = q_1_ = fmu_get_deriv();
 			fmu::set_time( tN = tQ + options::dtNum );
 			fmu_set_observees_q( tN );
 			x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
@@ -340,7 +340,7 @@ public: // Methods
 		set_qTol();
 		fmu_set_observees_q( tX = tQ = t );
 		if ( self_observer ) fmu_set_value( q_0_ );
-		x_1_ = q_1_ = s_1_ = fmu_get_deriv();
+		x_1_ = q_1_ = fmu_get_deriv();
 		fmu::set_time( tN = tQ + options::dtNum );
 		fmu_set_observees_q( tN );
 		if ( self_observer ) fmu_set_q( tN );
@@ -367,7 +367,7 @@ public: // Methods
 	{
 		fmu_set_observees_q( tQ );
 		if ( ( self_observer ) && ( observers_.empty() ) ) fmu_set_value( q_0_ );
-		x_1_ = q_1_ = s_1_ = fmu_get_deriv();
+		x_1_ = q_1_ = fmu_get_deriv();
 	}
 
 	// Handler Advance: Stage 2
@@ -472,19 +472,19 @@ private: // Methods
 		// Set coefficients based on second derivative signs
 		if ( ( d2_l_s == -1 ) && ( d2_u_s == -1 ) ) { // Downward curving trajectory
 			q_0_ = q_l;
-			x_1_ = q_1_ = d_l_; // s_1_ is not changed
+			x_1_ = q_1_ = d_l_;
 			x_2_ = d2_l;
 		} else if ( ( d2_l_s == +1 ) && ( d2_u_s == +1 ) ) { // Upward curving trajectory
 			q_0_ = q_u;
-			x_1_ = q_1_ = d_u_; // s_1_ is not changed
+			x_1_ = q_1_ = d_u_;
 			x_2_ = d2_u;
 		} else if ( ( d2_l_s == 0 ) && ( d2_u_s == 0 ) ) { // Non-curving trajectory
 			// Keep q_0_ == q_c_
-			x_1_ = q_1_ = one_half * ( d_l_ + d_u_ ); // Interpolated 1st deriv at q_0_ == q_c_ // s_1_ is not changed
+			x_1_ = q_1_ = one_half * ( d_l_ + d_u_ ); // Interpolated 1st deriv at q_0_ == q_c_
 			x_2_ = 0.0;
 		} else { // Straight trajectory
 			q_0_ = std::min( std::max( ( ( q_l * d2_u ) - ( q_u * d2_l ) ) / ( d2_u - d2_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
-			x_1_ = q_1_ = ( ( ( q_u - q_0_ ) * d_l_ ) + ( ( q_0_ - q_l ) * d_u_ ) ) / ( two * qTol ); // Interpolated 1st deriv at q_0_ // s_1_ is not changed
+			x_1_ = q_1_ = ( ( ( q_u - q_0_ ) * d_l_ ) + ( ( q_0_ - q_l ) * d_u_ ) ) / ( two * qTol ); // Interpolated 1st deriv at q_0_
 			x_2_ = 0.0;
 		}
 	}

@@ -366,13 +366,6 @@ private: // Methods
 		}
 	}
 
-	// Advance Self-Observing Trigger using Continuous Derivative
-	void
-	advance_x( Time const t )
-	{
-		advance_LIQSS( d_.xlu1( t, qTol ) );
-	}
-
 	// Advance Self-Observing Trigger using Quantized Derivative
 	void
 	advance_q( Time const t )
