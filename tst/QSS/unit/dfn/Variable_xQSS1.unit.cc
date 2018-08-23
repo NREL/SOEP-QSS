@@ -1,4 +1,4 @@
-// FMU-Based All-Variable Convenience Header
+// QSS::dfn::Variable_xQSS1 Unit Tests
 //
 // Project: QSS Solver
 //
@@ -33,33 +33,46 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_Variable_all_hh_INCLUDED
-#define QSS_fmu_Variable_all_hh_INCLUDED
+// Google Test Headers
+#include <gtest/gtest.h>
 
-// QSS Discrete Variable Headers
-#include <QSS/fmu/Variable_B.hh>
-#include <QSS/fmu/Variable_D.hh>
-#include <QSS/fmu/Variable_I.hh>
+// QSS Headers
+#include <QSS/dfn/mdl/Function_LTI.hh>
+#include <QSS/dfn/Variable_xQSS1.hh>
 
-// QSS Input Variable Headers
-#include <QSS/fmu/Variable_Inp1.hh>
-#include <QSS/fmu/Variable_Inp2.hh>
-#include <QSS/fmu/Variable_InpB.hh>
-#include <QSS/fmu/Variable_InpD.hh>
-#include <QSS/fmu/Variable_InpI.hh>
-#include <QSS/fmu/Variable_xInp1.hh>
-#include <QSS/fmu/Variable_xInp2.hh>
+// C++ Headers
+#include <algorithm>
 
-// QSS State Variable Headers
-#include <QSS/fmu/Variable_LIQSS1.hh>
-#include <QSS/fmu/Variable_LIQSS2.hh>
-#include <QSS/fmu/Variable_QSS1.hh>
-#include <QSS/fmu/Variable_QSS2.hh>
-#include <QSS/fmu/Variable_xQSS1.hh>
-#include <QSS/fmu/Variable_xQSS2.hh>
+using namespace QSS;
+using namespace QSS::dfn;
+using namespace QSS::dfn::mdl;
 
-// QSS Zero-Crossing Variable Headers
-#include <QSS/fmu/Variable_ZC1.hh>
-#include <QSS/fmu/Variable_ZC2.hh>
+TEST( Variable_xQSS1Test, Basic )
+{
+	Variable_xQSS1< Function_LTI > x1( "x1" );
+	x1.add( 12.0 ).add( 2.0, &x1 );
+	x1.init( 2.5 );
+	EXPECT_EQ( 1.0e-4, x1.rTol );
+	EXPECT_EQ( 1.0e-6, x1.aTol );
+	EXPECT_EQ( 2.5, x1.q( 0.0 ) );
+	EXPECT_EQ( 2.5 + 17.0, x1.q( 1.0 ) );
+	EXPECT_EQ( 17.0, x1.q1( 0.0 ) );
+	EXPECT_EQ( 17.0, x1.q1( 1.0 ) );
+	EXPECT_DOUBLE_EQ( 2.5 + 17.0e-7, x1.x( 1.0e-7 ) );
+	EXPECT_EQ( 0.0, x1.tQ );
+	EXPECT_DOUBLE_EQ( std::max( x1.rTol * 2.5, x1.aTol ) / 17.0, x1.tE );
+	double const x1_tE( x1.tE );
+	x1.advance_QSS();
+	EXPECT_EQ( x1_tE, x1.tQ );
 
-#endif
+	Variable_xQSS1< Function_LTI > x2( "x2", 1.0e-4, 1.0e-3 );
+	x2.add( 12.0 ).add( 2.0, &x2 );
+	x2.init( 2.5 );
+	EXPECT_EQ( 1.0e-4, x2.rTol );
+	EXPECT_EQ( 1.0e-3, x2.aTol );
+	EXPECT_EQ( 0.0, x2.tQ );
+	EXPECT_DOUBLE_EQ( std::max( x2.rTol * 2.5, x2.aTol ) / 17.0, x2.tE );
+
+	EXPECT_EQ( 2U, events.size() );
+	events.clear();
+}

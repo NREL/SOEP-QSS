@@ -336,6 +336,26 @@ StateEvent6( Variables & vars, Conditionals & cons )
 		vars.push_back( x1 = new Variable_QSS2< Function_x1 >( "x1", rTol, aTol, +1.1 ) ); // Add q/xlu12 to enable LIQSS2
 		vars.push_back( x2 = new Variable_LIQSS2< Function_LTI >( "x2", rTol, aTol, -2.5 ) );
 		vars.push_back( x3 = new Variable_LIQSS2< Function_LTI >( "x3", rTol, aTol, +4.0 ) );
+	} else if ( qss == QSS::xQSS1 ) {
+		vars.push_back( x1 = new Variable_xQSS1< Function_x1 >( "x1", rTol, aTol, +1.1 ) );
+		vars.push_back( x2 = new Variable_xQSS1< Function_LTI >( "x2", rTol, aTol, -2.5 ) );
+		vars.push_back( x3 = new Variable_xQSS1< Function_LTI >( "x3", rTol, aTol, +4.0 ) );
+	} else if ( qss == QSS::xQSS2 ) {
+		vars.push_back( x1 = new Variable_xQSS2< Function_x1 >( "x1", rTol, aTol, +1.1 ) );
+		vars.push_back( x2 = new Variable_xQSS2< Function_LTI >( "x2", rTol, aTol, -2.5 ) );
+		vars.push_back( x3 = new Variable_xQSS2< Function_LTI >( "x3", rTol, aTol, +4.0 ) );
+	} else if ( qss == QSS::xQSS3 ) {
+		vars.push_back( x1 = new Variable_xQSS3< Function_x1 >( "x1", rTol, aTol, +1.1 ) );
+		vars.push_back( x2 = new Variable_xQSS3< Function_LTI >( "x2", rTol, aTol, -2.5 ) );
+		vars.push_back( x3 = new Variable_xQSS3< Function_LTI >( "x3", rTol, aTol, +4.0 ) );
+	} else if ( qss == QSS::xLIQSS1 ) {
+		vars.push_back( x1 = new Variable_xQSS1< Function_x1 >( "x1", rTol, aTol, +1.1 ) ); // Add q/slu1 to enable LIQSS1
+		vars.push_back( x2 = new Variable_xLIQSS1< Function_LTI >( "x2", rTol, aTol, -2.5 ) );
+		vars.push_back( x3 = new Variable_xLIQSS1< Function_LTI >( "x3", rTol, aTol, +4.0 ) );
+	} else if ( qss == QSS::xLIQSS2 ) {
+		vars.push_back( x1 = new Variable_xQSS2< Function_x1 >( "x1", rTol, aTol, +1.1 ) ); // Add q/xlu12 to enable LIQSS2
+		vars.push_back( x2 = new Variable_xLIQSS2< Function_LTI >( "x2", rTol, aTol, -2.5 ) );
+		vars.push_back( x3 = new Variable_xLIQSS2< Function_LTI >( "x3", rTol, aTol, +4.0 ) );
 	} else {
 		std::cerr << "Error: Unsupported QSS method" << std::endl;
 		std::exit( EXIT_FAILURE );
@@ -354,9 +374,9 @@ StateEvent6( Variables & vars, Conditionals & cons )
 
 	// Zero-crossing variable: x1 > 1
 	Z * z1( nullptr );
-	if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) ) {
+	if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) || ( qss == QSS::xQSS1 ) || ( qss == QSS::xLIQSS1 ) ) {
 		vars.push_back( z1 = new Variable_ZC1< Function_LTI >( "z1", rTol, aTol, zTol ) );
-	} else if ( ( qss == QSS::QSS2 ) || ( qss == QSS::LIQSS2 ) ) {
+	} else if ( ( qss == QSS::QSS2 ) || ( qss == QSS::LIQSS2 ) || ( qss == QSS::xQSS2 ) || ( qss == QSS::xLIQSS2 ) ) {
 		vars.push_back( z1 = new Variable_ZC2< Function_LTI >( "z1", rTol, aTol, zTol ) );
 	} else {
 		vars.push_back( z1 = new Variable_ZC3< Function_LTI >( "z1", rTol, aTol, zTol ) );
@@ -366,9 +386,9 @@ StateEvent6( Variables & vars, Conditionals & cons )
 
 	// Zero-crossing variable: x1 <= 1
 	Z * z2( nullptr );
-	if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) ) {
+	if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) || ( qss == QSS::xQSS1 ) || ( qss == QSS::xLIQSS1 ) ) {
 		vars.push_back( z2 = new Variable_ZC1< Function_LTI >( "z2", rTol, aTol, zTol ) );
-	} else if ( ( qss == QSS::QSS2 ) || ( qss == QSS::LIQSS2 ) ) {
+	} else if ( ( qss == QSS::QSS2 ) || ( qss == QSS::LIQSS2 ) || ( qss == QSS::xQSS2 ) || ( qss == QSS::xLIQSS2 ) ) {
 		vars.push_back( z2 = new Variable_ZC2< Function_LTI >( "z2", rTol, aTol, zTol ) );
 	} else {
 		vars.push_back( z2 = new Variable_ZC3< Function_LTI >( "z2", rTol, aTol, zTol ) );
@@ -394,9 +414,9 @@ StateEvent6( Variables & vars, Conditionals & cons )
 //
 //	// Zero-crossing variable: x1 - 1
 //	Z * z( nullptr );
-//	if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) ) {
+//	if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) || ( qss == QSS::xQSS1 ) || ( qss == QSS::xLIQSS1 ) ) {
 //		vars.push_back( z = new Variable_ZC1< Function_LTI >( "z", rTol, aTol, zTol ) );
-//	} else if ( ( qss == QSS::QSS2 ) || ( qss == QSS::LIQSS2 ) ) {
+//	} else if ( ( qss == QSS::QSS2 ) || ( qss == QSS::LIQSS2 ) || ( qss == QSS::xQSS2 ) || ( qss == QSS::xLIQSS2 ) ) {
 //		vars.push_back( z = new Variable_ZC2< Function_LTI >( "z", rTol, aTol, zTol ) );
 //	} else {
 //		vars.push_back( z = new Variable_ZC3< Function_LTI >( "z", rTol, aTol, zTol ) );

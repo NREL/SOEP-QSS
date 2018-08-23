@@ -1,4 +1,4 @@
-// FMU-Based All-Variable Convenience Header
+// QSS::dfn::Variable_xInp3 Unit Tests
 //
 // Project: QSS Solver
 //
@@ -33,33 +33,44 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_Variable_all_hh_INCLUDED
-#define QSS_fmu_Variable_all_hh_INCLUDED
+// Google Test Headers
+#include <gtest/gtest.h>
 
-// QSS Discrete Variable Headers
-#include <QSS/fmu/Variable_B.hh>
-#include <QSS/fmu/Variable_D.hh>
-#include <QSS/fmu/Variable_I.hh>
+// QSS Headers
+#include <QSS/dfn/mdl/Function_Inp_sin.hh>
+#include <QSS/dfn/Variable_xInp3.hh>
 
-// QSS Input Variable Headers
-#include <QSS/fmu/Variable_Inp1.hh>
-#include <QSS/fmu/Variable_Inp2.hh>
-#include <QSS/fmu/Variable_InpB.hh>
-#include <QSS/fmu/Variable_InpD.hh>
-#include <QSS/fmu/Variable_InpI.hh>
-#include <QSS/fmu/Variable_xInp1.hh>
-#include <QSS/fmu/Variable_xInp2.hh>
+using namespace QSS;
+using namespace QSS::dfn;
+using namespace QSS::dfn::mdl;
 
-// QSS State Variable Headers
-#include <QSS/fmu/Variable_LIQSS1.hh>
-#include <QSS/fmu/Variable_LIQSS2.hh>
-#include <QSS/fmu/Variable_QSS1.hh>
-#include <QSS/fmu/Variable_QSS2.hh>
-#include <QSS/fmu/Variable_xQSS1.hh>
-#include <QSS/fmu/Variable_xQSS2.hh>
-
-// QSS Zero-Crossing Variable Headers
-#include <QSS/fmu/Variable_ZC1.hh>
-#include <QSS/fmu/Variable_ZC2.hh>
-
-#endif
+TEST( Variable_xInp3Test, Basic )
+{
+	Variable_xInp3< Function_Inp_sin > u( "u" );
+	u.set_dt_max( 1.0 );
+	u.f().c( 0.05 ).s( 0.5 );
+	u.init();
+	EXPECT_EQ( 1.0e-4, u.rTol );
+	EXPECT_EQ( 1.0e-6, u.aTol );
+	EXPECT_EQ( 0.0, u.f()( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 0.025, u.f().d1( 0.0 ) );
+	EXPECT_EQ( 0.0, u.f().d2( 0.0 ) );
+	EXPECT_DOUBLE_EQ( -0.00625, u.f().d3( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 0.0, u.x( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 0.025 - ( 0.00625 / 6.0 ), u.x( 1.0 ) );
+	EXPECT_DOUBLE_EQ( 0.025, u.x1( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 0.0, u.x2( 0.0 ) );
+	EXPECT_DOUBLE_EQ( -0.00625, u.x3( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 0.0, u.q( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 0.025 - ( 0.00625 / 6.0 ), u.q( 1.0 ) );
+	EXPECT_DOUBLE_EQ( 0.025, u.q1( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 0.0, u.q2( 0.0 ) );
+	EXPECT_DOUBLE_EQ( -0.00625, u.q3( 0.0 ) );
+	EXPECT_EQ( 0.0, u.tQ );
+	EXPECT_DOUBLE_EQ( std::cbrt( 6.0e-6 / 0.00625 ), u.tE );
+	double const u_tE( u.tE );
+	u.advance_QSS();
+	EXPECT_EQ( u_tE, u.tQ );
+	EXPECT_EQ( 1U, events.size() );
+	events.clear();
+}

@@ -105,6 +105,16 @@ simulate()
 		std::cout << "\nQSS Method: LIQSS1" << std::endl;
 	} else if ( options::qss == options::QSS::LIQSS2 ) {
 		std::cout << "\nQSS Method: LIQSS2" << std::endl;
+	} else if ( options::qss == options::QSS::xQSS1 ) {
+		std::cout << "\nQSS Method: xQSS1" << std::endl;
+	} else if ( options::qss == options::QSS::xQSS2 ) {
+		std::cout << "\nQSS Method: xQSS2" << std::endl;
+	} else if ( options::qss == options::QSS::xQSS3 ) {
+		std::cout << "\nQSS Method: xQSS3" << std::endl;
+	} else if ( options::qss == options::QSS::xLIQSS1 ) {
+		std::cout << "\nQSS Method: xLIQSS1" << std::endl;
+	} else if ( options::qss == options::QSS::xLIQSS2 ) {
+		std::cout << "\nQSS Method: xLIQSS2" << std::endl;
 	} else {
 		std::cerr << "\nError: Unsupported QSS method" << std::endl;
 		std::exit( EXIT_FAILURE );

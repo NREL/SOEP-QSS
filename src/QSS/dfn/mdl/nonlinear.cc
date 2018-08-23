@@ -73,6 +73,16 @@ nonlinear( Variables & vars )
 		vars.push_back( y = new Variable_LIQSS1< Function_nonlinear >( "y", rTol, aTol, 2.0 ) );
 	} else if ( qss == QSS::LIQSS2 ) {
 		vars.push_back( y = new Variable_LIQSS2< Function_nonlinear >( "y", rTol, aTol, 2.0 ) );
+	} else if ( qss == QSS::xQSS1 ) {
+		vars.push_back( y = new Variable_xQSS1< Function_nonlinear >( "y", rTol, aTol, 2.0 ) );
+	} else if ( qss == QSS::xQSS2 ) {
+		vars.push_back( y = new Variable_xQSS2< Function_nonlinear >( "y", rTol, aTol, 2.0 ) );
+	} else if ( qss == QSS::xQSS3 ) {
+		vars.push_back( y = new Variable_xQSS3< Function_nonlinear >( "y", rTol, aTol, 2.0 ) );
+	} else if ( qss == QSS::xLIQSS1 ) {
+		vars.push_back( y = new Variable_xLIQSS1< Function_nonlinear >( "y", rTol, aTol, 2.0 ) );
+	} else if ( qss == QSS::xLIQSS2 ) {
+		vars.push_back( y = new Variable_xLIQSS2< Function_nonlinear >( "y", rTol, aTol, 2.0 ) );
 	} else {
 		std::cerr << "Error: Unsupported QSS method" << std::endl;
 		std::exit( EXIT_FAILURE );

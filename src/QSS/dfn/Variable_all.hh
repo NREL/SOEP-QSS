@@ -48,6 +48,9 @@
 #include <QSS/dfn/Variable_InpB.hh>
 #include <QSS/dfn/Variable_InpD.hh>
 #include <QSS/dfn/Variable_InpI.hh>
+#include <QSS/dfn/Variable_xInp1.hh>
+#include <QSS/dfn/Variable_xInp2.hh>
+#include <QSS/dfn/Variable_xInp3.hh>
 
 // QSS State Variable Headers
 #include <QSS/dfn/Variable_LIQSS1.hh>
@@ -55,6 +58,11 @@
 #include <QSS/dfn/Variable_QSS1.hh>
 #include <QSS/dfn/Variable_QSS2.hh>
 #include <QSS/dfn/Variable_QSS3.hh>
+#include <QSS/dfn/Variable_xQSS1.hh>
+#include <QSS/dfn/Variable_xQSS2.hh>
+#include <QSS/dfn/Variable_xQSS3.hh>
+#include <QSS/dfn/Variable_xLIQSS1.hh>
+#include <QSS/dfn/Variable_xLIQSS2.hh>
 
 // QSS Zero-Crossing Variable Headers
 #include <QSS/dfn/Variable_ZC1.hh>

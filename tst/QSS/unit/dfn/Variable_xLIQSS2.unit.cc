@@ -1,4 +1,4 @@
-// FMU-Based All-Variable Convenience Header
+// QSS::dfn::Variable_xLIQSS2 Unit Tests
 //
 // Project: QSS Solver
 //
@@ -33,33 +33,56 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_Variable_all_hh_INCLUDED
-#define QSS_fmu_Variable_all_hh_INCLUDED
+// Google Test Headers
+#include <gtest/gtest.h>
 
-// QSS Discrete Variable Headers
-#include <QSS/fmu/Variable_B.hh>
-#include <QSS/fmu/Variable_D.hh>
-#include <QSS/fmu/Variable_I.hh>
+// QSS Headers
+#include <QSS/dfn/mdl/Function_LTI.hh>
+#include <QSS/dfn/Variable_xLIQSS2.hh>
 
-// QSS Input Variable Headers
-#include <QSS/fmu/Variable_Inp1.hh>
-#include <QSS/fmu/Variable_Inp2.hh>
-#include <QSS/fmu/Variable_InpB.hh>
-#include <QSS/fmu/Variable_InpD.hh>
-#include <QSS/fmu/Variable_InpI.hh>
-#include <QSS/fmu/Variable_xInp1.hh>
-#include <QSS/fmu/Variable_xInp2.hh>
+using namespace QSS;
+using namespace QSS::dfn;
+using namespace QSS::dfn::mdl;
 
-// QSS State Variable Headers
-#include <QSS/fmu/Variable_LIQSS1.hh>
-#include <QSS/fmu/Variable_LIQSS2.hh>
-#include <QSS/fmu/Variable_QSS1.hh>
-#include <QSS/fmu/Variable_QSS2.hh>
-#include <QSS/fmu/Variable_xQSS1.hh>
-#include <QSS/fmu/Variable_xQSS2.hh>
+TEST( Variable_xLIQSS2Test, Basic )
+{
+	Variable_xLIQSS2< Function_LTI > x1( "x1" );
+	x1.add( 12.0 ).add( 2.0, &x1 );
+	x1.init( 2.5 );
+	EXPECT_EQ( 1.0e-4, x1.rTol );
+	EXPECT_EQ( 1.0e-6, x1.aTol );
+	EXPECT_DOUBLE_EQ( 2.5e-4, x1.qTol );
+	EXPECT_EQ( 2.5, x1.x( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 2.5 + 2.5e-4, x1.q( 0.0 ) );
+	EXPECT_EQ( 2.5 + 17.0005 + 17.0005, x1.x( 1.0 ) );
+	EXPECT_DOUBLE_EQ( 2.50025 + 17.0005 + 17.0005, x1.q( 1.0 ) );
+	EXPECT_DOUBLE_EQ( 17.0005, x1.x1( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 17.0005, x1.q1( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 17.0005 + ( 2 * 17.0005 ), x1.x1( 1.0 ) );
+	EXPECT_DOUBLE_EQ( 17.0005 + ( 2 * 17.0005 ), x1.q1( 1.0 ) );
+	EXPECT_DOUBLE_EQ( 34.001, x1.x2( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 34.001, x1.q2( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 34.001, x1.x2( 1.0 ) );
+	EXPECT_DOUBLE_EQ( 34.001, x1.q2( 1.0 ) );
+	EXPECT_EQ( 0.0, x1.tQ );
+	EXPECT_DOUBLE_EQ( std::sqrt( std::max( x1.rTol * 2.5, x1.aTol ) / 17.0005 ), x1.tE );
+	double const x1_tE( x1.tE );
+	x1.advance_QSS();
+	EXPECT_EQ( x1_tE, x1.tQ );
 
-// QSS Zero-Crossing Variable Headers
-#include <QSS/fmu/Variable_ZC1.hh>
-#include <QSS/fmu/Variable_ZC2.hh>
+	Variable_xLIQSS2< Function_LTI > x2( "x2", 1.0e-4, 1.0e-3 );
+	x2.add( 12.0 ).add( 2.0, &x2 );
+	x2.init( 2.5 );
+	EXPECT_EQ( 1.0e-4, x2.rTol );
+	EXPECT_EQ( 1.0e-3, x2.aTol );
+	EXPECT_DOUBLE_EQ( 1.0e-3, x2.qTol );
+	EXPECT_DOUBLE_EQ( 2.501, x2.q( 0.0 ) );
+	EXPECT_EQ( 0.0, x2.tQ );
+	EXPECT_DOUBLE_EQ( std::sqrt( std::max( x2.rTol * 2.5, x2.aTol ) / 17.002 ), x2.tE );
+	x2.tE = 2.0; // To allow advance to 1.0
+	x2.advance_observer( 1.0 );
+	EXPECT_EQ( 1.0, x2.tX );
 
-#endif
+	EXPECT_EQ( 2U, events.size() );
+	events.clear();
+}

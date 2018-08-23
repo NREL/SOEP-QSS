@@ -207,6 +207,10 @@ namespace fmu {
 			std::cout << "\nQSS Method: LIQSS1" << std::endl;
 		} else if ( options::qss == options::QSS::LIQSS2 ) {
 			std::cout << "\nQSS Method: LIQSS2" << std::endl;
+		} else if ( options::qss == options::QSS::xQSS1 ) {
+			std::cout << "\nQSS Method: xQSS1" << std::endl;
+		} else if ( options::qss == options::QSS::xQSS2 ) {
+			std::cout << "\nQSS Method: xQSS2" << std::endl;
 		} else {
 			std::cerr << "\nError: Unsupported QSS method" << std::endl;
 			std::exit( EXIT_FAILURE );
@@ -288,6 +292,10 @@ namespace fmu {
 							qss_var = new Variable_Inp1( var_name, options::rTol, options::aTol, fmu_var, inp_fxn );
 						} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) ) {
 							qss_var = new Variable_Inp2( var_name, options::rTol, options::aTol, fmu_var, inp_fxn );
+						} else if ( options::qss == options::QSS::xQSS1 ) {
+							qss_var = new Variable_xInp1( var_name, options::rTol, options::aTol, fmu_var, inp_fxn );
+						} else if ( options::qss == options::QSS::xQSS2 ) {
+							qss_var = new Variable_xInp2( var_name, options::rTol, options::aTol, fmu_var, inp_fxn );
 						} else {
 							std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 							std::exit( EXIT_FAILURE );
@@ -492,6 +500,10 @@ namespace fmu {
 						qss_var = new Variable_LIQSS1( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS2 ) {
 						qss_var = new Variable_LIQSS2( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
+					} else if ( options::qss == options::QSS::xQSS1 ) {
+						qss_var = new Variable_xQSS1( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
+					} else if ( options::qss == options::QSS::xQSS2 ) {
+						qss_var = new Variable_xQSS2( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
 					} else {
 						std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 						std::exit( EXIT_FAILURE );
@@ -556,9 +568,9 @@ namespace fmu {
 									fmu_ders[ var_real ] = fmu_der;
 									fmu_dvrs[ der_real ] = fmu_var;
 									Variable_ZC * qss_var( nullptr );
-									if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) ) {
+									if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) || ( options::qss == options::QSS::xQSS1 ) ) {
 										qss_var = new Variable_ZC1( var_name, options::rTol, options::aTol, options::zTol, fmu_var, fmu_der );
-									} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) ) {
+									} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) || ( options::qss == options::QSS::xQSS2 ) ) {
 										qss_var = new Variable_ZC2( var_name, options::rTol, options::aTol, options::zTol, fmu_var, fmu_der );
 									} else {
 										std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;

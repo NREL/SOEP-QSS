@@ -207,6 +207,16 @@ gen( Variables & vars, Conditionals & cons, size_type const nQSS, size_type cons
 			vars.push_back( x = new Variable_LIQSS1< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
 		} else if ( qss == QSS::LIQSS2 ) {
 			vars.push_back( x = new Variable_LIQSS2< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
+		} else if ( qss == QSS::xQSS1 ) {
+			vars.push_back( x = new Variable_xQSS1< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
+		} else if ( qss == QSS::xQSS2 ) {
+			vars.push_back( x = new Variable_xQSS2< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
+		} else if ( qss == QSS::xQSS3 ) {
+			vars.push_back( x = new Variable_xQSS3< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
+		} else if ( qss == QSS::xLIQSS1 ) {
+			vars.push_back( x = new Variable_xLIQSS1< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
+		} else if ( qss == QSS::xLIQSS2 ) {
+			vars.push_back( x = new Variable_xLIQSS2< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
 		} else {
 			std::cerr << "Error: Unsupported QSS method" << std::endl;
 			std::exit( EXIT_FAILURE );
@@ -241,9 +251,9 @@ gen( Variables & vars, Conditionals & cons, size_type const nQSS, size_type cons
 		Z * z( nullptr );
 		std::ostringstream i_stream; i_stream << i;
 		std::string const z_nam( "z" + i_stream.str() );
-		if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) ) {
+		if ( ( qss == QSS::QSS1 ) || ( qss == QSS::LIQSS1 ) || ( qss == QSS::xQSS1 ) || ( qss == QSS::xLIQSS1 ) ) {
 			vars.push_back( z = new Variable_ZC1< Function_LTI >( z_nam, rTol, aTol, zTol ) );
-		} else if ( ( qss == QSS::QSS2 ) || ( qss == QSS::LIQSS2 ) ) {
+		} else if ( ( qss == QSS::QSS2 ) || ( qss == QSS::LIQSS2 ) || ( qss == QSS::xQSS2 ) || ( qss == QSS::xLIQSS2 ) ) {
 			vars.push_back( z = new Variable_ZC2< Function_LTI >( z_nam, rTol, aTol, zTol ) );
 		} else {
 			vars.push_back( z = new Variable_ZC3< Function_LTI >( z_nam, rTol, aTol, zTol ) );

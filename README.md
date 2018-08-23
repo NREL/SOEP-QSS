@@ -6,6 +6,7 @@ This is a QSS solver being developed for integration into JModelica as part of t
 
 Currently the code has:
 * QSS1/2/3 and LIQSS1/2 solvers.
+* Experimental xQSS variables with full-order broadcast representations.
 * Linear and nonlinear derivative function support.
 * Input variables/functions.
 * Discrete-valued variables.
@@ -105,6 +106,11 @@ At startup and simultaneous requantization trigger events the LIQSS approach def
 * Single pass in arbitrary order: Leaves different representations of the same variable in the system and has a processing order dependency so results can be non-deterministic depending on the order of variables in their containers.
 * Multiple passes hoping for a fixed point: May not find a consistent fixed point and is still potentially non-deterministic.
 * Use derivatives based on a stable LIQSS state at these events to eliminate the order dependency. This is the approach chosen and a "simultaneous" representation is used that contains the stable coefficients determined for each order pass of the algorithm, without the updates made by the highest-order LIQSS pass. This approach has the potential for solution value and derivative discontinuities at transitions between simultaneous and non-simultaneous events but no clearly better alternative is apparent.
+
+### xQSS Variant
+
+An experimental variant of the QSS method with methods named `xQSS1`, `xQSS2`, and `xQSS3` has been implemented. In this variant the broadcast (quantized) representation has the same order as the internal (continuous) representation. The concept is based on using all available knowledge of the variable trajectory in the broadcast representation. This has been found to provide significantly higher accuracy solutions at the same tolerance (or, equivalently, faster solutions at the same accuracy). More experience is needed to determine whether there are drawbacks to this approach.
+* LIQSS methods did not benefit from this approach since it tends to put the quantum-shifted quantized representation farther from the continuous representation.
 
 ### Event Queue
 
@@ -229,9 +235,11 @@ Finding accurate zero-crossing times is important for simulation correctness and
 
 The QSS-style continuous trajectory of zero-crossing functions will give accurate crossing times when the QSS tolerance is small enough to make the trajectory very close to the actual zero-crossing function. With larger QSS tolerances or fast-changing variables this may not be accurate enough. The current QSS solver can perform Newton iterative refinement of zero-crossing roots (using the `--refine` option), typically only requiring 1-2 iterations to converge. Root refinement is expensive and is probably not needed with most models. With FMU-based models root refinement is even more expensive: all observees (dependencies) of the zero-crossing variable must be set to the value at each iteration time and then the variable value and derivative must be evaluated by the FMU. This root refinement approach works well when the initial guess provided by the continuous trajectory tightly represents the actual zero-crossing function. When larger tolerances are in use this may not hold and a more robust approach will be needed.
 
+The zero-crossing method now used in this solver that bases the zero-crossing variables' representation on the continuous representation of their dependent variables provides more accurate crossing times and probably does not require root refinement in most situations with typical tolerances.
+
 A robust approach to large-tolerance zero-crossing root finding will probably have these characteristics:
-* Setting a dtZ time step for the zero-crossing variable that is sufficiently small to avoid missing zero crossings.
-* Sampling the function value out from the interval start time with dtZ steps until a crossing is localized or the trajectory-based root estimate is reached.
+* Setting a `dtZ` time step for the zero-crossing variable that is sufficiently small to avoid missing zero crossings.
+* Sampling the function value out from the interval start time with `dtZ` steps until a crossing is localized or the trajectory-based root estimate is reached.
 * Refinement with a Newton or Brent type algorithm from the root estimate and restricted to the interval of localization/interest.
 * A option to enable the large-tolerance root finding either directly or when a specified tolerance level is exceeded.
 
@@ -315,6 +323,7 @@ To build the QSS application on Linux:
 * `cd src/QSS/app`
 * `mak` (add a -j*N* make argument to override the number of parallel compile jobs)
 * Note that `-fPIC` is used to compile with GCC on Linux to share the build configuration with the FMU-QSS shared/dynamic library generation: this may add a small performance penalty for the QSS application and should not be used for production application builds.
+* There is an additional `src/QSS/app_dfn` directory that can build a code-defined only application (named `QSS_dfn`) for use in environments without a compatible FMI Library build available.
 
 To run the QSS application:
 * `QSS` from any directory with a console configured with `setProject`

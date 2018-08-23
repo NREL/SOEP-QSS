@@ -94,7 +94,7 @@ help_display()
 {
 	std::cout << '\n' << "QSS [options] [model|fmu]" << "\n\n";
 	std::cout << "Options:" << "\n\n";
-	std::cout << " --qss=METHOD  QSS method: (LI)QSS1|2|3  [QSS2|FMU-QSS]" << '\n';
+	std::cout << " --qss=METHOD  QSS method: (x)(LI)QSS1|2|3  [QSS2|FMU-QSS]" << '\n';
 	std::cout << " --rTol=TOL    Relative tolerance  [1e-4|FMU]" << '\n';
 	std::cout << " --aTol=TOL    Absolute tolerance  [1e-6]" << '\n';
 	std::cout << " --zTol=TOL    Zero-crossing anti-chatter tolerance  [0]" << '\n';
@@ -178,6 +178,16 @@ process_args( int argc, char * argv[] )
 				qss = QSS::LIQSS3;
 				std::cerr << "Error: The LIQSS3 method is not yet implemented" << std::endl;
 				fatal = true;
+			} else if ( qss_name == "XQSS1" ) {
+				qss = QSS::xQSS1;
+			} else if ( qss_name == "XQSS2" ) {
+				qss = QSS::xQSS2;
+			} else if ( qss_name == "XQSS3" ) {
+				qss = QSS::xQSS3;
+			} else if ( qss_name == "XLIQSS1" ) {
+				qss = QSS::xLIQSS1;
+			} else if ( qss_name == "XLIQSS2" ) {
+				qss = QSS::xLIQSS2;
 			} else {
 				std::cerr << "Error: Unsupported QSS method: " << qss_name << std::endl;
 				fatal = true;

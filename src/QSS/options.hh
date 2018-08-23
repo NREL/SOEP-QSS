@@ -50,7 +50,12 @@ enum class QSS {
  QSS3,
  LIQSS1,
  LIQSS2,
- LIQSS3
+ LIQSS3,
+ xQSS1,
+ xQSS2,
+ xQSS3,
+ xLIQSS1,
+ xLIQSS2
 };
 
 extern QSS qss; // QSS method: (LI)QSS1|2|3
