@@ -178,7 +178,7 @@ An FMU-QSS is an FMU that wraps an FMU for Model Exchange (FMU-ME) and only expo
 
 ### Code Structure
 
-Much of the source code is split into separate directories for the code-defined example models (`dfn`) and FMU-based models (`fmu`). While there is significant overlap between these codes there are a number of fundamental differences.
+Much of the source code is split into separate directories for the code-defined example models (`cod`) and FMU-based models (`fmu`). While there is significant overlap between these codes there are a number of fundamental differences.
 
 ### Numeric Differentiation
 
@@ -323,7 +323,7 @@ To build the QSS application on Linux:
 * `cd src/QSS/app`
 * `mak` (add a -j*N* make argument to override the number of parallel compile jobs)
 * Note that `-fPIC` is used to compile with GCC on Linux to share the build configuration with the FMU-QSS shared/dynamic library generation: this may add a small performance penalty for the QSS application and should not be used for production application builds.
-* There is an additional `src/QSS/app_dfn` directory that can build a code-defined only application (named `QSS_dfn`) for use in environments without a compatible FMI Library build available.
+* There is an additional `src/QSS/app_cod` directory that can build a code-defined only application (named `QSS_cod`) for use in environments without a compatible FMI Library build available.
 
 To run the QSS application:
 * `QSS` from any directory with a console configured with `setProject`

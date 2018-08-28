@@ -16,8 +16,8 @@ include $(QSS_bin)/GNUmakeinit.mk
 # Variables
 TAR := QSS
 SRC := $(notdir $(wildcard $(SRC_PATH)/*.cc))
-SRC += $(notdir $(wildcard $(SRC_PATH)/dfn/*.cc))
-SRC += $(notdir $(wildcard $(SRC_PATH)/dfn/mdl/*.cc))
+SRC += $(notdir $(wildcard $(SRC_PATH)/cod/*.cc))
+SRC += $(notdir $(wildcard $(SRC_PATH)/cod/mdl/*.cc))
 SRC += $(notdir $(wildcard $(SRC_PATH)/fmu/*.cc))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .o,$(basename $(SRC)))
@@ -64,7 +64,7 @@ $(LIB) : $(OBJ)
 	$(AR) $(ARFLAGS) $@ $?
 
 $(EXE) : $(LIB)
-	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) $(SRC_PATH)/app/QSS.cc -o $@ $^ -L$(FMIL_HOME)/lib -lfmilib -ldl
+	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) $(SRC_PATH)/app/$(TAR).cc -o $@ $^ -L$(FMIL_HOME)/lib -lfmilib -ldl
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)

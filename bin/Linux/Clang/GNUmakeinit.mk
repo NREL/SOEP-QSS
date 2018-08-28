@@ -22,7 +22,7 @@ OBJ_PATH := .
 BIN_PATH := $(QSS_bin)
 
 # Search Paths
-vpath %.cc  $(SRC_PATH) $(SRC_PATH)/dfn $(SRC_PATH)/dfn/mdl $(SRC_PATH)/fmu
+vpath %.cc  $(SRC_PATH) $(SRC_PATH)/cod $(SRC_PATH)/cod/mdl $(SRC_PATH)/fmu
 vpath %.cpp $(SRC_PATH)
 vpath %.c   $(SRC_PATH)
 vpath %.hh  $(INC_PATH)

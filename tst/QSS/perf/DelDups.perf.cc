@@ -1,4 +1,4 @@
-// QSS::dfn::Variable Delete Duplicates Performance Tests
+// QSS::cod::Variable Delete Duplicates Performance Tests
 //
 // Project: QSS Solver
 //

@@ -34,7 +34,7 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // QSS Headers
-#include <QSS/dfn/simulate_dfn.hh>
+#include <QSS/cod/simulate_cod.hh>
 #include <QSS/fmu/simulate_fmu_me.hh>
 #include <QSS/fmu/simulate_fmu_qss.hh>
 #include <QSS/options.hh>
@@ -61,6 +61,6 @@ main( int argc, char * argv[] )
 	} else if ( ( options::model.length() >= 5 ) && ( options::model.rfind( ".fmu" ) == options::model.length() - 4u ) ) { // FMU-ME
 		fmu::simulate_fmu_me();
 	} else { // Example
-		dfn::simulate();
+		cod::simulate();
 	}
 }

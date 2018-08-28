@@ -18,7 +18,7 @@ include $(QSS_bin)/GNUmakeinit.mk
 # Variables
 TAR := QSS
 SRC := $(notdir $(wildcard $(TST_PATH)/*.cc))
-SRC += $(notdir $(wildcard $(TST_PATH)/dfn/*.cc))
+SRC += $(notdir $(wildcard $(TST_PATH)/cod/*.cc))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .o,$(basename $(SRC)))
 EXE := $(BIN_PATH)/$(TAR).unit
@@ -29,7 +29,7 @@ LINK_LIBS := -ldl
 .SUFFIXES: .h
 
 # Search Paths
-vpath %.cc  $(TST_PATH) $(TST_PATH)/dfn
+vpath %.cc  $(TST_PATH) $(TST_PATH)/cod
 vpath %.hh  $(TST_PATH)
 vpath %.h   $(GTEST_INC)
 

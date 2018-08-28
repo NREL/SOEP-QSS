@@ -16,8 +16,8 @@ include $(QSS_bin)/GNUmakeinit.mk
 # Variables
 TAR := QSS
 SRC := $(notdir $(wildcard $(SRC_PATH)/*.cc))
-SRC += $(notdir $(wildcard $(SRC_PATH)/dfn/*.cc))
-SRC += $(notdir $(wildcard $(SRC_PATH)/dfn/mdl/*.cc))
+SRC += $(notdir $(wildcard $(SRC_PATH)/cod/*.cc))
+SRC += $(notdir $(wildcard $(SRC_PATH)/cod/mdl/*.cc))
 SRC += $(notdir $(wildcard $(SRC_PATH)/fmu/*.cc))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .obj,$(basename $(SRC)))
@@ -64,8 +64,8 @@ $(LIB) : $(OBJ)
 	$(AR) $(ARFLAGS) /out:$@ $^
 
 $(EXE) : $(LIB)
-	$(CXX) $(CXXFLAGS) $(PGO) -c $(SRC_PATH)\app\QSS.cc
-	$(LD) $(LDFLAGS) /out:$@ QSS.obj $^ $(FMIL_HOME)\lib\fmilib.lib
+	$(CXX) $(CXXFLAGS) $(PGO) -c $(SRC_PATH)\app\$(TAR).cc
+	$(LD) $(LDFLAGS) /out:$@ $(TAR).obj $^ $(FMIL_HOME)\lib\fmilib.lib
 	@-rm -f $(subst \,/,$(BIN_PATH))/$(TAR).exp $(subst \,/,$(BIN_PATH))/$(TAR).lib
 
 # Dependencies

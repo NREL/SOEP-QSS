@@ -18,7 +18,7 @@ include $(QSS_bin)/GNUmakeinit.mk
 # Variables
 TAR := QSS
 SRC := $(notdir $(wildcard $(TST_PATH)/*.cc))
-SRC += $(notdir $(wildcard $(TST_PATH)/dfn/*.cc))
+SRC += $(notdir $(wildcard $(TST_PATH)/cod/*.cc))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .o,$(basename $(SRC)))
 APP_OBJ := $(filter-out $(QSS)/src/QSS/$(PlatformFull)/QSS.o,$(wildcard $(QSS)/src/QSS/$(PlatformFull)/*.o))
@@ -30,7 +30,7 @@ LINK_LIBS :=
 .SUFFIXES: .h
 
 # Search Paths
-vpath %.cc  $(TST_PATH) $(TST_PATH)/dfn
+vpath %.cc  $(TST_PATH) $(TST_PATH)/cod
 vpath %.hh  $(TST_PATH)
 vpath %.h   $(GTEST_INC)
 
