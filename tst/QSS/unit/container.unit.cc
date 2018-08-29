@@ -1,4 +1,4 @@
-// QSS::cod::container Unit Tests
+// QSS::container Unit Tests
 //
 // Project: QSS Solver
 //
@@ -37,7 +37,7 @@
 #include <gtest/gtest.h>
 
 // QSS Headers
-#include <QSS/cod/container.hh>
+#include <QSS/container.hh>
 #include <QSS/cod/Variable_QSS1.hh>
 #include <QSS/cod/Variable_QSS2.hh>
 #include <QSS/cod/Variable_ZC1.hh>
@@ -81,7 +81,7 @@ TEST( ContainerTest, SortByZC )
 		variables.push_back( new QSS1( "QSS1" ) );
 	}
 	EXPECT_FALSE( std::is_sorted( variables.begin(), variables.end(), []( Variable const * v1, Variable const * v2 ){ return ( ! v1->is_ZC() ) && ( v2->is_ZC() ); } ) );
-	sort_by_ZC( variables );
+	sort_by_ZC_and_order( variables );
 	EXPECT_TRUE( std::is_sorted( variables.begin(), variables.end(), []( Variable const * v1, Variable const * v2 ){ return ( ! v1->is_ZC() ) && ( v2->is_ZC() ); } ) );
 }
 

@@ -1,4 +1,4 @@
-// FMU-Based QSS Solver Container Functions
+// QSS Solver Container Functions
 //
 // Project: QSS Solver
 //
@@ -33,11 +33,11 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_container_hh_INCLUDED
-#define QSS_fmu_container_hh_INCLUDED
+#ifndef QSS_container_hh_INCLUDED
+#define QSS_container_hh_INCLUDED
 
 // QSS Headers
-#include <QSS/fmu/Variable.hh>
+#include <QSS/globals.hh>
 
 // C++ Headers
 #include <algorithm>
@@ -45,50 +45,58 @@
 #include <cstdint>
 #include <iterator>
 #include <limits>
+#include <type_traits>
 
 namespace QSS {
-namespace fmu {
 
 // Sort Variables by Order
+template< typename Variables >
 inline
 void
-sort_by_order( Variable::Variables & variables )
+sort_by_order( Variables & variables )
 {
+	using V = typename std::remove_pointer< typename Variables::value_type >::type;
 	// Stable sort to be deterministic given prior address sort without adding extra address condition to std::sort
-	std::stable_sort( variables.begin(), variables.end(), []( Variable const * v1, Variable const * v2 ){ return v1->order() < v2->order(); } );
+	std::stable_sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->order() < v2->order(); } );
 }
 
 // Sort Variables by Type (Zero-Crossing at the End) and Order
+template< typename Variables >
 inline
 void
-sort_by_ZC( Variable::Variables & variables )
+sort_by_ZC_and_order( Variables & variables )
 {
+	using V = typename std::remove_pointer< typename Variables::value_type >::type;
 	// Stable sort to be deterministic given prior address sort without adding extra address condition to std::sort
-	std::stable_sort( variables.begin(), variables.end(), []( Variable const * v1, Variable const * v2 ){ return ( v1->is_ZC() ? max_rep_order << 1 : 0 ) + v1->order() < ( v2->is_ZC() ? max_rep_order << 1 : 0 ) + v2->order(); } );
+	std::stable_sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->order() + ( v1->is_ZC() ? max_rep_order : 0 ) < v2->order() + ( v2->is_ZC() ? max_rep_order : 0 ); } );
 }
 
 // Variables Begin Index of Given Order
+template< typename Variables >
 inline
-Variable::Variables::size_type
-begin_order_index( Variable::Variables const & variables, int const order )
+typename Variables::size_type
+begin_order_index( Variables const & variables, int const order )
 {
-	assert( std::is_sorted( variables.begin(), variables.end(), []( Variable const * v1, Variable const * v2 ){ return v1->order() < v2->order(); } ) ); // Require sorted by order
-	return static_cast< Variable::Variables::size_type >( std::distance( variables.begin(), std::lower_bound( variables.begin(), variables.end(), order, []( Variable const * v, int const o ){ return v->order() < o; } ) ) );
+	using V = typename std::remove_pointer< typename Variables::value_type >::type;
+	assert( std::is_sorted( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->order() < v2->order(); } ) ); // Require sorted by order
+	return static_cast< typename Variables::size_type >( std::distance( variables.begin(), std::lower_bound( variables.begin(), variables.end(), order, []( V const * v, int const o ){ return v->order() < o; } ) ) );
 }
 
 // Set up Non-Trigger Observers of Triggers and Sort Both by Order
+template< typename Variables >
 inline
 void
-variables_observers( Variable::Variables & triggers, Variable::Variables & observers )
+variables_observers( Variables & triggers, Variables & observers )
 {
-	using Variables = Variable::Variables;
-	using size_type = Variables::size_type;
+	using V = typename std::remove_pointer< typename Variables::value_type >::type;
+	using size_type = typename Variables::size_type;
+	using iterator = typename Variables::iterator;
 
 	observers.clear();
 
 	// Collect all observers
-	for ( Variable * trigger : triggers ) {
-		for ( Variable * observer : trigger->observers() ) {
+	for ( V * trigger : triggers ) {
+		for ( V * observer : trigger->observers() ) {
 			observers.push_back( observer );
 		}
 	}
@@ -102,14 +110,14 @@ variables_observers( Variable::Variables & triggers, Variable::Variables & obser
 		observers.resize( std::distance( observers.begin(), std::unique( observers.begin(), observers.end() ) ) );
 
 		// Remove triggers
-		Variables::iterator it( triggers.begin() );
-		Variables::iterator const et( triggers.end() );
+		iterator it( triggers.begin() );
+		iterator const et( triggers.end() );
 		size_type no( observers.size() ); // Number of observers
-		for ( Variable * & observer : observers ) {
+		for ( V * & observer : observers ) {
 			while ( ( it != et ) && ( *it < observer ) ) ++it;
 			if ( it != et ) {
 				if ( *it == observer ) {
-					observer = ( Variable * )( std::numeric_limits< std::uintptr_t >::max() );
+					observer = ( V * )( std::numeric_limits< std::uintptr_t >::max() );
 					--no;
 				}
 			} else {
@@ -119,14 +127,13 @@ variables_observers( Variable::Variables & triggers, Variable::Variables & obser
 		std::sort( observers.begin(), observers.end() );
 		observers.resize( no );
 		// Don't shrink observers: Meant for short-lived collections created for simultaneous variable event processing during simulation
-		if ( ! observers.empty() ) sort_by_ZC( observers );
+		if ( ! observers.empty() ) sort_by_ZC_and_order( observers );
 	}
 
 	// Sort triggers by order
 	sort_by_order( triggers );
 }
 
-} // fmu
 } // QSS
 
 #endif
