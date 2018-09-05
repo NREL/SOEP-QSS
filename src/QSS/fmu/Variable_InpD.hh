@@ -80,50 +80,43 @@ public: // Properties
 		return 0;
 	}
 
-	// Value
-	Value
-	x() const
+	// Real Value
+	Real
+	r() const
+	{
+		return x_;
+	}
+
+	// Real Value at Time t
+	Real
+	r( Time const ) const
 	{
 		return x_;
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const ) const
 	{
 		return x_;
 	}
 
-	// Continuous First Derivative at Time t
-	Value
-	x1( Time const ) const
-	{
-		return 0.0;
-	}
-
-	// Quantized Value
-	Value
-	q() const
-	{
-		return x_;
-	}
-
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const ) const
 	{
 		return x_;
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const ) const
 	{
 		return x_;
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
-	Value
+	Real
 	sn( Time const ) const
 	{
 		return x_;
@@ -154,7 +147,7 @@ public: // Methods
 	void
 	advance_discrete()
 	{
-		Value const x_new( f_( tX = tQ = tD ).x_0 );
+		Real const x_new( f_( tX = tQ = tD ).x_0 );
 		tD = f_( tD ).tD;
 		shift_discrete( tD );
 		bool const chg( x_ != x_new );
@@ -167,7 +160,7 @@ public: // Methods
 	void
 	advance_discrete_0_1()
 	{
-		Value const x_new( f_( tX = tQ = tD ).x_0 );
+		Real const x_new( f_( tX = tQ = tD ).x_0 );
 		tD = f_( tD ).tD;
 		shift_discrete( tD );
 		bool const chg( x_ != x_new );
@@ -177,7 +170,7 @@ public: // Methods
 
 private: // Data
 
-	Value x_; // Value
+	Real x_; // Value
 
 };
 

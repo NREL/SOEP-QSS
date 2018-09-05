@@ -71,7 +71,7 @@ public: // Types
 
 	using Variable = V;
 	using Time = typename Variable::Time;
-	using Value = typename Variable::Value;
+	using Real = typename Variable::Real;
 	using Coefficient = double;
 	using AdvanceSpecs_LIQSS1 = typename Variable::AdvanceSpecs_LIQSS1;
 	using AdvanceSpecs_LIQSS2 = typename Variable::AdvanceSpecs_LIQSS2;
@@ -79,45 +79,45 @@ public: // Types
 public: // Properties
 
 	// Continuous Value at Time t
-	Value
+	Real
 	operator ()( Time const t ) const
 	{
 		return ( 1.0 + ( 2.0 * t ) ) / ( y_->x( t ) + 2.0 );
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const t ) const
 	{
 		return ( 1.0 + ( 2.0 * t ) ) / ( y_->x( t ) + 2.0 );
 	}
 
 	// Continuous First Derivative at Time t
-	Value
+	Real
 	x1( Time const t ) const
 	{
-		Value const yp2( y_->x( t ) + 2.0 );
+		Real const yp2( y_->x( t ) + 2.0 );
 		return ( ( 2.0 * yp2 ) - ( y_->x1( t ) * ( 1.0 + ( 2.0 * t ) ) ) ) / square( yp2 );
 	}
 
 	// Continuous Second Derivative at Time t
-	Value
+	Real
 	x2( Time const t ) const
 	{
-		Value const yp2( y_->x( t ) + 2.0 );
-		Value const w( 1.0 + 2.0 * t );
+		Real const yp2( y_->x( t ) + 2.0 );
+		Real const w( 1.0 + 2.0 * t );
 		return ( ( 2.0 * square( y_->x1( t ) ) * w ) - ( yp2 * ( ( y_->x2( t ) * w ) + ( 4.0 * y_->x1( t ) ) ) ) ) / cube( yp2 );
 	}
 
 	// Continuous Third Derivative at Time t
-	Value
+	Real
 	x3( Time const t ) const
 	{
-		Value const yp2( y_->x( t ) + 2.0 );
-		Value const y1( y_->x1( t ) );
-		Value const y2( y_->x2( t ) );
-		Value const y3( y_->x3( t ) );
-		Value const w( 1.0 + 2.0 * t );
+		Real const yp2( y_->x( t ) + 2.0 );
+		Real const y1( y_->x1( t ) );
+		Real const y2( y_->x2( t ) );
+		Real const y3( y_->x3( t ) );
+		Real const w( 1.0 + 2.0 * t );
 		return (
 		 ( 4.0 * yp2 * ( 2.0 + y1 ) * y1 ) -
 		 ( 6.0 * w * cube( y1 ) ) +
@@ -127,104 +127,104 @@ public: // Properties
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const t ) const
 	{
 		return ( 1.0 + ( 2.0 * t ) ) / ( y_->q( t ) + 2.0 );
 	}
 
 	// Quantized First Derivative at Time t
-	Value
+	Real
 	q1( Time const t ) const
 	{
-		Value const yp2( y_->q( t ) + 2.0 );
+		Real const yp2( y_->q( t ) + 2.0 );
 		return ( ( 2.0 * yp2 ) - ( y_->q1( t ) * ( 1.0 + ( 2.0 * t ) ) ) ) / square( yp2 );
 	}
 
 	// Quantized Second Derivative at Time t
-	Value
+	Real
 	q2( Time const t ) const
 	{
-		Value const yp2( y_->q( t ) + 2.0 );
-		Value const w( 1.0 + 2.0 * t );
+		Real const yp2( y_->q( t ) + 2.0 );
+		Real const w( 1.0 + 2.0 * t );
 		return ( ( 2.0 * square( y_->q1( t ) ) * w ) - ( yp2 * ( ( y_->q2( t ) * w ) + ( 4.0 * y_->q1( t ) ) ) ) ) / cube( yp2 );
 	}
 
 	// Quantized Sequential Value at Time t
-	Value
+	Real
 	qs( Time const t ) const
 	{
 		return q( t );
 	}
 
 	// Quantized Forward-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	qf1( Time const t ) const
 	{
 		return q1( t );
 	}
 
 	// Quantized Centered-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	qc1( Time const t ) const
 	{
 		return q1( t );
 	}
 
 	// Quantized Centered-Difference Sequential Second Derivative at Time t
-	Value
+	Real
 	qc2( Time const t ) const
 	{
 		return q2( t );
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const t ) const
 	{
 		return ( 1.0 + ( 2.0 * t ) ) / ( y_->s( t ) + 2.0 );
 	}
 
 	// Simultaneous First Derivative at Time t
-	Value
+	Real
 	s1( Time const t ) const
 	{
-		Value const yp2( y_->s( t ) + 2.0 );
+		Real const yp2( y_->s( t ) + 2.0 );
 		return ( ( 2.0 * yp2 ) - ( y_->s1( t ) * ( 1.0 + ( 2.0 * t ) ) ) ) / square( yp2 );
 	}
 
 	// Simultaneous Second Derivative at Time t
-	Value
+	Real
 	s2( Time const t ) const
 	{
-		Value const yp2( y_->s( t ) + 2.0 );
-		Value const w( 1.0 + 2.0 * t );
+		Real const yp2( y_->s( t ) + 2.0 );
+		Real const w( 1.0 + 2.0 * t );
 		return ( ( 2.0 * square( y_->s1( t ) ) * w ) - ( yp2 * ( ( y_->s2( t ) * w ) + ( 4.0 * y_->s1( t ) ) ) ) ) / cube( yp2 );
 	}
 
 	// Simultaneous Sequential Value at Time t
-	Value
+	Real
 	ss( Time const t ) const
 	{
 		return s( t );
 	}
 
 	// Simultaneous Forward-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	sf1( Time const t ) const
 	{
 		return s1( t );
 	}
 
 	// Simultaneous Centered-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	sc1( Time const t ) const
 	{
 		return s1( t );
 	}
 
 	// Simultaneous Centered-Difference Sequential Second Derivative at Time t
-	Value
+	Real
 	sc2( Time const t ) const
 	{
 		return s2( t );
@@ -232,86 +232,86 @@ public: // Properties
 
 	// Quantized Values at Time t and at Variable +/- Delta
 	AdvanceSpecs_LIQSS1
-	qlu1( Time const t, Value const del ) const
+	qlu1( Time const t, Real const del ) const
 	{
 		// Value at +/- del
-		Value const num( 1.0 + ( 2.0 * t ) );
-		Value const y2( y_->q( t ) + 2.0 );
-		Value const vl( num / ( y2 - del ) );
-		Value const vu( num / ( y2 + del ) );
+		Real const num( 1.0 + ( 2.0 * t ) );
+		Real const y2( y_->q( t ) + 2.0 );
+		Real const vl( num / ( y2 - del ) );
+		Real const vu( num / ( y2 + del ) );
 
 		// Zero point: No y gives zero function value at any t >= 0
-		Value const z( 0.0 ); // No y value gives zero slope at any t >= 0
+		Real const z( 0.0 ); // No y value gives zero slope at any t >= 0
 
 		return AdvanceSpecs_LIQSS1{ vl, vu, z };
 	}
 
 	// Simultaneous Values at Time t and at Variable +/- Delta
 	AdvanceSpecs_LIQSS1
-	slu1( Time const t, Value const del ) const
+	slu1( Time const t, Real const del ) const
 	{
 		// Value at +/- del
-		Value const num( 1.0 + ( 2.0 * t ) );
-		Value const y2( y_->s( t ) + 2.0 );
-		Value const vl( num / ( y2 - del ) );
-		Value const vu( num / ( y2 + del ) );
+		Real const num( 1.0 + ( 2.0 * t ) );
+		Real const y2( y_->s( t ) + 2.0 );
+		Real const vl( num / ( y2 - del ) );
+		Real const vu( num / ( y2 + del ) );
 
 		// Zero point: No y gives zero function value at any t >= 0
-		Value const z( 0.0 );
+		Real const z( 0.0 );
 
 		return AdvanceSpecs_LIQSS1{ vl, vu, z };
 	}
 
 	// Quantized Values and Derivatives at Time t and at Variable +/- Delta
 	AdvanceSpecs_LIQSS2
-	qlu2( Time const t, Value const del ) const
+	qlu2( Time const t, Real const del ) const
 	{
 		// Value at +/- del
-		Value const num( 1.0 + ( 2.0 * t ) );
-		Value const y2( y_->q( t ) + 2.0 );
-		Value const vl( num / ( y2 - del ) );
-		Value const vu( num / ( y2 + del ) );
+		Real const num( 1.0 + ( 2.0 * t ) );
+		Real const y2( y_->q( t ) + 2.0 );
+		Real const vl( num / ( y2 - del ) );
+		Real const vu( num / ( y2 + del ) );
 
 		// Derivative at +/- del
-		Value const ts( square( 1.0 + ( 2.0 * t ) ) );
-		Value const sl( derivative( ts, y2 - del ) );
-		Value const su( derivative( ts, y2 + del ) );
+		Real const ts( square( 1.0 + ( 2.0 * t ) ) );
+		Real const sl( derivative( ts, y2 - del ) );
+		Real const su( derivative( ts, y2 + del ) );
 
 		// Zero point: No solution points have zero function derivative
 		assert( signum( sl ) == signum( su ) );
 		assert( signum( sl ) != 0 );
-		Value const z1( 0.0 );
-		Value const z2( 0.0 );
+		Real const z1( 0.0 );
+		Real const z2( 0.0 );
 
 		return AdvanceSpecs_LIQSS2{ vl, vu, z1, sl, su, z2 };
 	}
 
 	// Simultaneous Values and Derivatives at Time t and at Variable +/- Delta
 	AdvanceSpecs_LIQSS2
-	slu2( Time const t, Value const del, Value const ) const
+	slu2( Time const t, Real const del, Real const ) const
 	{
 		// Value at +/- del
-		Value const num( 1.0 + ( 2.0 * t ) );
-		Value const y2( y_->s( t ) + 2.0 );
-		Value const vl( num / ( y2 - del ) );
-		Value const vu( num / ( y2 + del ) );
+		Real const num( 1.0 + ( 2.0 * t ) );
+		Real const y2( y_->s( t ) + 2.0 );
+		Real const vl( num / ( y2 - del ) );
+		Real const vu( num / ( y2 + del ) );
 
 		// Derivative at +/- del
-		Value const ts( square( 1.0 + ( 2.0 * t ) ) );
-		Value const sl( derivative( ts, y2 - del ) );
-		Value const su( derivative( ts, y2 + del ) );
+		Real const ts( square( 1.0 + ( 2.0 * t ) ) );
+		Real const sl( derivative( ts, y2 - del ) );
+		Real const su( derivative( ts, y2 + del ) );
 
 		// Zero point: No solution points have zero function derivative
 		assert( signum( sl ) == signum( su ) );
 		assert( signum( sl ) != 0 );
-		Value const z1( 0.0 );
-		Value const z2( 0.0 );
+		Real const z1( 0.0 );
+		Real const z2( 0.0 );
 
 		return AdvanceSpecs_LIQSS2{ vl, vu, z1, sl, su, z2 };
 	}
 
 	// Exact Value of y at Time t
-	Value
+	Real
 	e( Time const t ) const
 	{
 		return std::sqrt( ( 2.0 * t * ( t + 1.0 ) ) + 16.0 ) - 2.0;
@@ -330,8 +330,8 @@ private: // Static Methods
 
 	// Derivative at Time t Given ( 1 + 2*t )^2 and y+2
 	static
-	Value
-	derivative( Time const ts, Value const y2 )
+	Real
+	derivative( Time const ts, Real const y2 )
 	{
 		return ( 2.0 / y2 ) - ( ts / cube( y2 ) );
 	}

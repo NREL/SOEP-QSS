@@ -50,8 +50,9 @@ class Variable_Inp1 final : public Variable_Inp< F >
 public: // Types
 
 	using Super = Variable_Inp< F >;
+
+	using Real = Variable::Real;
 	using Time = Variable::Time;
-	using Value = Variable::Value;
 
 	using Super::name;
 	using Super::rTol;
@@ -64,6 +65,8 @@ public: // Types
 	using Super::dt_min;
 	using Super::dt_max;
 	using Super::dt_inf;
+	using Super::have_observers_;
+	using Super::observees_;
 
 	using Super::add_discrete;
 	using Super::add_QSS;
@@ -71,7 +74,7 @@ public: // Types
 	using Super::event;
 	using Super::shift_discrete;
 	using Super::shift_QSS;
-	using Super::shrink_observers;
+	using Super::init_observers;
 	using Super::tE_infinity_tQ;
 
 private: // Types
@@ -84,8 +87,8 @@ public: // Creation
 	explicit
 	Variable_Inp1(
 	 std::string const & name,
-	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6
+	 Real const rTol = 1.0e-4,
+	 Real const aTol = 1.0e-6
 	) :
 	 Super( name, rTol, aTol )
 	{}
@@ -100,35 +103,35 @@ public: // Properties
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const t ) const
 	{
 		return x_0_ + ( x_1_ * ( t - tX ) );
 	}
 
 	// Continuous First Derivative at Time t
-	Value
+	Real
 	x1( Time const ) const
 	{
 		return x_1_;
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const ) const
 	{
 		return q_0_;
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const ) const
 	{
 		return q_0_;
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
-	Value
+	Real
 	sn( Time const ) const
 	{
 		return q_0_;
@@ -148,8 +151,8 @@ public: // Methods
 	void
 	init_0()
 	{
-		assert( Super::observees_.empty() );
-		shrink_observers();
+		assert( observees_.empty() );
+		init_observers();
 		x_0_ = q_0_ = f_.vs( tQ );
 		set_qTol();
 	}
@@ -184,7 +187,7 @@ public: // Methods
 		tD = f_.tD( tD );
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
-		advance_observers();
+		if ( have_observers_ ) advance_observers();
 	}
 
 	// Discrete Advance: Stages 0 and 1
@@ -211,7 +214,7 @@ public: // Methods
 		tD = f_.tD( tQ );
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
-		advance_observers();
+		if ( have_observers_ ) advance_observers();
 	}
 
 	// QSS Advance: Stage 0
@@ -249,8 +252,8 @@ private: // Methods
 
 private: // Data
 
-	Value x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
-	Value q_0_{ 0.0 }; // Quantized rep coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
+	Real q_0_{ 0.0 }; // Quantized rep coefficients
 
 };
 

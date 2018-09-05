@@ -52,10 +52,13 @@
 #include <vector>
 
 namespace QSS {
-namespace fmu {
 
 // Forward
 class Conditional;
+
+namespace fmu {
+
+// Forward
 class Variable;
 
 // FMU Variable Pointer Union
@@ -102,7 +105,7 @@ public: // Types
 
 	using size_type = std::size_t;
 	using Time = double;
-	using Value = double;
+	using Real = double;
 	using Variables = std::vector< Variable * >;
 	using FMU_Variables = std::vector< FMU_Variable >;
 	using Var_Idx = std::unordered_map< Variable const *, size_type >; // Map from Variables to their indexes
@@ -127,9 +130,9 @@ public: // Methods
 	// Options Setup
 	void
 	set_options(
-	 Value const tBeg,
-	 Value const tEnd,
-	 Value const rTolerance
+	 Real const tBeg,
+	 Real const tEnd,
+	 Real const rTolerance
 	);
 
 	// Pre-Simulation Setup
@@ -172,8 +175,8 @@ public: // Data
 	size_type iOut = 1u; // Output step index
 
 	// Tolerances
-	Value rTol; // Relative tolerance
-	Value aTol; // Absolute tolerance
+	Real rTol; // Relative tolerance
+	Real aTol; // Absolute tolerance
 
 	// FMU counts
 	size_type n_states = 0;

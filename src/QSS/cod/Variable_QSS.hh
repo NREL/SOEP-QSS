@@ -50,8 +50,10 @@ class Variable_QSS : public Variable
 public: // Types
 
 	using Super = Variable;
+
+	using Real = Variable::Real;
 	using Time = Variable::Time;
-	using Value = Variable::Value;
+
 	template< typename V > using Function = F< V >;
 	using Derivative = Function< Variable >;
 
@@ -61,9 +63,9 @@ protected: // Creation
 	explicit
 	Variable_QSS(
 	 std::string const & name,
-	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6,
-	 Value const xIni = 0.0
+	 Real const rTol = 1.0e-4,
+	 Real const aTol = 1.0e-6,
+	 Real const xIni = 0.0
 	) :
 	 Super( name, rTol, aTol, xIni )
 	{}

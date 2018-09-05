@@ -53,7 +53,7 @@ class Function_Inp_step final
 public: // Types
 
 	using Time = double;
-	using Value = double;
+	using Real = double;
 	using Coefficient = double;
 
 public: // Creation
@@ -96,70 +96,70 @@ public: // Properties
 	}
 
 	// Value at Time t
-	Value
+	Real
 	operator ()( Time const t ) const
 	{
 		return h_0_ + ( h_ * step_number( t ) );
 	}
 
 	// Value at Time t
-	Value
+	Real
 	v( Time const t ) const
 	{
 		return h_0_ + ( h_ * step_number( t ) );
 	}
 
 	// First Derivative at Time t
-	Value
+	Real
 	d1( Time const ) const
 	{
 		return 0.0;
 	}
 
 	// Second Derivative at Time t
-	Value
+	Real
 	d2( Time const ) const
 	{
 		return 0.0;
 	}
 
 	// Third Derivative at Time t
-	Value
+	Real
 	d3( Time const ) const
 	{
 		return 0.0;
 	}
 
 	// Sequential Value at Time t
-	Value
+	Real
 	vs( Time const t ) const
 	{
 		return h_0_ + ( h_ * step_number( t ) );
 	}
 
 	// Forward-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	df1( Time const ) const
 	{
 		return 0.0;
 	}
 
 	// Centered-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	dc1( Time const ) const
 	{
 		return 0.0;
 	}
 
 	// Centered-Difference Sequential Second Derivative at Time t
-	Value
+	Real
 	dc2( Time const ) const
 	{
 		return 0.0;
 	}
 
 	// Centered-Difference Sequential Third Derivative at Time t
-	Value
+	Real
 	dc3( Time const ) const
 	{
 		return 0.0;
@@ -204,10 +204,10 @@ public: // Methods
 private: // Methods
 
 	// Step Number at Time t
-	Value
+	Real
 	step_number( Time const t ) const
 	{
-		Value const ftd( std::floor( t / d_ ) );
+		Real const ftd( std::floor( t / d_ ) );
 		return ( d_ * ( ftd + 1.0 ) > t ? ftd : ftd + 1.0 );
 	}
 

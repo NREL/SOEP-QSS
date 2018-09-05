@@ -56,8 +56,7 @@ TEST( Variable_DTest, Basic )
 	EXPECT_EQ( 1.0e-6, d.aTol );
 	EXPECT_EQ( 0.0, d.tX );
 	EXPECT_EQ( 0.0, d.tQ );
-	EXPECT_EQ( 42.0, d.x() );
-	EXPECT_EQ( 42.0, d.q() );
+	EXPECT_EQ( 42.0, d.r() );
 	EXPECT_EQ( 42.0, d.x( 0.0 ) );
 	EXPECT_EQ( 42.0, d.q( 0.0 ) );
 	EXPECT_EQ( 0.0, d.x1( 0.0 ) );
@@ -69,8 +68,7 @@ TEST( Variable_DTest, Basic )
 	d.advance_handler( 2.0, 99.0 );
 	EXPECT_EQ( 2.0, d.tX );
 	EXPECT_EQ( 2.0, d.tQ );
-	EXPECT_EQ( 99.0, d.x() );
-	EXPECT_EQ( 99.0, d.q() );
+	EXPECT_EQ( 99.0, d.r() );
 	EXPECT_EQ( 99.0, d.x( 2.0 ) );
 	EXPECT_EQ( 99.0, d.q( 2.0 ) );
 	events.clear();

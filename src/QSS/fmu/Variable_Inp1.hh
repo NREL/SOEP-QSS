@@ -56,8 +56,8 @@ public: // Creation
 	explicit
 	Variable_Inp1(
 	 std::string const & name,
-	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6,
+	 Real const rTol = 1.0e-4,
+	 Real const aTol = 1.0e-6,
 	 FMU_Variable const var = FMU_Variable(),
 	 Function f = Function()
 	) :
@@ -74,35 +74,35 @@ public: // Properties
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const t ) const
 	{
 		return x_0_ + ( x_1_ * ( t - tX ) );
 	}
 
 	// Continuous First Derivative at Time t
-	Value
+	Real
 	x1( Time const ) const
 	{
 		return x_1_;
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const ) const
 	{
 		return q_0_;
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const ) const
 	{
 		return q_0_;
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
-	Value
+	Real
 	sn( Time const ) const
 	{
 		return q_0_;
@@ -223,8 +223,8 @@ private: // Methods
 
 private: // Data
 
-	Value x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
-	Value q_0_{ 0.0 }; // Quantized rep coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
+	Real q_0_{ 0.0 }; // Quantized rep coefficients
 
 };
 

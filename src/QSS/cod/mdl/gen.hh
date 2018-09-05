@@ -38,7 +38,7 @@
 
 // QSS Headers
 #include <QSS/cod/Variable.fwd.hh>
-#include <QSS/cod/Conditional.fwd.hh>
+#include <QSS/Conditional.fwd.hh>
 
 // C++ Headers
 #include <vector>
@@ -47,13 +47,16 @@ namespace QSS {
 namespace cod {
 namespace mdl {
 
-using Variables = std::vector< Variable * >;
-using Conditionals = std::vector< Conditional * >;
-using size_type = Variables::size_type;
-
 // Generated Example Setup
 void
-gen( Variables & vars, Conditionals & cons, size_type const nQSS = 9, size_type const nZC = 3, size_type const seed = 0, bool const do_seed = false );
+gen(
+ std::vector< Variable * > & vars,
+ std::vector< Conditional * > & cons,
+ std::vector< Variable * >::size_type const nQSS = 9,
+ std::vector< Variable * >::size_type const nZC = 3,
+ std::vector< Variable * >::size_type const seed = 0,
+ bool const do_seed = false
+);
 
 } // mdl
 } // cod

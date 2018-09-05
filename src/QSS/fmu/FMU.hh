@@ -49,7 +49,7 @@ namespace QSS {
 namespace fmu {
 
 using Time = double;
-using Value = double;
+using Real = double;
 using Integer = int;
 
 // Globals
@@ -116,11 +116,11 @@ init_derivatives( std::size_t const n_derivatives )
 
 // Get a Real FMU Variable Value
 inline
-Value
+Real
 get_real( fmi2_value_reference_t const ref )
 {
 	assert( fmu != nullptr );
-	Value val;
+	Real val;
 	fmi2_status_t const fmi_status = fmi2_import_get_real( fmu, &ref, std::size_t( 1u ), &val );
 	assert( status_check( "get_real", fmi_status ) );
 	return val;
@@ -129,7 +129,7 @@ get_real( fmi2_value_reference_t const ref )
 // Get Real FMU Variable Values
 inline
 void
-get_reals( std::size_t const n, fmi2_value_reference_t const refs[], Value vals[] )
+get_reals( std::size_t const n, fmi2_value_reference_t const refs[], Real vals[] )
 {
 	assert( fmu != nullptr );
 	fmi2_status_t const fmi_status = fmi2_import_get_real( fmu, refs, n, vals );
@@ -139,11 +139,21 @@ get_reals( std::size_t const n, fmi2_value_reference_t const refs[], Value vals[
 // Set a Real FMU Variable Value
 inline
 void
-set_real( fmi2_value_reference_t const ref, Value const val )
+set_real( fmi2_value_reference_t const ref, Real const val )
 {
 	assert( fmu != nullptr );
 	fmi2_status_t const fmi_status = fmi2_import_set_real( fmu, &ref, std::size_t( 1u ), &val );
 	assert( status_check( "set_real", fmi_status ) );
+}
+
+// Set a Real FMU Variable Value
+inline
+void
+set_reals( std::size_t const n, fmi2_value_reference_t const refs[], Real const vals[] )
+{
+	assert( fmu != nullptr );
+	fmi2_status_t const fmi_status = fmi2_import_set_real( fmu, refs, n, vals );
+	assert( status_check( "set_reals", fmi_status ) );
 }
 
 // Get All Derivatives Array: FMU Time and Variable Values Must be Set First
@@ -158,7 +168,7 @@ get_derivatives()
 
 // Get a Derivative: First call get_derivatives
 inline
-Value
+Real
 get_derivative( std::size_t const der_idx )
 {
 	assert( der_idx - 1 < n_ders );

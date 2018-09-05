@@ -50,20 +50,24 @@ class Variable_InpI final : public Variable_Inp< F >
 public: // Types
 
 	using Super = Variable_Inp< F >;
+
+	using Boolean = Variable::Boolean;
+	using Integer = Variable::Integer;
+	using Real = Variable::Real;
 	using Time = Variable::Time;
-	using Value = Variable::Value;
-	using Integer = std::int64_t;
 
 	using Super::name;
 	using Super::tQ;
 	using Super::tX;
 	using Super::tD;
+	using Super::have_observers_;
+	using Super::observees_;
 
 	using Super::add_discrete;
 	using Super::advance_observers;
 	using Super::event;
 	using Super::shift_discrete;
-	using Super::shrink_observers;
+	using Super::init_observers;
 
 private: // Types
 
@@ -95,6 +99,20 @@ public: // Properties
 		return 0;
 	}
 
+	// Boolean Value
+	Boolean
+	b() const
+	{
+		return Boolean( x_ );
+	}
+
+	// Boolean Value at Time t
+	Boolean
+	b( Time const ) const
+	{
+		return Boolean( x_ );
+	}
+
 	// Value
 	Integer
 	i() const
@@ -102,60 +120,53 @@ public: // Properties
 		return x_;
 	}
 
-	// Continuous Value at Time t
+	// Integer Value at Time t
 	Integer
 	i( Time const ) const
 	{
 		return x_;
 	}
 
-	// Value
-	Value
-	x() const
+	// Real Value
+	Real
+	r() const
 	{
-		return Value( x_ );
+		return Real( x_ );
+	}
+
+	// Real Value at Time t
+	Real
+	r( Time const ) const
+	{
+		return Real( x_ );
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const ) const
 	{
-		return Value( x_ );
-	}
-
-	// Continuous First Derivative at Time t
-	Value
-	x1( Time const ) const
-	{
-		return 0.0;
-	}
-
-	// Quantized Value
-	Value
-	q() const
-	{
-		return Value( x_ );
+		return Real( x_ );
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const ) const
 	{
-		return Value( x_ );
+		return Real( x_ );
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const ) const
 	{
-		return x_;
+		return Real( x_ );
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
-	Value
+	Real
 	sn( Time const ) const
 	{
-		return Value( x_ );
+		return Real( x_ );
 	}
 
 public: // Methods
@@ -171,8 +182,8 @@ public: // Methods
 	void
 	init_0()
 	{
-		assert( Super::observees_.empty() );
-		shrink_observers();
+		assert( observees_.empty() );
+		init_observers();
 		x_ = static_cast< Integer >( f_.vs( tQ ) );
 		tD = f_.tD( tQ );
 		add_discrete( tD );
@@ -189,7 +200,7 @@ public: // Methods
 		bool const chg( x_ != x_new );
 		if ( chg ) x_ = x_new;
 		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
-		if ( chg ) advance_observers();
+		if ( chg && have_observers_ ) advance_observers();
 	}
 
 	// Discrete Advance: Stages 0 and 1

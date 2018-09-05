@@ -46,7 +46,7 @@
 namespace QSS {
 
 // QSS Output Signal Class Template
-template< typename Value = double >
+template< typename Real = double >
 class Output_T
 {
 
@@ -54,7 +54,7 @@ public: // Types
 
 	using Time = double;
 	using Times = std::vector< Time >;
-	using Values = std::vector< Value >;
+	using Values = std::vector< Real >;
 	using size_type = Times::size_type;
 
 public: // Creation
@@ -64,8 +64,6 @@ public: // Creation
 	 std::string const & name,
 	 char const type
 	) :
-	 name_( name ),
-	 type_( type ),
 	 file_( name + '.' + type + ".out" )
 	{
 		t_.reserve( capacity_ );
@@ -87,7 +85,7 @@ public: // Methods
 	void
 	append(
 	 Time const t,
-	 Value const v
+	 Real const v
 	)
 	{
 		assert( t_.size() == v_.size() );
@@ -116,8 +114,6 @@ private: // Methods
 
 private: // Data
 
-	std::string name_; // Variable name
-	char type_; // Signal type
 	std::string file_; // File name
 	Times t_; // Time buffer
 	Values v_; // Value buffer

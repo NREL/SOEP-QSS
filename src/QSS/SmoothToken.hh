@@ -48,17 +48,17 @@ class SmoothToken final
 public: // Types
 
 	using Time = double;
-	using Value = double;
+	using Real = double;
 
 public: // Creation
 
 	// Default Constructor
 	SmoothToken(
 	 int const order = 3,
-	 Value const x_0 = 0.0,
-	 Value const x_1 = 0.0,
-	 Value const x_2 = 0.0,
-	 Value const x_3 = 0.0
+	 Real const x_0 = 0.0,
+	 Real const x_1 = 0.0,
+	 Real const x_2 = 0.0,
+	 Real const x_3 = 0.0
 	) :
 	 order( order ),
 	 x_0( x_0 ),
@@ -69,7 +69,7 @@ public: // Creation
 
 	// Order-0 Constructor
 	SmoothToken(
-	 Value const x_0
+	 Real const x_0
 	) :
 	 order( 0 ),
 	 x_0( x_0 )
@@ -77,8 +77,8 @@ public: // Creation
 
 	// Order-1 Constructor
 	SmoothToken(
-	 Value const x_0,
-	 Value const x_1
+	 Real const x_0,
+	 Real const x_1
 	) :
 	 order( 1 ),
 	 x_0( x_0 ),
@@ -87,9 +87,9 @@ public: // Creation
 
 	// Order-2 Constructor
 	SmoothToken(
-	 Value const x_0,
-	 Value const x_1,
-	 Value const x_2
+	 Real const x_0,
+	 Real const x_1,
+	 Real const x_2
 	) :
 	 order( 2 ),
 	 x_0( x_0 ),
@@ -99,10 +99,10 @@ public: // Creation
 
 	// Order-3 Constructor
 	SmoothToken(
-	 Value const x_0,
-	 Value const x_1,
-	 Value const x_2,
-	 Value const x_3
+	 Real const x_0,
+	 Real const x_1,
+	 Real const x_2,
+	 Real const x_3
 	) :
 	 order( 3 ),
 	 x_0( x_0 ),
@@ -139,7 +139,7 @@ public: // Data
 	int order{ 3 }; // Highest derivative order set
 	Time t{ 0.0 }; // Time
 	Time tD{ infinity }; // Next discrete event time
-	Value x_0{ 0.0 }, x_1{ 0.0 }, x_2{ 0.0 }, x_3{ 0.0 }; // Value and derivatives
+	Real x_0{ 0.0 }, x_1{ 0.0 }, x_2{ 0.0 }, x_3{ 0.0 }; // Value and derivatives
 
 };
 

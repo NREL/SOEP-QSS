@@ -50,8 +50,10 @@ class Variable_ZC1 final : public Variable_ZC< F >
 public: // Types
 
 	using Super = Variable_ZC< F >;
+
+	using Real = Variable::Real;
 	using Time = Variable::Time;
-	using Value = Variable::Value;
+
 	using Crossing = Variable::Crossing;
 	using typename Super::If;
 	using typename Super::When;
@@ -104,9 +106,9 @@ public: // Creation
 	explicit
 	Variable_ZC1(
 	 std::string const & name,
-	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6,
-	 Value const zTol = 0.0
+	 Real const rTol = 1.0e-4,
+	 Real const aTol = 1.0e-6,
+	 Real const zTol = 0.0
 	) :
 	 Super( name, rTol, aTol, zTol )
 	{}
@@ -121,7 +123,7 @@ public: // Properties
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const t ) const
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
@@ -129,7 +131,7 @@ public: // Properties
 	}
 
 	// Continuous First Derivative at Time t
-	Value
+	Real
 	x1( Time const t ) const
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
@@ -138,7 +140,7 @@ public: // Properties
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const t ) const
 	{
 		assert( ( tQ <= t ) && ( t <= tE ) );
@@ -175,7 +177,7 @@ public: // Methods
 	void
 	advance_QSS()
 	{
-		Value const x_tE( zChatter_ ? x( tE ) : Value( 0.0 ) );
+		Real const x_tE( zChatter_ ? x( tE ) : Real( 0.0 ) );
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
 		bool const check_crossing( ( tE > tZ_last ) || ( x_mag_ != 0.0 ) );
 		int const sign_old( check_crossing ? signum( zChatter_ ? x_tE : x( tE ) ) : 0 );
@@ -199,7 +201,7 @@ public: // Methods
 	advance_observer( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		Value const x_t( zChatter_ ? x( t ) : Value( 0.0 ) );
+		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		bool const check_crossing( ( t > tZ_last ) || ( x_mag_ != 0.0 ) );
 		int const sign_old( check_crossing ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
 		x_0_ = f_.x( tX = tQ = t );
@@ -216,7 +218,7 @@ public: // Methods
 	advance_observer_parallel( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		Value const x_t( zChatter_ ? x( t ) : Value( 0.0 ) );
+		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
 		x_0_ = f_.x( tX = tQ = t );
@@ -281,13 +283,13 @@ private: // Methods
 						if ( options::refine ) { // Refine root: Expensive!
 							Time t( tZ );
 							//Time t_p( tZ );
-							Value const vZ( f_.x( tZ ) );
-							Value v( vZ ), v_p( vZ );
-							Value m( 1.0 ); // Multiplier
+							Real const vZ( f_.x( tZ ) );
+							Real v( vZ ), v_p( vZ );
+							Real m( 1.0 ); // Multiplier
 							std::size_t i( 0 );
 							std::size_t const n( 10u ); // Max iterations
 							while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-								Value const d( f_.x1( t ) );
+								Real const d( f_.x1( t ) );
 								if ( d == 0.0 ) break;
 								//if ( ( signum( d ) != sign_old ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 								t -= m * ( v / d );
@@ -344,7 +346,7 @@ private: // Methods
 
 private: // Data
 
-	Value x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
 
 };
 

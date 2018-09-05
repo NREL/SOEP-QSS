@@ -47,11 +47,9 @@ namespace QSS {
 namespace cod {
 namespace mdl {
 
-using Variables = std::vector< Variable * >;
-
 // Nonlinear Derivative Example Setup
 void
-nonlinear( Variables & vars )
+nonlinear( Variable::Variables & vars )
 {
 	using namespace options;
 

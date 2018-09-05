@@ -46,11 +46,9 @@ namespace QSS {
 namespace cod {
 namespace mdl {
 
-using Variables = std::vector< Variable * >;
-
 // Simple xy Example Setup
 void
-xy( Variables & vars );
+xy( std::vector< Variable * > & vars );
 
 } // mdl
 } // cod

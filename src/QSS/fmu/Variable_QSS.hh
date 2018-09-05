@@ -56,9 +56,9 @@ protected: // Creation
 	explicit
 	Variable_QSS(
 	 std::string const & name,
-	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6,
-	 Value const xIni = 0.0,
+	 Real const rTol = 1.0e-4,
+	 Real const aTol = 1.0e-6,
+	 Real const xIni = 0.0,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :

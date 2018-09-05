@@ -55,131 +55,131 @@ public: // Types
 	using Variable = V;
 
 	using Time = typename Variable::Time;
-	using Value = typename Variable::Value;
+	using Real = typename Variable::Real;
 
 public: // Properties
 
 	// Continuous Value at Time t
-	Value
+	Real
 	operator ()( Time const t ) const
 	{
 		return ( c1_ * x1_->x( t ) ) + ( c2_ * x2_->x( t ) );
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const t ) const
 	{
 		return ( c1_ * x1_->x( t ) ) + ( c2_ * x2_->x( t ) );
 	}
 
 	// Continuous First Derivative at Time t
-	Value
+	Real
 	x1( Time const t ) const
 	{
 		return ( c1_ * x1_->x1( t ) ) + ( c2_ * x2_->x1( t ) );
 	}
 
 	// Continuous Second Derivative at Time t
-	Value
+	Real
 	x2( Time const t ) const
 	{
 		return ( c1_ * x1_->x2( t ) ) + ( c2_ * x2_->x2( t ) );
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const t ) const
 	{
 		return ( c1_ * x1_->q( t ) ) + ( c2_ * x2_->q( t ) );
 	}
 
 	// Quantized First Derivative at Time t
-	Value
+	Real
 	q1( Time const t ) const
 	{
 		return ( c1_ * x1_->q1( t ) ) + ( c2_ * x2_->q1( t ) );
 	}
 
 	// Quantized Second Derivative at Time t
-	Value
+	Real
 	q2( Time const t ) const
 	{
 		return ( c1_ * x1_->q2( t ) ) + ( c2_ * x2_->q2( t ) );
 	}
 
 	// Quantized Sequential Value at Time t
-	Value
+	Real
 	qs( Time const t ) const
 	{
 		return q( t );
 	}
 
 	// Quantized Forward-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	qf1( Time const t ) const
 	{
 		return q1( t );
 	}
 
 	// Quantized Centered-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	qc1( Time const t ) const
 	{
 		return q1( t );
 	}
 
 	// Quantized Centered-Difference Sequential Second Derivative at Time t
-	Value
+	Real
 	qc2( Time const t ) const
 	{
 		return q2( t );
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const t ) const
 	{
 		return ( c1_ * x1_->s( t ) ) + ( c2_ * x2_->s( t ) );
 	}
 
 	// Simultaneous First Derivative at Time t
-	Value
+	Real
 	s1( Time const t ) const
 	{
 		return ( c1_ * x1_->s1( t ) ) + ( c2_ * x2_->s1( t ) );
 	}
 
 	// Simultaneous Second Derivative at Time t
-	Value
+	Real
 	s2( Time const t ) const
 	{
 		return ( c1_ * x1_->s2( t ) ) + ( c2_ * x2_->s2( t ) );
 	}
 
 	// Simultaneous Sequential Value at Time t
-	Value
+	Real
 	ss( Time const t ) const
 	{
 		return s( t );
 	}
 
 	// Simultaneous Forward-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	sf1( Time const t ) const
 	{
 		return s1( t );
 	}
 
 	// Simultaneous Centered-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	sc1( Time const t ) const
 	{
 		return s1( t );
 	}
 
 	// Simultaneous Centered-Difference Sequential Second Derivative at Time t
-	Value
+	Real
 	sc2( Time const t ) const
 	{
 		return s2( t );

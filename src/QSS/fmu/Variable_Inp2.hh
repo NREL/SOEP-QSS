@@ -56,8 +56,8 @@ public: // Creation
 	explicit
 	Variable_Inp2(
 	 std::string const & name,
-	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6,
+	 Real const rTol = 1.0e-4,
+	 Real const aTol = 1.0e-6,
 	 FMU_Variable const var = FMU_Variable(),
 	 Function f = Function()
 	) :
@@ -74,7 +74,7 @@ public: // Properties
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const t ) const
 	{
 		Time const tDel( t - tX );
@@ -82,49 +82,49 @@ public: // Properties
 	}
 
 	// Continuous First Derivative at Time t
-	Value
+	Real
 	x1( Time const t ) const
 	{
 		return x_1_ + ( two * x_2_ * ( t - tX ) );
 	}
 
 	// Continuous Second Derivative at Time t
-	Value
+	Real
 	x2( Time const ) const
 	{
 		return two * x_2_;
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const t ) const
 	{
 		return q_0_ + ( q_1_ * ( t - tQ ) );
 	}
 
 	// Quantized First Derivative at Time t
-	Value
+	Real
 	q1( Time const ) const
 	{
 		return q_1_;
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const t ) const
 	{
 		return q_0_ + ( q_1_ * ( t - tQ ) );
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
-	Value
+	Real
 	sn( Time const t ) const
 	{
 		return q_0_ + ( q_1_ * ( t - tQ ) );
 	}
 
 	// Simultaneous First Derivative at Time t
-	Value
+	Real
 	s1( Time const ) const
 	{
 		return q_1_;
@@ -198,7 +198,7 @@ public: // Methods
 	{
 		x_0_ = q_0_ = f_( tX = tQ = tD ).x_0;
 		set_qTol();
-		x_1_ = f_( tD ).x_1;
+		x_1_ = q_1_ = f_( tD ).x_1;
 	}
 
 	// Discrete Advance: Stage 2
@@ -273,8 +273,8 @@ private: // Methods
 
 private: // Data
 
-	Value x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous rep coefficients
-	Value q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized rep coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous rep coefficients
+	Real q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized rep coefficients
 
 };
 

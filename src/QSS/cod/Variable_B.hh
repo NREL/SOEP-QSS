@@ -49,7 +49,6 @@ class Variable_B final : public Variable
 public: // Types
 
 	using Super = Variable;
-	using Integer = std::int64_t;
 
 public: // Creation
 
@@ -57,7 +56,7 @@ public: // Creation
 	explicit
 	Variable_B(
 	 std::string const & name,
-	 bool const xIni = false
+	 Boolean const xIni = false
 	) :
 	 Super( name, xIni ),
 	 x_( xIni )
@@ -82,14 +81,14 @@ public: // Properties
 	}
 
 	// Boolean Value
-	bool
+	Boolean
 	b() const
 	{
 		return x_;
 	}
 
 	// Boolean Value at Time t
-	bool
+	Boolean
 	b( Time const ) const
 	{
 		return x_;
@@ -99,63 +98,56 @@ public: // Properties
 	Integer
 	i() const
 	{
-		return x_;
+		return Integer( x_ );
 	}
 
-	// Continuous Integer Value at Time t
+	// Integer Value at Time t
 	Integer
 	i( Time const ) const
 	{
-		return x_;
+		return Integer( x_ );
 	}
 
-	// Value
-	Value
-	x() const
+	// Real Value
+	Real
+	r() const
 	{
-		return x_;
+		return Real( x_ );
+	}
+
+	// Real Value at Time t
+	Real
+	r( Time const ) const
+	{
+		return Real( x_ );
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const ) const
 	{
-		return x_;
-	}
-
-	// Continuous First Derivative at Time t
-	Value
-	x1( Time const ) const
-	{
-		return 0.0;
-	}
-
-	// Quantized Value
-	Value
-	q() const
-	{
-		return x_;
+		return Real( x_ );
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const ) const
 	{
-		return x_;
+		return Real( x_ );
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const ) const
 	{
-		return x_;
+		return Real( x_ );
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
-	Value
+	Real
 	sn( Time const ) const
 	{
-		return x_;
+		return Real( x_ );
 	}
 
 public: // Methods
@@ -169,7 +161,7 @@ public: // Methods
 
 	// Initialization to a Value
 	void
-	init( Value const x )
+	init( Real const x )
 	{
 		init_0( x );
 	}
@@ -178,8 +170,8 @@ public: // Methods
 	void
 	init_0()
 	{
-		assert( Super::observees_.empty() );
-		shrink_observers();
+		assert( observees_.empty() );
+		init_observers();
 		x_ = ( xIni != 0 );
 		add_handler();
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
@@ -187,10 +179,10 @@ public: // Methods
 
 	// Initialization to a Value: Stage 0
 	void
-	init_0( Value const x )
+	init_0( Real const x )
 	{
-		assert( Super::observees_.empty() );
-		shrink_observers();
+		assert( observees_.empty() );
+		init_observers();
 		x_ = ( x != 0 );
 		add_handler();
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
@@ -198,26 +190,26 @@ public: // Methods
 
 	// Handler Advance
 	void
-	advance_handler( Time const t, Value const x )
+	advance_handler( Time const t, Real const x )
 	{
 		assert( tX <= t );
 		tX = tQ = t;
 		shift_handler();
-		bool const x_new( x != 0.0 );
+		Boolean const x_new( x != 0.0 );
 		bool const chg( x_ != x_new );
-		if ( chg ) x_ = x;
+		if ( chg ) x_ = x_new;
 		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
-		if ( chg ) advance_observers();
+		if ( chg && have_observers_ ) advance_observers();
 	}
 
 	// Handler Advance: Stage 0
 	void
-	advance_handler_0( Time const t, Value const x )
+	advance_handler_0( Time const t, Real const x )
 	{
 		assert( tX <= t );
 		tX = tQ = t;
 		shift_handler();
-		bool const x_new( x != 0.0 );
+		Boolean const x_new( x != 0.0 );
 		bool const chg( x_ != x_new );
 		if ( chg ) x_ = x_new;
 		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
@@ -225,7 +217,7 @@ public: // Methods
 
 private: // Data
 
-	bool x_; // Value
+	Boolean x_; // Value
 
 };
 

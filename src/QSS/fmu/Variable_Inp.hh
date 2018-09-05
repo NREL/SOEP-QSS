@@ -53,6 +53,7 @@ class Variable_Inp : public Variable
 public: // Types
 
 	using Super = Variable;
+
 	using Function = std::function< SmoothToken const &( Time const ) >;
 
 protected: // Creation
@@ -60,8 +61,8 @@ protected: // Creation
 	// Name + Tolerance Constructor
 	Variable_Inp(
 	 std::string const & name,
-	 Value const rTol,
-	 Value const aTol,
+	 Real const rTol,
+	 Real const aTol,
 	 FMU_Variable const var = FMU_Variable(),
 	 Function f = Function()
 	) :

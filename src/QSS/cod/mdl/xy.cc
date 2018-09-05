@@ -43,8 +43,6 @@ namespace QSS {
 namespace cod {
 namespace mdl {
 
-using Variables = std::vector< Variable * >;
-
 // Simple xy Example Setup
 //
 //	 tmax   = 3.5
@@ -53,7 +51,7 @@ using Variables = std::vector< Variable * >;
 //	 Q      = 1
 //	 order  = 1
 void
-xy( Variables & vars )
+xy( Variable::Variables & vars )
 {
 	using namespace options;
 

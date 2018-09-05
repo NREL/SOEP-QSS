@@ -56,9 +56,9 @@ public: // Creation
 	explicit
 	Variable_LIQSS2(
 	 std::string const & name,
-	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6,
-	 Value const xIni = 0.0,
+	 Real const rTol = 1.0e-4,
+	 Real const aTol = 1.0e-6,
+	 Real const xIni = 0.0,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
@@ -80,7 +80,7 @@ public: // Properties
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const t ) const
 	{
 		Time const tDel( t - tX );
@@ -88,35 +88,35 @@ public: // Properties
 	}
 
 	// Continuous First Derivative at Time t
-	Value
+	Real
 	x1( Time const t ) const
 	{
 		return x_1_ + ( two * x_2_ * ( t - tX ) );
 	}
 
 	// Continuous Second Derivative at Time t
-	Value
+	Real
 	x2( Time const ) const
 	{
 		return two * x_2_;
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const t ) const
 	{
 		return q_0_ + ( q_1_ * ( t - tQ ) );
 	}
 
 	// Quantized First Derivative at Time t
-	Value
+	Real
 	q1( Time const ) const
 	{
 		return q_1_;
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const t ) const
 	{
 		assert( ( st != events.active_superdense_time() ) || ( t == tQ ) );
@@ -124,14 +124,14 @@ public: // Properties
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
-	Value
+	Real
 	sn( Time const t ) const
 	{
 		return ( st == events.active_superdense_time() ? q_c_ + ( s_1_ * ( t - tQ ) ) : q_0_ + ( q_1_ * ( t - tQ ) ) );
 	}
 
 	// Simultaneous First Derivative at Time t
-	Value
+	Real
 	s1( Time const ) const
 	{
 		return ( st == events.active_superdense_time() ? s_1_ : q_1_ );
@@ -150,7 +150,7 @@ public: // Methods
 
 	// Initialization to a Value
 	void
-	init( Value const x )
+	init( Real const x )
 	{
 		init_0( x );
 		init_1();
@@ -162,15 +162,17 @@ public: // Methods
 	init_0()
 	{
 		init_observers();
+		init_observees();
 		fmu_set_value( x_0_ = q_c_ = q_0_ = xIni );
 		set_qTol();
 	}
 
 	// Initialization to a Value: Stage 0
 	void
-	init_0( Value const x )
+	init_0( Real const x )
 	{
 		init_observers();
+		init_observees();
 		fmu_set_value( x_0_ = q_c_ = q_0_ = x );
 		set_qTol();
 	}
@@ -290,7 +292,7 @@ public: // Methods
 
 	// Observer Advance: Stage 1
 	void
-	advance_observer_1( Time const t, Value const d )
+	advance_observer_1( Time const t, Real const d )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		assert( d == fmu_get_deriv() );
@@ -314,7 +316,7 @@ public: // Methods
 
 	// Observer Advance: Stage 2
 	void
-	advance_observer_2( Time const t, Value const d )
+	advance_observer_2( Time const t, Real const d )
 	{
 		assert( tX <= t );
 		assert( d == fmu_get_deriv() );
@@ -413,8 +415,8 @@ private: // Methods
 	{
 		assert( tQ <= tX );
 		assert( dt_min <= dt_max );
-		Value const d_0( x_0_ - ( q_c_ + ( q_1_ * ( tX - tQ ) ) ) );
-		Value const d_1( x_1_ - q_1_ );
+		Real const d_0( x_0_ - ( q_c_ + ( q_1_ * ( tX - tQ ) ) ) );
+		Real const d_1( x_1_ - q_1_ );
 		Time dt;
 		if ( ( d_1 >= 0.0 ) && ( x_2_ >= 0.0 ) ) { // Upper boundary crossing
 			dt = min_root_quadratic_upper( x_2_, d_1, d_0 - qTol );
@@ -458,15 +460,15 @@ private: // Methods
 		assert( tN == tQ + options::dtNum );
 
 		// Value at +/- qTol
-		Value const q_l( q_c_ - qTol );
-		Value const q_u( q_c_ + qTol );
+		Real const q_l( q_c_ - qTol );
+		Real const q_u( q_c_ + qTol );
 
 		// Second derivative at +/- qTol
 		fmu_set_value( q_l + ( d_l_ * options::dtNum ) );
-		Value const d2_l( options::one_half_over_dtNum * ( fmu_get_deriv() - d_l_ ) ); // 1/2 * 2nd derivative
+		Real const d2_l( options::one_half_over_dtNum * ( fmu_get_deriv() - d_l_ ) ); // 1/2 * 2nd derivative
 		int const d2_l_s( signum( d2_l ) );
 		fmu_set_value( q_u + ( d_u_ * options::dtNum ) );
-		Value const d2_u( options::one_half_over_dtNum * ( fmu_get_deriv() - d_u_ ) ); // 1/2 * 2nd derivative
+		Real const d2_u( options::one_half_over_dtNum * ( fmu_get_deriv() - d_u_ ) ); // 1/2 * 2nd derivative
 		int const d2_u_s( signum( d2_u ) );
 
 		// Set coefficients based on second derivative signs
@@ -491,10 +493,10 @@ private: // Methods
 
 private: // Data
 
-	Value x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous rep coefficients
-	Value q_c_{ 0.0 }, q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized rep coefficients
-	Value s_1_{ 0.0 }; // Simultaneuous rep coefficients
-	Value d_l_{ 0.0 }, d_u_{ 0.0 }; // Derivative at +/- qTol
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous rep coefficients
+	Real q_c_{ 0.0 }, q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized rep coefficients
+	Real s_1_{ 0.0 }; // Simultaneuous rep coefficients
+	Real d_l_{ 0.0 }, d_u_{ 0.0 }; // Derivative at +/- qTol
 
 };
 

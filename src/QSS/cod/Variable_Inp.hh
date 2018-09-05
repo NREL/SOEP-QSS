@@ -50,8 +50,10 @@ class Variable_Inp : public Variable
 public: // Types
 
 	using Super = Variable;
+
+	using Real = Variable::Real;
 	using Time = Variable::Time;
-	using Value = Variable::Value;
+
 	using Function = F;
 
 protected: // Creation
@@ -60,8 +62,8 @@ protected: // Creation
 	explicit
 	Variable_Inp(
 	 std::string const & name,
-	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6
+	 Real const rTol = 1.0e-4,
+	 Real const aTol = 1.0e-6
 	) :
 	 Super( name, rTol, aTol )
 	{

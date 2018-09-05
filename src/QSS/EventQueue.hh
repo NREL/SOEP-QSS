@@ -64,7 +64,7 @@ public: // Types
 
 	using EventT = Event< T >;
 	using Type = typename EventT::Type;
-	using Value = typename EventT::Value;
+	using Real = typename EventT::Real;
 	using Time = SuperdenseTime::Time;
 	using Index = SuperdenseTime::Index;
 	using Offset = SuperdenseTime::Offset;
@@ -496,7 +496,7 @@ public: // Handler Event Methods
 	iterator
 	shift_handler(
 	 Time const t,
-	 Value const val,
+	 Real const val,
 	 iterator const i
 	)
 	{

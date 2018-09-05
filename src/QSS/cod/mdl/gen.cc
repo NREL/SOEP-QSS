@@ -91,13 +91,13 @@ public: // Types
 
 	using Variable = V;
 	using Time = typename Variable::Time;
-	using Value = typename Variable::Value;
+	using Real = typename Variable::Real;
 	using Variables = typename Variable::Variables;
 	using size_type = typename Variables::size_type;
 	using Crossing = typename Variable::Crossing;
 	using Variable_QSS_LTI = Variable_QSS< Function_LTI >;
 	using Variable_ZC_LTI = Variable_ZC< Function_LTI >;
-	using Values = std::vector< Value >;
+	using Values = std::vector< Real >;
 
 public: // Properties
 
@@ -144,8 +144,8 @@ public: // Methods
 	void
 	add(
 	 Variable_QSS_LTI * v, // Variable
-	 Value const dn, // Value to set on downward crossing
-	 Value const up // Value to set on upward crossing
+	 Real const dn, // Value to set on downward crossing
+	 Real const up // Value to set on upward crossing
 	)
 	{
 		assert( std::find( observers_.begin(), observers_.end(), v ) == observers_.end() );
@@ -165,18 +165,26 @@ private: // Data
 
 // Generated Example Setup
 void
-gen( Variables & vars, Conditionals & cons, size_type const nQSS, size_type const nZC, size_type const seed, bool const do_seed )
+gen(
+ Variable::Variables & vars,
+ std::vector< Conditional * > & cons,
+ Variable::size_type const nQSS,
+ Variable::size_type const nZC,
+ Variable::size_type const seed,
+ bool const do_seed
+)
 {
 	using namespace options;
-	using Value = Variable::Value;
+	using Real = Variable::Real;
+	using size_type = Variable::size_type;
 	using Indexes = std::unordered_set< size_type >;
 
 	// Parameters
-	Value const x_mag( 100.0 ); // Variable initial value range
-	Value const c_mag( 0.5 ); // Derivative coefficient range
-	Value const h_mag( x_mag ); // Handler value range
-	size_type const deg_QSS( static_cast< size_type >( std::sqrt( Value( nQSS ) ) ) ); // QSS dependency out-degree range
-	size_type const deg_ZC( static_cast< size_type >( std::sqrt( Value( nQSS ) ) ) ); // ZC dependency out-degree range
+	Real const x_mag( 100.0 ); // Variable initial value range
+	Real const c_mag( 0.5 ); // Derivative coefficient range
+	Real const h_mag( x_mag ); // Handler value range
+	size_type const deg_QSS( static_cast< size_type >( std::sqrt( Real( nQSS ) ) ) ); // QSS dependency out-degree range
+	size_type const deg_ZC( static_cast< size_type >( std::sqrt( Real( nQSS ) ) ) ); // ZC dependency out-degree range
 	size_type const deg_handler( static_cast< size_type >( 4 ) ); // Conditional handler dependency out-degree range
 
 	// Initialization
@@ -196,7 +204,7 @@ gen( Variables & vars, Conditionals & cons, size_type const nQSS, size_type cons
 		V * x( nullptr );
 		std::ostringstream i_stream; i_stream << i;
 		std::string const x_nam( "x" + i_stream.str() );
-		Value const x_ini( uniform_random_real( -x_mag, x_mag ) );
+		Real const x_ini( uniform_random_real( -x_mag, x_mag ) );
 		if ( qss == QSS::QSS1 ) {
 			vars.push_back( x = new Variable_QSS1< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
 		} else if ( qss == QSS::QSS2 ) {
@@ -227,13 +235,13 @@ gen( Variables & vars, Conditionals & cons, size_type const nQSS, size_type cons
 	std::cout << "\nQSS Variables:\n";
 	for ( size_type i = 0; i < nQSS; ++i ) {
 		V * x( static_cast< V * >( vars[ i ] ) );
-		Value const c0( uniform_random_real( -c_mag, c_mag ) ); // Constant
+		Real const c0( uniform_random_real( -c_mag, c_mag ) ); // Constant
 		x->add( c0 );
 		std::cout << '\n' << x->name << "\n der = " << c0;
 		size_type const n_deps( uniform_random_integer( size_type( 1 ), deg_QSS ) ); // Number of QSS derivative dependencies
 		Indexes ks;
 		for ( size_type j = 0; j < n_deps; ++j ) {
-			Value const c( uniform_random_real( -c_mag, c_mag ) ); // Coefficient
+			Real const c( uniform_random_real( -c_mag, c_mag ) ); // Coefficient
 			size_type k( uniform_random_integer( size_type( 0 ), nQSS - 1 ) ); // QSS variable index
 			while ( ks.find( k ) != ks.end() ) k = uniform_random_integer( size_type( 0 ), nQSS - 1 ); // Avoid duplicates
 			assert( k < nQSS );
@@ -261,13 +269,13 @@ gen( Variables & vars, Conditionals & cons, size_type const nQSS, size_type cons
 		z->add_crossings_non_Flat();
 
 		// Function
-		Value const c0( uniform_random_real( -c_mag, c_mag ) ); // Constant
+		Real const c0( uniform_random_real( -c_mag, c_mag ) ); // Constant
 		z->add( c0 );
 		std::cout << '\n' << z->name << "\n fxn = " << c0;
 		size_type const n_deps( uniform_random_integer( size_type( 1 ), deg_ZC ) ); // Number of ZC dependencies
 		Indexes ks;
 		for ( size_type j = 0; j < n_deps; ++j ) {
-			Value const c( uniform_random_real( -c_mag, c_mag ) ); // Coefficient
+			Real const c( uniform_random_real( -c_mag, c_mag ) ); // Coefficient
 			size_type k( uniform_random_integer( size_type( 0 ), nQSS - 1 ) ); // QSS variable index
 			while ( ks.find( k ) != ks.end() ) k = uniform_random_integer( size_type( 0 ), nQSS - 1 ); // Avoid duplicates
 			assert( k < nQSS );
@@ -278,7 +286,7 @@ gen( Variables & vars, Conditionals & cons, size_type const nQSS, size_type cons
 		std::cout << '\n';
 
 		// Conditional
-		using When = WhenV< Variable >;
+		using When = Conditional_When< Variable >;
 		When * hit( new When( z->name + "_When" ) );
 		cons.push_back( hit );
 		When::ClauseH< Handler_gen > * hit_clause( hit->add_clause< Handler_gen >() );
@@ -292,8 +300,8 @@ gen( Variables & vars, Conditionals & cons, size_type const nQSS, size_type cons
 			while ( ks.find( k ) != ks.end() ) k = uniform_random_integer( size_type( 0 ), nQSS - 1 ); // Avoid duplicates
 			assert( k < nQSS );
 			ks.insert( k );
-			Value const d( uniform_random_real( -h_mag, h_mag ) ); // Downward crossing value
-			Value const u( uniform_random_real( -h_mag, h_mag ) ); // Upward crossing value
+			Real const d( uniform_random_real( -h_mag, h_mag ) ); // Downward crossing value
+			Real const u( uniform_random_real( -h_mag, h_mag ) ); // Upward crossing value
 			hit_clause->h.add( static_cast< V * >( vars[ k ] ), d, u );
 			std::cout << "\n  " << vars[ k ]->name << ": ( " << d << ", " << u << " )";
 		}

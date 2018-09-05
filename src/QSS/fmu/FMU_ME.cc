@@ -172,9 +172,9 @@ namespace fmu {
 	void
 	FMU_ME::
 	set_options(
-	 Value const tBeg,
-	 Value const tEnd,
-	 Value const rTolerance
+	 Real const tBeg,
+	 Real const tEnd,
+	 Real const rTolerance
 	)
 	{
 		t0 = tBeg;
@@ -191,7 +191,7 @@ namespace fmu {
 		using Variables = Variable::Variables;
 		using size_type = Variables::size_type;
 		using Time = Variable::Time;
-		using Value = Variable::Value;
+		using Real = Variable::Real;
 		using Function = std::function< SmoothToken const &( Time const ) >;
 
 		// I/o setup
@@ -477,7 +477,7 @@ namespace fmu {
 				if ( var_real != nullptr ) { // Add to Variable to Derivative Map
 					FMU_Variable & fmu_der( fmu_vars[ der_real ] );
 					FMU_Variable & fmu_var( fmu_vars[ var_real ] );
-					Value const states_initial( states[ ics ] ); // Initial value from fmi2_import_get_continuous_states()
+					Real const states_initial( states[ ics ] ); // Initial value from fmi2_import_get_continuous_states()
 					fmu_der.ics = fmu_var.ics = ++ics;
 					fmu_ders[ var_real ] = fmu_der;
 					fmu_dvrs[ der_real ] = fmu_var;
@@ -485,7 +485,7 @@ namespace fmu {
 					std::cout << " Initial value of " << var_name << " = " << states_initial << std::endl;
 					bool const start( fmi2_import_get_variable_has_start( fmu_var.var ) == 1 );
 					if ( start ) {
-						Value const var_initial( fmi2_import_get_real_variable_start( var_real ) );
+						Real const var_initial( fmi2_import_get_real_variable_start( var_real ) );
 						if ( var_initial != states_initial ) {
 							std::cerr << "\n Warning: Initial value from xml specs: " << var_initial << " is not equal to initial value from fmi2GetContinuousStates(): " << states_initial << '\n';
 							std::cerr << "          Using initial value from fmi2GetContinuousStates()" << std::endl;
@@ -577,7 +577,7 @@ namespace fmu {
 										std::exit( EXIT_FAILURE );
 									}
 									vars.push_back( qss_var ); // Add to QSS variables
-									qss_var_of_ref[ fmi2_import_get_variable_vr( fmu_var.var )  ] = qss_var;
+									qss_var_of_ref[ fmi2_import_get_variable_vr( fmu_var.var ) ] = qss_var;
 									if ( fmi2_import_get_causality( fmu_var.var ) == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
 										outs.push_back( qss_var );
 										fmu_outs.erase( fmu_var.rvr ); // Remove it from non-QSS FMU outputs
@@ -587,7 +587,7 @@ namespace fmu {
 									++n_ZC_vars;
 
 									// Create single clause when block for the zero-crossing variable for now: FMU conditional block info would allow us to do more
-									using When = WhenV< Variable >;
+									using When = Conditional_When< Variable >;
 									When * when( new When() );
 									cons.push_back( when );
 									When::Clause * when_clause( when->add_clause() );

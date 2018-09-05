@@ -46,11 +46,9 @@ namespace QSS {
 namespace cod {
 namespace mdl {
 
-using Variables = std::vector< Variable * >;
-
 // Exponential Decay with Sine Input and Numeric Differentiation Example Setup
 void
-exponential_decay_sine_ND( Variables & vars );
+exponential_decay_sine_ND( std::vector< Variable * > & vars );
 
 } // mdl
 } // cod

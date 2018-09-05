@@ -56,8 +56,8 @@ public: // Creation
 	explicit
 	Variable_xInp2(
 	 std::string const & name,
-	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6,
+	 Real const rTol = 1.0e-4,
+	 Real const aTol = 1.0e-6,
 	 FMU_Variable const var = FMU_Variable(),
 	 Function f = Function()
 	) :
@@ -74,7 +74,7 @@ public: // Properties
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const t ) const
 	{
 		Time const tDel( t - tX );
@@ -82,21 +82,21 @@ public: // Properties
 	}
 
 	// Continuous First Derivative at Time t
-	Value
+	Real
 	x1( Time const t ) const
 	{
 		return x_1_ + ( two * x_2_ * ( t - tX ) );
 	}
 
 	// Continuous Second Derivative at Time t
-	Value
+	Real
 	x2( Time const ) const
 	{
 		return two * x_2_;
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const t ) const
 	{
 		Time const tDel( t - tQ );
@@ -104,21 +104,21 @@ public: // Properties
 	}
 
 	// Quantized First Derivative at Time t
-	Value
+	Real
 	q1( Time const t ) const
 	{
 		return x_1_ + ( two * x_2_ * ( t - tQ ) );
 	}
 
 	// Quantized Second Derivative at Time t
-	Value
+	Real
 	q2( Time const ) const
 	{
 		return two * x_2_;
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const t ) const
 	{
 		Time const tDel( t - tQ );
@@ -126,7 +126,7 @@ public: // Properties
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
-	Value
+	Real
 	sn( Time const t ) const
 	{
 		Time const tDel( t - tQ );
@@ -134,14 +134,14 @@ public: // Properties
 	}
 
 	// Simultaneous First Derivative at Time t
-	Value
+	Real
 	s1( Time const t ) const
 	{
 		return x_1_ + ( two * x_2_ * ( t - tQ ) );
 	}
 
 	// Simultaneous Second Derivative at Time t
-	Value
+	Real
 	s2( Time const ) const
 	{
 		return two * x_2_;
@@ -290,7 +290,7 @@ private: // Methods
 
 private: // Data
 
-	Value x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous rep coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous rep coefficients
 
 };
 

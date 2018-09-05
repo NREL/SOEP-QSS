@@ -81,15 +81,15 @@ public: // Types
 	using size_type = typename Terms::size_type;
 
 	using Time = typename Variable::Time;
-	using Value = typename Variable::Value;
+	using Real = typename Variable::Real;
 
 public: // Properties
 
 	// Continuous Value at Time t
-	Value
+	Real
 	operator ()( Time const t ) const
 	{
-		Value r( c0_ );
+		Real r( c0_ );
 		for ( Term const & term : terms_ ) {
 			r += term.c * term.v->x( t );
 		}
@@ -97,10 +97,10 @@ public: // Properties
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const t ) const
 	{
-		Value r( c0_ );
+		Real r( c0_ );
 		for ( Term const & term : terms_ ) {
 			r += term.c * term.v->x( t );
 		}
@@ -108,31 +108,31 @@ public: // Properties
 	}
 
 	// Continuous First Derivative at Time t
-	Value
+	Real
 	x1( Time const t ) const
 	{
 		return dtn_inv_2_ * ( x( t + dtn_ ) - x( t - dtn_ ) );
 	}
 
 	// Continuous Second Derivative at Time t
-	Value
+	Real
 	x2( Time const t ) const
 	{
 		return dtn_inv_sq_ * ( x( t + dtn_ ) - ( 2.0 * x( t ) ) + x( t - dtn_ ) );
 	}
 
 	// Continuous Third Derivative at Time t
-	Value
+	Real
 	x3( Time const t ) const
 	{
 		return dtn_inv_cb_2_ * ( x( t + dtn_2_ ) - x( t - dtn_2_ ) - ( 2.0 * ( x( t + dtn_ ) - x( t - dtn_ ) ) ) );
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const t ) const
 	{
-		Value r( c0_ );
+		Real r( c0_ );
 		for ( Term const & term : terms_ ) {
 			r += term.c * term.v->q( t );
 		}
@@ -140,52 +140,52 @@ public: // Properties
 	}
 
 	// Quantized First Derivative at Time t
-	Value
+	Real
 	q1( Time const t ) const
 	{
 		return dtn_inv_2_ * ( q( t + dtn_ ) - q( t - dtn_ ) );
 	}
 
 	// Quantized Second Derivative at Time t
-	Value
+	Real
 	q2( Time const t ) const
 	{
 		return dtn_inv_sq_ * ( q( t + dtn_ ) - ( 2.0 * q( t ) ) + q( t - dtn_ ) );
 	}
 
 	// Quantized Sequential Value at Time t
-	Value
+	Real
 	qs( Time const t ) const
 	{
 		return v_t_ = q( t );
 	}
 
 	// Quantized Forward-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	qf1( Time const t ) const
 	{
 		return dtn_inv_ * ( q( t + dtn_ ) - v_t_ );
 	}
 
 	// Quantized Centered-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	qc1( Time const t ) const
 	{
 		return dtn_inv_2_ * ( ( v_p_ = q( t + dtn_ ) ) - ( v_m_ = q( t - dtn_ ) ) );
 	}
 
 	// Quantized Centered-Difference Sequential Second Derivative at Time t
-	Value
+	Real
 	qc2( Time const ) const
 	{
 		return dtn_inv_sq_ * ( v_p_ - ( 2.0 * v_t_ ) + v_m_ );
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const t ) const
 	{
-		Value r( c0_ );
+		Real r( c0_ );
 		for ( Term const & term : terms_ ) {
 			r += term.c * term.v->s( t );
 		}
@@ -193,10 +193,10 @@ public: // Properties
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
-	Value
+	Real
 	sn( Time const t ) const
 	{
-		Value r( c0_ );
+		Real r( c0_ );
 		for ( Term const & term : terms_ ) {
 			r += term.c * term.v->sn( t );
 		}
@@ -204,42 +204,42 @@ public: // Properties
 	}
 
 	// Simultaneous First Derivative at Time t
-	Value
+	Real
 	s1( Time const t ) const
 	{
 		return dtn_inv_2_ * ( sn( t + dtn_ ) - sn( t - dtn_ ) );
 	}
 
 	// Simultaneous Second Derivative at Time t
-	Value
+	Real
 	s2( Time const t ) const
 	{
 		return dtn_inv_sq_ * ( sn( t + dtn_ ) - ( 2.0 * s( t ) ) + sn( t - dtn_ ) );
 	}
 
 	// Simultaneous Sequential Value at Time t
-	Value
+	Real
 	ss( Time const t ) const
 	{
 		return v_t_ = s( t );
 	}
 
 	// Simultaneous Forward-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	sf1( Time const t ) const
 	{
 		return dtn_inv_ * ( sn( t + dtn_ ) - v_t_ );
 	}
 
 	// Simultaneous Centered-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	sc1( Time const t ) const
 	{
 		return dtn_inv_2_ * ( ( v_p_ = sn( t + dtn_ ) ) - ( v_m_ = sn( t - dtn_ ) ) );
 	}
 
 	// Simultaneous Centered-Difference Sequential Second Derivative at Time t
-	Value
+	Real
 	sc2( Time const ) const
 	{
 		return dtn_inv_sq_ * ( v_p_ - ( 2.0 * v_t_ ) + v_m_ );
@@ -298,9 +298,9 @@ private: // Data
 	Coefficient c0_{ 0.0 }; // Constant term
 	Terms terms_; // Coefficient * Variable terms
 
-	mutable Value v_t_; // Last value(t) computed
-	mutable Value v_p_; // Last value(t+dtn) computed
-	mutable Value v_m_; // Last value(t-dtn) computed
+	mutable Real v_t_; // Last value(t) computed
+	mutable Real v_p_; // Last value(t+dtn) computed
+	mutable Real v_m_; // Last value(t-dtn) computed
 
 	Time dtn_{ options::dtNum }; // Differentiation time step
 	Time dtn_2_{ 2.0 * options::dtNum }; // Differentiation time step x 2

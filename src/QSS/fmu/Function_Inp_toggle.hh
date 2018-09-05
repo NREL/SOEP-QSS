@@ -53,15 +53,15 @@ class Function_Inp_toggle final
 public: // Types
 
 	using Time = double;
-	using Value = double;
+	using Real = double;
 
 public: // Creation
 
 	// Constructor
 	Function_Inp_toggle(
-	 Value const h_0 = 0.0,
-	 Value const h = 1.0,
-	 Value const d = 1.0
+	 Real const h_0 = 0.0,
+	 Real const h = 1.0,
+	 Real const d = 1.0
 	) :
 	 s_( 0, h_0 ),
 	 h_0_( h_0 ),
@@ -97,28 +97,28 @@ public: // Properties
 	}
 
 	// Value at Time t
-	Value
+	Real
 	v( Time const t ) const
 	{
 		return h_0_ + ( h_ * ( step_number( t ) % 2 ) );
 	}
 
 	// First Derivative at Time t
-	Value
+	Real
 	d1( Time const ) const
 	{
 		return 0.0;
 	}
 
 	// Second Derivative at Time t
-	Value
+	Real
 	d2( Time const ) const
 	{
 		return 0.0;
 	}
 
 	// Third Derivative at Time t
-	Value
+	Real
 	d3( Time const ) const
 	{
 		return 0.0;
@@ -128,8 +128,8 @@ public: // Properties
 	Time
 	tD( Time const t ) const
 	{
-		Value const n_next( std::floor( t / d_ ) + 1.0 );
-		Value const t_next( d_ * n_next );
+		Real const n_next( std::floor( t / d_ ) + 1.0 );
+		Real const t_next( d_ * n_next );
 		return ( t_next > t ? t_next : d_ * ( n_next + 1.0 ) );
 	}
 
@@ -139,7 +139,7 @@ private: // Methods
 	std::int64_t
 	step_number( Time const t ) const
 	{
-		Value const ftd( std::floor( t / d_ ) );
+		Real const ftd( std::floor( t / d_ ) );
 		return static_cast< std::int64_t >( d_ * ( ftd + 1.0 ) > t ? ftd : ftd + 1.0 );
 	}
 
@@ -147,9 +147,9 @@ private: // Data
 
 	mutable SmoothToken s_; // Cached state
 
-	Value const h_0_{ 0.0 }; // Initial height
-	Value const h_{ 1.0 }; // Step height
-	Value const d_{ 1.0 }; // Step time delta
+	Real const h_0_{ 0.0 }; // Initial height
+	Real const h_{ 1.0 }; // Step height
+	Real const d_{ 1.0 }; // Step time delta
 
 };
 

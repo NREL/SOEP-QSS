@@ -62,14 +62,17 @@ class Variable : public Target
 public: // Types
 
 	using Super = Target;
+
+	using Boolean = bool;
+	using Integer = std::int64_t;
+	using Real = double;
 	using Time = double;
-	using Value = double;
+	using Coefficient = double;
 	using Variables = std::vector< Variable * >;
 	using size_type = Variables::size_type;
-	using Coefficient = double;
 
-	using If = IfV< Variable >;
-	using When = WhenV< Variable >;
+	using If = Conditional_If< Variable >;
+	using When = Conditional_When< Variable >;
 	using If_Clauses = std::vector< If::Clause * >;
 	using When_Clauses = std::vector< When::Clause * >;
 
@@ -88,19 +91,19 @@ public: // Types
 
 	struct AdvanceSpecs_LIQSS1 final
 	{
-		Value l;
-		Value u;
-		Value z;
+		Real l;
+		Real u;
+		Real z;
 	};
 
 	struct AdvanceSpecs_LIQSS2 final
 	{
-		Value l1;
-		Value u1;
-		Value z1;
-		Value l2;
-		Value u2;
-		Value z2;
+		Real l1;
+		Real u1;
+		Real z1;
+		Real l2;
+		Real u2;
+		Real z2;
 	};
 
 protected: // Creation
@@ -108,13 +111,13 @@ protected: // Creation
 	// Name + Tolerance + Value Constructor
 	Variable(
 	 std::string const & name,
-	 Value const rTol,
-	 Value const aTol,
-	 Value const xIni = 0.0
+	 Real const rTol,
+	 Real const aTol,
+	 Real const xIni = 0.0
 	) :
 	 Target( name ),
 	 rTol( std::max( rTol, 0.0 ) ),
-	 aTol( std::max( aTol, std::numeric_limits< Value >::min() ) ),
+	 aTol( std::max( aTol, std::numeric_limits< Real >::min() ) ),
 	 xIni( xIni ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
@@ -126,7 +129,7 @@ protected: // Creation
 	explicit
 	Variable(
 	 std::string const & name,
-	 Value const xIni = 0.0
+	 Real const xIni = 0.0
 	) :
 	 Target( name ),
 	 xIni( xIni ),
@@ -158,7 +161,7 @@ public: // Predicate
 	virtual
 	bool
 	is_Discrete() const
-	{ // Default implementation
+	{
 		return false;
 	}
 
@@ -166,7 +169,7 @@ public: // Predicate
 	virtual
 	bool
 	is_Input() const
-	{ // Default implementation
+	{
 		return false;
 	}
 
@@ -174,7 +177,7 @@ public: // Predicate
 	virtual
 	bool
 	is_QSS() const
-	{ // Default implementation
+	{
 		return false;
 	}
 
@@ -182,7 +185,7 @@ public: // Predicate
 	virtual
 	bool
 	is_ZC() const
-	{ // Default implementation
+	{
 		return false;
 	}
 
@@ -190,7 +193,7 @@ public: // Predicate
 	virtual
 	bool
 	not_ZC() const
-	{ // Default implementation
+	{
 		return true;
 	}
 
@@ -201,28 +204,80 @@ public: // Properties
 	int
 	order() const = 0;
 
+	// Boolean Value
+	virtual
+	Boolean
+	b() const
+	{
+		assert( false ); // Missing override
+		return false;
+	}
+
 	// Boolean Value at Time t
 	virtual
-	bool
+	Boolean
 	b( Time const ) const
 	{
 		assert( false ); // Missing override
 		return false;
 	}
 
+	// Integer Value
+	virtual
+	Integer
+	i() const
+	{
+		assert( false ); // Missing override
+		return 0;
+	}
+
+	// Integer Value at Time t
+	virtual
+	Integer
+	i( Time const ) const
+	{
+		assert( false ); // Missing override
+		return 0;
+	}
+
+	// Real Value
+	virtual
+	Real
+	r() const
+	{
+		assert( false ); // Missing override
+		return 0.0;
+	}
+
+	// Real Value at Time t
+	virtual
+	Real
+	r( Time const ) const
+	{
+		assert( false ); // Missing override
+		return 0.0;
+	}
+
 	// Continuous Value at Time t
 	virtual
-	Value
-	x( Time const t ) const = 0;
+	Real
+	x( Time const t ) const
+	{
+		assert( false ); // Missing override
+		return 0.0;
+	}
 
 	// Continuous First Derivative at Time t
 	virtual
-	Value
-	x1( Time const t ) const = 0;
+	Real
+	x1( Time const t ) const
+	{
+		return 0.0;
+	}
 
 	// Continuous Second Derivative at Time t
 	virtual
-	Value
+	Real
 	x2( Time const ) const
 	{
 		return 0.0;
@@ -230,7 +285,7 @@ public: // Properties
 
 	// Continuous Third Derivative at Time t
 	virtual
-	Value
+	Real
 	x3( Time const ) const
 	{
 		return 0.0;
@@ -238,12 +293,16 @@ public: // Properties
 
 	// Quantized Value at Time t
 	virtual
-	Value
-	q( Time const t ) const = 0;
+	Real
+	q( Time const t ) const
+	{
+		assert( false ); // Missing override
+		return 0.0;
+	}
 
 	// Quantized First Derivative at Time t
 	virtual
-	Value
+	Real
 	q1( Time const ) const
 	{
 		return 0.0;
@@ -251,7 +310,7 @@ public: // Properties
 
 	// Quantized Second Derivative at Time t
 	virtual
-	Value
+	Real
 	q2( Time const ) const
 	{
 		return 0.0;
@@ -259,7 +318,7 @@ public: // Properties
 
 	// Quantized Third Derivative at Time t
 	virtual
-	Value
+	Real
 	q3( Time const ) const
 	{
 		return 0.0;
@@ -267,7 +326,7 @@ public: // Properties
 
 	// Simultaneous Value at Time t
 	virtual
-	Value
+	Real
 	s( Time const ) const
 	{
 		assert( false ); // Missing override
@@ -276,7 +335,7 @@ public: // Properties
 
 	// Simultaneous Numeric Differentiation Value at Time t
 	virtual
-	Value
+	Real
 	sn( Time const ) const
 	{
 		assert( false ); // Missing override
@@ -285,7 +344,7 @@ public: // Properties
 
 	// Simultaneous First Derivative at Time t
 	virtual
-	Value
+	Real
 	s1( Time const ) const
 	{
 		return 0.0;
@@ -293,7 +352,7 @@ public: // Properties
 
 	// Simultaneous Second Derivative at Time t
 	virtual
-	Value
+	Real
 	s2( Time const ) const
 	{
 		return 0.0;
@@ -301,7 +360,7 @@ public: // Properties
 
 	// Simultaneous Third Derivative at Time t
 	virtual
-	Value
+	Real
 	s3( Time const ) const
 	{
 		return 0.0;
@@ -383,42 +442,48 @@ public: // Methods
 		v->observers_.push_back( this );
 	}
 
-	// Shrink Observers Collection
+	// Initialize Observers Collection
 	void
-	shrink_observers()
+	init_observers()
 	{
-		// Remove duplicates
-		std::sort( observers_.begin(), observers_.end() );
-		observers_.resize( std::distance( observers_.begin(), std::unique( observers_.begin(), observers_.end() ) ) );
-		observers_.shrink_to_fit();
+		have_observers_ = ( ! observers_.empty() );
 
-		// Put ZC variables at end for correct observer updates since they use observee x reps
-		std::sort( observers_.begin(), observers_.end(), []( Variable const * v1, Variable const * v2 ){ return !( v1->is_ZC() ) && ( v2->is_ZC() ); } );
+		if ( have_observers_ ) {
+			// Remove duplicates
+			std::sort( observers_.begin(), observers_.end() );
+			observers_.resize( std::distance( observers_.begin(), std::unique( observers_.begin(), observers_.end() ) ) );
+			observers_.shrink_to_fit();
 
-		// Set index to first ZC observer
-		if ( ! observers_.empty() ) {
-			Variable const * front( observers_.front() );
-			if ( front->is_ZC() ) {
-				i_beg_ZC_observers_ = 0;
-			} else {
-				i_beg_ZC_observers_ = std::distance( observers_.begin(), std::upper_bound( observers_.begin(), observers_.end(), front, []( Variable const * v1, Variable const * v2 ){ return !( v1->is_ZC() ) && ( v2->is_ZC() ); } ) );
+			// Put ZC variables at end for correct observer updates since they use observee x reps
+			std::sort( observers_.begin(), observers_.end(), []( Variable const * v1, Variable const * v2 ){ return !( v1->is_ZC() ) && ( v2->is_ZC() ); } );
+
+			// Set index to first ZC observer
+			if ( ! observers_.empty() ) {
+				Variable const * front( observers_.front() );
+				if ( front->is_ZC() ) {
+					i_beg_ZC_observers_ = 0;
+				} else {
+					i_beg_ZC_observers_ = std::distance( observers_.begin(), std::upper_bound( observers_.begin(), observers_.end(), front, []( Variable const * v1, Variable const * v2 ){ return !( v1->is_ZC() ) && ( v2->is_ZC() ); } ) );
+				}
+			} else { // No ZC observers
+				i_beg_ZC_observers_ = observers_.size();
 			}
-		} else { // No ZC observers
-			i_beg_ZC_observers_ = observers_.size();
 		}
 	}
 
-	// Shrink Observees Collection
+	// Initialize Observees Collection
 	void
-	shrink_observees()
+	init_observees()
 	{
-		// Remove duplicates
-		std::sort( observees_.begin(), observees_.end() );
-		observees_.resize( std::distance( observees_.begin(), std::unique( observees_.begin(), observees_.end() ) ) );
-		observees_.shrink_to_fit();
+		if ( ! observees_.empty() ) {
+			observees_.erase( std::remove_if( observees_.begin(), observees_.end(), []( Variable * v ){ return v->is_Discrete(); } ), observees_.end() ); // Remove discrete variables: Don't need them after ZC drill-through observees set up
+			std::sort( observees_.begin(), observees_.end() );
+			observees_.resize( std::distance( observees_.begin(), std::unique( observees_.begin(), observees_.end() ) ) ); // Remove duplicates
+			observees_.shrink_to_fit();
 
-		// Put ZC variables at end
-		std::sort( observees_.begin(), observees_.end(), []( Variable const * v1, Variable const * v2 ){ return !( v1->is_ZC() ) && ( v2->is_ZC() ); } );
+			// Put ZC variables at end
+			std::sort( observees_.begin(), observees_.end(), []( Variable const * v1, Variable const * v2 ){ return !( v1->is_ZC() ) && ( v2->is_ZC() ); } );
+		}
 	}
 
 	// Initialization
@@ -430,7 +495,7 @@ public: // Methods
 	// Initialization to a Value
 	virtual
 	void
-	init( Value const )
+	init( Real const )
 	{}
 
 	// Initialization: Stage 0
@@ -442,7 +507,7 @@ public: // Methods
 	// Initialization to a Value: Stage 0
 	virtual
 	void
-	init_0( Value const )
+	init_0( Real const )
 	{}
 
 	// Initialization: Stage 1
@@ -600,7 +665,7 @@ public: // Methods
 
 	// Handler Shift Event to Time t
 	void
-	shift_handler( Time const t, Value const val )
+	shift_handler( Time const t, Real const val )
 	{
 		event_ = events.shift_handler( t, val, event_ );
 	}
@@ -615,7 +680,7 @@ public: // Methods
 	// Handler Advance
 	virtual
 	void
-	advance_handler( Time const, Value const )
+	advance_handler( Time const, Real const )
 	{
 		assert( false ); // Not a QSS or Discrete variable
 	}
@@ -623,7 +688,7 @@ public: // Methods
 	// Handler Advance: Stage 0
 	virtual
 	void
-	advance_handler_0( Time const, Value const )
+	advance_handler_0( Time const, Real const )
 	{
 		assert( false ); // Not a QSS or Discrete variable
 	}
@@ -779,10 +844,10 @@ protected: // Methods
 
 public: // Data
 
-	Value rTol{ 1.0e-4 }; // Relative tolerance
-	Value aTol{ 1.0e-6 }; // Absolute tolerance
-	Value qTol{ 1.0e-6 }; // Quantization tolerance
-	Value xIni{ 0.0 }; // Initial value
+	Real rTol{ 1.0e-4 }; // Relative tolerance
+	Real aTol{ 1.0e-6 }; // Absolute tolerance
+	Real qTol{ 1.0e-6 }; // Quantization tolerance
+	Real xIni{ 0.0 }; // Initial value
 	Time tQ{ 0.0 }; // Quantized time range begin
 	Time tX{ 0.0 }; // Continuous time range begin
 	Time tE{ 0.0 }; // Time range end: tQ <= tE and tX <= tE
@@ -798,8 +863,10 @@ public: // Data
 protected: // Data
 
 	Variables observers_; // Variables dependent on this one
-	Variables observees_; // Variables this one depends on
+	bool have_observers_{ false }; // Have any observers?
 	size_type i_beg_ZC_observers_{ 0u }; // Index of first ZC observer
+
+	Variables observees_; // Variables this one depends on
 
 };
 

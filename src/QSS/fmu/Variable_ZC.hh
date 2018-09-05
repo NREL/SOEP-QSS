@@ -49,6 +49,7 @@ class Variable_ZC : public Variable
 public: // Types
 
 	using Super = Variable;
+
 	using Crossings = std::vector< Crossing >;
 
 protected: // Creation
@@ -57,9 +58,9 @@ protected: // Creation
 	explicit
 	Variable_ZC(
 	 std::string const & name,
-	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6,
-	 Value const zTol = 0.0,
+	 Real const rTol = 1.0e-4,
+	 Real const aTol = 1.0e-6,
+	 Real const zTol = 0.0,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
@@ -112,7 +113,7 @@ public: // Predicate
 public: // Properties
 
 	// Boolean Value at Time t
-	bool
+	Boolean
 	b( Time const t ) const
 	{
 		return ( t == tZ_last );
@@ -140,9 +141,9 @@ public: // Methods
 		}
 	}
 
-	// Advance Observees Slightly Past Zero-Crossing Time for FMU Detection
+	// Bump Observees' to Slightly Past Zero-Crossing Time for FMU Detection
 	void
-	advance_observees()
+	bump_observees()
 	{
 		assert( tZ_last != infinity );
 		fmu_set_observees_x( tZ_last + options::dtZC ); // Use slightly later time to let FMU detect the zero crossing: This is not robust
@@ -264,7 +265,7 @@ protected: // Methods
 
 public: // Data
 
-	Value zTol{ 0.0 }; // Zero-crossing anti-chatter tolerance
+	Real zTol{ 0.0 }; // Zero-crossing anti-chatter tolerance
 	Time tZ{ infinity }; // Zero-crossing time: tQ <= tZ and tX <= tZ
 	Time tZ_last{ 0.0 }; // Zero-crossing time of last crossing
 	Crossing crossing{ Crossing::Flat }; // Zero-crossing type
@@ -274,7 +275,7 @@ public: // Data
 protected: // Data
 
 	bool zChatter_{ false }; // Zero-crossing chatter control active?
-	Value x_mag_{ 0.0 }; // Value max magnitude since last zero crossing
+	Real x_mag_{ 0.0 }; // Value max magnitude since last zero crossing
 	bool check_crossing_{ false }; // Check for zero crossing?
 	int sign_old_{ 0 }; // Sign of zero-crossing function before advance
 

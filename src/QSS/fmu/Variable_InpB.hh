@@ -49,8 +49,6 @@ class Variable_InpB final : public Variable_Inp
 public: // Types
 
 	using Super = Variable_Inp;
-	using Boolean = bool;
-	using Integer = int;
 
 public: // Creation
 
@@ -89,7 +87,7 @@ public: // Properties
 		return x_;
 	}
 
-	// Continuous Boolean Value at Time t
+	// Boolean Value at Time t
 	Boolean
 	b( Time const ) const
 	{
@@ -100,63 +98,56 @@ public: // Properties
 	Integer
 	i() const
 	{
-		return x_;
+		return Integer( x_ );
 	}
 
-	// Continuous Integer Value at Time t
+	// Integer Value at Time t
 	Integer
 	i( Time const ) const
 	{
-		return x_;
+		return Integer( x_ );
 	}
 
-	// Value
-	Value
-	x() const
+	// Real Value
+	Real
+	r() const
 	{
-		return x_;
+		return Real( x_ );
+	}
+
+	// Real Value at Time t
+	Real
+	r( Time const ) const
+	{
+		return Real( x_ );
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const ) const
 	{
-		return x_;
-	}
-
-	// Continuous First Derivative at Time t
-	Value
-	x1( Time const ) const
-	{
-		return 0.0;
-	}
-
-	// Quantized Value
-	Value
-	q() const
-	{
-		return x_;
+		return Real( x_ );
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const ) const
 	{
-		return x_;
+		return Real( x_ );
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const ) const
 	{
-		return x_;
+		return Real( x_ );
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
-	Value
+	Real
 	sn( Time const ) const
 	{
-		return x_;
+		return Real( x_ );
 	}
 
 public: // Methods

@@ -50,8 +50,10 @@ class Variable_ZC3 final : public Variable_ZC< F >
 public: // Types
 
 	using Super = Variable_ZC< F >;
+
+	using Real = Variable::Real;
 	using Time = Variable::Time;
-	using Value = Variable::Value;
+
 	using Crossing = Variable::Crossing;
 	using typename Super::If;
 	using typename Super::When;
@@ -104,9 +106,9 @@ public: // Creation
 	explicit
 	Variable_ZC3(
 	 std::string const & name,
-	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6,
-	 Value const zTol = 0.0
+	 Real const rTol = 1.0e-4,
+	 Real const aTol = 1.0e-6,
+	 Real const zTol = 0.0
 	) :
 	 Super( name, rTol, aTol, zTol )
 	{}
@@ -121,7 +123,7 @@ public: // Properties
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const t ) const
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
@@ -130,7 +132,7 @@ public: // Properties
 	}
 
 	// Continuous First Derivative at Time t
-	Value
+	Real
 	x1( Time const t ) const
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
@@ -139,7 +141,7 @@ public: // Properties
 	}
 
 	// Continuous Second Derivative at Time t
-	Value
+	Real
 	x2( Time const t ) const
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
@@ -147,7 +149,7 @@ public: // Properties
 	}
 
 	// Continuous Third Derivative at Time t
-	Value
+	Real
 	x3( Time const t ) const
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
@@ -156,7 +158,7 @@ public: // Properties
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const t ) const
 	{
 		assert( ( tQ <= t ) && ( t <= tE ) );
@@ -165,7 +167,7 @@ public: // Properties
 	}
 
 	// Quantized First Derivative at Time t
-	Value
+	Real
 	q1( Time const t ) const
 	{
 		assert( ( tQ <= t ) && ( t <= tE ) );
@@ -173,7 +175,7 @@ public: // Properties
 	}
 
 	// Quantized Second Derivative at Time t
-	Value
+	Real
 	q2( Time const t ) const
 	{
 		assert( ( tQ <= t ) && ( t <= tE ) );
@@ -212,7 +214,7 @@ public: // Methods
 	void
 	advance_QSS()
 	{
-		Value const x_tE( zChatter_ ? x( tE ) : Value( 0.0 ) );
+		Real const x_tE( zChatter_ ? x( tE ) : Real( 0.0 ) );
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
 		bool const check_crossing( ( tE > tZ_last ) || ( x_mag_ != 0.0 ) );
 		int const sign_old( check_crossing ? signum( zChatter_ ? x_tE : x( tE ) ) : 0 );
@@ -238,7 +240,7 @@ public: // Methods
 	advance_observer( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		Value const x_t( zChatter_ ? x( t ) : Value( 0.0 ) );
+		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		bool const check_crossing( ( t > tZ_last ) || ( x_mag_ != 0.0 ) );
 		int const sign_old( check_crossing ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
 		x_0_ = f_.x( tX = tQ = t );
@@ -257,7 +259,7 @@ public: // Methods
 	advance_observer_parallel( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		Value const x_t( zChatter_ ? x( t ) : Value( 0.0 ) );
+		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
 		x_0_ = f_.x( tX = tQ = t );
@@ -293,7 +295,7 @@ public: // Methods
 private: // Methods
 
 	// Continuous First Derivative at Time t
-	Value
+	Real
 	x1x( Time const t ) const
 	{
 		Time const tDel( t - tX );
@@ -328,20 +330,20 @@ private: // Methods
 			if ( dt != infinity ) { // Root exists
 				tZ = tX + dt;
 				Crossing const crossing_check( x_0_ == 0.0 ? ( tZ == tX ? Crossing::Flat : crossing_type( -x_1_ ) ) :
-				 crossing_type( x_0_ > 0.0 ? std::min( x1x( tZ ), Value( 0.0 ) ) : std::max( x1x( tZ ), Value( 0.0 ) ) ) );
+				 crossing_type( x_0_ > 0.0 ? std::min( x1x( tZ ), Real( 0.0 ) ) : std::max( x1x( tZ ), Real( 0.0 ) ) ) );
 				if ( has( crossing_check ) ) { // Crossing type is relevant
 					crossing = crossing_check;
 					if ( options::refine ) { // Refine root: Expensive!
 						Time t( tZ );
 						//Time t_p( tZ );
-						Value const vZ( f_.x( tZ ) );
-						Value v( vZ ), v_p( vZ );
-						Value m( 1.0 ); // Multiplier
+						Real const vZ( f_.x( tZ ) );
+						Real v( vZ ), v_p( vZ );
+						Real m( 1.0 ); // Multiplier
 						std::size_t i( 0 );
 						std::size_t const n( 10u ); // Max iterations
 						//int const sign_0( signum( x_0_ ) );
 						while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-							Value const d( f_.x1( t ) );
+							Real const d( f_.x1( t ) );
 							if ( d == 0.0 ) break;
 							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 							t -= m * ( v / d );
@@ -371,28 +373,28 @@ private: // Methods
 		} else { // Use root of continuous rep: Only robust for small active segments with continuous rep close to function
 			Time const dB( tB - tX );
 			assert( dB >= 0.0 );
-			Value const x_0( tB == tZ_last ? 0.0 : x_0_ + ( x_1_ * dB ) + ( x_2_ * square( dB ) ) );
-			Value const x_1( x_1_ + ( two * x_2_ * dB ) );
+			Real const x_0( tB == tZ_last ? 0.0 : x_0_ + ( x_1_ * dB ) + ( x_2_ * square( dB ) ) );
+			Real const x_1( x_1_ + ( two * x_2_ * dB ) );
 			Time const dt( min_positive_root_cubic( x_3_, x_2_, x_1, x_0 ) ); // Positive root using trajectory shifted to tB
 			assert( dt > 0.0 );
 			if ( dt != infinity ) { // Root exists
 				tZ = tB + dt;
 				Crossing const crossing_check( x_0 == 0.0 ?
 				 ( tZ == tB ? Crossing::Flat : crossing_type( -x_1 ) ) :
-				 crossing_type( x_0 > 0.0 ? std::min( x1x( tZ ), Value( 0.0 ) ) : std::max( x1x( tZ ), Value( 0.0 ) ) ) );
+				 crossing_type( x_0 > 0.0 ? std::min( x1x( tZ ), Real( 0.0 ) ) : std::max( x1x( tZ ), Real( 0.0 ) ) ) );
 				if ( has( crossing_check ) ) { // Crossing type is relevant
 					crossing = crossing_check;
 					if ( options::refine ) { // Refine root: Expensive!
 						Time t( tZ );
 						//Time t_p( tZ );
-						Value const vZ( f_.x( tZ ) );
-						Value v( vZ ), v_p( vZ );
-						Value m( 1.0 ); // Multiplier
+						Real const vZ( f_.x( tZ ) );
+						Real v( vZ ), v_p( vZ );
+						Real m( 1.0 ); // Multiplier
 						std::size_t i( 0 );
 						std::size_t const n( 10u ); // Max iterations
 						//int const sign_0( signum( x_0 ) );
 						while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-							Value const d( f_.x1( t ) );
+							Real const d( f_.x1( t ) );
 							if ( d == 0.0 ) break;
 							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 							t -= m * ( v / d );
@@ -437,7 +439,7 @@ private: // Methods
 
 private: // Data
 
-	Value x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Continuous rep coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Continuous rep coefficients
 
 };
 

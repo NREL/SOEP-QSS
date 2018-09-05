@@ -57,7 +57,7 @@ public: // Types
 	using Variable = V;
 	using Variables = typename Variable::Variables;
 	using Time = typename Variable::Time;
-	using Value = typename Variable::Value;
+	using Real = typename Variable::Real;
 	using Crossing = typename Variable::Crossing;
 	using Variable_QSS_LTI = Variable_QSS< Function_LTI >;
 	using Variable_ZC_LTI = Variable_ZC< Function_LTI >;
@@ -70,7 +70,7 @@ public: // Properties
 	{
 		Crossing const crossing( z_->crossing_last );
 		if ( crossing <= Crossing::Flat ) { // Downward zero-crossing or stationary on floor
-			Value const v( v_->x( t ) );
+			Real const v( v_->x( t ) );
 			if ( ( std::abs( v ) <= 0.01 ) && ( h_->x( t ) <= 0.0 ) ) { // Treat as stationary on floor
 				v_->d().add( 0.0 ); // Set velocity derivative to zero
 				v_->shift_handler( t, 0.0 );
@@ -78,7 +78,7 @@ public: // Properties
 			} else {
 				if ( v < 0.0 ) v_->shift_handler( t, -0.7 * v ); // Coefficient of restitution = 0.7
 				h_->shift_handler( t, 0.0 );
-//				b_->shift_handler( t, b_->x() + 1 ); // Add to bounce count
+//				b_->shift_handler( t, b_->r() + 1 ); // Add to bounce count
 				b_->shift_handler( t, b_->i() + 1 ); // Add to bounce count
 			}
 		}
@@ -133,7 +133,7 @@ private: // Data
 
 // Bouncing Ball Example Setup
 void
-bball( Variables & vars, Conditionals & cons )
+bball( Variable::Variables & vars, std::vector< Conditional * > & cons )
 {
 	using namespace options;
 
@@ -204,7 +204,7 @@ bball( Variables & vars, Conditionals & cons )
 	z->add( h );
 
 	// Conditional
-	using When = WhenV< Variable >;
+	using When = Conditional_When< Variable >;
 	When * hit( new When() );
 	cons.push_back( hit );
 	When::ClauseH< Handler_bball > * hit_floor( hit->add_clause< Handler_bball >() );

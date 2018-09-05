@@ -50,8 +50,9 @@ class Variable_xInp3 final : public Variable_Inp< F >
 public: // Types
 
 	using Super = Variable_Inp< F >;
+
+	using Real = Variable::Real;
 	using Time = Variable::Time;
-	using Value = Variable::Value;
 
 	using Super::name;
 	using Super::rTol;
@@ -64,6 +65,8 @@ public: // Types
 	using Super::dt_min;
 	using Super::dt_max;
 	using Super::dt_inf;
+	using Super::have_observers_;
+	using Super::observees_;
 
 	using Super::add_discrete;
 	using Super::add_QSS;
@@ -71,8 +74,8 @@ public: // Types
 	using Super::event;
 	using Super::shift_discrete;
 	using Super::shift_QSS;
-	using Super::shrink_observees;
-	using Super::shrink_observers;
+	using Super::init_observees;
+	using Super::init_observers;
 	using Super::tE_infinity_tQ;
 
 private: // Types
@@ -85,8 +88,8 @@ public: // Creation
 	explicit
 	Variable_xInp3(
 	 std::string const & name,
-	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6
+	 Real const rTol = 1.0e-4,
+	 Real const aTol = 1.0e-6
 	) :
 	 Super( name, rTol, aTol )
 	{}
@@ -101,7 +104,7 @@ public: // Properties
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const t ) const
 	{
 		Time const tDel( t - tX );
@@ -109,7 +112,7 @@ public: // Properties
 	}
 
 	// Continuous First Derivative at Time t
-	Value
+	Real
 	x1( Time const t ) const
 	{
 		Time const tDel( t - tX );
@@ -117,21 +120,21 @@ public: // Properties
 	}
 
 	// Continuous Second Derivative at Time t
-	Value
+	Real
 	x2( Time const t ) const
 	{
 		return ( two * x_2_ ) + ( six * x_3_ * ( t - tX ) );
 	}
 
 	// Continuous Third Derivative at Time t
-	Value
+	Real
 	x3( Time const ) const
 	{
 		return six * x_3_;
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const t ) const
 	{
 		Time const tDel( t - tQ );
@@ -139,7 +142,7 @@ public: // Properties
 	}
 
 	// Quantized First Derivative at Time t
-	Value
+	Real
 	q1( Time const t ) const
 	{
 		Time const tDel( t - tQ );
@@ -147,21 +150,21 @@ public: // Properties
 	}
 
 	// Quantized Second Derivative at Time t
-	Value
+	Real
 	q2( Time const t ) const
 	{
 		return ( two * x_2_ ) + ( six * x_3_ * ( t - tQ ) );
 	}
 
 	// Quantized Third Derivative at Time t
-	Value
+	Real
 	q3( Time const ) const
 	{
 		return six * x_3_;
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const t ) const
 	{
 		Time const tDel( t - tQ );
@@ -169,7 +172,7 @@ public: // Properties
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
-	Value
+	Real
 	sn( Time const t ) const
 	{
 		Time const tDel( t - tQ );
@@ -177,7 +180,7 @@ public: // Properties
 	}
 
 	// Simultaneous First Derivative at Time t
-	Value
+	Real
 	s1( Time const t ) const
 	{
 		Time const tDel( t - tQ );
@@ -185,14 +188,14 @@ public: // Properties
 	}
 
 	// Simultaneous Second Derivative at Time t
-	Value
+	Real
 	s2( Time const t ) const
 	{
 		return ( two * x_2_ ) + ( six * x_3_ * ( t - tQ ) );
 	}
 
 	// Simultaneous Third Derivative at Time t
-	Value
+	Real
 	s3( Time const ) const
 	{
 		return six * x_3_;
@@ -214,8 +217,8 @@ public: // Methods
 	void
 	init_0()
 	{
-		shrink_observers();
-		shrink_observees();
+		assert( observees_.empty() );
+		init_observers();
 		x_0_ = f_.vs( tQ );
 		set_qTol();
 	}
@@ -261,11 +264,12 @@ public: // Methods
 		set_qTol();
 		x_1_ = f_.dc1( tD );
 		x_2_ = one_half * f_.dc2( tD );
+		x_3_ = one_sixth * f_.dc3( tD );
 		set_tE();
 		tD = f_.tD( tD );
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
-		advance_observers();
+		if ( have_observers_ ) advance_observers();
 	}
 
 	// Discrete Advance: Stages 0 and 1
@@ -308,7 +312,7 @@ public: // Methods
 		tD = f_.tD( tQ );
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
-		advance_observers();
+		if ( have_observers_ ) advance_observers();
 	}
 
 	// QSS Advance: Stage 0
@@ -364,7 +368,7 @@ private: // Methods
 
 private: // Data
 
-	Value x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Continuous rep coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Continuous rep coefficients
 
 };
 

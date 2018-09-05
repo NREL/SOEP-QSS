@@ -37,64 +37,20 @@
 #define QSS_cod_Conditional_hh_INCLUDED
 
 // QSS Headers
+#include <QSS/Conditional.hh>
 #include <QSS/globals.hh>
 
 // C++ Headers
 #include <algorithm>
 #include <cassert>
-#include <string>
 #include <vector>
 
 namespace QSS {
 namespace cod {
 
-// Conditional Abstract Base Class
-class Conditional : public Target
-{
-
-public: // Types
-
-	using Super = Target;
-
-protected: // Creation
-
-	// Default Constructor
-	Conditional() = default;
-
-	// Name Constructor
-	explicit
-	Conditional( std::string const & name ) :
-	 Target( name )
-	{}
-
-	// Copy Constructor
-	Conditional( Conditional const & ) = default;
-
-	// Move Constructor
-	Conditional( Conditional && ) noexcept = default;
-
-protected: // Assignment
-
-	// Copy Assignment
-	Conditional &
-	operator =( Conditional const & ) = default;
-
-	// Move Assignment
-	Conditional &
-	operator =( Conditional && ) noexcept = default;
-
-public: // Methods
-
-	// Run Handler of Highest Priority Active Clause
-	virtual
-	void
-	advance_conditional() = 0;
-
-}; // Conditional
-
 // Conditional If Block Template
 template< typename V >
-class IfV final : public Conditional
+class Conditional_If final : public Conditional
 {
 
 public: // Nested Types
@@ -106,7 +62,7 @@ public: // Nested Types
 	public: // Types
 
 		using Variable = V;
-		using If = IfV< V >;
+		using If = Conditional_If< V >;
 		using Time = typename Variable::Time;
 		using Variables = typename Variable::Variables;
 		using size_type = typename Variables::size_type;
@@ -292,7 +248,7 @@ public: // Types
 	using Super = Conditional;
 	using Variable = V;
 	using Time = typename Variable::Time;
-	using Value = typename Variable::Value;
+	using Real = typename Variable::Real;
 
 	using Clauses = std::vector< Clause * >;
 	using size_type = typename Clauses::size_type;
@@ -300,7 +256,7 @@ public: // Types
 public: // Creation
 
 	// Default Constructor
-	IfV() :
+	Conditional_If() :
 	 Conditional( "If" )
 	{
 		add_conditional();
@@ -308,14 +264,14 @@ public: // Creation
 
 	// Name Constructor
 	explicit
-	IfV( std::string const & name ) :
+	Conditional_If( std::string const & name ) :
 	 Conditional( name )
 	{
 		add_conditional();
 	}
 
 	// Destructor
-	~IfV()
+	~Conditional_If()
 	{
 		for ( Clause * clause : clauses ) delete clause;
 	}
@@ -408,11 +364,11 @@ private: // Data
 
 	Clauses clauses; // Clauses in decreasing priority sequence
 
-}; // IfV
+}; // Conditional_If
 
 // Conditional When Block Template
 template< typename V >
-class WhenV final : public Conditional
+class Conditional_When final : public Conditional
 {
 
 public: // Nested Types
@@ -424,7 +380,7 @@ public: // Nested Types
 	public: // Types
 
 		using Variable = V;
-		using When = WhenV< V >;
+		using When = Conditional_When< V >;
 		using Time = typename Variable::Time;
 		using Variables = typename Variable::Variables;
 		using size_type = typename Variables::size_type;
@@ -598,7 +554,7 @@ public: // Types
 	using Super = Conditional;
 	using Variable = V;
 	using Time = typename Variable::Time;
-	using Value = typename Variable::Value;
+	using Real = typename Variable::Real;
 
 	using Clauses = std::vector< Clause * >;
 	using size_type = typename Clauses::size_type;
@@ -606,7 +562,7 @@ public: // Types
 public: // Creation
 
 	// Default Constructor
-	WhenV() :
+	Conditional_When() :
 	 Conditional( "When" )
 	{
 		add_conditional();
@@ -614,14 +570,14 @@ public: // Creation
 
 	// Name Constructor
 	explicit
-	WhenV( std::string const & name ) :
+	Conditional_When( std::string const & name ) :
 	 Conditional( name )
 	{
 		add_conditional();
 	}
 
 	// Destructor
-	~WhenV()
+	~Conditional_When()
 	{
 		for ( Clause * clause : clauses ) delete clause;
 	}
@@ -711,7 +667,7 @@ private: // Data
 
 	Clauses clauses; // Clauses in decreasing priority sequence
 
-}; // WhenV
+}; // Conditional_When
 
 } // cod
 } // QSS

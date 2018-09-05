@@ -56,9 +56,9 @@ public: // Creation
 	explicit
 	Variable_xQSS2(
 	 std::string const & name,
-	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6,
-	 Value const xIni = 0.0,
+	 Real const rTol = 1.0e-4,
+	 Real const aTol = 1.0e-6,
+	 Real const xIni = 0.0,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
@@ -79,7 +79,7 @@ public: // Properties
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const t ) const
 	{
 		Time const tDel( t - tX );
@@ -87,21 +87,21 @@ public: // Properties
 	}
 
 	// Continuous First Derivative at Time t
-	Value
+	Real
 	x1( Time const t ) const
 	{
 		return x_1_ + ( two * x_2_ * ( t - tX ) );
 	}
 
 	// Continuous Second Derivative at Time t
-	Value
+	Real
 	x2( Time const ) const
 	{
 		return two * x_2_;
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const t ) const
 	{
 		Time const tDel( t - tQ );
@@ -109,21 +109,21 @@ public: // Properties
 	}
 
 	// Quantized First Derivative at Time t
-	Value
+	Real
 	q1( Time const t ) const
 	{
 		return q_1_ + ( two * q_2_ * ( t - tQ ) );
 	}
 
 	// Quantized Second Derivative at Time t
-	Value
+	Real
 	q2( Time const ) const
 	{
 		return two * q_2_;
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const t ) const
 	{
 		Time const tDel( t - tQ );
@@ -131,7 +131,7 @@ public: // Properties
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
-	Value
+	Real
 	sn( Time const t ) const
 	{
 		Time const tDel( t - tQ );
@@ -139,14 +139,14 @@ public: // Properties
 	}
 
 	// Simultaneous First Derivative at Time t
-	Value
+	Real
 	s1( Time const t ) const
 	{
 		return q_1_ + ( two * q_2_ * ( t - tQ ) );
 	}
 
 	// Simultaneous Second Derivative at Time t
-	Value
+	Real
 	s2( Time const ) const
 	{
 		return two * q_2_;
@@ -165,7 +165,7 @@ public: // Methods
 
 	// Initialization to a Value
 	void
-	init( Value const x )
+	init( Real const x )
 	{
 		init_0( x );
 		init_1();
@@ -177,15 +177,17 @@ public: // Methods
 	init_0()
 	{
 		init_observers();
+		init_observees();
 		fmu_set_value( x_0_ = q_0_ = xIni );
 		set_qTol();
 	}
 
 	// Initialization to a Value: Stage 0
 	void
-	init_0( Value const x )
+	init_0( Real const x )
 	{
 		init_observers();
+		init_observees();
 		fmu_set_value( x_0_ = q_0_ = x );
 		set_qTol();
 	}
@@ -222,18 +224,52 @@ public: // Methods
 		Time const tDel( ( tQ = tE ) - tX );
 		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 		set_qTol();
+		if ( have_observers_ ) {
+			advance_observers_1();
+		} else if ( self_observer ) {
+			fmu_set_value( q_0_ );
+		}
 		fmu_set_observees_q( tX = tQ );
-		if ( self_observer ) fmu_set_value( q_0_ );
 		x_1_ = q_1_ = fmu_get_deriv();
+
 		fmu::set_time( tN = tQ + options::dtNum );
+		if ( have_observers_NZ_2_ ) {
+			advance_observers_NZ_2();
+		} else if ( self_observer ) {
+			fmu_set_q( tN );
+		}
 		fmu_set_observees_q( tN );
-		if ( self_observer ) fmu_set_q( tN );
 		x_2_ = q_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+		if ( have_observers_ZC_2_ ) advance_observers_ZC_2(); // After new x trajectory is set since this needs to set FMU value to x( tN )
+
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-		if ( have_observers_ ) advance_observers_tQ();
+		if ( options::output::d ) {
+			std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+			if ( have_observers_ ) advance_observers_d();
+		}
 	}
+
+// This simpler version is much slower doe to current FMIL internals
+//	// QSS Advance
+//	void
+//	advance_QSS_slow()
+//	{
+//		Time const tDel( ( tQ = tE ) - tX );
+//		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+//		set_qTol();
+//		fmu_set_observees_q( tX = tQ );
+//		if ( self_observer ) fmu_set_value( q_0_ );
+//		x_1_ = q_1_ = fmu_get_deriv();
+//		fmu::set_time( tN = tQ + options::dtNum );
+//		fmu_set_observees_q( tN );
+//		if ( self_observer ) fmu_set_q( tN );
+//		x_2_ = q_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+//		set_tE_aligned();
+//		shift_QSS( tE );
+//		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+//		if ( have_observers_ ) advance_observers_tQ();
+//	}
 
 	// QSS Advance: Stage 0
 	void
@@ -281,7 +317,7 @@ public: // Methods
 
 	// Observer Advance: Stage 1
 	void
-	advance_observer_1( Time const t, Value const d )
+	advance_observer_1( Time const t, Real const d )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		assert( d == fmu_get_deriv() );
@@ -305,7 +341,7 @@ public: // Methods
 
 	// Observer Advance: Stage 2
 	void
-	advance_observer_2( Time const t, Value const d )
+	advance_observer_2( Time const t, Real const d )
 	{
 		assert( tX <= t );
 		assert( d == fmu_get_deriv() );
@@ -404,8 +440,8 @@ private: // Methods
 	{
 		assert( tQ <= tX );
 		assert( dt_min <= dt_max );
-		Value const d_0( x_0_ - ( q_0_ + ( q_1_ * ( tX - tQ ) ) ) );
-		Value const d_1( x_1_ - q_1_ );
+		Real const d_0( x_0_ - ( q_0_ + ( q_1_ * ( tX - tQ ) ) ) );
+		Real const d_1( x_1_ - q_1_ );
 		Time dt;
 		if ( ( d_1 >= 0.0 ) && ( x_2_ >= 0.0 ) ) { // Upper boundary crossing
 			dt = min_root_quadratic_upper( x_2_, d_1, d_0 - qTol );
@@ -425,8 +461,8 @@ private: // Methods
 
 private: // Data
 
-	Value x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous rep coefficients
-	Value q_0_{ 0.0 }, q_1_{ 0.0 }, q_2_{ 0.0 }; // Quantized rep coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous rep coefficients
+	Real q_0_{ 0.0 }, q_1_{ 0.0 }, q_2_{ 0.0 }; // Quantized rep coefficients
 
 };
 

@@ -56,9 +56,9 @@ public: // Creation
 	explicit
 	Variable_LIQSS1(
 	 std::string const & name,
-	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6,
-	 Value const xIni = 0.0,
+	 Real const rTol = 1.0e-4,
+	 Real const aTol = 1.0e-6,
+	 Real const xIni = 0.0,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
@@ -80,35 +80,35 @@ public: // Properties
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const t ) const
 	{
 		return x_0_ + ( x_1_ * ( t - tX ) );
 	}
 
 	// Continuous First Derivative at Time t
-	Value
+	Real
 	x1( Time const ) const
 	{
 		return x_1_;
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const ) const
 	{
 		return q_0_;
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const ) const
 	{
 		return ( st == events.active_superdense_time() ? q_c_ : q_0_ );
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
-	Value
+	Real
 	sn( Time const ) const
 	{
 		return ( st == events.active_superdense_time() ? q_c_ : q_0_ );
@@ -126,7 +126,7 @@ public: // Methods
 
 	// Initialization to a Value
 	void
-	init( Value const x )
+	init( Real const x )
 	{
 		init_0( x );
 		init_1();
@@ -137,15 +137,17 @@ public: // Methods
 	init_0()
 	{
 		init_observers();
+		init_observees();
 		fmu_set_value( x_0_ = q_c_ = q_0_ = xIni );
 		set_qTol();
 	}
 
 	// Initialization to a Value: Stage 0
 	void
-	init_0( Value const x )
+	init_0( Real const x )
 	{
 		init_observers();
+		init_observees();
 		fmu_set_value( x_0_ = q_c_ = q_0_ = x );
 		set_qTol();
 	}
@@ -234,7 +236,7 @@ public: // Methods
 
 	// Observer Advance: Stage 1
 	void
-	advance_observer_1( Time const t, Value const d )
+	advance_observer_1( Time const t, Real const d )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		assert( d == fmu_get_deriv() );
@@ -336,15 +338,15 @@ private: // Methods
 		assert( x_0_ == q_0_ );
 
 		// Value at +/- qTol
-		Value const q_l( q_c_ - qTol );
-		Value const q_u( q_c_ + qTol );
+		Real const q_l( q_c_ - qTol );
+		Real const q_u( q_c_ + qTol );
 
 		// Derivative at +/- qTol
 		fmu_set_value( q_l );
-		Value const d_l( fmu_get_deriv() );
+		Real const d_l( fmu_get_deriv() );
 		int const d_l_s( signum( d_l ) );
 		fmu_set_value( q_u );
-		Value const d_u( fmu_get_deriv() );
+		Real const d_u( fmu_get_deriv() );
 		int const d_u_s( signum( d_u ) );
 
 		// Set coefficients based on derivative signs
@@ -365,8 +367,8 @@ private: // Methods
 
 private: // Data
 
-	Value x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
-	Value q_c_{ 0.0 }, q_0_{ 0.0 }; // Quantized rep coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
+	Real q_c_{ 0.0 }, q_0_{ 0.0 }; // Quantized rep coefficients
 
 };
 

@@ -50,7 +50,7 @@ class Function_Inp_sin final
 public: // Types
 
 	using Time = double;
-	using Value = double;
+	using Real = double;
 	using Coefficient = double;
 
 public: // Creation
@@ -82,70 +82,70 @@ public: // Properties
 	}
 
 	// Value at Time t
-	Value
+	Real
 	operator ()( Time const t ) const
 	{
 		return c_ * std::sin( s_ * t );
 	}
 
 	// Value at Time t
-	Value
+	Real
 	v( Time const t ) const
 	{
 		return c_ * std::sin( s_ * t );
 	}
 
 	// First Derivative at Time t
-	Value
+	Real
 	d1( Time const t ) const
 	{
 		return c_ * s_ * std::cos( s_ * t );
 	}
 
 	// Second Derivative at Time t
-	Value
+	Real
 	d2( Time const t ) const
 	{
 		return -c_ * ( s_ * s_ ) * std::sin( s_ * t );
 	}
 
 	// Third Derivative at Time t
-	Value
+	Real
 	d3( Time const t ) const
 	{
 		return -c_ * ( s_ * s_ * s_ ) * std::cos( s_ * t );
 	}
 
 	// Sequential Value at Time t
-	Value
+	Real
 	vs( Time const t ) const
 	{
 		return v( t );
 	}
 
 	// Forward-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	df1( Time const t ) const
 	{
 		return d1( t );
 	}
 
 	// Centered-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	dc1( Time const t ) const
 	{
 		return d1( t );
 	}
 
 	// Centered-Difference Sequential Second Derivative at Time t
-	Value
+	Real
 	dc2( Time const t ) const
 	{
 		return d2( t );
 	}
 
 	// Centered-Difference Sequential Third Derivative at Time t
-	Value
+	Real
 	dc3( Time const t ) const
 	{
 		return d3( t );

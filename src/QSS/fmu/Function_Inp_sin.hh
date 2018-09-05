@@ -50,15 +50,15 @@ class Function_Inp_sin final
 public: // Types
 
 	using Time = double;
-	using Value = double;
+	using Real = double;
 
 public: // Creation
 
 	// Constructor
 	Function_Inp_sin(
-	 Value const a = 1.0, // Amplitude
-	 Value const b = 1.0, // Time scaling (2*pi/period)
-	 Value const c = 0.0 // Shift
+	 Real const a = 1.0, // Amplitude
+	 Real const b = 1.0, // Time scaling (2*pi/period)
+	 Real const c = 0.0 // Shift
 	) :
 	 s_( 3, c, a * b, 0.0, -( a * b * b * b ) ),
 	 a_( a ),
@@ -98,28 +98,28 @@ public: // Properties
 	}
 
 	// Value at Time t
-	Value
+	Real
 	v( Time const t ) const
 	{
 		return ( a_ * std::sin( b_ * t ) ) + c_;
 	}
 
 	// First Derivative at Time t
-	Value
+	Real
 	d1( Time const t ) const
 	{
 		return a_b_ * std::cos( b_ * t );
 	}
 
 	// Second Derivative at Time t
-	Value
+	Real
 	d2( Time const t ) const
 	{
 		return -a_b2_ * std::sin( b_ * t );
 	}
 
 	// Third Derivative at Time t
-	Value
+	Real
 	d3( Time const t ) const
 	{
 		return -a_b3_ * std::cos( b_ * t );
@@ -136,12 +136,12 @@ private: // Data
 
 	mutable SmoothToken s_; // Cached state
 
-	Value const a_{ 1.0 }; // Amplitude
-	Value const b_{ 1.0 }; // Time scaling (2*pi/period)
-	Value const c_{ 0.0 }; // Shift
-	Value const a_b_{ 1.0 }; // a * b^2
-	Value const a_b2_{ 1.0 }; // a * b^2
-	Value const a_b3_{ 1.0 }; // a * b^3
+	Real const a_{ 1.0 }; // Amplitude
+	Real const b_{ 1.0 }; // Time scaling (2*pi/period)
+	Real const c_{ 0.0 }; // Shift
+	Real const a_b_{ 1.0 }; // a * b^2
+	Real const a_b2_{ 1.0 }; // a * b^2
+	Real const a_b3_{ 1.0 }; // a * b^3
 
 };
 

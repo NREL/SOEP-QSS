@@ -56,9 +56,9 @@ public: // Creation
 	explicit
 	Variable_QSS1(
 	 std::string const & name,
-	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6,
-	 Value const xIni = 0.0,
+	 Real const rTol = 1.0e-4,
+	 Real const aTol = 1.0e-6,
+	 Real const xIni = 0.0,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
@@ -79,35 +79,35 @@ public: // Properties
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const t ) const
 	{
 		return x_0_ + ( x_1_ * ( t - tX ) );
 	}
 
 	// Continuous First Derivative at Time t
-	Value
+	Real
 	x1( Time const ) const
 	{
 		return x_1_;
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const ) const
 	{
 		return q_0_;
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const ) const
 	{
 		return q_0_;
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
-	Value
+	Real
 	sn( Time const ) const
 	{
 		return q_0_;
@@ -125,7 +125,7 @@ public: // Methods
 
 	// Initialization to a Value
 	void
-	init( Value const x )
+	init( Real const x )
 	{
 		init_0( x );
 		init_1();
@@ -136,15 +136,17 @@ public: // Methods
 	init_0()
 	{
 		init_observers();
+		init_observees();
 		fmu_set_value( x_0_ = q_0_ = xIni );
 		set_qTol();
 	}
 
 	// Initialization to a Value: Stage 0
 	void
-	init_0( Value const x )
+	init_0( Real const x )
 	{
 		init_observers();
+		init_observees();
 		fmu_set_value( x_0_ = q_0_ = x );
 		set_qTol();
 	}
@@ -173,14 +175,42 @@ public: // Methods
 	{
 		x_0_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
 		set_qTol();
+		if ( have_observers_ ) {
+			advance_observers_1();
+		} else if ( self_observer ) {
+			fmu_set_value( q_0_ );
+		}
 		fmu_set_observees_q( tX = tQ );
-		if ( self_observer ) fmu_set_value( q_0_ );
 		x_1_ = fmu_get_deriv();
+
+		if ( have_observers_2_ ) {
+			fmu::set_time( tN = tQ + options::dtNum );
+			advance_observers_2();
+		}
+
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-		if ( have_observers_ ) advance_observers();
+		if ( options::output::d ) {
+			std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+			if ( have_observers_ ) advance_observers_d();
+		}
 	}
+
+// This simpler version is much slower doe to current FMIL internals
+//	// QSS Advance
+//	void
+//	advance_QSS()
+//	{
+//		x_0_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
+//		set_qTol();
+//		fmu_set_observees_q( tX = tQ );
+//		if ( self_observer ) fmu_set_value( q_0_ );
+//		x_1_ = fmu_get_deriv();
+//		set_tE_aligned();
+//		shift_QSS( tE );
+//		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+//		if ( have_observers_ ) advance_observers();
+//	}
 
 	// QSS Advance: Stage 0
 	void
@@ -219,7 +249,7 @@ public: // Methods
 
 	// Observer Advance: Stage 1
 	void
-	advance_observer_1( Time const t, Value const d )
+	advance_observer_1( Time const t, Real const d )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		assert( d == fmu_get_deriv() );
@@ -242,8 +272,6 @@ public: // Methods
 	advance_handler( Time const t )
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
-
-		// Requantize from FMU
 		x_0_ = q_0_ = fmu_get_value(); // Assume FMU ran zero-crossing handler
 		set_qTol();
 		fmu_set_observees_q( tX = tQ = t );
@@ -315,8 +343,8 @@ private: // Methods
 
 private: // Data
 
-	Value x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
-	Value q_0_{ 0.0 }; // Quantized rep coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
+	Real q_0_{ 0.0 }; // Quantized rep coefficients
 
 };
 

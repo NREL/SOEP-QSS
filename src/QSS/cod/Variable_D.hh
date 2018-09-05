@@ -56,7 +56,7 @@ public: // Creation
 	explicit
 	Variable_D(
 	 std::string const & name,
-	 Value const xIni = 0.0
+	 Real const xIni = 0.0
 	) :
 	 Super( name, xIni ),
 	 x_( xIni )
@@ -80,50 +80,43 @@ public: // Properties
 		return 0;
 	}
 
-	// Value
-	Value
-	x() const
+	// Real Value
+	Real
+	r() const
+	{
+		return x_;
+	}
+
+	// Real Value at Time t
+	Real
+	r( Time const ) const
 	{
 		return x_;
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const ) const
 	{
 		return x_;
 	}
 
-	// Continuous First Derivative at Time t
-	Value
-	x1( Time const ) const
-	{
-		return 0.0;
-	}
-
-	// Quantized Value
-	Value
-	q() const
-	{
-		return x_;
-	}
-
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const ) const
 	{
 		return x_;
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const ) const
 	{
 		return x_;
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
-	Value
+	Real
 	sn( Time const ) const
 	{
 		return x_;
@@ -140,7 +133,7 @@ public: // Methods
 
 	// Initialization to a Value
 	void
-	init( Value const x )
+	init( Real const x )
 	{
 		init_0( x );
 	}
@@ -149,8 +142,8 @@ public: // Methods
 	void
 	init_0()
 	{
-		assert( Super::observees_.empty() );
-		shrink_observers();
+		assert( observees_.empty() );
+		init_observers();
 		x_ = xIni;
 		add_handler();
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
@@ -158,10 +151,10 @@ public: // Methods
 
 	// Initialization to a Value: Stage 0
 	void
-	init_0( Value const x )
+	init_0( Real const x )
 	{
-		assert( Super::observees_.empty() );
-		shrink_observers();
+		assert( observees_.empty() );
+		init_observers();
 		x_ = x;
 		add_handler();
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
@@ -169,7 +162,7 @@ public: // Methods
 
 	// Handler Advance
 	void
-	advance_handler( Time const t, Value const x )
+	advance_handler( Time const t, Real const x )
 	{
 		assert( tX <= t );
 		tX = tQ = t;
@@ -177,12 +170,12 @@ public: // Methods
 		bool const chg( x_ != x );
 		if ( chg ) x_ = x;
 		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
-		if ( chg ) advance_observers();
+		if ( chg && have_observers_ ) advance_observers();
 	}
 
 	// Handler Advance: Stage 0
 	void
-	advance_handler_0( Time const t, Value const x )
+	advance_handler_0( Time const t, Real const x )
 	{
 		assert( tX <= t );
 		tX = tQ = t;
@@ -194,7 +187,7 @@ public: // Methods
 
 private: // Data
 
-	Value x_; // Value
+	Real x_; // Value
 
 };
 

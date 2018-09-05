@@ -1,4 +1,4 @@
-// Achilles and the Tortoise Example
+// Conditional Forward Declaration
 //
 // Project: QSS Solver
 //
@@ -33,25 +33,14 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_dnf_mdl_achilles_hh_INCLUDED
-#define QSS_dnf_mdl_achilles_hh_INCLUDED
-
-// QSS Headers
-#include <QSS/cod/Variable.fwd.hh>
-
-// C++ Headers
-#include <vector>
+#ifndef QSS_Conditional_fwd_hh_INCLUDED
+#define QSS_Conditional_fwd_hh_INCLUDED
 
 namespace QSS {
-namespace cod {
-namespace mdl {
 
-// Achilles and the Tortoise Example Setup
-void
-achilles( std::vector< Variable * > & vars );
+// Conditional Abstract Base Class
+class Conditional;
 
-} // mdl
-} // cod
 } // QSS
 
 #endif

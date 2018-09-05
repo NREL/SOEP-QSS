@@ -56,9 +56,9 @@ public: // Creation
 	explicit
 	Variable_ZC1(
 	 std::string const & name,
-	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6,
-	 Value const zTol = 0.0,
+	 Real const rTol = 1.0e-4,
+	 Real const aTol = 1.0e-6,
+	 Real const zTol = 0.0,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
@@ -75,7 +75,7 @@ public: // Properties
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const t ) const
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
@@ -83,7 +83,7 @@ public: // Properties
 	}
 
 	// Continuous First Derivative at Time t
-	Value
+	Real
 	x1( Time const t ) const
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
@@ -92,7 +92,7 @@ public: // Properties
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const t ) const
 	{
 		assert( ( tQ <= t ) && ( t <= tE ) );
@@ -121,7 +121,7 @@ public: // Methods
 		}
 
 		// Shrink observees
-		shrink_observees();
+		init_observees();
 
 		// Initialize trajectory specs
 		fmu_set_observees_x( tQ );
@@ -154,7 +154,7 @@ public: // Methods
 	advance_QSS()
 	{
 		fmu_set_observees_x( tX = tQ = tE );
-		Value const x_tE( zChatter_ ? x( tE ) : Value( 0.0 ) );
+		Real const x_tE( zChatter_ ? x( tE ) : Real( 0.0 ) );
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
 		check_crossing_ = ( tE > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_tE : x( tE ) ) : 0 );
@@ -179,7 +179,7 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		fmu_set_observees_x( tX = tQ = t );
-		Value const x_t( zChatter_ ? x( t ) : Value( 0.0 ) );
+		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
 		x_0_ = fmu_get_value();
@@ -192,12 +192,12 @@ public: // Methods
 
 	// Observer Advance: Stage 1
 	void
-	advance_observer_1( Time const t, Value const d )
+	advance_observer_1( Time const t, Real const d )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		assert( d == fmu_get_deriv() );
 		tX = tQ = t;
-		Value const x_t( zChatter_ ? x( t ) : Value( 0.0 ) );
+		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
 		x_0_ = fmu_get_value();
@@ -210,13 +210,13 @@ public: // Methods
 
 	// Zero-Crossing Observer Advance: Stage 1
 	void
-	advance_observer_ZC_1( Time const t, Value const d, Value const v )
+	advance_observer_ZC_1( Time const t, Real const d, Real const v )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		assert( d == fmu_get_deriv() );
 		assert( v == fmu_get_value() );
 		tX = tQ = t;
-		Value const x_t( zChatter_ ? x( t ) : Value( 0.0 ) );
+		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
 		x_0_ = v;
@@ -245,7 +245,7 @@ public: // Methods
 		x_mag_ = 0.0;
 		set_tZ( tZ_last = tZ ); // Next zero-crossing: Might be in active segment
 		tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
-		advance_observees(); // set_tZ refinement sets observees so we do this after
+		bump_observees(); // set_tZ refinement sets observees so we do this after
 	}
 
 private: // Methods
@@ -285,13 +285,13 @@ private: // Methods
 							Time const t_fmu( fmu::get_time() );
 							fmu::set_time( tZ ); // Don't seem to need this
 							fmu_set_observees_x( tZ );
-							Value const vZ( fmu_get_value() );
-							Value v( vZ ), v_p( vZ );
-							Value m( 1.0 ); // Multiplier
+							Real const vZ( fmu_get_value() );
+							Real v( vZ ), v_p( vZ );
+							Real m( 1.0 ); // Multiplier
 							std::size_t i( 0 );
 							std::size_t const n( 10u ); // Max iterations
 							while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-								Value const d( fmu_get_deriv() );
+								Real const d( fmu_get_deriv() );
 								if ( d == 0.0 ) break;
 								//if ( ( signum( d ) != sign_old ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 								t -= m * ( v / d );
@@ -351,7 +351,7 @@ private: // Methods
 
 private: // Data
 
-	Value x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
 
 };
 

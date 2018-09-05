@@ -50,7 +50,7 @@ class Event final
 public: // Types
 
 	using Target = T;
-	using Value = double;
+	using Real = double;
 
 	// Event Type
 	enum class Type : std::size_t {
@@ -68,7 +68,7 @@ public: // Creation
 	Event(
 	 Type const typ,
 	 Target * tar = nullptr,
-	 Value const val = 0.0
+	 Real const val = 0.0
 	) :
 	 typ_( typ ),
 	 tar_( tar ),
@@ -173,28 +173,28 @@ public: // Properties
 	}
 
 	// Value
-	Value
+	Real
 	val() const
 	{
 		return val_;
 	}
 
 	// Value
-	Value &
+	Real &
 	val()
 	{
 		return val_;
 	}
 
 	// Value
-	Value
+	Real
 	value() const
 	{
 		return val_;
 	}
 
 	// Value
-	Value &
+	Real &
 	value()
 	{
 		return val_;
@@ -222,7 +222,7 @@ private: // Data
 
 	Type typ_; // Event type
 	Target * tar_{ nullptr }; // Event target
-	Value val_{ 0.0 }; // Event target value
+	Real val_{ 0.0 }; // Event target value
 
 };
 

@@ -49,7 +49,6 @@ class Variable_I final : public Variable
 public: // Types
 
 	using Super = Variable;
-	using Integer = int;
 
 public: // Creation
 
@@ -59,7 +58,7 @@ public: // Creation
 	 Integer const xIni,
 	 FMU_Variable const var = FMU_Variable()
 	) :
-	 Super( name, Value( xIni ), var ),
+	 Super( name, Real( xIni ), var ),
 	 x_( xIni )
 	{}
 
@@ -91,6 +90,20 @@ public: // Properties
 		return 0;
 	}
 
+	// Boolean Value
+	Boolean
+	b() const
+	{
+		return Boolean( x_ );
+	}
+
+	// Boolean Value at Time t
+	Boolean
+	b( Time const ) const
+	{
+		return Boolean( x_ );
+	}
+
 	// Integer Value
 	Integer
 	i() const
@@ -98,60 +111,53 @@ public: // Properties
 		return x_;
 	}
 
-	// Continuous Integer Value at Time t
+	// Integer Value at Time t
 	Integer
 	i( Time const ) const
 	{
 		return x_;
 	}
 
-	// Value
-	Value
-	x() const
+	// Real Value
+	Real
+	r() const
 	{
-		return Value( x_ );
+		return Real( x_ );
+	}
+
+	// Real Value at Time t
+	Real
+	r( Time const ) const
+	{
+		return Real( x_ );
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const ) const
 	{
-		return Value( x_ );
-	}
-
-	// Continuous First Derivative at Time t
-	Value
-	x1( Time const ) const
-	{
-		return 0.0;
-	}
-
-	// Quantized Value
-	Value
-	q() const
-	{
-		return Value( x_ );
+		return Real( x_ );
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const ) const
 	{
-		return Value( x_ );
+		return Real( x_ );
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const ) const
 	{
-		return Value( x_ );
+		return Real( x_ );
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
-	Value
+	Real
 	sn( Time const ) const
 	{
-		return Value( x_ );
+		return Real( x_ );
 	}
 
 public: // Methods
@@ -165,7 +171,7 @@ public: // Methods
 
 	// Initialization to a Value
 	void
-	init( Value const x )
+	init( Real const x )
 	{
 		init_0( x );
 	}
@@ -183,7 +189,7 @@ public: // Methods
 
 	// Initialization to a Value: Stage 0
 	void
-	init_0( Value const x )
+	init_0( Real const x )
 	{
 		assert( observees_.empty() );
 		init_observers();

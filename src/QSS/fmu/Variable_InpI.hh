@@ -49,7 +49,6 @@ class Variable_InpI final : public Variable_Inp
 public: // Types
 
 	using Super = Variable_Inp;
-	using Integer = std::int64_t;
 
 public: // Creation
 
@@ -81,6 +80,20 @@ public: // Properties
 		return 0;
 	}
 
+	// Boolean Value
+	Boolean
+	b() const
+	{
+		return Boolean( x_ );
+	}
+
+	// Boolean Value at Time t
+	Boolean
+	b( Time const ) const
+	{
+		return Boolean( x_ );
+	}
+
 	// Value
 	Integer
 	i() const
@@ -88,60 +101,53 @@ public: // Properties
 		return x_;
 	}
 
-	// Continuous Value at Time t
+	// Integer Value at Time t
 	Integer
 	i( Time const ) const
 	{
 		return x_;
 	}
 
-	// Value
-	Value
-	x() const
+	// Real Value
+	Real
+	r() const
 	{
-		return Value( x_ );
+		return Real( x_ );
+	}
+
+	// Real Value at Time t
+	Real
+	r( Time const ) const
+	{
+		return Real( x_ );
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const ) const
 	{
-		return Value( x_ );
-	}
-
-	// Continuous First Derivative at Time t
-	Value
-	x1( Time const ) const
-	{
-		return 0.0;
-	}
-
-	// Quantized Value
-	Value
-	q() const
-	{
-		return Value( x_ );
+		return Real( x_ );
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const ) const
 	{
-		return Value( x_ );
+		return Real( x_ );
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const ) const
 	{
-		return x_;
+		return Real( x_ );
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
-	Value
+	Real
 	sn( Time const ) const
 	{
-		return Value( x_ );
+		return Real( x_ );
 	}
 
 public: // Methods

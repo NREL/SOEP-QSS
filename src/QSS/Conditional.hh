@@ -1,4 +1,4 @@
-// Achilles and the Tortoise Example
+// Conditional
 //
 // Project: QSS Solver
 //
@@ -33,25 +33,58 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_dnf_mdl_achilles_hh_INCLUDED
-#define QSS_dnf_mdl_achilles_hh_INCLUDED
+#ifndef QSS_Conditional_hh_INCLUDED
+#define QSS_Conditional_hh_INCLUDED
 
 // QSS Headers
-#include <QSS/cod/Variable.fwd.hh>
-
-// C++ Headers
-#include <vector>
+#include <QSS/Target.hh>
 
 namespace QSS {
-namespace cod {
-namespace mdl {
 
-// Achilles and the Tortoise Example Setup
-void
-achilles( std::vector< Variable * > & vars );
+// Conditional Abstract Base Class
+class Conditional : public Target
+{
 
-} // mdl
-} // cod
+public: // Types
+
+	using Super = Target;
+
+protected: // Creation
+
+	// Default Constructor
+	Conditional() = default;
+
+	// Name Constructor
+	explicit
+	Conditional( std::string const & name ) :
+	 Target( name )
+	{}
+
+	// Copy Constructor
+	Conditional( Conditional const & ) = default;
+
+	// Move Constructor
+	Conditional( Conditional && ) noexcept = default;
+
+protected: // Assignment
+
+	// Copy Assignment
+	Conditional &
+	operator =( Conditional const & ) = default;
+
+	// Move Assignment
+	Conditional &
+	operator =( Conditional && ) noexcept = default;
+
+public: // Methods
+
+	// Run Handler of Highest Priority Active Clause
+	virtual
+	void
+	advance_conditional() = 0;
+
+}; // Conditional
+
 } // QSS
 
 #endif

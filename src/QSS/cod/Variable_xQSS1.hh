@@ -50,8 +50,9 @@ class Variable_xQSS1 final : public Variable_QSS< F >
 public: // Types
 
 	using Super = Variable_QSS< F >;
+
+	using Real = Variable::Real;
 	using Time = Variable::Time;
-	using Value = Variable::Value;
 
 	using Super::name;
 	using Super::rTol;
@@ -65,13 +66,14 @@ public: // Types
 	using Super::dt_max;
 	using Super::dt_inf;
 	using Super::self_observer;
+	using Super::have_observers_;
 
 	using Super::add_QSS;
 	using Super::advance_observers;
 	using Super::event;
 	using Super::shift_QSS;
-	using Super::shrink_observees;
-	using Super::shrink_observers;
+	using Super::init_observees;
+	using Super::init_observers;
 	using Super::tE_infinity_tQ;
 	using Super::tE_infinity_tX;
 
@@ -87,9 +89,9 @@ public: // Creation
 	explicit
 	Variable_xQSS1(
 	 std::string const & name,
-	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6,
-	 Value const xIni = 0.0
+	 Real const rTol = 1.0e-4,
+	 Real const aTol = 1.0e-6,
+	 Real const xIni = 0.0
 	) :
 	 Super( name, rTol, aTol, xIni ),
 	 x_0_( xIni ),
@@ -108,49 +110,49 @@ public: // Properties
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const t ) const
 	{
 		return x_0_ + ( x_1_ * ( t - tX ) );
 	}
 
 	// Continuous First Derivative at Time t
-	Value
+	Real
 	x1( Time const ) const
 	{
 		return x_1_;
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const t ) const
 	{
 		return q_0_ + ( q_1_ * ( t - tQ ) );
 	}
 
 	// Quantized First Derivative at Time t
-	Value
+	Real
 	q1( Time const ) const
 	{
 		return q_1_;
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const t ) const
 	{
 		return q_0_ + ( q_1_ * ( t - tQ ) );
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
-	Value
+	Real
 	sn( Time const t ) const
 	{
 		return q_0_ + ( q_1_ * ( t - tQ ) );
 	}
 
 	// Simultaneous First Derivative at Time t
-	Value
+	Real
 	s1( Time const ) const
 	{
 		return q_1_;
@@ -168,7 +170,7 @@ public: // Methods
 
 	// Initialization to a Value
 	void
-	init( Value const x )
+	init( Real const x )
 	{
 		init_0( x );
 		init_1();
@@ -184,7 +186,7 @@ public: // Methods
 
 	// Initialization to a Value: Stage 0
 	void
-	init_0( Value const x )
+	init_0( Real const x )
 	{
 		x_0_ = q_0_ = x;
 		set_qTol();
@@ -194,8 +196,8 @@ public: // Methods
 	void
 	init_1()
 	{
-		shrink_observers();
-		shrink_observees();
+		init_observers();
+		init_observees();
 		x_1_ = q_1_ = d_.s( tQ );
 		set_tE_aligned();
 		add_QSS( tE );
@@ -220,7 +222,7 @@ public: // Methods
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-		advance_observers();
+		if ( have_observers_ ) advance_observers();
 	}
 
 	// QSS Advance: Stage 0
@@ -274,7 +276,7 @@ public: // Methods
 
 	// Handler Advance
 	void
-	advance_handler( Time const t, Value const x )
+	advance_handler( Time const t, Real const x )
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
@@ -284,12 +286,12 @@ public: // Methods
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-		advance_observers();
+		if ( have_observers_ ) advance_observers();
 	}
 
 	// Handler Advance: Stage 0
 	void
-	advance_handler_0( Time const t, Value const x )
+	advance_handler_0( Time const t, Real const x )
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
@@ -338,8 +340,8 @@ private: // Methods
 
 private: // Data
 
-	Value x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
-	Value q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized rep coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
+	Real q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized rep coefficients
 
 };
 

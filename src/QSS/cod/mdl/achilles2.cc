@@ -43,13 +43,11 @@ namespace QSS {
 namespace cod {
 namespace mdl {
 
-using Variables = std::vector< Variable * >;
-
 // Achilles and the Tortoise Symmetric Example Setup
 //
 // Symmetric duplicate variables to test simultaneous triggering
 void
-achilles2( Variables & vars )
+achilles2( Variable::Variables & vars )
 {
 	using namespace options;
 

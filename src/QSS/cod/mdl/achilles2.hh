@@ -46,11 +46,9 @@ namespace QSS {
 namespace cod {
 namespace mdl {
 
-using Variables = std::vector< Variable * >;
-
 // Achilles and the Tortoise Symmetric Example Setup
 void
-achilles2( Variables & vars );
+achilles2( std::vector< Variable * > & vars );
 
 } // mdl
 } // cod

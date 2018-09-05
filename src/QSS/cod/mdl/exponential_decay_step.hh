@@ -46,11 +46,9 @@ namespace QSS {
 namespace cod {
 namespace mdl {
 
-using Variables = std::vector< Variable * >;
-
 // Exponential Decay with Step Input Example Setup
 void
-exponential_decay_step( Variables & vars );
+exponential_decay_step( std::vector< Variable * > & vars );
 
 } // mdl
 } // cod

@@ -50,13 +50,17 @@ class Variable_ZC : public Variable
 public: // Types
 
 	using Super = Variable;
+
+	using Real = Variable::Real;
 	using Time = Variable::Time;
-	using Value = Variable::Value;
+
 	using Function = F< Variable >;
 	using Crossing = Variable::Crossing;
 	using Crossings = std::vector< Crossing >;
 
-	using Super::shrink_observees;
+	using Super::observees_;
+
+	using Super::init_observees;
 
 protected: // Creation
 
@@ -64,9 +68,9 @@ protected: // Creation
 	explicit
 	Variable_ZC(
 	 std::string const & name,
-	 Value const rTol = 1.0e-4,
-	 Value const aTol = 1.0e-6,
-	 Value const zTol = 0.0
+	 Real const rTol = 1.0e-4,
+	 Real const aTol = 1.0e-6,
+	 Real const zTol = 0.0
 	) :
 	 Super( name, rTol, aTol ),
 	 zTol( zTol ),
@@ -115,7 +119,7 @@ public: // Predicate
 public: // Properties
 
 	// Boolean Value at Time t
-	bool
+	Boolean
 	b( Time const t ) const
 	{
 		return ( t == tZ_last );
@@ -155,15 +159,15 @@ public: // Methods
 		}
 
 		// Add drill-through observees
-		for ( size_type i = 0, n = Super::observees_.size(); i < n; ++i ) {
-			Variable * vo( Super::observees_[ i ] );
+		for ( size_type i = 0, n = observees_.size(); i < n; ++i ) {
+			Variable * vo( observees_[ i ] );
 			for ( Variable * voo : vo->observees() ) {
 				observe_ZC( voo ); // Only need back-observer to force observer updates when observees update since ZC variable value doesn't depend on these 2nd level observees
 			}
 		}
 
 		// Shrink observees
-		shrink_observees();
+		init_observees();
 	}
 
 public: // Function Methods
@@ -313,7 +317,7 @@ protected: // Methods
 
 public: // Data
 
-	Value zTol{ 0.0 }; // Zero-crossing anti-chatter tolerance
+	Real zTol{ 0.0 }; // Zero-crossing anti-chatter tolerance
 	Time tZ{ infinity }; // Zero-crossing time: tQ <= tZ and tX <= tZ
 	Time tZ_last{ 0.0 }; // Zero-crossing time of last crossing
 	Crossing crossing{ Crossing::Flat }; // Zero-crossing type
@@ -323,7 +327,7 @@ public: // Data
 protected: // Data
 
 	bool zChatter_{ false }; // Zero-crossing chatter control active?
-	Value x_mag_{ 0.0 }; // Value max magnitude since last zero crossing
+	Real x_mag_{ 0.0 }; // Value max magnitude since last zero crossing
 	bool check_crossing_{ false }; // Check for zero crossing?
 	int sign_old_{ 0 }; // Sign of zero-crossing function before advance
 	Function f_; // Zero-crossing function

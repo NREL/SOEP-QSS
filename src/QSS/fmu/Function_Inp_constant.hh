@@ -49,12 +49,12 @@ class Function_Inp_constant final
 public: // Types
 
 	using Time = double;
-	using Value = double;
+	using Real = double;
 
 public: // Creation
 
 	// Constructor
-	Function_Inp_constant( Value const x_0 ) :
+	Function_Inp_constant( Real const x_0 ) :
 	 s_( 0, x_0 )
 	{}
 
@@ -77,28 +77,28 @@ public: // Properties
 	}
 
 	// Value at Time t
-	Value
+	Real
 	v( Time const ) const
 	{
 		return s_.x_0;
 	}
 
 	// First Derivative at Time t
-	Value
+	Real
 	d1( Time const ) const
 	{
 		return 0.0;
 	}
 
 	// Second Derivative at Time t
-	Value
+	Real
 	d2( Time const ) const
 	{
 		return 0.0;
 	}
 
 	// Third Derivative at Time t
-	Value
+	Real
 	d3( Time const ) const
 	{
 		return 0.0;

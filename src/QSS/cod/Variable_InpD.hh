@@ -50,19 +50,22 @@ class Variable_InpD final : public Variable_Inp< F >
 public: // Types
 
 	using Super = Variable_Inp< F >;
+
+	using Real = Variable::Real;
 	using Time = Variable::Time;
-	using Value = Variable::Value;
 
 	using Super::name;
 	using Super::tQ;
 	using Super::tX;
 	using Super::tD;
+	using Super::have_observers_;
+	using Super::observees_;
 
 	using Super::add_discrete;
 	using Super::advance_observers;
 	using Super::event;
 	using Super::shift_discrete;
-	using Super::shrink_observers;
+	using Super::init_observers;
 
 private: // Types
 
@@ -94,50 +97,43 @@ public: // Properties
 		return 0;
 	}
 
-	// Value
-	Value
-	x() const
+	// Real Value
+	Real
+	r() const
+	{
+		return x_;
+	}
+
+	// Real Value at Time t
+	Real
+	r( Time const ) const
 	{
 		return x_;
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const ) const
 	{
 		return x_;
 	}
 
-	// Continuous First Derivative at Time t
-	Value
-	x1( Time const ) const
-	{
-		return 0.0;
-	}
-
-	// Quantized Value
-	Value
-	q() const
-	{
-		return x_;
-	}
-
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const ) const
 	{
 		return x_;
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const ) const
 	{
 		return x_;
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
-	Value
+	Real
 	sn( Time const ) const
 	{
 		return x_;
@@ -156,8 +152,8 @@ public: // Methods
 	void
 	init_0()
 	{
-		assert( Super::observees_.empty() );
-		shrink_observers();
+		assert( observees_.empty() );
+		init_observers();
 		x_ = f_.vs( tQ );
 		tD = f_.tD( tQ );
 		add_discrete( tD );
@@ -168,20 +164,20 @@ public: // Methods
 	void
 	advance_discrete()
 	{
-		Value const x_new( f_.vs( tX = tQ = tD ) );
+		Real const x_new( f_.vs( tX = tQ = tD ) );
 		tD = f_.tD( tD );
 		shift_discrete( tD );
 		bool const chg( x_ != x_new );
 		if ( chg ) x_ = x_new;
 		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
-		if ( chg ) advance_observers();
+		if ( chg && have_observers_ ) advance_observers();
 	}
 
 	// Discrete Advance: Stages 0 and 1
 	void
 	advance_discrete_0_1()
 	{
-		Value const x_new( f_.vs( tX = tQ = tD ) );
+		Real const x_new( f_.vs( tX = tQ = tD ) );
 		tD = f_.tD( tD );
 		shift_discrete( tD );
 		bool const chg( x_ != x_new );
@@ -191,7 +187,7 @@ public: // Methods
 
 private: // Data
 
-	Value x_; // Value
+	Real x_; // Value
 
 };
 

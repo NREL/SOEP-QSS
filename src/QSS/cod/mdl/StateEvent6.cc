@@ -91,7 +91,7 @@ public: // Types
 	using Variable = V;
 	using Variables = typename Variable::Variables;
 	using Time = typename Variable::Time;
-	using Value = typename Variable::Value;
+	using Real = typename Variable::Real;
 	using Crossing = typename Variable::Crossing;
 	using Variable_ZC_LTI = Variable_ZC< Function_LTI >;
 
@@ -155,7 +155,7 @@ public: // Types
 
 	using Variable = V;
 	using Time = typename Variable::Time;
-	using Value = typename Variable::Value;
+	using Real = typename Variable::Real;
 	using Coefficient = double;
 
 public: // Creation
@@ -167,119 +167,119 @@ public: // Creation
 public: // Properties
 
 	// Continuous Value at Time t
-	Value
+	Real
 	operator ()( Time const t ) const
 	{
 		return std::cos( c() * t );
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const t ) const
 	{
 		return std::cos( c() * t );
 	}
 
 	// Continuous First Derivative at Time t
-	Value
+	Real
 	x1( Time const t ) const
 	{
 		return -c() * std::sin( c() * t );
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const t ) const
 	{
 		return std::cos( c() * t );
 	}
 
 	// Quantized First Derivative at Time t
-	Value
+	Real
 	q1( Time const t ) const
 	{
 		return -c() * std::sin( c() * t );
 	}
 
 	// Quantized Second Derivative at Time t
-	Value
+	Real
 	q2( Time const t ) const
 	{
 		return -square( c() ) * std::cos( c() * t );
 	}
 
 	// Quantized Sequential Value at Time t
-	Value
+	Real
 	qs( Time const t ) const
 	{
 		return q( t );
 	}
 
 	// Quantized Forward-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	qf1( Time const t ) const
 	{
 		return q1( t );
 	}
 
 	// Quantized Centered-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	qc1( Time const t ) const
 	{
 		return q1( t );
 	}
 
 	// Quantized Centered-Difference Sequential Second Derivative at Time t
-	Value
+	Real
 	qc2( Time const t ) const
 	{
 		return q2( t );
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const t ) const
 	{
 		return std::cos( c() * t );
 	}
 
 	// Simultaneous First Derivative at Time t
-	Value
+	Real
 	s1( Time const t ) const
 	{
 		return -c() * std::sin( c() * t );
 	}
 
 	// Simultaneous Second Derivative at Time t
-	Value
+	Real
 	s2( Time const t ) const
 	{
 		return -square( c() ) * std::cos( c() * t );
 	}
 
 	// Simultaneous Sequential Value at Time t
-	Value
+	Real
 	ss( Time const t ) const
 	{
 		return s( t );
 	}
 
 	// Simultaneous Forward-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	sf1( Time const t ) const
 	{
 		return s1( t );
 	}
 
 	// Simultaneous Centered-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	sc1( Time const t ) const
 	{
 		return s1( t );
 	}
 
 	// Simultaneous Centered-Difference Sequential Second Derivative at Time t
-	Value
+	Real
 	sc2( Time const t ) const
 	{
 		return s2( t );
@@ -289,10 +289,10 @@ public: // Static Methods
 
 	// Time factor
 	static
-	Value
+	Real
 	c()
 	{
-		static Value const c_( 0.8 * pi );
+		static Real const c_( 0.8 * pi );
 		return c_;
 	}
 
@@ -300,7 +300,7 @@ public: // Static Methods
 
 // StateEvent6 Example Setup
 void
-StateEvent6( Variables & vars, Conditionals & cons )
+StateEvent6( Variable::Variables & vars, std::vector< Conditional * > & cons )
 {
 	using namespace options;
 
@@ -397,7 +397,7 @@ StateEvent6( Variables & vars, Conditionals & cons )
 	z2->add( x1 ).add( -1.0 );
 
 	// Conditional
-	using When = WhenV< Variable >;
+	using When = Conditional_When< Variable >;
 	When * zc( new When() );
 	cons.push_back( zc );
 	// Using the same handler for both crossings but in general would need separate handlers
@@ -425,7 +425,7 @@ StateEvent6( Variables & vars, Conditionals & cons )
 //	z->add( x1 ).add( -1.0 );
 //
 //	// Conditional
-//	using When = WhenV< Variable >;
+//	using When = Conditional_When< Variable >;
 //	When * zc( new When() );
 //	cons.push_back( zc );
 //	When::ClauseH< Handler_StateEvent6 > * zc_clause( zc->add_clause< Handler_StateEvent6 >() );

@@ -37,16 +37,17 @@
 #define QSS_cod_Conditional_fwd_hh_INCLUDED
 
 namespace QSS {
-namespace cod {
 
 // Conditional Abstract Base Class
 class Conditional;
 
+namespace cod {
+
 // Conditional If Block Template
-template< typename > class IfV;
+template< typename > class Conditional_If;
 
 // Conditional When Block Template
-template< typename > class WhenV;
+template< typename > class Conditional_When;
 
 } // cod
 } // QSS

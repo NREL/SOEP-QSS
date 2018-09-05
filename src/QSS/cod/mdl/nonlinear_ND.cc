@@ -47,11 +47,9 @@ namespace QSS {
 namespace cod {
 namespace mdl {
 
-using Variables = std::vector< Variable * >;
-
 // Nonlinear Derivative with Numeric Differentiation Example Setup
 void
-nonlinear_ND( Variables & vars )
+nonlinear_ND( Variable::Variables & vars )
 {
 	using namespace options;
 

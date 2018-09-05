@@ -37,16 +37,17 @@
 #define QSS_fmu_Conditional_fwd_hh_INCLUDED
 
 namespace QSS {
-namespace fmu {
 
 // Conditional Abstract Base Class
 class Conditional;
 
+namespace fmu {
+
 // Conditional If Block Template
-template< typename > class IfV;
+template< typename > class Conditional_If;
 
 // Conditional When Block Template
-template< typename > class WhenV;
+template< typename > class Conditional_When;
 
 } // fmu
 } // QSS

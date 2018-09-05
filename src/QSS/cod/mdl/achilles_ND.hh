@@ -46,11 +46,9 @@ namespace QSS {
 namespace cod {
 namespace mdl {
 
-using Variables = std::vector< Variable * >;
-
 // Achilles and the Tortoise Numeric Differentiation Example Setup
 void
-achilles_ND( Variables & vars );
+achilles_ND( std::vector< Variable * > & vars );
 
 } // mdl
 } // cod

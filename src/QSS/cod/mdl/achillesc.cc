@@ -44,11 +44,9 @@ namespace QSS {
 namespace cod {
 namespace mdl {
 
-using Variables = std::vector< Variable * >;
-
 // Achilles and the Tortoise Custom Function Example Setup
 void
-achillesc( Variables & vars )
+achillesc( Variable::Variables & vars )
 {
 	using namespace options;
 

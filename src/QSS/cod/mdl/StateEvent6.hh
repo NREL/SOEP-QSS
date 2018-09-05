@@ -38,7 +38,7 @@
 
 // QSS Headers
 #include <QSS/cod/Variable.fwd.hh>
-#include <QSS/cod/Conditional.fwd.hh>
+#include <QSS/Conditional.fwd.hh>
 
 // C++ Headers
 #include <vector>
@@ -47,12 +47,9 @@ namespace QSS {
 namespace cod {
 namespace mdl {
 
-using Variables = std::vector< Variable * >;
-using Conditionals = std::vector< Conditional * >;
-
 // StateEvent6 Example Setup
 void
-StateEvent6( Variables & vars, Conditionals & cons );
+StateEvent6( std::vector< Variable * > & vars, std::vector< Conditional * > & cons );
 
 } // mdl
 } // cod

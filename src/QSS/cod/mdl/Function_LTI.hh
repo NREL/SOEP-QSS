@@ -79,17 +79,17 @@ public: // Types
 	using size_type = typename Terms::size_type;
 
 	using Time = typename Variable::Time;
-	using Value = typename Variable::Value;
+	using Real = typename Variable::Real;
 	using AdvanceSpecs_LIQSS1 = typename Variable::AdvanceSpecs_LIQSS1;
 	using AdvanceSpecs_LIQSS2 = typename Variable::AdvanceSpecs_LIQSS2;
 
 public: // Properties
 
 	// Continuous Value at Time t
-	Value
+	Real
 	operator ()( Time const t ) const
 	{
-		Value r( c0_ );
+		Real r( c0_ );
 		for ( Term const & term : terms_ ) {
 			r += term.c * term.v->x( t );
 		}
@@ -97,10 +97,10 @@ public: // Properties
 	}
 
 	// Continuous Value at Time t
-	Value
+	Real
 	x( Time const t ) const
 	{
-		Value r( c0_ );
+		Real r( c0_ );
 		for ( Term const & term : terms_ ) {
 			r += term.c * term.v->x( t );
 		}
@@ -108,10 +108,10 @@ public: // Properties
 	}
 
 	// Continuous First Derivative at Time t
-	Value
+	Real
 	x1( Time const t ) const
 	{
-		Value r( 0.0 );
+		Real r( 0.0 );
 		for ( Term const & term : terms_ ) {
 			r += term.c * term.v->x1( t );
 		}
@@ -119,10 +119,10 @@ public: // Properties
 	}
 
 	// Continuous Second Derivative at Time t
-	Value
+	Real
 	x2( Time const t ) const
 	{
-		Value r( 0.0 );
+		Real r( 0.0 );
 		for ( size_type i = iBeg2, n = terms_.size(); i < n; ++i ) {
 			Term const & term( terms_[ i ] );
 			r += term.c * term.v->x2( t );
@@ -131,10 +131,10 @@ public: // Properties
 	}
 
 	// Continuous Third Derivative at Time t
-	Value
+	Real
 	x3( Time const t ) const
 	{
-		Value r( 0.0 );
+		Real r( 0.0 );
 		for ( size_type i = iBeg3, n = terms_.size(); i < n; ++i ) {
 			Term const & term( terms_[ i ] );
 			r += term.c * term.v->x3( t );
@@ -143,10 +143,10 @@ public: // Properties
 	}
 
 	// Quantized Value at Time t
-	Value
+	Real
 	q( Time const t ) const
 	{
-		Value r( c0_ );
+		Real r( c0_ );
 		for ( Term const & term : terms_ ) {
 			r += term.c * term.v->q( t );
 		}
@@ -154,10 +154,10 @@ public: // Properties
 	}
 
 	// Quantized First Derivative at Time t
-	Value
+	Real
 	q1( Time const t ) const
 	{
-		Value r( 0.0 );
+		Real r( 0.0 );
 		for ( size_type i = iBeg2, n = terms_.size(); i < n; ++i ) {
 			Term const & term( terms_[ i ] );
 			r += term.c * term.v->q1( t );
@@ -166,10 +166,10 @@ public: // Properties
 	}
 
 	// Quantized Second Derivative at Time t
-	Value
+	Real
 	q2( Time const t ) const
 	{
-		Value r( 0.0 );
+		Real r( 0.0 );
 		for ( size_type i = iBeg3, n = terms_.size(); i < n; ++i ) {
 			Term const & term( terms_[ i ] );
 			r += term.c * term.v->q2( t );
@@ -178,38 +178,38 @@ public: // Properties
 	}
 
 	// Quantized Sequential Value at Time t
-	Value
+	Real
 	qs( Time const t ) const
 	{
 		return q( t );
 	}
 
 	// Quantized Forward-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	qf1( Time const t ) const
 	{
 		return q1( t );
 	}
 
 	// Quantized Centered-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	qc1( Time const t ) const
 	{
 		return q1( t );
 	}
 
 	// Quantized Centered-Difference Sequential Second Derivative at Time t
-	Value
+	Real
 	qc2( Time const t ) const
 	{
 		return q2( t );
 	}
 
 	// Simultaneous Value at Time t
-	Value
+	Real
 	s( Time const t ) const
 	{
-		Value r( c0_ );
+		Real r( c0_ );
 		for ( Term const & term : terms_ ) {
 			r += term.c * term.v->s( t );
 		}
@@ -217,10 +217,10 @@ public: // Properties
 	}
 
 	// Simultaneous First Derivative at Time t
-	Value
+	Real
 	s1( Time const t ) const
 	{
-		Value r( 0.0 );
+		Real r( 0.0 );
 		for ( size_type i = iBeg2, n = terms_.size(); i < n; ++i ) {
 			Term const & term( terms_[ i ] );
 			r += term.c * term.v->s1( t );
@@ -229,10 +229,10 @@ public: // Properties
 	}
 
 	// Simultaneous Second Derivative at Time t
-	Value
+	Real
 	s2( Time const t ) const
 	{
-		Value r( 0.0 );
+		Real r( 0.0 );
 		for ( size_type i = iBeg3, n = terms_.size(); i < n; ++i ) {
 			Term const & term( terms_[ i ] );
 			r += term.c * term.v->s2( t );
@@ -241,28 +241,28 @@ public: // Properties
 	}
 
 	// Simultaneous Sequential Value at Time t
-	Value
+	Real
 	ss( Time const t ) const
 	{
 		return s( t );
 	}
 
 	// Simultaneous Forward-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	sf1( Time const t ) const
 	{
 		return s1( t );
 	}
 
 	// Simultaneous Centered-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	sc1( Time const t ) const
 	{
 		return s1( t );
 	}
 
 	// Simultaneous Centered-Difference Sequential Second Derivative at Time t
-	Value
+	Real
 	sc2( Time const t ) const
 	{
 		return s2( t );
@@ -270,98 +270,98 @@ public: // Properties
 
 	// Quantized Values at Time t and at Variable +/- Delta
 	AdvanceSpecs_LIQSS1
-	qlu1( Time const t, Value const del ) const
+	qlu1( Time const t, Real const del ) const
 	{
 		// Value at +/- del
-		Value v( c0_ );
+		Real v( c0_ );
 		for ( Term const & term : termso_ ) {
 			v += term.c * term.v->q( t );
 		}
-		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * v_->q( t ) ) );
-		Value const cv_del( cv_ * del );
-		Value const vl( vc - cv_del );
-		Value const vu( vc + cv_del );
+		Real const vc( cv_ == 0.0 ? v : v + ( cv_ * v_->q( t ) ) );
+		Real const cv_del( cv_ * del );
+		Real const vl( vc - cv_del );
+		Real const vu( vc + cv_del );
 
 		// Zero point
-		Value const z( signum( vl ) != signum( vu ) ? -( v * cv_inv_ ) : 0.0 );
+		Real const z( signum( vl ) != signum( vu ) ? -( v * cv_inv_ ) : 0.0 );
 
 		return AdvanceSpecs_LIQSS1{ vl, vu, z };
 	}
 
 	// Simultaneous Values at Time t and at Variable +/- Delta
 	AdvanceSpecs_LIQSS1
-	slu1( Time const t, Value const del ) const
+	slu1( Time const t, Real const del ) const
 	{
 		// Value at +/- del
-		Value v( c0_ );
+		Real v( c0_ );
 		for ( Term const & term : termso_ ) {
 			v += term.c * term.v->s( t );
 		}
-		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * v_->x( t ) ) );
-		Value const cv_del( cv_ * del );
-		Value const vl( vc - cv_del );
-		Value const vu( vc + cv_del );
+		Real const vc( cv_ == 0.0 ? v : v + ( cv_ * v_->x( t ) ) );
+		Real const cv_del( cv_ * del );
+		Real const vl( vc - cv_del );
+		Real const vu( vc + cv_del );
 
 		// Zero point
-		Value const z( signum( vl ) != signum( vu ) ? -( v * cv_inv_ ) : 0.0 );
+		Real const z( signum( vl ) != signum( vu ) ? -( v * cv_inv_ ) : 0.0 );
 
 		return AdvanceSpecs_LIQSS1{ vl, vu, z };
 	}
 
 	// Quantized Values and Derivatives at Time t and at Variable +/- Delta
 	AdvanceSpecs_LIQSS2
-	qlu2( Time const t, Value const del ) const
+	qlu2( Time const t, Real const del ) const
 	{
 		// Value at +/- del
-		Value v( c0_ );
+		Real v( c0_ );
 		for ( Term const & term : termso_ ) {
 			v += term.c * term.v->q( t );
 		}
-		Value const vc( cv_ == 0.0 ? v : v + ( cv_ * v_->q( t ) ) );
-		Value const cv_del( cv_ * del );
-		Value const vl( vc - cv_del );
-		Value const vu( vc + cv_del );
+		Real const vc( cv_ == 0.0 ? v : v + ( cv_ * v_->q( t ) ) );
+		Real const cv_del( cv_ * del );
+		Real const vl( vc - cv_del );
+		Real const vu( vc + cv_del );
 
 		// Derivative at +/- del
-		Value s( 0.0 );
+		Real s( 0.0 );
 		for ( size_type i = ioBeg2, n = termso_.size(); i < n; ++i ) {
 			Term const & term( termso_[ i ] );
 			s += term.c * term.v->q1( t );
 		}
-		Value const sl( s + ( cv_ * vl ) );
-		Value const su( s + ( cv_ * vu ) );
+		Real const sl( s + ( cv_ * vl ) );
+		Real const su( s + ( cv_ * vu ) );
 
 		// Zero point
 		bool const signs_differ( signum( sl ) != signum( su ) );
-		Value const z1( signs_differ ? -( s * cv_inv_ ) : 0.0 );
-		Value const z2( signs_differ ? ( z1 - v ) * cv_inv_ : 0.0 );
+		Real const z1( signs_differ ? -( s * cv_inv_ ) : 0.0 );
+		Real const z2( signs_differ ? ( z1 - v ) * cv_inv_ : 0.0 );
 
 		return AdvanceSpecs_LIQSS2{ vl, vu, z1, sl, su, z2 };
 	}
 
 	// Simultaneous Values and Derivatives at Time t and at Variable +/- Delta
 	AdvanceSpecs_LIQSS2
-	slu2( Time const t, Value const del, Value const vc ) const
+	slu2( Time const t, Real const del, Real const vc ) const
 	{
 		// Value at +/- del
-		Value const v( cv_ == 0.0 ? vc : vc - ( cv_ * v_->x( t ) ) );
-		Value const cv_del( cv_ * del );
-		Value const vl( vc - cv_del );
-		Value const vu( vc + cv_del );
+		Real const v( cv_ == 0.0 ? vc : vc - ( cv_ * v_->x( t ) ) );
+		Real const cv_del( cv_ * del );
+		Real const vl( vc - cv_del );
+		Real const vu( vc + cv_del );
 
 		// Derivative at +/- del
-		Value s( 0.0 );
+		Real s( 0.0 );
 		for ( size_type i = ioBeg2, n = termso_.size(); i < n; ++i ) {
 			Term const & term( termso_[ i ] );
 			s += term.c * term.v->s1( t );
 		}
-		Value const sl( s + ( cv_ * vl ) );
-		Value const su( s + ( cv_ * vu ) );
+		Real const sl( s + ( cv_ * vl ) );
+		Real const su( s + ( cv_ * vu ) );
 
 		// Zero point
 		bool const signs_differ( signum( sl ) != signum( su ) );
-		Value const z1( signs_differ ? -( s * cv_inv_ ) : 0.0 );
-		Value const z2( signs_differ ? ( z1 - v ) * cv_inv_ : 0.0 );
+		Real const z1( signs_differ ? -( s * cv_inv_ ) : 0.0 );
+		Real const z2( signs_differ ? ( z1 - v ) * cv_inv_ : 0.0 );
 
 		return AdvanceSpecs_LIQSS2{ vl, vu, z1, sl, su, z2 };
 	}

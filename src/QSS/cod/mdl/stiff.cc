@@ -43,13 +43,11 @@ namespace QSS {
 namespace cod {
 namespace mdl {
 
-using Variables = std::vector< Variable * >;
-
 // Stiff System Example Setup
 //
 // Demonstrates LIQSS benefits for stiff systems
 void
-stiff( Variables & vars )
+stiff( Variable::Variables & vars )
 {
 	using namespace options;
 

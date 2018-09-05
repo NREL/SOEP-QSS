@@ -46,11 +46,9 @@ namespace QSS {
 namespace cod {
 namespace mdl {
 
-using Variables = std::vector< Variable * >;
-
 // Stiff System Example Setup
 void
-stiff( Variables & vars );
+stiff( std::vector< Variable * > & vars );
 
 } // mdl
 } // cod

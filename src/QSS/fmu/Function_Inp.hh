@@ -49,16 +49,16 @@ class Function_Inp final
 public: // Types
 
 	using Time = double;
-	using Value = double;
+	using Real = double;
 
 public: // Creation
 
 	// Default Constructor
 	Function_Inp(
-	 Value const x_0 = 0.0,
-	 Value const x_1 = 0.0,
-	 Value const x_2 = 0.0,
-	 Value const x_3 = 0.0
+	 Real const x_0 = 0.0,
+	 Real const x_1 = 0.0,
+	 Real const x_2 = 0.0,
+	 Real const x_3 = 0.0
 	) :
 	 s_( 3, x_0, x_1, x_2, x_3 )
 	{}
@@ -94,28 +94,28 @@ public: // Properties
 	}
 
 	// Value at Time t
-	Value
+	Real
 	v( Time const t ) const
 	{
 		return ?;
 	}
 
 	// First Derivative at Time t
-	Value
+	Real
 	d1( Time const t ) const
 	{
 		return ?;
 	}
 
 	// Second Derivative at Time t
-	Value
+	Real
 	d2( Time const t ) const
 	{
 		return ?;
 	}
 
 	// Third Derivative at Time t
-	Value
+	Real
 	d3( Time const t ) const
 	{
 		return ?;

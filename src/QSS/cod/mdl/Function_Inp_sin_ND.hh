@@ -54,7 +54,7 @@ class Function_Inp_sin_ND final
 public: // Types
 
 	using Time = double;
-	using Value = double;
+	using Real = double;
 	using Coefficient = double;
 
 public: // Creation
@@ -86,70 +86,70 @@ public: // Properties
 	}
 
 	// Value at Time t
-	Value
+	Real
 	operator ()( Time const t ) const
 	{
 		return c_ * std::sin( s_ * t );
 	}
 
 	// Value at Time t
-	Value
+	Real
 	v( Time const t ) const
 	{
 		return c_ * std::sin( s_ * t );
 	}
 
 	// First Derivative at Time t
-	Value
+	Real
 	d1( Time const t ) const
 	{
 		return dtn_inv_2_ * ( v( t + dtn_ ) - v( t - dtn_ ) );
 	}
 
 	// Second Derivative at Time t
-	Value
+	Real
 	d2( Time const t ) const
 	{
 		return dtn_inv_sq_ * ( v( t + dtn_ ) - ( 2.0 * v( t ) ) + v( t - dtn_ ) );
 	}
 
 	// Third Derivative at Time t
-	Value
+	Real
 	d3( Time const t ) const
 	{
 		return dtn_inv_cb_2_ * ( v( t + dtn_2_ ) - ( 2.0 * ( v( t + dtn_ ) - v( t - dtn_ ) ) ) - v( t - dtn_2_ ) );
 	}
 
 	// Sequential Value at Time t
-	Value
+	Real
 	vs( Time const t ) const
 	{
 		return v_t_ = v( t );
 	}
 
 	// Forward-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	df1( Time const t ) const
 	{
 		return dtn_inv_ * ( v( t + dtn_ ) - v_t_ );
 	}
 
 	// Centered-Difference Sequential First Derivative at Time t
-	Value
+	Real
 	dc1( Time const t ) const
 	{
 		return dtn_inv_2_ * ( ( v_p_ = v( t + dtn_ ) ) - ( v_m_ = v( t - dtn_ ) ) );
 	}
 
 	// Centered-Difference Sequential Second Derivative at Time t
-	Value
+	Real
 	dc2( Time const ) const
 	{
 		return dtn_inv_sq_ * ( v_p_ - ( 2.0 * v_t_ ) + v_m_ );
 	}
 
 	// Centered-Difference Sequential Third Derivative at Time t
-	Value
+	Real
 	dc3( Time const t ) const
 	{
 		return dtn_inv_cb_2_ * ( v( t + dtn_2_ ) - ( 2.0 * ( v_p_ - v_m_ ) ) - v( t - dtn_2_ ) );
@@ -204,9 +204,9 @@ private: // Data
 
 	Coefficient c_{ 1.0 }; // Value scaling
 	Coefficient s_{ 1.0 }; // Time scaling
-	mutable Value v_t_; // Last v(t) computed
-	mutable Value v_p_; // Last v(t+dtn) computed
-	mutable Value v_m_; // Last v(t-dtn) computed
+	mutable Real v_t_; // Last v(t) computed
+	mutable Real v_p_; // Last v(t+dtn) computed
+	mutable Real v_m_; // Last v(t-dtn) computed
 	Time dtn_{ options::dtNum }; // Differentiation time step
 	Time dtn_2_{ 2 * options::dtNum }; // Differentiation time step doubled
 	Time dtn_inv_{ 1.0 / options::dtNum }; // Differentiation time step inverse
