@@ -179,12 +179,12 @@ public: // Methods
 	void
 	advance_QSS()
 	{
-		fmu_set_observees_x( tX = tQ = tE );
 		Real const x_tE( zChatter_ ? x( tE ) : Real( 0.0 ) );
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
 		check_crossing_ = ( tE > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_tE : x( tE ) ) : 0 );
 #endif
+		fmu_set_observees_x( tX = tQ = tE );
 		x_0_ = fmu_get_real();
 		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 		set_qTol();

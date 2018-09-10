@@ -997,13 +997,13 @@ namespace fmu {
 			for ( auto var : vars_NZ ) {
 				if ( ! var->is_Discrete() ) var->fmu_set_sn( t );
 			}
-			fmu::get_derivatives(); // Not sure why we need this here but not in simulate_fmu
+			fmu::get_derivatives(); // Not sure why we need this here but not in simulate_fmu_me
 			for ( auto var : vars_NZ ) {
 				var->init_2();
 			}
+			fmu::set_time( t = t0 );
 		}
 		if ( ! vars_ZC.empty() ) {
-			if ( QSS_order_max >= 2 ) fmu::set_time( t0 );
 			for ( auto var : vars_ZC ) {
 				var->init_0();
 			}
@@ -1015,9 +1015,9 @@ namespace fmu {
 				for ( auto var : vars_ZC ) {
 					var->init_2();
 				}
+			fmu::set_time( t0 );
 			}
 		}
-		fmu::set_time( t = t0 );
 
 		// Dependency cycle detection: After init sets up observers
 		if ( options::cycles ) cycles< Variable >( vars );

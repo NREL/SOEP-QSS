@@ -270,6 +270,7 @@ public: // Methods
 		fmu_set_observees_sn( tN = tQ + options::dtNum );
 		if ( self_observer ) {
 			advance_LIQSS_2();
+			fmu_set_sn( tN );
 		} else {
 			x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 			q_0_ += signum( x_2_ ) * qTol;

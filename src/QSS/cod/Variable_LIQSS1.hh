@@ -210,8 +210,9 @@ public: // Methods
 	void
 	advance_QSS()
 	{
-		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
+		Time const tDel( tE - tX );
 		tX = tQ = tE;
+		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * tDel );
 		set_qTol();
 		if ( self_observer ) {
 			advance_q( tQ );
@@ -229,8 +230,9 @@ public: // Methods
 	void
 	advance_QSS_0()
 	{
-		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
+		Time const tDel( tE - tX );
 		tX = tQ = tE;
+		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * tDel );
 		set_qTol();
 	}
 
