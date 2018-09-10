@@ -21,7 +21,7 @@ Currently the code has:
 * FMU for Model Exchange simulation support.
 * FMU-QSS generation and simulation support.
 
-Notes:
+### Notes
 * Modelica input file processing is not provided: test cases are code-defined or loaded from FMUs.
 * Modelica models need zero-crossing variables with names of the form \_\_zc\_*name*.
 * FMU XML files need to be customized for now with zero-crossing dependencies.
@@ -56,7 +56,7 @@ The design concepts are still emerging. The basic constituents of a fast QSS sol
 * Continuous and discrete valued variables.
 * Algebraic relationships between variables including handling of algebraic loops.
 
-Notes:
+### Notes
 * For efficiency variables handle their own integration and quantization operations so we don't consider those as separate entities.
 * Parallel updating of variables dependent on the trigger variable is anticipated.
 * Priority queues with good concurrency and cache efficiency is a wide research topic: if the event queue is found to be a bottleneck experiments with advanced concepts are planned.
@@ -161,7 +161,7 @@ Modelica supports conditional behavior via "if" and "when" blocks. The QSS solve
 
 Models defined by FMUs following the FMI 2.0 API can be run by this QSS solver using QSS1 or QSS2 solvers. Discrete variables and zero crossing functions are supported. This is currently an initial/demonstration capability that cannot yet handle unit conversions (pure SI models are OK), or algebraic relationships. Some simple test model FMUs and a 50-variable room air thermal model have been simulated successfully.
 
-Notes:
+### FMU Notes
 * Mixing QSS methods in an FMU simulation is not yet supported and will require a Modelica annotation to indicate QSS methods on a per-variable basis.
 * The FMU support is performance-limited by the FMI 2.0 API, which requires expensive get-all-derivatives calls where QSS needs individual derivatives.
 * QSS2 performance is limited by the use of numeric differentiation: the FMI ME 2.0 API doesn't provide higher derivatives but they may become available via FMI extensions.
@@ -182,14 +182,13 @@ Much of the source code is split into separate directories for the code-defined 
 
 ### Numeric Differentiation
 
-Higher derivatives are needed for QSS2+ methods. These are available analytically for linear functions and we provide them for the nonlinear function examples. In general analytical higher derivatives may not be provided by the model description or via automatic differentiation or may not be available across an FMU interface so we need some support for numeric differentiation. Numeric differentiation variants of some of the function classes were built to allow emulation of an environment where analytical higher derivatives are not available. A simple and fast approach suffices for this purpose:
+Higher derivatives are needed for QSS2+ methods. These are available analytically for linear functions and we provide them for the nonlinear functions in `cod`. In general analytical higher derivatives may not be provided by the model description or via automatic differentiation and may not be available across the FMU interface so we need some support for numeric differentiation. Numeric differentiation variants of some of the function classes are included to allow emulation of an environment where analytical higher derivatives are not available. A simple and fast approach suffices for this purpose:
 * QSS2 does 2-point forward difference differentiation to allow reuse of one derivative evaluation.
 * QSS3 does 2 and 3-point centered difference differentiation to allow reuse of derivative evaluations.
-* Input variables of orders 2 and 3 are handled analogously to the corresponding QSS variable.
+* Input variables of orders 2 and 3 are handled analogously.
+* A mechanism to specify globat and per-variable differentiation time steps is provided.
 
-A mechanism to specify a per-variable differentiation time step is provided with defaulting to a global differentiation time step.
-
-At startup and requantization events QSS3 with numeric differentiation has a cyclic dependency problem because the derivative function evaluations at time step offsets used to compute the higher derivatives are both used to set the q2 coefficient of the quantized representation but also depend on q2. The QSS literature does not offer a robust solution and none is implemented at this point. An iterative approach could be used to find a fixed point solution for a stable q2 value but this would require a number of additional derivative evaluations. The impact of this flaw will vary across models and could be severe in some situations so it should be addressed if numeric differentiation will be used in the production JModelica+QSS system.
+At startup and simultaneous or self-observer requantization events, numeric differentiation of QSS3+ and xQSS2+ variables has a cyclic dependency problem: the derivative function evaluations at time step offsets used to compute the higher derivatives are both used to set the q2 coefficient of the quantized representation but also depend on q2. (The same problem exists for the higher q terms in higher order QSS methods.) The result is that some variables will use a "stale" value of q2 in their derivative computation. The impact of this flaw will vary across models and could be severe in some situations so numeric differentiation should be avoided in the production JModelica+QSS system with these higher order QSS variables.
 
 ### Numeric Bulletproofing
 
@@ -224,7 +223,7 @@ FMU zero crossing support has some additional complications and limitations:
 * There is no FMI API to trigger the zero-crossing handlers to run when the QSS solver reaches zero-crossing events. Instead we set the FMU variables to a time slightly beyond the zero-crossing time with the hope that the zero crossing will be detected by the FMU. The `dtZC` option allows control over this "step". This uniform step size is not robust as it doesn't adjust for solution behavior. This is also not highly robust because the output variables used to track the zero crossing derivatives are (at least for Dymola-generated FMUs) numerically, not analytically, based so the QSS zero-crossing function does not track the actual FMU zero-crossing function to high precision.
 * Zero-crossing root refinement is expensive due to the overhead of FMU operations so it is disabled by default (the `--refine` option enables it). Once atomic FMU variable get/set operations are provided the overhead will be lower.
 
-Notes:
+#### Notes
 * Zero-crossing variables should not need and are required to have no observers (but they do have dependents: the variables modified by their handlers).
 * Zero-crossing variables must initialize and advance after other variables because their zero-order coefficients come from their function evaluation that depends on the zero-order coefficients of other variables being advanced.
 * Zero-crossing variables use the quantized, not continuous, representations of variables appearing in their functions. This is what the literature indicates and it prevents additional updating operations and potential event cascades. But it also provides a lower accuracy representation, making root finding and refinement more critical. It also means that QSS1 variables appearing linearly in zero-crossing functions only contribute a constant to the function at any time: if all variables are QSS1 and/or discrete then no zero crossings can be predicted so zero crossings will only occur as a result of observer updates of the zero-crossing variable. For this reason QSS1 is not suggested when zero crossings are in use.
