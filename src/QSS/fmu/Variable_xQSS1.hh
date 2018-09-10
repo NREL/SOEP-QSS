@@ -151,7 +151,7 @@ public: // Methods
 	{
 		init_observers();
 		init_observees();
-		fmu_set_value( x_0_ = q_0_ = xIni );
+		fmu_set_real( x_0_ = q_0_ = xIni );
 		set_qTol();
 	}
 
@@ -161,7 +161,7 @@ public: // Methods
 	{
 		init_observers();
 		init_observees();
-		fmu_set_value( x_0_ = q_0_ = x );
+		fmu_set_real( x_0_ = q_0_ = x );
 		set_qTol();
 	}
 
@@ -172,7 +172,7 @@ public: // Methods
 		x_1_ = q_1_ = fmu_get_deriv();
 		set_tE_aligned();
 		add_QSS( tE );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// Set Current Tolerance
@@ -187,19 +187,21 @@ public: // Methods
 	void
 	advance_QSS()
 	{
-		x_0_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
+		x_0_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
+		tX = tQ = tE;
 		set_qTol();
 		if ( have_observers_ ) {
 			advance_observers_1();
 		} else if ( self_observer ) {
-			fmu_set_value( q_0_ );
+			fmu_set_real( q_0_ );
 		}
-		fmu_set_observees_q( tX = tQ );
+		fmu_set_observees_q( tQ );
 		x_1_ = q_1_ = fmu_get_deriv();
 
 		if ( have_observers_2_ ) {
 			fmu::set_time( tN = tQ + options::dtNum );
 			advance_observers_2();
+			fmu::set_time( tQ );
 		}
 
 		set_tE_aligned();
@@ -215,10 +217,11 @@ public: // Methods
 //	void
 //	advance_QSS_slow()
 //	{
-//		x_0_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
+//		x_0_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
+//		tX = tQ = tE;
 //		set_qTol();
-//		fmu_set_observees_q( tX = tQ );
-//		if ( self_observer ) fmu_set_value( q_0_ );
+//		fmu_set_observees_q( tQ );
+//		if ( self_observer ) fmu_set_real( q_0_ );
 //		x_1_ = q_1_ = fmu_get_deriv();
 //		set_tE_aligned();
 //		shift_QSS( tE );
@@ -230,8 +233,8 @@ public: // Methods
 	void
 	advance_QSS_0()
 	{
-		x_0_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
-		tX = tE;
+		x_0_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
+		tX = tQ = tE;
 		set_qTol();
 	}
 
@@ -240,7 +243,7 @@ public: // Methods
 	advance_QSS_1()
 	{
 		fmu_set_observees_s( tQ );
-		if ( self_observer ) fmu_set_value( q_0_ );
+		if ( self_observer ) fmu_set_real( q_0_ );
 		x_1_ = q_1_ = fmu_get_deriv();
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -286,10 +289,9 @@ public: // Methods
 	advance_handler( Time const t )
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
-		x_0_ = q_0_ = fmu_get_value(); // Assume FMU ran zero-crossing handler
+		x_0_ = q_0_ = fmu_get_real(); // Assume FMU ran zero-crossing handler
 		set_qTol();
 		fmu_set_observees_q( tX = tQ = t );
-		if ( self_observer ) fmu_set_value( q_0_ );
 		x_1_ = q_1_ = fmu_get_deriv();
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -303,7 +305,7 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
-		x_0_ = q_0_ = fmu_get_value(); // Assume FMU ran zero-crossing handler
+		x_0_ = q_0_ = fmu_get_real(); // Assume FMU ran zero-crossing handler
 		set_qTol();
 	}
 
@@ -312,7 +314,6 @@ public: // Methods
 	advance_handler_1()
 	{
 		fmu_set_observees_q( tQ );
-		if ( self_observer ) fmu_set_value( q_0_ );
 		x_1_ = q_1_ = fmu_get_deriv();
 		set_tE_aligned();
 		shift_QSS( tE );

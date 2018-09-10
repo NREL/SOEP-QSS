@@ -54,7 +54,7 @@ public: // Types
 
 	using Time = double;
 	using Times = std::vector< Time >;
-	using Values = std::vector< Real >;
+	using Reals = std::vector< Real >;
 	using size_type = Times::size_type;
 
 public: // Creation
@@ -116,7 +116,7 @@ private: // Data
 
 	std::string file_; // File name
 	Times t_; // Time buffer
-	Values v_; // Value buffer
+	Reals v_; // Value buffer
 	size_type const capacity_{ 2048 }; // Buffer capacities
 
 };

@@ -382,9 +382,6 @@ simulate()
 				} else { // Simultaneous triggers
 					Variables triggers( events.top_subs< Variable >() );
 					variables_observers( triggers, observers );
-					size_type const iBeg_triggers_2( begin_order_index( triggers, 2 ) );
-					size_type const iBeg_triggers_3( begin_order_index( triggers, 3 ) );
-					int const triggers_order_max( triggers.back()->order() );
 
 					if ( doTOut ) { // Time event output: before discrete changes
 						if ( options::output::a ) { // All variables output
@@ -413,18 +410,31 @@ simulate()
 					for ( Variable * trigger : triggers ) {
 						assert( trigger->tD == t );
 						trigger->st = s; // Set trigger superdense time
-						trigger->advance_discrete_0_1();
+						trigger->advance_discrete();
 					}
-					if ( triggers_order_max >= 2 ) { // 2nd order pass
-						for ( size_type i = iBeg_triggers_2, n = triggers.size(); i < n; ++i ) {
-							triggers[ i ]->advance_discrete_2();
-						}
-						if ( triggers_order_max >= 3 ) { // 3rd order pass
-							for ( size_type i = iBeg_triggers_3, n = triggers.size(); i < n; ++i ) {
-								triggers[ i ]->advance_discrete_3();
-							}
-						}
-					}
+
+//					// If discrete events can change order 1+ QSS variables this block should be used instead
+//					for ( Variable * trigger : triggers ) {
+//						assert( trigger->tD == t );
+//						trigger->st = s; // Set trigger superdense time
+//						trigger->advance_discrete_0();
+//					}
+//					int const triggers_order_max( triggers.back()->order() );
+//					if ( triggers_order_max >= 1 ) { // 1st order pass
+//						for ( size_type i = begin_order_index( triggers, 1 ), n = triggers.size(); i < n; ++i ) {
+//							triggers[ i ]->advance_discrete_1();
+//						}
+//						if ( triggers_order_max >= 2 ) { // 2nd order pass
+//							for ( size_type i = begin_order_index( triggers, 2 ), n = triggers.size(); i < n; ++i ) {
+//								triggers[ i ]->advance_discrete_2();
+//							}
+//							if ( triggers_order_max >= 3 ) { // 3rd order pass
+//								for ( size_type i = begin_order_index( triggers, 3 ), n = triggers.size(); i < n; ++i ) {
+//									triggers[ i ]->advance_discrete_3();
+//								}
+//							}
+//						}
+//					}
 
 					Variable::advance_observers( observers, t );
 
@@ -532,9 +542,6 @@ simulate()
 				} else { // Simultaneous handlers
 					Variables handlers( events.top_subs< Variable >() );
 					variables_observers( handlers, observers );
-					size_type const iBeg_handlers_1( begin_order_index( handlers, 1 ) );
-					size_type const iBeg_handlers_2( begin_order_index( handlers, 2 ) );
-					size_type const iBeg_handlers_3( begin_order_index( handlers, 3 ) );
 					int const handlers_order_max( handlers.empty() ? 0 : handlers.back()->order() );
 
 					if ( doROut ) { // Requantization output: before handler changes
@@ -564,16 +571,18 @@ simulate()
 					for ( auto & e : events.top_events() ) {
 						e.sub< Variable >()->advance_handler_0( t, e.val() );
 					}
-					for ( size_type i = iBeg_handlers_1, n = handlers.size(); i < n; ++i ) {
-						handlers[ i ]->advance_handler_1();
-					}
-					if ( handlers_order_max >= 2 ) { // 2nd order pass
-						for ( size_type i = iBeg_handlers_2, n = handlers.size(); i < n; ++i ) {
-							handlers[ i ]->advance_handler_2();
+					if ( handlers_order_max >= 1 ) { // 1st order pass
+						for ( size_type i = begin_order_index( handlers, 1 ), n = handlers.size(); i < n; ++i ) {
+							handlers[ i ]->advance_handler_1();
 						}
-						if ( handlers_order_max >= 3 ) { // 3rd order pass
-							for ( size_type i = iBeg_handlers_3, n = handlers.size(); i < n; ++i ) {
-								handlers[ i ]->advance_handler_3();
+						if ( handlers_order_max >= 2 ) { // 2nd order pass
+							for ( size_type i = begin_order_index( handlers, 2 ), n = handlers.size(); i < n; ++i ) {
+								handlers[ i ]->advance_handler_2();
+							}
+							if ( handlers_order_max >= 3 ) { // 3rd order pass
+								for ( size_type i = begin_order_index( handlers, 3 ), n = handlers.size(); i < n; ++i ) {
+									handlers[ i ]->advance_handler_3();
+								}
 							}
 						}
 					}
@@ -648,9 +657,6 @@ simulate()
 					++n_QSS_simultaneous_events;
 					Variables triggers( events.top_subs< Variable >() );
 					variables_observers( triggers, observers );
-					size_type const iBeg_triggers_2( begin_order_index( triggers, 2 ) );
-					size_type const iBeg_triggers_3( begin_order_index( triggers, 3 ) );
-					int const triggers_order_max( triggers.back()->order() );
 
 					if ( doROut ) { // Requantization output: Quantized rep before to capture its discrete change
 						if ( ( options::output::a ) || ( options::output::r ) ) { // Requantization output
@@ -672,12 +678,13 @@ simulate()
 					for ( Variable * trigger : triggers ) {
 						trigger->advance_QSS_1();
 					}
+					int const triggers_order_max( triggers.back()->order() );
 					if ( triggers_order_max >= 2 ) { // 2nd order pass
-						for ( size_type i = iBeg_triggers_2, n = triggers.size(); i < n; ++i ) {
+						for ( size_type i = begin_order_index( triggers, 2 ), n = triggers.size(); i < n; ++i ) {
 							triggers[ i ]->advance_QSS_2();
 						}
 						if ( triggers_order_max >= 3 ) { // 3rd order pass
-							for ( size_type i = iBeg_triggers_3, n = triggers.size(); i < n; ++i ) {
+							for ( size_type i = begin_order_index( triggers, 3 ), n = triggers.size(); i < n; ++i ) {
 								triggers[ i ]->advance_QSS_3();
 							}
 						}

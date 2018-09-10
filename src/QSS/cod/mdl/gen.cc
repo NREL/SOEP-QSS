@@ -92,12 +92,12 @@ public: // Types
 	using Variable = V;
 	using Time = typename Variable::Time;
 	using Real = typename Variable::Real;
+	using Reals = typename Variable::Reals;
 	using Variables = typename Variable::Variables;
 	using size_type = typename Variables::size_type;
 	using Crossing = typename Variable::Crossing;
 	using Variable_QSS_LTI = Variable_QSS< Function_LTI >;
 	using Variable_ZC_LTI = Variable_ZC< Function_LTI >;
-	using Values = std::vector< Real >;
 
 public: // Properties
 
@@ -156,8 +156,8 @@ public: // Methods
 
 private: // Data
 
-	Values dn_; // Values to set on downward crossing
-	Values up_; // Values to set on upward crossing
+	Reals dn_; // Values to set on downward crossing
+	Reals up_; // Values to set on upward crossing
 	Variable_ZC_LTI * z_{ nullptr }; // Associated zero-crossing variable
 	Variables observers_;
 

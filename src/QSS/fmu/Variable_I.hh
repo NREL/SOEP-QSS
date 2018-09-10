@@ -205,7 +205,7 @@ public: // Methods
 		assert( tX <= t );
 		tX = tQ = t;
 		shift_handler();
-		Integer const x_new( fmu_get_integer_value() ); // Assume FMU ran event handler
+		Integer const x_new( fmu_get_integer() ); // Assume FMU ran event handler
 		bool const chg( x_ != x_new );
 		if ( chg ) x_ = x_new;
 		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
@@ -219,7 +219,7 @@ public: // Methods
 		assert( tX <= t );
 		tX = tQ = t;
 		shift_handler();
-		Integer const x_new( fmu_get_integer_value() ); // Assume FMU ran event handler
+		Integer const x_new( fmu_get_integer() ); // Assume FMU ran event handler
 		bool const chg( x_ != x_new );
 		if ( chg ) x_ = x_new;
 		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';

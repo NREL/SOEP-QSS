@@ -71,9 +71,9 @@ public: // Types
 	using Integer = int;
 	using Real = double;
 	using Time = double;
+	using Reals = std::vector< Real >;
 	using Variables = std::vector< Variable * >;
 	using VariableRefs = std::vector< fmi2_value_reference_t >;
-	using Values = std::vector< Real >;
 	using size_type = Variables::size_type;
 	using Indexes = std::vector< size_type >;
 
@@ -493,7 +493,7 @@ public: // Methods
 		if ( ! observees_.empty() ) {
 			observees_.erase( std::remove_if( observees_.begin(), observees_.end(), []( Variable * v ){ return v->is_Discrete(); } ), observees_.end() ); // Remove discrete variables: Don't need them after ZC drill-thru observees set up
 			std::sort( observees_.begin(), observees_.end() );
-			observees_.resize( std::distance( observees_.begin(), std::unique( observees_.begin(), observees_.end() ) ) ); // Remove duplicates
+			observees_.erase( std::unique( observees_.begin(), observees_.end() ), observees_.end() ); // Remove duplicates
 			observees_.shrink_to_fit();
 		}
 	}
@@ -577,10 +577,18 @@ public: // Methods
 		assert( false );
 	}
 
-	// Discrete Advance: Stages 0 and 1
+	// Discrete Advance: Stage 0
 	virtual
 	void
-	advance_discrete_0_1()
+	advance_discrete_0()
+	{
+		assert( false );
+	}
+
+	// Discrete Advance: Stage 1
+	virtual
+	void
+	advance_discrete_1()
 	{
 		assert( false );
 	}
@@ -790,76 +798,6 @@ public: // Methods
 		observers_.advance( tQ );
 	}
 
-	// Advance Given Observers
-	static
-	void
-	advance_observers( Variables & observers, Time const t )
-	{
-		assert( std::is_sorted( observers.begin(), observers.end(), []( Variable const * v1, Variable const * v2 ){ return v1->order() + ( v1->is_ZC() ? max_rep_order : 0 ) < v2->order() + ( v2->is_ZC() ? max_rep_order : 0 ); } ) ); // Require sorted by NZ,ZC type and order
-		size_type const no( observers.size() );
-		Variables::iterator const end_NZ( std::upper_bound( observers.begin(), observers.end(), false, []( bool const, Variable const * v ){ return v->is_ZC(); } ) );
-		Variables::iterator const beg_ZC( std::lower_bound( observers.begin(), observers.end(), true, []( Variable const * v, bool const ){ return v->not_ZC(); } ) );
-		size_type const i_end_NZ( static_cast< Variable::Variables::size_type >( std::distance( observers.begin(), end_NZ ) ) );
-		size_type const i_beg_ZC( static_cast< Variable::Variables::size_type >( std::distance( observers.begin(), beg_ZC ) ) );
-		size_type const i_beg_NZ_2( static_cast< Variable::Variables::size_type >( std::distance( observers.begin(), std::lower_bound( observers.begin(), end_NZ, 2, []( Variable const * v, int const o ){ return v->order() < o; } ) ) ) );
-		size_type const i_beg_ZC_2( static_cast< Variable::Variables::size_type >( std::distance( observers.begin(), std::lower_bound( beg_ZC, observers.end(), 2, []( Variable const * v, int const o ){ return v->order() < o; } ) ) ) );
-		bool have_NZ( false ), have_ZC( false );
-		int order_max_NZ( 0 ), order_max_ZC( 0 );
-		if ( end_NZ == observers.begin() ) { // No non-zero-crossing observers
-			have_NZ = false;
-			order_max_NZ = 0;
-		} else { // Have non-zero-crossing observers
-			have_NZ = true;
-			order_max_NZ = (*( end_NZ - 1 ))->order();
-		}
-		if ( end_NZ == observers.end() ) { // No zero-crossing observers
-			have_ZC = false;
-			order_max_ZC = 0;
-		} else { // Have zero-crossing observers
-			have_ZC = true;
-			order_max_ZC = observers.back()->order();
-		}
-
-		if ( have_NZ ) {
-			for ( size_type i = 0; i < i_end_NZ; ++i ) {
-				observers[ i ]->advance_observer_1( t );
-			}
-			if ( order_max_NZ >= 2 ) { // 2nd order pass
-				Time const tN( t + options::dtNum ); // Set time to t + delta for numeric differentiation
-				fmu::set_time( tN );
-				for ( size_type i = i_beg_NZ_2; i < i_end_NZ; ++i ) {
-					observers[ i ]->advance_observer_2( tN );
-				}
-			}
-		}
-		if ( have_ZC ) {
-			if ( order_max_NZ >= 2 ) fmu::set_time( t );
-			for ( size_type i = i_beg_ZC; i < no; ++i ) {
-				observers[ i ]->advance_observer_1( t );
-			}
-			if ( order_max_ZC >= 2 ) { // 2nd order pass
-				Time const tN( t + options::dtNum ); // Set time to t + delta for numeric differentiation
-				fmu::set_time( tN );
-				for ( size_type i = i_beg_ZC_2; i < no; ++i ) {
-					observers[ i ]->advance_observer_2( tN );
-				}
-			}
-		}
-		if ( options::output::d ) {
-			for ( Variable const * observer : observers ) {
-				observer->advance_observer_d();
-			}
-		}
-	}
-
-	// Advance Observers: Set FMU Time to tQ First
-	void
-	advance_observers_tQ()
-	{
-		fmu::set_time( tQ );
-		advance_observers();
-	}
-
 	// Observer Advance: Stage 1
 	virtual
 	void
@@ -910,23 +848,16 @@ public: // Methods
 
 public: // Methods: FMU
 
-	// Get FMU Variable Value
+	// Get FMU Real Variable Value
 	Real
-	fmu_get_value() const
+	fmu_get_real() const
 	{
 		return fmu::get_real( var.ref );
 	}
 
-	// Get FMU Variable Derivative
-	Real
-	fmu_get_deriv() const
-	{
-		return fmu::get_real( der.ref );
-	}
-
-	// Set FMU Variable to a Value
+	// Set FMU Real Variable to a Value
 	void
-	fmu_set_value( Real const v ) const
+	fmu_set_real( Real const v ) const
 	{
 		fmu::set_real( var.ref, v );
 	}
@@ -961,28 +892,28 @@ public: // Methods: FMU
 
 	// Get FMU Integer Variable Value
 	Integer
-	fmu_get_integer_value() const
+	fmu_get_integer() const
 	{
 		return fmu::get_integer( var.ref );
 	}
 
 	// Set FMU Integer Variable to a Value
 	void
-	fmu_set_integer_value( Integer const v ) const
+	fmu_set_integer( Integer const v ) const
 	{
 		fmu::set_integer( var.ref, v );
 	}
 
 	// Get FMU Boolean Variable Value
 	bool
-	fmu_get_boolean_value() const
+	fmu_get_boolean() const
 	{
 		return fmu::get_boolean( var.ref );
 	}
 
 	// Set FMU Boolean Variable to a Value
 	void
-	fmu_set_boolean_value( bool const v ) const
+	fmu_set_boolean( bool const v ) const
 	{
 		fmu::set_boolean( var.ref, v );
 	}
@@ -1021,6 +952,13 @@ public: // Methods: FMU
 		for ( auto observee : observees_ ) {
 			observee->fmu_set_sn( t );
 		}
+	}
+
+	// Get FMU Variable Derivative
+	Real
+	fmu_get_deriv() const
+	{
+		return fmu::get_real( der.ref );
 	}
 
 protected: // Methods

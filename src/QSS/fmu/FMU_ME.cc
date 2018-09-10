@@ -40,6 +40,7 @@
 #include <QSS/fmu/Function_Inp_sin.hh>
 #include <QSS/fmu/Function_Inp_step.hh>
 #include <QSS/fmu/Function_Inp_toggle.hh>
+#include <QSS/fmu/Observers_Simultaneous.hh>
 #include <QSS/fmu/Variable_all.hh>
 #include <QSS/container.hh>
 #include <QSS/cycles.hh>
@@ -1098,6 +1099,7 @@ namespace fmu {
 		using Variables = Variable::Variables;
 		using size_type = Variables::size_type;
 		using Time = Variable::Time;
+		using Observers_S = Observers_Simultaneous< Variable >;
 
 		// I/o setup
 		std::cout << std::setprecision( 15 );
@@ -1244,9 +1246,8 @@ namespace fmu {
 						}
 					} else { // Simultaneous triggers
 						Variables triggers( events.top_subs< Variable >() );
-						variables_observers( triggers, observers );
-						size_type const iBeg_triggers_2( begin_order_index( triggers, 2 ) );
-						int const triggers_order_max( triggers.back()->order() );
+						Observers_S observers( triggers );
+						sort_by_order( triggers );
 
 						if ( doTOut ) { // Time event output: before discrete changes
 							if ( options::output::a ) { // All variables output
@@ -1275,19 +1276,30 @@ namespace fmu {
 						for ( Variable * trigger : triggers ) {
 							assert( trigger->tD == t );
 							trigger->st = s; // Set trigger superdense time
-							trigger->advance_discrete_0_1();
-						}
-						if ( triggers_order_max >= 2 ) { // 2nd order pass
-							// fmu::set_time( t + options::dtNum ); // Set time to t + delta for numeric differentiation // Need this if we enable discrete events on QSS variables
-							for ( size_type i = iBeg_triggers_2, n = triggers.size(); i < n; ++i ) {
-								triggers[ i ]->advance_discrete_2();
-							}
+							trigger->advance_discrete();
 						}
 
-						if ( ! observers.empty() ) { // Advance observers
-							// if ( triggers_order_max >= 2 ) fmu::set_time( t ); // Need this if we enable discrete events on QSS variables
-							Variable::advance_observers( observers, t );
-						}
+//						// If discrete events can change order 1+ QSS variables this block should be used instead
+//						for ( Variable * trigger : triggers ) {
+//							assert( trigger->tD == t );
+//							trigger->st = s; // Set trigger superdense time
+//							trigger->advance_discrete_0();
+//						}
+//						int const triggers_order_max( triggers.back()->order() );
+//						if ( triggers_order_max >= 1 ) { // 1st order pass
+//							for ( size_type i = begin_order_index( triggers, 1 ), n = triggers.size(); i < n; ++i ) {
+//								triggers[ i ]->advance_discrete_1();
+//							}
+//							if ( triggers_order_max >= 2 ) { // 2nd order pass
+//								fmu::set_time( t + options::dtNum ); // Set time to t + delta for numeric differentiation
+//								for ( size_type i = begin_order_index( triggers, 2 ), n = triggers.size(); i < n; ++i ) {
+//									triggers[ i ]->advance_discrete_2();
+//								}
+//								fmu::set_time( t );
+//							}
+//						}
+
+						if ( observers.have() ) observers.advance( t ); // Advance observers
 
 						if ( doTOut ) { // Time event output: after discrete changes
 							if ( options::output::a ) { // All variables output
@@ -1431,10 +1443,8 @@ namespace fmu {
 							}
 						} else { // Simultaneous handlers
 							Variables handlers( events.top_subs< Variable >() );
-							variables_observers( handlers, observers );
-							size_type const iBeg_handlers_1( begin_order_index( handlers, 1 ) );
-							size_type const iBeg_handlers_2( begin_order_index( handlers, 2 ) );
-							int const handlers_order_max( handlers.back()->order() );
+							Observers_S observers( handlers );
+							sort_by_order( handlers );
 
 							if ( doROut ) { // Requantization output: before handler changes
 								if ( options::output::a ) { // All variables output
@@ -1463,20 +1473,21 @@ namespace fmu {
 							for ( Variable * handler : handlers ) {
 								handler->advance_handler_0( t );
 							}
-							for ( size_type i = iBeg_handlers_1, n = handlers.size(); i < n; ++i ) {
-								handlers[ i ]->advance_handler_1();
-							}
-							if ( handlers_order_max >= 2 ) { // 2nd order pass
-								fmu::set_time( t + options::dtNum ); // Advance time to t + delta for numeric differentiation
-								for ( size_type i = iBeg_handlers_2, n = handlers.size(); i < n; ++i ) {
-									handlers[ i ]->advance_handler_2();
+							int const handlers_order_max( handlers.back()->order() );
+							if ( handlers_order_max >= 1 ) { // 1st order pass
+								for ( size_type i = begin_order_index( handlers, 1 ), n = handlers.size(); i < n; ++i ) {
+									handlers[ i ]->advance_handler_1();
+								}
+								if ( handlers_order_max >= 2 ) { // 2nd order pass
+									fmu::set_time( t + options::dtNum ); // Advance time to t + delta for numeric differentiation
+									for ( size_type i = begin_order_index( handlers, 2 ), n = handlers.size(); i < n; ++i ) {
+										handlers[ i ]->advance_handler_2();
+									}
+									fmu::set_time( t );
 								}
 							}
 
-							if ( ! observers.empty() ) { // Advance observers
-								if ( handlers_order_max >= 2 ) fmu::set_time( t );
-								Variable::advance_observers( observers, t );
-							}
+							if ( observers.have() ) observers.advance( t ); // Advance observers
 
 							if ( doROut ) { // Requantization output: after handler changes
 								if ( options::output::a ) { // All variables output
@@ -1555,9 +1566,8 @@ namespace fmu {
 					} else { // Simultaneous triggers
 						++n_QSS_simultaneous_events;
 						Variables triggers( events.top_subs< Variable >() );
-						variables_observers( triggers, observers );
-						size_type const iBeg_triggers_2( begin_order_index( triggers, 2 ) );
-						int const triggers_order_max( triggers.back()->order() );
+						Observers_S observers( triggers );
+						sort_by_order( triggers );
 
 						if ( doROut ) { // Requantization output: Quantized rep before to capture its discrete change
 							if ( ( options::output::a ) || ( options::output::r ) ) { // Requantization output
@@ -1579,17 +1589,16 @@ namespace fmu {
 						for ( Variable * trigger : triggers ) {
 							trigger->advance_QSS_1();
 						}
+						int const triggers_order_max( triggers.back()->order() );
 						if ( triggers_order_max >= 2 ) { // 2nd order pass
 							fmu::set_time( t + options::dtNum ); // Set time to t + delta for numeric differentiation
-							for ( size_type i = iBeg_triggers_2, n = triggers.size(); i < n; ++i ) {
+							for ( size_type i = begin_order_index( triggers, 2 ), n = triggers.size(); i < n; ++i ) {
 								triggers[ i ]->advance_QSS_2();
 							}
+							fmu::set_time( t );
 						}
 
-						if ( ! observers.empty() ) { // Advance observers
-							if ( triggers_order_max >= 2 ) fmu::set_time( t );
-							Variable::advance_observers( observers, t );
-						}
+						if ( observers.have() ) observers.advance( t ); // Advance observers
 
 						if ( doROut ) { // Requantization output
 							if ( options::output::a ) { // All variables output

@@ -55,7 +55,8 @@ double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits<
 double dtZC( 1.0e-9 ); // FMU zero-crossing time step (s)
 double dtNum( 1.0e-6 ); // Numeric differentiation time step (s)
 double one_over_dtNum( 1.0e6 ); // 1 / dtNum  [computed]
-double one_half_over_dtNum( 5.0e5 ); // 0.5 / dtNum  [computed]
+double one_half_over_dtNum( 5.0e5 ); // 1 / ( 2 * dtNum )  [computed]
+double one_sixth_over_dtNum_squared( 1.0e12 / 6.0 ); // 1 / ( 6 * dtNum^2 )  [computed]
 double dtOut( 1.0e-3 ); // Sampled & FMU output time step (s)
 double tEnd( 1.0 ); // End time (s)  [1|FMU]
 std::size_t pass( 20 ); // Pass count limit
@@ -297,6 +298,7 @@ process_args( int argc, char * argv[] )
 				}
 				one_over_dtNum = 1.0 / dtNum;
 				one_half_over_dtNum = 0.5 / dtNum;
+				one_sixth_over_dtNum_squared = 1.0 / ( 6.0 * ( dtNum * dtNum ) );
 			} else {
 				std::cerr << "Error: Nonnumeric dtNum: " << dtNum_str << std::endl;
 				fatal = true;

@@ -52,6 +52,37 @@ namespace QSS {
 // Sort Variables by Order
 template< typename Variables >
 inline
+bool
+is_sorted_by_order( Variables & variables )
+{
+	using V = typename std::remove_pointer< typename Variables::value_type >::type;
+	return std::is_sorted( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->order() < v2->order(); } );
+}
+
+// Sort Variables by Type (Zero-Crossing at the End) and Order
+template< typename Variables >
+inline
+bool
+is_sorted_by_ZC_and_order( Variables & variables )
+{
+	using V = typename std::remove_pointer< typename Variables::value_type >::type;
+	return std::is_sorted( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->order() + ( v1->is_ZC() ? max_rep_order : 0 ) < v2->order() + ( v2->is_ZC() ? max_rep_order : 0 ); } );
+}
+
+// Variables Begin Index of Given Order or Greater
+template< typename Variables >
+inline
+typename Variables::size_type
+begin_order_index( Variables const & variables, int const order )
+{
+	using V = typename std::remove_pointer< typename Variables::value_type >::type;
+	assert( is_sorted_by_order( variables ) ); // Require sorted by order
+	return static_cast< typename Variables::size_type >( std::distance( variables.begin(), std::lower_bound( variables.begin(), variables.end(), order, []( V const * v, int const o ){ return v->order() < o; } ) ) );
+}
+
+// Sort Variables by Order
+template< typename Variables >
+inline
 void
 sort_by_order( Variables & variables )
 {
@@ -69,17 +100,6 @@ sort_by_ZC_and_order( Variables & variables )
 	using V = typename std::remove_pointer< typename Variables::value_type >::type;
 	// Stable sort to be deterministic given prior address sort without adding extra address condition to std::sort
 	std::stable_sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->order() + ( v1->is_ZC() ? max_rep_order : 0 ) < v2->order() + ( v2->is_ZC() ? max_rep_order : 0 ); } );
-}
-
-// Variables Begin Index of Given Order
-template< typename Variables >
-inline
-typename Variables::size_type
-begin_order_index( Variables const & variables, int const order )
-{
-	using V = typename std::remove_pointer< typename Variables::value_type >::type;
-	assert( std::is_sorted( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->order() < v2->order(); } ) ); // Require sorted by order
-	return static_cast< typename Variables::size_type >( std::distance( variables.begin(), std::lower_bound( variables.begin(), variables.end(), order, []( V const * v, int const o ){ return v->order() < o; } ) ) );
 }
 
 // Set up Non-Trigger Observers of Triggers and Sort Both by Order
@@ -103,13 +123,13 @@ variables_observers( Variables & triggers, Variables & observers )
 
 	// Remove duplicates and triggers from observers
 	if ( ! observers.empty() ) {
-		std::sort( triggers.begin(), triggers.end() );
-		std::sort( observers.begin(), observers.end() );
 
 		// Remove duplicates
-		observers.resize( std::distance( observers.begin(), std::unique( observers.begin(), observers.end() ) ) );
+		std::sort( observers.begin(), observers.end() );
+		observers.erase( std::unique( observers.begin(), observers.end() ), observers.end() );
 
 		// Remove triggers
+		std::sort( triggers.begin(), triggers.end() );
 		iterator it( triggers.begin() );
 		iterator const et( triggers.end() );
 		size_type no( observers.size() ); // Number of observers

@@ -81,7 +81,7 @@ main()
 		double const time_beg = (double)clock()/CLOCKS_PER_SEC;
 		for ( std::size_t r = 1; r <= R; ++r ) {
 			std::sort( v.begin(), v.end() );
-			v.resize( std::distance( v.begin(), std::unique( v.begin(), v.end() ) ) );
+			v.erase( std::unique( v.begin(), v.end() ), v.end() );
 			v.shrink_to_fit();
 		}
 		double const time_end = (double)clock()/CLOCKS_PER_SEC;

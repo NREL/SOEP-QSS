@@ -37,40 +37,41 @@
 #define QSS_fmu_Observers_hh_INCLUDED
 
 // QSS Headers
-//#include <QSS/fmu/Variable.fwd.hh>
-#include <QSS/fmu/FMU.hh>
 #include <QSS/container.hh>
 #include <QSS/options.hh>
+#include <QSS/fmu/FMU.hh>
 
 // C++ Headers
 #include <algorithm>
 #include <cassert>
 #include <unordered_set>
-#include <vector>
 
 namespace QSS {
 namespace fmu {
 
 // FMU-Based Variable Observers
-template< typename Variable >
+template< typename V >
 class Observers final
 {
 
 public: // Types
 
-	using Time = double;
-	using Real = double;
-	using Values = std::vector< Real >;
-	using Variables = std::vector< Variable * >;
-	using VariableRefs = std::vector< fmi2_value_reference_t >;
+	using Variable = V;
+	using Time = typename Variable::Time;
+	using Real = typename Variable::Real;
+	using Reals = typename Variable::Reals;
+	using Variables = typename Variable::Variables;
+	using VariableRefs = typename Variable::VariableRefs;
 	using size_type = typename Variables::size_type;
 
-public: // Creation
+	using const_iterator = typename Variables::const_iterator;
+	using iterator = typename Variables::iterator;
+	using const_pointer = typename Variables::const_pointer;
+	using pointer = typename Variables::pointer;
+	using const_reference = typename Variables::const_reference;
+	using reference = typename Variables::reference;
 
-	// // Variable Constructor
-	// Observers( Variable * variable ) :
-	//  variable_( variable )
-	// {}
+public: // Creation
 
 public: // Conversion
 
@@ -154,43 +155,47 @@ public: // Methods
 	{
 		// Remove duplicates and shrink
 		std::sort( observers_.begin(), observers_.end() );
-		observers_.resize( std::distance( observers_.begin(), std::unique( observers_.begin(), observers_.end() ) ) ); // Remove duplicates
+		observers_.erase( std::unique( observers_.begin(), observers_.end() ), observers_.end() ); // Remove duplicates
 		observers_.shrink_to_fit();
 
 		// Sort observers by NZ|ZC and then order
 		sort_by_ZC_and_order( observers_ );
 
 		// Observer specs
-		have_ = have2_ = false;
+		have_ = ( ! observers_.empty() );
+		have2_ = false;
 		b_ = e_ = n_ = max_order_ = 0;
 		nz_.clear();
 		zc_.clear();
-		have_ = ( ! observers_.empty() );
 		if ( have_ ) {
-			b_ = 0;
 			e_ = n_ = observers_.size();
 
-			nz_.b_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return v->not_ZC(); } ) ) );
-			nz_.e_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return v->is_ZC(); } ) ) );
-			nz_.n_ = ( nz_.e_ > nz_.b_ ? nz_.e_ - nz_.b_ : 0u );
-			nz_.have_ = ( nz_.n_ > 0u );
+			if ( observers_[ 0 ]->not_ZC() ) { // Non-zero-crossing observers present
+				nz_.e_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return v->is_ZC(); } ) ) );
+				nz_.n_ = ( nz_.b_ < nz_.e_ ? nz_.e_ - nz_.b_ : 0u );
+				assert( nz_.n_ > 0u );
+				nz_.have_ = true;
 
-			nz_.b2_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return v->not_ZC() && ( v->order() >= 2 ); } ) ) );
-			nz_.have2_ = ( nz_.b2_ < nz_.e_ );
-			nz_.n2_ = ( nz_.e_ > nz_.b2_ ? nz_.e_ - nz_.b2_ : 0u );
+				nz_.b2_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return v->not_ZC() && ( v->order() >= 2 ); } ) ) );
+				nz_.n2_ = ( nz_.b2_ < nz_.e_ ? nz_.e_ - nz_.b2_ : 0u );
+				nz_.have2_ = ( nz_.n2_ > 0u );
 
-			nz_.max_order_ = ( nz_.b2_ < nz_.e_ ? 2 : ( nz_.b_ < nz_.e_ ? 1 : 0 ) );
+				nz_.max_order_ = ( nz_.b2_ < nz_.e_ ? 2 : 1 );
+			}
 
-			zc_.b_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return v->is_ZC(); } ) ) );
-			zc_.e_ = e_;
-			zc_.n_ = ( zc_.e_ > zc_.b_ ? zc_.e_ - zc_.b_ : 0u );
-			zc_.have_ = ( zc_.n_ > 0u );
+			if ( observers_.back()->is_ZC() ) { // Zero-crossing observers present
+				zc_.b_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return v->is_ZC(); } ) ) );
+				zc_.e_ = e_;
+				zc_.n_ = ( zc_.b_ < zc_.e_ ? zc_.e_ - zc_.b_ : 0u );
+				assert( zc_.n_ > 0u );
+				zc_.have_ = true;
 
-			zc_.b2_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return v->is_ZC() && ( v->order() >= 2 ); } ) ) );
-			zc_.have2_ = ( zc_.b2_ < zc_.e_ );
-			zc_.n2_ = ( zc_.e_ > zc_.b2_ ? zc_.e_ - zc_.b2_ : 0u );
+				zc_.b2_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return v->is_ZC() && ( v->order() >= 2 ); } ) ) );
+				zc_.n2_ = ( zc_.b2_ < zc_.e_ ? zc_.e_ - zc_.b2_ : 0u );
+				zc_.have2_ = ( zc_.n2_ > 0u );
 
-			zc_.max_order_ = ( zc_.b2_ < zc_.e_ ? 2 : ( zc_.b_ < zc_.e_ ? 1 : 0 ) );
+				zc_.max_order_ = ( zc_.b2_ < zc_.e_ ? 2 : 1 );
+			}
 
 			have2_ = ( nz_.have2_ || zc_.have2_ );
 			max_order_ = std::max( nz_.max_order_, zc_.max_order_ );
@@ -243,23 +248,21 @@ public: // Methods
 
 		// Non-zero-crossing observer observees set up
 		std::unordered_set< Variable * > nz_oo2s; // Observees of observers of order 2+
-		for ( size_type i = nz_.b_, e = nz_.e_; i < e; ++i ) {
+		for ( size_type i = nz_.b2_, e = nz_.e_; i < e; ++i ) {
 			auto observer( observers_[ i ] );
-			if ( observer->order() >= 2 ) {
-				if ( observer->self_observer ) nz_oo2s.insert( observer );
-				for ( auto observee : observer->observees() ) {
-					if ( ! observee->is_Discrete() ) nz_oo2s.insert( observee );
-				}
+			assert( observer->order() >= 2 );
+			if ( observer->self_observer ) nz_oo2s.insert( observer );
+			for ( auto observee : observer->observees() ) {
+				if ( ! observee->is_Discrete() ) nz_oo2s.insert( observee );
 			}
 		}
 		std::unordered_set< Variable * > nz_oo1s; // Observees of observers of order <=1 not in nz_oo2s
-		for ( size_type i = nz_.b_, e = nz_.e_; i < e; ++i ) {
+		for ( size_type i = nz_.b_, e = nz_.b2_; i < e; ++i ) {
 			auto observer( observers_[ i ] );
-			if ( observer->order() <= 1 ) {
-				if ( ( observer->self_observer ) && ( nz_oo2s.find( observer ) == nz_oo2s.end() ) ) nz_oo1s.insert( observer );
-				for ( auto observee : observer->observees() ) {
-					if ( ( ! observee->is_Discrete() ) && ( nz_oo2s.find( observee ) == nz_oo2s.end() ) ) nz_oo1s.insert( observee );
-				}
+			assert( observer->order() <= 1 );
+			if ( ( observer->self_observer ) && ( nz_oo2s.find( observer ) == nz_oo2s.end() ) ) nz_oo1s.insert( observer );
+			for ( auto observee : observer->observees() ) {
+				if ( ( ! observee->is_Discrete() ) && ( nz_oo2s.find( observee ) == nz_oo2s.end() ) ) nz_oo1s.insert( observee );
 			}
 		}
 		nz_observees_.clear();
@@ -274,23 +277,21 @@ public: // Methods
 
 		// Zero-crossing observer observees set up
 		std::unordered_set< Variable * > zc_oo2s; // Observees of observers of order 2+
-		for ( size_type i = zc_.b_, e = zc_.e_; i < e; ++i ) {
+		for ( size_type i = zc_.b2_, e = zc_.e_; i < e; ++i ) {
 			auto observer( observers_[ i ] );
-			if ( observer->order() >= 2 ) {
-				if ( observer->self_observer ) zc_oo2s.insert( observer );
-				for ( auto observee : observer->observees() ) {
-					if ( ! observee->is_Discrete() ) zc_oo2s.insert( observee );
-				}
+			assert( observer->order() >= 2 );
+			if ( observer->self_observer ) zc_oo2s.insert( observer );
+			for ( auto observee : observer->observees() ) {
+				if ( ! observee->is_Discrete() ) zc_oo2s.insert( observee );
 			}
 		}
 		std::unordered_set< Variable * > zc_oo1s; // Observees of observers of order <=1 not in zc_oo2s
-		for ( size_type i = zc_.b_, e = zc_.e_; i < e; ++i ) {
+		for ( size_type i = zc_.b_, e = zc_.b2_; i < e; ++i ) {
 			auto observer( observers_[ i ] );
-			if ( observer->order() <= 1 ) {
-				if ( ( observer->self_observer ) && ( zc_oo2s.find( observer ) == zc_oo2s.end() ) ) zc_oo1s.insert( observer );
-				for ( auto observee : observer->observees() ) {
-					if ( ( ! observee->is_Discrete() ) && ( zc_oo2s.find( observee ) == zc_oo2s.end() ) ) zc_oo1s.insert( observee );
-				}
+			assert( observer->order() <= 1 );
+			if ( ( observer->self_observer ) && ( zc_oo2s.find( observer ) == zc_oo2s.end() ) ) zc_oo1s.insert( observer );
+			for ( auto observee : observer->observees() ) {
+				if ( ( ! observee->is_Discrete() ) && ( zc_oo2s.find( observee ) == zc_oo2s.end() ) ) zc_oo1s.insert( observee );
 			}
 		}
 		zc_observees_.clear();
@@ -325,15 +326,16 @@ public: // Methods
 				Time const tN( t + options::dtNum );
 				fmu::set_time( tN );
 				advance_NZ_2( tN );
+				fmu::set_time( t );
 			}
 		}
 		if ( zc_.have_ ) {
-			if ( nz_.max_order_ >= 2 ) fmu::set_time( t );
 			advance_ZC_1( t );
 			if ( zc_.have2_ ) {
 				Time const tN( t + options::dtNum );
 				fmu::set_time( tN );
 				advance_ZC_2( tN );
+				fmu::set_time( t );
 			}
 		}
 		if ( options::output::d ) advance_d();
@@ -471,6 +473,36 @@ public: // Indexing
 		return observers_[ i ];
 	}
 
+public: // Iterators
+
+	// Begin Iterator
+	const_iterator
+	begin() const
+	{
+		return observers_.begin();
+	}
+
+	// Begin Iterator
+	iterator
+	begin()
+	{
+		return observers_.begin();
+	}
+
+	// End Iterator
+	const_iterator
+	end() const
+	{
+		return observers_.end();
+	}
+
+	// End Iterator
+	iterator
+	end()
+	{
+		return observers_.end();
+	}
+
 private: // Data
 
 	// Observers
@@ -508,15 +540,15 @@ private: // Data
 	// FMU observer data
 	VariableRefs nz_der_refs_; // Non-zero-crossing observer FMU derivative refs
 	VariableRefs nz_2_der_refs_; // Non-zero-crossing observer FMU derivative refs
-	Values nz_der_vals_; // Non-zero-crossing observer FMU derivative values
-	Values nz_2_der_vals_; // Non-zero-crossing observer FMU derivative values
+	Reals nz_der_vals_; // Non-zero-crossing observer FMU derivative values
+	Reals nz_2_der_vals_; // Non-zero-crossing observer FMU derivative values
 	VariableRefs zc_der_refs_; // Zero-crossing observer FMU derivative refs
 	VariableRefs zc_2_der_refs_; // Zero-crossing observer FMU derivative refs
-	Values zc_der_vals_; // Zero-crossing observer FMU derivative values
-	Values zc_2_der_vals_; // Zero-crossing observer FMU derivative values
+	Reals zc_der_vals_; // Zero-crossing observer FMU derivative values
+	Reals zc_2_der_vals_; // Zero-crossing observer FMU derivative values
 	VariableRefs zc_refs_; // Zero-crossing observer FMU variable refs
 	VariableRefs zc_2_refs_; // Zero-crossing observer FMU variable refs
-	Values zc_vals_; //  Zero-crossing observer FMU variable values
+	Reals zc_vals_; //  Zero-crossing observer FMU variable values
 
 	// Non-zero-crossing observer observees
 	Variables nz_observees_; // Non-zero-crossing observer observees (including self-observing observers)
@@ -528,7 +560,7 @@ private: // Data
 
 //	// FMU observee data
 //	VariableRefs nz_observee_refs_; // Non-zero-crossing observee FMU refs
-//	Values nz_observee_vals_; // Non-zero-crossing observee FMU values
+//	Reals nz_observee_vals_; // Non-zero-crossing observee FMU values
 
 };
 

@@ -221,12 +221,18 @@ public: // Methods
 		if ( have_observers_ ) advance_observers();
 	}
 
-	// Discrete Advance: Stages 0 and 1
+	// Discrete Advance: Stage 0
 	void
-	advance_discrete_0_1()
+	advance_discrete_0()
 	{
 		x_0_ = q_0_ = f_.vs( tX = tQ = tD );
 		set_qTol();
+	}
+
+	// Discrete Advance: Stage 1
+	void
+	advance_discrete_1()
+	{
 		x_1_ = q_1_ = f_.dc1( tD );
 	}
 
@@ -247,8 +253,8 @@ public: // Methods
 	{
 		x_0_ = q_0_ = f_.vs( tX = tQ = tE );
 		set_qTol();
-		x_1_ = q_1_ = f_.dc1( tE );
-		x_2_ = one_half * f_.dc2( tE );
+		x_1_ = q_1_ = f_.dc1( tQ );
+		x_2_ = one_half * f_.dc2( tQ );
 		set_tE();
 		tD = f_.tD( tQ );
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
@@ -268,14 +274,14 @@ public: // Methods
 	void
 	advance_QSS_1()
 	{
-		x_1_ = q_1_ = f_.dc1( tE );
+		x_1_ = q_1_ = f_.dc1( tQ );
 	}
 
 	// QSS Advance: Stage 2
 	void
 	advance_QSS_2()
 	{
-		x_2_ = one_half * f_.dc2( tE );
+		x_2_ = one_half * f_.dc2( tQ );
 		set_tE();
 		tD = f_.tD( tQ );
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );

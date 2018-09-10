@@ -161,12 +161,18 @@ public: // Methods
 		if ( have_observers_ ) advance_observers();
 	}
 
-	// Discrete Advance: Stages 0 and 1
+	// Discrete Advance: Stage 0
 	void
-	advance_discrete_0_1()
+	advance_discrete_0()
 	{
 		x_0_ = q_0_ = f_( tX = tQ = tD ).x_0;
 		set_qTol();
+	}
+
+	// Discrete Advance: Stage 1
+	void
+	advance_discrete_1()
+	{
 		x_1_ = f_( tD ).x_1;
 		set_tE();
 		tD = f_( tD ).tD;

@@ -68,6 +68,7 @@ public: // Types
 	using Real = double;
 	using Time = double;
 	using Coefficient = double;
+	using Reals = std::vector< Real >;
 	using Variables = std::vector< Variable * >;
 	using size_type = Variables::size_type;
 
@@ -451,7 +452,7 @@ public: // Methods
 		if ( have_observers_ ) {
 			// Remove duplicates
 			std::sort( observers_.begin(), observers_.end() );
-			observers_.resize( std::distance( observers_.begin(), std::unique( observers_.begin(), observers_.end() ) ) );
+			observers_.erase( std::unique( observers_.begin(), observers_.end() ), observers_.end() );
 			observers_.shrink_to_fit();
 
 			// Put ZC variables at end for correct observer updates since they use observee x reps
@@ -478,7 +479,7 @@ public: // Methods
 		if ( ! observees_.empty() ) {
 			observees_.erase( std::remove_if( observees_.begin(), observees_.end(), []( Variable * v ){ return v->is_Discrete(); } ), observees_.end() ); // Remove discrete variables: Don't need them after ZC drill-through observees set up
 			std::sort( observees_.begin(), observees_.end() );
-			observees_.resize( std::distance( observees_.begin(), std::unique( observees_.begin(), observees_.end() ) ) ); // Remove duplicates
+			observees_.erase( std::unique( observees_.begin(), observees_.end() ), observees_.end() ); // Remove duplicates
 			observees_.shrink_to_fit();
 
 			// Put ZC variables at end
@@ -550,10 +551,18 @@ public: // Methods
 		assert( false );
 	}
 
-	// Discrete Advance: Stages 0 and 1
+	// Discrete Advance: Stage 0
 	virtual
 	void
-	advance_discrete_0_1()
+	advance_discrete_0()
+	{
+		assert( false );
+	}
+
+	// Discrete Advance: Stage 1
+	virtual
+	void
+	advance_discrete_1()
 	{
 		assert( false );
 	}

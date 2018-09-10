@@ -138,7 +138,7 @@ public: // Methods
 	{
 		init_observers();
 		init_observees();
-		fmu_set_value( x_0_ = q_c_ = q_0_ = xIni );
+		fmu_set_real( x_0_ = q_c_ = q_0_ = xIni );
 		set_qTol();
 	}
 
@@ -148,7 +148,7 @@ public: // Methods
 	{
 		init_observers();
 		init_observees();
-		fmu_set_value( x_0_ = q_c_ = q_0_ = x );
+		fmu_set_real( x_0_ = q_c_ = q_0_ = x );
 		set_qTol();
 	}
 
@@ -158,7 +158,7 @@ public: // Methods
 	{
 		if ( self_observer ) {
 			advance_LIQSS();
-			fmu_set_value( x_0_ );
+			fmu_set_real( x_0_ );
 		} else {
 			x_1_ = fmu_get_deriv();
 			q_0_ += signum( x_1_ ) * qTol;
@@ -180,9 +180,10 @@ public: // Methods
 	void
 	advance_QSS()
 	{
-		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
+		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
+		tX = tQ = tE;
 		set_qTol();
-		fmu_set_observees_q( tX = tQ );
+		fmu_set_observees_q( tQ );
 		if ( self_observer ) {
 			advance_LIQSS();
 		} else {
@@ -199,8 +200,8 @@ public: // Methods
 	void
 	advance_QSS_0()
 	{
-		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
-		tX = tE;
+		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
+		tX = tQ = tE;
 		set_qTol();
 	}
 
@@ -259,10 +260,9 @@ public: // Methods
 	advance_handler( Time const t )
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
-		x_0_ = q_c_ = q_0_ = fmu_get_value(); // Assume FMU ran zero-crossing handler
+		x_0_ = q_c_ = q_0_ = fmu_get_real(); // Assume FMU ran zero-crossing handler
 		set_qTol();
 		fmu_set_observees_q( tX = tQ = t );
-		if ( self_observer ) fmu_set_value( q_0_ );
 		x_1_ = fmu_get_deriv();
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -276,7 +276,7 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
-		x_0_ = q_c_ = q_0_ = fmu_get_value(); // Assume FMU ran zero-crossing handler
+		x_0_ = q_c_ = q_0_ = fmu_get_real(); // Assume FMU ran zero-crossing handler
 		set_qTol();
 	}
 
@@ -285,7 +285,6 @@ public: // Methods
 	advance_handler_1()
 	{
 		fmu_set_observees_q( tQ );
-		if ( ( self_observer ) && ( observers_.empty() ) ) fmu_set_value( q_0_ );
 		x_1_ = fmu_get_deriv();
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -342,10 +341,10 @@ private: // Methods
 		Real const q_u( q_c_ + qTol );
 
 		// Derivative at +/- qTol
-		fmu_set_value( q_l );
+		fmu_set_real( q_l );
 		Real const d_l( fmu_get_deriv() );
 		int const d_l_s( signum( d_l ) );
-		fmu_set_value( q_u );
+		fmu_set_real( q_u );
 		Real const d_u( fmu_get_deriv() );
 		int const d_u_s( signum( d_u ) );
 

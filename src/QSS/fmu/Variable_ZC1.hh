@@ -125,7 +125,7 @@ public: // Methods
 
 		// Initialize trajectory specs
 		fmu_set_observees_x( tQ );
-		x_0_ = fmu_get_value();
+		x_0_ = fmu_get_real();
 		x_mag_ = std::abs( x_0_ );
 		set_qTol();
 	}
@@ -159,7 +159,7 @@ public: // Methods
 		check_crossing_ = ( tE > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_tE : x( tE ) ) : 0 );
 #endif
-		x_0_ = fmu_get_value();
+		x_0_ = fmu_get_real();
 		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 		set_qTol();
 		x_1_ = fmu_get_deriv();
@@ -182,7 +182,7 @@ public: // Methods
 		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = fmu_get_value();
+		x_0_ = fmu_get_real();
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		set_qTol();
 		x_1_ = fmu_get_deriv();
@@ -200,7 +200,7 @@ public: // Methods
 		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = fmu_get_value();
+		x_0_ = fmu_get_real();
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		set_qTol();
 		x_1_ = d;
@@ -214,7 +214,7 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		assert( d == fmu_get_deriv() );
-		assert( v == fmu_get_value() );
+		assert( v == fmu_get_real() );
 		tX = tQ = t;
 		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
@@ -285,7 +285,7 @@ private: // Methods
 							Time const t_fmu( fmu::get_time() );
 							fmu::set_time( tZ ); // Don't seem to need this
 							fmu_set_observees_x( tZ );
-							Real const vZ( fmu_get_value() );
+							Real const vZ( fmu_get_real() );
 							Real v( vZ ), v_p( vZ );
 							Real m( 1.0 ); // Multiplier
 							std::size_t i( 0 );
@@ -297,7 +297,7 @@ private: // Methods
 								t -= m * ( v / d );
 								fmu::set_time( t ); // Don't seem to need this
 								fmu_set_observees_x( t );
-								v = fmu_get_value();
+								v = fmu_get_real();
 								if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
 								//t_p = t;
 								v_p = v;

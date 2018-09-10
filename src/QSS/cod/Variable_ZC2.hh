@@ -203,8 +203,8 @@ public: // Methods
 		x_0_ = f_.x( tX = tQ = tE );
 		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 		set_qTol();
-		x_1_ = f_.x1( tE );
-		x_2_ = one_half * f_.x2( tE );
+		x_1_ = f_.x1( tQ );
+		x_2_ = one_half * f_.x2( tQ );
 		set_tE();
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
 		crossing_detect( sign_old, signum( x_0_ ), check_crossing );

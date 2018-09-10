@@ -284,12 +284,13 @@ public: // Methods
 	void
 	advance_QSS()
 	{
-		Time const tDel( ( tQ = tE ) - tX );
+		Time const tDel( tE - tX );
+		tX = tQ = tE;
 		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
 		set_qTol();
-		x_1_ = q_1_ = d_.qs( tE );
-		x_2_ = q_2_ = one_half * d_.qc1( tE );
-		x_3_ = q_3_ = one_sixth * d_.qc2( tX = tE );
+		x_1_ = q_1_ = d_.qs( tQ );
+		x_2_ = q_2_ = one_half * d_.qc1( tQ );
+		x_3_ = q_3_ = one_sixth * d_.qc2( tQ );
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << q_3_ << "*t^3" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
@@ -300,9 +301,9 @@ public: // Methods
 	void
 	advance_QSS_0()
 	{
-		Time const tDel( ( tQ = tE ) - tX );
+		Time const tDel( tE - tX );
+		tX = tQ = tE;
 		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
-		tX = tE;
 		set_qTol();
 	}
 
@@ -310,21 +311,21 @@ public: // Methods
 	void
 	advance_QSS_1()
 	{
-		x_1_ = q_1_ = d_.ss( tE );
+		x_1_ = q_1_ = d_.ss( tQ );
 	}
 
 	// QSS Advance: Stage 2
 	void
 	advance_QSS_2()
 	{
-		x_2_ = q_2_ = one_half * d_.sc1( tE );
+		x_2_ = q_2_ = one_half * d_.sc1( tQ );
 	}
 
 	// QSS Advance: Stage 3
 	void
 	advance_QSS_3()
 	{
-		x_3_ = q_3_ = one_sixth * d_.sc2( tE );
+		x_3_ = q_3_ = one_sixth * d_.sc2( tQ );
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << q_3_ << "*t^3" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';

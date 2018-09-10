@@ -203,9 +203,9 @@ public: // Methods
 		if ( chg && have_observers_ ) advance_observers();
 	}
 
-	// Discrete Advance: Stages 0 and 1
+	// Discrete Advance: Stage 0
 	void
-	advance_discrete_0_1()
+	advance_discrete_0()
 	{
 		Integer const x_new( static_cast< Integer >( f_.vs( tX = tQ = tD ) ) );
 		tD = f_.tD( tD );

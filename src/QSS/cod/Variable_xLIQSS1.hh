@@ -225,12 +225,13 @@ public: // Methods
 	void
 	advance_QSS()
 	{
-		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
+		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
+		tX = tQ = tE;
 		set_qTol();
 		if ( self_observer ) {
-			advance_q( tX = tE );
+			advance_q( tQ );
 		} else {
-			x_1_ = q_1_ = d_.q( tX = tE );
+			x_1_ = q_1_ = d_.q( tQ );
 			q_0_ += signum( x_1_ ) * qTol;
 		}
 		set_tE_aligned();
@@ -243,8 +244,8 @@ public: // Methods
 	void
 	advance_QSS_0()
 	{
-		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
-		tX = tE;
+		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
+		tX = tQ = tE;
 		set_qTol();
 	}
 
@@ -253,9 +254,9 @@ public: // Methods
 	advance_QSS_1()
 	{
 		if ( self_observer ) {
-			advance_s( tE ); // Simultaneous reps used to avoid cyclic dependency
+			advance_s( tQ ); // Simultaneous reps used to avoid cyclic dependency
 		} else {
-			x_1_ = q_1_ = d_.s( tE ); // Simultaneous reps used to avoid cyclic dependency
+			x_1_ = q_1_ = d_.s( tQ ); // Simultaneous reps used to avoid cyclic dependency
 			q_0_ += signum( x_1_ ) * qTol;
 		}
 		set_tE_aligned();

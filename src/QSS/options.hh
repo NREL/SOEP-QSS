@@ -69,7 +69,8 @@ extern double dtZC; // FMU zero-crossing time step (s)
 extern double dtNum; // Numeric differentiation time step (s)
 extern double dtOut; // Sampled & FMU output time step (s)
 extern double one_over_dtNum; // 1 / dtNum
-extern double one_half_over_dtNum; // 0.5 / dtNum
+extern double one_half_over_dtNum; // 1 / ( 2 * dtNum )
+extern double one_sixth_over_dtNum_squared; // 1 / ( 6 * dtNum^2 )  [computed]
 extern double tEnd; // End time (s)
 extern std::size_t pass; // Pass count limit
 extern bool cycles; // Report dependency cycles?

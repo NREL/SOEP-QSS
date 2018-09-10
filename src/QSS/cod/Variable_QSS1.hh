@@ -202,9 +202,10 @@ public: // Methods
 	void
 	advance_QSS()
 	{
-		x_0_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
+		x_0_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
+		tX = tQ = tE;
 		set_qTol();
-		x_1_ = d_.q( tX = tE );
+		x_1_ = d_.q( tQ );
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
@@ -215,8 +216,8 @@ public: // Methods
 	void
 	advance_QSS_0()
 	{
-		x_0_ = q_0_ = x_0_ + ( x_1_ * ( ( tQ = tE ) - tX ) );
-		tX = tE;
+		x_0_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
+		tX = tQ = tE;
 		set_qTol();
 	}
 
@@ -224,7 +225,7 @@ public: // Methods
 	void
 	advance_QSS_1()
 	{
-		x_1_ = d_.s( tE );
+		x_1_ = d_.s( tQ );
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
