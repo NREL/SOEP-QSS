@@ -356,8 +356,7 @@ private: // Methods
 			assert( dt > 0.0 );
 			if ( dt != infinity ) { // Root exists
 				tZ = tB + dt;
-				Crossing const crossing_check( x_0 == 0.0 ?
-				 ( tZ == tB ? Crossing::Flat : crossing_type( -x_1 ) ) :
+				Crossing const crossing_check( x_0 == 0.0 ? ( tZ == tB ? Crossing::Flat : crossing_type( -x_1 ) ) :
 				 crossing_type( x_0 > 0.0 ? std::min( x1x( tZ ), Real( 0.0 ) ) : std::max( x1x( tZ ), Real( 0.0 ) ) ) );
 				if ( has( crossing_check ) ) { // Crossing type is relevant
 					crossing = crossing_check;

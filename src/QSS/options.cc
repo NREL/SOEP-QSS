@@ -45,7 +45,7 @@
 namespace QSS {
 namespace options {
 
-QSS qss( QSS::QSS2 ); // QSS method: (LI)QSS1|2|3
+QSS qss( QSS::QSS2 ); // QSS method: (x)(LI)QSS(1|2|3)
 double rTol( 1.0e-4 ); // Relative tolerance  [1e-4|FMU]
 double aTol( 1.0e-6 ); // Absolute tolerance
 double zTol( 0.0 ); // Zero-crossing anti-chatter tolerance
@@ -95,7 +95,7 @@ help_display()
 {
 	std::cout << '\n' << "QSS [options] [model|fmu]" << "\n\n";
 	std::cout << "Options:" << "\n\n";
-	std::cout << " --qss=METHOD  QSS method: (x)(LI)QSS1|2|3  [QSS2|FMU-QSS]" << '\n';
+	std::cout << " --qss=METHOD  QSS method: (x)(LI)QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
 	std::cout << " --rTol=TOL    Relative tolerance  [1e-4|FMU]" << '\n';
 	std::cout << " --aTol=TOL    Absolute tolerance  [1e-6]" << '\n';
 	std::cout << " --zTol=TOL    Zero-crossing anti-chatter tolerance  [0]" << '\n';
@@ -297,7 +297,7 @@ process_args( int argc, char * argv[] )
 					fatal = true;
 				}
 				one_over_dtNum = 1.0 / dtNum;
-				one_half_over_dtNum = 0.5 / dtNum;
+				one_half_over_dtNum = 1.0 / ( 2.0 * dtNum );
 				one_sixth_over_dtNum_squared = 1.0 / ( 6.0 * ( dtNum * dtNum ) );
 			} else {
 				std::cerr << "Error: Nonnumeric dtNum: " << dtNum_str << std::endl;

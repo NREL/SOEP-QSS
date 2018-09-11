@@ -55,10 +55,11 @@ enum class QSS {
  xQSS2,
  xQSS3,
  xLIQSS1,
- xLIQSS2
+ xLIQSS2,
+ xLIQSS3
 };
 
-extern QSS qss; // QSS method: (LI)QSS1|2|3
+extern QSS qss; // QSS method: (x)(LI)QSS(1|2|3)
 extern double rTol; // Relative tolerance
 extern double aTol; // Absolute tolerance
 extern double zTol; // Zero-crossing anti-chatter tolerance

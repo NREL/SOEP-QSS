@@ -60,14 +60,14 @@ def fmu_qss_gen():
     # Process arguments
     parser = argparse.ArgumentParser()
     parser.add_argument( 'ME', help = 'FMU-ME fmu or xml file', default = 'modelDescription.xml' )
-    parser.add_argument( '--qss', help = 'QSS method  (LI|QSS1|2)  [QSS2]', default = 'QSS2' )
+    parser.add_argument( '--qss', help = 'QSS method  (x)(LI)QSS(1|2)  [QSS2]', default = 'QSS2' )
     parser.add_argument( '--rTol', help = 'relative tolerance  [FMU]', type = float )
     parser.add_argument( '--aTol', help = 'absolute tolerance  [1e-6]', type = float, default = 1.0e-6 )
     parser.add_argument( '--tEnd', help = 'simulation end time  [FMU]', type = float )
     args = parser.parse_args()
     args.qss = args.qss.upper()
-    if args.qss not in ( 'QSS1', 'QSS2', 'LIQSS1', 'LIQSS2' ):
-        print( '\nUnsupported QSS method: ' + args.qss + ': Must be one of QSS1, QSS2, LIQSS1, LIQSS2' )
+    if args.qss not in ( 'QSS1', 'QSS2', 'LIQSS1', 'LIQSS2', 'xQSS1', 'xQSS2' ):
+        print( '\nUnsupported QSS method: ' + args.qss + ': Must be one of QSS1, QSS2, LIQSS1, LIQSS2, xQSS1, xQSS2' )
         sys.exit( 1 )
     if ( args.rTol is not None ) and ( args.rTol < 0.0 ):
         print( '\nNegative rTol: ' + "{:.16f}".format( args.rTol ) )
