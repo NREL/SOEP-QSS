@@ -51,10 +51,9 @@ TEST( Variable_QSS3Test, Basic )
 	x1.init( 2.5 );
 	EXPECT_EQ( 1.0e-4, x1.rTol );
 	EXPECT_EQ( 1.0e-6, x1.aTol );
-
 	EXPECT_EQ( 2.5, x1.x( 0.0 ) );
 	EXPECT_EQ( 2.5, x1.q( 0.0 ) );
-	EXPECT_DOUBLE_EQ( 2.5 + 17.0 + 17.0 + (68.0/6.0), x1.x( 1.0 ) );
+	EXPECT_DOUBLE_EQ( 2.5 + 17.0 + 17.0 + ( 68.0 / 6.0 ), x1.x( 1.0 ) );
 	EXPECT_EQ( 2.5 + 17.0 + 17.0, x1.q( 1.0 ) );
 	EXPECT_EQ( 17.0, x1.x1( 0.0 ) );
 	EXPECT_EQ( 17.0, x1.q1( 0.0 ) );
@@ -69,7 +68,7 @@ TEST( Variable_QSS3Test, Basic )
 	EXPECT_EQ( 68.0, x1.x3( 1.0 ) );
 	EXPECT_EQ( 0.0, x1.q3( 1.0 ) );
 	EXPECT_EQ( 0.0, x1.tQ );
-	EXPECT_DOUBLE_EQ( std::cbrt( std::max( x1.rTol * 2.5, x1.aTol ) / ( 34.0 / 3.0 ) ), x1.tE );
+	EXPECT_DOUBLE_EQ( std::cbrt( std::max( x1.rTol * 2.5, x1.aTol ) / ( 68.0 / 6.0 ) ), x1.tE );
 	double const x1_tE( x1.tE );
 	x1.advance_QSS();
 	EXPECT_EQ( x1_tE, x1.tQ );
@@ -80,7 +79,7 @@ TEST( Variable_QSS3Test, Basic )
 	EXPECT_EQ( 1.0e-4, x2.rTol );
 	EXPECT_EQ( 1.0e-3, x2.aTol );
 	EXPECT_EQ( 0.0, x2.tQ );
-	EXPECT_DOUBLE_EQ( std::cbrt( std::max( x2.rTol * 2.5, x2.aTol ) / ( 34.0 / 3.0 ) ), x2.tE );
+	EXPECT_DOUBLE_EQ( std::cbrt( std::max( x2.rTol * 2.5, x2.aTol ) / ( 68.0 / 6.0 ) ), x2.tE );
 
 	EXPECT_EQ( 2U, events.size() );
 	events.clear();

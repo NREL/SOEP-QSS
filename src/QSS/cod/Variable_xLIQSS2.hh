@@ -229,7 +229,7 @@ public: // Methods
 	{
 		init_observers();
 		init_observees();
-		x_1_ = q_1_ = s_1_ = d_.s( tQ ); // Simultaneous reps used to avoid cyclic dependency
+		x_1_ = q_1_ = s_1_ = d_.ss( tQ ); // Simultaneous reps used to avoid cyclic dependency
 	}
 
 	// Initialization: Stage 2
@@ -239,7 +239,7 @@ public: // Methods
 		if ( self_observer ) {
 			advance_s( tQ ); // Simultaneous reps used to avoid cyclic dependency
 		} else {
-			x_2_ = q_2_ = one_half * d_.s1( tQ ); // Simultaneous reps used to avoid cyclic dependency
+			x_2_ = q_2_ = one_half * d_.sf1( tQ ); // Simultaneous reps used to avoid cyclic dependency
 			q_0_ += signum( x_2_ ) * qTol;
 		}
 		set_tE_aligned();
@@ -266,8 +266,8 @@ public: // Methods
 		if ( self_observer ) {
 			advance_q( tQ );
 		} else {
-			x_1_ = q_1_ = d_.q( tQ );
-			x_2_ = q_2_ = one_half * d_.q1( tQ );
+			x_1_ = q_1_ = d_.qs( tQ );
+			x_2_ = q_2_ = one_half * d_.qf1( tQ );
 			q_0_ += signum( x_2_ ) * qTol;
 		}
 		set_tE_aligned();
@@ -290,7 +290,7 @@ public: // Methods
 	void
 	advance_QSS_1()
 	{
-		x_1_ = q_1_ = s_1_ = d_.s( tQ ); // Simultaneous reps used to avoid cyclic dependency
+		x_1_ = q_1_ = s_1_ = d_.ss( tQ ); // Simultaneous reps used to avoid cyclic dependency
 	}
 
 	// QSS Advance: Stage 2
@@ -300,7 +300,7 @@ public: // Methods
 		if ( self_observer ) {
 			advance_s( tQ ); // Simultaneous reps used to avoid cyclic dependency
 		} else {
-			x_2_ = q_2_ = one_half * d_.s1( tQ ); // Simultaneous reps used to avoid cyclic dependency
+			x_2_ = q_2_ = one_half * d_.sf1( tQ ); // Simultaneous reps used to avoid cyclic dependency
 			q_0_ += signum( x_2_ ) * qTol;
 		}
 		set_tE_aligned();

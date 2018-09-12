@@ -68,7 +68,7 @@ TEST( Variable_LIQSS2Test, Basic )
 	EXPECT_EQ( 1.0e-4, x2.rTol );
 	EXPECT_EQ( 1.0e-3, x2.aTol );
 	EXPECT_DOUBLE_EQ( 1.0e-3, x2.qTol );
-	EXPECT_DOUBLE_EQ( 2.501, x2.q( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 2.5 + x2.aTol, x2.q( 0.0 ) );
 	EXPECT_EQ( 0.0, x2.tQ );
 	EXPECT_DOUBLE_EQ( std::sqrt( std::max( x2.rTol * 2.5, x2.aTol ) / 17.002 ), x2.tE );
 	x2.tE = 2.0; // To allow advance to 1.0

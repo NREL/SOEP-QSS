@@ -235,21 +235,21 @@ public: // Methods
 	{
 		init_observers();
 		init_observees();
-		x_1_ = q_1_ = d_.s( tQ );
+		x_1_ = q_1_ = d_.ss( tQ );
 	}
 
 	// Initialization: Stage 2
 	void
 	init_2()
 	{
-		x_2_ = q_2_ = one_half * d_.s1( tQ );
+		x_2_ = q_2_ = one_half * d_.sc1( tQ );
 	}
 
 	// Initialization: Stage 3
 	void
 	init_3()
 	{
-		x_3_ = one_sixth * d_.s2( tQ );
+		x_3_ = one_sixth * d_.sc2( tQ );
 		set_tE_aligned();
 		add_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
