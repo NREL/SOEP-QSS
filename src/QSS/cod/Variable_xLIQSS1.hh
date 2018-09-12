@@ -144,7 +144,7 @@ public: // Properties
 	Real
 	s( Time const t ) const
 	{
-		assert( ( st != events.active_superdense_time() ) || ( t == tQ ) );
+		assert( ( t == tQ ) || ( st != events.active_superdense_time() ) );
 		return ( st == events.active_superdense_time() ? q_c_ : q_0_ + ( q_1_ * ( t - tQ ) ) );
 	}
 

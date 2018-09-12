@@ -101,10 +101,10 @@ public: // Types
 	{
 		Real l1;
 		Real u1;
-		Real z1;
 		Real l2;
 		Real u2;
-		Real z2;
+		Real z0;
+		Real z1;
 	};
 
 protected: // Creation

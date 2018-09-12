@@ -119,7 +119,7 @@ public: // Properties
 	Real
 	s( Time const t ) const
 	{
-		assert( ( st != events.active_superdense_time() ) || ( t == tQ ) );
+		assert( ( t == tQ ) || ( st != events.active_superdense_time() ) );
 		return ( st == events.active_superdense_time() ? q_c_ : q_0_ + ( q_1_ * ( t - tQ ) ) );
 	}
 
@@ -446,9 +446,9 @@ private: // Methods
 
 		// Derivative at +/- qTol
 		fmu_set_real( q_c_ - qTol );
-		d_l_ = fmu_get_deriv();
+		x_1_l_ = fmu_get_deriv();
 		fmu_set_real( q_c_ + qTol );
-		d_u_ = fmu_get_deriv();
+		x_1_u_ = fmu_get_deriv();
 	}
 
 	// Advance Self-Observing Trigger: Stage 2
@@ -459,36 +459,35 @@ private: // Methods
 		assert( self_observer );
 		assert( q_c_ == q_0_ );
 		assert( x_0_ == q_0_ );
-		assert( tN == tQ + options::dtNum );
 
 		// Value at +/- qTol
 		Real const q_l( q_c_ - qTol );
 		Real const q_u( q_c_ + qTol );
 
 		// Second derivative at +/- qTol
-		fmu_set_real( q_l + ( d_l_ * options::dtNum ) );
-		Real const d2_l( options::one_half_over_dtNum * ( fmu_get_deriv() - d_l_ ) ); // 1/2 * 2nd derivative
-		int const d2_l_s( signum( d2_l ) );
-		fmu_set_real( q_u + ( d_u_ * options::dtNum ) );
-		Real const d2_u( options::one_half_over_dtNum * ( fmu_get_deriv() - d_u_ ) ); // 1/2 * 2nd derivative
-		int const d2_u_s( signum( d2_u ) );
+		fmu_set_real( q_l + ( x_1_l_ * options::dtNum ) );
+		Real const x_2_l( options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_l_ ) ); // 1/2 * 2nd derivative
+		int const x_2_l_s( signum( x_2_l ) );
+		fmu_set_real( q_u + ( x_1_u_ * options::dtNum ) );
+		Real const x_2_u( options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_u_ ) ); // 1/2 * 2nd derivative
+		int const x_2_u_s( signum( x_2_u ) );
 
 		// Set coefficients based on second derivative signs
-		if ( ( d2_l_s == -1 ) && ( d2_u_s == -1 ) ) { // Downward curving trajectory
+		if ( ( x_2_l_s == -1 ) && ( x_2_u_s == -1 ) ) { // Downward curving trajectory
 			q_0_ = q_l;
-			x_1_ = q_1_ = d_l_;
-			x_2_ = d2_l;
-		} else if ( ( d2_l_s == +1 ) && ( d2_u_s == +1 ) ) { // Upward curving trajectory
+			x_1_ = q_1_ = x_1_l_;
+			x_2_ = x_2_l;
+		} else if ( ( x_2_l_s == +1 ) && ( x_2_u_s == +1 ) ) { // Upward curving trajectory
 			q_0_ = q_u;
-			x_1_ = q_1_ = d_u_;
-			x_2_ = d2_u;
-		} else if ( ( d2_l_s == 0 ) && ( d2_u_s == 0 ) ) { // Non-curving trajectory
+			x_1_ = q_1_ = x_1_u_;
+			x_2_ = x_2_u;
+		} else if ( ( x_2_l_s == 0 ) && ( x_2_u_s == 0 ) ) { // Non-curving trajectory
 			// Keep q_0_ == q_c_
-			x_1_ = q_1_ = one_half * ( d_l_ + d_u_ ); // Interpolated 1st deriv at q_0_ == q_c_
+			x_1_ = q_1_ = one_half * ( x_1_l_ + x_1_u_ ); // Interpolated 1st deriv at q_0_ == q_c_
 			x_2_ = 0.0;
 		} else { // Straight trajectory
-			q_0_ = std::min( std::max( ( ( q_l * d2_u ) - ( q_u * d2_l ) ) / ( d2_u - d2_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
-			x_1_ = q_1_ = ( ( ( q_u - q_0_ ) * d_l_ ) + ( ( q_0_ - q_l ) * d_u_ ) ) / ( two * qTol ); // Interpolated 1st deriv at q_0_
+			q_0_ = std::min( std::max( ( ( q_l * x_2_u ) - ( q_u * x_2_l ) ) / ( x_2_u - x_2_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
+			x_1_ = q_1_ = ( ( ( q_u - q_0_ ) * x_1_l_ ) + ( ( q_0_ - q_l ) * x_1_u_ ) ) / ( two * qTol ); // Interpolated 1st deriv at q_0_
 			x_2_ = 0.0;
 		}
 	}
@@ -498,7 +497,7 @@ private: // Data
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous rep coefficients
 	Real q_c_{ 0.0 }, q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized rep coefficients
 	Real s_1_{ 0.0 }; // Simultaneuous rep coefficients
-	Real d_l_{ 0.0 }, d_u_{ 0.0 }; // Derivative at +/- qTol
+	Real x_1_l_{ 0.0 }, x_1_u_{ 0.0 }; // Derivative at +/- qTol
 
 };
 

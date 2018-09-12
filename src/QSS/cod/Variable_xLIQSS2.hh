@@ -160,7 +160,7 @@ public: // Properties
 	Real
 	s( Time const t ) const
 	{
-		assert( ( st != events.active_superdense_time() ) || ( t == tQ ) );
+		assert( ( t == tQ ) || ( st != events.active_superdense_time() ) );
 		return ( st == events.active_superdense_time() ? q_c_ : q_0_ + ( ( q_1_ + ( q_2_ * ( t - tQ ) ) ) * ( t - tQ ) ) );
 	}
 
@@ -176,7 +176,7 @@ public: // Properties
 	Real
 	s1( Time const t ) const
 	{
-		assert( ( st != events.active_superdense_time() ) || ( t == tQ ) );
+		assert( ( t == tQ ) || ( st != events.active_superdense_time() ) );
 		return ( st == events.active_superdense_time() ? s_1_ : q_1_ + ( two * q_2_ * ( t - tQ ) ) );
 	}
 
@@ -452,7 +452,7 @@ private: // Methods
 			x_1_ = q_1_ = one_half * ( specs.l1 + specs.u1 ); // Interpolated 1st deriv at q_0_ == q_c_
 			x_2_ = q_2_ = 0.0;
 		} else { // Straight trajectory
-			q_0_ = std::min( std::max( specs.z2, q_c_ - qTol ), q_c_ + qTol ); // Clipped in case of roundoff
+			q_0_ = std::min( std::max( specs.z0, q_c_ - qTol ), q_c_ + qTol ); // Clipped in case of roundoff
 			x_1_ = q_1_ = specs.z1;
 			x_2_ = q_2_ = 0.0;
 		}

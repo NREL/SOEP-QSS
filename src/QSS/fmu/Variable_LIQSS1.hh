@@ -344,24 +344,24 @@ private: // Methods
 
 		// Derivative at +/- qTol
 		fmu_set_real( q_l );
-		Real const d_l( fmu_get_deriv() );
-		int const d_l_s( signum( d_l ) );
+		Real const x_1_l( fmu_get_deriv() );
+		int const x_1_l_s( signum( x_1_l ) );
 		fmu_set_real( q_u );
-		Real const d_u( fmu_get_deriv() );
-		int const d_u_s( signum( d_u ) );
+		Real const x_1_u( fmu_get_deriv() );
+		int const x_1_u_s( signum( x_1_u ) );
 
 		// Set coefficients based on derivative signs
-		if ( ( d_l_s == -1 ) && ( d_u_s == -1 ) ) { // Downward trajectory
+		if ( ( x_1_l_s == -1 ) && ( x_1_u_s == -1 ) ) { // Downward trajectory
 			q_0_ -= qTol;
-			x_1_ = d_l;
-		} else if ( ( d_l_s == +1 ) && ( d_u_s == +1 ) ) { // Upward trajectory
+			x_1_ = x_1_l;
+		} else if ( ( x_1_l_s == +1 ) && ( x_1_u_s == +1 ) ) { // Upward trajectory
 			q_0_ += qTol;
-			x_1_ = d_u;
-		} else if ( ( d_l_s == 0 ) && ( d_u_s == 0 ) ) { // Flat trajectory
+			x_1_ = x_1_u;
+		} else if ( ( x_1_l_s == 0 ) && ( x_1_u_s == 0 ) ) { // Flat trajectory
 			// Keep q_0_ == q_c_
 			x_1_ = 0.0;
 		} else { // Flat trajectory
-			q_0_ = std::min( std::max( ( ( q_l * d_u ) - ( q_u * d_l ) ) / ( d_u - d_l ), q_l ), q_u ); // Value where deriv is ~ 0 // Clipped in case of roundoff
+			q_0_ = std::min( std::max( ( ( q_l * x_1_u ) - ( q_u * x_1_l ) ) / ( x_1_u - x_1_l ), q_l ), q_u ); // Value where deriv is ~ 0 // Clipped in case of roundoff
 			x_1_ = 0.0;
 		}
 	}

@@ -281,9 +281,9 @@ public: // Properties
 		assert( signum( sl ) == signum( su ) );
 		assert( signum( sl ) != 0 );
 		Real const z1( 0.0 );
-		Real const z2( 0.0 );
+		Real const z0( 0.0 );
 
-		return AdvanceSpecs_LIQSS2{ vl, vu, z1, sl, su, z2 };
+		return AdvanceSpecs_LIQSS2{ vl, vu, sl, su, z0, z1 };
 	}
 
 	// Simultaneous Values and Derivatives at Time t and at Variable +/- Delta
@@ -305,9 +305,9 @@ public: // Properties
 		assert( signum( sl ) == signum( su ) );
 		assert( signum( sl ) != 0 );
 		Real const z1( 0.0 );
-		Real const z2( 0.0 );
+		Real const z0( 0.0 );
 
-		return AdvanceSpecs_LIQSS2{ vl, vu, z1, sl, su, z2 };
+		return AdvanceSpecs_LIQSS2{ vl, vu, sl, su, z0, z1 };
 	}
 
 	// Exact Value of y at Time t

@@ -186,9 +186,9 @@ Higher derivatives are needed for QSS2+ methods. These are available analyticall
 * QSS2 does 2-point forward difference differentiation to allow reuse of one derivative evaluation.
 * QSS3 does 2 and 3-point centered difference differentiation to allow reuse of derivative evaluations.
 * Input variables of orders 2 and 3 are handled analogously.
-* A mechanism to specify globat and per-variable differentiation time steps is provided.
+* A mechanism to specify global and per-variable differentiation time steps is provided.
 
-At startup and simultaneous or self-observer requantization events, numeric differentiation of QSS3+ and xQSS2+ variables has a cyclic dependency problem: the derivative function evaluations at time step offsets used to compute the higher derivatives are both used to set the q2 coefficient of the quantized representation but also depend on q2. (The same problem exists for the higher q terms in higher order QSS methods.) The result is that some variables will use a "stale" value of q2 in their derivative computation. The impact of this flaw will vary across models and could be severe in some situations so numeric differentiation should be avoided in the production JModelica+QSS system with these higher order QSS variables.
+At startup and simultaneous or self-observer requantization events, numeric differentiation of QSS3+ and xQSS2+ variables has a cyclic dependency problem: the derivative function evaluations at time step offsets used to compute the higher derivatives depend on those same order 2+ coefficients of the representation. This causes some variables to use "stale" values of their order 2+ coefficients in their derivative computation. The impact of this flaw will vary across models and could be severe in some situations so these higher order QSS variables should not be used for production simulations of code-defined models using numeric differentiation and of FMU-based models until the planned JModelica FMI Library version with higher derivative support is available.
 
 ### Numeric Bulletproofing
 

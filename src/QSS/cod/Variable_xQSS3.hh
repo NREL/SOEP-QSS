@@ -145,7 +145,6 @@ public: // Properties
 	{
 		Time const tDel( t - tQ );
 		return q_0_ + ( ( q_1_ + ( ( q_2_ + ( q_3_ * tDel ) ) * tDel ) ) * tDel );
-
 	}
 
 	// Quantized First Derivative at Time t

@@ -112,7 +112,8 @@ public: // Properties
 	x1( Time const t ) const
 	{
 		Real r( 0.0 );
-		for ( Term const & term : terms_ ) {
+		for ( size_type i = iBeg1, n = terms_.size(); i < n; ++i ) {
+			Term const & term( terms_[ i ] );
 			r += term.c * term.v->x1( t );
 		}
 		return r;
@@ -158,7 +159,7 @@ public: // Properties
 	q1( Time const t ) const
 	{
 		Real r( 0.0 );
-		for ( size_type i = iBeg2, n = terms_.size(); i < n; ++i ) {
+		for ( size_type i = iBeg1, n = terms_.size(); i < n; ++i ) {
 			Term const & term( terms_[ i ] );
 			r += term.c * term.v->q1( t );
 		}
@@ -170,9 +171,21 @@ public: // Properties
 	q2( Time const t ) const
 	{
 		Real r( 0.0 );
-		for ( size_type i = iBeg3, n = terms_.size(); i < n; ++i ) {
+		for ( size_type i = iBeg2, n = terms_.size(); i < n; ++i ) {
 			Term const & term( terms_[ i ] );
 			r += term.c * term.v->q2( t );
+		}
+		return r;
+	}
+
+	// Quantized Third Derivative at Time t
+	Real
+	q3( Time const t ) const
+	{
+		Real r( 0.0 );
+		for ( size_type i = iBeg3, n = terms_.size(); i < n; ++i ) {
+			Term const & term( terms_[ i ] );
+			r += term.c * term.v->q3( t );
 		}
 		return r;
 	}
@@ -324,7 +337,7 @@ public: // Properties
 
 		// Derivative at +/- del
 		Real s( 0.0 );
-		for ( size_type i = ioBeg2, n = termso_.size(); i < n; ++i ) {
+		for ( size_type i = ioBeg1, n = termso_.size(); i < n; ++i ) {
 			Term const & term( termso_[ i ] );
 			s += term.c * term.v->q1( t );
 		}
@@ -334,9 +347,9 @@ public: // Properties
 		// Zero point
 		bool const signs_differ( signum( sl ) != signum( su ) );
 		Real const z1( signs_differ ? -( s * cv_inv_ ) : 0.0 );
-		Real const z2( signs_differ ? ( z1 - v ) * cv_inv_ : 0.0 );
+		Real const z0( signs_differ ? ( z1 - v ) * cv_inv_ : 0.0 );
 
-		return AdvanceSpecs_LIQSS2{ vl, vu, z1, sl, su, z2 };
+		return AdvanceSpecs_LIQSS2{ vl, vu, sl, su, z0, z1 };
 	}
 
 	// Simultaneous Values and Derivatives at Time t and at Variable +/- Delta
@@ -344,14 +357,14 @@ public: // Properties
 	slu2( Time const t, Real const del, Real const vc ) const
 	{
 		// Value at +/- del
-		Real const v( cv_ == 0.0 ? vc : vc - ( cv_ * v_->x( t ) ) );
+		Real const v( cv_ == 0.0 ? vc : vc - ( cv_ * v_->x( t ) ) ); // x and s reps are the same at this point but the x(t) call is faster //Do Add x_0() method to just get x_0_ and use here
 		Real const cv_del( cv_ * del );
 		Real const vl( vc - cv_del );
 		Real const vu( vc + cv_del );
 
 		// Derivative at +/- del
 		Real s( 0.0 );
-		for ( size_type i = ioBeg2, n = termso_.size(); i < n; ++i ) {
+		for ( size_type i = ioBeg1, n = termso_.size(); i < n; ++i ) {
 			Term const & term( termso_[ i ] );
 			s += term.c * term.v->s1( t );
 		}
@@ -361,9 +374,9 @@ public: // Properties
 		// Zero point
 		bool const signs_differ( signum( sl ) != signum( su ) );
 		Real const z1( signs_differ ? -( s * cv_inv_ ) : 0.0 );
-		Real const z2( signs_differ ? ( z1 - v ) * cv_inv_ : 0.0 );
+		Real const z0( signs_differ ? ( z1 - v ) * cv_inv_ : 0.0 );
 
-		return AdvanceSpecs_LIQSS2{ vl, vu, z1, sl, su, z2 };
+		return AdvanceSpecs_LIQSS2{ vl, vu, sl, su, z0, z1 };
 	}
 
 public: // Methods
@@ -385,7 +398,16 @@ public: // Methods
 			v_ = v; // Register self Variable
 			terms_.insert( std::upper_bound( terms_.begin(), terms_.end(), term ), std::move( term ) );
 			switch ( v->order() ) {
-			case 0: case 1:
+			case 0:
+				++iBeg1;
+#if __cplusplus >= 201703L //C++17
+				[[fallthrough]];
+#elif defined(__clang__)
+				[[clang::fallthrough]];
+#elif defined(__GNUC__)
+				[[gnu::fallthrough]];
+#endif
+			case 1:
 				++iBeg2;
 #if __cplusplus >= 201703L //C++17
 				[[fallthrough]];
@@ -402,7 +424,17 @@ public: // Methods
 			terms_.insert( std::upper_bound( terms_.begin(), terms_.end(), term ), term );
 			termso_.insert( std::upper_bound( termso_.begin(), termso_.end(), term ), std::move( term ) );
 			switch ( v->order() ) {
-			case 0: case 1:
+			case 0:
+				++iBeg1;
+				++ioBeg1;
+#if __cplusplus >= 201703L //C++17
+				[[fallthrough]];
+#elif defined(__clang__)
+				[[clang::fallthrough]];
+#elif defined(__GNUC__)
+				[[gnu::fallthrough]];
+#endif
+			case 1:
 				++iBeg2;
 				++ioBeg2;
 #if __cplusplus >= 201703L //C++17
@@ -414,6 +446,7 @@ public: // Methods
 #endif
 			case 2:
 				++iBeg3;
+				++ioBeg3;
 			}
 		}
 	}
@@ -432,7 +465,16 @@ public: // Methods
 			v_ = v; // Register self Variable
 			terms_.insert( std::upper_bound( terms_.begin(), terms_.end(), term ), std::move( term ) );
 			switch ( v->order() ) {
-			case 0: case 1:
+			case 0:
+				++iBeg1;
+#if __cplusplus >= 201703L //C++17
+				[[fallthrough]];
+#elif defined(__clang__)
+				[[clang::fallthrough]];
+#elif defined(__GNUC__)
+				[[gnu::fallthrough]];
+#endif
+			case 1:
 				++iBeg2;
 #if __cplusplus >= 201703L //C++17
 				[[fallthrough]];
@@ -450,7 +492,17 @@ public: // Methods
 			terms_.insert( std::upper_bound( terms_.begin(), terms_.end(), term ), term );
 			termso_.insert( std::upper_bound( termso_.begin(), termso_.end(), term ), std::move( term ) );
 			switch ( v->order() ) {
-			case 0: case 1:
+			case 0:
+				++iBeg1;
+				++ioBeg1;
+#if __cplusplus >= 201703L //C++17
+				[[fallthrough]];
+#elif defined(__clang__)
+				[[clang::fallthrough]];
+#elif defined(__GNUC__)
+				[[gnu::fallthrough]];
+#endif
+			case 1:
 				++iBeg2;
 				++ioBeg2;
 #if __cplusplus >= 201703L //C++17
@@ -462,6 +514,7 @@ public: // Methods
 #endif
 			case 2:
 				++iBeg3;
+				++ioBeg3;
 			}
 		}
 	}
@@ -470,8 +523,12 @@ private: // Data
 
 	Coefficient c0_{ 0.0 }; // Constant term
 	Terms terms_; // Coefficient * Variable terms
-	size_type iBeg2{ 0 }, iBeg3{ 0 }; // Index of first Variable of QSS orders 2+
-	size_type ioBeg2{ 0 }; // Index of first non-self Variable of QSS order 2
+	size_type iBeg1{ 0 }; // Index of first Variable of QSS orders 1+
+	size_type iBeg2{ 0 }; // Index of first Variable of QSS orders 2+
+	size_type iBeg3{ 0 }; // Index of first Variable of QSS orders 3+
+	size_type ioBeg1{ 0 }; // Index of first non-self Variable of QSS order 1+
+	size_type ioBeg2{ 0 }; // Index of first non-self Variable of QSS order 2+
+	size_type ioBeg3{ 0 }; // Index of first non-self Variable of QSS order 3+
 
 	Variable * v_{ nullptr }; // Self Variable
 	Coefficient cv_{ 0.0 }; // Coefficient of self Variable

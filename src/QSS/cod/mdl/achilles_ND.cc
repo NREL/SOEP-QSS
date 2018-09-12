@@ -85,7 +85,7 @@ achilles_ND( Variable::Variables & vars )
 //	} else if ( qss == QSS::xLIQSS1 ) {
 //		vars.push_back( x1 = new Variable_xLIQSS1< Function_LTI_ND >( "x1", rTol, aTol, 0.0 ) );
 //		vars.push_back( x2 = new Variable_xLIQSS1< Function_LTI_ND >( "x2", rTol, aTol, 2.0 ) );
-//	} else if ( qss == QSS:x:LIQSS2 ) {
+//	} else if ( qss == QSS::xLIQSS2 ) {
 //		vars.push_back( x1 = new Variable_xLIQSS2< Function_LTI_ND >( "x1", rTol, aTol, 0.0 ) );
 //		vars.push_back( x2 = new Variable_xLIQSS2< Function_LTI_ND >( "x2", rTol, aTol, 2.0 ) );
 	} else {
