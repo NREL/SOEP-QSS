@@ -70,6 +70,8 @@ exponential_decay_step( Variable::Variables & vars )
 		vars.push_back( x = new Variable_LIQSS1< Function_LTI >( "x", rTol, aTol, 1.0 ) );
 	} else if ( qss == QSS::LIQSS2 ) {
 		vars.push_back( x = new Variable_LIQSS2< Function_LTI >( "x", rTol, aTol, 1.0 ) );
+	} else if ( qss == QSS::LIQSS3 ) {
+		vars.push_back( x = new Variable_LIQSS3< Function_LTI >( "x", rTol, aTol, 1.0 ) );
 	} else if ( qss == QSS::xQSS1 ) {
 		vars.push_back( x = new Variable_xQSS1< Function_LTI >( "x", rTol, aTol, 1.0 ) );
 	} else if ( qss == QSS::xQSS2 ) {
@@ -80,6 +82,8 @@ exponential_decay_step( Variable::Variables & vars )
 		vars.push_back( x = new Variable_xLIQSS1< Function_LTI >( "x", rTol, aTol, 1.0 ) );
 	} else if ( qss == QSS::xLIQSS2 ) {
 		vars.push_back( x = new Variable_xLIQSS2< Function_LTI >( "x", rTol, aTol, 1.0 ) );
+	} else if ( qss == QSS::xLIQSS3 ) {
+		vars.push_back( x = new Variable_xLIQSS3< Function_LTI >( "x", rTol, aTol, 1.0 ) );
 	} else {
 		std::cerr << "Error: Unsupported QSS method" << std::endl;
 		std::exit( EXIT_FAILURE );

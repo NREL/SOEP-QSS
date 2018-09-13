@@ -5,7 +5,7 @@ This is a QSS solver being developed for integration into JModelica as part of t
 ## Status
 
 Currently the code has:
-* QSS1/2/3 and LIQSS1/2 solvers.
+* QSS1/2/3 and LIQSS1/2/3 solvers.
 * Experimental xQSS variables with full-order broadcast representations.
 * Linear and nonlinear derivative function support.
 * Input variables/functions.

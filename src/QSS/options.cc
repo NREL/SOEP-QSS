@@ -177,8 +177,6 @@ process_args( int argc, char * argv[] )
 				qss = QSS::LIQSS2;
 			} else if ( qss_name == "LIQSS3" ) {
 				qss = QSS::LIQSS3;
-				std::cerr << "Error: The LIQSS3 method is not yet implemented" << std::endl;
-				fatal = true;
 			} else if ( qss_name == "XQSS1" ) {
 				qss = QSS::xQSS1;
 			} else if ( qss_name == "XQSS2" ) {
@@ -191,8 +189,6 @@ process_args( int argc, char * argv[] )
 				qss = QSS::xLIQSS2;
 			} else if ( qss_name == "XLIQSS3" ) {
 				qss = QSS::xLIQSS3;
-				std::cerr << "Error: The xLIQSS3 method is not yet implemented" << std::endl;
-				fatal = true;
 			} else {
 				std::cerr << "Error: Unsupported QSS method: " << qss_name << std::endl;
 				fatal = true;
