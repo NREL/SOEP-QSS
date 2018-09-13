@@ -38,8 +38,6 @@
 
 // QSS Headers
 #include <QSS/container.hh>
-#include <QSS/options.hh>
-#include <QSS/fmu/FMU.hh>
 
 // C++ Headers
 #include <algorithm>
@@ -219,11 +217,6 @@ public: // Methods
 	{
 		if ( nz_.have_ ) advance_NZ( t );
 		if ( zc_.have_ ) advance_ZC( t );
-		if ( options::output::d ) {
-			for ( Variable const * observer : observers_ ) {
-				observer->advance_observer_d();
-			}
-		}
 	}
 
 	// Advance Non-Zero-Crossing Observers
@@ -231,15 +224,7 @@ public: // Methods
 	advance_NZ( Time const t )
 	{
 		for ( size_type i = nz_.b_, e = nz_.e_; i < e; ++i ) {
-			observers_[ i ]->advance_observer_1( t );
-		}
-		if ( nz_.max_order_ >= 2 ) { // 2nd order pass
-			Time const tN( t + options::dtNum ); // Set time to t + delta for numeric differentiation
-			fmu::set_time( tN );
-			for ( size_type i = nz_.b2_, e = nz_.e_; i < e; ++i ) {
-				observers_[ i ]->advance_observer_2( tN );
-			}
-			fmu::set_time( t );
+			observers_[ i ]->advance_observer_s( t );
 		}
 	}
 
@@ -248,15 +233,7 @@ public: // Methods
 	advance_ZC( Time const t )
 	{
 		for ( size_type i = zc_.b_, e = zc_.e_; i < e; ++i ) {
-			observers_[ i ]->advance_observer_1( t );
-		}
-		if ( zc_.max_order_ >= 2 ) { // 2nd order pass
-			Time const tN( t + options::dtNum ); // Set time to t + delta for numeric differentiation
-			fmu::set_time( tN );
-			for ( size_type i = zc_.b2_, e = zc_.e_; i < e; ++i ) {
-				observers_[ i ]->advance_observer_2( tN );
-			}
-			fmu::set_time( t );
+			observers_[ i ]->advance_observer_s( t );
 		}
 	}
 

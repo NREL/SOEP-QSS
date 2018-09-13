@@ -1,4 +1,4 @@
-// FMU-Based QSS1 Variable
+// FMU-Based QSS3 Variable
 //
 // Project: QSS Solver
 //
@@ -33,8 +33,8 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_Variable_QSS1_hh_INCLUDED
-#define QSS_fmu_Variable_QSS1_hh_INCLUDED
+#ifndef QSS_fmu_Variable_QSS3_hh_INCLUDED
+#define QSS_fmu_Variable_QSS3_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/fmu/Variable_QSS.hh>
@@ -42,8 +42,8 @@
 namespace QSS {
 namespace fmu {
 
-// FMU-Based QSS1 Variable
-class Variable_QSS1 final : public Variable_QSS
+// FMU-Based QSS3 Variable
+class Variable_QSS3 final : public Variable_QSS
 {
 
 public: // Types
@@ -54,7 +54,7 @@ public: // Creation
 
 	// Constructor
 	explicit
-	Variable_QSS1(
+	Variable_QSS3(
 	 std::string const & name,
 	 Real const rTol = 1.0e-4,
 	 Real const aTol = 1.0e-6,
@@ -75,35 +75,67 @@ public: // Properties
 	int
 	order() const
 	{
-		return 1;
+		return 3;
 	}
 
 	// Continuous Value at Time t
 	Real
 	x( Time const t ) const
 	{
-		return x_0_ + ( x_1_ * ( t - tX ) );
+		Time const tDel( t - tX );
+		return x_0_ + ( ( x_1_ + ( ( x_2_ + ( x_3_ * tDel ) ) * tDel ) ) * tDel );
 	}
 
 	// Continuous First Derivative at Time t
 	Real
-	x1( Time const ) const
+	x1( Time const t ) const
 	{
-		return x_1_;
+		Time const tDel( t - tX );
+		return x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_ * tDel ) ) * tDel );
+	}
+
+	// Continuous Second Derivative at Time t
+	Real
+	x2( Time const t ) const
+	{
+		return ( two * x_2_ ) + ( six * x_3_ * ( t - tX ) );
+	}
+
+	// Continuous Third Derivative at Time t
+	Real
+	x3( Time const ) const
+	{
+		return six * x_3_;
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const ) const
+	q( Time const t ) const
 	{
-		return q_0_;
+		Time const tDel( t - tQ );
+		return q_0_ + ( ( q_1_ + ( q_2_ * tDel ) ) * tDel );
+	}
+
+	// Quantized First Derivative at Time t
+	Real
+	q1( Time const t ) const
+	{
+		return q_1_ + ( two * q_2_ * ( t - tQ ) );
+	}
+
+	// Quantized Second Derivative at Time t
+	Real
+	q2( Time const ) const
+	{
+		return two * q_2_;
 	}
 
 	// Simultaneous Value at Time t
 	Real
-	s( Time const ) const
+	s( Time const t ) const
 	{
-		return q_0_;
+		Time const tDel( t - tQ );
+		return q_0_ + ( ( q_1_ + ( q_2_ * tDel ) ) * tDel );
 	}
 
 public: // Methods
@@ -114,6 +146,8 @@ public: // Methods
 	{
 		init_0();
 		init_1();
+		init_2();
+		init_3();
 	}
 
 	// Initialization to a Value
@@ -122,6 +156,8 @@ public: // Methods
 	{
 		init_0( x );
 		init_1();
+		init_2();
+		init_3();
 	}
 
 	// Initialization: Stage 0
@@ -148,10 +184,24 @@ public: // Methods
 	void
 	init_1()
 	{
-		x_1_ = fmu_get_poly_1();
+		x_1_ = q_1_ = fmu_get_poly_1();
+	}
+
+	// Initialization: Stage 2
+	void
+	init_2()
+	{
+		x_2_ = q_2_ = fmu_get_poly_2();
+	}
+
+	// Initialization: Stage 3
+	void
+	init_3()
+	{
+		x_3_ = fmu_get_poly_3();
 		set_tE_aligned();
 		add_QSS( tE );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// Set Current Tolerance
@@ -168,14 +218,16 @@ public: // Methods
 	{
 		Time const tDel( tE - tX );
 		tX = tQ = tE;
-		x_0_ = q_0_ = x_0_ + ( x_1_ * tDel );
+		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
 		set_qTol();
 		fmu_set_observees_q( tQ );
 		if ( self_observer ) fmu_set_real( q_0_ );
-		x_1_ = fmu_get_poly_1();
+		x_1_ = q_1_ = fmu_get_poly_1();
+		x_2_ = q_2_ = fmu_get_poly_2();
+		x_3_ = fmu_get_poly_3();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 		if ( have_observers_ ) advance_observers();
 	}
 
@@ -185,7 +237,7 @@ public: // Methods
 	{
 		Time const tDel( tE - tX );
 		tX = tQ = tE;
-		x_0_ = q_0_ = x_0_ + ( x_1_ * tDel );
+		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
 		set_qTol();
 	}
 
@@ -195,10 +247,24 @@ public: // Methods
 	{
 		fmu_set_observees_s( tQ );
 		if ( self_observer ) fmu_set_real( q_0_ );
-		x_1_ = fmu_get_poly_1();
+		x_1_ = q_1_ = fmu_get_poly_1();
+	}
+
+	// QSS Advance: Stage 2
+	void
+	advance_QSS_2()
+	{
+		x_2_ = q_2_ = fmu_get_poly_2();
+	}
+
+	// QSS Advance: Stage 3
+	void
+	advance_QSS_3()
+	{
+		x_3_ = fmu_get_poly_3();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// Observer Advance
@@ -208,11 +274,13 @@ public: // Methods
 		assert( ( tX <= t ) && ( t <= tE ) );
 		Time const tDel( t - tX );
 		tX = t;
-		x_0_ = x_0_ + ( x_1_ * tDel );
+		x_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
 		x_1_ = fmu_get_poly_1();
+		x_2_ = fmu_get_poly_2();
+		x_3_ = fmu_get_poly_3();
 		set_tE_unaligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << q_0_ << " [q]" << '(' << std::noshowpos << tQ << std::showpos << ')' << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << " [q]" << '(' << std::noshowpos << tQ << std::showpos << ')' << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// Observer Advance: Simultaneous
@@ -233,10 +301,12 @@ public: // Methods
 		x_0_ = q_0_ = fmu_get_real(); // Assume FMU ran zero-crossing handler
 		set_qTol();
 		fmu_set_observees_q( tX = tQ = t );
-		x_1_ = fmu_get_poly_1();
+		x_1_ = q_1_ = fmu_get_poly_1();
+		x_2_ = q_2_ = fmu_get_poly_2();
+		x_3_ = fmu_get_poly_3();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 		if ( have_observers_ ) advance_observers();
 	}
 
@@ -255,10 +325,24 @@ public: // Methods
 	advance_handler_1()
 	{
 		fmu_set_observees_q( tQ );
-		x_1_ = fmu_get_poly_1();
+		x_1_ = q_1_ = fmu_get_poly_1();
+	}
+
+	// Handler Advance: Stage 2
+	void
+	advance_handler_2()
+	{
+		x_2_ = q_2_ = fmu_get_poly_2();
+	}
+
+	// Handler Advance: Stage 3
+	void
+	advance_handler_3()
+	{
+		x_3_ = fmu_get_poly_3();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// Handler No-Advance
@@ -276,9 +360,13 @@ private: // Methods
 	{
 		assert( tX <= tQ );
 		assert( dt_min <= dt_max );
-		Time dt( x_1_ != 0.0 ? qTol / std::abs( x_1_ ) : infinity );
+		Time dt( x_3_ != 0.0 ? std::cbrt( qTol / std::abs( x_3_ ) ) : infinity );
 		dt = std::min( std::max( dt, dt_min ), dt_max );
 		tE = ( dt != infinity ? tQ + dt : infinity );
+		if ( ( options::inflection ) && ( x_3_ != 0.0 ) && ( signum( x_2_ ) != signum( x_3_ ) ) ) {
+			Time const tI( tX - ( x_2_ / ( three * x_3_ ) ) );
+			if ( tQ < tI ) tE = std::min( tE, tI );
+		}
 		tE_infinity_tQ();
 	}
 
@@ -288,19 +376,31 @@ private: // Methods
 	{
 		assert( tQ <= tX );
 		assert( dt_min <= dt_max );
-		Time dt(
-		 ( x_1_ > 0.0 ? ( q_0_ + qTol - x_0_ ) / x_1_ :
-		 ( x_1_ < 0.0 ? ( q_0_ - qTol - x_0_ ) / x_1_ :
-		 infinity ) ) );
+		Time const tXQ( tX - tQ );
+		Real const d_0( x_0_ - ( q_0_ + ( q_1_ + ( q_2_ * tXQ ) ) * tXQ ) );
+		Real const d_1( x_1_ - ( q_1_ + ( two * q_2_ * tXQ ) ) );
+		Real const d_2( x_2_ - q_2_ );
+		Time dt;
+		if ( ( x_3_ >= 0.0 ) && ( d_2 >= 0.0 ) && ( d_1 >= 0.0 ) ) { // Upper boundary crossing
+			dt = min_root_cubic_upper( x_3_, d_2, d_1, d_0 - qTol );
+		} else if ( ( x_3_ <= 0.0 ) && ( d_2 <= 0.0 ) && ( d_1 <= 0.0 ) ) { // Lower boundary crossing
+			dt = min_root_cubic_lower( x_3_, d_2, d_1, d_0 + qTol );
+		} else { // Both boundaries can have crossings
+			dt = min_root_cubic_both( x_3_, d_2, d_1, d_0 + qTol, d_0 - qTol );
+		}
 		dt = std::min( std::max( dt, dt_min ), dt_max );
 		tE = ( dt != infinity ? tX + dt : infinity );
+		if ( ( options::inflection ) && ( x_3_ != 0.0 ) && ( signum( x_2_ ) != signum( x_3_ ) ) && ( signum( x_2_ ) == signum( q_2_ ) ) ) {
+			Time const tI( tX - ( x_2_ / ( three * x_3_ ) ) );
+			if ( tX < tI ) tE = std::min( tE, tI );
+		}
 		tE_infinity_tX();
 	}
 
 private: // Data
 
-	Real x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
-	Real q_0_{ 0.0 }; // Quantized rep coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Continuous rep coefficients
+	Real q_0_{ 0.0 }, q_1_{ 0.0 }, q_2_{ 0.0 }; // Quantized rep coefficients
 
 };
 

@@ -336,6 +336,10 @@ StateEvent6( Variable::Variables & vars, std::vector< Conditional * > & cons )
 		vars.push_back( x1 = new Variable_QSS2< Function_x1 >( "x1", rTol, aTol, +1.1 ) ); // Add q/xlu12 to enable LIQSS2
 		vars.push_back( x2 = new Variable_LIQSS2< Function_LTI >( "x2", rTol, aTol, -2.5 ) );
 		vars.push_back( x3 = new Variable_LIQSS2< Function_LTI >( "x3", rTol, aTol, +4.0 ) );
+	} else if ( qss == QSS::LIQSS3 ) {
+		vars.push_back( x1 = new Variable_QSS3< Function_x1 >( "x1", rTol, aTol, +1.1 ) ); // Add q/xlu13 to enable LIQSS23
+		vars.push_back( x2 = new Variable_LIQSS3< Function_LTI >( "x2", rTol, aTol, -2.5 ) );
+		vars.push_back( x3 = new Variable_LIQSS3< Function_LTI >( "x3", rTol, aTol, +4.0 ) );
 	} else if ( qss == QSS::xQSS1 ) {
 		vars.push_back( x1 = new Variable_xQSS1< Function_x1 >( "x1", rTol, aTol, +1.1 ) );
 		vars.push_back( x2 = new Variable_xQSS1< Function_LTI >( "x2", rTol, aTol, -2.5 ) );
@@ -356,6 +360,10 @@ StateEvent6( Variable::Variables & vars, std::vector< Conditional * > & cons )
 		vars.push_back( x1 = new Variable_xQSS2< Function_x1 >( "x1", rTol, aTol, +1.1 ) ); // Add q/xlu12 to enable xLIQSS2
 		vars.push_back( x2 = new Variable_xLIQSS2< Function_LTI >( "x2", rTol, aTol, -2.5 ) );
 		vars.push_back( x3 = new Variable_xLIQSS2< Function_LTI >( "x3", rTol, aTol, +4.0 ) );
+	} else if ( qss == QSS::xLIQSS3 ) {
+		vars.push_back( x1 = new Variable_xQSS3< Function_x1 >( "x1", rTol, aTol, +1.1 ) ); // Add q/xlu12 to enable xLIQSS3
+		vars.push_back( x2 = new Variable_xLIQSS3< Function_LTI >( "x2", rTol, aTol, -2.5 ) );
+		vars.push_back( x3 = new Variable_xLIQSS3< Function_LTI >( "x3", rTol, aTol, +4.0 ) );
 	} else {
 		std::cerr << "Error: Unsupported QSS method" << std::endl;
 		std::exit( EXIT_FAILURE );

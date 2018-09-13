@@ -82,6 +82,7 @@ public: // Types
 	using Real = typename Variable::Real;
 	using AdvanceSpecs_LIQSS1 = typename Variable::AdvanceSpecs_LIQSS1;
 	using AdvanceSpecs_LIQSS2 = typename Variable::AdvanceSpecs_LIQSS2;
+	using AdvanceSpecs_LIQSS3 = typename Variable::AdvanceSpecs_LIQSS3;
 
 public: // Properties
 
@@ -377,6 +378,80 @@ public: // Properties
 		Real const z0( signs_differ ? ( z1 - v ) * cv_inv_ : 0.0 );
 
 		return AdvanceSpecs_LIQSS2{ vl, vu, sl, su, z0, z1 };
+	}
+
+	// Quantized Values and Derivatives at Time t and at Variable +/- Delta
+	AdvanceSpecs_LIQSS3
+	qlu3( Time const t, Real const del ) const
+	{
+		// Value at +/- del
+		Real v( c0_ );
+		for ( Term const & term : termso_ ) {
+			v += term.c * term.v->q( t );
+		}
+		Real const vc( cv_ == 0.0 ? v : v + ( cv_ * v_->q( t ) ) );
+		Real const cv_del( cv_ * del );
+		Real const vl( vc - cv_del );
+		Real const vu( vc + cv_del );
+
+		// Derivative at +/- del
+		Real s( 0.0 );
+		for ( size_type i = ioBeg1, n = termso_.size(); i < n; ++i ) {
+			Term const & term( termso_[ i ] );
+			s += term.c * term.v->q1( t );
+		}
+		Real const sl( s + ( cv_ * vl ) );
+		Real const su( s + ( cv_ * vu ) );
+
+		// 2nd derivative at +/- del
+		Real c( 0.0 );
+		for ( size_type i = ioBeg2, n = termso_.size(); i < n; ++i ) {
+			Term const & term( termso_[ i ] );
+			c += term.c * term.v->q2( t );
+		}
+		Real const cl( c + ( cv_ * sl ) );
+		Real const cu( c + ( cv_ * su ) );
+
+		// Zero point
+		bool const signs_differ( signum( cl ) != signum( cu ) );
+		Real const z2( signs_differ ? -( c * cv_inv_ ) : 0.0 );
+		Real const z1( signs_differ ? ( z2 - s ) * cv_inv_ : 0.0 );
+		Real const z0( signs_differ ? ( z1 - v ) * cv_inv_ : 0.0 );
+
+		return AdvanceSpecs_LIQSS3{ vl, vu, sl, su, cl, cu, z0, z1, z2 };
+	}
+
+	// Simultaneous Values and Derivatives at Time t and at Variable +/- Delta
+	AdvanceSpecs_LIQSS3
+	slu3( Time const t, Real const del, Real const vc, Real const sc ) const
+	{
+		// Value at +/- del
+		Real const v( cv_ == 0.0 ? vc : vc - ( cv_ * v_->x( t ) ) ); // x and s reps are the same at this point but the x(t) call is faster //Do Add x_0() method to just get x_0_ and use here
+		Real const cv_del( cv_ * del );
+		Real const vl( vc - cv_del );
+		Real const vu( vc + cv_del );
+
+		// Derivative at +/- del
+		Real const s( cv_ == 0.0 ? sc : sc - ( cv_ * v_->x1( t ) ) ); // x and s reps are the same at this point but the x1(t) call is faster //Do Add x_1() method to just get x_1_ and use here
+		Real const sl( s + ( cv_ * vl ) );
+		Real const su( s + ( cv_ * vu ) );
+
+		// 2nd derivative at +/- del
+		Real c( 0.0 );
+		for ( size_type i = ioBeg2, n = termso_.size(); i < n; ++i ) {
+			Term const & term( termso_[ i ] );
+			c += term.c * term.v->s2( t );
+		}
+		Real const cl( c + ( cv_ * sl ) );
+		Real const cu( c + ( cv_ * su ) );
+
+		// Zero point
+		bool const signs_differ( signum( cl ) != signum( cu ) );
+		Real const z2( signs_differ ? -( c * cv_inv_ ) : 0.0 );
+		Real const z1( signs_differ ? ( z2 - s ) * cv_inv_ : 0.0 );
+		Real const z0( signs_differ ? ( z1 - v ) * cv_inv_ : 0.0 );
+
+		return AdvanceSpecs_LIQSS3{ vl, vu, sl, su, cl, cu, z0, z1, z2 };
 	}
 
 public: // Methods

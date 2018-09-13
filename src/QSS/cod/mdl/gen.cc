@@ -215,6 +215,8 @@ gen(
 			vars.push_back( x = new Variable_LIQSS1< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
 		} else if ( qss == QSS::LIQSS2 ) {
 			vars.push_back( x = new Variable_LIQSS2< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
+		} else if ( qss == QSS::LIQSS3 ) {
+			vars.push_back( x = new Variable_LIQSS3< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
 		} else if ( qss == QSS::xQSS1 ) {
 			vars.push_back( x = new Variable_xQSS1< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
 		} else if ( qss == QSS::xQSS2 ) {
@@ -225,6 +227,8 @@ gen(
 			vars.push_back( x = new Variable_xLIQSS1< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
 		} else if ( qss == QSS::xLIQSS2 ) {
 			vars.push_back( x = new Variable_xLIQSS2< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
+		} else if ( qss == QSS::xLIQSS3 ) {
+			vars.push_back( x = new Variable_xLIQSS3< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
 		} else {
 			std::cerr << "Error: Unsupported QSS method" << std::endl;
 			std::exit( EXIT_FAILURE );

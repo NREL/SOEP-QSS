@@ -125,13 +125,6 @@ public: // Properties
 		return x_;
 	}
 
-	// Simultaneous Numeric Differentiation Value at Time t
-	Real
-	sn( Time const ) const
-	{
-		return x_;
-	}
-
 public: // Methods
 
 	// Initialization

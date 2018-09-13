@@ -75,6 +75,9 @@ achillesc( Variable::Variables & vars )
 //	} else if ( qss == QSS::LIQSS2 ) {
 //		vars.push_back( x1 = new Variable_LIQSS2< Function_achilles1 >( "x1", rTol, aTol, 0.0 ) );
 //		vars.push_back( x2 = new Variable_LIQSS2< Function_achilles2 >( "x2", rTol, aTol, 2.0 ) );
+//	} else if ( qss == QSS::LIQSS3 ) {
+//		vars.push_back( x1 = new Variable_LIQSS3< Function_achilles1 >( "x1", rTol, aTol, 0.0 ) );
+//		vars.push_back( x2 = new Variable_LIQSS3< Function_achilles2 >( "x2", rTol, aTol, 2.0 ) );
 	} else if ( qss == QSS::xQSS1 ) {
 		vars.push_back( x1 = new Variable_xQSS1< Function_achilles1 >( "x1", rTol, aTol, 0.0 ) );
 		vars.push_back( x2 = new Variable_xQSS1< Function_achilles2 >( "x2", rTol, aTol, 2.0 ) );
@@ -90,6 +93,9 @@ achillesc( Variable::Variables & vars )
 //	} else if ( qss == QSS::xLIQSS2 ) {
 //		vars.push_back( x1 = new Variable_xLIQSS2< Function_achilles1 >( "x1", rTol, aTol, 0.0 ) );
 //		vars.push_back( x2 = new Variable_xLIQSS2< Function_achilles2 >( "x2", rTol, aTol, 2.0 ) );
+//	} else if ( qss == QSS::xLIQSS3 ) {
+//		vars.push_back( x1 = new Variable_xLIQSS3< Function_achilles1 >( "x1", rTol, aTol, 0.0 ) );
+//		vars.push_back( x2 = new Variable_xLIQSS3< Function_achilles2 >( "x2", rTol, aTol, 2.0 ) );
 	} else {
 		std::cerr << "Error: Unsupported QSS method" << std::endl;
 		std::exit( EXIT_FAILURE );

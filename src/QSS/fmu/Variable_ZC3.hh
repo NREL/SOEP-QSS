@@ -1,4 +1,4 @@
-// FMU-Based QSS2 Zero-Crossing Variable
+// FMU-Based QSS3 Zero-Crossing Variable
 //
 // Project: QSS Solver
 //
@@ -33,8 +33,8 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_Variable_ZC2_hh_INCLUDED
-#define QSS_fmu_Variable_ZC2_hh_INCLUDED
+#ifndef QSS_fmu_Variable_ZC3_hh_INCLUDED
+#define QSS_fmu_Variable_ZC3_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/fmu/Variable_ZC.hh>
@@ -42,8 +42,8 @@
 namespace QSS {
 namespace fmu {
 
-// FMU-Based QSS2 Zero-Crossing Variable
-class Variable_ZC2 final : public Variable_ZC
+// FMU-Based QSS3 Zero-Crossing Variable
+class Variable_ZC3 final : public Variable_ZC
 {
 
 public: // Types
@@ -54,7 +54,7 @@ public: // Creation
 
 	// Constructor
 	explicit
-	Variable_ZC2(
+	Variable_ZC3(
 	 std::string const & name,
 	 Real const rTol = 1.0e-4,
 	 Real const aTol = 1.0e-6,
@@ -71,7 +71,7 @@ public: // Properties
 	int
 	order() const
 	{
-		return 2;
+		return 3;
 	}
 
 	// Continuous Value at Time t
@@ -80,7 +80,7 @@ public: // Properties
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		Time const tDel( t - tX );
-		return x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		return x_0_ + ( ( x_1_ + ( ( x_2_ + ( x_3_ * tDel ) ) * tDel ) ) * tDel );
 	}
 
 	// Continuous First Derivative at Time t
@@ -88,7 +88,8 @@ public: // Properties
 	x1( Time const t ) const
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		return x_1_ + ( two * x_2_ * ( t - tX ) );
+		Time const tDel( t - tX );
+		return x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_ * tDel ) ) * tDel );
 	}
 
 	// Continuous Second Derivative at Time t
@@ -96,8 +97,16 @@ public: // Properties
 	x2( Time const t ) const
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
+		return ( two * x_2_ ) + ( six * x_3_ * ( t - tX ) );
+	}
+
+	// Continuous Third Derivative at Time t
+	Real
+	x3( Time const t ) const
+	{
+		assert( ( tX <= t ) && ( t <= tE ) );
 		(void)t; // Suppress unused parameter warning
-		return two * x_2_;
+		return six * x_3_;
 	}
 
 	// Quantized Value at Time t
@@ -105,7 +114,8 @@ public: // Properties
 	q( Time const t ) const
 	{
 		assert( ( tQ <= t ) && ( t <= tE ) );
-		return x_0_ + ( x_1_ * ( t - tQ ) );
+		Time const tDel( t - tQ );
+		return x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 	}
 
 	// Quantized First Derivative at Time t
@@ -113,8 +123,16 @@ public: // Properties
 	q1( Time const t ) const
 	{
 		assert( ( tQ <= t ) && ( t <= tE ) );
+		return x_1_ + ( two * x_2_ * ( t - tQ ) );
+	}
+
+	// Quantized Second Derivative at Time t
+	Real
+	q2( Time const t ) const
+	{
+		assert( ( tQ <= t ) && ( t <= tE ) );
 		(void)t; // Suppress unused parameter warning
-		return x_1_;
+		return two * x_2_;
 	}
 
 public: // Methods
@@ -126,6 +144,7 @@ public: // Methods
 		init_0();
 		init_1();
 		init_2();
+		init_3();
 	}
 
 	// Initialization: Stage 0
@@ -160,10 +179,17 @@ public: // Methods
 	init_2()
 	{
 		x_2_ = fmu_get_poly_2();
+	}
+
+	// Initialization: Stage 3
+	void
+	init_3()
+	{
+		x_3_ = fmu_get_poly_3();
 		set_tE();
 		set_tZ();
 		tE < tZ ? add_QSS_ZC( tE ) : add_ZC( tZ );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
 	// Set Current Tolerance
@@ -189,6 +215,7 @@ public: // Methods
 		set_qTol();
 		x_1_ = fmu_get_poly_1();
 		x_2_ = fmu_get_poly_2();
+		x_3_ = fmu_get_poly_3();
 		set_tE();
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
@@ -196,7 +223,7 @@ public: // Methods
 		set_tZ();
 		tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 #endif
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
 	// Observer Advance
@@ -213,9 +240,10 @@ public: // Methods
 		set_qTol();
 		x_1_ = fmu_get_poly_1();
 		x_2_ = fmu_get_poly_2();
+		x_3_ = fmu_get_poly_3();
 		set_tE();
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
-		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ <<  '\n';
+		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ <<  '\n';
 	}
 
 	// Observer Advance: Simultaneous
@@ -247,7 +275,8 @@ private: // Methods
 	Real
 	x1x( Time const t ) const
 	{
-		return x_1_ + ( two * x_2_ * ( t - tX ) ); // Allows t beyond tE for set_tZ use
+		Time const tDel( t - tX );
+		return x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_ * tDel ) ) * tDel ); // Allows t beyond tE for set_tZ use
 	}
 
 	// Set End Time
@@ -256,11 +285,11 @@ private: // Methods
 	{
 		assert( tX <= tQ );
 		assert( dt_min <= dt_max );
-		Time dt( x_2_ != 0.0 ? std::sqrt( qTol / std::abs( x_2_ ) ) : infinity );
+		Time dt( x_3_ != 0.0 ? std::cbrt( qTol / std::abs( x_3_ ) ) : infinity );
 		dt = std::min( std::max( dt, dt_min ), dt_max );
 		tE = ( dt != infinity ? tQ + dt : infinity );
-		if ( ( options::inflection ) && ( x_2_ != 0.0 ) && ( signum( x_1_ ) != signum( x_2_ ) ) ) {
-			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
+		if ( ( options::inflection ) && ( x_3_ != 0.0 ) && ( signum( x_2_ ) != signum( x_3_ ) ) ) {
+			Time const tI( tX - ( x_2_ / ( three * x_3_ ) ) );
 			if ( tQ < tI ) tE = std::min( tE, tI );
 		}
 		tE_infinity_tQ();
@@ -273,7 +302,7 @@ private: // Methods
 		if ( zChatter_ && ( x_mag_ < zTol ) ) { // Chatter prevention
 			tZ = infinity;
 		} else { // Use root of continuous rep: Only robust for small active segments with continuous rep close to function
-			Time const dt( min_positive_root_quadratic( x_2_, x_1_, x_0_ ) );
+			Time const dt( min_positive_root_cubic( x_3_, x_2_, x_1_, x_0_ ) );
 			assert( dt > 0.0 );
 			if ( dt != infinity ) { // Root exists
 				tZ = tX + dt;
@@ -329,7 +358,7 @@ private: // Methods
 			assert( dB >= 0.0 );
 			Real const x_0( tB == tZ_last ? 0.0 : x_0_ + ( x_1_ * dB ) + ( x_2_ * square( dB ) ) );
 			Real const x_1( x_1_ + ( two * x_2_ * dB ) );
-			Time const dt( min_positive_root_quadratic( x_2_, x_1, x_0 ) ); // Positive root using trajectory shifted to tB
+			Time const dt( min_positive_root_cubic( x_3_, x_2_, x_1, x_0 ) ); // Positive root using trajectory shifted to tB
 			assert( dt > 0.0 );
 			if ( dt != infinity ) { // Root exists
 				tZ = tB + dt;
@@ -398,7 +427,7 @@ private: // Methods
 
 private: // Data
 
-	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous rep coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Continuous rep coefficients
 
 };
 

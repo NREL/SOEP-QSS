@@ -108,20 +108,6 @@ public: // Properties
 		return x_0_ + ( x_1_ * ( t - tQ ) );
 	}
 
-	// Simultaneous Numeric Differentiation Value at Time t
-	Real
-	sn( Time const t ) const
-	{
-		return x_0_ + ( x_1_ * ( t - tQ ) );
-	}
-
-	// Simultaneous First Derivative at Time t
-	Real
-	s1( Time const ) const
-	{
-		return x_1_;
-	}
-
 public: // Methods
 
 	// Initialization

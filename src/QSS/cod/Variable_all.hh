@@ -55,6 +55,7 @@
 // QSS State Variable Headers
 #include <QSS/cod/Variable_LIQSS1.hh>
 #include <QSS/cod/Variable_LIQSS2.hh>
+#include <QSS/cod/Variable_LIQSS3.hh>
 #include <QSS/cod/Variable_QSS1.hh>
 #include <QSS/cod/Variable_QSS2.hh>
 #include <QSS/cod/Variable_QSS3.hh>
@@ -63,6 +64,7 @@
 #include <QSS/cod/Variable_xQSS3.hh>
 #include <QSS/cod/Variable_xLIQSS1.hh>
 #include <QSS/cod/Variable_xLIQSS2.hh>
+#include <QSS/cod/Variable_xLIQSS3.hh>
 
 // QSS Zero-Crossing Variable Headers
 #include <QSS/cod/Variable_ZC1.hh>

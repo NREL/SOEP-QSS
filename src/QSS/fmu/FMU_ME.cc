@@ -204,14 +204,20 @@ namespace fmu {
 			std::cout << "\nQSS Method: QSS1" << std::endl;
 		} else if ( options::qss == options::QSS::QSS2 ) {
 			std::cout << "\nQSS Method: QSS2" << std::endl;
+		} else if ( options::qss == options::QSS::QSS3 ) {
+			std::cout << "\nQSS Method: QSS3" << std::endl;
 		} else if ( options::qss == options::QSS::LIQSS1 ) {
 			std::cout << "\nQSS Method: LIQSS1" << std::endl;
 		} else if ( options::qss == options::QSS::LIQSS2 ) {
 			std::cout << "\nQSS Method: LIQSS2" << std::endl;
+		} else if ( options::qss == options::QSS::LIQSS3 ) {
+			std::cout << "\nQSS Method: LIQSS3" << std::endl;
 		} else if ( options::qss == options::QSS::xQSS1 ) {
 			std::cout << "\nQSS Method: xQSS1" << std::endl;
 		} else if ( options::qss == options::QSS::xQSS2 ) {
 			std::cout << "\nQSS Method: xQSS2" << std::endl;
+		} else if ( options::qss == options::QSS::xQSS3 ) {
+			std::cout << "\nQSS Method: xQSS3" << std::endl;
 		} else {
 			std::cerr << "\nError: Unsupported QSS method" << std::endl;
 			std::exit( EXIT_FAILURE );
@@ -293,10 +299,14 @@ namespace fmu {
 							qss_var = new Variable_Inp1( var_name, options::rTol, options::aTol, fmu_var, inp_fxn );
 						} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) ) {
 							qss_var = new Variable_Inp2( var_name, options::rTol, options::aTol, fmu_var, inp_fxn );
+						} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) ) {
+							qss_var = new Variable_Inp3( var_name, options::rTol, options::aTol, fmu_var, inp_fxn );
 						} else if ( options::qss == options::QSS::xQSS1 ) {
 							qss_var = new Variable_xInp1( var_name, options::rTol, options::aTol, fmu_var, inp_fxn );
 						} else if ( options::qss == options::QSS::xQSS2 ) {
 							qss_var = new Variable_xInp2( var_name, options::rTol, options::aTol, fmu_var, inp_fxn );
+						} else if ( options::qss == options::QSS::xQSS3 ) {
+							qss_var = new Variable_xInp3( var_name, options::rTol, options::aTol, fmu_var, inp_fxn );
 						} else {
 							std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 							std::exit( EXIT_FAILURE );
@@ -497,14 +507,20 @@ namespace fmu {
 						qss_var = new Variable_QSS1( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::QSS2 ) {
 						qss_var = new Variable_QSS2( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
+					} else if ( options::qss == options::QSS::QSS3 ) {
+						qss_var = new Variable_QSS3( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS1 ) {
 						qss_var = new Variable_LIQSS1( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS2 ) {
 						qss_var = new Variable_LIQSS2( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
+					} else if ( options::qss == options::QSS::LIQSS3 ) {
+						qss_var = new Variable_LIQSS3( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::xQSS1 ) {
 						qss_var = new Variable_xQSS1( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::xQSS2 ) {
 						qss_var = new Variable_xQSS2( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
+					} else if ( options::qss == options::QSS::xQSS3 ) {
+						qss_var = new Variable_xQSS3( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
 					} else {
 						std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 						std::exit( EXIT_FAILURE );
@@ -573,6 +589,8 @@ namespace fmu {
 										qss_var = new Variable_ZC1( var_name, options::rTol, options::aTol, options::zTol, fmu_var, fmu_der );
 									} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) || ( options::qss == options::QSS::xQSS2 ) ) {
 										qss_var = new Variable_ZC2( var_name, options::rTol, options::aTol, options::zTol, fmu_var, fmu_der );
+									} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) || ( options::qss == options::QSS::xQSS3 ) ) {
+										qss_var = new Variable_ZC3( var_name, options::rTol, options::aTol, options::zTol, fmu_var, fmu_der );
 									} else {
 										std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 										std::exit( EXIT_FAILURE );
@@ -992,16 +1010,16 @@ namespace fmu {
 		for ( auto var : vars_NZ ) {
 			var->init_1();
 		}
+		fmu::get_derivatives(); // Not sure why we need this here but not in simulate_fmu_me
 		if ( QSS_order_max >= 2 ) {
-			fmu::set_time( t = t0 + options::dtNum ); // Set time to t0 + delta for numeric differentiation
-			for ( auto var : vars_NZ ) {
-				if ( ! var->is_Discrete() ) var->fmu_set_sn( t );
-			}
-			fmu::get_derivatives(); // Not sure why we need this here but not in simulate_fmu_me
 			for ( auto var : vars_NZ ) {
 				var->init_2();
 			}
-			fmu::set_time( t = t0 );
+			if ( QSS_order_max >= 3 ) {
+				for ( auto var : vars_NZ ) {
+					var->init_3();
+				}
+			}
 		}
 		if ( ! vars_ZC.empty() ) {
 			for ( auto var : vars_ZC ) {
@@ -1011,11 +1029,14 @@ namespace fmu {
 				var->init_1();
 			}
 			if ( QSS_order_max >= 2 ) {
-				fmu::set_time( t0 + options::dtNum );
 				for ( auto var : vars_ZC ) {
 					var->init_2();
 				}
-			fmu::set_time( t0 );
+				if ( QSS_order_max >= 3 ) {
+					for ( auto var : vars_ZC ) {
+						var->init_3();
+					}
+				}
 			}
 		}
 
@@ -1291,11 +1312,14 @@ namespace fmu {
 //								triggers[ i ]->advance_discrete_1();
 //							}
 //							if ( triggers_order_max >= 2 ) { // 2nd order pass
-//								fmu::set_time( t + options::dtNum ); // Set time to t + delta for numeric differentiation
 //								for ( size_type i = begin_order_index( triggers, 2 ), n = triggers.size(); i < n; ++i ) {
 //									triggers[ i ]->advance_discrete_2();
 //								}
-//								fmu::set_time( t );
+//								if ( triggers_order_max >= 3 ) { // 3rd order pass
+//									for ( size_type i = begin_order_index( triggers, 3 ), n = triggers.size(); i < n; ++i ) {
+//										triggers[ i ]->advance_discrete_3();
+//									}
+//								}
 //							}
 //						}
 
@@ -1479,11 +1503,14 @@ namespace fmu {
 									handlers[ i ]->advance_handler_1();
 								}
 								if ( handlers_order_max >= 2 ) { // 2nd order pass
-									fmu::set_time( t + options::dtNum ); // Advance time to t + delta for numeric differentiation
 									for ( size_type i = begin_order_index( handlers, 2 ), n = handlers.size(); i < n; ++i ) {
 										handlers[ i ]->advance_handler_2();
 									}
-									fmu::set_time( t );
+									if ( handlers_order_max >= 3 ) { // 3rd order pass
+										for ( size_type i = begin_order_index( handlers, 3 ), n = handlers.size(); i < n; ++i ) {
+											handlers[ i ]->advance_handler_3();
+										}
+									}
 								}
 							}
 
@@ -1591,11 +1618,14 @@ namespace fmu {
 						}
 						int const triggers_order_max( triggers.back()->order() );
 						if ( triggers_order_max >= 2 ) { // 2nd order pass
-							fmu::set_time( t + options::dtNum ); // Set time to t + delta for numeric differentiation
 							for ( size_type i = begin_order_index( triggers, 2 ), n = triggers.size(); i < n; ++i ) {
 								triggers[ i ]->advance_QSS_2();
 							}
-							fmu::set_time( t );
+							if ( triggers_order_max >= 3 ) { // 3rd order pass
+								for ( size_type i = begin_order_index( triggers, 3 ), n = triggers.size(); i < n; ++i ) {
+									triggers[ i ]->advance_QSS_3();
+								}
+							}
 						}
 
 						if ( observers.have() ) observers.advance( t ); // Advance observers

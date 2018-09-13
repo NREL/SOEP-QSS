@@ -125,28 +125,6 @@ public: // Properties
 		return x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 	}
 
-	// Simultaneous Numeric Differentiation Value at Time t
-	Real
-	sn( Time const t ) const
-	{
-		Time const tDel( t - tQ );
-		return x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
-	}
-
-	// Simultaneous First Derivative at Time t
-	Real
-	s1( Time const t ) const
-	{
-		return x_1_ + ( two * x_2_ * ( t - tQ ) );
-	}
-
-	// Simultaneous Second Derivative at Time t
-	Real
-	s2( Time const ) const
-	{
-		return two * x_2_;
-	}
-
 public: // Methods
 
 	// Initialization

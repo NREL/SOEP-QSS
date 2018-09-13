@@ -107,6 +107,19 @@ public: // Types
 		Real z1;
 	};
 
+	struct AdvanceSpecs_LIQSS3 final
+	{
+		Real l1;
+		Real u1;
+		Real l2;
+		Real u2;
+		Real l3;
+		Real u3;
+		Real z0;
+		Real z1;
+		Real z2;
+	};
+
 protected: // Creation
 
 	// Name + Tolerance + Value Constructor

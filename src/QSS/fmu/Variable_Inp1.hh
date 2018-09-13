@@ -101,13 +101,6 @@ public: // Properties
 		return q_0_;
 	}
 
-	// Simultaneous Numeric Differentiation Value at Time t
-	Real
-	sn( Time const ) const
-	{
-		return q_0_;
-	}
-
 public: // Methods
 
 	// Initialization
