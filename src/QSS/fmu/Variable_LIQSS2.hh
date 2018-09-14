@@ -369,15 +369,6 @@ private: // Methods
 		tE_infinity_tX();
 	}
 
-	// Advance Self-Observing Trigger: Stage 1
-	void
-	advance_LIQSS_1()
-	{
-		assert( qTol > 0.0 );
-		assert( self_observer );
-		assert( q_c_ == q_0_ );
-	}
-
 	// Advance Self-Observing Trigger
 	void
 	advance_LIQSS()

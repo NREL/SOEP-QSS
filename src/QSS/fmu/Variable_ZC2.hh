@@ -159,7 +159,7 @@ public: // Methods
 	void
 	init_2()
 	{
-		x_2_ = fmu_get_poly_2();
+		x_2_ = fmu_get_poly_2_x();
 		set_tE();
 		set_tZ();
 		tE < tZ ? add_QSS_ZC( tE ) : add_ZC( tZ );
@@ -188,7 +188,7 @@ public: // Methods
 		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 		set_qTol();
 		x_1_ = fmu_get_poly_1();
-		x_2_ = fmu_get_poly_2();
+		x_2_ = fmu_get_poly_2_x();
 		set_tE();
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
@@ -212,7 +212,7 @@ public: // Methods
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		set_qTol();
 		x_1_ = fmu_get_poly_1();
-		x_2_ = fmu_get_poly_2();
+		x_2_ = fmu_get_poly_2_x();
 		set_tE();
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
 		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ <<  '\n';
