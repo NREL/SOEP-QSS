@@ -15,25 +15,28 @@ include $(QSS_bin)/GNUmakeinit.mk
 
 # Variables
 TAR := QSS
+TAR_SRC := $(SRC_PATH)/app/$(TAR).cc
+TAR_DEP := $(TAR).d
+TAR_OBJ := $(TAR).obj
 SRC := $(notdir $(wildcard $(SRC_PATH)/*.cc))
 SRC += $(notdir $(wildcard $(SRC_PATH)/cod/*.cc))
 SRC += $(notdir $(wildcard $(SRC_PATH)/cod/mdl/*.cc))
-SRC += $(notdir $(wildcard $(SRC_PATH)/fmu/*.cc))
+#SRC += $(notdir $(wildcard $(SRC_PATH)/fmu/*.cc))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .obj,$(basename $(SRC)))
-LIB := $(BIN_PATH)\lib$(TAR).lib
+SLB := $(BIN_PATH)\lib$(TAR).lib
 EXE := $(BIN_PATH)\$(TAR).exe
 
 # Rules
 
 .PHONY : all
-all : $(EXE) $(LIB)
+all : $(EXE) $(SLB)
 
 .PHONY : exe
 exe : $(EXE)
 
 .PHONY : lib
-lib : $(LIB)
+lib : $(SLB)
 
 .PHONY : dep
 dep : $(DEP)
@@ -47,7 +50,7 @@ check :
 	@echo $(SRC)
 	@echo $(DEP)
 	@echo $(OBJ)
-	@echo $(LIB)
+	@echo $(SLB)
 	@echo $(EXE)
 
 .PHONY : clear
@@ -56,16 +59,20 @@ clear :
 
 .PHONY : clean
 clean :
-	-rm -f *.d *.obj $(subst \,/,$(LIB)) $(subst \,/,$(EXE)) $(subst \,/,$(BIN_PATH))/$(TAR).ilk $(subst \,/,$(BIN_PATH))/$(TAR).pdb
+	-rm -f *.d *.obj $(subst \,/,$(SLB)) $(subst \,/,$(EXE)) $(subst \,/,$(BIN_PATH))/$(TAR).ilk $(subst \,/,$(BIN_PATH))/$(TAR).pdb
 
-$(LIB) : $(OBJ)
-	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
-	@-rm -f $(filter-out $(OBJ),$(wildcard *.obj)) # Prune obs objs
+$(SLB) : $(OBJ)
+	@-rm -f $(filter-out $(DEP) $(TAR_DEP),$(wildcard *.d)) # Prune obs deps
+	@-rm -f $(filter-out $(OBJ) $(TAR_OBJ),$(wildcard *.obj)) # Prune obs objs
 	$(AR) $(ARFLAGS) /out:$@ $^
 
-$(EXE) : $(LIB)
-	$(CXX) $(CXXFLAGS) $(PGO) -c $(SRC_PATH)\app\$(TAR).cc
-	$(CXX) $(LDFLAGS) /Fe:$@ $(TAR).obj $(LINKFLAGS) $^ $(FMIL_HOME)\lib\fmilib.lib
+$(TAR_OBJ) : $(TAR_SRC)
+	@$(MAKEDEPEND) $<
+	$(CXX) $(CXXFLAGS) /c $(subst /,\,$<)
+
+$(EXE) : $(SLB) $(TAR_OBJ)
+#	$(CXX) $(PGO) $(LDFLAGS) /Fe:$@ $(TAR_OBJ) $(LINKFLAGS) $(SLB) $(FMIL_HOME)\lib\fmilib.lib
+	$(CXX) $(PGO) $(LDFLAGS) /Fe:$@ $(TAR_OBJ) $(LINKFLAGS) $(SLB)
 	@-rm -f $(subst \,/,$(BIN_PATH))/$(TAR).exp $(subst \,/,$(BIN_PATH))/$(TAR).lib
 
 # Dependencies

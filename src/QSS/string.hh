@@ -53,7 +53,7 @@ uppercased( std::string const & s )
 {
 	std::string u( s.length(), ' ' );
 	for ( std::string::size_type i = 0, e = s.length(); i < e; ++i ) {
-		u[ i ] = std::toupper( s[ i ] );
+		u[ i ] = static_cast< char >( std::toupper( s[ i ] ) );
 	}
 	return u;
 }
@@ -130,7 +130,7 @@ inline
 bool
 has( std::string const & s, char const c )
 {
-	char const b( std::tolower( c ) );
+	char const b( static_cast< char >( std::tolower( c ) ) );
 	for ( char const a : s ) {
 		if ( std::tolower( a ) == b ) return true;
 	}
@@ -143,7 +143,7 @@ bool
 has_any_not_of( std::string const & s, std::string const & t ) // Pass lowercase t
 {
 	for ( char const a : s ) {
-		if ( t.find( std::tolower( a ) ) == std::string::npos ) return true;
+		if ( t.find( static_cast< char >( std::tolower( a ) ) ) == std::string::npos ) return true;
 	}
 	return false;
 }

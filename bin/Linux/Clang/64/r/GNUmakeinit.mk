@@ -5,7 +5,7 @@
 # Platform: Linux/Clang/64/r
 
 # Variables
-CXXFLAGS := -pipe -std=c++11 -pedantic -Wall -Wextra -Wno-unknown-pragmas -m64 -march=native -pthread -fPIC -DNDEBUG -fopenmp -Ofast -fno-stack-protector
+CXXFLAGS := -pipe -std=c++11 -pedantic -Wall -Wextra -Wno-unknown-pragmas -m64 -march=native -pthread -fPIC -DQSS_FMU -DNDEBUG -fopenmp -Ofast -fno-stack-protector
 CXXFLAGS += -Wno-unused-parameter -Wno-unused-function # For FMIL headers
 CXXFLAGS += -Wno-unused-variable # FMI status flags are assert checked
 CXXFLAGS += -Wno-unused-local-typedef # Suppress false-positive warnings

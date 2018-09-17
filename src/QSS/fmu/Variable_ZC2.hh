@@ -96,7 +96,7 @@ public: // Properties
 	x2( Time const t ) const
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		(void)t; // Suppress unused parameter warning
+		(void)t; // Suppress unused warning
 		return two * x_2_;
 	}
 
@@ -113,7 +113,7 @@ public: // Properties
 	q1( Time const t ) const
 	{
 		assert( ( tQ <= t ) && ( t <= tE ) );
-		(void)t; // Suppress unused parameter warning
+		(void)t; // Suppress unused warning
 		return x_1_;
 	}
 

@@ -78,8 +78,7 @@ public: // Properties
 			} else {
 				if ( v < 0.0 ) v_->shift_handler( t, -0.7 * v ); // Coefficient of restitution = 0.7
 				h_->shift_handler( t, 0.0 );
-//				b_->shift_handler( t, b_->r() + 1 ); // Add to bounce count
-				b_->shift_handler( t, b_->i() + 1 ); // Add to bounce count
+				b_->shift_handler( t, b_->r() + 1 ); // Add to bounce count
 			}
 		}
 	}

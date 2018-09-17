@@ -190,7 +190,7 @@ gen(
 	// Initialization
 	if ( do_seed ) {
 		if ( seed == 0u ) { // Use time as seed
-			random_generator.seed( std::chrono::system_clock::now().time_since_epoch().count() );
+			random_generator.seed( static_cast< uint_fast32_t >( std::chrono::system_clock::now().time_since_epoch().count() ) );
 		} else { // Use specified seed
 			random_generator.seed( static_cast< uint_fast32_t >( seed ) );
 		}

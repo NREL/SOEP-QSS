@@ -1223,10 +1223,10 @@ simulate_fmu_me()
 								if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
 								if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
 								for ( Variable const * observer : trigger->observers() ) { // Observer output
-									size_type const i( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ i ].append( t, observer->x( t ) );
+									size_type const io( var_idx[ observer ] );
+									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
 									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ i ].append( t, observer->q( t ) );
+										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 									}
 								}
 							}
@@ -1247,10 +1247,10 @@ simulate_fmu_me()
 								if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
 								if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
 								for ( Variable const * observer : trigger->observers() ) { // Observer output
-									size_type const i( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ i ].append( t, observer->x( t ) );
+									size_type const io( var_idx[ observer ] );
+									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
 									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ i ].append( t, observer->q( t ) );
+										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 									}
 								}
 							}
@@ -1275,10 +1275,10 @@ simulate_fmu_me()
 									if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
 								}
 								for ( Variable const * observer : observers ) { // Observer output
-									size_type const i( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ i ].append( t, observer->x( t ) );
+									size_type const io( var_idx[ observer ] );
+									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
 									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ i ].append( t, observer->q( t ) );
+										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 									}
 								}
 							}
@@ -1330,10 +1330,10 @@ simulate_fmu_me()
 									if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
 								}
 								for ( Variable const * observer : observers ) { // Observer output
-									size_type const i( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ i ].append( t, observer->x( t ) );
+									size_type const io( var_idx[ observer ] );
+									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
 									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ i ].append( t, observer->q( t ) );
+										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 									}
 								}
 							}
@@ -1423,10 +1423,10 @@ simulate_fmu_me()
 									if ( options::output::x ) x_outs[ i ].append( t, handler->x( t ) );
 									if ( options::output::q ) q_outs[ i ].append( t, handler->q( t ) );
 									for ( Variable const * observer : handler->observers() ) { // Observer output
-										size_type const i( var_idx[ observer ] );
-										if ( options::output::x ) x_outs[ i ].append( t, observer->x( t ) );
+										size_type const io( var_idx[ observer ] );
+										if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
 										if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-											if ( options::output::q ) q_outs[ i ].append( t, observer->q( t ) );
+											if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 										}
 									}
 								}
@@ -1447,10 +1447,10 @@ simulate_fmu_me()
 									if ( options::output::x ) x_outs[ i ].append( t, handler->x( t ) );
 									if ( options::output::q ) q_outs[ i ].append( t, handler->q( t ) );
 									for ( Variable const * observer : handler->observers() ) { // Observer output
-										size_type const i( var_idx[ observer ] );
-										if ( options::output::x ) x_outs[ i ].append( t, observer->x( t ) );
+										size_type const io( var_idx[ observer ] );
+										if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
 										if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-											if ( options::output::q ) q_outs[ i ].append( t, observer->q( t ) );
+											if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 										}
 									}
 								}
@@ -1475,10 +1475,10 @@ simulate_fmu_me()
 										if ( options::output::q ) q_outs[ i ].append( t, handler->q( t ) );
 									}
 									for ( Variable const * observer : observers ) { // Observer output
-										size_type const i( var_idx[ observer ] );
-										if ( options::output::x ) x_outs[ i ].append( t, observer->x( t ) );
+										size_type const io( var_idx[ observer ] );
+										if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
 										if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-											if ( options::output::q ) q_outs[ i ].append( t, observer->q( t ) );
+											if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 										}
 									}
 								}
@@ -1521,10 +1521,10 @@ simulate_fmu_me()
 										if ( options::output::q ) q_outs[ i ].append( t, handler->q( t ) );
 									}
 									for ( Variable const * observer : observers ) { // Observer output
-										size_type const i( var_idx[ observer ] );
-										if ( options::output::x ) x_outs[ i ].append( t, observer->x( t ) );
+										size_type const io( var_idx[ observer ] );
+										if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
 										if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-											if ( options::output::q ) q_outs[ i ].append( t, observer->q( t ) );
+											if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 										}
 									}
 								}
@@ -1572,10 +1572,10 @@ simulate_fmu_me()
 								if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
 								if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
 								for ( Variable const * observer : trigger->observers() ) { // Observer output
-									size_type const i( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ i ].append( t, observer->x( t ) );
+									size_type const io( var_idx[ observer ] );
+									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
 									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ i ].append( t, observer->q( t ) );
+										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 									}
 								}
 							}
@@ -1635,10 +1635,10 @@ simulate_fmu_me()
 									if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
 								}
 								for ( Variable const * observer : observers ) { // Observer output
-									size_type const i( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ i ].append( t, observer->x( t ) );
+									size_type const io( var_idx[ observer ] );
+									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
 									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ i ].append( t, observer->q( t ) );
+										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 									}
 								}
 							}
