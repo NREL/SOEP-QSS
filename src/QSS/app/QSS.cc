@@ -35,8 +35,10 @@
 
 // QSS Headers
 #include <QSS/cod/simulate_cod.hh>
+#ifdef QSS_FMU
 #include <QSS/fmu/simulate_fmu_me.hh>
 #include <QSS/fmu/simulate_fmu_qss.hh>
+#endif
 #include <QSS/options.hh>
 
 // C++ Headers
@@ -57,9 +59,19 @@ main( int argc, char * argv[] )
 		std::cerr << "Error: No model name or FMU file specified" << std::endl;
 		std::exit( EXIT_FAILURE );
 	} else if ( ( options::model.length() >= 9 ) && ( options::model.rfind( "_QSS.fmu" ) == options::model.length() - 8u ) ) { // FMU-QSS
+#ifdef QSS_FMU
 		fmu::simulate_fmu_qss();
+#else
+		std::cerr << "Error: FMU-QSS models not supported in this build" << std::endl;
+		std::exit( EXIT_FAILURE );
+#endif
 	} else if ( ( options::model.length() >= 5 ) && ( options::model.rfind( ".fmu" ) == options::model.length() - 4u ) ) { // FMU-ME
+#ifdef QSS_FMU
 		fmu::simulate_fmu_me();
+#else
+		std::cerr << "Error: FMU-ME models not supported in this build" << std::endl;
+		std::exit( EXIT_FAILURE );
+#endif
 	} else { // Example
 		cod::simulate();
 	}

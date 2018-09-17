@@ -332,7 +332,7 @@ public: // Methods
 	{
 		assert( tX <= t );
 		assert( d == fmu_get_deriv() );
-		(void)t; // Suppress unused parameter warning
+		(void)t; // Suppress unused warning
 		x_2_ = options::one_half_over_dtNum * ( d - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE_unaligned();
 		shift_QSS( tE );

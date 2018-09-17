@@ -322,7 +322,6 @@ To build the QSS application on Linux:
 * `cd src/QSS/app`
 * `mak` (add a -j*N* make argument to override the number of parallel compile jobs)
 * Note that `-fPIC` is used to compile with GCC on Linux to share the build configuration with the FMU-QSS shared/dynamic library generation: this may add a small performance penalty for the QSS application and should not be used for production application builds.
-* There is an additional `src/QSS/app_cod` directory that can build a code-defined only application (named `QSS_cod`) for use in environments without a compatible FMI Library build available.
 
 To run the QSS application:
 * `QSS` from any directory with a console configured with `setProject`
@@ -332,6 +331,10 @@ To build and run the unit tests on Linux:
 * The unit tests are in the `tst/QSS/unit` directory and can be built and run with the command `mak run`.
 
 ### Windows
+
+#### Note
+
+FMU support is not yet available on Windows. We will need binary compatibility with FMUs built by JModelica's pymodelica but on Windows that currently includes/uses a very old MinGW GCC compiler. If that can't be updated we would need to install that compiler and try to build FMIL and QSS with it: building QSS could be a challenge due to our use of C++11 features. Due to this and other challenges with Windows support QSS will build on Windows without FMU model support, allowing code-defined models to be run.
 
 FMIL:
 * You will need a build of the latest [FMI Library](http://www.jmodelica.org/FMILibrary).

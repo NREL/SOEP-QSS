@@ -331,7 +331,7 @@ process_args( int argc, char * argv[] )
 		} else if ( has_value_option( arg, "pass" ) ) {
 			std::string const pass_str( arg_value( arg ) );
 			if ( is_size( pass_str ) ) {
-				std::size_t const pass( size_of( pass_str ) );
+				pass = size_of( pass_str );
 				if ( pass < 1 ) {
 					std::cerr << "Error: Nonpositive pass: " << pass_str << std::endl;
 					fatal = true;

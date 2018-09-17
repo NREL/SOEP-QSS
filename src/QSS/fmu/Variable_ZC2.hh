@@ -96,7 +96,7 @@ public: // Properties
 	x2( Time const t ) const
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		(void)t; // Suppress unused parameter warning
+		(void)t; // Suppress unused warning
 		return two * x_2_;
 	}
 
@@ -113,7 +113,7 @@ public: // Properties
 	q1( Time const t ) const
 	{
 		assert( ( tQ <= t ) && ( t <= tE ) );
-		(void)t; // Suppress unused parameter warning
+		(void)t; // Suppress unused warning
 		return x_1_;
 	}
 
@@ -268,7 +268,7 @@ public: // Methods
 	{
 		assert( tX <= t );
 		assert( d == fmu_get_deriv() );
-		(void)t; // Suppress unused parameter warning
+		(void)t; // Suppress unused warning
 		x_2_ = options::one_half_over_dtNum * ( d - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE();
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
