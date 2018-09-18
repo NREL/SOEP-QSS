@@ -72,7 +72,7 @@ public: // Properties
 		if ( crossing <= Crossing::Flat ) { // Downward zero-crossing or stationary on floor
 			Real const v( v_->x( t ) );
 			if ( ( std::abs( v ) <= 0.01 ) && ( h_->x( t ) <= 0.0 ) ) { // Treat as stationary on floor
-				v_->d().add( 0.0 ); // Set velocity derivative to zero
+				v_->add( 0.0 ); // Set velocity derivative to zero
 				v_->shift_handler( t, 0.0 );
 				h_->shift_handler( t, 0.0 );
 			} else {

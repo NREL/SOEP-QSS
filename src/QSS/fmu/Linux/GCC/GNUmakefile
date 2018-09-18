@@ -19,15 +19,15 @@ SRC := $(notdir $(wildcard $(SRC_PATH)/*.cc))
 SRC += $(filter-out simulate_fmu_%.cc,$(notdir $(wildcard $(SRC_PATH)/fmu/*.cc)))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .o,$(basename $(SRC)))
-LIB := $(BIN_PATH)/lib$(TAR).so
+DLB := $(BIN_PATH)/lib$(TAR).so
 
 # Rules
 
 .PHONY : all
-all : $(LIB)
+all : $(DLB)
 
 .PHONY : lib
-lib : $(LIB)
+lib : $(DLB)
 
 .PHONY : dep
 dep : $(DEP)
@@ -41,7 +41,7 @@ check :
 	@echo $(SRC)
 	@echo $(DEP)
 	@echo $(OBJ)
-	@echo $(LIB)
+	@echo $(DLB)
 
 .PHONY : clear
 clear :
@@ -49,9 +49,9 @@ clear :
 
 .PHONY : clean
 clean :
-	-rm -f *.d *.o $(LIB)
+	-rm -f *.d *.o $(DLB)
 
-$(LIB) : $(OBJ)
+$(DLB) : $(OBJ)
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.o)) # Prune obs objs
 	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) -shared -o $@ $^ -L$(FMIL_HOME)/lib -lfmilib -ldl
