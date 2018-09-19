@@ -129,10 +129,10 @@ achilles2( Variable::Variables & vars )
 
 	// Derivatives
 //	x1->add( -0.5, x1 ).add( 1.5, x2 ); // Decoupled
-	x1->add( -0.5, x1 ).add( 1.5, y2 ); // Cross-coupled
+	x1->add( -0.5, y1 ).add( 1.5, x2 ); // Cross-coupled
 	x2->add( -1.0, x1 );
 //	y1->add( -0.5, y1 ).add( 1.5, y2 ); // Decoupled
-	y1->add( -0.5, y1 ).add( 1.5, x2 ); // Cross-coupled
+	y1->add( -0.5, x1 ).add( 1.5, y2 ); // Cross-coupled
 	y2->add( -1.0, y1 );
 }
 

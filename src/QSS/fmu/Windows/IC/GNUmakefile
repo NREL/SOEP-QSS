@@ -19,15 +19,15 @@ SRC := $(notdir $(wildcard $(SRC_PATH)/*.cc))
 SRC += $(filter-out simulate_fmu_%.cc,$(notdir $(wildcard $(SRC_PATH)/fmu/*.cc)))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .obj,$(basename $(SRC)))
-LIB := $(BIN_PATH)\lib$(TAR).dll
+DLB := $(BIN_PATH)\lib$(TAR).dll
 
 # Rules
 
 .PHONY : all
-all : $(LIB)
+all : $(DLB)
 
 .PHONY : lib
-lib : $(LIB)
+lib : $(DLB)
 
 .PHONY : dep
 dep : $(DEP)
@@ -41,7 +41,7 @@ check :
 	@echo $(SRC)
 	@echo $(DEP)
 	@echo $(OBJ)
-	@echo $(LIB)
+	@echo $(DLB)
 
 .PHONY : clear
 clear :
@@ -49,9 +49,9 @@ clear :
 
 .PHONY : clean
 clean :
-	-rm -f *.d *.obj $(subst \,/,$(LIB))
+	-rm -f *.d *.obj $(subst \,/,$(DLB))
 
-$(LIB) : $(OBJ)
+$(DLB) : $(OBJ)
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.obj)) # Prune obs objs
 	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) $^ $(FMIL_HOME)\lib\fmilib.lib /link /LD /out:$@ # /LDd for debug

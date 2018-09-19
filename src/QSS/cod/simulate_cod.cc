@@ -65,6 +65,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <ctime> // Simulation time
 #include <iomanip>
 #include <iostream>
 #include <iterator>
@@ -279,6 +280,7 @@ simulate()
 
 	// Simulation loop
 	std::cout << "\nSimulation Loop =====" << std::endl;
+	std::clock_t const sim_time_beg( std::clock() ); // Simulation time
 	size_type const max_pass_count_multiplier( 2 );
 	size_type n_discrete_events( 0 );
 	size_type n_QSS_events( 0 );
@@ -748,6 +750,7 @@ simulate()
 			}
 		}
 	}
+	std::clock_t const sim_time_end( std::clock() ); // Simulation time
 
 	// End time outputs
 	if ( ( options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) {
@@ -770,6 +773,7 @@ simulate()
 	if ( n_QSS_events > 0 ) std::cout << n_QSS_events << " requantization event passes" << std::endl;
 	if ( n_QSS_simultaneous_events > 0 ) std::cout << n_QSS_simultaneous_events << " simultaneous requantization event passes" << std::endl;
 	if ( n_ZC_events > 0 ) std::cout << n_ZC_events << " zero-crossing event passes" << std::endl;
+	std::cout << "Simulation CPU time: " << double( sim_time_end - sim_time_beg ) / CLOCKS_PER_SEC << " (s)" << std::endl; // Simulation time
 
 	// QSS cleanup
 	for ( auto & var : vars ) delete var;
