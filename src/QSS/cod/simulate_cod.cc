@@ -758,7 +758,7 @@ simulate()
 		}
 	}
 	std::clock_t const sim_time_end( std::clock() ); // Simulation time
-	std::cout << "\r  " << std::setw( 3 ) << 100 << "% complete" << std::endl;
+	std::cout << '\r' << std::setw( 3 ) << 100 << "% complete" << std::endl;
 
 	// End time outputs
 	if ( ( options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) {
