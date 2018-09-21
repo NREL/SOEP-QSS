@@ -58,6 +58,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <ctime> // Simulation time
 #include <functional>
 #include <iomanip>
 #include <iostream>
@@ -1107,6 +1108,7 @@ simulate_fmu_me()
 
 	// Simulation loop
 	std::cout << "\nSimulation Loop =====" << std::endl;
+	std::clock_t const sim_time_beg( std::clock() ); // Simulation time
 	size_type const max_pass_count_multiplier( 2 );
 	size_type n_discrete_events( 0 );
 	size_type n_QSS_events( 0 );
@@ -1323,7 +1325,7 @@ simulate_fmu_me()
 					assert( trigger->tZC() == t );
 					trigger->st = s; // Set trigger superdense time
 					trigger->advance_ZC();
-					if ( doTOut ) { // Time event output: after discrete changes
+					if ( doTOut ) { // Time event output
 						if ( options::output::a ) { // All variables output
 							for ( size_type i = 0; i < n_vars; ++i ) {
 								if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
@@ -1653,6 +1655,7 @@ simulate_fmu_me()
 		fmi2_import_completed_integrator_step( fmu, fmi2_true, &callEventUpdate, &terminateSimulation );
 		if ( eventInfo.terminateSimulation || terminateSimulation ) break;
 	}
+	std::clock_t const sim_time_end( std::clock() ); // Simulation time
 
 	// End time outputs
 	if ( ( options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) { // QSS tEnd outputs
@@ -1695,6 +1698,7 @@ simulate_fmu_me()
 	if ( n_QSS_events > 0 ) std::cout << n_QSS_events << " requantization event passes" << std::endl;
 	if ( n_QSS_simultaneous_events > 0 ) std::cout << n_QSS_simultaneous_events << " simultaneous requantization event passes" << std::endl;
 	if ( n_ZC_events > 0 ) std::cout << n_ZC_events << " zero-crossing event passes" << std::endl;
+	std::cout << "Simulation CPU time: " << double( sim_time_end - sim_time_beg ) / CLOCKS_PER_SEC << " (s)" << std::endl; // Simulation time
 
 	// QSS cleanup
 	for ( auto & var : vars ) delete var;

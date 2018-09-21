@@ -475,7 +475,7 @@ simulate()
 					assert( trigger->tZC() == t );
 					trigger->st = s; // Set trigger superdense time
 					trigger->advance_ZC();
-					if ( doTOut ) { // Time event output: after discrete changes
+					if ( doTOut ) { // Time event output
 						if ( options::output::a ) { // All variables output
 							for ( size_type i = 0; i < n_vars; ++i ) {
 								if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
