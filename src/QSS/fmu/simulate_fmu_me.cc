@@ -274,7 +274,6 @@ simulate_fmu_me()
 	Time tE( options::specified::tEnd ? options::tEnd : tstop ); // Simulation end time
 	Time t( t0 ); // Simulation current time
 	Time tOut( t0 + options::dtOut ); // Sampling time
-	size_type iOut( 1u ); // Output step index
 	if ( ! options::specified::rTol ) options::rTol = relativeTolerance; // Quantization relative tolerance (FMU doesn't have an absolute tolerance)
 	std::cout << "Relative Tolerance: " << options::rTol << std::endl;
 	std::cout << "Absolute Tolerance: " << options::aTol << std::endl;
@@ -1028,6 +1027,11 @@ simulate_fmu_me()
 	int const QSS_order_max( max_QSS_order ); // Highest QSS order in use
 	assert( QSS_order_max <= 3 );
 
+	// Timing setup
+	size_type iOut( 1u ); // Output step index
+	Time const tSim( tE - t0 ); // Simulation time span expected
+	int tPer( 0 ); // Percent of simulation time completed
+
 	// Variable initialization
 	std::cout << "\nInitialization =====" << std::endl;
 	fmu::set_time( t0 );
@@ -1108,7 +1112,6 @@ simulate_fmu_me()
 
 	// Simulation loop
 	std::cout << "\nSimulation Loop =====" << std::endl;
-	std::clock_t const sim_time_beg( std::clock() ); // Simulation time
 	size_type const max_pass_count_multiplier( 2 );
 	size_type n_discrete_events( 0 );
 	size_type n_QSS_events( 0 );
@@ -1118,6 +1121,7 @@ simulate_fmu_me()
 	bool pass_warned( false );
 	fmi2_boolean_t callEventUpdate( fmi2_false );
 	fmi2_boolean_t terminateSimulation( fmi2_false );
+	std::clock_t const sim_time_beg( std::clock() ); // Simulation time
 	while ( t <= tE ) {
 		t = events.top_time();
 		if ( doSOut ) { // Sampled and/or FMU outputs
@@ -1654,8 +1658,15 @@ simulate_fmu_me()
 //		fmi2_import_set_continuous_states( fmu, states, n_states );
 		fmi2_import_completed_integrator_step( fmu, fmi2_true, &callEventUpdate, &terminateSimulation );
 		if ( eventInfo.terminateSimulation || terminateSimulation ) break;
+
+		int const tPerNow( static_cast< int >( 100 * ( t - t0 ) / tSim ) );
+		if ( tPerNow > tPer ) { // Report % complete
+			tPer = tPerNow;
+			std::cout << '\r' << std::setw( 3 ) << tPer << "% complete" << std::flush;
+		}
 	}
 	std::clock_t const sim_time_end( std::clock() ); // Simulation time
+	std::cout << "\r  " << std::setw( 3 ) << 100 << "% complete" << std::endl;
 
 	// End time outputs
 	if ( ( options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) { // QSS tEnd outputs
