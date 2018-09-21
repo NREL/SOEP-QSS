@@ -233,6 +233,8 @@ simulate()
 	Time t( t0 ); // Simulation current time
 	Time tOut( t0 + options::dtOut ); // Sampling time
 	size_type iOut( 1u ); // Output step index
+	Time const tSim( tE - t0 ); // Simulation time span expected
+	int tPer( 0 ); // Percent of simulation time completed
 
 	// Variable initialization
 	std::cout << "\nInitialization =====" << std::endl;
@@ -280,7 +282,6 @@ simulate()
 
 	// Simulation loop
 	std::cout << "\nSimulation Loop =====" << std::endl;
-	std::clock_t const sim_time_beg( std::clock() ); // Simulation time
 	size_type const max_pass_count_multiplier( 2 );
 	size_type n_discrete_events( 0 );
 	size_type n_QSS_events( 0 );
@@ -289,6 +290,7 @@ simulate()
 	double sim_dtMin( options::dtMin );
 	bool pass_warned( false );
 	Variables observers;
+	std::clock_t const sim_time_beg( std::clock() ); // Simulation time
 	while ( t <= tE ) {
 		t = events.top_time();
 		if ( doSOut ) { // Sampled outputs
@@ -749,8 +751,14 @@ simulate()
 				assert( false );
 			}
 		}
+		int const tPerNow( static_cast< int >( 100 * ( t - t0 ) / tSim ) );
+		if ( tPerNow > tPer ) { // Report % complete
+			tPer = tPerNow;
+			std::cout << '\r' << std::setw( 3 ) << tPer << "% complete" << std::flush;
+		}
 	}
 	std::clock_t const sim_time_end( std::clock() ); // Simulation time
+	std::cout << "\r  " << std::setw( 3 ) << 100 << "% complete" << std::endl;
 
 	// End time outputs
 	if ( ( options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) {
