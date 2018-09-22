@@ -1659,14 +1659,16 @@ simulate_fmu_me()
 		fmi2_import_completed_integrator_step( fmu, fmi2_true, &callEventUpdate, &terminateSimulation );
 		if ( eventInfo.terminateSimulation || terminateSimulation ) break;
 
-		int const tPerNow( static_cast< int >( 100 * ( t - t0 ) / tSim ) );
-		if ( tPerNow > tPer ) { // Report % complete
-			tPer = tPerNow;
-			std::cout << '\r' << std::setw( 3 ) << tPer << "% complete" << std::flush;
+		if ( ! options::output::d ) { // % complete reporting
+			int const tPerNow( static_cast< int >( 100 * ( t - t0 ) / tSim ) );
+			if ( tPerNow > tPer ) { // Report % complete
+				tPer = tPerNow;
+				std::cout << '\r' << std::setw( 3 ) << tPer << "% complete" << std::flush;
+			}
 		}
 	}
 	std::clock_t const sim_time_end( std::clock() ); // Simulation time
-	std::cout << '\r' << std::setw( 3 ) << 100 << "% complete" << std::endl;
+	if ( ! options::output::d ) std::cout << '\r' << std::setw( 3 ) << 100 << "% complete" << std::endl;
 
 	// End time outputs
 	if ( ( options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) { // QSS tEnd outputs
