@@ -58,7 +58,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
-#include <ctime> // Simulation time
+#include <ctime> // CPU time
 #include <functional>
 #include <iomanip>
 #include <iostream>
@@ -954,7 +954,7 @@ simulate_fmu_me()
 				if ( iout != fmu_idxs.end() ) {
 					Variable * out_var( iout->second );
 					std::cout << " FMU-ME idx: " << fmu_out->idx << " -> QSS var: " << out_var->name << std::endl;
-					if ( ! out_var->is_ZC() ) continue; // Don't worry about dependencies of non-ZC output variables on the QSS side
+					if ( out_var->not_ZC() ) continue; // Don't worry about dependencies of non-ZC output variables on the QSS side
 					for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
 						size_type const dep_idx( dependency[ j ] );
 						std::cout << "  Dep Index: " << dep_idx << std::endl;
@@ -1121,7 +1121,7 @@ simulate_fmu_me()
 	bool pass_warned( false );
 	fmi2_boolean_t callEventUpdate( fmi2_false );
 	fmi2_boolean_t terminateSimulation( fmi2_false );
-	std::clock_t const sim_time_beg( std::clock() ); // Simulation time
+	std::clock_t const cpu_time_beg( std::clock() ); // CPU time
 	while ( t <= tE ) {
 		t = events.top_time();
 		if ( doSOut ) { // Sampled and/or FMU outputs
@@ -1525,7 +1525,7 @@ simulate_fmu_me()
 				if ( events.single() ) { // Single trigger
 					Variable * trigger( event.sub< Variable >() );
 					assert( trigger->tE == t );
-					assert( ! trigger->is_ZC() ); // ZC variable requantizations are QSS_ZC events
+					assert( trigger->not_ZC() ); // ZC variable requantizations are QSS_ZC events
 					trigger->st = s; // Set trigger superdense time
 
 					if ( doROut ) { // Requantization output: Quantized rep before to capture its discrete change
@@ -1579,7 +1579,7 @@ simulate_fmu_me()
 
 					for ( Variable * trigger : triggers ) {
 						assert( trigger->tE == t );
-						assert( ! trigger->is_ZC() ); // ZC variable requantizations are QSS_ZC events
+						assert( trigger->not_ZC() ); // ZC variable requantizations are QSS_ZC events
 						trigger->st = s; // Set trigger superdense time
 						trigger->advance_QSS_0();
 					}
@@ -1625,7 +1625,7 @@ simulate_fmu_me()
 				++n_QSS_events;
 				Variable * trigger( event.sub< Variable >() );
 				assert( trigger->tE == t );
-				assert( trigger->is_ZC() ); // ZC variable requantizations are QSS_ZC events
+				assert( trigger->is_ZC() );
 				trigger->st = s; // Set trigger superdense time
 
 				trigger->advance_QSS();
@@ -1667,7 +1667,7 @@ simulate_fmu_me()
 			}
 		}
 	}
-	std::clock_t const sim_time_end( std::clock() ); // Simulation time
+	std::clock_t const cpu_time_end( std::clock() ); // CPU time
 	if ( ! options::output::d ) std::cout << '\r' << std::setw( 3 ) << 100 << "% complete" << std::endl;
 
 	// End time outputs
@@ -1711,7 +1711,7 @@ simulate_fmu_me()
 	if ( n_QSS_events > 0 ) std::cout << n_QSS_events << " requantization event passes" << std::endl;
 	if ( n_QSS_simultaneous_events > 0 ) std::cout << n_QSS_simultaneous_events << " simultaneous requantization event passes" << std::endl;
 	if ( n_ZC_events > 0 ) std::cout << n_ZC_events << " zero-crossing event passes" << std::endl;
-	std::cout << "Simulation CPU time: " << double( sim_time_end - sim_time_beg ) / CLOCKS_PER_SEC << " (s)" << std::endl; // Simulation time
+	std::cout << "Simulation CPU time: " << double( cpu_time_end - cpu_time_beg ) / CLOCKS_PER_SEC << " (s)" << std::endl; // CPU time
 
 	// QSS cleanup
 	for ( auto & var : vars ) delete var;

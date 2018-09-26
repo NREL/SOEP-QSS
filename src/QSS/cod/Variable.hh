@@ -469,7 +469,7 @@ public: // Methods
 			observers_.shrink_to_fit();
 
 			// Put ZC variables at end for correct observer updates since they use observee x reps
-			std::sort( observers_.begin(), observers_.end(), []( Variable const * v1, Variable const * v2 ){ return !( v1->is_ZC() ) && ( v2->is_ZC() ); } );
+			std::sort( observers_.begin(), observers_.end(), []( Variable const * v1, Variable const * v2 ){ return v1->not_ZC() && v2->is_ZC(); } );
 
 			// Set index to first ZC observer
 			if ( ! observers_.empty() ) {
@@ -477,7 +477,7 @@ public: // Methods
 				if ( front->is_ZC() ) {
 					i_beg_ZC_observers_ = 0;
 				} else {
-					i_beg_ZC_observers_ = std::distance( observers_.begin(), std::upper_bound( observers_.begin(), observers_.end(), front, []( Variable const * v1, Variable const * v2 ){ return !( v1->is_ZC() ) && ( v2->is_ZC() ); } ) );
+					i_beg_ZC_observers_ = std::distance( observers_.begin(), std::upper_bound( observers_.begin(), observers_.end(), front, []( Variable const * v1, Variable const * v2 ){ return v1->not_ZC() && v2->is_ZC(); } ) );
 				}
 			} else { // No ZC observers
 				i_beg_ZC_observers_ = observers_.size();
@@ -496,7 +496,7 @@ public: // Methods
 			observees_.shrink_to_fit();
 
 			// Put ZC variables at end
-			std::sort( observees_.begin(), observees_.end(), []( Variable const * v1, Variable const * v2 ){ return !( v1->is_ZC() ) && ( v2->is_ZC() ); } );
+			std::sort( observees_.begin(), observees_.end(), []( Variable const * v1, Variable const * v2 ){ return v1->not_ZC() && v2->is_ZC(); } );
 		}
 	}
 
@@ -745,20 +745,37 @@ public: // Methods
 	{
 #ifdef _OPENMP
 		std::int64_t const n( static_cast< std::int64_t >( observers_.size() ) );
-		if ( n >= 4u ) { // Tuned on 4-core/8-thread CPU: Should tune on 8+ core systems
+		if ( n >= 40u ) { // Crossover
 			std::int64_t const iZC( static_cast< std::int64_t >( i_beg_ZC_observers_ ) );
-			#pragma omp parallel for schedule(guided)
+			bool const haveZC( iZC < n );
+
+			#pragma omp parallel
+			{
+
+			#pragma omp for schedule(guided)
 			for ( std::int64_t i = 0; i < iZC; ++i ) { // Non-ZC
-				assert( ! observers[ i ]->is_ZC() );
+				assert( observers[ i ]->not_ZC() );
 				observers_[ i ]->advance_observer_parallel( tQ );
 			}
-			#pragma omp parallel for schedule(guided)
-			for ( std::int64_t i = iZC; i < n; ++i ) { // ZC
-				assert( observers[ i ]->is_ZC() );
-				observers_[ i ]->advance_observer_parallel( tQ );
+
+			if ( haveZC ) {
+				#pragma omp for schedule(guided)
+				for ( std::int64_t i = iZC; i < n; ++i ) { // ZC
+					assert( observers[ i ]->is_ZC() );
+					observers_[ i ]->advance_observer_parallel( tQ );
+				}
 			}
-			for ( Variable * observer : observers_ ) {
-				observer->advance_observer_sequential();
+
+			} // omp
+
+			if ( options::output::d ) {
+				for ( Variable * observer : observers_ ) {
+					observer->advance_observer_serial_d();
+				}
+			} else {
+				for ( Variable * observer : observers_ ) {
+					observer->advance_observer_serial();
+				}
 			}
 			return;
 		}
@@ -775,28 +792,45 @@ public: // Methods
 	{
 #ifdef _OPENMP
 		std::int64_t const n( static_cast< std::int64_t >( observers.size() ) );
-		if ( n >= 4u ) { // Tuned on 4-core/8-thread CPU: Should tune on 8+ core systems
+		if ( n >= 40u ) { // Crossover
 			std::int64_t iZC( 0 );
 			if ( ! observers.empty() ) {
 				Variable const * front( observers.front() );
-				if ( ! front->is_ZC() ) { // Some non-ZC observers
-					iZC = std::distance( observers.begin(), std::upper_bound( observers.begin(), observers.end(), front, []( Variable const * v1, Variable const * v2 ){ return !( v1->is_ZC() ) && ( v2->is_ZC() ); } ) );
+				if ( front->not_ZC() ) { // Some non-ZC observers
+					iZC = std::distance( observers.begin(), std::upper_bound( observers.begin(), observers.end(), front, []( Variable const * v1, Variable const * v2 ){ return v1->not_ZC() && v2->is_ZC(); } ) );
 				}
 			} else { // No ZC observers
 				iZC = observers.size();
 			}
-			#pragma omp parallel for schedule(guided)
+			bool const haveZC( iZC < n );
+
+			#pragma omp parallel
+			{
+
+			#pragma omp for schedule(guided)
 			for ( std::int64_t i = 0; i < iZC; ++i ) { // Non-ZC
-				assert( ! observers[ i ]->is_ZC() );
+				assert( observers[ i ]->not_ZC() );
 				observers[ i ]->advance_observer_parallel( t );
 			}
-			#pragma omp parallel for schedule(guided)
-			for ( std::int64_t i = iZC; i < n; ++i ) { // ZC
-				assert( observers[ i ]->is_ZC() );
-				observers[ i ]->advance_observer_parallel( t );
+
+			if ( haveZC ) {
+				#pragma omp for schedule(guided)
+				for ( std::int64_t i = iZC; i < n; ++i ) { // ZC
+					assert( observers[ i ]->is_ZC() );
+					observers[ i ]->advance_observer_parallel( t );
+				}
 			}
-			for ( Variable * observer : observers ) {
-				observer->advance_observer_sequential();
+
+			} // omp
+
+			if ( options::output::d ) {
+				for ( Variable * observer : observers ) {
+					observer->advance_observer_serial_d();
+				}
+			} else {
+				for ( Variable * observer : observers ) {
+					observer->advance_observer_serial();
+				}
 			}
 			return;
 		}
@@ -822,12 +856,20 @@ public: // Methods
 		assert( false ); // Not a QSS or ZC variable
 	}
 
-	// Observer Advance: Sequential
+	// Observer Advance: Serial + Diagnostics
 	virtual
 	void
-	advance_observer_sequential()
+	advance_observer_serial_d()
 	{
 		assert( false ); // Not a QSS or ZC variable
+	}
+
+	// Observer Advance: Serial
+	virtual
+	void
+	advance_observer_serial()
+	{
+		shift_QSS( tE );
 	}
 
 protected: // Methods

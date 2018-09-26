@@ -902,7 +902,7 @@ namespace fmu {
 					if ( iout != fmu_idxs.end() ) {
 						Variable * out_var( iout->second );
 						std::cout << " FMU-ME idx: " << fmu_out->idx << " -> QSS var: " << out_var->name << std::endl;
-						if ( ! out_var->is_ZC() ) continue; // Don't worry about dependencies of non-ZC output variables on the QSS side
+						if ( out_var->not_ZC() ) continue; // Don't worry about dependencies of non-ZC output variables on the QSS side
 						for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
 							size_type const dep_idx( dependency[ j ] );
 							std::cout << "  Dep Index: " << dep_idx << std::endl;
@@ -1528,7 +1528,7 @@ namespace fmu {
 					if ( events.single() ) { // Single trigger
 						Variable * trigger( event.sub< Variable >() );
 						assert( trigger->tE == t );
-						assert( ! trigger->is_ZC() ); // ZC variable requantizations are QSS_ZC events
+						assert( trigger->not_ZC() ); // ZC variable requantizations are QSS_ZC events
 						trigger->st = s; // Set trigger superdense time
 
 						if ( doROut ) { // Requantization output: Quantized rep before to capture its discrete change
@@ -1582,7 +1582,7 @@ namespace fmu {
 
 						for ( Variable * trigger : triggers ) {
 							assert( trigger->tE == t );
-							assert( ! trigger->is_ZC() ); // ZC variable requantizations are QSS_ZC events
+							assert( trigger->not_ZC() ); // ZC variable requantizations are QSS_ZC events
 							trigger->st = s; // Set trigger superdense time
 							trigger->advance_QSS_0();
 						}
@@ -1628,7 +1628,7 @@ namespace fmu {
 					++n_QSS_events;
 					Variable * trigger( event.sub< Variable >() );
 					assert( trigger->tE == t );
-					assert( trigger->is_ZC() ); // ZC variable requantizations are QSS_ZC events
+					assert( trigger->is_ZC() );
 					trigger->st = s; // Set trigger superdense time
 
 					trigger->advance_QSS();
