@@ -288,12 +288,13 @@ public: // Methods
 		set_tE_unaligned();
 	}
 
-	// Observer Advance: Sequential
+	// Observer Advance: Serial + Diagnostics
 	void
-	advance_observer_sequential()
+	advance_observer_serial_d()
 	{
+		assert( options::output::d );
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << '(' << std::noshowpos << tQ << std::showpos << ')' << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << '(' << std::noshowpos << tQ << std::showpos << ')' << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// Handler Advance

@@ -80,9 +80,9 @@ TEST( ContainerTest, SortByZC )
 		variables.push_back( new QSS2( "QSS2" ) );
 		variables.push_back( new QSS1( "QSS1" ) );
 	}
-	EXPECT_FALSE( std::is_sorted( variables.begin(), variables.end(), []( Variable const * v1, Variable const * v2 ){ return ( ! v1->is_ZC() ) && ( v2->is_ZC() ); } ) );
+	EXPECT_FALSE( std::is_sorted( variables.begin(), variables.end(), []( Variable const * v1, Variable const * v2 ){ return v1->not_ZC() && v2->is_ZC(); } ) );
 	sort_by_ZC_and_order( variables );
-	EXPECT_TRUE( std::is_sorted( variables.begin(), variables.end(), []( Variable const * v1, Variable const * v2 ){ return ( ! v1->is_ZC() ) && ( v2->is_ZC() ); } ) );
+	EXPECT_TRUE( std::is_sorted( variables.begin(), variables.end(), []( Variable const * v1, Variable const * v2 ){ return v1->not_ZC() && v2->is_ZC(); } ) );
 }
 
 TEST( ContainerTest, BeginOrderIndex )

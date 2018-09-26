@@ -61,11 +61,16 @@
 #include <QSS/Output.hh>
 #include <QSS/string.hh>
 
+// OpenMP Headers
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 // C++ Headers
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
-#include <ctime> // Simulation time
+#include <ctime> // CPU time
 #include <iomanip>
 #include <iostream>
 #include <iterator>
@@ -290,7 +295,10 @@ simulate()
 	double sim_dtMin( options::dtMin );
 	bool pass_warned( false );
 	Variables observers;
-	std::clock_t const sim_time_beg( std::clock() ); // Simulation time
+	std::clock_t const cpu_time_beg( std::clock() ); // CPU time
+#ifdef _OPENMP
+	double const wall_time_beg( omp_get_wtime() ); // Wall time
+#endif
 	while ( t <= tE ) {
 		t = events.top_time();
 		if ( doSOut ) { // Sampled outputs
@@ -626,7 +634,7 @@ simulate()
 				if ( events.single() ) { // Single trigger
 					Variable * trigger( event.sub< Variable >() );
 					assert( trigger->tE == t );
-					assert( ! trigger->is_ZC() ); // ZC variable requantizations are QSS_ZC events
+					assert( trigger->not_ZC() ); // ZC variable requantizations are QSS_ZC events
 					trigger->st = s; // Set trigger superdense time
 
 					if ( doROut ) { // Requantization output: Quantized rep before to capture its discrete change
@@ -679,7 +687,7 @@ simulate()
 
 					for ( Variable * trigger : triggers ) {
 						assert( trigger->tE == t );
-						assert( ! trigger->is_ZC() ); // ZC variable requantizations are QSS_ZC events
+						assert( trigger->not_ZC() ); // ZC variable requantizations are QSS_ZC events
 						trigger->st = s; // Set trigger superdense time
 						trigger->advance_QSS_0();
 					}
@@ -728,7 +736,7 @@ simulate()
 				++n_QSS_events;
 				Variable * trigger( event.sub< Variable >() );
 				assert( trigger->tE == t );
-				assert( trigger->is_ZC() ); // ZC variable requantizations are QSS_ZC events
+				assert( trigger->is_ZC() );
 				trigger->st = s; // Set trigger superdense time
 
 				trigger->advance_QSS();
@@ -759,7 +767,10 @@ simulate()
 			}
 		}
 	}
-	std::clock_t const sim_time_end( std::clock() ); // Simulation time
+	std::clock_t const cpu_time_end( std::clock() ); // CPU time
+#ifdef _OPENMP
+	double const wall_time_end( omp_get_wtime() ); // Wall time
+#endif
 	if ( ! options::output::d ) std::cout << '\r' << std::setw( 3 ) << 100 << "% complete" << std::endl;
 
 	// End time outputs
@@ -783,7 +794,10 @@ simulate()
 	if ( n_QSS_events > 0 ) std::cout << n_QSS_events << " requantization event passes" << std::endl;
 	if ( n_QSS_simultaneous_events > 0 ) std::cout << n_QSS_simultaneous_events << " simultaneous requantization event passes" << std::endl;
 	if ( n_ZC_events > 0 ) std::cout << n_ZC_events << " zero-crossing event passes" << std::endl;
-	std::cout << "Simulation CPU time: " << double( sim_time_end - sim_time_beg ) / CLOCKS_PER_SEC << " (s)" << std::endl; // Simulation time
+	std::cout << "Simulation CPU time: " << double( cpu_time_end - cpu_time_beg ) / CLOCKS_PER_SEC << " (s)" << std::endl; // CPU time
+#ifdef _OPENMP
+	std::cout << "Simulation wall time: " << wall_time_end - wall_time_beg << " (s)" << std::endl; // Wall time
+#endif
 
 	// QSS cleanup
 	for ( auto & var : vars ) delete var;

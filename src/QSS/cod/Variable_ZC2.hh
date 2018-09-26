@@ -249,12 +249,20 @@ public: // Methods
 		set_tE();
 	}
 
-	// Observer Advance: Sequential
+	// Observer Advance: Serial
 	void
-	advance_observer_sequential()
+	advance_observer_serial()
 	{
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
-		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ <<  '\n';
+	}
+
+	// Observer Advance: Serial + Diagnostics
+	void
+	advance_observer_serial_d()
+	{
+		assert( options::output::d );
+		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
+		std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ <<  '\n';
 	}
 
 	// Zero-Crossing Advance
