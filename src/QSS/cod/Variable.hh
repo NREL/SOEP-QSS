@@ -744,25 +744,48 @@ public: // Methods
 	advance_observers()
 	{
 #ifdef _OPENMP
-		std::int64_t const n( static_cast< std::int64_t >( observers_.size() ) );
-		if ( n >= 40u ) { // Crossover
-			std::int64_t const iZC( static_cast< std::int64_t >( i_beg_ZC_observers_ ) );
-			bool const haveZC( iZC < n );
+		static size_type const observer_crossover( 40u ); // Size when parallel starts to be faster
+		size_type const nzo( i_beg_ZC_observers_ );
+		size_type const zco( observers_.size() - nzo );
+		if ( std::max( nzo, zco ) >= observer_crossover ) { // Parallel
+
+			std::int64_t const bZC( static_cast< std::int64_t >( i_beg_ZC_observers_ ) );
+			std::int64_t const n( static_cast< std::int64_t >( observers_.size() ) );
+			bool const haveNZ( 0 < bZC );
+			bool const haveZC( bZC < n );
 
 			#pragma omp parallel
 			{
 
-			#pragma omp for schedule(guided)
-			for ( std::int64_t i = 0; i < iZC; ++i ) { // Non-ZC
-				assert( observers[ i ]->not_ZC() );
-				observers_[ i ]->advance_observer_parallel( tQ );
+			if ( haveNZ ) {
+				if ( nzo >= observer_crossover ) {
+					#pragma omp for schedule(guided)
+					for ( std::int64_t i = 0; i < bZC; ++i ) { // Non-ZC
+						assert( observers_[ i ]->not_ZC() );
+						observers_[ i ]->advance_observer_parallel( tQ );
+					}
+				} else {
+					#pragma omp single
+					for ( std::int64_t i = 0; i < bZC; ++i ) { // Non-ZC
+						assert( observers_[ i ]->not_ZC() );
+						observers_[ i ]->advance_observer_parallel( tQ );
+					}
+				}
 			}
 
 			if ( haveZC ) {
-				#pragma omp for schedule(guided)
-				for ( std::int64_t i = iZC; i < n; ++i ) { // ZC
-					assert( observers[ i ]->is_ZC() );
-					observers_[ i ]->advance_observer_parallel( tQ );
+				if ( zco >= observer_crossover ) {
+					#pragma omp for schedule(guided)
+					for ( std::int64_t i = bZC; i < n; ++i ) { // ZC
+						assert( observers_[ i ]->is_ZC() );
+						observers_[ i ]->advance_observer_parallel( tQ );
+					}
+				} else {
+					#pragma omp single
+					for ( std::int64_t i = bZC; i < n; ++i ) { // ZC
+						assert( observers_[ i ]->is_ZC() );
+						observers_[ i ]->advance_observer_parallel( tQ );
+					}
 				}
 			}
 
@@ -791,33 +814,50 @@ public: // Methods
 	advance_observers( Variables & observers, Time const t )
 	{
 #ifdef _OPENMP
-		std::int64_t const n( static_cast< std::int64_t >( observers.size() ) );
-		if ( n >= 40u ) { // Crossover
-			std::int64_t iZC( 0 );
-			if ( ! observers.empty() ) {
-				Variable const * front( observers.front() );
-				if ( front->not_ZC() ) { // Some non-ZC observers
-					iZC = std::distance( observers.begin(), std::upper_bound( observers.begin(), observers.end(), front, []( Variable const * v1, Variable const * v2 ){ return v1->not_ZC() && v2->is_ZC(); } ) );
-				}
-			} else { // No ZC observers
-				iZC = observers.size();
-			}
-			bool const haveZC( iZC < n );
+		static size_type const observer_crossover( 40u ); // Size when parallel starts to be faster
+		std::int64_t bZC( ( ! observers.empty() ) && observers.front()->not_ZC() ?
+		 std::distance( observers.begin(), std::upper_bound( observers.begin(), observers.end(), observers.front(), []( Variable const * v1, Variable const * v2 ){ return v1->not_ZC() && v2->is_ZC(); } ) ) :
+		 observers.size() );
+		size_type const nzo( bZC );
+		size_type const zco( observers.size() - nzo );
+		if ( std::max( nzo, zco ) >= observer_crossover ) { // Parallel
+
+			std::int64_t const n( static_cast< std::int64_t >( observers.size() ) );
+			bool const haveNZ( 0 < bZC );
+			bool const haveZC( bZC < n );
 
 			#pragma omp parallel
 			{
 
-			#pragma omp for schedule(guided)
-			for ( std::int64_t i = 0; i < iZC; ++i ) { // Non-ZC
-				assert( observers[ i ]->not_ZC() );
-				observers[ i ]->advance_observer_parallel( t );
+			if ( haveNZ ) {
+				if ( nzo >= observer_crossover ) {
+					#pragma omp for schedule(guided)
+					for ( std::int64_t i = 0; i < bZC; ++i ) { // Non-ZC
+						assert( observers[ i ]->not_ZC() );
+						observers[ i ]->advance_observer_parallel( t );
+					}
+				} else {
+					#pragma omp single
+					for ( std::int64_t i = 0; i < bZC; ++i ) { // Non-ZC
+						assert( observers[ i ]->not_ZC() );
+						observers[ i ]->advance_observer_parallel( t );
+					}
+				}
 			}
 
 			if ( haveZC ) {
-				#pragma omp for schedule(guided)
-				for ( std::int64_t i = iZC; i < n; ++i ) { // ZC
-					assert( observers[ i ]->is_ZC() );
-					observers[ i ]->advance_observer_parallel( t );
+				if ( zco >= observer_crossover ) {
+					#pragma omp for schedule(guided)
+					for ( std::int64_t i = bZC; i < n; ++i ) { // ZC
+						assert( observers[ i ]->is_ZC() );
+						observers[ i ]->advance_observer_parallel( t );
+					}
+				} else {
+					#pragma omp single
+					for ( std::int64_t i = bZC; i < n; ++i ) { // ZC
+						assert( observers[ i ]->is_ZC() );
+						observers[ i ]->advance_observer_parallel( t );
+					}
 				}
 			}
 

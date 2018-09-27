@@ -54,6 +54,11 @@
 // FMI Library Headers
 #include <fmilib.h>
 
+// OpenMP Headers
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 // C++ Headers
 #include <algorithm>
 #include <cassert>
@@ -1122,6 +1127,9 @@ simulate_fmu_me()
 	fmi2_boolean_t callEventUpdate( fmi2_false );
 	fmi2_boolean_t terminateSimulation( fmi2_false );
 	std::clock_t const cpu_time_beg( std::clock() ); // CPU time
+#ifdef _OPENMP
+	double const wall_time_beg( omp_get_wtime() ); // Wall time
+#endif
 	while ( t <= tE ) {
 		t = events.top_time();
 		if ( doSOut ) { // Sampled and/or FMU outputs
@@ -1668,6 +1676,9 @@ simulate_fmu_me()
 		}
 	}
 	std::clock_t const cpu_time_end( std::clock() ); // CPU time
+#ifdef _OPENMP
+	double const wall_time_end( omp_get_wtime() ); // Wall time
+#endif
 	if ( ! options::output::d ) std::cout << '\r' << std::setw( 3 ) << 100 << "% complete" << std::endl;
 
 	// End time outputs
@@ -1712,6 +1723,9 @@ simulate_fmu_me()
 	if ( n_QSS_simultaneous_events > 0 ) std::cout << n_QSS_simultaneous_events << " simultaneous requantization event passes" << std::endl;
 	if ( n_ZC_events > 0 ) std::cout << n_ZC_events << " zero-crossing event passes" << std::endl;
 	std::cout << "Simulation CPU time: " << double( cpu_time_end - cpu_time_beg ) / CLOCKS_PER_SEC << " (s)" << std::endl; // CPU time
+#ifdef _OPENMP
+	std::cout << "Simulation wall time: " << wall_time_end - wall_time_beg << " (s)" << std::endl; // Wall time
+#endif
 
 	// QSS cleanup
 	for ( auto & var : vars ) delete var;
