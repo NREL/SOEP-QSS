@@ -7,7 +7,7 @@
                 "/usr/local/include",
                 "${workspaceFolder}"
             ],
-            "defines": [],
+            "defines": [ "_OPENMP" ],
             "intelliSenseMode": "clang-x64",
             "browse": {
                 "path": [
@@ -32,7 +32,7 @@
                 "${workspaceFolder}/src",
                 "/opt/FMIL.GCC.r/include"
             ],
-            "defines": [],
+            "defines": [ "_OPENMP" ],
             "intelliSenseMode": "clang-x64",
             "browse": {
                 "path": [
@@ -56,6 +56,7 @@
                 "C:/gtest/include"
             ],
             "defines": [
+                "_OPENMP",
                 "_DEBUG",
                 "UNICODE"
             ],

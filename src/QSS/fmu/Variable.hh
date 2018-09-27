@@ -294,7 +294,7 @@ public: // Properties
 	// Continuous Value at Time t
 	virtual
 	Real
-	x( Time const t ) const
+	x( Time const ) const
 	{
 		assert( false ); // Missing override
 		return 0.0;
@@ -303,7 +303,7 @@ public: // Properties
 	// Continuous First Derivative at Time t
 	virtual
 	Real
-	x1( Time const t ) const
+	x1( Time const ) const
 	{
 		return 0.0;
 	}
@@ -327,7 +327,7 @@ public: // Properties
 	// Quantized Value at Time t
 	virtual
 	Real
-	q( Time const t ) const
+	q( Time const ) const
 	{
 		assert( false ); // Missing override
 		return 0.0;
@@ -737,7 +737,7 @@ public: // Methods
 	// Observer Advance
 	virtual
 	void
-	advance_observer( Time const t )
+	advance_observer( Time const )
 	{
 		assert( false );
 	}
@@ -745,7 +745,7 @@ public: // Methods
 	// Observer Advance: Simultaneous
 	virtual
 	void
-	advance_observer_s( Time const t )
+	advance_observer_s( Time const )
 	{
 		assert( false );
 	}
