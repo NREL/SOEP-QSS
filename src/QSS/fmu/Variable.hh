@@ -400,14 +400,14 @@ public: // Properties
 	}
 
 	// Observers
-	Variables const &
+	Observers< Variable > const &
 	observers() const
 	{
 		return observers_;
 	}
 
 	// Observers
-	Variables &
+	Observers< Variable > &
 	observers()
 	{
 		return observers_;
