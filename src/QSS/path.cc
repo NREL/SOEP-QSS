@@ -40,16 +40,37 @@
 // C++ Headers
 #include <cctype>
 #include <regex>
+#include <sys/stat.h>
+#include <sys/types.h>
 #ifdef _WIN32
 #include <direct.h>
 #include <errno.h>
 #else
-#include <sys/stat.h>
 #include <sys/errno.h>
+#endif
+#ifdef _WIN32
+#ifdef _WIN64
+#define stat _stat64
+#else
+#define stat _stat
+#endif
 #endif
 
 namespace QSS {
 namespace path {
+
+// Is Name a File?
+bool
+is_file( std::string const & name )
+{
+	if ( name.empty() ) return false;
+	struct stat stat_buf;
+#ifdef _WIN32
+	return ( ( stat( name.c_str(), &stat_buf ) == 0 ) && S_ISREG( stat_buf.st_mode ) && ( stat_buf.st_mode & _S_IREAD ) );
+#else
+	return ( ( stat( name.c_str(), &stat_buf ) == 0 ) && S_ISREG( stat_buf.st_mode ) && ( stat_buf.st_mode & S_IRUSR ) );
+#endif
+}
 
 // Base Name
 std::string

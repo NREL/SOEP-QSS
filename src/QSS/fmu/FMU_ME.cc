@@ -97,6 +97,10 @@ namespace fmu {
 		context = fmi_import_allocate_context( &callbacks );
 
 		// Unzip the FMU-ME in the resources directory
+		if ( ! path::is_file( path ) ) {
+			std::cerr << "\nError: FMU file not found: " << path << std::endl;
+			std::exit( EXIT_FAILURE );
+		}
 		name = path::base( path );
 		unzip_dir = path::dir( path );
 		fmi_version_enu_t const fmi_version( fmi_import_get_fmi_version( context, path.c_str(), unzip_dir.c_str() ) );

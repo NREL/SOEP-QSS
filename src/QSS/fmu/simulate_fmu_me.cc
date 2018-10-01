@@ -171,6 +171,10 @@ simulate_fmu_me()
 	callbacks.context = 0;
 	fmi_import_context_t * const context( fmi_import_allocate_context( &callbacks ) );
 
+	if ( ! path::is_file( options::model ) ) {
+		std::cerr << "\nError: FMU file not found: " << options::model << std::endl;
+		std::exit( EXIT_FAILURE );
+	}
 #ifdef _WIN32
 	char const * TEMP( std::getenv( "TEMP" ) );
 	std::string const tmp_path( TEMP != nullptr ? TEMP : "." );
