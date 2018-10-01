@@ -42,6 +42,10 @@
 namespace QSS {
 namespace path {
 
+// Is Name a File?
+bool
+is_file( std::string const & name );
+
 // Base Name
 std::string
 base( std::string const & path );
