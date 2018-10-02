@@ -319,8 +319,8 @@ public: // Methods
 	void
 	advance( Time const t )
 	{
+		assert( fmu::get_time() == t );
 		if ( nz_.have_ ) {
-			assert( fmu::get_time() == t );
 			advance_NZ_1( t );
 			if ( nz_.have2_ ) {
 				Time const tN( t + options::dtNum );
@@ -374,17 +374,6 @@ public: // Methods
 
 		fmu::get_reals( nz_der_refs_.size(), &nz_der_refs_[ 0 ], &nz_der_vals_[ 0 ] );
 
-//#ifdef _OPENMP
-//		std::int64_t const n( static_cast< std::int64_t >( nz_.n_ ) );
-//		if ( n > 8u ) { // Tune threshold
-//			#pragma omp parallel for schedule(guided)
-//			for ( std::int64_t i = nz_.b_, e = nz_.e_; i < e; ++i ) {
-//				observers_[ i ]->advance_observer_1( t, nz_der_vals_[ i ] );
-//			}
-//			return;
-//		}
-//#endif
-
 		for ( size_type i = nz_.b_, e = nz_.e_; i < e; ++i ) {
 			observers_[ i ]->advance_observer_1( t, nz_der_vals_[ i ] );
 		}
@@ -401,19 +390,8 @@ public: // Methods
 		fmu::get_reals( zc_der_refs_.size(), &zc_der_refs_[ 0 ], &zc_der_vals_[ 0 ] );
 		fmu::get_reals( zc_refs_.size(), &zc_refs_[ 0 ], &zc_vals_[ 0 ] );
 
-//#ifdef _OPENMP
-//		std::int64_t const n( static_cast< std::int64_t >( zc_.n_ ) );
-//		if ( n > 8u ) { // Tune threshold
-//			#pragma omp parallel for schedule(guided)
-//			for ( std::int64_t i = zc_.b_, e = zc_.e_; i < e; ++i ) {
-//				observers_[ i ]->advance_observer_ZC_1( t, zc_der_vals_[ i ], zc_vals_[ i ] );
-//			}
-//			return;
-//		}
-//#endif
-
-		for ( size_type i = zc_.b_, e = zc_.e_; i < e; ++i ) {
-			 observers_[ i ]->advance_observer_ZC_1( t, zc_der_vals_[ i ], zc_vals_[ i ] );
+		for ( size_type i = zc_.b_, j = 0, e = zc_.e_; i < e; ++i, ++j ) {
+			 observers_[ i ]->advance_observer_ZC_1( t, zc_der_vals_[ j ], zc_vals_[ j ] );
 		}
 	}
 
