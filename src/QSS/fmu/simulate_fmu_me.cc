@@ -666,6 +666,9 @@ simulate_fmu_me()
 	size_type const n_outs( outs.size() );
 	size_type const n_fmu_outs( fmu_outs.size() );
 	size_type const n_all_outs( n_outs + n_fmu_outs );
+	if ( n_ZC_vars > 0u ) {
+		std::cout << "\nZero Crossing Time Step: dtZC = " << options::dtZC << " (s)" << std::endl;
+	}
 	if ( fmu_generator == FMU_Generator::Dymola ) {
 		if ( n_event_indicators != 2 * n_ZC_vars ) { // Dymola has 2x as many event indicators
 			std::cerr << "\nWarning: Number of FMU-ME event indicators (" << n_event_indicators << ") is not equal to twice the number of zero-crossing variables found (" << n_ZC_vars << ") as expected for Dymola FMUs" << std::endl;
@@ -1339,6 +1342,8 @@ simulate_fmu_me()
 				while ( events.top_superdense_time() == s ) {
 					Variable * trigger( events.top_sub< Variable >() );
 					assert( trigger->tZC() == t );
+					std::swap( event_indicators, event_indicators_last );
+					fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators ); // Get event indicators before crossing so FMU will see them change sign at crossing
 					trigger->st = s; // Set trigger superdense time
 					trigger->advance_ZC();
 					if ( doTOut ) { // Time event output
@@ -1369,11 +1374,8 @@ simulate_fmu_me()
 				// Advance FMU time to help it detect zero crossing event
 				fmu::set_time( t + options::dtZC );
 
-				{ // Swap event_indicators and event_indicators_last so that we can get new indicators
-					fmi2_real_t * temp = event_indicators;
-					event_indicators = event_indicators_last;
-					event_indicators_last = temp;
-				}
+				// Get event indicators
+				std::swap( event_indicators, event_indicators_last );
 				fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 
 				// Check if an event indicator has triggered

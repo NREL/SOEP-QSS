@@ -245,7 +245,7 @@ public: // Methods
 		x_mag_ = 0.0;
 		set_tZ( tZ_last = tZ ); // Next zero-crossing: Might be in active segment
 		tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
-		bump_observees(); // set_tZ refinement sets observees so we do this after
+		bump_forward();
 	}
 
 private: // Methods
