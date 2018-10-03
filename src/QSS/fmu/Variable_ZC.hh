@@ -141,12 +141,12 @@ public: // Methods
 		}
 	}
 
-	// Bump Observees' to Slightly Past Zero-Crossing Time for FMU Detection
+	// Bump Forward to Slightly Past Zero-Crossing Time for FMU Detection
 	void
-	bump_observees()
+	bump_forward()
 	{
 		assert( tZ_last != infinity );
-		fmu_set_observees_x( tZ_last + options::dtZC ); // Use slightly later time to let FMU detect the zero crossing: This is not robust
+		fmu_set_observees_x( tZ_last + options::dtZC );
 	}
 
 public: // Crossing Methods
