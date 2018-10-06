@@ -400,6 +400,36 @@ simulate_fmu_me()
 					fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
 					std::cout << " FMU-ME idx: " << i+1 << " maps to QSS var: " << qss_var->name << std::endl;
 				}
+			} else if ( var_variability == fmi2_variability_enu_fixed ) {
+				if ( var_name == "_events_default_tol" ) { // JModelica parameter for setting FMU zero crossing value tolerance
+					if ( var_causality == fmi2_causality_enu_parameter ) {
+						if ( var_has_start ) {
+							if ( ! options::specified::zTol ) {
+								double const zTol( std::abs( var_start ) );
+								if ( zTol > 0.0 ) {
+									options::specified::zTol = true;
+									options::zTol = zTol;
+									std::cout << " FMU zero crossing value tolerance set to " << zTol << std::endl;
+								}
+							}
+						}
+					}
+				}
+// This would only work if toleranceControlled was set to true but that isn't supported for FMU M-E
+//				if ( var_name == "_events_tol_factor" ) { // JModelica parameter for setting FMU zero crossing value tolerance
+//					if ( var_causality == fmi2_causality_enu_parameter ) {
+//						if ( var_has_start ) {
+//							if ( ! options::specified::zTol ) {
+//								double const zTol( std::abs( var_start ) * options::rTol );
+//								if ( zTol > 0.0 ) {
+//									options::specified::zTol = true;
+//									options::zTol = zTol;
+//									std::cout << " FMU zero crossing value tolerance set to " << zTol << std::endl;
+//								}
+//							}
+//						}
+//					}
+//				}
 			}
 			}
 			break;
@@ -667,6 +697,7 @@ simulate_fmu_me()
 	size_type const n_fmu_outs( fmu_outs.size() );
 	size_type const n_all_outs( n_outs + n_fmu_outs );
 	if ( n_ZC_vars > 0u ) {
+		std::cout << "\nZero Crossing Tolerance: zTol = " << options::zTol << std::endl;
 		std::cout << "\nZero Crossing Time Step: dtZC = " << options::dtZC << " (s)" << std::endl;
 	}
 	if ( fmu_generator == FMU_Generator::Dymola ) {
@@ -1372,13 +1403,17 @@ simulate_fmu_me()
 				// Perform FMU event mode handler processing /////
 
 				// Advance FMU time to help it detect zero crossing event
-				fmu::set_time( t + options::dtZC );
+//				fmu::set_time( t + options::dtZC );
 
+std::cerr << "\nP: Event indicators @ t = " << t << std::endl;///////////////////////////////////////////////////////////////////
+for ( size_type k = 0; k < n_event_indicators; ++k ) std::cerr << k << ' ' << event_indicators[ k ] << ' ' << event_indicators_last[ k ] << std::endl;///////////////////////////////
 				// Get event indicators
 				std::swap( event_indicators, event_indicators_last );
 				fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 
 				// Check if an event indicator has triggered
+std::cerr << "\nH: Event indicators @ t = " << t << std::endl;///////////////////////////////////////////////////////////////////
+for ( size_type k = 0; k < n_event_indicators; ++k ) std::cerr << k << ' ' << event_indicators[ k ] << ' ' << event_indicators_last[ k ] << std::endl;///////////////////////////////
 				bool zero_crossing_event( false );
 				for ( size_type k = 0; k < n_event_indicators; ++k ) {
 					if ( ( event_indicators[ k ] > 0 ) != ( event_indicators_last[ k ] > 0 ) ) {
@@ -1400,7 +1435,7 @@ simulate_fmu_me()
 				}
 
 				// Restore FMU simulation time
-				fmu::set_time( t );
+//				fmu::set_time( t );
 
 				// Perform handler operations on QSS side
 				if ( callEventUpdate || zero_crossing_event ) {
@@ -1430,6 +1465,38 @@ simulate_fmu_me()
 						}
 
 						handler->advance_handler( t );
+
+// Try to get FMU to see crossing back event: This is a temporary hack: A broader redesign will be needed to do this efficiently
+for ( auto var : vars_ZC ) {
+	Time const tbump( t + 2 * options::dtZC );
+	var->fmu_set_x( tbump );
+std::cerr << var->name << " bumped to " << var->x( tbump ) << " @ " << tbump << std::endl;//////////
+	var->fmu_set_observees_x( tbump );
+for ( auto observee : var->observees() ) std::cerr << observee->name << " observee bumped to " << observee->x( tbump ) << std::endl;//////////
+}
+std::swap( event_indicators, event_indicators_last );
+fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
+// Check if an event indicator has triggered
+std::cerr << "\nH: Event indicators @ t = " << t << std::endl;///////////////////////////////////////////////////////////////////
+for ( size_type k = 0; k < n_event_indicators; ++k ) std::cerr << k << ' ' << event_indicators[ k ] << ' ' << event_indicators_last[ k ] << std::endl;///////////////////////////////
+zero_crossing_event = false;
+for ( size_type k = 0; k < n_event_indicators; ++k ) {
+	if ( ( event_indicators[ k ] > 0 ) != ( event_indicators_last[ k ] > 0 ) ) {
+		zero_crossing_event = true;
+		break;
+	}
+}
+// Handle zero-crossing events
+if ( callEventUpdate || zero_crossing_event ) {
+	fmi2_import_enter_event_mode( fmu );
+	do_event_iteration( fmu, &eventInfo );
+	fmi2_import_enter_continuous_time_mode( fmu );
+	fmi2_import_get_continuous_states( fmu, states, n_states );
+	fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
+	if ( options::output::d ) std::cout << "Zero-crossing triggers FMU-ME event at t=" << t << std::endl;
+} else {
+	if ( options::output::d ) std::cout << "Zero-crossing does not trigger FMU-ME event at t=" << t << std::endl;
+}
 
 						if ( doROut ) { // Requantization output: after handler changes
 							if ( options::output::a ) { // All variables output
@@ -1664,7 +1731,7 @@ simulate_fmu_me()
 		}
 
 		// FMU end of step processing
-// Not sure we need to set continuous states: It would be a performance hit
+// Not sure we need to set continuous states: It would be a performance hit and this wipes out ZC bump values between ZC and Handler event calls
 //		fmu::set_time( t );
 //		for ( size_type i = 0; i < n_states; ++i ) {
 //			states[ i ] = state_vars[ i ]->x( t );

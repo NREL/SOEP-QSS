@@ -48,7 +48,7 @@ namespace options {
 QSS qss( QSS::QSS2 ); // QSS method: (x)(LI)QSS(1|2|3)
 double rTol( 1.0e-4 ); // Relative tolerance  [1e-4|FMU]
 double aTol( 1.0e-6 ); // Absolute tolerance
-double zTol( 0.0 ); // Zero-crossing anti-chatter tolerance
+double zTol( 0.0 ); // Zero-crossing tolerance
 double dtMin( 0.0 ); // Min time step (s)
 double dtMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Max time step (s)
 double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Inf time step (s)
@@ -71,6 +71,8 @@ namespace specified {
 bool qss( false ); // QSS method specified?
 bool rTol( false ); // Relative tolerance specified?
 bool aTol( false ); // Absolute tolerance specified?
+bool zTol( false ); // Zero-crossing tolerance specified?
+bool dtZC( false ); // FMU zero-crossing time step specified?
 bool tEnd( false ); // End time specified?
 
 } // specified
@@ -98,7 +100,7 @@ help_display()
 	std::cout << " --qss=METHOD  QSS method: (x)(LI)QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
 	std::cout << " --rTol=TOL    Relative tolerance  [1e-4|FMU]" << '\n';
 	std::cout << " --aTol=TOL    Absolute tolerance  [1e-6]" << '\n';
-	std::cout << " --zTol=TOL    Zero-crossing anti-chatter tolerance  [0]" << '\n';
+	std::cout << " --zTol=TOL    Zero-crossing tolerance  [0|FMU]" << '\n';
 	std::cout << " --dtMin=STEP  Min time step (s)  [0]" << '\n';
 	std::cout << " --dtMax=STEP  Max time step (s)  [infinity]" << '\n';
 	std::cout << " --dtInf=STEP  Inf alt time step (s)  [infinity]" << '\n';
@@ -229,6 +231,7 @@ process_args( int argc, char * argv[] )
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "zTol" ) ) {
+			specified::zTol = true;
 			std::string const zTol_str( arg_value( arg ) );
 			if ( is_double( zTol_str ) ) {
 				zTol = double_of( zTol_str );
@@ -277,6 +280,7 @@ process_args( int argc, char * argv[] )
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtZC" ) ) {
+			specified::dtZC = true;
 			std::string const dtZC_str( arg_value( arg ) );
 			if ( is_double( dtZC_str ) ) {
 				dtZC = double_of( dtZC_str );

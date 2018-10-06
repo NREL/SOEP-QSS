@@ -146,7 +146,19 @@ public: // Methods
 	bump_forward()
 	{
 		assert( tZ_last != infinity );
-		fmu_set_observees_x( tZ_last + options::dtZC );
+		Real dtZC;
+		if ( options::specified::zTol ) {
+			Real d1( x1( tZ_last ) );
+			dtZC = ( d1 != 0.0 ? 2 * options::zTol / std::abs( d1 ) : options::dtZC ); // Aim for 2x the zTol to hope FMU detects the crossing
+std::cerr << "\ndtZC = " << dtZC << std::endl;//////////////////////
+options::dtZC = dtZC; ///////////////////////
+		} else {
+			dtZC = options::dtZC;
+		}
+//		fmu_set_x( tZ_last + dtZC );
+//std::cerr << name << " bumped to " << x( tZ_last + dtZC ) << " @ " << tZ_last + dtZC << std::endl;//////////
+		fmu_set_observees_x( tZ_last + dtZC );
+for ( auto observee : observees_ ) std::cerr << observee->name << " observee bumped to " << observee->x( tZ_last + dtZC ) << std::endl;//////////
 	}
 
 public: // Crossing Methods
