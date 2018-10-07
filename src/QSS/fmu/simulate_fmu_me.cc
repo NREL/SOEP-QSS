@@ -1342,8 +1342,6 @@ simulate_fmu_me()
 				while ( events.top_superdense_time() == s ) {
 					Variable * trigger( events.top_sub< Variable >() );
 					assert( trigger->tZC() == t );
-					std::swap( event_indicators, event_indicators_last );
-					fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators ); // Get event indicators before crossing so FMU will see them change sign at crossing
 					trigger->st = s; // Set trigger superdense time
 					trigger->advance_ZC();
 					if ( doTOut ) { // Time event output
