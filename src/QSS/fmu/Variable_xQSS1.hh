@@ -216,7 +216,7 @@ public: // Methods
 // This simpler version is much slower doe to current FMIL internals
 //	// QSS Advance
 //	void
-//	advance_QSS_slow()
+//	advance_QSS()
 //	{
 //		x_0_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
 //		tX = tQ = tE;
