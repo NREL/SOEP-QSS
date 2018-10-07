@@ -255,7 +255,7 @@ public: // Methods
 // This simpler version is much slower doe to current FMIL internals
 //	// QSS Advance
 //	void
-//	advance_QSS_slow()
+//	advance_QSS()
 //	{
 //		Time const tDel( tE - tX );
 //		tX = tQ = tE;
