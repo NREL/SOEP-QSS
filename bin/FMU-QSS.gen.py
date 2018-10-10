@@ -427,7 +427,7 @@ def fmu_qss_gen():
                     lines = sources.readlines()
                 with open( 'GNUmakefile', 'w' ) as sources:
                     for line in lines:
-                        if line.startswith( 'SLB := $(BIN_PATH)' + os.sep ):
+                        if line.startswith( 'DLB := $(BIN_PATH)' + os.sep ):
                             sources.write( line.replace( '$(BIN_PATH)' + os.sep, '' ) )
                         else:
                             sources.write( line )
