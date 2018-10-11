@@ -375,6 +375,12 @@ There are command line options to select the QSS method, set quantization tolera
 * FMU outputs can be generated for FMU model runs.
 * Diagnostic output can be enabled, which includes a line for each quantization-related variable update.
 
+To run QSS with one of the code-defined models:
+* `QSS <model_name> [options]`
+
+To run QSS with an FMU:
+* `QSS <model_name>.fmu [options]`
+
 Run `QSS --help` to see the command line usage.
 
 ## Building an FMU-QSS
@@ -382,7 +388,7 @@ Run `QSS --help` to see the command line usage.
 Instructions for building an FMU-QSS from an FMU-ME (FMU for Model Exchange) follows.
 * The [fmu-uuid](https://github.com/viproma/fmu-uuid) application must be on your PATH to generate and FMU-QSS with GUID checking.
 * The same FMIL setup and `setProject` console configuration as for the QSS application is assumed.
-* The `bin/FMU-QSS.gen.py` (Python 2.7 or 3.x) script generates the FMU-QSS from an FMU-ME adapted for QSS use.
+* The `FMU-QSS.gen.py` (Python 2.7 or 3.x) script generates the FMU-QSS from an FMU-ME adapted for QSS use.
 * From a console configured with `setProject` move to an empty working directory and copy in the FMU-ME .fmu file.
 * Run `FMU-QSS.gen.py <FMU-ME_name>.fmu` to start the generation process.
   * Additional options can be seen by running `FMU-QSS.gen.py --help`.
@@ -391,6 +397,8 @@ Instructions for building an FMU-QSS from an FMU-ME (FMU for Model Exchange) fol
 ## Running an FMU-QSS
 
 To run an FMU-QSS:
-* `QSS <FMU-QSS_name>.fmu`
+* `QSS <FMU-QSS_name>.fmu [options]`
+
+Run `QSS --help` to see the command line usage.
 
 FMU-QSS support is basic at this point. Support for connecting inputs and outputs and for inputs with discrete events will be added before or during JModelica integration.

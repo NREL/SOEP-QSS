@@ -123,8 +123,8 @@ simulate()
 		fmi2EnterEventMode( c );
 		fmi2EnterContinuousTimeMode( c );
 		eventInfo.nextEventTimeDefined = fmi2_true;
-		Time time( fmu_me.t );
-		Time const tNext( fmu_time ); // This can be a varying next step stop time to do output to another FMU
+		fmi2Real time( fmu_me.t );
+		fmi2Real const tNext( fmu_time ); // This can be a varying next step stop time to do output to another FMU
 		while ( time <= fmu_time ) {
 			while ( time <= fmu_time ) {
 				while ( ( eventInfo.newDiscreteStatesNeeded == fmi2_true ) && ( eventInfo.terminateSimulation == fmi2_false ) && ( eventInfo.nextEventTime < tNext ) ) {

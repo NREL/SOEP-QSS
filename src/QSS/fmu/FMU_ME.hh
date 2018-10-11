@@ -37,7 +37,6 @@
 #define QSS_fmu_FMU_ME_hh_INCLUDED
 
 // QSS Headers
-#include <QSS/fmu/Variable.hh>
 #include <QSS/fmu/FMU_Variable.hh>
 #include <QSS/Output.hh>
 #include <QSS/SmoothToken.hh>

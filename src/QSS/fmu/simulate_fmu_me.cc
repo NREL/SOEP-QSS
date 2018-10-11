@@ -71,6 +71,7 @@
 #include <limits>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace QSS {
@@ -123,6 +124,7 @@ simulate_fmu_me()
 	using Real = Variable::Real;
 	using Observers_S = Observers_Simultaneous< Variable >;
 
+	using Var_Names = std::unordered_set< std::string >; // FMU Variables names
 	using Var_Idx = std::unordered_map< Variable const *, size_type >; // Map from Variables to their indexes
 	using Conditionals = std::vector< Conditional * >; // Conditionals
 	using FMU_Vars = std::unordered_map< FMUVarPtr, FMU_Variable, FMUVarPtrHash >; // Map from FMU variables to FMU_Variable objects
@@ -313,6 +315,7 @@ simulate_fmu_me()
 	Variables vars; // QSS variables
 	Variables state_vars; // FMU state QSS variables
 	Variables outs; // FMU output QSS variables
+	Var_Names var_names; // Variable names (to check for duplicates)
 	Conditionals cons;
 	FMU_Vars fmu_vars; // FMU variables
 	FMU_Vars fmu_outs; // FMU output variables
@@ -329,6 +332,11 @@ simulate_fmu_me()
 		std::cout << "\nVariable  Index: " << i+1 << " Ref: " << vrs[ i ] << std::endl;
 		fmi2_import_variable_t * var( fmi2_import_get_variable( var_list, i ) );
 		std::string const var_name( fmi2_import_get_variable_name( var ) );
+		if ( var_names.find( var_name ) != var_names.end() ) {
+			std::cerr << "\n Error: Variable name repeats: " << var_name << std::endl;
+			std::exit( EXIT_FAILURE );
+		}
+		var_names.insert( var_name );
 		std::cout << " Name: " << var_name << std::endl;
 		std::cout << " Desc: " << ( fmi2_import_get_variable_description( var ) ? fmi2_import_get_variable_description( var ) : "" ) << std::endl;
 		std::cout << " Ref: " << fmi2_import_get_variable_vr( var ) << std::endl;
@@ -354,9 +362,117 @@ simulate_fmu_me()
 				fmu_vars[ var_real ] = fmu_var;
 				if ( var_causality == fmi2_causality_enu_input ) {
 					std::cout << " Type: Real: Continuous: Input" << std::endl;
-//					Function inp_fxn = Function_Inp_constant( var_start ); // Constant start value
-					Function inp_fxn = Function_Inp_step( 1.0, 1.0, 0.1 ); // Step up by 1 every 0.1 s via discrete events
-//					Function inp_fxn = Function_Inp_sin( 2.0, 10.0, 1.0 ); // 2 * sin( 10 * t ) + 1
+					Function inp_fxn ;
+					auto i_inp_var = options::inp.find( var_name );
+					if ( i_inp_var != options::inp.end() ) { // Input function specified
+						std::string const & fxn_spec( i_inp_var->second );
+						std::string::size_type const ilb( fxn_spec.find( '[' ) );
+						if ( ilb == std::string::npos ) {
+							std::cerr << "\n Error: Input function spec missing [args]: " << fxn_spec << std::endl;
+							std::exit( EXIT_FAILURE );
+						}
+						std::string::size_type const irb( fxn_spec.find( ']', ilb ) );
+						if ( irb == std::string::npos ) {
+							std::cerr << "\n Error: Input function spec [args] missing closing ]: " << fxn_spec << std::endl;
+							std::exit( EXIT_FAILURE );
+						}
+						std::string const fxn_name( fxn_spec.substr( 0, ilb ) );
+						std::string const fxn_args( fxn_spec.substr( ilb + 1, irb - ( ilb + 1 ) ) );
+						if ( fxn_name == "constant" ) {
+							if ( is_double( fxn_args ) ) {
+								inp_fxn = Function_Inp_constant( double_of( fxn_args ) ); // Constant start value
+							} else {
+								std::cerr << "\n Error: Input function spec constant[c] argument c is not a valid double: " << fxn_spec << std::endl;
+								std::exit( EXIT_FAILURE );
+							}
+						} else if ( fxn_name == "sin" ) {
+							std::vector< std::string > args( split( fxn_args, ',' ) );
+							if ( args.size() != 3u ) {
+								std::cerr << "\n Error: Input function spec sin[a,b,c] doesn't have 3 arguments: " << fxn_spec << std::endl;
+								std::exit( EXIT_FAILURE );
+							}
+							Real a, b, c;
+							if ( is_double( args[ 0 ] ) ) {
+								a = double_of( args[ 0 ] ); // Constant start value
+							} else {
+								std::cerr << "\n Error: Input function spec sin[a,b,c] argument a is not a valid double: " << fxn_spec << std::endl;
+								std::exit( EXIT_FAILURE );
+							}
+							if ( is_double( args[ 1 ] ) ) {
+								b = double_of( args[ 1 ] ); // Constant start value
+							} else {
+								std::cerr << "\n Error: Input function spec sin[a,b,c] argument b is not a valid double: " << fxn_spec << std::endl;
+								std::exit( EXIT_FAILURE );
+							}
+							if ( is_double( args[ 2 ] ) ) {
+								c = double_of( args[ 2 ] ); // Constant start value
+							} else {
+								std::cerr << "\n Error: Input function spec sin[a,b,c] argument c is not a valid double: " << fxn_spec << std::endl;
+								std::exit( EXIT_FAILURE );
+							}
+							inp_fxn = Function_Inp_sin( a, b, c ); // a * sin( b * t ) + c
+						} else if ( fxn_name == "step" ) {
+							std::vector< std::string > args( split( fxn_args, ',' ) );
+							if ( args.size() != 3u ) {
+								std::cerr << "\n Error: Input function spec step[h0,h,d] doesn't have 3 arguments: " << fxn_spec << std::endl;
+								std::exit( EXIT_FAILURE );
+							}
+							Real h0, h, d;
+							if ( is_double( args[ 0 ] ) ) {
+								h0 = double_of( args[ 0 ] ); // Constant start value
+							} else {
+								std::cerr << "\n Error: Input function spec step[h0,h,d] argument h0 is not a valid double: " << fxn_spec << std::endl;
+								std::exit( EXIT_FAILURE );
+							}
+							if ( is_double( args[ 1 ] ) ) {
+								h = double_of( args[ 1 ] ); // Constant start value
+							} else {
+								std::cerr << "\n Error: Input function spec step[h0,h,d] argument h is not a valid double: " << fxn_spec << std::endl;
+								std::exit( EXIT_FAILURE );
+							}
+							if ( is_double( args[ 2 ] ) ) {
+								d = double_of( args[ 2 ] ); // Constant start value
+							} else {
+								std::cerr << "\n Error: Input function spec step[h0,h,d] argument d is not a valid double: " << fxn_spec << std::endl;
+								std::exit( EXIT_FAILURE );
+							}
+							inp_fxn = Function_Inp_step( h0, h, d ); // h0 + h * floor( t / d )
+						} else if ( fxn_name == "toggle" ) {
+							std::vector< std::string > args( split( fxn_args, ',' ) );
+							if ( args.size() != 3u ) {
+								std::cerr << "\n Error: Input function spec toggle[h0,h,d] doesn't have 3 arguments: " << fxn_spec << std::endl;
+								std::exit( EXIT_FAILURE );
+							}
+							Real h0, h, d;
+							if ( is_double( args[ 0 ] ) ) {
+								h0 = double_of( args[ 0 ] ); // Constant start value
+							} else {
+								std::cerr << "\n Error: Input function spec toggle[h0,h,d] argument h0 is not a valid double: " << fxn_spec << std::endl;
+								std::exit( EXIT_FAILURE );
+							}
+							if ( is_double( args[ 1 ] ) ) {
+								h = double_of( args[ 1 ] ); // Constant start value
+							} else {
+								std::cerr << "\n Error: Input function spec toggle[h0,h,d] argument h is not a valid double: " << fxn_spec << std::endl;
+								std::exit( EXIT_FAILURE );
+							}
+							if ( is_double( args[ 2 ] ) ) {
+								d = double_of( args[ 2 ] ); // Constant start value
+							} else {
+								std::cerr << "\n Error: Input function spec toggle[h0,h,d] argument d is not a valid double: " << fxn_spec << std::endl;
+								std::exit( EXIT_FAILURE );
+							}
+							inp_fxn = Function_Inp_toggle( h0, h, d ); // h0 + h * ( floor( t / d ) % 2 )
+						} else {
+							std::cerr << "\n Error: Input function spec function name unrecognized: " << fxn_spec << std::endl;
+							std::exit( EXIT_FAILURE );
+						}
+					} else { // Use hard-coded default function
+//						inp_fxn = Function_Inp_constant( var_start ); // Constant start value
+//						inp_fxn = Function_Inp_sin( 2.0, 10.0, var_has_start ? var_start : 1.0 ); // 2 * sin( 10 * t ) + 1
+						inp_fxn = Function_Inp_step( var_has_start ? var_start : 1.0, 1.0, 0.1 ); // Step up by 1 every 0.1 s via discrete events
+//						inp_fxn = Function_Inp_toggle( var_has_start ? var_start : 1.0, 1.0, 0.1 ); // Step up/down by 1 every 0.1 s via discrete events
+					}
 					if ( var_has_start && var_start != inp_fxn( 0.0 ).x_0 ) {
 						std::cerr << "\n Error: Specified start value does not match function value at t=0 for " << var_name << std::endl;
 						std::exit( EXIT_FAILURE );
@@ -385,7 +501,8 @@ simulate_fmu_me()
 				if ( var_causality == fmi2_causality_enu_input ) {
 					std::cout << " Type: Real: Discrete: Input" << std::endl;
 //					Function inp_fxn = Function_Inp_constant( var_start ); // Constant start value
-					Function inp_fxn = Function_Inp_step( 1.0, 1.0, 0.1 ); // Step up by 1 every 0.1 s via discrete events
+					Function inp_fxn = Function_Inp_step( var_has_start ? var_start : 1.0, 1.0, 0.1 ); // Step up by 1 every 0.1 s via discrete events
+//					Function inp_fxn = Function_Inp_toggle( var_has_start ? var_start : 1.0, 1.0, 0.1 ); // Toggle 0-1 every 0.1 s via discrete events
 					Variable_InpD * qss_var( new Variable_InpD( var_name, fmu_var, inp_fxn ) );
 					vars.push_back( qss_var ); // Add to QSS variables
 					fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
@@ -415,7 +532,8 @@ simulate_fmu_me()
 				if ( var_causality == fmi2_causality_enu_input ) {
 					std::cout << " Type: Integer: Discrete: Input" << std::endl;
 //					Function inp_fxn = Function_Inp_constant( var_start ); // Constant start value
-					Function inp_fxn = Function_Inp_step( 1.0, 1.0, 0.1 ); // Step up by 1 every 0.1 s via discrete events
+					Function inp_fxn = Function_Inp_step( var_has_start ? var_start : 1.0, 1.0, 0.1 ); // Step up by 1 every 0.1 s via discrete events
+//					Function inp_fxn = Function_Inp_toggle( var_has_start ? var_start : 1.0, 1.0, 0.1 ); // Toggle 0-1 every 0.1 s via discrete events
 					Variable_InpI * qss_var( new Variable_InpI( var_name, fmu_var, inp_fxn ) );
 					vars.push_back( qss_var ); // Add to QSS variables
 					fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
@@ -445,7 +563,7 @@ simulate_fmu_me()
 				fmu_vars[ var_bool ] = fmu_var;
 				if ( var_causality == fmi2_causality_enu_input ) {
 					std::cout << " Type: Boolean: Discrete: Input" << std::endl;
-					Function inp_fxn = Function_Inp_toggle( 1.0, 1.0, 0.1 ); // Toggle 0-1 every 0.1 s via discrete events
+					Function inp_fxn = Function_Inp_toggle( var_has_start ? var_start : 1.0, 1.0, 0.1 ); // Toggle 0-1 every 0.1 s via discrete events
 					Variable_InpB * qss_var( new Variable_InpB( var_name, fmu_var, inp_fxn ) );
 					vars.push_back( qss_var ); // Add to QSS variables
 					fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
@@ -662,10 +780,6 @@ simulate_fmu_me()
 			}
 		}
 	}
-	size_type const n_vars( vars.size() );
-	size_type const n_outs( outs.size() );
-	size_type const n_fmu_outs( fmu_outs.size() );
-	size_type const n_all_outs( n_outs + n_fmu_outs );
 	if ( n_ZC_vars > 0u ) {
 		std::cout << "\nZero Crossing Time Step: dtZC = " << options::dtZC << " (s)" << std::endl;
 	}
@@ -1017,6 +1131,12 @@ simulate_fmu_me()
 	if ( n_state_vars != n_states ) {
 		std::cerr << "\nError: Number of state variables found (" << n_state_vars << ") is not equal to number in FMU-ME (" << n_states << ')' << std::endl;
 	}
+
+	// Sizes
+	size_type const n_vars( vars.size() );
+	size_type const n_outs( outs.size() );
+	size_type const n_fmu_outs( fmu_outs.size() );
+	size_type const n_all_outs( n_outs + n_fmu_outs );
 
 	// Variable-index map setup
 	Var_Idx var_idx;

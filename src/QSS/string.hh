@@ -42,7 +42,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <limits>
+#include <sstream>
 #include <string>
+#include <vector>
 
 namespace QSS {
 
@@ -236,6 +238,20 @@ arg_value( std::string const & arg )
 	} else {
 		return std::string();
 	}
+}
+
+// Split into Tokens
+inline
+std::vector< std::string >
+split( std::string const & str, char del = ' ' )
+{
+	std::vector< std::string > toks;
+	std::istringstream ss( str );
+	std::string tok;
+	while ( std::getline( ss, tok, del ) ) {
+		toks.push_back( tok );
+	}
+	return toks;
 }
 
 } // QSS
