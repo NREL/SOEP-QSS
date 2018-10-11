@@ -39,6 +39,10 @@
 // QSS Headers
 #include <QSS/math.hh>
 
+// C++ Headers
+#include <iomanip>
+#include <ostream>
+
 namespace QSS {
 
 // SmoothToken Class
