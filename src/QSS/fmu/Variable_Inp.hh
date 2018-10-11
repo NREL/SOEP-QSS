@@ -68,10 +68,7 @@ protected: // Creation
 	) :
 	 Super( name, rTol, aTol, var ),
 	 f_( f )
-	{
-		xIni = f_( tQ ).x_0;
-		tD = f_( tQ ).tD;
-	}
+	{}
 
 	// Name Constructor
 	explicit
@@ -82,10 +79,7 @@ protected: // Creation
 	) :
 	 Super( name, var ),
 	 f_( f )
-	{
-		xIni = f_( tQ ).x_0;
-		tD = f_( tQ ).tD;
-	}
+	{}
 
 	// Copy Constructor
 	Variable_Inp( Variable_Inp const & ) = default;

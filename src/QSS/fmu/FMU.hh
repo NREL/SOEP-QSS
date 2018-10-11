@@ -101,7 +101,7 @@ set_time( Time const t )
 {
 	assert( fmu != nullptr );
 	fmi2_status_t const fmi_status = fmi2_import_set_time( fmu, t_fmu = t );
-	assert( status_check( "set_time", fmi_status ) );
+	assert( ( t > fmi2_import_get_default_experiment_stop( fmu ) ) || status_check( "set_time", fmi_status ) ); // Suppress errors for t>tstop for now to allow numeric differentiation at last step
 }
 
 // Initialize Derivatives Array Size
