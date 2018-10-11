@@ -135,6 +135,7 @@ public: // Methods
 	void
 	init_0()
 	{
+		assert( f() );
 		assert( observees_.empty() );
 		init_observers();
 		x_ = f_( tQ ).x_0;

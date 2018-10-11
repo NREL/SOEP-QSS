@@ -39,9 +39,12 @@
 // C++ Headers
 #include <cstddef>
 #include <string>
+#include <unordered_map>
 
 namespace QSS {
 namespace options {
+
+using InpVarFxn = std::unordered_map< std::string, std::string >;
 
 // QSS Method Enumerator
 enum class QSS {
@@ -77,6 +80,7 @@ extern std::size_t pass; // Pass count limit
 extern bool cycles; // Report dependency cycles?
 extern bool inflection; // Requantize at inflections?
 extern bool refine; // Refine FMU zero-crossing roots?
+extern InpVarFxn inp; // Map from input variable names to function specs
 extern std::string out; // Outputs: r, a, s, x, q, f
 extern std::string model; // Name of model or FMU
 

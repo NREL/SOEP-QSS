@@ -63,6 +63,7 @@ std::size_t pass( 20 ); // Pass count limit
 bool cycles( false ); // Report dependency cycles?
 bool inflection( false ); // Requantize at inflections?
 bool refine( false ); // Refine FMU zero-crossing roots?
+InpVarFxn inp; // Map from input variable names to function specs
 std::string out; // Outputs
 std::string model; // Model|FMU name
 
@@ -97,31 +98,36 @@ help_display()
 {
 	std::cout << '\n' << "QSS [options] [model|fmu]" << "\n\n";
 	std::cout << "Options:" << "\n\n";
-	std::cout << " --qss=METHOD  QSS method: (x)(LI)QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
-	std::cout << " --rTol=TOL    Relative tolerance  [1e-4|FMU]" << '\n';
-	std::cout << " --aTol=TOL    Absolute tolerance  [1e-6]" << '\n';
-	std::cout << " --zTol=TOL    Zero-crossing tolerance  [0|FMU]" << '\n';
-	std::cout << " --dtMin=STEP  Min time step (s)  [0]" << '\n';
-	std::cout << " --dtMax=STEP  Max time step (s)  [infinity]" << '\n';
-	std::cout << " --dtInf=STEP  Inf alt time step (s)  [infinity]" << '\n';
-	std::cout << " --dtZC=STEP   FMU zero-crossing step (s)  [1e-9]" << '\n';
-	std::cout << " --dtNum=STEP  Numeric differentiation step (s)  [1e-6]" << '\n';
-	std::cout << " --dtOut=STEP  Sampled & FMU output step (s)  [1e-3]" << '\n';
-	std::cout << " --tEnd=TIME   End time (s)  [1|FMU]" << '\n';
-	std::cout << " --pass=COUNT  Pass count limit  [20]" << '\n';
-	std::cout << " --cycles      Report dependency cycles?  [F]" << '\n';
-	std::cout << " --inflection  Requantize at inflections?  [F]" << '\n';
-	std::cout << " --refine      Refine FMU zero-crossing roots?  [F]" << '\n';
-	std::cout << " --out=OUTPUTS Outputs  [trfkx]" << '\n';
-	std::cout << "       t       Time events" << '\n';
-	std::cout << "       r       Requantizations" << '\n';
-	std::cout << "       a       All variables" << '\n';
-	std::cout << "       s       Sampled time steps" << '\n';
-	std::cout << "       f       FMU outputs" << '\n';
-	std::cout << "       k       FMU-QSS smooth tokens" << '\n';
-	std::cout << "       x       Continuous trajectories" << '\n';
-	std::cout << "       q       Quantized trajectories" << '\n';
-	std::cout << "       d       Diagnostic output" << '\n';
+	std::cout << " --qss=METHOD   QSS method: (x)(LI)QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
+	std::cout << " --rTol=TOL     Relative tolerance  [1e-4|FMU]" << '\n';
+	std::cout << " --aTol=TOL     Absolute tolerance  [1e-6]" << '\n';
+	std::cout << " --zTol=TOL     Zero-crossing tolerance  [0|FMU]" << '\n';
+	std::cout << " --dtMin=STEP   Min time step (s)  [0]" << '\n';
+	std::cout << " --dtMax=STEP   Max time step (s)  [infinity]" << '\n';
+	std::cout << " --dtInf=STEP   Inf alt time step (s)  [infinity]" << '\n';
+	std::cout << " --dtZC=STEP    FMU zero-crossing step (s)  [1e-9]" << '\n';
+	std::cout << " --dtNum=STEP   Numeric differentiation step (s)  [1e-6]" << '\n';
+	std::cout << " --dtOut=STEP   Sampled & FMU output step (s)  [1e-3]" << '\n';
+	std::cout << " --tEnd=TIME    End time (s)  [1|FMU]" << '\n';
+	std::cout << " --pass=COUNT   Pass count limit  [20]" << '\n';
+	std::cout << " --cycles       Report dependency cycles?  [F]" << '\n';
+	std::cout << " --inflection   Requantize at inflections?  [F]" << '\n';
+	std::cout << " --refine       Refine FMU zero-crossing roots?  [F]" << '\n';
+	std::cout << " --inp=VAR:FXN  Input variable:function  [step[0,1,1]]" << '\n';
+	std::cout << "           constant[c] => c" << '\n';
+	std::cout << "           sin[a,b,c] => a * sin( b * t ) + c" << '\n';
+	std::cout << "           step[h0,h,d] => h0 + h * floor( t / d )" << '\n';
+	std::cout << "           toggle[h0,h,d] => h0 + h * ( floor( t / d ) % 2 )" << '\n';
+	std::cout << " --out=OUTPUTS  Outputs  [trfkx]" << '\n';
+	std::cout << "       t  Time events" << '\n';
+	std::cout << "       r  Requantizations" << '\n';
+	std::cout << "       a  All variables" << '\n';
+	std::cout << "       s  Sampled time steps" << '\n';
+	std::cout << "       f  FMU outputs" << '\n';
+	std::cout << "       k  FMU-QSS smooth tokens" << '\n';
+	std::cout << "       x  Continuous trajectories" << '\n';
+	std::cout << "       q  Quantized trajectories" << '\n';
+	std::cout << "       d  Diagnostic output" << '\n';
 	std::cout << '\n';
 	std::cout << "Models:" << "\n\n";
 	std::cout << "  achilles : Achilles and the Tortoise" << '\n';
@@ -343,6 +349,37 @@ process_args( int argc, char * argv[] )
 			} else {
 				std::cerr << "Error: Nonintegral pass: " << pass_str << std::endl;
 				fatal = true;
+			}
+		} else if ( has_value_option( arg, "inp" ) ) {
+			std::string const var_fxn( arg_value( arg ) );
+			std::string var_name;
+			std::string fxn_spec;
+			if ( var_fxn[ 0 ] == '"' ) { // Quoted variable name
+				std::string::size_type const qe( var_fxn.find( '"', 1u ) );
+				if ( qe != std::string::npos ) {
+					var_name = var_fxn.substr( 1, qe );
+					std::string::size_type const isep( var_fxn.find( ':', qe ) );
+					if ( isep != std::string::npos ) {
+						fxn_spec = var_fxn.substr( isep + 1 );
+						inp[ var_name ] = fxn_spec;
+					} else {
+						std::cerr << "Error: Input function spec not in VAR:FXN format: " << var_fxn << std::endl;
+						fatal = true;
+					}
+				} else {
+					std::cerr << "Error: Input function quoted variable name missing end quote: " << var_fxn << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::string::size_type const isep( var_fxn.find( ':' ) );
+				if ( isep != std::string::npos ) {
+					var_name = var_fxn.substr( 0, isep );
+					fxn_spec = var_fxn.substr( isep + 1 );
+					inp[ var_name ] = fxn_spec;
+				} else {
+					std::cerr << "Error: Input function spec not in VAR:FXN format: " << var_fxn << std::endl;
+					fatal = true;
+				}
 			}
 		} else if ( has_value_option( arg, "out" ) ) {
 			out = arg_value( arg );
