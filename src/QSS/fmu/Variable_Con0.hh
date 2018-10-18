@@ -1,4 +1,4 @@
-// FMU-Based Discrete Input Variable
+// FMU-Based QSS0 Connection Variable
 //
 // Project: QSS Solver
 //
@@ -33,86 +33,75 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_Variable_InpD_hh_INCLUDED
-#define QSS_fmu_Variable_InpD_hh_INCLUDED
+#ifndef QSS_fmu_Variable_Con0_hh_INCLUDED
+#define QSS_fmu_Variable_Con0_hh_INCLUDED
 
 // QSS Headers
-#include <QSS/fmu/Variable_Inp.hh>
+#include <QSS/fmu/Variable_Con.hh>
 
 namespace QSS {
 namespace fmu {
 
-// FMU-Based Discrete Input Variable
-class Variable_InpD final : public Variable_Inp
+// FMU-Based QSS0 Connection Variable
+class Variable_Con0 final : public Variable_Con
 {
 
 public: // Types
 
-	using Super = Variable_Inp;
+	using Super = Variable_Con;
 
 public: // Creation
 
-	// Constructor
-	Variable_InpD(
+	// Name Constructor
+	Variable_Con0(
 	 std::string const & name,
 	 FMU_ME * fmu_me,
-	 FMU_Variable const var = FMU_Variable(),
-	 Function f = Function()
+	 FMU_Variable const var = FMU_Variable()
 	) :
-	 Super( 0, name, fmu_me, var, f )
+	 Super( 0, name, fmu_me, var )
 	{}
 
-public: // Predicate
-
-	// Discrete Variable?
-	bool
-	is_Discrete() const
+	// Name + Initial Value Constructor
+	Variable_Con0(
+	 std::string const & name,
+	 Real const xIni,
+	 FMU_ME * fmu_me,
+	 FMU_Variable const var = FMU_Variable()
+	) :
+	 Super( 0, name, xIni, fmu_me, var ),
+	 x_0_( xIni )
 	{
-		return true;
+		fmu_set_real( xIni );
 	}
 
 public: // Properties
-
-	// Real Value
-	Real
-	r() const
-	{
-		return x_;
-	}
-
-	// Real Value at Time t
-	Real
-	r( Time const ) const
-	{
-		return x_;
-	}
 
 	// Continuous Value at Time t
 	Real
 	x( Time const ) const
 	{
-		return x_;
+		return x_0_ = fmu_get_real();
 	}
 
 	// Quantized Value at Time t
 	Real
 	q( Time const ) const
 	{
-		return x_;
+		return x_0_ = fmu_get_real();
 	}
 
 	// Simultaneous Value at Time t
 	Real
 	s( Time const ) const
 	{
-		return x_;
+		return x_0_ = fmu_get_real();
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
 	Real
 	sn( Time const ) const
 	{
-		return x_;
+		return x_0_ = fmu_get_real();
 	}
 
 public: // Methods
@@ -128,43 +117,53 @@ public: // Methods
 	void
 	init_0()
 	{
-		assert( f() );
 		assert( observees_.empty() );
 		init_observers();
-		x_ = f_( tQ ).x_0;
-		tD = f_( tQ ).tD;
-		add_discrete( tD );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
+		x_0_ = fmu_get_real();
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << std::noshowpos << '\n';
 	}
 
 	// Discrete Advance
 	void
 	advance_discrete()
 	{
-		Real const x_new( f_( tX = tQ = tD ).x_0 );
-		tD = f_( tD ).tD;
-		shift_discrete( tD );
-		bool const chg( x_ != x_new );
-		if ( chg ) x_ = x_new;
-		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
-		if ( chg && have_observers_ ) advance_observers();
+		x_0_ = fmu_get_real();
+		tX = tQ = tD;
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << std::noshowpos << '\n';
+		if ( have_observers_ ) advance_observers();
 	}
 
 	// Discrete Advance: Stage 0
 	void
 	advance_discrete_0()
 	{
-		Real const x_new( f_( tX = tQ = tD ).x_0 );
-		tD = f_( tD ).tD;
-		shift_discrete( tD );
-		bool const chg( x_ != x_new );
-		if ( chg ) x_ = x_new;
-		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
+		x_0_ = fmu_get_real();
+		tX = tQ = tD;
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << std::noshowpos << '\n';
+	}
+
+	// QSS Advance
+	void
+	advance_QSS()
+	{
+		x_0_ = fmu_get_real();
+		tX = tQ = tE;
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << std::noshowpos << '\n';
+		if ( have_observers_ ) advance_observers();
+	}
+
+	// QSS Advance: Stage 0
+	void
+	advance_QSS_0()
+	{
+		x_0_ = fmu_get_real();
+		tX = tQ = tE;
+		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << std::noshowpos << '\n';
 	}
 
 private: // Data
 
-	Real x_; // Value
+	mutable Real x_0_{ 0.0 }; // Trajecotry coefficients
 
 };
 

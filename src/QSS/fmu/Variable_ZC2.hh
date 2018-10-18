@@ -53,26 +53,19 @@ public: // Types
 public: // Creation
 
 	// Constructor
-	explicit
 	Variable_ZC2(
 	 std::string const & name,
-	 Real const rTol = 1.0e-4,
-	 Real const aTol = 1.0e-6,
-	 Real const zTol = 0.0,
+	 Real const rTol,
+	 Real const aTol,
+	 Real const zTol,
+	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
-	 Super( name, rTol, aTol, zTol, var, der )
+	 Super( 2, name, rTol, aTol, zTol, fmu_me, var, der )
 	{}
 
 public: // Properties
-
-	// Order of Method
-	int
-	order() const
-	{
-		return 2;
-	}
 
 	// Continuous Value at Time t
 	Real
@@ -189,10 +182,10 @@ public: // Methods
 		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 		set_qTol();
 		x_1_ = fmu_get_deriv();
-		fmu::set_time( tN = tQ + options::dtNum );
+		fmu_me->set_time( tN = tQ + options::dtNum );
 		fmu_set_observees_x( tN );
 		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
-		fmu::set_time( tQ );
+		fmu_me->set_time( tQ );
 		set_tE();
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
@@ -338,8 +331,8 @@ private: // Methods
 					if ( options::refine ) { // Refine root: Expensive!
 						Time t( tZ );
 						//Time t_p( tZ );
-						Time const t_fmu( fmu::get_time() );
-						fmu::set_time( tZ ); // Don't seem to need this
+						Time const t_fmu( fmu_me->get_time() );
+						fmu_me->set_time( tZ ); // Don't seem to need this
 						fmu_set_observees_x( tZ );
 						Real const vZ( fmu_get_real() );
 						Real v( vZ ), v_p( vZ );
@@ -352,7 +345,7 @@ private: // Methods
 							if ( d == 0.0 ) break;
 							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 							t -= m * ( v / d );
-							fmu::set_time( t ); // Don't seem to need this
+							fmu_me->set_time( t ); // Don't seem to need this
 							fmu_set_observees_x( t );
 							v = fmu_get_real();
 							if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
@@ -361,7 +354,7 @@ private: // Methods
 						}
 						if ( ( t >= tX ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
 						if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
-						fmu::set_time( t_fmu ); // Don't seem to need this
+						fmu_me->set_time( t_fmu ); // Don't seem to need this
 					}
 				} else { // Crossing type not relevant
 					tZ = infinity;
@@ -394,8 +387,8 @@ private: // Methods
 					if ( options::refine ) { // Refine root: Expensive!
 						Time t( tZ );
 						//Time t_p( tZ );
-						Time const t_fmu( fmu::get_time() );
-						fmu::set_time( tZ ); // Don't seem to need this
+						Time const t_fmu( fmu_me->get_time() );
+						fmu_me->set_time( tZ ); // Don't seem to need this
 						fmu_set_observees_x( tZ );
 						Real const vZ( fmu_get_real() );
 						Real v( vZ ), v_p( vZ );
@@ -408,7 +401,7 @@ private: // Methods
 							if ( d == 0.0 ) break;
 							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 							t -= m * ( v / d );
-							fmu::set_time( t ); // Don't seem to need this
+							fmu_me->set_time( t ); // Don't seem to need this
 							fmu_set_observees_x( t );
 							v = fmu_get_real();
 							if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
@@ -417,7 +410,7 @@ private: // Methods
 						}
 						if ( ( t >= tB ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
 						if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
-						fmu::set_time( t_fmu ); // Don't seem to need this
+						fmu_me->set_time( t_fmu ); // Don't seem to need this
 					}
 				} else { // Crossing type not relevant
 					tZ = infinity;

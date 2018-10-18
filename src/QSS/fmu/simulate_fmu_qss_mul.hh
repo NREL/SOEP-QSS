@@ -1,4 +1,4 @@
-// FMU Lookup Functions
+// Multiple FMU-QSS Simulation Runner
 //
 // Project: QSS Solver
 //
@@ -33,17 +33,21 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// QSS Headers
-#include <QSS/fmu/FMU.hh>
+#ifndef QSS_fmu_simulate_fmu_qss_mul_hh_INCLUDED
+#define QSS_fmu_simulate_fmu_qss_mul_hh_INCLUDED
+
+// C++ Headers
+#include <string>
+#include <vector>
 
 namespace QSS {
 namespace fmu {
 
-// Globals
-fmi2_import_t * fmu( nullptr ); // FMU instance
-std::size_t n_ders( 0 ); // Number of derivatives
-fmi2_real_t * derivatives( nullptr ); // Derivatives
-Time t_fmu( 0.0 ); // FMU time
+// Simulate multiple FMU-QSS with QSS
+void
+simulate_fmu_qss_mul( std::vector< std::string > const & paths );
 
 } // fmu
 } // QSS
+
+#endif

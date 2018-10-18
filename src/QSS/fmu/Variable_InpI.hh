@@ -53,13 +53,13 @@ public: // Types
 public: // Creation
 
 	// Constructor
-	explicit
 	Variable_InpI(
 	 std::string const & name,
+	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 Function f = Function()
 	) :
-	 Super( name, var, f )
+	 Super( 0, name, fmu_me, var, f )
 	{}
 
 public: // Predicate
@@ -72,13 +72,6 @@ public: // Predicate
 	}
 
 public: // Properties
-
-	// Order of Method
-	int
-	order() const
-	{
-		return 0;
-	}
 
 	// Boolean Value
 	Boolean

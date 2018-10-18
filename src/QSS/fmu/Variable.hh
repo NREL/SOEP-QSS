@@ -39,13 +39,16 @@
 // QSS Headers
 #include <QSS/fmu/Variable.fwd.hh>
 #include <QSS/fmu/Conditional.hh>
-#include <QSS/fmu/FMU.hh>
+#include <QSS/fmu/FMU_ME.hh>
 #include <QSS/fmu/FMU_Variable.hh>
 #include <QSS/fmu/Observers.hh>
-#include <QSS/globals.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
+#include <QSS/SmoothToken.hh>
 #include <QSS/Target.hh>
+
+// FMI Library Headers
+#include <fmilib.h>
 
 // C++ Headers
 #include <algorithm>
@@ -53,7 +56,6 @@
 #include <cstdlib>
 #include <iostream>
 #include <iterator>
-#include <unordered_set>
 #include <vector>
 
 namespace QSS {
@@ -72,6 +74,7 @@ public: // Types
 	using Real = double;
 	using Time = double;
 	using Reals = std::vector< Real >;
+	using Events = FMU_ME::Events;
 	using Variables = std::vector< Variable * >;
 	using VariableRefs = std::vector< fmi2_value_reference_t >;
 	using size_type = Variables::size_type;
@@ -99,14 +102,17 @@ protected: // Creation
 
 	// Name + Tolerance + Value Constructor
 	Variable(
+	 int const order,
 	 std::string const & name,
 	 Real const rTol,
 	 Real const aTol,
 	 Real const xIni,
+	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
 	 Target( name ),
+	 order_( order ),
 	 rTol( std::max( rTol, 0.0 ) ),
 	 aTol( std::max( aTol, std::numeric_limits< Real >::min() ) ),
 	 xIni( xIni ),
@@ -114,19 +120,25 @@ protected: // Creation
 	 dt_max( options::dtMax ),
 	 dt_inf( options::dtInf ),
 	 dt_inf_rlx( options::dtInf == infinity ? infinity : 0.5 * options::dtInf ),
+	 fmu_me( fmu_me ),
 	 var( var ),
-	 der( der )
+	 der( der ),
+	 observers_( fmu_me ),
+	 events_( fmu_me->events )
 	{}
 
 	// Name + Tolerance Constructor
 	Variable(
+	 int const order,
 	 std::string const & name,
 	 Real const rTol,
 	 Real const aTol,
+	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
 	 Target( name ),
+	 order_( order ),
 	 rTol( std::max( rTol, 0.0 ) ),
 	 aTol( std::max( aTol, std::numeric_limits< Real >::min() ) ),
 	 xIni( 0.0 ),
@@ -134,42 +146,56 @@ protected: // Creation
 	 dt_max( options::dtMax ),
 	 dt_inf( options::dtInf ),
 	 dt_inf_rlx( options::dtInf == infinity ? infinity : 0.5 * options::dtInf ),
+	 fmu_me( fmu_me ),
 	 var( var ),
-	 der( der )
+	 der( der ),
+	 observers_( fmu_me ),
+	 events_( fmu_me->events )
 	{}
 
 	// Name + Value Constructor
 	Variable(
+	 int const order,
 	 std::string const & name,
 	 Real const xIni,
+	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
 	 Target( name ),
+	 order_( order ),
 	 xIni( xIni ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
 	 dt_inf( options::dtInf ),
 	 dt_inf_rlx( options::dtInf == infinity ? infinity : 0.5 * options::dtInf ),
+	 fmu_me( fmu_me ),
 	 var( var ),
-	 der( der )
+	 der( der ),
+	 observers_( fmu_me ),
+	 events_( fmu_me->events )
 	{}
 
 	// Name Constructor
-	explicit
 	Variable(
+	 int const order,
 	 std::string const & name,
+	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
 	 Target( name ),
+	 order_( order ),
 	 xIni( 0.0 ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
 	 dt_inf( options::dtInf ),
 	 dt_inf_rlx( options::dtInf == infinity ? infinity : 0.5 * options::dtInf ),
+	 fmu_me( fmu_me ),
 	 var( var ),
-	 der( der )
+	 der( der ),
+	 observers_( fmu_me ),
+	 events_( fmu_me->events )
 	{}
 
 	// Copy Constructor
@@ -233,9 +259,11 @@ public: // Predicate
 public: // Properties
 
 	// Order of Method
-	virtual
 	int
-	order() const = 0;
+	order() const
+	{
+		return order_;
+	}
 
 	// Boolean Value
 	virtual
@@ -399,6 +427,34 @@ public: // Properties
 		return 0.0;
 	}
 
+	// SmoothToken at Time t
+	SmoothToken
+	k( Time const t ) const
+	{
+		switch ( order_ ) {
+		case 0:
+			return SmoothToken::order_0( x( t ), tD );
+		case 1:
+			return SmoothToken::order_1( x( t ), x1( t ), tD );
+		case 2:
+			return SmoothToken::order_2( x( t ), x1( t ), x2( t ), tD );
+		case 3:
+			return SmoothToken::order_3( x( t ), x1( t ), x2( t ), x3( t ), tD );
+		default: // Should not happen
+			assert( false );
+			return SmoothToken();
+		}
+	}
+
+	// Zero-Crossing Time
+	virtual
+	Time
+	tZC() const
+	{
+		assert( false ); // Not a ZC variable
+		return Time( 0.0 );
+	}
+
 	// Observers
 	Observers< Variable > const &
 	observers() const
@@ -427,13 +483,18 @@ public: // Properties
 		return observees_;
 	}
 
-	// Zero-Crossing Time
-	virtual
-	Time
-	tZC() const
+	// Event Queue
+	Events const *
+	events() const
 	{
-		assert( false ); // Not a ZC variable
-		return Time( 0.0 );
+		return events_;
+	}
+
+	// Event Queue
+	Events *
+	events()
+	{
+		return events_;
 	}
 
 public: // Methods
@@ -559,14 +620,14 @@ public: // Methods
 	void
 	add_discrete( Time const t )
 	{
-		event_ = events.add_discrete( t, this );
+		event_ = events_->add_discrete( t, this );
 	}
 
 	// Discrete Shift Event to Time t
 	void
 	shift_discrete( Time const t )
 	{
-		event_ = events.shift_discrete( t, event_ );
+		event_ = events_->shift_discrete( t, event_ );
 	}
 
 	// Discrete Advance
@@ -609,28 +670,28 @@ public: // Methods
 	void
 	add_QSS( Time const t )
 	{
-		event_ = events.add_QSS( t, this );
+		event_ = events_->add_QSS( t, this );
 	}
 
 	// QSS Shift Event to Time t
 	void
 	shift_QSS( Time const t )
 	{
-		event_ = events.shift_QSS( t, event_ );
+		event_ = events_->shift_QSS( t, event_ );
 	}
 
 	// QSS ZC Add Event
 	void
 	add_QSS_ZC( Time const t )
 	{
-		event_ = events.add_QSS_ZC( t, this );
+		event_ = events_->add_QSS_ZC( t, this );
 	}
 
 	// QSS ZC Shift Event to Time t
 	void
 	shift_QSS_ZC( Time const t )
 	{
-		event_ = events.shift_QSS_ZC( t, event_ );
+		event_ = events_->shift_QSS_ZC( t, event_ );
 	}
 
 	// QSS Advance
@@ -673,14 +734,14 @@ public: // Methods
 	void
 	add_ZC( Time const t )
 	{
-		event_ = events.add_ZC( t, this );
+		event_ = events_->add_ZC( t, this );
 	}
 
 	// Zero-Crossing Shift Event to Time t
 	void
 	shift_ZC( Time const t )
 	{
-		event_ = events.shift_ZC( t, event_ );
+		event_ = events_->shift_ZC( t, event_ );
 	}
 
 	// Zero-Crossing Advance
@@ -695,21 +756,21 @@ public: // Methods
 	void
 	add_handler()
 	{
-		event_ = events.add_handler( this );
+		event_ = events_->add_handler( this );
 	}
 
 	// Handler Shift Event to Time t
 	void
 	shift_handler( Time const t )
 	{
-		event_ = events.shift_handler( t, event_ );
+		event_ = events_->shift_handler( t, event_ );
 	}
 
 	// Handler Shift Event to Time Infinity
 	void
 	shift_handler()
 	{
-		event_ = events.shift_handler( event_ );
+		event_ = events_->shift_handler( event_ );
 	}
 
 	// Handler Advance
@@ -852,70 +913,88 @@ public: // Methods: FMU
 	Real
 	fmu_get_real() const
 	{
-		return fmu::get_real( var.ref );
+		assert( fmu_me != nullptr );
+		return fmu_me->get_real( var.ref );
 	}
 
 	// Set FMU Real Variable to a Value
 	void
 	fmu_set_real( Real const v ) const
 	{
-		fmu::set_real( var.ref, v );
-	}
-
-	// Set FMU Variable to Continuous Value at Time t
-	void
-	fmu_set_x( Time const t ) const
-	{
-		fmu::set_real( var.ref, x( t ) );
-	}
-
-	// Set FMU Variable to Quantized Value at Time t
-	void
-	fmu_set_q( Time const t ) const
-	{
-		fmu::set_real( var.ref, q( t ) );
-	}
-
-	// Set FMU Variable to Simultaneous Value at Time t
-	void
-	fmu_set_s( Time const t ) const
-	{
-		fmu::set_real( var.ref, s( t ) );
-	}
-
-	// Set FMU Variable to Simultaneous Numeric Differentiation Value at Time t
-	void
-	fmu_set_sn( Time const t ) const
-	{
-		fmu::set_real( var.ref, sn( t ) );
+		assert( fmu_me != nullptr );
+		fmu_me->set_real( var.ref, v );
 	}
 
 	// Get FMU Integer Variable Value
 	Integer
 	fmu_get_integer() const
 	{
-		return fmu::get_integer( var.ref );
+		assert( fmu_me != nullptr );
+		return fmu_me->get_integer( var.ref );
 	}
 
 	// Set FMU Integer Variable to a Value
 	void
 	fmu_set_integer( Integer const v ) const
 	{
-		fmu::set_integer( var.ref, v );
+		assert( fmu_me != nullptr );
+		fmu_me->set_integer( var.ref, v );
 	}
 
 	// Get FMU Boolean Variable Value
 	bool
 	fmu_get_boolean() const
 	{
-		return fmu::get_boolean( var.ref );
+		assert( fmu_me != nullptr );
+		return fmu_me->get_boolean( var.ref );
 	}
 
 	// Set FMU Boolean Variable to a Value
 	void
 	fmu_set_boolean( bool const v ) const
 	{
-		fmu::set_boolean( var.ref, v );
+		assert( fmu_me != nullptr );
+		fmu_me->set_boolean( var.ref, v );
+	}
+
+	// Get FMU Variable Derivative
+	Real
+	fmu_get_deriv() const
+	{
+		assert( fmu_me != nullptr );
+		return fmu_me->get_real( der.ref );
+	}
+
+	// Set FMU Variable to Continuous Value at Time t
+	void
+	fmu_set_x( Time const t ) const
+	{
+		assert( fmu_me != nullptr );
+		fmu_me->set_real( var.ref, x( t ) );
+	}
+
+	// Set FMU Variable to Quantized Value at Time t
+	void
+	fmu_set_q( Time const t ) const
+	{
+		assert( fmu_me != nullptr );
+		fmu_me->set_real( var.ref, q( t ) );
+	}
+
+	// Set FMU Variable to Simultaneous Value at Time t
+	void
+	fmu_set_s( Time const t ) const
+	{
+		assert( fmu_me != nullptr );
+		fmu_me->set_real( var.ref, s( t ) );
+	}
+
+	// Set FMU Variable to Simultaneous Numeric Differentiation Value at Time t
+	void
+	fmu_set_sn( Time const t ) const
+	{
+		assert( fmu_me != nullptr );
+		fmu_me->set_real( var.ref, sn( t ) );
 	}
 
 	// Set All Observee FMU Variables to Continuous Value at Time t
@@ -954,13 +1033,6 @@ public: // Methods: FMU
 		}
 	}
 
-	// Get FMU Variable Derivative
-	Real
-	fmu_get_deriv() const
-	{
-		return fmu::get_real( der.ref );
-	}
-
 protected: // Methods
 
 	// Infinite Aligned Time Step Processing
@@ -995,6 +1067,10 @@ protected: // Methods
 		}
 	}
 
+protected: // Data
+
+	int order_{ 0 }; // Method order
+
 public: // Data
 
 	Real rTol{ 1.0e-4 }; // Relative tolerance
@@ -1013,6 +1089,7 @@ public: // Data
 	bool self_observer{ false }; // Variable appears in its function/derivative?
 	If_Clauses if_clauses; // Clauses in conditional if blocks
 	When_Clauses when_clauses; // Clauses in conditional when blocks
+	FMU_ME * fmu_me{ nullptr }; // FMU-ME (non-owning) pointer
 	FMU_Variable var; // FMU variables specs
 	FMU_Variable der; // FMU derivative specs
 
@@ -1027,6 +1104,9 @@ protected: // Data
 
 	// Observees
 	Variables observees_; // Variables this one depends on
+
+	// Event queue
+	Events * events_{ nullptr };
 
 };
 

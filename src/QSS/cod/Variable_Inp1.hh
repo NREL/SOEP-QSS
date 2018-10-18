@@ -90,17 +90,10 @@ public: // Creation
 	 Real const rTol = 1.0e-4,
 	 Real const aTol = 1.0e-6
 	) :
-	 Super( name, rTol, aTol )
+	 Super( 1, name, rTol, aTol )
 	{}
 
 public: // Properties
-
-	// Order of Method
-	int
-	order() const
-	{
-		return 1;
-	}
 
 	// Continuous Value at Time t
 	Real

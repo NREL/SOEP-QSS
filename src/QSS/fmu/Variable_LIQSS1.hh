@@ -53,16 +53,16 @@ public: // Types
 public: // Creation
 
 	// Constructor
-	explicit
 	Variable_LIQSS1(
 	 std::string const & name,
-	 Real const rTol = 1.0e-4,
-	 Real const aTol = 1.0e-6,
-	 Real const xIni = 0.0,
+	 Real const rTol,
+	 Real const aTol,
+	 Real const xIni,
+	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
-	 Super( name, rTol, aTol, xIni, var, der ),
+	 Super( 1, name, rTol, aTol, xIni, fmu_me, var, der ),
 	 x_0_( xIni ),
 	 q_c_( xIni ),
 	 q_0_( xIni )
@@ -71,13 +71,6 @@ public: // Creation
 	}
 
 public: // Properties
-
-	// Order of Method
-	int
-	order() const
-	{
-		return 1;
-	}
 
 	// Continuous Value at Time t
 	Real
@@ -104,14 +97,14 @@ public: // Properties
 	Real
 	s( Time const ) const
 	{
-		return ( st == events.active_superdense_time() ? q_c_ : q_0_ );
+		return ( st == events_->active_superdense_time() ? q_c_ : q_0_ );
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
 	Real
 	sn( Time const ) const
 	{
-		return ( st == events.active_superdense_time() ? q_c_ : q_0_ );
+		return ( st == events_->active_superdense_time() ? q_c_ : q_0_ );
 	}
 
 public: // Methods

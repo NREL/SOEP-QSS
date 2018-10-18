@@ -38,7 +38,7 @@
 
 // QSS Headers
 #include <QSS/Conditional.hh>
-#include <QSS/globals.hh>
+#include <QSS/cod/events.hh>
 
 // C++ Headers
 #include <algorithm>
@@ -70,8 +70,7 @@ public: // Nested Types
 	protected: // Creation
 
 		// Default Constructor
-		Clause()
-		{}
+		Clause() = default;
 
 		// Copy Constructor
 		Clause( Clause const & ) = delete;
@@ -388,8 +387,7 @@ public: // Nested Types
 	protected: // Creation
 
 		// Default Constructor
-		Clause()
-		{}
+		Clause() = default;
 
 		// Copy Constructor
 		Clause( Clause const & ) = delete;

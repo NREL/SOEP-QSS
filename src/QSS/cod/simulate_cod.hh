@@ -36,12 +36,15 @@
 #ifndef QSS_cod_simulate_cod_hh_INCLUDED
 #define QSS_cod_simulate_cod_hh_INCLUDED
 
+// C++ Headers
+#include <string>
+
 namespace QSS {
 namespace cod {
 
 // Simulate an Example Model
 void
-simulate();
+simulate( std::string const & model );
 
 } // cod
 } // QSS

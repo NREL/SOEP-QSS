@@ -1,4 +1,4 @@
-// FMU-ME QSS Simulation Runner
+// QSS Event Queue Global
 //
 // Project: QSS Solver
 //
@@ -33,23 +33,20 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#ifndef QSS_cod_events_hh_INCLUDED
+#define QSS_cod_events_hh_INCLUDED
+
 // QSS Headers
-#include <QSS/fmu/simulate_fmu_me.hh>
-#include <QSS/fmu/FMU_ME.hh>
+#include <QSS/EventQueue.hh>
+#include <QSS/Target.hh>
 
 namespace QSS {
-namespace fmu {
+namespace cod {
 
-// Simulate an FMU-ME with QSS
-void
-simulate_fmu_me( std::string const & path )
-{
-	FMU_ME fmu_me( path );
-	fmu_me.instantiate();
-	fmu_me.pre_simulate();
-	fmu_me.simulate();
-	fmu_me.post_simulate();
-}
+// QSS Globals
+extern EventQueue< Target > events; // Event queue
 
-} // fmu
+} // cod
 } // QSS
+
+#endif

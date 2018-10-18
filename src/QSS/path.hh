@@ -42,6 +42,10 @@
 namespace QSS {
 namespace path {
 
+// Globals
+extern char const sep; // OS path separator
+extern std::string const tmp; // OS temporary path
+
 // Is Name a File?
 bool
 is_file( std::string const & name );

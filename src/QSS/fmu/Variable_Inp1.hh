@@ -53,25 +53,18 @@ public: // Types
 public: // Creation
 
 	// Constructor
-	explicit
 	Variable_Inp1(
 	 std::string const & name,
-	 Real const rTol = 1.0e-4,
-	 Real const aTol = 1.0e-6,
+	 Real const rTol,
+	 Real const aTol,
+	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 Function f = Function()
 	) :
-	 Super( name, rTol, aTol, var, f )
+	 Super( 1, name, rTol, aTol, fmu_me, var, f )
 	{}
 
 public: // Properties
-
-	// Order of Method
-	int
-	order() const
-	{
-		return 1;
-	}
 
 	// Continuous Value at Time t
 	Real

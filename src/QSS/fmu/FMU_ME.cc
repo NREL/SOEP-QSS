@@ -1,4 +1,4 @@
-// QSS FMU-ME Class
+// FMU-ME Class
 //
 // Project: QSS Solver
 //
@@ -44,14 +44,20 @@
 #include <QSS/fmu/Variable_all.hh>
 #include <QSS/container.hh>
 #include <QSS/cycles.hh>
-#include <QSS/globals.hh>
 #include <QSS/options.hh>
 #include <QSS/path.hh>
 #include <QSS/string.hh>
 
+// OpenMP Headers
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 // C++ Headers
 #include <algorithm>
 #include <cassert>
+#include <cstdlib>
+#include <ctime> // CPU time
 #include <functional>
 #include <iomanip>
 #include <iostream>
@@ -62,32 +68,49 @@
 namespace QSS {
 namespace fmu {
 
+	// Default Constructor
+	FMU_ME::
+	FMU_ME() :
+	 events( new Events() )
+	{}
+
+	// FMU-ME Path Constructor
+	FMU_ME::
+	FMU_ME( std::string const & path ) :
+	 events( new Events() )
+	{
+		init( path, false );
+	}
+
 	// Destructor
 	FMU_ME::
 	~FMU_ME()
 	{
-		fmu::cleanup();
+		cleanup();
 		std::free( states );
-		std::free( states_der );
+		std::free( derivatives );
 		std::free( event_indicators );
 		std::free( event_indicators_last );
 		std::free( var_list );
 		std::free( der_list );
 		if ( fmu ) fmi2_import_free( fmu );
 		if ( context ) fmi_import_free_context( context );
+		for ( Variable * var : vars ) delete var;
+		for ( Conditional * con : cons ) delete con;
+		delete events;
 	}
 
 	// Initialize
 	void
 	FMU_ME::
-	init( std::string const & path )
+	init( std::string const & path, bool const in_place )
 	{
 		if ( ! has_suffix( path, ".fmu" ) ) {
-			std::cerr << "FMU-ME name is not of the form <model>.fmu" << std::endl;
+			std::cerr << "\nFMU-ME name is not of the form <model>.fmu" << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
 
-		// Set up callbacks and context
+		// Set up FMU callbacks and context
 		callbacks.malloc = std::malloc;
 		callbacks.calloc = std::calloc;
 		callbacks.realloc = std::realloc;
@@ -97,13 +120,25 @@ namespace fmu {
 		callbacks.context = 0;
 		context = fmi_import_allocate_context( &callbacks );
 
-		// Unzip the FMU-ME in the resources directory
+		// Check FMU-ME exists and is FMI 2.0
 		if ( ! path::is_file( path ) ) {
 			std::cerr << "\nError: FMU file not found: " << path << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
 		name = path::base( path );
-		unzip_dir = path::dir( path );
+
+		// Set unzip directory
+		if ( in_place ) { // Use FMU directory
+			unzip_dir = path::dir( path );
+		} else { // Use temporary directory
+			unzip_dir = path::tmp + path::sep + name; //Do Randomize the path to avoid collisions
+			if ( ! path::make_dir( unzip_dir ) ) {
+				std::cerr << "\nError: FMU-ME unzip directory creation failed: " << unzip_dir << std::endl;
+				std::exit( EXIT_FAILURE );
+			}
+		}
+
+		// Get FMU's FMI version
 		fmi_version_enu_t const fmi_version( fmi_import_get_fmi_version( context, path.c_str(), unzip_dir.c_str() ) );
 		if ( fmi_version != fmi_version_2_0_enu ) {
 			std::cerr << "\nError: FMU-ME is not FMI 2.0" << std::endl;
@@ -119,7 +154,6 @@ namespace fmu {
 		}
 
 		// Check FMU-ME is ME
-		fmu::fmu = fmu;
 		if ( fmi2_import_get_fmu_kind( fmu ) == fmi2_fmu_kind_cs ) {
 			std::cerr << "\nError: FMU-ME is CS not ME" << std::endl;
 			std::exit( EXIT_FAILURE );
@@ -169,9 +203,42 @@ namespace fmu {
 		std::cout << n_event_indicators << " event indicators" << std::endl;
 
 		states = (fmi2_real_t*)std::calloc( n_states, sizeof( double ) );
-		states_der = (fmi2_real_t*)std::calloc( n_states, sizeof( double ) );
+		derivatives = (fmi2_real_t*)std::calloc( n_states, sizeof( double ) );
 		event_indicators = (fmi2_real_t*)std::calloc( n_event_indicators, sizeof( double ) );
 		event_indicators_last = (fmi2_real_t*)std::calloc( n_event_indicators, sizeof( double ) );
+	}
+
+	// Instantiate FMU
+	void
+	FMU_ME::
+	instantiate()
+	{
+		if ( fmi2_import_instantiate( fmu, "FMU-ME model instance", fmi2_model_exchange, 0, 0 ) == jm_status_error ) {
+			std::cerr << "\nError: fmi2_import_instantiate failed" << std::endl;
+			std::exit( EXIT_FAILURE );
+		}
+
+		fmi2_import_set_debug_logging( fmu, fmi2_false, 0, 0 );
+
+		fmi2_real_t const tstart( fmi2_import_get_default_experiment_start( fmu ) ); // [0.0]
+		fmi2_real_t const tstop( fmi2_import_get_default_experiment_stop( fmu ) ); // [1.0]
+		fmi2_real_t const relativeTolerance( fmi2_import_get_default_experiment_tolerance( fmu ) ); // [0.0001]
+		fmi2_boolean_t const toleranceControlled( fmi2_false ); // FMIL says tolerance control not supported for ME
+		fmi2_boolean_t const stopTimeDefined( fmi2_true );
+		std::cout << "\nSimulation Time Range:  Start: " << tstart << "  Stop: " << tstop << std::endl;
+		std::cout << "\nRelative Tolerance in FMU-ME: " << relativeTolerance << std::endl;
+		if ( fmi2_import_setup_experiment( fmu, toleranceControlled, relativeTolerance, tstart, stopTimeDefined, tstop ) >= fmi2_status_error ) {
+			std::cerr << "\nError: fmi2_import_setup_experiment failed" << std::endl;
+			std::exit( EXIT_FAILURE );
+		}
+		rTol = relativeTolerance;
+
+		// QSS time and tolerance run controls
+		t0 = tstart; // Simulation start time
+		tE = ( options::specified::tEnd ? options::tEnd : tstop ); // Simulation end time
+
+		fmi2_import_enter_initialization_mode( fmu );
+		fmi2_import_exit_initialization_mode( fmu );
 	}
 
 	// Options Setup
@@ -199,7 +266,7 @@ namespace fmu {
 		using Time = Variable::Time;
 		using Real = Variable::Real;
 		using Var_Names = std::unordered_set< std::string >; // FMU Variables names
-		using Function = std::function< SmoothToken const &( Time const ) >;
+		using Function = std::function< SmoothToken ( Time const ) >;
 
 		// I/o setup
 		std::cout << std::setprecision( 15 );
@@ -272,6 +339,7 @@ namespace fmu {
 			std::cout << " Desc: " << ( fmi2_import_get_variable_description( var ) ? fmi2_import_get_variable_description( var ) : "" ) << std::endl;
 			fmi2_value_reference_t const var_ref( fmi2_import_get_variable_vr( var ) );
 			std::cout << " Ref: " << var_ref << std::endl;
+			var_name_ref[ var_name ] = var_ref;
 			bool const var_has_start( fmi2_import_get_variable_has_start( var ) == 1 );
 			std::cout << " Start? " << var_has_start << std::endl;
 			fmi2_base_type_enu_t var_base_type( fmi2_import_get_variable_base_type( var ) );
@@ -286,19 +354,26 @@ namespace fmu {
 				if ( var_has_start ) std::cout << " Start: " << var_start << std::endl;
 				if ( var_causality == fmi2_causality_enu_output ) {
 					std::cout << " Type: Real: Output" << std::endl;
-					fmu_outs[ var_real ] = FMU_Variable( var, var_real, fmi2_import_get_variable_vr( var ), i+1 );
+					fmu_outs[ var_real ] = FMU_Variable( var, var_real, var_ref, i+1 );
 				}
 				if ( var_variability == fmi2_variability_enu_continuous ) {
 					std::cout << " Type: Real: Continuous" << std::endl;
-					FMU_Variable const fmu_var( var, var_real, fmi2_import_get_variable_vr( var ), i+1 );
+					FMU_Variable const fmu_var( var, var_real, var_ref, i+1 );
 					fmu_vars[ var_real ] = fmu_var;
 					fmu_var_of_ref[ var_ref ] = fmu_var;
 					if ( var_causality == fmi2_causality_enu_input ) {
 						std::cout << " Type: Real: Continuous: Input" << std::endl;
-						Function inp_fxn ;
-						auto i_inp_var = options::inp.find( var_name );
-						if ( i_inp_var != options::inp.end() ) { // Input function specified
-							std::string const & fxn_spec( i_inp_var->second );
+						Function inp_fxn;
+						auto i_fxn_var( options::fxn.find( var_name ) );
+						if ( i_fxn_var == options::fxn.end() ) i_fxn_var = options::fxn.find( name + '.' + var_name ); // Try as mdl.var
+						auto i_con_var( options::con.find( var_name ) );
+						if ( i_con_var == options::con.end() ) i_con_var = options::con.find( name + '.' + var_name ); // Try as mdl.var
+						if ( ( i_fxn_var != options::fxn.end() ) && ( i_con_var != options::con.end() ) ) {
+							std::cerr << "\n Error: Both function and connections specified for input variable: " << var_name << std::endl;
+							std::exit( EXIT_FAILURE );
+						}
+						if ( i_fxn_var != options::fxn.end() ) { // Input function specified
+							std::string const & fxn_spec( i_fxn_var->second );
 							std::string::size_type const ilb( fxn_spec.find( '[' ) );
 							if ( ilb == std::string::npos ) {
 								std::cerr << "\n Error: Input function spec missing [args]: " << fxn_spec << std::endl;
@@ -400,37 +475,53 @@ namespace fmu {
 								std::cerr << "\n Error: Input function spec function name unrecognized: " << fxn_spec << std::endl;
 								std::exit( EXIT_FAILURE );
 							}
+						} else if ( i_con_var != options::con.end() ) { // Input connection specified
+							std::string const & con_name( i_con_var->second );
+							std::cout << " Type: Real: Continuous: Input: Connection: " << con_name << std::endl;
+							Variable_Con0 * qss_var( nullptr );
+							if ( var_has_start ) {
+								qss_var = new Variable_Con0( var_name, var_start, this, fmu_var );
+							} else {
+								qss_var = new Variable_Con0( var_name, this, fmu_var );
+							}
+							vars.push_back( qss_var ); // Add to QSS variables
+							qss_var_of_ref[ var_ref ] = qss_var;
+							fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
+							std::cout << " FMU-ME idx: " << i+1 << " maps to QSS var: " << qss_var->name << std::endl;
 						} else { // Use hard-coded default function
-	//						inp_fxn = Function_Inp_constant( var_start ); // Constant start value
+	//						inp_fxn = Function_Inp_constant( var_has_start ? var_start : 1.0 ); // Constant start value
 	//						inp_fxn = Function_Inp_sin( 2.0, 10.0, var_has_start ? var_start : 1.0 ); // 2 * sin( 10 * t ) + 1
-							inp_fxn = Function_Inp_step( var_has_start ? var_start : 1.0, 1.0, 0.1 ); // Step up by 1 every 0.1 s via discrete events
-	//						inp_fxn = Function_Inp_toggle( var_has_start ? var_start : 1.0, 1.0, 0.1 ); // Step up/down by 1 every 0.1 s via discrete events
+							inp_fxn = Function_Inp_step( var_has_start ? var_start : 0.0, 1.0, 1.0 ); // Step up by 1 every 0.1 s via discrete events
+	//						inp_fxn = Function_Inp_toggle( var_has_start ? var_start : 0.0, 1.0, 0.1 ); // Step up/down by 1 every 0.1 s via discrete events
 						}
-						if ( var_has_start && var_start != inp_fxn( 0.0 ).x_0 ) {
-							std::cerr << "\n Error: Specified start value does not match function value at t=0 for " << var_name << std::endl;
-							std::exit( EXIT_FAILURE );
+						if ( inp_fxn ) {
+							std::cout << " Type: Real: Continuous: Input: Function" << std::endl;
+							if ( var_has_start && var_start != inp_fxn( 0.0 ).x_0 ) {
+								std::cerr << "\n Error: Specified start value does not match function value at t=0 for " << var_name << std::endl;
+								std::exit( EXIT_FAILURE );
+							}
+							Variable_Inp * qss_var( nullptr );
+							if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) ) {
+								qss_var = new Variable_Inp1( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
+							} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) ) {
+								qss_var = new Variable_Inp2( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
+							} else if ( options::qss == options::QSS::xQSS1 ) {
+								qss_var = new Variable_xInp1( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
+							} else if ( options::qss == options::QSS::xQSS2 ) {
+								qss_var = new Variable_xInp2( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
+							} else {
+								std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
+								std::exit( EXIT_FAILURE );
+							}
+							vars.push_back( qss_var ); // Add to QSS variables
+							qss_var_of_ref[ var_ref ] = qss_var;
+							fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
+							std::cout << " FMU-ME idx: " << i+1 << " maps to QSS var: " << qss_var->name << std::endl;
 						}
-						Variable_Inp * qss_var( nullptr );
-						if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) ) {
-							qss_var = new Variable_Inp1( var_name, options::rTol, options::aTol, fmu_var, inp_fxn );
-						} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) ) {
-							qss_var = new Variable_Inp2( var_name, options::rTol, options::aTol, fmu_var, inp_fxn );
-						} else if ( options::qss == options::QSS::xQSS1 ) {
-							qss_var = new Variable_xInp1( var_name, options::rTol, options::aTol, fmu_var, inp_fxn );
-						} else if ( options::qss == options::QSS::xQSS2 ) {
-							qss_var = new Variable_xInp2( var_name, options::rTol, options::aTol, fmu_var, inp_fxn );
-						} else {
-							std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
-							std::exit( EXIT_FAILURE );
-						}
-						vars.push_back( qss_var ); // Add to QSS variables
-						qss_var_of_ref[ var_ref ] = qss_var;
-						fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
-						std::cout << " FMU-ME idx: " << i+1 << " maps to QSS var: " << qss_var->name << std::endl;
 					}
 				} else if ( var_variability == fmi2_variability_enu_discrete ) {
 					std::cout << " Type: Real: Discrete" << std::endl;
-					FMU_Variable const fmu_var( var, var_real, fmi2_import_get_variable_vr( var ), i+1 );
+					FMU_Variable const fmu_var( var, var_real, var_ref, i+1 );
 					fmu_vars[ var_real ] = fmu_var;
 					fmu_var_of_ref[ var_ref ] = fmu_var;
 					if ( var_causality == fmi2_causality_enu_input ) {
@@ -438,13 +529,13 @@ namespace fmu {
 //						Function inp_fxn = Function_Inp_constant( var_start ); // Constant start value
 						Function inp_fxn = Function_Inp_step( var_has_start ? var_start : 1.0, 1.0, 0.1 ); // Step up by 1 every 0.1 s via discrete events
 //						Function inp_fxn = Function_Inp_toggle( var_has_start ? var_start : 1.0, 1.0, 0.1 ); // Toggle 0-1 every 0.1 s via discrete events
-						Variable_InpD * qss_var( new Variable_InpD( var_name, fmu_var, inp_fxn ) );
+						Variable_InpD * qss_var( new Variable_InpD( var_name, this, fmu_var, inp_fxn ) );
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
 						fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
 						std::cout << " FMU-ME idx: " << i+1 << " maps to QSS var: " << qss_var->name << std::endl;
 					} else {
-						Variable_D * qss_var( new Variable_D( var_name, var_start, fmu_var ) );
+						Variable_D * qss_var( new Variable_D( var_name, var_start, this, fmu_var ) );
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
 						if ( var_causality == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
@@ -464,7 +555,7 @@ namespace fmu {
 				int const var_start( var_has_start ? fmi2_import_get_integer_variable_start( var_int ) : 0 );
 				if ( var_has_start ) std::cout << " Start: " << var_start << std::endl;
 				if ( var_variability == fmi2_variability_enu_discrete ) {
-					FMU_Variable const fmu_var( var, var_int, fmi2_import_get_variable_vr( var ), i+1 );
+					FMU_Variable const fmu_var( var, var_int, var_ref, i+1 );
 					fmu_vars[ var_int ] = fmu_var;
 					fmu_var_of_ref[ var_ref ] = fmu_var;
 					if ( var_causality == fmi2_causality_enu_input ) {
@@ -472,14 +563,14 @@ namespace fmu {
 //						Function inp_fxn = Function_Inp_constant( var_start ); // Constant start value
 						Function inp_fxn = Function_Inp_step( var_has_start ? var_start : 1.0, 1.0, 0.1 ); // Step up by 1 every 0.1 s via discrete events
 //						Function inp_fxn = Function_Inp_toggle( var_has_start ? var_start : 1.0, 1.0, 0.1 ); // Toggle 0-1 every 0.1 s via discrete events
-						Variable_InpI * qss_var( new Variable_InpI( var_name, fmu_var, inp_fxn ) );
+						Variable_InpI * qss_var( new Variable_InpI( var_name, this, fmu_var, inp_fxn ) );
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
 						fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
 						std::cout << " FMU-ME idx: " << i+1 << " maps to QSS var: " << qss_var->name << std::endl;
 					} else {
 						std::cout << " Type: Integer: Discrete" << std::endl;
-						Variable_I * qss_var( new Variable_I( var_name, var_start, fmu_var ) );
+						Variable_I * qss_var( new Variable_I( var_name, var_start, this, fmu_var ) );
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
 						if ( var_causality == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
@@ -499,20 +590,20 @@ namespace fmu {
 				bool const var_start( var_has_start ? fmi2_import_get_boolean_variable_start( var_bool ) != 0 : 0 );
 				if ( var_has_start ) std::cout << " Start: " << var_start << std::endl;
 				if ( var_variability == fmi2_variability_enu_discrete ) {
-					FMU_Variable const fmu_var( var, var_bool, fmi2_import_get_variable_vr( var ), i+1 );
+					FMU_Variable const fmu_var( var, var_bool, var_ref, i+1 );
 					fmu_vars[ var_bool ] = fmu_var;
 					fmu_var_of_ref[ var_ref ] = fmu_var;
 					if ( var_causality == fmi2_causality_enu_input ) {
 						std::cout << " Type: Boolean: Discrete: Input" << std::endl;
 						Function inp_fxn = Function_Inp_toggle( 1.0, 1.0, 0.1 ); // Toggle 0-1 every 0.1 s via discrete events
-						Variable_InpB * qss_var( new Variable_InpB( var_name, fmu_var, inp_fxn ) );
+						Variable_InpB * qss_var( new Variable_InpB( var_name, this, fmu_var, inp_fxn ) );
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
 						fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
 						std::cout << " FMU-ME idx: " << i+1 << " maps to QSS var: " << qss_var->name << std::endl;
 					} else {
 						std::cout << " Type: Boolean: Discrete" << std::endl;
-						Variable_B * qss_var( new Variable_B( var_name, var_start, fmu_var ) );
+						Variable_B * qss_var( new Variable_B( var_name, var_start, this, fmu_var ) );
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
 						if ( var_causality == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
@@ -579,10 +670,10 @@ namespace fmu {
 
 		// Process FMU derivatives
 		der_list = fmi2_import_get_derivatives_list( fmu );
-		size_type const n_ders( fmi2_import_get_variable_list_size( der_list ) );
-		std::cout << "\nFMU Derivative Processing: Num FMU-ME Derivatives: " << n_ders << " =====" << std::endl;
+		size_type const n_derivatives( fmi2_import_get_variable_list_size( der_list ) );
+		std::cout << "\nFMU Derivative Processing: Num FMU-ME Derivatives: " << n_derivatives << " =====" << std::endl;
 		fmi2_value_reference_t const * drs( fmi2_import_get_value_referece_list( der_list ) ); // reference is spelled wrong in FMIL API
-		for ( size_type i = 0, ics = 0; i < n_ders; ++i ) {
+		for ( size_type i = 0, ics = 0; i < n_derivatives; ++i ) {
 			std::cout << "\nDerivative  Ref: " << drs[ i ] << std::endl;
 			fmi2_import_variable_t * der( fmi2_import_get_variable( der_list, i ) );
 			std::string const der_name( fmi2_import_get_variable_name( der ) );
@@ -618,17 +709,17 @@ namespace fmu {
 					}
 					Variable_QSS * qss_var( nullptr );
 					if ( options::qss == options::QSS::QSS1 ) {
-						qss_var = new Variable_QSS1( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
+						qss_var = new Variable_QSS1( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::QSS2 ) {
-						qss_var = new Variable_QSS2( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
+						qss_var = new Variable_QSS2( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS1 ) {
-						qss_var = new Variable_LIQSS1( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
+						qss_var = new Variable_LIQSS1( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS2 ) {
-						qss_var = new Variable_LIQSS2( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
+						qss_var = new Variable_LIQSS2( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::xQSS1 ) {
-						qss_var = new Variable_xQSS1( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
+						qss_var = new Variable_xQSS1( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::xQSS2 ) {
-						qss_var = new Variable_xQSS2( var_name, options::rTol, options::aTol, states_initial, fmu_var, fmu_der );
+						qss_var = new Variable_xQSS2( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
 					} else {
 						std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 						std::exit( EXIT_FAILURE );
@@ -694,9 +785,9 @@ namespace fmu {
 									fmu_dvrs[ der_real ] = fmu_var;
 									Variable_ZC * qss_var( nullptr );
 									if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) || ( options::qss == options::QSS::xQSS1 ) ) {
-										qss_var = new Variable_ZC1( var_name, options::rTol, options::aTol, options::zTol, fmu_var, fmu_der );
+										qss_var = new Variable_ZC1( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var, fmu_der );
 									} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) || ( options::qss == options::QSS::xQSS2 ) ) {
-										qss_var = new Variable_ZC2( var_name, options::rTol, options::aTol, options::zTol, fmu_var, fmu_der );
+										qss_var = new Variable_ZC2( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var, fmu_der );
 									} else {
 										std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 										std::exit( EXIT_FAILURE );
@@ -713,7 +804,7 @@ namespace fmu {
 
 									// Create single clause when block for the zero-crossing variable for now: FMU conditional block info would allow us to do more
 									using When = Conditional_When< Variable >;
-									When * when( new When() );
+									When * when( new When( events ) );
 									cons.push_back( when );
 									When::Clause * when_clause( when->add_clause() );
 									when_clause->add( qss_var );
@@ -743,7 +834,7 @@ namespace fmu {
 			char * factorKind( nullptr );
 			fmi2_import_get_derivatives_dependencies( fmu, &startIndex, &dependency, &factorKind );
 			if ( startIndex != nullptr ) { // Derivatives dependency info present in XML
-				for ( size_type i = 0; i < n_ders; ++i ) {
+				for ( size_type i = 0; i < n_derivatives; ++i ) {
 					std::cout << "\nDerivative  Ref: " << drs[ i ] << std::endl;
 					fmi2_import_variable_t * der( fmi2_import_get_variable( der_list, i ) );
 					std::string const der_name( fmi2_import_get_variable_name( der ) );
@@ -1088,25 +1179,24 @@ namespace fmu {
 			var_idx[ vars[ i ] ] = i;
 		}
 
-		// Containers of ZC and non-ZC variables
-		Variables vars_ZC;
-		Variables vars_NZ;
-		int max_QSS_order( 0 );
+		// Containers of non-zero-crossing and zero-crossing variables
+		order_max_NZ = order_max_ZC = 0;
 		for ( auto var : vars ) {
-			if ( var->is_ZC() ) { // ZC variable
-				vars_ZC.push_back( var );
-			} else { // Non-ZC variable
+			if ( var->not_ZC() ) { // Non-zero crossing variable
 				vars_NZ.push_back( var );
-				max_QSS_order = std::max( max_QSS_order, var->order() ); // Max QSS order of non-ZC variables to avoid unnec loop stages
+				order_max_NZ = std::max( order_max_NZ, var->order() ); // Max QSS order of non-zero-crossing variables
+			} else { // Zero crossing variable
+				vars_ZC.push_back( var );
+				order_max_ZC = std::max( order_max_ZC, var->order() ); // Max QSS order of zero-crossing variables
 			}
 		}
-		int const QSS_order_max( max_QSS_order ); // Highest QSS order in use
-		assert( QSS_order_max <= 3 );
+		assert( order_max_NZ <= 3 );
+		assert( order_max_ZC <= 3 );
 
 		// Variable initialization
 		std::cout << "\nInitialization =====" << std::endl;
-		fmu::set_time( t0 );
-		fmu::init_derivatives( n_ders );
+		set_time( t0 );
+		init_derivatives( n_derivatives );
 		if ( t0 != Time( 0 ) ) {
 			for ( auto var : vars ) {
 				var->init_time( t0 );
@@ -1121,16 +1211,16 @@ namespace fmu {
 		for ( auto var : vars_NZ ) {
 			var->init_1();
 		}
-		if ( QSS_order_max >= 2 ) {
-			fmu::set_time( t = t0 + options::dtNum ); // Set time to t0 + delta for numeric differentiation
+		if ( order_max_NZ >= 2 ) {
+			set_time( t = t0 + options::dtNum ); // Set time to t0 + delta for numeric differentiation
 			for ( auto var : vars_NZ ) {
 				if ( ! var->is_Discrete() ) var->fmu_set_sn( t );
 			}
-			fmu::get_derivatives(); // Not sure why we need this here but not in simulate_fmu_me
+			get_derivatives(); // Not sure why we need this here but not in simulate_fmu_me
 			for ( auto var : vars_NZ ) {
 				var->init_2();
 			}
-			fmu::set_time( t = t0 );
+			set_time( t = t0 );
 		}
 		if ( ! vars_ZC.empty() ) {
 			for ( auto var : vars_ZC ) {
@@ -1139,12 +1229,12 @@ namespace fmu {
 			for ( auto var : vars_ZC ) {
 				var->init_1();
 			}
-			if ( QSS_order_max >= 2 ) {
-				fmu::set_time( t0 + options::dtNum );
+			if ( order_max_ZC >= 2 ) {
+				set_time( t0 + options::dtNum );
 				for ( auto var : vars_ZC ) {
 					var->init_2();
 				}
-			fmu::set_time( t0 );
+				set_time( t0 );
 			}
 		}
 
@@ -1152,7 +1242,7 @@ namespace fmu {
 		if ( options::cycles ) cycles< Variable >( vars );
 
 		// Output initialization
-		if ( options::output::k && ( fmu_qss_out_var_refs.size() > 0u ) ) { // FMU-QSS t0 smooth token outputs
+		if ( options::output::k && ( fmu_qss_out_var_refs.size() > 0u ) ) { // FMU t0 smooth token outputs
 			for ( auto const & var_ref : fmu_qss_out_var_refs ) {
 				auto ivar( qss_var_of_ref.find( var_ref ) );
 				if ( ivar != qss_var_of_ref.end() ) {
@@ -1170,16 +1260,17 @@ namespace fmu {
 		doSOut = ( options::output::s && ( options::output::x || options::output::q ) ) || ( options::output::f && ( n_all_outs > 0u ) ) || ( options::output::k && ( n_fmu_qss_qss_outs > 0u ) );
 		doTOut = options::output::t && ( options::output::x || options::output::q );
 		doROut = options::output::r && ( options::output::x || options::output::q );
+		std::string const output_dir( options::have_multiple_models() ? name : std::string() );
 		if ( ( options::output::t || options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) { // QSS t0 outputs
 			if ( options::output::x ) x_outs.reserve( vars.size() );
 			if ( options::output::q ) q_outs.reserve( vars.size() );
 			for ( auto var : vars ) {
 				if ( options::output::x ) {
-					x_outs.push_back( Output( var->name, 'x' ) );
+					x_outs.push_back( Output( output_dir, var->name, 'x' ) );
 					x_outs.back().append( t, var->x( t ) );
 				}
 				if ( options::output::q ) {
-					q_outs.push_back( Output( var->name, 'q' ) );
+					q_outs.push_back( Output( output_dir, var->name, 'q' ) );
 					q_outs.back().append( t, var->q( t ) );
 				}
 			}
@@ -1187,23 +1278,23 @@ namespace fmu {
 		if ( options::output::f && ( n_all_outs > 0u ) ) { // FMU t0 outputs
 			f_outs.reserve( n_all_outs );
 			for ( auto const & var : outs ) { // FMU QSS variables
-				f_outs.push_back( Output( var->name, 'f' ) );
+				f_outs.push_back( Output( output_dir, var->name, 'f' ) );
 				f_outs.back().append( t, var->x( t ) );
 			}
 			for ( auto const & e : fmu_outs ) { // FMU (non-QSS) variables
 				FMU_Variable const & var( e.second );
-				f_outs.push_back( Output( fmi2_import_get_variable_name( var.var ), 'f' ) );
-				f_outs.back().append( t, fmu::get_real( var.ref ) );
+				f_outs.push_back( Output( output_dir, fmi2_import_get_variable_name( var.var ), 'f' ) );
+				f_outs.back().append( t, get_real( var.ref ) );
 			}
 		}
-		if ( options::output::k && ( fmu_qss_out_var_refs.size() > 0u ) ) { // FMU-QSS t0 smooth token outputs
+		if ( options::output::k && ( fmu_qss_out_var_refs.size() > 0u ) ) { // FMU t0 smooth token outputs
 			for ( Variable * var : fmu_qss_qss_outs ) {
-				k_qss_outs.push_back( SmoothTokenOutput( var->name, 'k' ) );
-				k_qss_outs.back().append( t, SmoothToken( var->x( t ), var->x1( t ), var->x2( t ), var->x3( t ) ) );
+				k_qss_outs.push_back( SmoothTokenOutput( output_dir, var->name, 'k' ) );
+				k_qss_outs.back().append( t, var->k( t ) );
 			}
 //			for ( FMU_Variable const & fmu_var : fmu_qss_fmu_outs ) {
-//				k_fmu_outs.push_back( Output( fmi2_import_get_variable_name( fmu_var.var, 'k' ) ) );
-//				k_fmu_outs.back().append( t, fmu::get_real( fmu_var.ref ) ); //Do SmoothToken once we can get derivatives
+//				k_fmu_outs.push_back( Output( output_dir, fmi2_import_get_variable_name( fmu_var.var, 'k' ) ) );
+//				k_fmu_outs.back().append( t, get_real( fmu_var.ref ) ); //Do SmoothToken once we can get derivatives
 //			}
 		}
 
@@ -1217,6 +1308,43 @@ namespace fmu {
 		pass_warned = false;
 		enterEventMode = fmi2_false;
 		terminateSimulation = fmi2_false;
+	}
+
+	// Reinitialize
+	void
+	FMU_ME::
+	reinitialize()
+	{
+		set_time( t0 );
+		for ( auto var : vars_NZ ) {
+			var->init_1();
+		}
+		if ( order_max_NZ >= 2 ) {
+			set_time( t = t0 + options::dtNum ); // Set time to t0 + delta for numeric differentiation
+			for ( auto var : vars_NZ ) {
+				if ( ! var->is_Discrete() ) var->fmu_set_sn( t );
+			}
+			get_derivatives(); // Not sure why we need this here but not in simulate_fmu_me
+			for ( auto var : vars_NZ ) {
+				var->init_2();
+			}
+			set_time( t = t0 );
+		}
+		if ( ! vars_ZC.empty() ) {
+			for ( auto var : vars_ZC ) {
+				var->init_0();
+			}
+			for ( auto var : vars_ZC ) {
+				var->init_1();
+			}
+			if ( order_max_ZC >= 2 ) {
+				set_time( t0 + options::dtNum );
+				for ( auto var : vars_ZC ) {
+					var->init_2();
+				}
+				set_time( t0 );
+			}
+		}
 	}
 
 	// Simulation Pass
@@ -1234,9 +1362,17 @@ namespace fmu {
 		std::cout << std::setprecision( 15 );
 		std::cerr << std::setprecision( 15 );
 
+		// Timing setup
+		Time const tSim( tE - t0 ); // Simulation time span expected
+		int tPer( 0 ); // Percent of simulation time completed
+		std::clock_t const cpu_time_beg( std::clock() ); // CPU time
+#ifdef _OPENMP
+		double const wall_time_beg( omp_get_wtime() ); // Wall time
+#endif
+
 		Time tNext( eventInfoMaster->nextEventTimeDefined ? std::min( eventInfoMaster->nextEventTime, tE ) : tE );
 		while ( t <= tNext ) {
-			t = events.top_time();
+			t = events->top_time();
 			if ( doSOut ) { // Sampled and/or FMU outputs
 				Time const tStop( std::min( t, tNext ) );
 				while ( tOut < tStop ) {
@@ -1254,7 +1390,7 @@ namespace fmu {
 							}
 						}
 						if ( n_fmu_outs > 0u ) { // FMU (non-QSS) variables
-							fmu::set_time( tOut );
+							set_time( tOut );
 							for ( size_type i = 0; i < n_states; ++i ) {
 								states[ i ] = state_vars[ i ]->x( tOut );
 							}
@@ -1262,7 +1398,7 @@ namespace fmu {
 							size_type i( n_outs );
 							for ( auto const & e : fmu_outs ) {
 								FMU_Variable const & var( e.second );
-								f_outs[ i++ ].append( tOut, fmu::get_real( var.ref ) );
+								f_outs[ i++ ].append( tOut, get_real( var.ref ) );
 							}
 						}
 					}
@@ -1270,18 +1406,18 @@ namespace fmu {
 						if ( n_fmu_qss_qss_outs > 0u ) {
 							for ( size_type i = 0; i < n_fmu_qss_qss_outs; ++i ) {
 								Variable * var( fmu_qss_qss_outs[ i ] );
-								k_qss_outs[ i ].append( tOut, SmoothToken( var->x( tOut ), var->x1( tOut ), var->x2( tOut ), var->x3( tOut ) ) );
+								k_qss_outs[ i ].append( tOut, var->k( tOut ) );
 							}
 						}
 //						if ( fmu_qss_fmu_outs.size() > 0u ) {
-//							fmu::set_time( tOut );
+//							set_time( tOut );
 //							for ( size_type i = 0; i < n_states; ++i ) {
 //								states[ i ] = state_vars[ i ]->x( tOut );
 //							}
 //							fmi2_import_set_continuous_states( fmu, states, n_states );
 //							size_type i( n_fmu_qss_qss_outs );
 //							for ( FMU_Variable const & fmu_var : fmu_qss_qss_outs ) {
-//								k_fmu_outs[ i++ ].append( tOut, fmu::get_real( fmu_var.ref ) ); //Do SmoothToken once we can get derivatives
+//								k_fmu_outs[ i++ ].append( tOut, get_real( fmu_var.ref ) ); //Do SmoothToken once we can get derivatives
 //							}
 //						}
 					}
@@ -1290,9 +1426,9 @@ namespace fmu {
 				}
 			}
 			if ( t <= tNext ) { // Perform event(s)
-				fmu::set_time( t );
-				Event< Target > & event( events.top() );
-				SuperdenseTime const s( events.top_superdense_time() );
+				set_time( t );
+				Event< Target > & event( events->top() );
+				SuperdenseTime const s( events->top_superdense_time() );
 				if ( s.i >= options::pass ) { // Pass count limit reached
 					if ( s.i <= max_pass_count_multiplier * options::pass ) { // Use time step controls
 						if ( sim_dtMin > 0.0 ) { // Double dtMin
@@ -1319,10 +1455,10 @@ namespace fmu {
 						break;
 					}
 				}
-				events.set_active_time();
+				events->set_active_time();
 				if ( event.is_discrete() ) { // Discrete event
 					++n_discrete_events;
-					if ( events.single() ) { // Single trigger
+					if ( events->single() ) { // Single trigger
 						Variable * trigger( event.sub< Variable >() );
 						assert( trigger->tD == t );
 
@@ -1374,8 +1510,8 @@ namespace fmu {
 							}
 						}
 					} else { // Simultaneous triggers
-						Variables triggers( events.top_subs< Variable >() );
-						Observers_S observers( triggers );
+						Variables triggers( events->top_subs< Variable >() );
+						Observers_S observers( triggers, this );
 						sort_by_order( triggers );
 
 						if ( doTOut ) { // Time event output: before discrete changes
@@ -1420,11 +1556,11 @@ namespace fmu {
 //								triggers[ i ]->advance_discrete_1();
 //							}
 //							if ( triggers_order_max >= 2 ) { // 2nd order pass
-//								fmu::set_time( t + options::dtNum ); // Set time to t + delta for numeric differentiation
+//								set_time( t + options::dtNum ); // Set time to t + delta for numeric differentiation
 //								for ( size_type i = begin_order_index( triggers, 2 ), n = triggers.size(); i < n; ++i ) {
 //									triggers[ i ]->advance_discrete_2();
 //								}
-//								fmu::set_time( t );
+//								set_time( t );
 //							}
 //						}
 
@@ -1456,8 +1592,8 @@ namespace fmu {
 					}
 				} else if ( event.is_ZC() ) { // Zero-crossing event
 					++n_ZC_events;
-					while ( events.top_superdense_time() == s ) {
-						Variable * trigger( events.top_sub< Variable >() );
+					while ( events->top_superdense_time() == s ) {
+						Variable * trigger( events->top_sub< Variable >() );
 						assert( trigger->tZC() == t );
 						trigger->st = s; // Set trigger superdense time
 						trigger->advance_ZC();
@@ -1477,8 +1613,8 @@ namespace fmu {
 						}
 					}
 				} else if ( event.is_conditional() ) { // Conditional event
-					while ( events.top_superdense_time() == s ) {
-						Conditional * trigger( events.top_sub< Conditional >() );
+					while ( events->top_superdense_time() == s ) {
+						Conditional * trigger( events->top_sub< Conditional >() );
 						trigger->st = s; // Set trigger superdense time
 						trigger->advance_conditional();
 					}
@@ -1487,7 +1623,7 @@ namespace fmu {
 					// Perform FMU event mode handler processing /////
 
 					// Advance FMU time to help it detect zero crossing event
-					fmu::set_time( t + options::dtZC );
+					set_time( t + options::dtZC );
 
 					// Get event indicators
 					std::swap( event_indicators, event_indicators_last );
@@ -1515,11 +1651,11 @@ namespace fmu {
 					}
 
 					// Restore FMU simulation time
-					fmu::set_time( t );
+					set_time( t );
 
 					// Perform handler operations on QSS side
 					if ( enterEventMode || zero_crossing_event ) {
-						if ( events.single() ) { // Single handler
+						if ( events->single() ) { // Single handler
 							Variable * handler( event.sub< Variable >() );
 
 							if ( doROut ) { // Requantization output: before handler changes
@@ -1568,8 +1704,8 @@ namespace fmu {
 								}
 							}
 						} else { // Simultaneous handlers
-							Variables handlers( events.top_subs< Variable >() );
-							Observers_S observers( handlers );
+							Variables handlers( events->top_subs< Variable >() );
+							Observers_S observers( handlers, this );
 							sort_by_order( handlers );
 
 							if ( doROut ) { // Requantization output: before handler changes
@@ -1605,11 +1741,11 @@ namespace fmu {
 									handlers[ i ]->advance_handler_1();
 								}
 								if ( handlers_order_max >= 2 ) { // 2nd order pass
-									fmu::set_time( t + options::dtNum ); // Advance time to t + delta for numeric differentiation
+									set_time( t + options::dtNum ); // Advance time to t + delta for numeric differentiation
 									for ( size_type i = begin_order_index( handlers, 2 ), n = handlers.size(); i < n; ++i ) {
 										handlers[ i ]->advance_handler_2();
 									}
-									fmu::set_time( t );
+									set_time( t );
 								}
 							}
 
@@ -1640,19 +1776,20 @@ namespace fmu {
 							}
 						}
 					} else { // Update event queue entries for no-action handler event
-						if ( events.single() ) { // Single handler
+						if ( events->single() ) { // Single handler
 							Variable * handler( event.sub< Variable >() );
 							handler->no_advance_handler();
 						} else { // Simultaneous handlers
-							for ( Variable * handler : events.top_subs< Variable >() ) {
+							for ( Variable * handler : events->top_subs< Variable >() ) {
 								handler->no_advance_handler();
 							}
 						}
 					}
 				} else if ( event.is_QSS() ) { // QSS requantization event
 					++n_QSS_events;
-					if ( events.single() ) { // Single trigger
+					if ( events->single() ) { // Single trigger
 						Variable * trigger( event.sub< Variable >() );
+if ( trigger->tE != t ) std::cerr << '\n' << name << ' ' << trigger->name << ' ' << trigger->tE << ' ' << t << std::endl;////////////////////////////////
 						assert( trigger->tE == t );
 						assert( trigger->not_ZC() ); // ZC variable requantizations are QSS_ZC events
 						trigger->st = s; // Set trigger superdense time
@@ -1691,8 +1828,8 @@ namespace fmu {
 						}
 					} else { // Simultaneous triggers
 						++n_QSS_simultaneous_events;
-						Variables triggers( events.top_subs< Variable >() );
-						Observers_S observers( triggers );
+						Variables triggers( events->top_subs< Variable >() );
+						Observers_S observers( triggers, this );
 						sort_by_order( triggers );
 
 						if ( doROut ) { // Requantization output: Quantized rep before to capture its discrete change
@@ -1717,11 +1854,11 @@ namespace fmu {
 						}
 						int const triggers_order_max( triggers.back()->order() );
 						if ( triggers_order_max >= 2 ) { // 2nd order pass
-							fmu::set_time( t + options::dtNum ); // Set time to t + delta for numeric differentiation
+							set_time( t + options::dtNum ); // Set time to t + delta for numeric differentiation
 							for ( size_type i = begin_order_index( triggers, 2 ), n = triggers.size(); i < n; ++i ) {
 								triggers[ i ]->advance_QSS_2();
 							}
-							fmu::set_time( t );
+							set_time( t );
 						}
 
 						if ( observers.have() ) observers.advance( t ); // Advance observers
@@ -1778,9 +1915,18 @@ namespace fmu {
 				}
 			}
 
+			// Report % complete
+			if ( ! options::output::d ) {
+				int const tPerNow( static_cast< int >( 100 * ( t - t0 ) / tSim ) );
+				if ( tPerNow > tPer ) { // Report % complete
+					tPer = tPerNow;
+					std::cout << '\r' << std::setw( 3 ) << tPer << "% complete" << std::flush;
+				}
+			}
+
 			// FMU end of step processing
 	// Not sure we need to set continuous states: It would be a performance hit
-	//		fmu::set_time( t );
+	//		set_time( t );
 	//		for ( size_type i = 0; i < n_states; ++i ) {
 	//			states[ i ] = state_vars[ i ]->x( t );
 	//		}
@@ -1793,6 +1939,37 @@ namespace fmu {
 		}
 		eventInfoMaster->nextEventTimeDefined = fmi2_true;
 		eventInfoMaster->nextEventTime = t;
+
+		std::clock_t const cpu_time_end( std::clock() ); // CPU time
+#ifdef _OPENMP
+		double const wall_time_end( omp_get_wtime() ); // Wall time
+#endif
+		if ( ! options::output::d ) std::cout << '\r' << std::setw( 3 ) << 100 << "% complete" << std::endl;
+
+		// Reporting
+		std::cout << "\nSimulation Complete =====" << std::endl;
+		if ( n_discrete_events > 0 ) std::cout << n_discrete_events << " discrete event passes" << std::endl;
+		if ( n_QSS_events > 0 ) std::cout << n_QSS_events << " requantization event passes" << std::endl;
+		if ( n_QSS_simultaneous_events > 0 ) std::cout << n_QSS_simultaneous_events << " simultaneous requantization event passes" << std::endl;
+		if ( n_ZC_events > 0 ) std::cout << n_ZC_events << " zero-crossing event passes" << std::endl;
+		std::cout << "Simulation CPU time: " << double( cpu_time_end - cpu_time_beg ) / CLOCKS_PER_SEC << " (s)" << std::endl; // CPU time
+#ifdef _OPENMP
+		std::cout << "Simulation wall time: " << wall_time_end - wall_time_beg << " (s)" << std::endl; // Wall time
+#endif
+	}
+
+	// Simulation Pass
+	void
+	FMU_ME::
+	simulate()
+	{
+		fmi2_event_info_t eventInfo;
+		eventInfo.newDiscreteStatesNeeded = fmi2_false;
+		eventInfo.terminateSimulation = fmi2_false;
+		eventInfo.nominalsOfContinuousStatesChanged = fmi2_false;
+		eventInfo.valuesOfContinuousStatesChanged = fmi2_false;
+		eventInfo.nextEventTimeDefined = fmi2_false;
+		simulate( &eventInfo );
 	}
 
 	// Post-Simulation Actions
@@ -1822,7 +1999,7 @@ namespace fmu {
 				}
 			}
 			if ( n_fmu_outs > 0u ) { // FMU (non-QSS) variables
-				fmu::set_time( tE );
+				set_time( tE );
 				for ( size_type i = 0; i < n_states; ++i ) {
 					states[ i ] = state_vars[ i ]->x( tE );
 				}
@@ -1830,7 +2007,7 @@ namespace fmu {
 				size_type i( n_outs );
 				for ( auto const & e : fmu_outs ) {
 					FMU_Variable const & var( e.second );
-					f_outs[ i++ ].append( tE, fmu::get_real( var.ref ) );
+					f_outs[ i++ ].append( tE, get_real( var.ref ) );
 				}
 			}
 		}
@@ -1838,38 +2015,50 @@ namespace fmu {
 			if ( n_fmu_qss_qss_outs > 0u ) {
 				for ( size_type i = 0; i < n_fmu_qss_qss_outs; ++i ) {
 					Variable * var( fmu_qss_qss_outs[ i ] );
-					k_qss_outs[ i ].append( tE, SmoothToken( var->x( tE ), var->x1( tE ), var->x2( tE ), var->x3( tE ) ) );
+					k_qss_outs[ i ].append( tE, var->k( tE ) );
 				}
 			}
 //			if ( fmu_qss_fmu_outs.size() > 0u ) {
-//				fmu::set_time( tE );
+//				set_time( tE );
 //				for ( size_type i = 0; i < n_states; ++i ) {
 //					states[ i ] = state_vars[ i ]->x( tE );
 //				}
 //				fmi2_import_set_continuous_states( fmu, states, n_states );
 //				size_type i( n_fmu_qss_qss_outs );
 //				for ( FMU_Variable const & fmu_var : fmu_qss_qss_outs ) {
-//					k_fmu_outs[ i++ ].append( tE, fmu::get_real( fmu_var.ref ) ); //Do SmoothToken once we can get derivatives
+//					k_fmu_outs[ i++ ].append( tE, get_real( fmu_var.ref ) ); //Do SmoothToken once we can get derivatives
 //				}
 //			}
 		}
-
-		// Reporting
-		std::cout << "\nSimulation Complete =====" << std::endl;
-		if ( n_discrete_events > 0 ) std::cout << n_discrete_events << " discrete event passes" << std::endl;
-		if ( n_QSS_events > 0 ) std::cout << n_QSS_events << " requantization event passes" << std::endl;
-		if ( n_QSS_simultaneous_events > 0 ) std::cout << n_QSS_simultaneous_events << " simultaneous requantization event passes" << std::endl;
-		if ( n_ZC_events > 0 ) std::cout << n_ZC_events << " zero-crossing event passes" << std::endl;
-
-		// QSS cleanup
-		for ( auto & var : vars ) delete var;
-		vars.clear();
-		for ( auto & con : cons ) delete con;
-		cons.clear();
 }
 
-// Globals
-FMU_ME fmu_me;
+	// FMI Status Check/Report
+	bool
+	FMU_ME::
+	status_check( fmi2_status_t const status, std::string const & fxn_name )
+	{
+		switch ( status ) {
+		case fmi2_status_ok:
+			return true;
+		case fmi2_status_warning:
+			if ( ! fxn_name.empty() ) std::cerr << fxn_name << " FMI status = warning" << std::endl;
+			return false;
+		case fmi2_status_discard:
+			if ( ! fxn_name.empty() ) std::cerr << fxn_name << " FMI status = discard" << std::endl;
+			return false;
+		case fmi2_status_error:
+			if ( ! fxn_name.empty() ) std::cerr << fxn_name << " FMI status = error" << std::endl;
+			return false;
+		case fmi2_status_fatal:
+			if ( ! fxn_name.empty() ) std::cerr << fxn_name << " FMI status = fatal" << std::endl;
+			return false;
+		case fmi2_status_pending:
+			if ( ! fxn_name.empty() ) std::cerr << fxn_name << " FMI status = pending" << std::endl;
+			return false;
+		default:
+			return false;
+		}
+	}
 
 } // fmu
 } // QSS

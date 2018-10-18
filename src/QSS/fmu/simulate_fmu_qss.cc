@@ -34,6 +34,7 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // QSS Headers
+#include <QSS/fmu/simulate_fmu_qss.hh>
 #include <QSS/fmu/FMU_QSS.hh>
 #include <QSS/fmu/FMI.hh>
 #include <QSS/options.hh>
@@ -51,13 +52,14 @@ namespace fmu {
 
 // Simulate an FMU-QSS with QSS
 void
-simulate_fmu_qss()
+simulate_fmu_qss( std::string const & path )
 {
 	// Types
 	using Time = double;
 
 	// Initialize the FMUs
-	fmu_qss.init( options::model ); // Need to load FMU-QSS for guid arg to fmi2Instantiate
+	FMU_QSS fmu_qss( path );
+	reg( fmi2_import_get_GUID( fmu_qss.fmu ), &fmu_qss );
 
 	// Instantiation
 	fmi2Component c( fmi2Instantiate( "FMU-QSS model instance", fmi2ModelExchange, fmi2_import_get_GUID( fmu_qss.fmu ), fmu_qss.fmuResourceLocation().c_str(), (fmi2CallbackFunctions*)&fmu_qss.callBackFunctions, 0, 0 ) );
@@ -65,9 +67,10 @@ simulate_fmu_qss()
 		std::cerr << "\nError: fmi2Instantiate failed: " << std::endl;
 		std::exit( EXIT_FAILURE );
 	}
+	reg( c, &fmu_qss );
 
 	// Time initialization
-	Time const tStart( 0.0 );
+	Time const tStart( fmi2_import_get_default_experiment_start( fmu_qss.fmu ) );
 	Time const tEnd( options::specified::tEnd ? options::tEnd : fmi2_import_get_default_experiment_stop( fmu_qss.fmu ) ); // No FMI API for getting stop time from FMU
 	Time const tNext( tEnd ); // This can be a varying next step stop time to do output to another FMU
 	Time time( tStart );
@@ -112,6 +115,7 @@ simulate_fmu_qss()
 	}
 	fmi2Terminate( c );
 	fmi2FreeInstance( c );
+	unreg( &fmu_qss );
 }
 
 } // fmu

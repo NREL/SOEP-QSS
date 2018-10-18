@@ -54,30 +54,33 @@ public: // Types
 
 	using Super = Variable;
 
-	using Function = std::function< SmoothToken const &( Time const ) >;
+	using Function = std::function< SmoothToken ( Time const ) >;
 
 protected: // Creation
 
 	// Name + Tolerance Constructor
 	Variable_Inp(
+	 int const order,
 	 std::string const & name,
 	 Real const rTol,
 	 Real const aTol,
+	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 Function f = Function()
 	) :
-	 Super( name, rTol, aTol, var ),
+	 Super( order, name, rTol, aTol, fmu_me, var ),
 	 f_( f )
 	{}
 
 	// Name Constructor
-	explicit
 	Variable_Inp(
+	 int const order,
 	 std::string const & name,
+	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 Function f = Function()
 	) :
-	 Super( name, var ),
+	 Super( order, name, fmu_me, var ),
 	 f_( f )
 	{}
 

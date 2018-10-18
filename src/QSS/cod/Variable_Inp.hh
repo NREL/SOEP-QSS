@@ -59,13 +59,13 @@ public: // Types
 protected: // Creation
 
 	// Constructor
-	explicit
 	Variable_Inp(
+	 int const order,
 	 std::string const & name,
 	 Real const rTol = 1.0e-4,
 	 Real const aTol = 1.0e-6
 	) :
-	 Super( name, rTol, aTol )
+	 Super( order, name, rTol, aTol )
 	{
 		xIni = f_.vs( tQ );
 		tD = f_.tD( tQ );

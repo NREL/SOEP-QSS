@@ -38,7 +38,7 @@
 
 // QSS Headers
 #include <QSS/Conditional.hh>
-#include <QSS/globals.hh>
+#include <QSS/EventQueue.hh>
 
 // C++ Headers
 #include <algorithm>
@@ -187,23 +187,29 @@ public: // Types
 	using Variable = V;
 	using Time = typename Variable::Time;
 	using Real = typename Variable::Real;
+	using Events = EventQueue< Target >;
 
 	using Clauses = std::vector< Clause * >;
 	using size_type = typename Clauses::size_type;
 
 public: // Creation
 
-	// Default Constructor
-	Conditional_If() :
-	 Conditional( "If" )
+	// Constructor
+	Conditional_If( Events * events ) :
+	 Conditional( "If" ),
+	 events( events )
 	{
 		add_conditional();
 	}
 
 	// Name Constructor
 	explicit
-	Conditional_If( std::string const & name ) :
-	 Conditional( name )
+	Conditional_If(
+	 std::string const & name,
+	 Events * events
+	) :
+	 Conditional( name ),
+	 events( events )
 	{
 		add_conditional();
 	}
@@ -266,21 +272,21 @@ public: // Methods
 	void
 	add_conditional()
 	{
-		event_ = events.add_conditional( this );
+		event_ = events->add_conditional( this );
 	}
 
 	// If Shift Event to Time Infinity
 	void
 	shift_conditional()
 	{
-		event_ = events.shift_conditional( event_ );
+		event_ = events->shift_conditional( event_ );
 	}
 
 	// If Shift Event to Time t
 	void
 	shift_conditional( Time const t )
 	{
-		event_ = events.shift_conditional( t, event_ );
+		event_ = events->shift_conditional( t, event_ );
 	}
 
 	// Run Handler of Highest Priority Active Clause
@@ -300,6 +306,7 @@ public: // Methods
 private: // Data
 
 	Clauses clauses; // Clauses in decreasing priority sequence
+	Events * events; // Event queue
 
 }; // Conditional_If
 
@@ -430,23 +437,29 @@ public: // Types
 	using Variable = V;
 	using Time = typename Variable::Time;
 	using Real = typename Variable::Real;
+	using Events = EventQueue< Target >;
 
 	using Clauses = std::vector< Clause * >;
 	using size_type = typename Clauses::size_type;
 
 public: // Creation
 
-	// Default Constructor
-	Conditional_When() :
-	 Conditional( "When" )
+	// Constructor
+	Conditional_When( Events * events ) :
+	 Conditional( "When" ),
+	 events( events )
 	{
 		add_conditional();
 	}
 
 	// Name Constructor
 	explicit
-	Conditional_When( std::string const & name ) :
-	 Conditional( name )
+	Conditional_When(
+	 std::string const & name,
+	 Events * events
+	) :
+	 Conditional( name ),
+	 events( events )
 	{
 		add_conditional();
 	}
@@ -506,21 +519,21 @@ public: // Methods
 	void
 	add_conditional()
 	{
-		event_ = events.add_conditional( this );
+		event_ = events->add_conditional( this );
 	}
 
 	// When Shift Event to Time Infinity
 	void
 	shift_conditional()
 	{
-		event_ = events.shift_conditional( event_ );
+		event_ = events->shift_conditional( event_ );
 	}
 
 	// When Shift Event to Time t
 	void
 	shift_conditional( Time const t )
 	{
-		event_ = events.shift_conditional( t, event_ );
+		event_ = events->shift_conditional( t, event_ );
 	}
 
 	// Run Handler of Highest Priority Active Clause
@@ -540,6 +553,7 @@ public: // Methods
 private: // Data
 
 	Clauses clauses; // Clauses in decreasing priority sequence
+	Events * events; // Event queue
 
 }; // Conditional_When
 

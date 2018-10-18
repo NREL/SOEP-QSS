@@ -95,7 +95,7 @@ public: // Creation
 	 Real const aTol = 1.0e-6,
 	 Real const xIni = 0.0
 	) :
-	 Super( name, rTol, aTol, xIni ),
+	 Super( 3, name, rTol, aTol, xIni ),
 	 x_0_( xIni ),
 	 q_c_( xIni ),
 	 q_0_( xIni )
@@ -104,13 +104,6 @@ public: // Creation
 	}
 
 public: // Properties
-
-	// Order of Method
-	int
-	order() const
-	{
-		return 3;
-	}
 
 	// Continuous Value at Time t
 	Real

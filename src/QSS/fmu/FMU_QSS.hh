@@ -36,6 +36,9 @@
 #ifndef QSS_fmu_FMU_QSS_hh_INCLUDED
 #define QSS_fmu_FMU_QSS_hh_INCLUDED
 
+// QSS Headers
+#include <QSS/fmu/FMU_ME.hh>
+
 // FMI Library Headers
 #include <fmilib.h>
 
@@ -58,6 +61,15 @@ public: // Types
 	enum class FMU_Generator { JModelica, Dymola, Other };
 
 public: // Creation
+
+	// Default Constructor
+	FMU_QSS() = default;
+
+	// FMU-QSS Path Constructor
+	FMU_QSS( std::string const & path )
+	{
+		init( path );
+	}
 
 	// Destructor
 	~FMU_QSS();
@@ -95,11 +107,14 @@ public: // Static Metods
 
 public: // Data
 
+	// Model name and unzip directory
 	std::string name;
 	std::string unzip_dir;
+
+	// FMU
 	fmi2_import_t * fmu = nullptr; // FMU pointer
 	fmi2_real_t * states = nullptr;
-	fmi2_real_t * states_der = nullptr;
+	fmi2_real_t * derivatives = nullptr;
 	fmi2_real_t * event_indicators = nullptr;
 	fmi2_real_t * event_indicators_last = nullptr;
 	fmi_import_context_t * context = nullptr;
@@ -108,19 +123,18 @@ public: // Data
 	std::vector< fmi2_value_reference_t > var_refs;
 	std::vector< fmi2_value_reference_t > inp_var_refs;
 	std::vector< fmi2_value_reference_t > out_var_refs;
-
+	fmi2_callback_functions_t callBackFunctions;
+	jm_callbacks callbacks;
 	FMU_Generator fmu_generator;
 
-	jm_callbacks callbacks;
-	fmi2_callback_functions_t callBackFunctions;
-
+	// FMU counts
 	size_type n_states = 0;
 	size_type n_event_indicators = 0;
 
-};
+	// Contained FMU-ME
+	FMU_ME fmu_me;
 
-// Globals
-extern FMU_QSS fmu_qss;
+};
 
 } // fmu
 } // QSS

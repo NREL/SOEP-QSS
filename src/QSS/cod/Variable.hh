@@ -39,9 +39,10 @@
 // QSS Headers
 #include <QSS/cod/Variable.fwd.hh>
 #include <QSS/cod/Conditional.hh>
-#include <QSS/globals.hh>
+#include <QSS/cod/events.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
+#include <QSS/SmoothToken.hh>
 #include <QSS/Target.hh>
 
 // C++ Headers
@@ -124,12 +125,14 @@ protected: // Creation
 
 	// Name + Tolerance + Value Constructor
 	Variable(
+	 int const order,
 	 std::string const & name,
 	 Real const rTol,
 	 Real const aTol,
 	 Real const xIni = 0.0
 	) :
 	 Target( name ),
+	 order_( order ),
 	 rTol( std::max( rTol, 0.0 ) ),
 	 aTol( std::max( aTol, std::numeric_limits< Real >::min() ) ),
 	 xIni( xIni ),
@@ -140,12 +143,13 @@ protected: // Creation
 	{}
 
 	// Name + Value Constructor
-	explicit
 	Variable(
+	 int const order,
 	 std::string const & name,
 	 Real const xIni = 0.0
 	) :
 	 Target( name ),
+	 order_( order ),
 	 xIni( xIni ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
@@ -214,9 +218,11 @@ public: // Predicate
 public: // Properties
 
 	// Order of Method
-	virtual
 	int
-	order() const = 0;
+	order() const
+	{
+		return order_;
+	}
 
 	// Boolean Value
 	virtual
@@ -378,6 +384,25 @@ public: // Properties
 	s3( Time const ) const
 	{
 		return 0.0;
+	}
+
+	// SmoothToken at Time t
+	SmoothToken
+	k( Time const t ) const
+	{
+		switch ( order_ ) {
+		case 0:
+			return SmoothToken::order_0( x( t ), tD );
+		case 1:
+			return SmoothToken::order_1( x( t ), x1( t ), tD );
+		case 2:
+			return SmoothToken::order_2( x( t ), x1( t ), x2( t ), tD );
+		case 3:
+			return SmoothToken::order_3( x( t ), x1( t ), x2( t ), x3( t ), tD );
+		default: // Should not happen
+			assert( false );
+			return SmoothToken();
+		}
 	}
 
 	// Observers
@@ -945,6 +970,10 @@ protected: // Methods
 			}
 		}
 	}
+
+protected: // Data
+
+	int order_; // Order of method
 
 public: // Data
 

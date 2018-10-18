@@ -76,7 +76,7 @@ public: // Creation
 	// Constructor
 	explicit
 	Variable_InpD( std::string const & name ) :
-	 Super( name )
+	 Super( 0, name )
 	{}
 
 public: // Predicate
@@ -89,13 +89,6 @@ public: // Predicate
 	}
 
 public: // Properties
-
-	// Order of Method
-	int
-	order() const
-	{
-		return 0;
-	}
 
 	// Real Value
 	Real
