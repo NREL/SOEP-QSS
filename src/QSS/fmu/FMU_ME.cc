@@ -1789,7 +1789,6 @@ namespace fmu {
 					++n_QSS_events;
 					if ( events->single() ) { // Single trigger
 						Variable * trigger( event.sub< Variable >() );
-if ( trigger->tE != t ) std::cerr << '\n' << name << ' ' << trigger->name << ' ' << trigger->tE << ' ' << t << std::endl;////////////////////////////////
 						assert( trigger->tE == t );
 						assert( trigger->not_ZC() ); // ZC variable requantizations are QSS_ZC events
 						trigger->st = s; // Set trigger superdense time
