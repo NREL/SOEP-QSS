@@ -232,7 +232,7 @@ fmi2Status
 fmi2SetDebugLogging(
  fmi2Component c,
  fmi2Boolean loggingOn,
- size_t n ,
+ std::size_t n ,
  fmi2String const cat[]
 )
 {
@@ -292,16 +292,52 @@ fmi2SetupExperiment(
 	fmi2_real_t const tstop( stopTimeDefined ? stopTime : fmi2_import_get_default_experiment_stop( fmu ) ); // [1.0]
 	std::cout << "\nSimulation Time Range (s):  Start: " << tstart << "  Stop: " << tstop << std::endl;
 	fmi2_real_t const rTolerance( toleranceDefined ? tolerance : fmi2_import_get_default_experiment_tolerance( fmu ) ); // [0.0001]
-	fmu_qss.fmu_me.set_options( tstart, tstop, rTolerance );
-	return (fmi2Status)fmi2_import_setup_experiment( fmu, toleranceDefined, tolerance, startTime, stopTimeDefined, stopTime );
+	FMU_ME & fmu_me( fmu_qss.fmu_me );
+	fmu_me.set_options( tstart, tstop, rTolerance );
+	fmi2Status const fmi_status( (fmi2Status)fmi2_import_setup_experiment( fmu, toleranceDefined, tolerance, startTime, stopTimeDefined, stopTime ) );
+	fmu_qss.pre_simulate();
+	fmu_me.pre_simulate();
+	return fmi_status;
 }
 
 fmi2Status
 fmi2EnterInitializationMode( fmi2Component c )
 {
+	static std::unordered_map< fmi2Component, int > stage;
 	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
-	return (fmi2Status)fmi2_import_enter_initialization_mode( fmu_qss.fmu_me.fmu );
+	FMU_ME & fmu_me( fmu_qss.fmu_me );
+	if ( stage.find( c ) == stage.end() ) { // First stage
+		stage[ c ] = 0;
+	} else {
+		stage[ c ] += 1;
+	}
+	switch ( stage[ c ] ) {
+	case 0:
+		fmu_me.init_0_1();
+		return fmi2OK;
+	case 1:
+		fmu_me.init_0_2();
+		return fmi2OK;
+	case 2:
+		fmu_me.init_1_1();
+		return fmi2OK;
+	case 3:
+		fmu_me.init_1_2();
+		return fmi2OK;
+	case 4:
+		fmu_me.init_2_1();
+		return fmi2OK;
+	case 5:
+		fmu_me.init_2_2();
+		return fmi2OK;
+	case 6:
+		fmu_me.init_f();
+		return (fmi2Status)fmi2_import_enter_initialization_mode( fmu_qss.fmu_me.fmu );
+	default:
+		assert( false );
+		return fmi2Fatal;
+	}
 }
 
 fmi2Status
@@ -310,8 +346,6 @@ fmi2ExitInitializationMode( fmi2Component c )
 	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	fmi2Status const fmi_status( (fmi2Status)fmi2_import_exit_initialization_mode( fmu_qss.fmu_me.fmu ) );
-	fmu_qss.pre_simulate();
-	fmu_qss.fmu_me.pre_simulate( fmu_qss.out_var_refs );
 	return fmi_status;
 }
 
@@ -343,9 +377,9 @@ fmi2NewDiscreteStates(
 	fmu_qss.fmu_me.simulate( (fmi2_event_info_t *)eventInfo );
 	if ( ( fmu_qss.fmu_me.t >= fmu_qss.fmu_me.tE ) || ( eventInfo->terminateSimulation ) ) {
 		eventInfo->terminateSimulation = fmi2_true;
-		eventInfo->newDiscreteStatesNeeded = fmi2_false;
 		fmu_qss.fmu_me.post_simulate();
 	}
+	eventInfo->newDiscreteStatesNeeded = fmi2_false;
 	((component_ptr_t)c)->fmitime = fmu_qss.fmu_me.t;
 	return fmi2OK;
 }
@@ -354,7 +388,7 @@ fmi2Status
 fmi2SetRealInputDerivatives(
  fmi2Component c,
  fmi2ValueReference const vr[],
- size_t nvr,
+ std::size_t nvr,
  fmi2Integer const order[],
  fmi2Real const value[]
 )
@@ -368,7 +402,7 @@ fmi2Status
 fmi2GetRealOutputDerivatives(
  fmi2Component c,
  fmi2ValueReference const vr[],
- size_t nvr,
+ std::size_t nvr,
  fmi2Integer const order[],
  fmi2Real value[]
 )
@@ -394,7 +428,7 @@ fmi2Status
 fmi2GetReal(
  fmi2Component c,
  fmi2ValueReference const vr[],
- size_t nvr,
+ std::size_t nvr,
  fmi2Real value[]
 )
 {
@@ -408,7 +442,7 @@ fmi2Status
 fmi2SetReal(
  fmi2Component c,
  fmi2ValueReference const vr[],
- size_t nvr,
+ std::size_t nvr,
  fmi2Real const value[]
 )
 {
@@ -421,7 +455,7 @@ fmi2Status
 fmi2GetInteger(
  fmi2Component c,
  fmi2ValueReference const vr[],
- size_t nvr,
+ std::size_t nvr,
  fmi2Integer value[]
 )
 {
@@ -435,7 +469,7 @@ fmi2Status
 fmi2SetInteger(
  fmi2Component c,
  fmi2ValueReference const vr[],
- size_t nvr,
+ std::size_t nvr,
  fmi2Integer const value[]
 )
 {
@@ -448,7 +482,7 @@ fmi2Status
 fmi2GetBoolean(
  fmi2Component c,
  fmi2ValueReference const vr[],
- size_t nvr,
+ std::size_t nvr,
  fmi2Boolean value[]
 )
 {
@@ -462,7 +496,7 @@ fmi2Status
 fmi2SetBoolean(
  fmi2Component c,
  fmi2ValueReference const vr[],
- size_t nvr,
+ std::size_t nvr,
  fmi2Boolean const value[]
 )
 {
@@ -475,7 +509,7 @@ fmi2Status
 fmi2GetString(
  fmi2Component c,
  fmi2ValueReference const vr[],
- size_t nvr,
+ std::size_t nvr,
  fmi2String value[]
 )
 {
@@ -489,7 +523,7 @@ fmi2Status
 fmi2SetString(
  fmi2Component c,
  fmi2ValueReference const vr[],
- size_t nvr,
+ std::size_t nvr,
  fmi2String const value[]
 )
 {
@@ -516,7 +550,7 @@ fmi2Status
 fmi2GetContinuousStates(
  fmi2Component c,
  fmi2Real /*x*/[], // Unused
- size_t nx
+ std::size_t nx
 )
 {
 	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
@@ -530,7 +564,7 @@ fmi2Status
 fmi2SetContinuousStates(
  fmi2Component c,
  fmi2Real const /*x*/[], // Unused
- size_t nx
+ std::size_t nx
 )
 {
 	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
@@ -544,7 +578,7 @@ fmi2Status
 fmi2GetDerivatives(
  fmi2Component c,
  fmi2Real /*derivatives*/[], // Unused
- size_t nx
+ std::size_t nx
 )
 {
 	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
@@ -558,9 +592,9 @@ fmi2Status
 fmi2GetDirectionalDerivative(
  fmi2Component c,
  fmi2ValueReference const vUnknown_ref[],
- size_t nUnknown,
+ std::size_t nUnknown,
  fmi2ValueReference const vKnown_ref[],
- size_t nKnown,
+ std::size_t nKnown,
  fmi2Real const dvKnown[],
  fmi2Real dvUnknown[]
 )
@@ -574,7 +608,7 @@ fmi2Status
 fmi2GetEventIndicators(
  fmi2Component c,
  fmi2Real /*eventIndicators*/[], // Unused
- size_t ni
+ std::size_t ni
 )
 {
 	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
@@ -588,7 +622,7 @@ fmi2Status
 fmi2GetNominalsOfContinuousStates(
  fmi2Component c,
  fmi2Real /*x_nominal*/[], // Unused
- size_t nx
+ std::size_t nx
 )
 {
 	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
@@ -625,7 +659,7 @@ fmi2SerializeFMUstate(
  fmi2Component c,
  fmi2FMUstate FMUstate,
  fmi2Byte serializedState[],
- size_t size
+ std::size_t size
 )
 {
 	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
@@ -637,7 +671,7 @@ fmi2Status
 fmi2SerializedFMUstateSize(
  fmi2Component c,
  fmi2FMUstate FMUstate,
- size_t * size
+ std::size_t * size
 )
 {
 	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
@@ -649,7 +683,7 @@ fmi2Status
 fmi2DeSerializeFMUstate(
  fmi2Component c,
  fmi2Byte const serializedState[],
- size_t size,
+ std::size_t size,
  fmi2FMUstate * FMUstate
 )
 {

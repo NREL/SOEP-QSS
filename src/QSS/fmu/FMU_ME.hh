@@ -48,6 +48,7 @@
 // C++ Headers
 #include <cassert>
 #include <cstdlib>
+#include <ctime>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -116,7 +117,10 @@ public: // Types
 	using Variables = std::vector< Variable * >;
 	using FMU_Variables = std::vector< FMU_Variable >;
 	using Var_Idx = std::unordered_map< Variable const *, size_type >; // Map from Variables to their indexes
+	using Var_Name_Var = std::unordered_map< std::string, Variable * >; // Map from variable names to variables
 	using Var_Name_Ref = std::unordered_map< std::string, fmi2_value_reference_t >; // Map from variable names to FMU variable value references
+	using Ref_Var = std::unordered_map< fmi2_value_reference_t, Variable * >;
+	using Var_Refs = std::vector< fmi2_value_reference_t >;
 	using Conditionals = std::vector< Conditional * >;
 	using FMU_Vars = std::unordered_map< FMUVarPtr, FMU_Variable, FMUVarPtrHash >; // Map from FMU variables to FMU_Variable objects
 	using FMU_Idxs = std::unordered_map< size_type, Variable * >; // Map from FMU variable indexes to QSS Variables
@@ -153,24 +157,41 @@ public: // Simulation Methods
 
 	// Pre-Simulation Setup
 	void
-	pre_simulate( std::vector< fmi2_value_reference_t > const & fmu_qss_out_var_refs );
+	pre_simulate();
 
-	// Pre-Simulation Setup
+	// Initialization: Stage 0.1
 	void
-	pre_simulate()
-	{
-		pre_simulate( std::vector< fmi2_value_reference_t >() ); // Pass empty output variable references
-	}
+	init_0_1();
 
-	// Reinitialize
+	// Initialization: Stage 0.2
 	void
-	reinitialize();
+	init_0_2();
 
-	// Simulation Pass
+	// Initialization: Stage 1.1
+	void
+	init_1_1();
+
+	// Initialization: Stage 1.2
+	void
+	init_1_2();
+
+	// Initialization: Stage 2.1
+	void
+	init_2_1();
+
+	// Initialization: Stage 2.2
+	void
+	init_2_2();
+
+	// Initialization: Stage Final
+	void
+	init_f();
+
+	// Simulation
 	void
 	simulate( fmi2_event_info_t * eventInfoMaster );
 
-	// Simulation Pass
+	// Simulation
 	void
 	simulate();
 
@@ -379,28 +400,36 @@ public: // Data
 	Variables vars; // QSS variables
 	Variables vars_NZ; // Non-zero-crossing variables
 	Variables vars_ZC; // Zero-crossing variables
+	Variables vars_NC; // Non-zero-crossing non-connection variables
+	Variables vars_CI; // Connection input variables
 	Variables state_vars; // FMU state QSS variables
 	Variables outs; // FMU output QSS variables
 	Variables fmu_qss_qss_outs; // FMU-QSS output QSS variables
 	Var_Idx var_idx; // Map from Variables to their indexes
 	Var_Name_Ref var_name_ref; // Map from variable names to FMU variable value references
+	Var_Name_Var var_name_var; // Map from variable names to variables
 	Conditionals cons; // Conditionals
 	FMU_Vars fmu_vars; // FMU variables
 	FMU_Vars fmu_outs; // FMU output variables
 	FMU_Vars fmu_ders; // FMU variable to derivative map
 	FMU_Vars fmu_dvrs; // FMU derivative to variable map
 	FMU_Idxs fmu_idxs; // Map from FMU variable index to QSS variable
+	Ref_Var qss_var_of_ref;
+	Var_Refs out_var_refs;
 	std::vector< Output > x_outs; // Continuous rep outputs
 	std::vector< Output > q_outs; // Quantized rep outputs
 	std::vector< Output > f_outs; // FMU outputs
 	std::vector< SmoothTokenOutput > k_qss_outs; // FMU-QSS QSS variable smooth token outputs
 	int order_max_NZ{ 0 }; // Non-zero-crossing QSS variable max order
 	int order_max_ZC{ 0 }; // Zero-crossing QSS variable max order
+	int order_max_NC{ 0 }; // Non-zero-crossing non-connection QSS variable max order
+	int order_max_CI{ 0 }; // Connection input QSS variable max order
 
 	// Output controls
 	bool doSOut{ false };
 	bool doTOut{ false };
 	bool doROut{ false };
+	bool doKOut{ false };
 
 	// Simulation
 	size_type const max_pass_count_multiplier{ 2 };
@@ -413,6 +442,8 @@ public: // Data
 	Variables observers;
 	fmi2_boolean_t enterEventMode{ fmi2_false };
 	fmi2_boolean_t terminateSimulation{ fmi2_false };
+	std::clock_t sim_cpu_time{ 0 }; // Simulation CPU time
+	double sim_wall_time{ 0.0 }; // Simulation sall time
 
 };
 

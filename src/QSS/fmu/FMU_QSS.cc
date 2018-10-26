@@ -268,6 +268,7 @@ namespace fmu {
 				out_var_refs.push_back( vrs[ i ] );
 			}
 		}
+		fmu_me.out_var_refs = out_var_refs;
 	}
 
 	// Unzip Location from FMU Resource Location URI

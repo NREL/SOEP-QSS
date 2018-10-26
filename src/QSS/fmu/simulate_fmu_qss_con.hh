@@ -1,4 +1,4 @@
-// Multiple FMU-QSS Simulation Runner
+// Connected FMU-QSS Simulation Runner
 //
 // Project: QSS Solver
 //
@@ -33,8 +33,8 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_simulate_fmu_qss_mul_hh_INCLUDED
-#define QSS_fmu_simulate_fmu_qss_mul_hh_INCLUDED
+#ifndef QSS_fmu_simulate_fmu_qss_con_hh_INCLUDED
+#define QSS_fmu_simulate_fmu_qss_con_hh_INCLUDED
 
 // C++ Headers
 #include <string>
@@ -43,9 +43,9 @@
 namespace QSS {
 namespace fmu {
 
-// Simulate multiple FMU-QSS with QSS
+// Simulate connected FMU-QSS with QSS
 void
-simulate_fmu_qss_mul( std::vector< std::string > const & paths );
+simulate_fmu_qss_con( std::vector< std::string > const & paths );
 
 } // fmu
 } // QSS

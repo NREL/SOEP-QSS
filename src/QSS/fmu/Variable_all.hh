@@ -50,9 +50,6 @@
 #include <QSS/fmu/Variable_xInp1.hh>
 #include <QSS/fmu/Variable_xInp2.hh>
 
-// QSS Connection Variable Headers
-#include <QSS/fmu/Variable_Con0.hh>
-
 // QSS State Variable Headers
 #include <QSS/fmu/Variable_LIQSS1.hh>
 #include <QSS/fmu/Variable_LIQSS2.hh>

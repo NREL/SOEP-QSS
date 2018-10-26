@@ -20,6 +20,7 @@ Currently the code has:
 * A few simple code-defined example cases.
 * FMU for Model Exchange simulation support.
 * FMU-QSS generation and simulation support.
+* Multiple connected FMU-QSS model simulation.
 
 ### Notes
 * Modelica input file processing is not provided: test cases are code-defined or loaded from FMUs.
@@ -134,6 +135,8 @@ Input functions are external system "drivers" that do not depend on the state of
 
 Input functions can also have discrete events at which their value changes. To provide accurate behavior with QSS solvers, where time steps can be large and variable, these discrete events are assumed predictable by the input functions. These predicted discrete events are placed in the QSS event queue to assure they are processed at their exact event time. We don't currently support discrete events for continuous input functions but this is easily added if needed.
 
+Input functions may be outputs from other models/FMUs. This is discussed in the Interconnected Models section.
+
 ### Zero-Crossing Functions
 
 So-called zero-crossing functions are used by Modelica for conditional behavior: when the function crosses zero an event needs to be carried out. This might be, for instance, a thermostat control reaching a trigger temperature that needs to turn on an A/C system. Zero crossings cause (discontinuous) changes to (otherwise) continuous and discrete variables via "handler" functions.
@@ -156,6 +159,23 @@ Zero-crossing based conditional logic can also introduce "chattering" when their
 ### Conditionals
 
 Modelica supports conditional behavior via "if" and "when" blocks. The QSS solver has classes representing if and when conditional blocks to provide this behavior. Each conditional block has a sequence of clauses that represent the if/elseif/else and when/elsewhen structure of the corresponding Modelica conditional. Each clause (except the else clause) contains one or more boolean or zero-crossing variables. When fully realized clauses would be able to represent logical "trees" over their variables: for now only OR logic is supported.
+
+### Interconnected Models
+
+Simulation of multiple subsystems models with some outputs connected to inputs in other models is important for SOEP. For this purpose the QSS application was extended to support multiple models and support for a `--con` option to specify interconnections was added. When connections are specified the models run in a synched mode to provide the "current" inputs.
+
+Interconnected simulations are supported for FMU-QSS models: support for FMU-ME models is planned.
+
+Because there are no QSS dependencies between the FMU-QSS models the input trajectories won't get updated when the corresponding output variable has requantization or observer updates. Rather, the input is updated when its variable requires an update within its model's simulation. This means there is some potential for discrepancy between outputs and inputs. (The "smooth tokens" used to communicate output state to inputs has a next discrete even time field so that predicted discrete events will force a refresh of the inputs.)
+
+There are two modes for synching the models:
+1. Specifying a `--dtCon` connection sync time step will simulate each model for that time span in loops until finished. This limits the worst-case time sync error.
+2. Simulating without `--dtCon` causes an event queue based sync that only simulates each model until the time of a top-of-queue event in another model, at which time it switches to that model, and so on. This does not assure perfect sync because output requantization and observer updates do not trigger updates in the corresponding input. It also will be less efficient than using a large enough `dtCon` to allow more events to be processed in each model simulation pass.
+
+Connected FMU-ME models could be run with a QSS-specific master algorithm that used a combined event queue and captured dependencies across models that would eliminate any discrepancies and allow for faster simulation. Parallelization could be used to exploit the likely presence of independent events at the top of the queue in this scenario.
+
+Each connections can be specified via a command line options of this form:
+`--con=`_model1_`.`_inp\_var_`:`_model2_`.`_out\_var_
 
 ## FMU Support
 
@@ -376,10 +396,10 @@ There are command line options to select the QSS method, set quantization tolera
 * Diagnostic output can be enabled, which includes a line for each quantization-related variable update.
 
 To run QSS with one of the code-defined models:
-* `QSS <model_name> [options]`
+* `QSS <model> [options]`
 
 To run QSS with an FMU:
-* `QSS <model_name>.fmu [options]`
+* `QSS <model>.fmu [options]`
 
 Run `QSS --help` to see the command line usage.
 
@@ -397,8 +417,16 @@ Instructions for building an FMU-QSS from an FMU-ME (FMU for Model Exchange) fol
 ## Running an FMU-QSS
 
 To run an FMU-QSS:
-* `QSS <FMU-QSS_name>.fmu [options]`
+* `QSS <FMU-QSS>.fmu [options]`
 
 Run `QSS --help` to see the command line usage.
 
-FMU-QSS support is basic at this point. Support for connecting inputs and outputs and for inputs with discrete events will be added before or during JModelica integration.
+## Running Multiple FMU-QSS
+
+To run multiple FMU-QSS simply enter all of them on the command line:
+* `QSS <FMU-QSS_1>.fmu <FMU-QSS_2>.fmu ... [options]`
+
+Input/output connections between models can be specified via command line options of the form:
+`--con=`_model1_`.`_inp\_var_`:`_model2_`.`_out\_var_
+
+Run `QSS --help` to see the command line usage.

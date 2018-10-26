@@ -47,6 +47,13 @@ simulate_fmu_me( std::string const & path )
 	FMU_ME fmu_me( path );
 	fmu_me.instantiate();
 	fmu_me.pre_simulate();
+	fmu_me.init_0_1();
+	fmu_me.init_0_2();
+	fmu_me.init_1_1();
+	fmu_me.init_1_2();
+	fmu_me.init_2_1();
+	fmu_me.init_2_2();
+	fmu_me.init_f();
 	fmu_me.simulate();
 	fmu_me.post_simulate();
 }

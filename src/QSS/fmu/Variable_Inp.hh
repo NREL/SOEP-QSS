@@ -69,7 +69,8 @@ protected: // Creation
 	 Function f = Function()
 	) :
 	 Super( order, name, rTol, aTol, fmu_me, var ),
-	 f_( f )
+	 f_( f ),
+	 is_connection_( f_ == nullptr )
 	{}
 
 	// Name Constructor
@@ -81,7 +82,8 @@ protected: // Creation
 	 Function f = Function()
 	) :
 	 Super( order, name, fmu_me, var ),
-	 f_( f )
+	 f_( f ),
+	 is_connection_( f_ == nullptr )
 	{}
 
 	// Copy Constructor
@@ -109,6 +111,13 @@ public: // Predicate
 		return true;
 	}
 
+	// Connection Input Variable?
+	bool
+	is_connection() const
+	{
+		return is_connection_;
+	}
+
 public: // Properties
 
 	// Function
@@ -128,6 +137,7 @@ public: // Properties
 protected: // Data
 
 	Function f_; // Input function
+	bool is_connection_{ false }; // Connection input?
 
 };
 

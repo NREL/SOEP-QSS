@@ -118,7 +118,7 @@ public: // Methods
 		assert( f() );
 		assert( observees_.empty() );
 		init_observers();
-		x_0_ = q_0_ = f_( tQ ).x_0;
+		fmu_set_real( x_0_ = q_0_ = f_( tQ ).x_0 );
 		set_qTol();
 	}
 
@@ -126,9 +126,10 @@ public: // Methods
 	void
 	init_1()
 	{
-		x_1_ = f_( tQ ).x_1;
+		SmoothToken const s( f_( tQ ) );
+		x_1_ = s.x_1;
 		set_tE();
-		tD = f_( tQ ).tD;
+		tD = s.tD;
 		tE < tD ? add_QSS( tE ) : add_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
@@ -145,11 +146,12 @@ public: // Methods
 	void
 	advance_discrete()
 	{
-		x_0_ = q_0_ = f_( tX = tQ = tD ).x_0;
+		SmoothToken const s( f_( tX = tQ = tD ) );
+		x_0_ = q_0_ = s.x_0;
 		set_qTol();
-		x_1_ = f_( tD ).x_1;
+		x_1_ = s.x_1;
 		set_tE();
-		tD = f_( tD ).tD;
+		tD = s.tD;
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 		if ( have_observers_ ) advance_observers();
@@ -167,9 +169,10 @@ public: // Methods
 	void
 	advance_discrete_1()
 	{
-		x_1_ = f_( tD ).x_1;
+		SmoothToken const s( f_( tD ) );
+		x_1_ = s.x_1;
 		set_tE();
-		tD = f_( tD ).tD;
+		tD = s.tD;
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
@@ -178,11 +181,12 @@ public: // Methods
 	void
 	advance_QSS()
 	{
-		x_0_ = q_0_ = f_( tX = tQ = tE ).x_0;
+		SmoothToken const s( f_( tX = tQ = tE ) );
+		x_0_ = q_0_ = s.x_0;
 		set_qTol();
-		x_1_ = f_( tQ ).x_1;
+		x_1_ = s.x_1;
 		set_tE();
-		tD = f_( tQ ).tD;
+		tD = s.tD;
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 		if ( have_observers_ ) advance_observers();
@@ -200,9 +204,10 @@ public: // Methods
 	void
 	advance_QSS_1()
 	{
-		x_1_ = f_( tQ ).x_1;
+		SmoothToken const s( f_( tQ ) );
+		x_1_ = s.x_1;
 		set_tE();
-		tD = f_( tQ ).tD;
+		tD = s.tD;
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}

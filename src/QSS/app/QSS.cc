@@ -38,7 +38,7 @@
 #ifdef QSS_FMU
 #include <QSS/fmu/simulate_fmu_me.hh>
 #include <QSS/fmu/simulate_fmu_qss.hh>
-#include <QSS/fmu/simulate_fmu_qss_mul.hh>
+#include <QSS/fmu/simulate_fmu_qss_con.hh>
 #endif
 #include <QSS/options.hh>
 #include <QSS/path.hh>
@@ -130,7 +130,7 @@ main( int argc, char * argv[] )
 			std::exit( EXIT_FAILURE );
 		} else if ( model_type == ModelType::FMU_QSS ) { // FMU-QSS
 #ifdef QSS_FMU
-			fmu::simulate_fmu_qss_mul( options::models );
+			fmu::simulate_fmu_qss_con( options::models );
 #endif
 		} else {
 			assert( false );

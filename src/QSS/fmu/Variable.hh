@@ -232,6 +232,14 @@ public: // Predicate
 		return false;
 	}
 
+	// Connection Input Variable?
+	virtual
+	bool
+	is_connection() const
+	{
+		return false;
+	}
+
 	// QSS Variable?
 	virtual
 	bool

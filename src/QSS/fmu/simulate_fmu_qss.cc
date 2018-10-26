@@ -56,6 +56,7 @@ simulate_fmu_qss( std::string const & path )
 {
 	// Types
 	using Time = double;
+	using size_type = std::size_t;
 
 	// Initialize the FMUs
 	FMU_QSS fmu_qss( path );
@@ -72,7 +73,7 @@ simulate_fmu_qss( std::string const & path )
 	// Time initialization
 	Time const tStart( fmi2_import_get_default_experiment_start( fmu_qss.fmu ) );
 	Time const tEnd( options::specified::tEnd ? options::tEnd : fmi2_import_get_default_experiment_stop( fmu_qss.fmu ) ); // No FMI API for getting stop time from FMU
-	Time const tNext( tEnd ); // This can be a varying next step stop time to do output to another FMU
+	Time const tNext( tEnd ); // Can be used to add interrupt times to do outputs
 	Time time( tStart );
 
 	// Initialization
@@ -80,9 +81,11 @@ simulate_fmu_qss( std::string const & path )
 		std::cerr << "\nError: fmi2SetupExperiment failed: " << std::endl;
 		std::exit( EXIT_FAILURE );
 	}
-	if ( fmi2EnterInitializationMode( c ) != fmi2OK ) {
-		std::cerr << "\nError: fmi2EnterInitializationMode failed: " << std::endl;
-		std::exit( EXIT_FAILURE );
+	for ( size_type k = 0; k < 7u; ++k ) { // Initialization stages
+		if ( fmi2EnterInitializationMode( c ) != fmi2OK ) {
+			std::cerr << "\nError: fmi2EnterInitializationMode failed: " << std::endl;
+			std::exit( EXIT_FAILURE );
+		}
 	}
 	if ( fmi2ExitInitializationMode( c ) != fmi2OK ) {
 		std::cerr << "\nError: fmi2ExitInitializationMode failed: " << std::endl;

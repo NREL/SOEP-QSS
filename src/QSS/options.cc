@@ -54,6 +54,7 @@ double dtMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits<
 double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Inf time step (s)
 double dtZC( 1.0e-9 ); // FMU zero-crossing time step (s)
 double dtNum( 1.0e-6 ); // Numeric differentiation time step (s)
+double dtCon( 0.0 ); // Connection sync time step (s)
 double one_over_dtNum( 1.0e6 ); // 1 / dtNum  [computed]
 double one_half_over_dtNum( 5.0e5 ); // 1 / ( 2 * dtNum )  [computed]
 double one_sixth_over_dtNum_squared( 1.0e12 / 6.0 ); // 1 / ( 6 * dtNum^2 )  [computed]
@@ -104,9 +105,10 @@ help_display()
 	std::cout << " --dtMin=STEP   Min time step (s)  [0]" << '\n';
 	std::cout << " --dtMax=STEP   Max time step (s)  [infinity]" << '\n';
 	std::cout << " --dtInf=STEP   Inf alt time step (s)  [infinity]" << '\n';
-	std::cout << " --dtZC=STEP    FMU zero-crossing step (s)  [1e-9]" << '\n';
-	std::cout << " --dtNum=STEP   Numeric differentiation step (s)  [1e-6]" << '\n';
-	std::cout << " --dtOut=STEP   Sampled & FMU output step (s)  [1e-3]" << '\n';
+	std::cout << " --dtZC=STEP    FMU zero-crossing time step (s)  [1e-9]" << '\n';
+	std::cout << " --dtNum=STEP   Numeric differentiation time step (s)  [1e-6]" << '\n';
+	std::cout << " --dtCon=STEP   Connection sync time step (s)  [1e-6]" << '\n';
+	std::cout << " --dtOut=STEP   Sampled & FMU output time step (s)  [1e-3]" << '\n';
 	std::cout << " --tEnd=TIME    End time (s)  [1|FMU]" << '\n';
 	std::cout << " --pass=COUNT   Pass count limit  [20]" << '\n';
 	std::cout << " --cycles       Report dependency cycles?  [F]" << '\n';
@@ -314,6 +316,18 @@ process_args( int argc, char * argv[] )
 				one_sixth_over_dtNum_squared = 1.0 / ( 6.0 * ( dtNum * dtNum ) );
 			} else {
 				std::cerr << "Error: Nonnumeric dtNum: " << dtNum_str << std::endl;
+				fatal = true;
+			}
+		} else if ( has_value_option( arg, "dtCon" ) ) {
+			std::string const dtCon_str( arg_value( arg ) );
+			if ( is_double( dtCon_str ) ) {
+				dtCon = double_of( dtCon_str );
+				if ( dtCon <= 0.0 ) {
+					std::cerr << "Error: Nonpositive dtCon: " << dtCon_str << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::cerr << "Error: Nonnumeric dtCon: " << dtCon_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtOut" ) ) {
