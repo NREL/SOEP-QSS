@@ -79,6 +79,7 @@ public: // Nested Types
 		Clause( Clause && ) noexcept = default;
 
 		// Constructor
+		explicit
 		Clause( If * conditional ) :
 		 conditional( conditional )
 		{}
@@ -207,6 +208,7 @@ public: // Nested Types
 	public: // Creation
 
 		// Constructor
+		explicit
 		ClauseH( If * conditional ) :
 		 Clause( conditional )
 		{}
@@ -396,6 +398,7 @@ public: // Nested Types
 		Clause( Clause && ) noexcept = default;
 
 		// Constructor
+		explicit
 		Clause( When * conditional ) :
 		 conditional( conditional )
 		{}
@@ -512,6 +515,7 @@ public: // Nested Types
 	public: // Creation
 
 		// Constructor
+		explicit
 		ClauseH( When * conditional ) :
 		 Clause( conditional )
 		{}

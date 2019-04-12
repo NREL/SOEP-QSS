@@ -1,4 +1,4 @@
-// FMU-Based Conditional Blocks Forward Declaration
+// FMU-Based Conditional Forward Declaration
 //
 // Project: QSS Solver
 //
@@ -43,13 +43,11 @@ class Conditional;
 
 namespace fmu {
 
-// Conditional If Block Template
-template< typename > class Conditional_If;
-
-// Conditional When Block Template
-template< typename > class Conditional_When;
+// Conditional Template
+template< typename > class Conditional;
 
 } // fmu
+
 } // QSS
 
 #endif

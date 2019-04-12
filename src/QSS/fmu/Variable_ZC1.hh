@@ -231,8 +231,7 @@ public: // Methods
 	void
 	advance_ZC()
 	{
-		for ( typename If::Clause * clause : if_clauses ) clause->activity( tZ );
-		for ( typename When::Clause * clause : when_clauses ) clause->activity( tZ );
+		if ( in_conditional() ) conditional->activity( tZ );
 		if ( options::output::d ) std::cout << "Z " << name << '(' << tZ << ')' << '\n';
 		crossing_last = crossing;
 		x_mag_ = 0.0;

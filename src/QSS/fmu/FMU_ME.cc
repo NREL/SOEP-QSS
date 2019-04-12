@@ -36,6 +36,7 @@
 // QSS Headers
 #include <QSS/fmu/FMU_ME.hh>
 #include <QSS/fmu/Conditional.hh>
+#include <QSS/fmu/cycles.hh>
 #include <QSS/fmu/Function_Inp_constant.hh>
 #include <QSS/fmu/Function_Inp_sin.hh>
 #include <QSS/fmu/Function_Inp_step.hh>
@@ -43,7 +44,6 @@
 #include <QSS/fmu/Observers_Simultaneous.hh>
 #include <QSS/fmu/Variable_all.hh>
 #include <QSS/container.hh>
-#include <QSS/cycles.hh>
 #include <QSS/options.hh>
 #include <QSS/path.hh>
 #include <QSS/string.hh>
@@ -95,7 +95,7 @@ namespace fmu {
 		if ( fmu ) fmi2_import_free( fmu );
 		if ( context ) fmi_import_free_context( context );
 		for ( Variable * var : vars ) delete var;
-		for ( Conditional * con : cons ) delete con;
+		for ( Conditional< Variable > * con : cons ) delete con;
 		delete events;
 	}
 
@@ -801,12 +801,8 @@ namespace fmu {
 									std::cout << " FMU-ME idx: " << fmu_var.idx << " maps to QSS var: " << qss_var->name << std::endl;
 									++n_ZC_vars;
 
-									// Create single clause when block for the zero-crossing variable for now: FMU conditional block info would allow us to do more
-									using When = Conditional_When< Variable >;
-									When * when( new When( events ) );
-									cons.push_back( when );
-									When::Clause * when_clause( when->add_clause() );
-									when_clause->add( qss_var );
+									// Create conditional for the zero-crossing variable for now: FMU conditional block info would allow us to do more
+									cons.push_back( new Conditional< Variable >( qss_var, events ) );
 								}
 								break; // Found derivative so stop scanning
 							}
@@ -871,8 +867,7 @@ namespace fmu {
 								var->self_observer = true;
 							} else if ( dep->is_ZC() ) {
 								std::cout << "  Zero Crossing Var: " << dep->name << " handler modifies " << var->name << std::endl;
-								assert( dep->when_clauses.size() == 1u ); // Should just be one clause for now
-								for ( auto * when_clause : dep->when_clauses ) when_clause->add_observer( var );
+								if ( dep->in_conditional() ) dep->conditional->add_observer( var );
 							} else {
 								std::cout << "  Var: " << dep->name << " has observer " << var->name << std::endl;
 								var->observe( dep );
@@ -943,8 +938,7 @@ namespace fmu {
 									var->self_observer = true;
 								} else if ( dep->is_ZC() ) {
 									std::cout << "  Zero Crossing Var: " << dep->name << " handler modifies " << var->name << std::endl;
-									assert( dep->when_clauses.size() == 1u ); // Should just be one clause for now
-									for ( auto * when_clause : dep->when_clauses ) when_clause->add_observer( var );
+									dep->conditional->add_observer( var );
 								} else {
 									std::cout << "  Var: " << dep->name << " has observer " << var->name << std::endl;
 									var->observe( dep );
@@ -1047,8 +1041,7 @@ namespace fmu {
 									std::exit( EXIT_FAILURE );
 								} else if ( dep->is_ZC() ) {
 									std::cout << "  Zero Crossing Var: " << dep->name << " handler modifies discrete variable " << dis_name << std::endl;
-									assert( dep->when_clauses.size() == 1u ); // Should just be one clause for now
-									for ( auto * when_clause : dep->when_clauses ) when_clause->add_observer( dis_var );
+									dep->conditional->add_observer( dis_var );
 								} else {
 									std::cerr << "\n   Error: Discrete variable " << dis_name << " has dependency on non-zero-crossing variable " << dep->name << std::endl;
 									std::exit( EXIT_FAILURE );
@@ -1145,8 +1138,7 @@ namespace fmu {
 									std::exit( EXIT_FAILURE );
 								} else if ( dep->is_ZC() ) {
 									std::cout << "  Zero Crossing Var: " << dep->name << " handler modifies output variable " << out_name << std::endl;
-									assert( dep->when_clauses.size() == 1u ); // Should just be one clause for now
-									for ( auto * when_clause : dep->when_clauses ) when_clause->add_observer( out_var );
+									dep->conditional->add_observer( out_var );
 								} else {
 									std::cout << "  Var: " << dep->name << " has observer " << out_name << std::endl;
 									out_var->observe( dep );
@@ -1659,7 +1651,7 @@ namespace fmu {
 					}
 				} else if ( event.is_conditional() ) { // Conditional event
 					while ( events->top_superdense_time() == s ) {
-						Conditional * trigger( events->top_sub< Conditional >() );
+						Conditional< Variable > * trigger( events->top_sub< Conditional< Variable > >() );
 						trigger->st = s; // Set trigger superdense time
 						trigger->advance_conditional();
 					}

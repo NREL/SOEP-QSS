@@ -80,11 +80,6 @@ public: // Types
 	using size_type = Variables::size_type;
 	using Indexes = std::vector< size_type >;
 
-	using If = Conditional_If< Variable >;
-	using When = Conditional_When< Variable >;
-	using If_Clauses = std::vector< If::Clause * >;
-	using When_Clauses = std::vector< When::Clause * >;
-
 	// Zero Crossing Type
 	enum class Crossing {
 	 DnPN = -4, // Positive to negative
@@ -262,6 +257,14 @@ public: // Predicate
 	not_ZC() const
 	{
 		return true;
+	}
+
+	// In Conditional?
+	virtual
+	bool
+	in_conditional() const
+	{
+		return conditional != nullptr;
 	}
 
 public: // Properties
@@ -1095,8 +1098,7 @@ public: // Data
 	Time dt_inf{ infinity }; // Time step inf
 	Time dt_inf_rlx{ infinity }; // Relaxed time step inf
 	bool self_observer{ false }; // Variable appears in its function/derivative?
-	If_Clauses if_clauses; // Clauses in conditional if blocks
-	When_Clauses when_clauses; // Clauses in conditional when blocks
+	Conditional< Variable > * conditional{ nullptr }; // Conditional (non-owning)
 	FMU_ME * fmu_me{ nullptr }; // FMU-ME (non-owning) pointer
 	FMU_Variable var; // FMU variables specs
 	FMU_Variable der; // FMU derivative specs

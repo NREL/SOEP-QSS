@@ -57,12 +57,12 @@ namespace QSS {
 
 // Forward
 class Target;
-class Conditional;
 
 namespace fmu {
 
 // Forward
 class Variable;
+template< typename V > class Conditional;
 
 // FMU-ME Class
 struct FMU_ME final
@@ -121,7 +121,7 @@ public: // Types
 	using Var_Name_Ref = std::unordered_map< std::string, fmi2_value_reference_t >; // Map from variable names to FMU variable value references
 	using Ref_Var = std::unordered_map< fmi2_value_reference_t, Variable * >;
 	using Var_Refs = std::vector< fmi2_value_reference_t >;
-	using Conditionals = std::vector< Conditional * >;
+	using Conditionals = std::vector< Conditional< Variable > * >;
 	using FMU_Vars = std::unordered_map< FMUVarPtr, FMU_Variable, FMUVarPtrHash >; // Map from FMU variables to FMU_Variable objects
 	using FMU_Idxs = std::unordered_map< size_type, Variable * >; // Map from FMU variable indexes to QSS Variables
 	using SmoothTokenOutput = Output_T< SmoothToken >;
