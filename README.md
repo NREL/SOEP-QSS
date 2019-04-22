@@ -160,6 +160,8 @@ Zero-crossing based conditional logic can also introduce "chattering" when their
 
 Modelica supports conditional behavior via "if" and "when" blocks. The QSS solver has classes representing if and when conditional blocks to provide this behavior. Each conditional block has a sequence of clauses that represent the if/elseif/else and when/elsewhen structure of the corresponding Modelica conditional. Each clause (except the else clause) contains one or more boolean or zero-crossing variables. When fully realized clauses would be able to represent logical "trees" over their variables: for now only OR logic is supported.
 
+Since FMUs are not going expose the full conditional block and clause structure to QSS via the model description XML file the conditional support has been simplified for FMUs to treat each Conditional object as a single-Variable clause.
+
 ### Interconnected Models
 
 Simulation of multiple subsystems models with some outputs connected to inputs in other models is important for SOEP. For this purpose the QSS application was extended to support multiple models and support for a `--con` option to specify interconnections was added. When connections are specified the models run in a synched mode to provide the "current" inputs.
@@ -275,6 +277,8 @@ The QSS solver behavior for processing conditionals is:
 * When conditional events are processed the clauses are evaluated to see which of them are active at that time (and superdense time pass).
 * Active clauses place events for their handlers on the queue at the same time and pass.
 * Handler events are processed to make the necessary variable updates.
+
+For FMUs a simpler conditional support is used because the FMUs don't expose the conditional block and clause structure.
 
 Conditional handler functions can cause variable changes that cause other (zero-crossing, requantization, ...) events so the processing order can affect results. To assure deterministic results, each event type has an offset number that is used as an additional field in the superdense time to assure that discrete, zero-crossing, conditional, and handler events are processed in groups in that order in each pass. Variables modified inconsistently by handlers in the same pass are detected and warnings generated since this indicates a problematic model that can produce processing order-dependent results.
 

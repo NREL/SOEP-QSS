@@ -1578,29 +1578,8 @@ namespace fmu {
 						for ( Variable * trigger : triggers ) {
 							assert( trigger->tD == t );
 							trigger->st = s; // Set trigger superdense time
-							trigger->advance_discrete();
+							trigger->advance_discrete_simultaneous();
 						}
-
-//						// If discrete events can change order 1+ QSS variables this block should be used instead
-//						for ( Variable * trigger : triggers ) {
-//							assert( trigger->tD == t );
-//							trigger->st = s; // Set trigger superdense time
-//							trigger->advance_discrete_0();
-//						}
-//						int const triggers_order_max( triggers.back()->order() );
-//						if ( triggers_order_max >= 1 ) { // 1st order pass
-//							for ( size_type i = begin_order_index( triggers, 1 ), n = triggers.size(); i < n; ++i ) {
-//								triggers[ i ]->advance_discrete_1();
-//							}
-//							if ( triggers_order_max >= 2 ) { // 2nd order pass
-//								set_time( t + options::dtNum ); // Set time to t + delta for numeric differentiation
-//								for ( size_type i = begin_order_index( triggers, 2 ), n = triggers.size(); i < n; ++i ) {
-//									triggers[ i ]->advance_discrete_2();
-//								}
-//								set_time( t );
-//							}
-//						}
-
 						if ( observers.have() ) observers.advance( t ); // Advance observers
 
 						if ( doTOut ) { // Time event output: after discrete changes

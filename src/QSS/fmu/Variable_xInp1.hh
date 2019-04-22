@@ -171,19 +171,13 @@ public: // Methods
 		if ( have_observers_ ) advance_observers();
 	}
 
-	// Discrete Advance: Stage 0
+	// Discrete Advance Simultaneous
 	void
-	advance_discrete_0()
+	advance_discrete_simultaneous()
 	{
-		x_0_ = f_( tX = tQ = tD ).x_0;
+		SmoothToken const s( f_( tX = tQ = tD ) );
+		x_0_ = s.x_0;
 		set_qTol();
-	}
-
-	// Discrete Advance: Stage 1
-	void
-	advance_discrete_1()
-	{
-		SmoothToken const s( f_( tD ) );
 		x_1_ = s.x_1;
 		set_tE();
 		tD = s.tD;

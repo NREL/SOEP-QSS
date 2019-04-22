@@ -428,32 +428,8 @@ simulate( std::string const & model )
 					for ( Variable * trigger : triggers ) {
 						assert( trigger->tD == t );
 						trigger->st = s; // Set trigger superdense time
-						trigger->advance_discrete();
+						trigger->advance_discrete_simultaneous();
 					}
-
-//					// If discrete events can change order 1+ QSS variables this block should be used instead
-//					for ( Variable * trigger : triggers ) {
-//						assert( trigger->tD == t );
-//						trigger->st = s; // Set trigger superdense time
-//						trigger->advance_discrete_0();
-//					}
-//					int const triggers_order_max( triggers.back()->order() );
-//					if ( triggers_order_max >= 1 ) { // 1st order pass
-//						for ( size_type i = begin_order_index( triggers, 1 ), n = triggers.size(); i < n; ++i ) {
-//							triggers[ i ]->advance_discrete_1();
-//						}
-//						if ( triggers_order_max >= 2 ) { // 2nd order pass
-//							for ( size_type i = begin_order_index( triggers, 2 ), n = triggers.size(); i < n; ++i ) {
-//								triggers[ i ]->advance_discrete_2();
-//							}
-//							if ( triggers_order_max >= 3 ) { // 3rd order pass
-//								for ( size_type i = begin_order_index( triggers, 3 ), n = triggers.size(); i < n; ++i ) {
-//									triggers[ i ]->advance_discrete_3();
-//								}
-//							}
-//						}
-//					}
-
 					Variable::advance_observers( observers, t );
 
 					if ( doTOut ) { // Time event output: after discrete changes

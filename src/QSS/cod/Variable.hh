@@ -464,7 +464,7 @@ public: // Methods
 	void
 	observe( Variable * v )
 	{
-		if ( v == this ) { // Don't need to self-observe
+		if ( v == this ) { // Flag as self-observer
 			self_observer = true;
 		} else {
 			observees_.push_back( v );
@@ -589,33 +589,13 @@ public: // Methods
 		assert( false );
 	}
 
-	// Discrete Advance: Stage 0
+	// Discrete Advance Simultaneous
 	virtual
 	void
-	advance_discrete_0()
+	advance_discrete_simultaneous()
 	{
 		assert( false );
 	}
-
-	// Discrete Advance: Stage 1
-	virtual
-	void
-	advance_discrete_1()
-	{
-		assert( false );
-	}
-
-	// Discrete Advance: Stage 2
-	virtual
-	void
-	advance_discrete_2()
-	{}
-
-	// Discrete Advance: Stage 3
-	virtual
-	void
-	advance_discrete_3()
-	{}
 
 	// QSS Add Event
 	void

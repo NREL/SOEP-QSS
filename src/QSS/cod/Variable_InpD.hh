@@ -166,9 +166,9 @@ public: // Methods
 		if ( chg && have_observers_ ) advance_observers();
 	}
 
-	// Discrete Advance: Stage 0
+	// Discrete Advance Simultaneous
 	void
-	advance_discrete_0()
+	advance_discrete_simultaneous()
 	{
 		Real const x_new( f_.vs( tX = tQ = tD ) );
 		tD = f_.tD( tD );
