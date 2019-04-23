@@ -49,6 +49,9 @@
 #include <sys/errno.h>
 #endif
 #ifdef _WIN32
+#ifndef S_ISREG
+#define S_ISREG(mode) (((mode)&S_IFMT)==S_IFREG)
+#endif
 #ifdef _WIN64
 #define stat _stat64
 #else

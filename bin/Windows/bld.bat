@@ -13,7 +13,7 @@ if not "%2" == "" (
 
 rem Build QSS
 cd %QSS%\src\QSS\app
-call mak.bat %3 %4 %5 %6 %7 %8 %9
+call mak.bat -j8 %3 %4 %5 %6 %7 %8 %9
 if "%2" == "d" (
   if not "%3" == "clean" (
     cd %QSS%\tst\QSS\unit
