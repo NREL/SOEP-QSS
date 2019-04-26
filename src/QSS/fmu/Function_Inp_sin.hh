@@ -55,6 +55,7 @@ public: // Types
 public: // Creation
 
 	// Constructor
+	explicit
 	Function_Inp_sin(
 	 Real const a = 1.0, // Amplitude
 	 Real const b = 1.0, // Time scaling (2*pi/period)

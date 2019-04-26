@@ -54,6 +54,7 @@ public: // Types
 public: // Creation
 
 	// Constructor
+	explicit
 	Function_Inp_constant( Real const x_0 = 0.0 ) :
 	 x_0_( x_0 )
 	{}

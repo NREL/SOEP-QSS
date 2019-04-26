@@ -72,6 +72,7 @@ public: // Types
 public: // Creation
 
 	// Triggers Constructor
+	explicit
 	Observers_Simultaneous(
 	 Variables & triggers,
 	 FMU_ME * fmu_me = nullptr

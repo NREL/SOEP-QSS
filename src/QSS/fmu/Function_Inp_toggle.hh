@@ -58,6 +58,7 @@ public: // Types
 public: // Creation
 
 	// Constructor
+	explicit
 	Function_Inp_toggle(
 	 Real const h_0 = 0.0,
 	 Real const h = 1.0,

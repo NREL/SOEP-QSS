@@ -74,6 +74,7 @@ public: // Types
 public: // Creation
 
 	// Constructor
+	explicit
 	Observers( FMU_ME * fmu_me = nullptr ) :
 	 fmu_me_( fmu_me )
 	{}
