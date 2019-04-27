@@ -56,19 +56,20 @@ public: // Creation
 	Variable_I(
 	 std::string const & name,
 	 Integer const xIni,
+	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable()
 	) :
-	 Super( name, Real( xIni ), var ),
+	 Super( 0, name, Real( xIni ), fmu_me, var ),
 	 x_( xIni )
 	{}
 
 	// Name Constructor
-	explicit
 	Variable_I(
 	 std::string const & name,
+	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable()
 	) :
-	 Super( name, var ),
+	 Super( 0, name, fmu_me, var ),
 	 x_( static_cast< Integer >( xIni ) )
 	{}
 
@@ -82,13 +83,6 @@ public: // Predicate
 	}
 
 public: // Properties
-
-	// Order of Method
-	int
-	order() const
-	{
-		return 0;
-	}
 
 	// Boolean Value
 	Boolean

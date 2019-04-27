@@ -54,6 +54,7 @@ double dtMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits<
 double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Inf time step (s)
 double dtZC( 1.0e-9 ); // FMU zero-crossing time step (s)
 double dtNum( 1.0e-6 ); // Numeric differentiation time step (s)
+double dtCon( 0.0 ); // Connection sync time step (s)
 double one_over_dtNum( 1.0e6 ); // 1 / dtNum  [computed]
 double one_half_over_dtNum( 5.0e5 ); // 1 / ( 2 * dtNum )  [computed]
 double one_sixth_over_dtNum_squared( 1.0e12 / 6.0 ); // 1 / ( 6 * dtNum^2 )  [computed]
@@ -63,9 +64,10 @@ std::size_t pass( 20 ); // Pass count limit
 bool cycles( false ); // Report dependency cycles?
 bool inflection( false ); // Requantize at inflections?
 bool refine( false ); // Refine FMU zero-crossing roots?
-InpVarFxn inp; // Map from input variable names to function specs
+InpFxn fxn; // Map from input variables to function specs
+InpOut con; // Map from input variables to output variables
 std::string out; // Outputs
-std::string model; // Model|FMU name
+Models models; // Name of model(s) or FMU(s)
 
 namespace specified {
 
@@ -96,40 +98,47 @@ bool d( false ); // Diagnostic output?
 void
 help_display()
 {
-	std::cout << '\n' << "QSS [options] [model|fmu]" << "\n\n";
+	std::cout << '\n' << "QSS [options] [model [model ...]]" << "\n\n";
 	std::cout << "Options:" << "\n\n";
-	std::cout << " --qss=METHOD   QSS method: (x)(LI)QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
+	std::cout << " --qss=QSS      QSS method: (x)(LI)QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
 	std::cout << " --rTol=TOL     Relative tolerance  [1e-4|FMU]" << '\n';
 	std::cout << " --aTol=TOL     Absolute tolerance  [1e-6]" << '\n';
-	std::cout << " --zTol=TOL     Zero-crossing tolerance  [0|FMU]" << '\n';
+	std::cout << " --zTol=TOL     Zero-crossing tolerance  [0]" << '\n';
 	std::cout << " --dtMin=STEP   Min time step (s)  [0]" << '\n';
 	std::cout << " --dtMax=STEP   Max time step (s)  [infinity]" << '\n';
 	std::cout << " --dtInf=STEP   Inf alt time step (s)  [infinity]" << '\n';
-	std::cout << " --dtZC=STEP    FMU zero-crossing step (s)  [1e-9]" << '\n';
-	std::cout << " --dtNum=STEP   Numeric differentiation step (s)  [1e-6]" << '\n';
-	std::cout << " --dtOut=STEP   Sampled & FMU output step (s)  [1e-3]" << '\n';
+	std::cout << " --dtZC=STEP    FMU zero-crossing time step (s)  [1e-9]" << '\n';
+	std::cout << " --dtNum=STEP   Numeric differentiation time step (s)  [1e-6]" << '\n';
+	std::cout << " --dtCon=STEP   Connection sync time step (s)  [1e-6]" << '\n';
+	std::cout << " --dtOut=STEP   Sampled & FMU output time step (s)  [1e-3]" << '\n';
 	std::cout << " --tEnd=TIME    End time (s)  [1|FMU]" << '\n';
 	std::cout << " --pass=COUNT   Pass count limit  [20]" << '\n';
 	std::cout << " --cycles       Report dependency cycles?  [F]" << '\n';
 	std::cout << " --inflection   Requantize at inflections?  [F]" << '\n';
 	std::cout << " --refine       Refine FMU zero-crossing roots?  [F]" << '\n';
-	std::cout << " --inp=VAR:FXN  Input variable:function  [step[0,1,1]]" << '\n';
+	std::cout << " --fxn=INP:FXN  FMU input variable function  [step[0|start,1,1]]" << '\n';
+	std::cout << "       INP can be <model>.<var> with 2+ models" << '\n';
+	std::cout << "           FXN is function spec:" << '\n';
 	std::cout << "           constant[c] => c" << '\n';
 	std::cout << "           sin[a,b,c] => a * sin( b * t ) + c" << '\n';
 	std::cout << "           step[h0,h,d] => h0 + h * floor( t / d )" << '\n';
 	std::cout << "           toggle[h0,h,d] => h0 + h * ( floor( t / d ) % 2 )" << '\n';
+	std::cout << " --con=INP:OUT  Connect input and output variables" << '\n';
+	std::cout << "       INP and OUT are <model>.<var> with 2+ models" << '\n';
 	std::cout << " --out=OUTPUTS  Outputs  [trfkx]" << '\n';
 	std::cout << "       t  Time events" << '\n';
 	std::cout << "       r  Requantizations" << '\n';
 	std::cout << "       a  All variables" << '\n';
 	std::cout << "       s  Sampled time steps" << '\n';
 	std::cout << "       f  FMU outputs" << '\n';
-	std::cout << "       k  FMU-QSS smooth tokens" << '\n';
+	std::cout << "       k  FMU smooth tokens" << '\n';
 	std::cout << "       x  Continuous trajectories" << '\n';
 	std::cout << "       q  Quantized trajectories" << '\n';
 	std::cout << "       d  Diagnostic output" << '\n';
 	std::cout << '\n';
 	std::cout << "Models:" << "\n\n";
+	std::cout << "  <model>.fmu : FMU-ME (FMU for Model Exchange)" << '\n';
+	std::cout << "  <model>_QSS.fmu : FMU-QSS (FMU wrapping an FMU-ME and QSS)" << '\n';
 	std::cout << "  achilles : Achilles and the Tortoise" << '\n';
 	std::cout << "  achilles2 : Adds symmetry for simultaneous triggering" << '\n';
 	std::cout << "  achillesc : Custom functions demo " << '\n';
@@ -313,6 +322,18 @@ process_args( int argc, char * argv[] )
 				std::cerr << "Error: Nonnumeric dtNum: " << dtNum_str << std::endl;
 				fatal = true;
 			}
+		} else if ( has_value_option( arg, "dtCon" ) ) {
+			std::string const dtCon_str( arg_value( arg ) );
+			if ( is_double( dtCon_str ) ) {
+				dtCon = double_of( dtCon_str );
+				if ( dtCon <= 0.0 ) {
+					std::cerr << "Error: Nonpositive dtCon: " << dtCon_str << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::cerr << "Error: Nonnumeric dtCon: " << dtCon_str << std::endl;
+				fatal = true;
+			}
 		} else if ( has_value_option( arg, "dtOut" ) ) {
 			std::string const dtOut_str( arg_value( arg ) );
 			if ( is_double( dtOut_str ) ) {
@@ -350,7 +371,7 @@ process_args( int argc, char * argv[] )
 				std::cerr << "Error: Nonintegral pass: " << pass_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "inp" ) ) {
+		} else if ( has_value_option( arg, "fxn" ) ) {
 			std::string const var_fxn( arg_value( arg ) );
 			std::string var_name;
 			std::string fxn_spec;
@@ -361,9 +382,9 @@ process_args( int argc, char * argv[] )
 					std::string::size_type const isep( var_fxn.find( ':', qe ) );
 					if ( isep != std::string::npos ) {
 						fxn_spec = var_fxn.substr( isep + 1 );
-						inp[ var_name ] = fxn_spec;
+						fxn[ var_name ] = fxn_spec;
 					} else {
-						std::cerr << "Error: Input function spec not in VAR:FXN format: " << var_fxn << std::endl;
+						std::cerr << "Error: Input function spec not in variable:function format: " << var_fxn << std::endl;
 						fatal = true;
 					}
 				} else {
@@ -375,12 +396,51 @@ process_args( int argc, char * argv[] )
 				if ( isep != std::string::npos ) {
 					var_name = var_fxn.substr( 0, isep );
 					fxn_spec = var_fxn.substr( isep + 1 );
-					inp[ var_name ] = fxn_spec;
+					fxn[ var_name ] = fxn_spec;
 				} else {
-					std::cerr << "Error: Input function spec not in VAR:FXN format: " << var_fxn << std::endl;
+					std::cerr << "Error: Input variable function spec not in variable:function format: " << var_fxn << std::endl;
 					fatal = true;
 				}
 			}
+		} else if ( has_value_option( arg, "con" ) ) {
+			std::string const inp_out( arg_value( arg ) );
+			std::string inp_name;
+			std::string out_name;
+			if ( inp_out[ 0 ] == '"' ) { // Quoted input variable name
+				std::string::size_type const qe( inp_out.find( '"', 1u ) );
+				if ( qe != std::string::npos ) {
+					inp_name = inp_out.substr( 1, qe );
+					std::string::size_type const isep( inp_out.find( ':', qe ) );
+					if ( isep != std::string::npos ) {
+						out_name = inp_out.substr( isep + 1 );
+					} else {
+						std::cerr << "Error: Input-output connection spec not in input:output format: " << inp_out << std::endl;
+						fatal = true;
+					}
+				} else {
+					std::cerr << "Error: Input-output connection spec quoted input variable name missing end quote: " << inp_out << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::string::size_type const isep( inp_out.find( ':' ) );
+				if ( isep != std::string::npos ) {
+					inp_name = inp_out.substr( 0, isep );
+					out_name = inp_out.substr( isep + 1 );
+				} else {
+					std::cerr << "Error: Input-output connection spec not in input:output format: " << inp_out << std::endl;
+					fatal = true;
+				}
+			}
+			if ( out_name[ 0 ] == '"' ) { // Quoted output variable name
+				std::string::size_type const qe( inp_out.find( '"', 1u ) );
+				if ( qe != std::string::npos ) {
+					out_name = out_name.substr( 1, qe );
+				} else {
+					std::cerr << "Error: Input-output connection spec quoted output variable name missing end quote: " << inp_out << std::endl;
+					fatal = true;
+				}
+			}
+			con[ inp_name ] = out_name;
 		} else if ( has_value_option( arg, "out" ) ) {
 			out = arg_value( arg );
 			if ( has_any_not_of( out, "trasfkxqd" ) ) {
@@ -400,7 +460,7 @@ process_args( int argc, char * argv[] )
 			std::cerr << "Error: Unsupported option: " << arg << std::endl;
 			fatal = true;
 		} else { // Treat non-option argument as model
-			model = arg;
+			models.push_back( arg );
 		}
 		if ( ( dtMax != infinity ) && ( dtInf != infinity ) ) {
 			std::cerr << "Warning: dtInf has no effect when dtMax is specified" << std::endl;
@@ -409,6 +469,20 @@ process_args( int argc, char * argv[] )
 
 	if ( help ) std::exit( EXIT_SUCCESS );
 	if ( fatal ) std::exit( EXIT_FAILURE );
+}
+
+// Multiple models?
+bool
+have_multiple_models()
+{
+	return ( models.size() > 1u );
+}
+
+// Input-output connections?
+bool
+have_connections()
+{
+	return ( ! con.empty() );
 }
 
 } // options

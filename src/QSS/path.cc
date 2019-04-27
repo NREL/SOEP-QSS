@@ -49,6 +49,9 @@
 #include <sys/errno.h>
 #endif
 #ifdef _WIN32
+#ifndef S_ISREG
+#define S_ISREG(mode) (((mode)&S_IFMT)==S_IFREG)
+#endif
 #ifdef _WIN64
 #define stat _stat64
 #else
@@ -58,6 +61,15 @@
 
 namespace QSS {
 namespace path {
+
+// Globals
+#ifdef _WIN32
+char const sep( '\\' );
+std::string const tmp( std::getenv( "TEMP" ) != nullptr ? std::getenv( "TEMP" ) : "." );
+#else
+char const sep( '/' );
+std::string const tmp( "/tmp" );
+#endif
 
 // Is Name a File?
 bool
@@ -76,11 +88,6 @@ is_file( std::string const & name )
 std::string
 base( std::string const & path )
 {
-#ifdef _WIN32
-	char const sep( '\\' );
-#else
-	char const sep( '/' );
-#endif
 	std::size_t ibeg( path.rfind( sep ) );
 	if ( ibeg == std::string::npos ) {
 		ibeg = 0;
@@ -100,11 +107,6 @@ base( std::string const & path )
 std::string
 dir( std::string const & path )
 {
-#ifdef _WIN32
-	char const sep( '\\' );
-#else
-	char const sep( '/' );
-#endif
 	std::size_t l( path.length() ); // Length to search up to
 	while ( ( l > 0u ) && ( path[ l - 1 ] == sep ) ) --l; // Skip trailing path separators
 	while ( ( l > 0u ) && ( path[ l - 1 ] != sep ) ) --l; // Skip dir/file name

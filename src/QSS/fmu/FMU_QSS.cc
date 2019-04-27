@@ -35,7 +35,6 @@
 
 // QSS Headers
 #include <QSS/fmu/FMU_QSS.hh>
-#include <QSS/fmu/FMU_ME.hh>
 #include <QSS/path.hh>
 #include <QSS/string.hh>
 
@@ -51,7 +50,7 @@ namespace fmu {
 	~FMU_QSS()
 	{
 		std::free( states );
-		std::free( states_der );
+		std::free( derivatives );
 		std::free( event_indicators );
 		std::free( event_indicators_last );
 		std::free( var_list );
@@ -94,16 +93,8 @@ namespace fmu {
 		context = fmi_import_allocate_context( &callbacks );
 
 		// Unzip the FMU-QSS in a temporary directory
-#ifdef _WIN32
-		char const * TEMP( std::getenv( "TEMP" ) );
-		std::string const tmp_path( TEMP != nullptr ? TEMP : "." );
-		char const path_sep( '\\' );
-#else
-		std::string const tmp_path( "/tmp" );
-		char const path_sep( '/' );
-#endif
 		name = path::base( path );
-		unzip_dir = tmp_path + path_sep + name; //Do Randomize the path to avoid collisions
+		unzip_dir = path::tmp + path::sep + name; //Do Randomize the path to avoid collisions
 		if ( ! path::make_dir( unzip_dir ) ) {
 			std::cerr << "\nError: FMU-QSS unzip directory creation failed: " << unzip_dir << std::endl;
 			std::exit( EXIT_FAILURE );
@@ -137,7 +128,7 @@ namespace fmu {
 
 		// Initialize the FMU-ME object
 		std::string const fmu_me_name( name, 0, name.length() - 4 ); // Strip off _QSS
-		std::string const fmu_me_path( unzip_dir + path_sep + std::string( "resources" ) + path_sep + fmu_me_name + ".fmu" );
+		std::string const fmu_me_path( unzip_dir + path::sep + std::string( "resources" ) + path::sep + fmu_me_name + ".fmu" );
 		fmu_me.init( fmu_me_path );
 
 		// Load the FMU-QSS library
@@ -190,13 +181,8 @@ namespace fmu {
 		}
 
 		// Initialize the FMU-ME object
-#ifdef _WIN32
-		char const path_sep( '\\' );
-#else
-		char const path_sep( '/' );
-#endif
 		std::string const fmu_me_name( name, 0, name.length() - 4 ); // Strip off _QSS
-		std::string const fmu_me_path( unzip_dir + path_sep + std::string( "resources" ) + path_sep + fmu_me_name + ".fmu" );
+		std::string const fmu_me_path( unzip_dir + path::sep + std::string( "resources" ) + path::sep + fmu_me_name + ".fmu" );
 		fmu_me.init( fmu_me_path );
 
 		// Load the FMU-QSS library
@@ -255,7 +241,7 @@ namespace fmu {
 		}
 
 		states = (fmi2_real_t*)std::calloc( n_states, sizeof( double ) );
-		states_der = (fmi2_real_t*)std::calloc( n_states, sizeof( double ) );
+		derivatives = (fmi2_real_t*)std::calloc( n_states, sizeof( double ) );
 		event_indicators = (fmi2_real_t*)std::calloc( n_event_indicators, sizeof( double ) );
 		event_indicators_last = (fmi2_real_t*)std::calloc( n_event_indicators, sizeof( double ) );
 	}
@@ -282,6 +268,7 @@ namespace fmu {
 				out_var_refs.push_back( vrs[ i ] );
 			}
 		}
+		fmu_me.out_var_refs = out_var_refs;
 	}
 
 	// Unzip Location from FMU Resource Location URI
@@ -294,9 +281,6 @@ namespace fmu {
 		unz = path::un_uri( unz );
 		return unz;
 	}
-
-// Globals
-FMU_QSS fmu_qss;
 
 } // fmu
 } // QSS

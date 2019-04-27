@@ -1,4 +1,4 @@
-// Input Function Mockup
+// Connected FMU-QSS Simulation Runner
 //
 // Project: QSS Solver
 //
@@ -33,106 +33,19 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_Function_Inp_hh_INCLUDED
-#define QSS_fmu_Function_Inp_hh_INCLUDED
+#ifndef QSS_fmu_simulate_fmu_qss_con_hh_INCLUDED
+#define QSS_fmu_simulate_fmu_qss_con_hh_INCLUDED
 
-// QSS Headers
-#include <QSS/SmoothToken.hh>
+// C++ Headers
+#include <string>
+#include <vector>
 
 namespace QSS {
 namespace fmu {
 
-// Input Function Mockup
-class Function_Inp final
-{
-
-public: // Types
-
-	using Time = double;
-	using Real = double;
-
-public: // Creation
-
-	// Default Constructor
-	Function_Inp(
-	 Real const x_0 = 0.0,
-	 Real const x_1 = 0.0,
-	 Real const x_2 = 0.0,
-	 Real const x_3 = 0.0
-	) :
-	 s_( 3, x_0, x_1, x_2, x_3 )
-	{}
-
-public: // Properties
-
-	// State at Time t
-	SmoothToken const &
-	operator ()( Time const t ) const
-	{
-		if ( t != s_.t ) { // Reevaluate state
-			s_.t = t;
-			s_.tD = tD( t );
-			s_.x_0 = v( t );
-			s_.x_1 = d1( t );
-			s_.x_2 = d2( t );
-			s_.x_3 = d3( t );
-		}
-		return s_;
-	}
-
-	// State at Time t (Reevaluated)
-	SmoothToken const &
-	smooth_token( Time const t ) const
-	{
-		s_.t = t;
-		s_.tD = tD( t );
-		s_.x_0 = v( t );
-		s_.x_1 = d1( t );
-		s_.x_2 = d2( t );
-		s_.x_3 = d3( t );
-		return s_;
-	}
-
-	// Value at Time t
-	Real
-	v( Time const t ) const
-	{
-		return ?;
-	}
-
-	// First Derivative at Time t
-	Real
-	d1( Time const t ) const
-	{
-		return ?;
-	}
-
-	// Second Derivative at Time t
-	Real
-	d2( Time const t ) const
-	{
-		return ?;
-	}
-
-	// Third Derivative at Time t
-	Real
-	d3( Time const t ) const
-	{
-		return ?;
-	}
-
-	// Discrete Event after Time t
-	Time
-	tD( Time const t ) const
-	{
-		return ?;
-	}
-
-private: // Data
-
-	mutable SmoothToken s_; // Cached state
-
-};
+// Simulate connected FMU-QSS with QSS
+void
+simulate_fmu_qss_con( std::vector< std::string > const & paths );
 
 } // fmu
 } // QSS

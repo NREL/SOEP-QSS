@@ -55,16 +55,17 @@ public: // Types
 protected: // Creation
 
 	// Constructor
-	explicit
 	Variable_ZC(
+	 int const order,
 	 std::string const & name,
-	 Real const rTol = 1.0e-4,
-	 Real const aTol = 1.0e-6,
-	 Real const zTol = 0.0,
+	 Real const rTol,
+	 Real const aTol,
+	 Real const zTol,
+	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
-	 Super( name, rTol, aTol, 0.0, var, der ),
+	 Super( order, name, rTol, aTol, 0.0, fmu_me, var, der ),
 	 zTol( zTol ),
 	 zChatter_( zTol > 0.0 )
 	{
@@ -146,6 +147,7 @@ public: // Methods
 	bump_forward()
 	{
 		assert( tZ_last != infinity );
+///////////////////////////////////////////////////////////////
 		Real dtZC;
 		if ( options::specified::zTol ) {
 			Real d1( x1( tZ_last ) );

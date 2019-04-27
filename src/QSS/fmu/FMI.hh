@@ -36,12 +36,82 @@
 #ifndef QSS_fmu_FMI_hh_INCLUDED
 #define QSS_fmu_FMI_hh_INCLUDED
 
+// C++ Headers
+#include <unordered_map>
+
 // FMIL Headers
 #include <fmilib.h>
 #include <FMI2/fmi2FunctionTypes.h>
 
 // C++ Headers
-#include <stddef.h>
+#include <algorithm>
+#include <cassert>
+#include <cstddef>
+#include <string>
+#include <utility>
+
+namespace QSS {
+namespace fmu {
+
+// Forward
+struct FMU_QSS;
+
+// Globals
+extern std::unordered_map< std::string, FMU_QSS * > guid_to_fmu_qss; // FMU-QSS lookup from FMU-ME GUID
+extern std::unordered_map< fmi2Component, FMU_QSS * > c_to_fmu_qss; // FMU-QSS lookup from context
+
+// Register FMU-QSS by its FMU-ME GUID
+inline
+void
+reg( std::string const & guid, FMU_QSS * fmu_qss )
+{
+	guid_to_fmu_qss[ guid ] = fmu_qss;
+}
+
+// Register FMU-QSS by its fmi2Component
+inline
+void
+reg( fmi2Component c, FMU_QSS * fmu_qss )
+{
+	c_to_fmu_qss[ c ] = fmu_qss;
+}
+
+// Unregister FMU-QSS
+inline
+void
+unreg( FMU_QSS * fmu_qss )
+{
+	auto ig( std::find_if( guid_to_fmu_qss.begin(), guid_to_fmu_qss.end(), [fmu_qss]( std::pair< std::string, FMU_QSS * > const & p ){ return p.second == fmu_qss; } ) );
+	if ( ig != guid_to_fmu_qss.end() ) guid_to_fmu_qss.erase( ig );
+	assert( std::find_if( guid_to_fmu_qss.begin(), guid_to_fmu_qss.end(), [fmu_qss]( std::pair< std::string, FMU_QSS * > const & p ){ return p.second == fmu_qss; } ) == guid_to_fmu_qss.end() ); // Each FMU-QSS should only appear once
+
+	auto ic( std::find_if( c_to_fmu_qss.begin(), c_to_fmu_qss.end(), [fmu_qss]( std::pair< fmi2Component, FMU_QSS * > const & p ){ return p.second == fmu_qss; } ) );
+	if ( ic != c_to_fmu_qss.end() ) c_to_fmu_qss.erase( ic );
+	assert( std::find_if( c_to_fmu_qss.begin(), c_to_fmu_qss.end(), [fmu_qss]( std::pair< fmi2Component, FMU_QSS * > const & p ){ return p.second == fmu_qss; } ) == c_to_fmu_qss.end() ); // Each FMU-QSS should only appear once
+}
+
+// Lookup FMU-QSS by its FMU-ME GUID
+inline
+FMU_QSS &
+fmu_qss_of( std::string const & guid )
+{
+	auto ig( guid_to_fmu_qss.find( guid ) );
+	assert( ig != guid_to_fmu_qss.end() );
+	return *(ig->second);
+}
+
+// Lookup FMU-QSS by its fmi2Component
+inline
+FMU_QSS &
+fmu_qss_of( fmi2Component c )
+{
+	auto ic( c_to_fmu_qss.find( c ) );
+	assert( ic != c_to_fmu_qss.end() );
+	return *(ic->second);
+}
+
+} // fmu
+} // QSS
 
 #ifdef _MSC_VER
 #define DllExport __declspec( dllexport )
@@ -82,7 +152,7 @@ fmi2Status
 fmi2SetDebugLogging(
  fmi2Component c,
  fmi2Boolean loggingOn,
- size_t n ,
+ std::size_t n ,
  fmi2String const cat[]
 );
 
@@ -125,7 +195,7 @@ fmi2Status
 fmi2SetRealInputDerivatives(
  fmi2Component c,
  fmi2ValueReference const vr[],
- size_t nvr,
+ std::size_t nvr,
  fmi2Integer const order[],
  fmi2Real const value[]
 );
@@ -135,7 +205,7 @@ fmi2Status
 fmi2GetRealOutputDerivatives(
  fmi2Component c,
  fmi2ValueReference const vr[],
- size_t nvr,
+ std::size_t nvr,
  fmi2Integer const order[],
  fmi2Real value[]
 );
@@ -152,7 +222,7 @@ fmi2Status
 fmi2GetReal(
  fmi2Component c,
  fmi2ValueReference const vr[],
- size_t nvr,
+ std::size_t nvr,
  fmi2Real value[]
 );
 
@@ -161,7 +231,7 @@ fmi2Status
 fmi2SetReal(
  fmi2Component c,
  fmi2ValueReference const vr[],
- size_t nvr,
+ std::size_t nvr,
  fmi2Real const value[]
 );
 
@@ -170,7 +240,7 @@ fmi2Status
 fmi2GetInteger(
  fmi2Component c,
  fmi2ValueReference const vr[],
- size_t nvr,
+ std::size_t nvr,
  fmi2Integer value[]
 );
 
@@ -179,7 +249,7 @@ fmi2Status
 fmi2SetInteger(
  fmi2Component c,
  fmi2ValueReference const vr[],
- size_t nvr,
+ std::size_t nvr,
  fmi2Integer const value[]
 );
 
@@ -188,7 +258,7 @@ fmi2Status
 fmi2GetBoolean(
  fmi2Component c,
  fmi2ValueReference const vr[],
- size_t nvr,
+ std::size_t nvr,
  fmi2Boolean value[]
 );
 
@@ -197,7 +267,7 @@ fmi2Status
 fmi2SetBoolean(
  fmi2Component c,
  fmi2ValueReference const vr[],
- size_t nvr,
+ std::size_t nvr,
  fmi2Boolean const value[]
 );
 
@@ -206,7 +276,7 @@ fmi2Status
 fmi2GetString(
  fmi2Component c,
  fmi2ValueReference const vr[],
- size_t nvr,
+ std::size_t nvr,
  fmi2String value[]
 );
 
@@ -215,7 +285,7 @@ fmi2Status
 fmi2SetString(
  fmi2Component c,
  fmi2ValueReference const vr[],
- size_t nvr,
+ std::size_t nvr,
  fmi2String const value[]
 );
 
@@ -233,7 +303,7 @@ fmi2Status
 fmi2GetContinuousStates(
  fmi2Component c,
  fmi2Real x[],
- size_t nx
+ std::size_t nx
 );
 
 FMI2_Export
@@ -241,7 +311,7 @@ fmi2Status
 fmi2SetContinuousStates(
  fmi2Component c,
  fmi2Real const x[],
- size_t nx
+ std::size_t nx
 );
 
 FMI2_Export
@@ -249,7 +319,7 @@ fmi2Status
 fmi2GetDerivatives(
  fmi2Component c,
  fmi2Real derivatives[],
- size_t nx
+ std::size_t nx
 );
 
 FMI2_Export
@@ -257,9 +327,9 @@ fmi2Status
 fmi2GetDirectionalDerivative(
  fmi2Component c,
  fmi2ValueReference const vUnknown_ref[],
- size_t nUnknown,
+ std::size_t nUnknown,
  fmi2ValueReference const vKnown_ref[],
- size_t nKnown,
+ std::size_t nKnown,
  fmi2Real const dvKnown[],
  fmi2Real dvUnknown[]
 );
@@ -269,7 +339,7 @@ fmi2Status
 fmi2GetEventIndicators(
  fmi2Component c,
  fmi2Real eventIndicators[],
- size_t ni
+ std::size_t ni
 );
 
 FMI2_Export
@@ -277,7 +347,7 @@ fmi2Status
 fmi2GetNominalsOfContinuousStates(
  fmi2Component c,
  fmi2Real x_nominal[],
- size_t nx
+ std::size_t nx
 );
 
 FMI2_Export
@@ -300,7 +370,7 @@ fmi2SerializeFMUstate(
  fmi2Component c,
  fmi2FMUstate FMUstate,
  fmi2Byte serializedState[],
- size_t size
+ std::size_t size
 );
 
 FMI2_Export
@@ -308,7 +378,7 @@ fmi2Status
 fmi2SerializedFMUstateSize(
  fmi2Component c,
  fmi2FMUstate FMUstate,
- size_t * size
+ std::size_t * size
 );
 
 FMI2_Export
@@ -316,7 +386,7 @@ fmi2Status
 fmi2DeSerializeFMUstate(
  fmi2Component c,
  fmi2Byte const serializedState[],
- size_t size,
+ std::size_t size,
  fmi2FMUstate * FMUstate
 );
 

@@ -90,17 +90,10 @@ public: // Creation
 	 Real const rTol = 1.0e-4,
 	 Real const aTol = 1.0e-6
 	) :
-	 Super( name, rTol, aTol )
+	 Super( 2, name, rTol, aTol )
 	{}
 
 public: // Properties
-
-	// Order of Method
-	int
-	order() const
-	{
-		return 2;
-	}
 
 	// Continuous Value at Time t
 	Real
@@ -238,25 +231,13 @@ public: // Methods
 		if ( have_observers_ ) advance_observers();
 	}
 
-	// Discrete Advance: Stage 0
+	// Discrete Advance Simultaneous
 	void
-	advance_discrete_0()
+	advance_discrete_simultaneous()
 	{
 		x_0_ = f_.vs( tX = tQ = tD );
 		set_qTol();
-	}
-
-	// Discrete Advance: Stage 1
-	void
-	advance_discrete_1()
-	{
 		x_1_ = f_.dc1( tD );
-	}
-
-	// Discrete Advance: Stage 2
-	void
-	advance_discrete_2()
-	{
 		x_2_ = one_half * f_.dc2( tD );
 		set_tE();
 		tD = f_.tD( tD );

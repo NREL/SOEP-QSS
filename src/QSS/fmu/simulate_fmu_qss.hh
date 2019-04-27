@@ -36,12 +36,15 @@
 #ifndef QSS_fmu_simulate_fmu_qss_hh_INCLUDED
 #define QSS_fmu_simulate_fmu_qss_hh_INCLUDED
 
+// C++ Headers
+#include <string>
+
 namespace QSS {
 namespace fmu {
 
 // Simulate an FMU-QSS with QSS
 void
-simulate_fmu_qss();
+simulate_fmu_qss( std::string const & path );
 
 } // fmu
 } // QSS

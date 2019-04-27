@@ -40,11 +40,14 @@
 #include <cstddef>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace QSS {
 namespace options {
 
-using InpVarFxn = std::unordered_map< std::string, std::string >;
+using Models = std::vector< std::string >;
+using InpFxn = std::unordered_map< std::string, std::string >;
+using InpOut = std::unordered_map< std::string, std::string >;
 
 // QSS Method Enumerator
 enum class QSS {
@@ -71,6 +74,7 @@ extern double dtMax; // Max time step (s)
 extern double dtInf; // Inf time step (s)
 extern double dtZC; // FMU zero-crossing time step (s)
 extern double dtNum; // Numeric differentiation time step (s)
+extern double dtCon; // Connection sync time step (s)
 extern double dtOut; // Sampled & FMU output time step (s)
 extern double one_over_dtNum; // 1 / dtNum
 extern double one_half_over_dtNum; // 1 / ( 2 * dtNum )
@@ -80,9 +84,10 @@ extern std::size_t pass; // Pass count limit
 extern bool cycles; // Report dependency cycles?
 extern bool inflection; // Requantize at inflections?
 extern bool refine; // Refine FMU zero-crossing roots?
-extern InpVarFxn inp; // Map from input variable names to function specs
+extern InpFxn fxn; // Map from input variables to function specs
+extern InpOut con; // Map from input variables to output variables
 extern std::string out; // Outputs: r, a, s, x, q, f
-extern std::string model; // Name of model or FMU
+extern Models models; // Name of model(s) or FMU(s)
 
 namespace specified {
 
@@ -102,7 +107,7 @@ extern bool r; // Requantizations?
 extern bool a; // All variables?
 extern bool s; // Sampled output?
 extern bool f; // FMU outputs?
-extern bool k; // FMU-QSS smooth tokens?
+extern bool k; // FMU smooth tokens?
 extern bool x; // Continuous trajectories?
 extern bool q; // Quantized trajectories?
 extern bool d; // Diagnostic output?
@@ -112,6 +117,14 @@ extern bool d; // Diagnostic output?
 // Process command line arguments
 void
 process_args( int argc, char * argv[] );
+
+// Multiple models?
+bool
+have_multiple_models();
+
+// Input-output connections?
+bool
+have_connections();
 
 } // options
 } // QSS

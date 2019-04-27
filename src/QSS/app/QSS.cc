@@ -38,12 +38,38 @@
 #ifdef QSS_FMU
 #include <QSS/fmu/simulate_fmu_me.hh>
 #include <QSS/fmu/simulate_fmu_qss.hh>
+#include <QSS/fmu/simulate_fmu_qss_con.hh>
 #endif
 #include <QSS/options.hh>
+#include <QSS/path.hh>
 
 // C++ Headers
+#include <algorithm>
+#include <cassert>
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
+
+// Types
+enum class ModelType { UNK, COD, FMU_ME, FMU_QSS };
+
+// Model Type from Name
+ModelType
+model_type_of( std::string const & model )
+{
+	if ( model.rfind( ".fmu" ) == model.length() - 4u ) { // FMU
+		if ( ( model.length() >= 9 ) && ( model.rfind( "_QSS.fmu" ) == model.length() - 8u ) ) { // FMU-QSS
+			return ModelType::FMU_QSS;
+		} else if ( model.length() >= 5 ) { // FMU-ME
+			return ModelType::FMU_ME;
+		} else {
+			std::cerr << "Error: FMU model file name invalid: " + model << std::endl;
+			std::exit( EXIT_FAILURE );
+		}
+	} else { // Code-defined model
+		return ModelType::COD;
+	}
+}
 
 // QSS Solver Main
 int
@@ -53,26 +79,83 @@ main( int argc, char * argv[] )
 
 	// Process command line arguments
 	options::process_args( argc, argv );
-
-	// Run FMU-QSS, FMU-ME, or example model simulation
-	if ( options::model.empty() ) {
+	if ( options::models.empty() ) {
 		std::cerr << "Error: No model name or FMU file specified" << std::endl;
 		std::exit( EXIT_FAILURE );
-	} else if ( ( options::model.length() >= 9 ) && ( options::model.rfind( "_QSS.fmu" ) == options::model.length() - 8u ) ) { // FMU-QSS
-#ifdef QSS_FMU
-		fmu::simulate_fmu_qss();
-#else
-		std::cerr << "Error: FMU-QSS models not supported in this build" << std::endl;
+	}
+
+	// Check model names/types
+	ModelType model_type( ModelType::UNK );
+	if ( options::have_multiple_models() ) {
+
+		// Check for mix of model types
+		for ( std::string const & model : options::models ) {
+			ModelType const model_type_loop( model_type_of( model ) );
+			if ( model_type == ModelType::UNK ) {
+				model_type = model_type_loop;
+			} else if ( model_type != model_type_loop ) {
+				std::cerr << "Error: Models must all be code-defined, FMU-ME, or FMU-QSS" << std::endl;
+				std::exit( EXIT_FAILURE );
+			}
+		}
+
+		// Check for repeat model names
+		options::Models sorted_models( options::models );
+		std::sort( sorted_models.begin(), sorted_models.end() );
+		if ( std::adjacent_find( sorted_models.begin(), sorted_models.end() ) != sorted_models.end() )  {
+			std::cerr << "Error: Repeat model name" << std::endl;
+			std::exit( EXIT_FAILURE );
+		}
+
+	} else { // Single model
+		assert( options::models.size() == 1u );
+		model_type = model_type_of( options::models[ 0 ] );
+	}
+
+#ifndef QSS_FMU
+	// Check for FMU models if not supported in this build
+	if ( ( model_type == ModelType::FMU_ME ) || ( model_type == ModelType::FMU_QSS ) ) {
+		std::cerr << "Error: FMU models not supported in this build" << std::endl;
 		std::exit( EXIT_FAILURE );
+	}
 #endif
-	} else if ( ( options::model.length() >= 5 ) && ( options::model.rfind( ".fmu" ) == options::model.length() - 4u ) ) { // FMU-ME
+
+	// Run FMU-QSS, FMU-ME, or code-defined model simulation
+	if ( options::have_connections() ) { // Synched simulations
+		if ( model_type == ModelType::COD ) { // Code-defined model
+			std::cerr << "Error: Code-defined models with input:output connections not yet supported" << std::endl;
+			std::exit( EXIT_FAILURE );
+		} else if ( model_type == ModelType::FMU_ME ) { // FMU-ME
+			std::cerr << "Error: FMU-ME models with input:output connections not yet supported" << std::endl;
+			std::exit( EXIT_FAILURE );
+		} else if ( model_type == ModelType::FMU_QSS ) { // FMU-QSS
 #ifdef QSS_FMU
-		fmu::simulate_fmu_me();
-#else
-		std::cerr << "Error: FMU-ME models not supported in this build" << std::endl;
-		std::exit( EXIT_FAILURE );
+			fmu::simulate_fmu_qss_con( options::models );
 #endif
-	} else { // Example
-		cod::simulate();
+		} else {
+			assert( false );
+		}
+	} else { // Independent simulations
+		std::int64_t const n_models( options::models.size() );
+//#ifdef _OPENMP // Can enable if global event queue eliminated
+//		#pragma omp parallel for schedule(dynamic) if ( n_models > 1 )
+//#endif
+		for ( std::int64_t i = 0; i < n_models; ++i ) {
+			std::string const & model( options::models[ i ] );
+			std::cout << '\n' + path::base( model ) + " Simulation =====" << std::endl;
+			if ( model_type == ModelType::COD ) { // Code-defined model
+				cod::simulate( model );
+			} else if ( model_type == ModelType::FMU_ME ) { // FMU-ME
+#ifdef QSS_FMU
+				fmu::simulate_fmu_me( model );
+#endif
+			} else if ( model_type == ModelType::FMU_QSS ) { // FMU-QSS
+#ifdef QSS_FMU
+				fmu::simulate_fmu_qss( model );
+#endif
+			} else {
+				assert( false );
+			}
+		}
 	}
 }

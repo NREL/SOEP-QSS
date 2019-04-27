@@ -53,25 +53,18 @@ public: // Types
 public: // Creation
 
 	// Constructor
-	explicit
 	Variable_xInp2(
 	 std::string const & name,
-	 Real const rTol = 1.0e-4,
-	 Real const aTol = 1.0e-6,
+	 Real const rTol,
+	 Real const aTol,
+	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 Function f = Function()
 	) :
-	 Super( name, rTol, aTol, var, f )
+	 Super( 2, name, rTol, aTol, fmu_me, var, f )
 	{}
 
 public: // Properties
-
-	// Order of Method
-	int
-	order() const
-	{
-		return 2;
-	}
 
 	// Continuous Value at Time t
 	Real
@@ -165,7 +158,7 @@ public: // Methods
 		assert( f() );
 		assert( observees_.empty() );
 		init_observers();
-		x_0_ = f_( tQ ).x_0;
+		fmu_set_real( x_0_ = f_( tQ ).x_0 );
 		set_qTol();
 	}
 
@@ -180,9 +173,10 @@ public: // Methods
 	void
 	init_2()
 	{
-		x_2_ = one_half * f_( tQ ).x_2;
+		SmoothToken const s( f_( tQ ) );
+		x_2_ = one_half * s.x_2;
 		set_tE();
-		tD = f_( tQ ).tD;
+		tD = s.tD;
 		tE < tD ? add_QSS( tE ) : add_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
@@ -199,39 +193,29 @@ public: // Methods
 	void
 	advance_discrete()
 	{
-		x_0_ = f_( tX = tQ = tD ).x_0;
+		SmoothToken const s( f_( tX = tQ = tD ) );
+		x_0_ = s.x_0;
 		set_qTol();
-		x_1_ = f_( tD ).x_1;
-		x_2_ = one_half * f_( tD ).x_2;
+		x_1_ = s.x_1;
+		x_2_ = one_half * s.x_2;
 		set_tE();
-		tD = f_( tD ).tD;
+		tD = s.tD;
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 		if ( have_observers_ ) advance_observers();
 	}
 
-	// Discrete Advance: Stage 0
+	// Discrete Advance Simultaneous
 	void
-	advance_discrete_0()
+	advance_discrete_simultaneous()
 	{
-		x_0_ = f_( tX = tQ = tD ).x_0;
+		SmoothToken const s( f_( tX = tQ = tD ) );
+		x_0_ = s.x_0;
 		set_qTol();
-	}
-
-	// Discrete Advance: Stage 1
-	void
-	advance_discrete_1()
-	{
-		x_1_ = f_( tD ).x_1;
-	}
-
-	// Discrete Advance: Stage 2
-	void
-	advance_discrete_2()
-	{
-		x_2_ = one_half * f_( tD ).x_2;
+		x_1_ = s.x_1;
+		x_2_ = one_half * s.x_2;
 		set_tE();
-		tD = f_( tD ).tD;
+		tD = s.tD;
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
@@ -240,12 +224,13 @@ public: // Methods
 	void
 	advance_QSS()
 	{
-		x_0_ = f_( tX = tQ = tE ).x_0;
+		SmoothToken const s( f_( tX = tQ = tE ) );
+		x_0_ = s.x_0;
 		set_qTol();
-		x_1_ = f_( tQ ).x_1;
-		x_2_ = one_half * f_( tQ ).x_2;
+		x_1_ = s.x_1;
+		x_2_ = one_half * s.x_2;
 		set_tE();
-		tD = f_( tQ ).tD;
+		tD = s.tD;
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 		if ( have_observers_ ) advance_observers();
@@ -270,9 +255,10 @@ public: // Methods
 	void
 	advance_QSS_2()
 	{
-		x_2_ = one_half * f_( tQ ).x_2;
+		SmoothToken const s( f_( tQ ) );
+		x_2_ = one_half * s.x_2;
 		set_tE();
-		tD = f_( tQ ).tD;
+		tD = s.tD;
 		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}

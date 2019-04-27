@@ -49,18 +49,18 @@ class Function_Inp_sin final
 
 public: // Types
 
-	using Time = double;
 	using Real = double;
+	using Time = double;
 
 public: // Creation
 
 	// Constructor
+	explicit
 	Function_Inp_sin(
 	 Real const a = 1.0, // Amplitude
 	 Real const b = 1.0, // Time scaling (2*pi/period)
 	 Real const c = 0.0 // Shift
 	) :
-	 s_( 3, c, a * b, 0.0, -( a * b * b * b ) ),
 	 a_( a ),
 	 b_( b ),
 	 c_( c ),
@@ -72,29 +72,18 @@ public: // Creation
 public: // Properties
 
 	// State at Time t
-	SmoothToken const &
+	SmoothToken
 	operator ()( Time const t ) const
 	{
-		if ( t != s_.t ) { // Reevaluate state
-			s_.t = t;
-			s_.x_0 = v( t );
-			s_.x_1 = d1( t );
-			s_.x_2 = d2( t );
-			s_.x_3 = d3( t );
-		}
-		return s_;
-	}
-
-	// State at Time t (Reevaluated)
-	SmoothToken const &
-	smooth_token( Time const t ) const
-	{
-		s_.t = t;
-		s_.x_0 = v( t );
-		s_.x_1 = d1( t );
-		s_.x_2 = d2( t );
-		s_.x_3 = d3( t );
-		return s_;
+		Real const b_t( b_ * t );
+		Real const sin_b_t( std::sin( b_t ) );
+		Real const cos_b_t( std::cos( b_t ) );
+		return SmoothToken(
+		 ( a_ * sin_b_t ) + c_,
+		 a_b_ * cos_b_t,
+		 -a_b2_ * sin_b_t,
+		 -a_b3_ * cos_b_t
+		);
 	}
 
 	// Value at Time t
@@ -133,8 +122,6 @@ public: // Properties
 	}
 
 private: // Data
-
-	mutable SmoothToken s_; // Cached state
 
 	Real const a_{ 1.0 }; // Amplitude
 	Real const b_{ 1.0 }; // Time scaling (2*pi/period)
