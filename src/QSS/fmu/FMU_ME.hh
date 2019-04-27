@@ -132,6 +132,7 @@ public: // Creation
 	FMU_ME();
 
 	// FMU-ME Path Constructor
+	explicit
 	FMU_ME( std::string const & path );
 
 	// Destructor
