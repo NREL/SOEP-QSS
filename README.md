@@ -20,6 +20,7 @@ Currently the code has:
 * A few simple code-defined example cases.
 * FMU for Model Exchange simulation support.
 * FMU-QSS generation and simulation support.
+* Multiple connected FMU-QSS model simulation.
 
 ### Notes
 * Modelica input file processing is not provided: test cases are code-defined or loaded from FMUs.
@@ -134,6 +135,8 @@ Input functions are external system "drivers" that do not depend on the state of
 
 Input functions can also have discrete events at which their value changes. To provide accurate behavior with QSS solvers, where time steps can be large and variable, these discrete events are assumed predictable by the input functions. These predicted discrete events are placed in the QSS event queue to assure they are processed at their exact event time. We don't currently support discrete events for continuous input functions but this is easily added if needed.
 
+Input functions may be outputs from other models/FMUs. This is discussed in the Interconnected Models section.
+
 ### Zero-Crossing Functions
 
 So-called zero-crossing functions are used by Modelica for conditional behavior: when the function crosses zero an event needs to be carried out. This might be, for instance, a thermostat control reaching a trigger temperature that needs to turn on an A/C system. Zero crossings cause (discontinuous) changes to (otherwise) continuous and discrete variables via "handler" functions.
@@ -151,11 +154,30 @@ With cyclic dependencies it is possible for an infinite cascade loop of such cha
 * The `--cycles` option will cause the QSS solver to report cyclic dependencies among the variables, including dependencies created *via* conditional clause handlers.
 * The `--pass` option sets a limit for event passes at the same (clock) time after which increasing minimum time steps are used to advance the time and avoid a (possibly infinite) cascade of events preventing the simulation from advancing. If 100 times the pass limit is reached the simulation will terminate.
 
-Zero-crossing based conditional logic can also introduce "chattering" when their handlers change the model state such that another conditional is triggered almost immediately. In some models this occurs with the same zero-crossing function crossing in the opposite direction. This can cause many very small time steps that bog a simulation down. The best solution to chattering is to build the necessary "smooth" control logic and/or hysteresis into the model's conditional logic. Automatic chattering prevention can be effective in some cases, typically ignoring zero crossings until the variable's magnitude has reached some threshold level since the last zero crossing. The QSS solver implements this using the `--zTol` option that can set a global threshold value and the code-defined models can set per-variable thresholds. If FMU annotations include such threshold information per-variable thresholds can be readily enabled for FMU-based models. The threshold method is fairly simplistic and can cause meaningful zero crossings to be ignored and so should be used with care: more sophisticated approaches can be implemented in the QSS solver if/when needed.
+Zero-crossing based conditional logic can also introduce "chattering" when their handlers change the model state such that another conditional is triggered almost immediately. In some models this occurs with the same zero-crossing function crossing in the opposite direction. This can cause many very small time steps that bog a simulation down. The best solution to chattering is to build the necessary "smooth" control logic and/or hysteresis into the model's conditional logic. Automatic chattering prevention can be effective in some cases, typically ignoring zero crossings until the variable's magnitude has reached some threshold level since the last zero crossing. The QSS solver implements this using the `--zTol` option that can set a global threshold value and the code-defined models can set per-variable thresholds. JModelica FMUs may have a parameter named `_events_default_tol`, and that is used as the default `zTol` value if present. The threshold method is fairly simplistic and can cause meaningful zero crossings to be ignored and so should be used with care: more sophisticated approaches can be implemented in the QSS solver if/when needed.
 
 ### Conditionals
 
 Modelica supports conditional behavior via "if" and "when" blocks. The QSS solver has classes representing if and when conditional blocks to provide this behavior. Each conditional block has a sequence of clauses that represent the if/elseif/else and when/elsewhen structure of the corresponding Modelica conditional. Each clause (except the else clause) contains one or more boolean or zero-crossing variables. When fully realized clauses would be able to represent logical "trees" over their variables: for now only OR logic is supported.
+
+Since FMUs are not going expose the full conditional block and clause structure to QSS via the model description XML file the conditional support has been simplified for FMUs to treat each Conditional object as a single-Variable clause.
+
+### Interconnected Models
+
+Simulation of multiple subsystems models with some outputs connected to inputs in other models is important for SOEP. For this purpose the QSS application was extended to support multiple models and support for a `--con` option to specify interconnections was added. When connections are specified the models run in a synched mode to provide the "current" inputs.
+
+Interconnected simulations are supported for FMU-QSS models: support for FMU-ME models is planned.
+
+Because there are no QSS dependencies between the FMU-QSS models the input trajectories won't get updated when the corresponding output variable has requantization or observer updates. Rather, the input is updated when its variable requires an update within its model's simulation. This means there is some potential for discrepancy between outputs and inputs. (The "smooth tokens" used to communicate output state to inputs has a next discrete even time field so that predicted discrete events will force a refresh of the inputs.)
+
+There are two modes for synching the models:
+1. Specifying a `--dtCon` connection sync time step will simulate each model for that time span in loops until finished. This limits the worst-case time sync error.
+2. Simulating without `--dtCon` causes an event queue based sync that only simulates each model until the time of a top-of-queue event in another model, at which time it switches to that model, and so on. This does not assure perfect sync because output requantization and observer updates do not trigger updates in the corresponding input. It also will be less efficient than using a large enough `dtCon` to allow more events to be processed in each model simulation pass.
+
+Connected FMU-ME models could be run with a QSS-specific master algorithm that used a combined event queue and captured dependencies across models that would eliminate any discrepancies and allow for faster simulation. Parallelization could be used to exploit the likely presence of independent events at the top of the queue in this scenario.
+
+Each connections can be specified via a command line options of this form:
+`--con=`_model1_`.`_inp\_var_`:`_model2_`.`_out\_var_
 
 ## FMU Support
 
@@ -220,7 +242,7 @@ FMU zero crossing support has some additional complications and limitations:
 * Zero-crossing functions are implicitly defined by if and when blocks in the Modelica file and are not directly exposed via the FMI API. Until this is addressed we have created a convention of defining output variables and their derivatives for each zero-crossing function with names of the form \_\_zc\__name_ and \_\_zc\_der\__name_.
 * The FMI API doesn't expose crossing directions of interest so we enable all of them. If this will never be available we should eliminate crossing check logic to avoid wasted effort.
 * When zero crossings occur a "handler" function within the FMU makes the required changes to state and discrete variables. The QSS solver needs to know the dependency of these modified variables on its zero-crossing variable to maintain its state but neither the FMI API nor the generated xml files expose these dependencies. We are adding such dependencies to `DiscreteStates` (dropped from FMI 2.0 but supported by FMI Library) of the xml for discrete variables and `InitialUnknowns` for continuous state variables.
-* There is no FMI API to trigger the zero-crossing handlers to run when the QSS solver reaches zero-crossing events. Instead we set the FMU variables to a time slightly beyond the zero-crossing time with the hope that the zero crossing will be detected by the FMU. The `dtZC` option allows control over this "step". This uniform step size is not robust as it doesn't adjust for solution behavior. This is also not highly robust because the output variables used to track the zero crossing derivatives are (at least for Dymola-generated FMUs) numerically, not analytically, based so the QSS zero-crossing function does not track the actual FMU zero-crossing function to high precision.
+* There is no FMI API to directly trigger the zero-crossing handlers to run when the QSS solver reaches zero-crossing events. Instead we set the FMU variables to a time slightly beyond the zero-crossing time with the hope that the zero crossing will be detected by the FMU. The `--zTol` and `--dtZC` options allows control over this time "bump". JModelica FMUs may have a parameter called `_events_default_tol` that will be used as the default `zTol` value to match the QSS time bump to the FMU behavior. The `dtZC` value is only a fallback when no `zTol` is present or when the trajectory doesn't allow a time bump step to be computed. Using the uniform `dtZC` bump step is not robust as it doesn't adjust for solution behavior. This is also not highly robust because the output variables used to track the zero crossing derivatives are (at least for Dymola-generated FMUs) numerically, not analytically, based so the QSS zero-crossing function does not track the actual FMU zero-crossing function to high precision.
 * Zero-crossing root refinement is expensive due to the overhead of FMU operations so it is disabled by default (the `--refine` option enables it). Once atomic FMU variable get/set operations are provided the overhead will be lower.
 
 #### Notes
@@ -255,6 +277,8 @@ The QSS solver behavior for processing conditionals is:
 * When conditional events are processed the clauses are evaluated to see which of them are active at that time (and superdense time pass).
 * Active clauses place events for their handlers on the queue at the same time and pass.
 * Handler events are processed to make the necessary variable updates.
+
+For FMUs a simpler conditional support is used because the FMUs don't expose the conditional block and clause structure.
 
 Conditional handler functions can cause variable changes that cause other (zero-crossing, requantization, ...) events so the processing order can affect results. To assure deterministic results, each event type has an offset number that is used as an additional field in the superdense time to assure that discrete, zero-crossing, conditional, and handler events are processed in groups in that order in each pass. Variables modified inconsistently by handlers in the same pass are detected and warnings generated since this indicates a problematic model that can produce processing order-dependent results.
 
@@ -376,10 +400,10 @@ There are command line options to select the QSS method, set quantization tolera
 * Diagnostic output can be enabled, which includes a line for each quantization-related variable update.
 
 To run QSS with one of the code-defined models:
-* `QSS <model_name> [options]`
+* `QSS <model> [options]`
 
 To run QSS with an FMU:
-* `QSS <model_name>.fmu [options]`
+* `QSS <model>.fmu [options]`
 
 Run `QSS --help` to see the command line usage.
 
@@ -397,8 +421,16 @@ Instructions for building an FMU-QSS from an FMU-ME (FMU for Model Exchange) fol
 ## Running an FMU-QSS
 
 To run an FMU-QSS:
-* `QSS <FMU-QSS_name>.fmu [options]`
+* `QSS <FMU-QSS>.fmu [options]`
 
 Run `QSS --help` to see the command line usage.
 
-FMU-QSS support is basic at this point. Support for connecting inputs and outputs and for inputs with discrete events will be added before or during JModelica integration.
+## Running Multiple FMU-QSS
+
+To run multiple FMU-QSS simply enter all of them on the command line:
+* `QSS <FMU-QSS_1>.fmu <FMU-QSS_2>.fmu ... [options]`
+
+Input/output connections between models can be specified via command line options of the form:
+`--con=`_model1_`.`_inp\_var_`:`_model2_`.`_out\_var_
+
+Run `QSS --help` to see the command line usage.

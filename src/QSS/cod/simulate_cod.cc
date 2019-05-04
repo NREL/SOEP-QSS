@@ -37,6 +37,8 @@
 #include <QSS/cod/simulate_cod.hh>
 #include <QSS/cod/Conditional.hh>
 #include <QSS/cod/Variable.hh>
+#include <QSS/cod/cycles.hh>
+#include <QSS/cod/events.hh>
 #include <QSS/cod/mdl/achilles.hh>
 #include <QSS/cod/mdl/achilles2.hh>
 #include <QSS/cod/mdl/achillesc.hh>
@@ -54,8 +56,6 @@
 #include <QSS/cod/mdl/xy.hh>
 #include <QSS/cod/mdl/xyz.hh>
 #include <QSS/container.hh>
-#include <QSS/cycles.hh>
-#include <QSS/globals.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
 #include <QSS/Output.hh>
@@ -76,7 +76,6 @@
 #include <iterator>
 #include <limits>
 #include <sstream>
-#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -85,7 +84,7 @@ namespace cod {
 
 // Simulate a Defined Model
 void
-simulate()
+simulate( std::string const & model )
 {
 	// Types
 	using Variables = Variable::Variables;
@@ -93,6 +92,9 @@ simulate()
 	using Time = Variable::Time;
 	using Var_Idx = std::unordered_map< Variable const *, size_type >; // Map from Variables to their indexes
 	using Conditionals = std::vector< Conditional * >;
+
+	// Clear event queue
+	events.clear();
 
 	// I/o setup
 	std::cout << std::setprecision( 15 );
@@ -135,40 +137,40 @@ simulate()
 	Conditionals cons;
 
 	// Model setup
-	if ( options::model == "achilles" ) {
+	if ( model == "achilles" ) {
 		mdl::achilles( vars );
-	} else if ( options::model == "achilles2" ) {
+	} else if ( model == "achilles2" ) {
 		mdl::achilles2( vars );
-	} else if ( options::model == "achillesc" ) {
+	} else if ( model == "achillesc" ) {
 		mdl::achillesc( vars );
-	} else if ( options::model == "achilles_ND" ) {
+	} else if ( model == "achilles_ND" ) {
 		mdl::achilles_ND( vars );
-	} else if ( options::model == "bball" ) {
+	} else if ( model == "bball" ) {
 		mdl::bball( vars, cons );
-	} else if ( options::model == "exponential_decay" ) {
+	} else if ( model == "exponential_decay" ) {
 		mdl::exponential_decay( vars );
-	} else if ( options::model == "exponential_decay_sine" ) {
+	} else if ( model == "exponential_decay_sine" ) {
 		mdl::exponential_decay_sine( vars );
-	} else if ( options::model == "exponential_decay_sine_ND" ) {
+	} else if ( model == "exponential_decay_sine_ND" ) {
 		mdl::exponential_decay_sine_ND( vars );
-	} else if ( options::model == "exponential_decay_step" ) {
+	} else if ( model == "exponential_decay_step" ) {
 		mdl::exponential_decay_step( vars );
-	} else if ( options::model == "nonlinear" ) {
+	} else if ( model == "nonlinear" ) {
 		mdl::nonlinear( vars );
-	} else if ( options::model == "nonlinear_ND" ) {
+	} else if ( model == "nonlinear_ND" ) {
 		mdl::nonlinear_ND( vars );
-	} else if ( options::model == "stiff" ) {
+	} else if ( model == "stiff" ) {
 		mdl::stiff( vars );
-	} else if ( ( options::model == "StateEvent6" ) || ( options::model == "stateevent6" ) ) {
+	} else if ( ( model == "StateEvent6" ) || ( model == "stateevent6" ) ) {
 		mdl::StateEvent6( vars, cons );
-	} else if ( options::model == "xy" ) {
+	} else if ( model == "xy" ) {
 		mdl::xy( vars );
-	} else if ( options::model == "xyz" ) {
+	} else if ( model == "xyz" ) {
 		mdl::xyz( vars );
-	} else if ( options::model == "gen" ) {
+	} else if ( model == "gen" ) {
 		mdl::gen( vars, cons );
-	} else if ( options::model.substr( 0, 4 ) == "gen:" ) {
-		std::istringstream n_stream( options::model.substr( 4 ) );
+	} else if ( model.substr( 0, 4 ) == "gen:" ) {
+		std::istringstream n_stream( model.substr( 4 ) );
 		std::string nQSS_string;
 		std::string nZC_string;
 		std::string seed_string;
@@ -182,13 +184,13 @@ simulate()
 		if ( is_size( nQSS_string ) ) {
 			nQSS = size_of( nQSS_string );
 		} else if ( ! nQSS_string.empty() ) {
-			std::cerr << "\nError: gen model specifier not in gen:nQSS or gen:nQSS,nZC,SEED format: " << options::model << std::endl;
+			std::cerr << "\nError: gen model specifier not in gen:nQSS or gen:nQSS,nZC,SEED format: " << model << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
 		if ( is_size( nZC_string ) ) {
 			nZC = size_of( nZC_string );
 		} else if ( ! nZC_string.empty() ) {
-			std::cerr << "\nError: gen model specifier not in gen:nQSS or gen:nQSS,nZC,SEED format: " << options::model << std::endl;
+			std::cerr << "\nError: gen model specifier not in gen:nQSS or gen:nQSS,nZC,SEED format: " << model << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
 		if ( is_size( seed_string ) ) {
@@ -199,12 +201,12 @@ simulate()
 		} else if ( seed_string == "F" ) {
 			do_seed = false;
 		} else if ( ! seed_string.empty() ) {
-			std::cerr << "\nError: gen model specifier not in gen:nQSS or gen:nQSS,nZC,SEED format: " << options::model << std::endl;
+			std::cerr << "\nError: gen model specifier not in gen:nQSS or gen:nQSS,nZC,SEED format: " << model << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
 		mdl::gen( vars, cons, nQSS, nZC, seed, do_seed );
 	} else {
-		std::cerr << "\nError: Unknown model: " << options::model << std::endl;
+		std::cerr << "\nError: Unknown model: " << model << std::endl;
 		std::exit( EXIT_FAILURE );
 	}
 
@@ -342,7 +344,7 @@ simulate()
 				}
 			}
 			events.set_active_time();
-			if ( event.is_discrete() ) { // Discrete event
+			if ( event.is_discrete() ) { // Discrete event(s)
 				++n_discrete_events;
 				if ( events.single() ) { // Single trigger
 					Variable * trigger( event.sub< Variable >() );
@@ -426,32 +428,8 @@ simulate()
 					for ( Variable * trigger : triggers ) {
 						assert( trigger->tD == t );
 						trigger->st = s; // Set trigger superdense time
-						trigger->advance_discrete();
+						trigger->advance_discrete_simultaneous();
 					}
-
-//					// If discrete events can change order 1+ QSS variables this block should be used instead
-//					for ( Variable * trigger : triggers ) {
-//						assert( trigger->tD == t );
-//						trigger->st = s; // Set trigger superdense time
-//						trigger->advance_discrete_0();
-//					}
-//					int const triggers_order_max( triggers.back()->order() );
-//					if ( triggers_order_max >= 1 ) { // 1st order pass
-//						for ( size_type i = begin_order_index( triggers, 1 ), n = triggers.size(); i < n; ++i ) {
-//							triggers[ i ]->advance_discrete_1();
-//						}
-//						if ( triggers_order_max >= 2 ) { // 2nd order pass
-//							for ( size_type i = begin_order_index( triggers, 2 ), n = triggers.size(); i < n; ++i ) {
-//								triggers[ i ]->advance_discrete_2();
-//							}
-//							if ( triggers_order_max >= 3 ) { // 3rd order pass
-//								for ( size_type i = begin_order_index( triggers, 3 ), n = triggers.size(); i < n; ++i ) {
-//									triggers[ i ]->advance_discrete_3();
-//								}
-//							}
-//						}
-//					}
-
 					Variable::advance_observers( observers, t );
 
 					if ( doTOut ) { // Time event output: after discrete changes
@@ -478,7 +456,7 @@ simulate()
 						}
 					}
 				}
-			} else if ( event.is_ZC() ) { // Zero-crossing event
+			} else if ( event.is_ZC() ) { // Zero-crossing event(s)
 				++n_ZC_events;
 				while ( events.top_superdense_time() == s ) {
 					Variable * trigger( events.top_sub< Variable >() );
@@ -500,13 +478,13 @@ simulate()
 						}
 					}
 				}
-			} else if ( event.is_conditional() ) { // Conditional event
+			} else if ( event.is_conditional() ) { // Conditional event(s)
 				while ( events.top_superdense_time() == s ) {
 					Conditional * trigger( events.top_sub< Conditional >() );
 					trigger->st = s; // Set trigger superdense time
 					trigger->advance_conditional();
 				}
-			} else if ( event.is_handler() ) { // Zero-crossing handler event
+			} else if ( event.is_handler() ) { // Zero-crossing handler event(s)
 				if ( events.single() ) { // Single handler
 					Variable * handler( event.sub< Variable >() );
 
@@ -629,7 +607,7 @@ simulate()
 						}
 					}
 				}
-			} else if ( event.is_QSS() ) { // QSS requantization event
+			} else if ( event.is_QSS() ) { // QSS requantization event(s)
 				++n_QSS_events;
 				if ( events.single() ) { // Single trigger
 					Variable * trigger( event.sub< Variable >() );
@@ -732,7 +710,7 @@ simulate()
 						}
 					}
 				}
-			} else if ( event.is_QSS_ZC() ) { // QSS ZC requantization event
+			} else if ( event.is_QSS_ZC() ) { // QSS ZC requantization event(s)
 				++n_QSS_events;
 				Variable * trigger( event.sub< Variable >() );
 				assert( trigger->tE == t );

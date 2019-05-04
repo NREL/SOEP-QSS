@@ -37,9 +37,9 @@
 #define QSS_fmu_Observers_hh_INCLUDED
 
 // QSS Headers
+#include <QSS/fmu/FMU_ME.hh>
 #include <QSS/container.hh>
 #include <QSS/options.hh>
-#include <QSS/fmu/FMU.hh>
 
 // C++ Headers
 #include <algorithm>
@@ -72,6 +72,12 @@ public: // Types
 	using reference = typename Variables::reference;
 
 public: // Creation
+
+	// Constructor
+	explicit
+	Observers( FMU_ME * fmu_me = nullptr ) :
+	 fmu_me_( fmu_me )
+	{}
 
 public: // Conversion
 
@@ -319,23 +325,24 @@ public: // Methods
 	void
 	advance( Time const t )
 	{
-		assert( fmu::get_time() == t );
+		assert( fmu_me_ != nullptr );
+		assert( fmu_me_->get_time() == t );
 		if ( nz_.have_ ) {
 			advance_NZ_1( t );
 			if ( nz_.have2_ ) {
 				Time const tN( t + options::dtNum );
-				fmu::set_time( tN );
+				fmu_me_->set_time( tN );
 				advance_NZ_2( tN );
-				fmu::set_time( t );
+				fmu_me_->set_time( t );
 			}
 		}
 		if ( zc_.have_ ) {
 			advance_ZC_1( t );
 			if ( zc_.have2_ ) {
 				Time const tN( t + options::dtNum );
-				fmu::set_time( tN );
+				fmu_me_->set_time( tN );
 				advance_ZC_2( tN );
-				fmu::set_time( t );
+				fmu_me_->set_time( t );
 			}
 		}
 		if ( options::output::d ) advance_d();
@@ -361,7 +368,8 @@ public: // Methods
 	void
 	advance_NZ_1( Time const t )
 	{
-		assert( fmu::get_time() == t );
+		assert( fmu_me_ != nullptr );
+		assert( fmu_me_->get_time() == t );
 		for ( auto observee : nz_observees_ ) {
 			observee->fmu_set_q( t );
 		}
@@ -370,9 +378,9 @@ public: // Methods
 //		for ( size_type i = 0, e = nz_observees_.size(); i < e; ++i ) {
 //			nz_observee_vals_[ i ] = nz_observees_[ i ]->q( t );
 //		}
-//		fmu::set_reals( nz_observee_refs_.size(), &nz_observee_refs_[ 0 ], &nz_observee_vals_[ 0 ] );
+//		fmu_me_->set_reals( nz_observee_refs_.size(), &nz_observee_refs_[ 0 ], &nz_observee_vals_[ 0 ] );
 
-		fmu::get_reals( nz_der_refs_.size(), &nz_der_refs_[ 0 ], &nz_der_vals_[ 0 ] );
+		fmu_me_->get_reals( nz_der_refs_.size(), &nz_der_refs_[ 0 ], &nz_der_vals_[ 0 ] );
 
 		for ( size_type i = nz_.b_, e = nz_.e_; i < e; ++i ) {
 			observers_[ i ]->advance_observer_1( t, nz_der_vals_[ i ] );
@@ -383,12 +391,13 @@ public: // Methods
 	void
 	advance_ZC_1( Time const t )
 	{
-		assert( fmu::get_time() == t );
+		assert( fmu_me_ != nullptr );
+		assert( fmu_me_->get_time() == t );
 		for ( auto observee : zc_observees_ ) {
 			observee->fmu_set_x( t );
 		}
-		fmu::get_reals( zc_der_refs_.size(), &zc_der_refs_[ 0 ], &zc_der_vals_[ 0 ] );
-		fmu::get_reals( zc_refs_.size(), &zc_refs_[ 0 ], &zc_vals_[ 0 ] );
+		fmu_me_->get_reals( zc_der_refs_.size(), &zc_der_refs_[ 0 ], &zc_der_vals_[ 0 ] );
+		fmu_me_->get_reals( zc_refs_.size(), &zc_refs_[ 0 ], &zc_vals_[ 0 ] );
 
 		for ( size_type i = zc_.b_, j = 0, e = zc_.e_; i < e; ++i, ++j ) {
 			 observers_[ i ]->advance_observer_ZC_1( t, zc_der_vals_[ j ], zc_vals_[ j ] );
@@ -399,11 +408,12 @@ public: // Methods
 	void
 	advance_NZ_2( Time const t )
 	{
-		assert( fmu::get_time() == t );
+		assert( fmu_me_ != nullptr );
+		assert( fmu_me_->get_time() == t );
 		for ( size_type i = b2_nz_observees_, n = nz_observees_.size(); i < n; ++i ) {
 			nz_observees_[ i ]->fmu_set_q( t );
 		}
-		fmu::get_reals( nz_2_der_refs_.size(), &nz_2_der_refs_[ 0 ], &nz_2_der_vals_[ 0 ] );
+		fmu_me_->get_reals( nz_2_der_refs_.size(), &nz_2_der_refs_[ 0 ], &nz_2_der_vals_[ 0 ] );
 		for ( size_type i = nz_.b2_, j = 0, e = nz_.e_; i < e; ++i, ++j ) { // Order 2+ observers
 			observers_[ i ]->advance_observer_2( t, nz_2_der_vals_[ j ] );
 		}
@@ -413,11 +423,12 @@ public: // Methods
 	void
 	advance_ZC_2( Time const t )
 	{
-		assert( fmu::get_time() == t );
+		assert( fmu_me_ != nullptr );
+		assert( fmu_me_->get_time() == t );
 		for ( size_type i = b2_zc_observees_, n = zc_observees_.size(); i < n; ++i ) {
 			zc_observees_[ i ]->fmu_set_x( t );
 		}
-		fmu::get_reals( zc_2_der_refs_.size(), &zc_2_der_refs_[ 0 ], &zc_2_der_vals_[ 0 ] );
+		fmu_me_->get_reals( zc_2_der_refs_.size(), &zc_2_der_refs_[ 0 ], &zc_2_der_vals_[ 0 ] );
 		for ( size_type i = zc_.b2_, j = 0, e = zc_.e_; i < e; ++i, ++j ) { // Order 2+ observers
 			observers_[ i ]->advance_observer_2( t, zc_2_der_vals_[ j ] );
 		}
@@ -483,7 +494,8 @@ public: // Iterators
 
 private: // Data
 
-	// Observers
+	FMU_ME * fmu_me_{ nullptr }; // FMU-ME (non-owning) pointer
+
 	Variables observers_; // Observers of a variable
 
 	bool have_{ false }; // Observers present?

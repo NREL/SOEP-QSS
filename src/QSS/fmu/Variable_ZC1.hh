@@ -53,26 +53,19 @@ public: // Types
 public: // Creation
 
 	// Constructor
-	explicit
 	Variable_ZC1(
 	 std::string const & name,
-	 Real const rTol = 1.0e-4,
-	 Real const aTol = 1.0e-6,
-	 Real const zTol = 0.0,
+	 Real const rTol,
+	 Real const aTol,
+	 Real const zTol,
+	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
-	 Super( name, rTol, aTol, zTol, var, der )
+	 Super( 1, name, rTol, aTol, zTol, fmu_me, var, der )
 	{}
 
 public: // Properties
-
-	// Order of Method
-	int
-	order() const
-	{
-		return 1;
-	}
 
 	// Continuous Value at Time t
 	Real
@@ -238,8 +231,7 @@ public: // Methods
 	void
 	advance_ZC()
 	{
-		for ( typename If::Clause * clause : if_clauses ) clause->activity( tZ );
-		for ( typename When::Clause * clause : when_clauses ) clause->activity( tZ );
+		if ( in_conditional() ) conditional->activity( tZ );
 		if ( options::output::d ) std::cout << "Z " << name << '(' << tZ << ')' << '\n';
 		crossing_last = crossing;
 		x_mag_ = 0.0;
@@ -282,8 +274,8 @@ private: // Methods
 						if ( options::refine ) { // Refine root: Expensive!
 							Time t( tZ );
 							//Time t_p( tZ );
-							Time const t_fmu( fmu::get_time() );
-							fmu::set_time( tZ ); // Don't seem to need this
+							Time const t_fmu( fmu_me->get_time() );
+							fmu_me->set_time( tZ ); // Don't seem to need this
 							fmu_set_observees_x( tZ );
 							Real const vZ( fmu_get_real() );
 							Real v( vZ ), v_p( vZ );
@@ -295,7 +287,7 @@ private: // Methods
 								if ( d == 0.0 ) break;
 								//if ( ( signum( d ) != sign_old ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 								t -= m * ( v / d );
-								fmu::set_time( t ); // Don't seem to need this
+								fmu_me->set_time( t ); // Don't seem to need this
 								fmu_set_observees_x( t );
 								v = fmu_get_real();
 								if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
@@ -304,7 +296,7 @@ private: // Methods
 							}
 							if ( ( t >= tX ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
 							if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
-							fmu::set_time( t_fmu ); // Don't seem to need this
+							fmu_me->set_time( t_fmu ); // Don't seem to need this
 						}
 					} else { // Essentially flat
 						tZ = infinity;

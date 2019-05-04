@@ -1,4 +1,4 @@
-// FMU Lookup Functions
+// QSS Event Queue Global
 //
 // Project: QSS Solver
 //
@@ -33,17 +33,20 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#ifndef QSS_cod_events_hh_INCLUDED
+#define QSS_cod_events_hh_INCLUDED
+
 // QSS Headers
-#include <QSS/fmu/FMU.hh>
+#include <QSS/EventQueue.hh>
+#include <QSS/Target.hh>
 
 namespace QSS {
-namespace fmu {
+namespace cod {
 
-// Globals
-fmi2_import_t * fmu( nullptr ); // FMU instance
-std::size_t n_ders( 0 ); // Number of derivatives
-fmi2_real_t * derivatives( nullptr ); // Derivatives
-Time t_fmu( 0.0 ); // FMU time
+// QSS Globals
+extern EventQueue< Target > events; // Event queue
 
-} // fmu
+} // cod
 } // QSS
+
+#endif

@@ -56,8 +56,7 @@ public: // Types
 public: // Creation
 
 	// Default Constructor
-	FMU_Variable()
-	{}
+	FMU_Variable() = default;
 
 	// Real Variable Constructor
 	FMU_Variable(

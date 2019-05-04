@@ -53,13 +53,13 @@ public: // Types
 public: // Creation
 
 	// Constructor
-	explicit
 	Variable_InpB(
 	 std::string const & name,
+	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 Function f = Function()
 	) :
-	 Super( name, var, f )
+	 Super( 0, name, fmu_me, var, f )
 	{}
 
 public: // Predicate
@@ -72,13 +72,6 @@ public: // Predicate
 	}
 
 public: // Properties
-
-	// Order of Method
-	int
-	order() const
-	{
-		return 0;
-	}
 
 	// Boolean Value
 	Boolean
@@ -185,9 +178,9 @@ public: // Methods
 		if ( chg && have_observers_ ) advance_observers();
 	}
 
-	// Discrete Advance: Stage 0
+	// Discrete Advance Simultaneous
 	void
-	advance_discrete_0()
+	advance_discrete_simultaneous()
 	{
 		Boolean const x_new( f_( tX = tQ = tD ).x_0 != 0.0 );
 		tD = f_( tD ).tD;

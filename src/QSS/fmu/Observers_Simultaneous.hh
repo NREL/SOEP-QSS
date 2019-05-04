@@ -37,9 +37,9 @@
 #define QSS_fmu_Observers_Simultaneous_hh_INCLUDED
 
 // QSS Headers
+#include <QSS/fmu/FMU_ME.hh>
 #include <QSS/container.hh>
 #include <QSS/options.hh>
-#include <QSS/fmu/FMU.hh>
 
 // C++ Headers
 #include <algorithm>
@@ -72,8 +72,15 @@ public: // Types
 public: // Creation
 
 	// Triggers Constructor
-	Observers_Simultaneous( Variables & triggers )
+	explicit
+	Observers_Simultaneous(
+	 Variables & triggers,
+	 FMU_ME * fmu_me = nullptr
+	) :
+	 fmu_me_( fmu_me )
 	{
+		assert( ! triggers.empty() );
+
 		// Collect all observers
 		for ( Variable * trigger : triggers ) {
 			for ( Variable * observer : trigger->observers() ) {
@@ -235,11 +242,11 @@ public: // Methods
 		}
 		if ( nz_.max_order_ >= 2 ) { // 2nd order pass
 			Time const tN( t + options::dtNum ); // Set time to t + delta for numeric differentiation
-			fmu::set_time( tN );
+			fmu_me_->set_time( tN );
 			for ( size_type i = nz_.b2_, e = nz_.e_; i < e; ++i ) {
 				observers_[ i ]->advance_observer_2( tN );
 			}
-			fmu::set_time( t );
+			fmu_me_->set_time( t );
 		}
 	}
 
@@ -252,11 +259,11 @@ public: // Methods
 		}
 		if ( zc_.max_order_ >= 2 ) { // 2nd order pass
 			Time const tN( t + options::dtNum ); // Set time to t + delta for numeric differentiation
-			fmu::set_time( tN );
+			fmu_me_->set_time( tN );
 			for ( size_type i = zc_.b2_, e = zc_.e_; i < e; ++i ) {
 				observers_[ i ]->advance_observer_2( tN );
 			}
-			fmu::set_time( t );
+			fmu_me_->set_time( t );
 		}
 	}
 
@@ -309,6 +316,8 @@ public: // Iterators
 	}
 
 private: // Data
+
+	FMU_ME * fmu_me_{ nullptr }; // FMU-ME (non-owning) pointer
 
 	Variables observers_; // Observers of a variable
 

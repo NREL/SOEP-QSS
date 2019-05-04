@@ -42,6 +42,8 @@
 // C++ Headers
 #include <iomanip>
 #include <ostream>
+#include <sstream>
+#include <string>
 
 namespace QSS {
 
@@ -51,27 +53,16 @@ class SmoothToken final
 
 public: // Types
 
-	using Time = double;
 	using Real = double;
+	using Time = double;
 
 public: // Creation
 
 	// Default Constructor
-	SmoothToken(
-	 int const order = 3,
-	 Real const x_0 = 0.0,
-	 Real const x_1 = 0.0,
-	 Real const x_2 = 0.0,
-	 Real const x_3 = 0.0
-	) :
-	 order( order ),
-	 x_0( x_0 ),
-	 x_1( x_1 ),
-	 x_2( x_2 ),
-	 x_3( x_3 )
-	{}
+	SmoothToken() = default;
 
 	// Order-0 Constructor
+	explicit
 	SmoothToken(
 	 Real const x_0
 	) :
@@ -115,6 +106,78 @@ public: // Creation
 	 x_3( x_3 )
 	{}
 
+	// Order-3 Constructor with Discrete Event Time
+	SmoothToken(
+	 Real const x_0,
+	 Real const x_1,
+	 Real const x_2,
+	 Real const x_3,
+	 Time const tD
+	) :
+	 order( 3 ),
+	 x_0( x_0 ),
+	 x_1( x_1 ),
+	 x_2( x_2 ),
+	 x_3( x_3 ),
+	 tD( tD )
+	{}
+
+	// Order-0 Named Constructor
+	static
+	SmoothToken
+	order_0(
+	 Real const x_0,
+	 Time const tD = infinity
+	)
+	{
+		SmoothToken s( x_0 );
+		s.tD = tD;
+		return s;
+	}
+
+	// Order-1 Named Constructor
+	static
+	SmoothToken
+	order_1(
+	 Real const x_0,
+	 Real const x_1,
+	 Time const tD = infinity
+	)
+	{
+		SmoothToken s( x_0, x_1 );
+		s.tD = tD;
+		return s;
+	}
+
+	// Order-2 Named Constructor
+	static
+	SmoothToken
+	order_2(
+	 Real const x_0,
+	 Real const x_1,
+	 Real const x_2,
+	 Time const tD = infinity
+	)
+	{
+		SmoothToken s( x_0, x_1, x_2 );
+		s.tD = tD;
+		return s;
+	}
+
+	// Order-3 Named Constructor
+	static
+	SmoothToken
+	order_3(
+	 Real const x_0,
+	 Real const x_1,
+	 Real const x_2,
+	 Real const x_3,
+	 Time const tD = infinity
+	)
+	{
+		return SmoothToken( x_0, x_1, x_2, x_3, tD );
+	}
+
 public: // Properties
 
 	// Has a Discrete Event?
@@ -124,26 +187,46 @@ public: // Properties
 		return tD < infinity;
 	}
 
+	// String Representation
+	std::string
+	rep() const
+	{
+		std::ostringstream stream;
+		stream << std::setprecision( 15 ) << x_0;
+		if ( order >= 1 ) {
+			stream << ' ' << x_1;
+			if ( order >= 2 ) {
+				stream << ' ' << x_2;
+				if ( order >= 3 ) stream << ' ' << x_3;
+			}
+		}
+		if ( tD < infinity ) stream << " ->| " << tD << " s";
+		return stream.str();
+	}
+
 public: // I/O
 
-	// Stream << SuperdenseTime
+	// Stream << SmoothToken (For Plotting so tD Omitted)
 	friend
 	std::ostream &
 	operator <<( std::ostream & stream, SmoothToken const & s )
 	{
 		stream << std::setprecision( 15 ) << s.x_0;
-		if ( s.order >=1 ) stream << '\t' << s.x_1;
-		if ( s.order >=2 ) stream << '\t' << s.x_2;
-		if ( s.order >=3 ) stream << '\t' << s.x_3;
+		if ( s.order >= 1 ) {
+			stream << '\t' << s.x_1;
+			if ( s.order >= 2 ) {
+				stream << '\t' << s.x_2;
+				if ( s.order >= 3 ) stream << '\t' << s.x_3;
+			}
+		}
 		return stream;
 	}
 
 public: // Data
 
 	int order{ 3 }; // Highest derivative order set
-	Time t{ 0.0 }; // Time
-	Time tD{ infinity }; // Next discrete event time
 	Real x_0{ 0.0 }, x_1{ 0.0 }, x_2{ 0.0 }, x_3{ 0.0 }; // Value and derivatives
+	Time tD{ infinity }; // Next discrete event time
 
 };
 

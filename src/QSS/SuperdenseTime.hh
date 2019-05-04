@@ -74,8 +74,7 @@ public: // Types
 public: // Creation
 
 	// Default Constructor
-	SuperdenseTime()
-	{}
+	SuperdenseTime() = default;
 
 	// Time Constructor
 	SuperdenseTime( Time const t ) :

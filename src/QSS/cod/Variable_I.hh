@@ -58,7 +58,7 @@ public: // Creation
 	 std::string const & name,
 	 Integer const xIni = 0
 	) :
-	 Super( name, Real( xIni ) ),
+	 Super( 0, name, Real( xIni ) ),
 	 x_( xIni )
 	{}
 
@@ -72,13 +72,6 @@ public: // Predicate
 	}
 
 public: // Properties
-
-	// Order of Method
-	int
-	order() const
-	{
-		return 0;
-	}
 
 	// Boolean Value
 	Boolean

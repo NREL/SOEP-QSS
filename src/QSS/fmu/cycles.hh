@@ -33,8 +33,8 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_cycles_hh_INCLUDED
-#define QSS_cycles_hh_INCLUDED
+#ifndef QSS_fmu_cycles_hh_INCLUDED
+#define QSS_fmu_cycles_hh_INCLUDED
 
 // C++ Headers
 #include <cassert>
@@ -43,6 +43,7 @@
 #include <vector>
 
 namespace QSS {
+namespace fmu {
 
 // QSS Dependency Cycle Detection
 template< typename Variable >
@@ -104,8 +105,6 @@ cycles( typename Variable::Variables const & vars )
 
 	// Types
 	using Nodes = std::vector< Node >;
-	using If = typename Variable::If;
-	using When = typename Variable::When;
 
 	// Create graph
 	Nodes nodes;
@@ -116,13 +115,8 @@ cycles( typename Variable::Variables const & vars )
 		for ( Variable const * obs : node.var->observers() ) {
 			node.observers.push_back( &*std::find_if( nodes.begin(), nodes.end(), [obs]( Node const & n ){ return n.var == obs; } ) );
 		}
-		for ( typename If::Clause * if_clause : node.var->if_clauses ) { // Short-circuit if block dependencies
-			for ( Variable const * mod : if_clause->observers() ) {
-				node.observers.push_back( &*std::find_if( nodes.begin(), nodes.end(), [mod]( Node const & n ){ return n.var == mod; } ) );
-			}
-		}
-		for ( typename When::Clause * when_clause : node.var->when_clauses ) { // Short-circuit when block dependencies
-			for ( Variable const * mod : when_clause->observers() ) {
+		if ( node.var->in_conditional() ) { // Short-circuit conditional dependencies
+			for ( Variable const * mod : node.var->conditional->observers() ) {
 				node.observers.push_back( &*std::find_if( nodes.begin(), nodes.end(), [mod]( Node const & n ){ return n.var == mod; } ) );
 			}
 		}
@@ -188,6 +182,7 @@ cycles( typename Variable::Variables const & vars )
 	}
 }
 
+} // cod
 } // QSS
 
 #endif
