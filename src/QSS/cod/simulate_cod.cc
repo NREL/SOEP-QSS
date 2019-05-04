@@ -344,7 +344,7 @@ simulate( std::string const & model )
 				}
 			}
 			events.set_active_time();
-			if ( event.is_discrete() ) { // Discrete event
+			if ( event.is_discrete() ) { // Discrete event(s)
 				++n_discrete_events;
 				if ( events.single() ) { // Single trigger
 					Variable * trigger( event.sub< Variable >() );
@@ -456,7 +456,7 @@ simulate( std::string const & model )
 						}
 					}
 				}
-			} else if ( event.is_ZC() ) { // Zero-crossing event
+			} else if ( event.is_ZC() ) { // Zero-crossing event(s)
 				++n_ZC_events;
 				while ( events.top_superdense_time() == s ) {
 					Variable * trigger( events.top_sub< Variable >() );
@@ -478,13 +478,13 @@ simulate( std::string const & model )
 						}
 					}
 				}
-			} else if ( event.is_conditional() ) { // Conditional event
+			} else if ( event.is_conditional() ) { // Conditional event(s)
 				while ( events.top_superdense_time() == s ) {
 					Conditional * trigger( events.top_sub< Conditional >() );
 					trigger->st = s; // Set trigger superdense time
 					trigger->advance_conditional();
 				}
-			} else if ( event.is_handler() ) { // Zero-crossing handler event
+			} else if ( event.is_handler() ) { // Zero-crossing handler event(s)
 				if ( events.single() ) { // Single handler
 					Variable * handler( event.sub< Variable >() );
 
@@ -607,7 +607,7 @@ simulate( std::string const & model )
 						}
 					}
 				}
-			} else if ( event.is_QSS() ) { // QSS requantization event
+			} else if ( event.is_QSS() ) { // QSS requantization event(s)
 				++n_QSS_events;
 				if ( events.single() ) { // Single trigger
 					Variable * trigger( event.sub< Variable >() );
@@ -710,7 +710,7 @@ simulate( std::string const & model )
 						}
 					}
 				}
-			} else if ( event.is_QSS_ZC() ) { // QSS ZC requantization event
+			} else if ( event.is_QSS_ZC() ) { // QSS ZC requantization event(s)
 				++n_QSS_events;
 				Variable * trigger( event.sub< Variable >() );
 				assert( trigger->tE == t );

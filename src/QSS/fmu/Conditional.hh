@@ -200,7 +200,7 @@ public: // Methods
 	void
 	advance_conditional()
 	{
-		if ( var_->b( st ) ) handler( st.t );
+		if ( var_->b( st.t ) ) handler( st.t );
 		shift_conditional();
 	}
 
