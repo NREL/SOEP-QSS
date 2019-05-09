@@ -237,7 +237,7 @@ public: // Methods
 		x_3_ = one_sixth * f_.dc3( tQ );
 		set_tE();
 		tD = f_.tD( tQ );
-		tE < tD ? add_QSS( tE ) : add_discrete( tD );
+		( tE < tD ) ? add_QSS( tE ) : add_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
@@ -260,7 +260,7 @@ public: // Methods
 		x_3_ = one_sixth * f_.dc3( tD );
 		set_tE();
 		tD = f_.tD( tD );
-		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
+		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 		if ( have_observers_ ) advance_observers();
 	}
@@ -276,7 +276,7 @@ public: // Methods
 		x_3_ = one_sixth * f_.dc3( tD );
 		set_tE();
 		tD = f_.tD( tD );
-		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
+		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
@@ -291,7 +291,7 @@ public: // Methods
 		x_3_ = one_sixth * f_.dc3( tQ );
 		set_tE();
 		tD = f_.tD( tQ );
-		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
+		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 		if ( have_observers_ ) advance_observers();
 	}
@@ -325,7 +325,7 @@ public: // Methods
 		x_3_ = one_sixth * f_.dc3( tQ );
 		set_tE();
 		tD = f_.tD( tQ );
-		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
+		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 

@@ -286,15 +286,6 @@ public: // Predicates
 		return clauses.empty();
 	}
 
-public: // Properties
-
-	// Size
-	size_type
-	size() const
-	{
-		return clauses.size();
-	}
-
 	// Valid?
 	bool
 	valid() const
@@ -312,6 +303,15 @@ public: // Properties
 			}
 			return true;
 		}
+	}
+
+public: // Properties
+
+	// Size
+	size_type
+	size() const
+	{
+		return clauses.size();
 	}
 
 public: // Methods
@@ -593,15 +593,6 @@ public: // Predicates
 		return clauses.empty();
 	}
 
-public: // Properties
-
-	// Size
-	size_type
-	size() const
-	{
-		return clauses.size();
-	}
-
 	// Valid?
 	bool
 	valid() const
@@ -616,6 +607,15 @@ public: // Properties
 			}
 			return true;
 		}
+	}
+
+public: // Properties
+
+	// Size
+	size_type
+	size() const
+	{
+		return clauses.size();
 	}
 
 public: // Methods

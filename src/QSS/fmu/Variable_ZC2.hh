@@ -110,6 +110,21 @@ public: // Properties
 		return x_1_;
 	}
 
+	// Zero-Crossing Bump Time for FMU Detection
+	Time
+	tZC_bump( Time const t ) const
+	{
+		if ( zTol > 0.0 ) {
+			Real const x1_t( x1( t ) );
+			Real const zTol2( 2.0 * zTol ); // Hope FMU detects the crossing at 2x the zTol
+			Real dt_bump( min_root_quadratic_both( x_2_, x1_t, zTol2, -zTol2 ) );
+			if ( dt_bump <= 0.0 ) dt_bump = ( x1_t != 0.0 ? zTol2 / std::abs( x1_t ) : options::dtZC ); // Fall back to 1st order estimate
+			return t + dt_bump;
+		} else {
+			return t + options::dtZC;
+		}
+	}
+
 public: // Methods
 
 	// Initialization
@@ -156,7 +171,7 @@ public: // Methods
 		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
 		set_tE();
 		set_tZ();
-		tE < tZ ? add_QSS_ZC( tE ) : add_ZC( tZ );
+		( tE < tZ ) ? add_QSS_ZC( tE ) : add_ZC( tZ );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
@@ -191,7 +206,7 @@ public: // Methods
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
 #else
 		set_tZ();
-		tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
+		( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 #endif
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
@@ -278,13 +293,13 @@ public: // Methods
 	void
 	advance_ZC()
 	{
-		if ( in_conditional() ) conditional->activity( tZ );
+		assert( in_conditional() );
+		conditional->activity( tZ );
 		if ( options::output::d ) std::cout << "Z " << name << '(' << tZ << ')' << '\n';
 		crossing_last = crossing;
 		x_mag_ = 0.0;
 		set_tZ( tZ_last = tZ ); // Next zero-crossing: Might be in active segment
-		tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
-		bump_forward();
+		( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 	}
 
 private: // Methods
@@ -429,7 +444,7 @@ private: // Methods
 			shift_QSS_ZC( tE );
 		} else if ( ( ! check_crossing ) || ( sign_old == sign_new ) ) {
 			set_tZ();
-			tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
+			( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 		} else { // Check zero-crossing
 			Crossing const crossing_check( crossing_type( sign_old, sign_new ) );
 			if ( has( crossing_check ) ) { // Crossing type is relevant
@@ -437,7 +452,7 @@ private: // Methods
 				shift_ZC( tZ = tX );
 			} else {
 				set_tZ();
-				tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
+				( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 			}
 		}
 	}

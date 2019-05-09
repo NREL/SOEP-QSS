@@ -52,6 +52,7 @@
 
 // C++ Headers
 #include <algorithm>
+#include <cassert>
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
@@ -194,16 +195,24 @@ protected: // Creation
 	{}
 
 	// Copy Constructor
-	Variable( Variable const & ) = delete;
+	Variable( Variable const & ) = default;
 
 	// Move Constructor
 	Variable( Variable && ) noexcept = default;
+
+public: // Creation
+
+	// Destructor
+	~Variable()
+	{
+		if ( conditional != nullptr ) conditional->var() = nullptr;
+	}
 
 protected: // Assignment
 
 	// Copy Assignment
 	Variable &
-	operator =( Variable const & ) = delete;
+	operator =( Variable const & ) = default;
 
 	// Move Assignment
 	Variable &
