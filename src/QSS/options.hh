@@ -94,6 +94,8 @@ namespace specified {
 extern bool qss; // QSS method specified?
 extern bool rTol; // Relative tolerance specified?
 extern bool aTol; // Absolute tolerance specified?
+extern bool zTol; // Zero-crossing tolerance specified?
+extern bool dtZC; // FMU zero-crossing time step specified?
 extern bool tEnd; // End time specified?
 
 } // specified

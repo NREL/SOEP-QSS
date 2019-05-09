@@ -74,6 +74,8 @@ namespace specified {
 bool qss( false ); // QSS method specified?
 bool rTol( false ); // Relative tolerance specified?
 bool aTol( false ); // Absolute tolerance specified?
+bool zTol( false ); // Zero-crossing tolerance specified?
+bool dtZC( false ); // FMU zero-crossing time step specified?
 bool tEnd( false ); // End time specified?
 
 } // specified
@@ -244,6 +246,7 @@ process_args( int argc, char * argv[] )
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "zTol" ) ) {
+			specified::zTol = true;
 			std::string const zTol_str( arg_value( arg ) );
 			if ( is_double( zTol_str ) ) {
 				zTol = double_of( zTol_str );
@@ -292,6 +295,7 @@ process_args( int argc, char * argv[] )
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtZC" ) ) {
+			specified::dtZC = true;
 			std::string const dtZC_str( arg_value( arg ) );
 			if ( is_double( dtZC_str ) ) {
 				dtZC = double_of( dtZC_str );

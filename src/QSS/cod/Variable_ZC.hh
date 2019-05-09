@@ -73,7 +73,7 @@ protected: // Creation
 	 Real const zTol = 0.0
 	) :
 	 Super( order, name, rTol, aTol ),
-	 zTol( zTol ),
+	 zTol( std::max( zTol, 0.0 ) ),
 	 zChatter_( zTol > 0.0 )
 	{}
 

@@ -15,5 +15,6 @@
         "type_traits": "cpp",
         "typeinfo": "cpp",
         "iostream": "cpp"
-    }
+    },
+    "python.pythonPath": "/usr/bin/python3"
 }

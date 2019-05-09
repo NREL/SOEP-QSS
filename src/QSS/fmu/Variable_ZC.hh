@@ -66,7 +66,7 @@ protected: // Creation
 	 FMU_Variable const der = FMU_Variable()
 	) :
 	 Super( order, name, rTol, aTol, 0.0, fmu_me, var, der ),
-	 zTol( zTol ),
+	 zTol( std::max( zTol, 0.0 ) ),
 	 zChatter_( zTol > 0.0 )
 	{
 		add_crossings_Dn_Up(); // FMI API doesn't currently expose crossing information
@@ -127,6 +127,11 @@ public: // Properties
 		return tZ;
 	}
 
+	// Zero-Crossing Bump Time for FMU Detection
+	virtual
+	Time
+	tZC_bump( Time const t ) const = 0;
+
 public: // Methods
 
 	// Initialization: Stage 0 ZC
@@ -142,12 +147,12 @@ public: // Methods
 		}
 	}
 
-	// Bump Forward to Slightly Past Zero-Crossing Time for FMU Detection
+	// Bump Time for FMU Detection
 	void
-	bump_forward()
+	bump_time( Time const t_bump ) const
 	{
-		assert( tZ_last != infinity );
-		fmu_set_observees_x( tZ_last + options::dtZC );
+		fmu_set_x( t_bump ); // Does FMU need this?
+		fmu_set_observees_x( t_bump );
 	}
 
 public: // Crossing Methods

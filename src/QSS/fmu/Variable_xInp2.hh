@@ -177,7 +177,7 @@ public: // Methods
 		x_2_ = one_half * s.x_2;
 		set_tE();
 		tD = s.tD;
-		tE < tD ? add_QSS( tE ) : add_discrete( tD );
+		( tE < tD ) ? add_QSS( tE ) : add_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
@@ -200,7 +200,7 @@ public: // Methods
 		x_2_ = one_half * s.x_2;
 		set_tE();
 		tD = s.tD;
-		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
+		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 		if ( have_observers_ ) advance_observers();
 	}
@@ -216,7 +216,7 @@ public: // Methods
 		x_2_ = one_half * s.x_2;
 		set_tE();
 		tD = s.tD;
-		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
+		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
@@ -231,7 +231,7 @@ public: // Methods
 		x_2_ = one_half * s.x_2;
 		set_tE();
 		tD = s.tD;
-		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
+		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 		if ( have_observers_ ) advance_observers();
 	}
@@ -259,7 +259,7 @@ public: // Methods
 		x_2_ = one_half * s.x_2;
 		set_tE();
 		tD = s.tD;
-		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
+		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 

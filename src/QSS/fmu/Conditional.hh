@@ -73,6 +73,8 @@ public: // Creation
 	 var_( var ),
 	 events_( events )
 	{
+		assert( var_ != nullptr );
+		assert( events_ != nullptr );
 		var_->conditional = this;
 		add_conditional();
 	}
@@ -87,6 +89,8 @@ public: // Creation
 	 var_( var ),
 	 events_( events )
 	{
+		assert( var_ != nullptr );
+		assert( events_ != nullptr );
 		var_->conditional = this;
 		add_conditional();
 	}
@@ -94,7 +98,7 @@ public: // Creation
 	// Destructor
 	~Conditional()
 	{
-		var_->conditional = nullptr;
+		if ( var_ != nullptr ) var_->conditional = nullptr;
 	}
 
 public: // Predicates
@@ -106,6 +110,13 @@ public: // Predicates
 		return false;
 	}
 
+	// Valid?
+	bool
+	valid() const
+	{
+		return true;
+	}
+
 public: // Properties
 
 	// Size
@@ -115,11 +126,18 @@ public: // Properties
 		return 1u;
 	}
 
-	// Valid?
-	bool
-	valid() const
+	// Variable
+	Variable const *
+	var() const
 	{
-		return true;
+		return var_;
+	}
+
+	// Variable
+	Variable * &
+	var()
+	{
+		return var_;
 	}
 
 	// Handler-Modified (Observer) Variables

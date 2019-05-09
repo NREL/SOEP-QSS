@@ -538,6 +538,36 @@ namespace fmu {
 						fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
 						std::cout << " FMU-ME idx: " << i+1 << " maps to QSS var: " << qss_var->name << std::endl;
 					}
+				} else if ( var_variability == fmi2_variability_enu_fixed ) {
+					if ( var_name == "_events_default_tol" ) { // JModelica parameter for setting FMU zero crossing value tolerance
+						if ( var_causality == fmi2_causality_enu_parameter ) {
+							if ( var_has_start ) {
+								if ( ! options::specified::zTol ) {
+									double const zTol( std::abs( var_start ) );
+									if ( zTol > 0.0 ) {
+										options::specified::zTol = true;
+										options::zTol = zTol;
+										std::cout << " FMU zero crossing value tolerance set to " << zTol << std::endl;
+									}
+								}
+							}
+						}
+					}
+// This would only work if toleranceControlled was set to true but that isn't supported for FMU M-E
+//					if ( var_name == "_events_tol_factor" ) { // JModelica parameter for setting FMU zero crossing value tolerance
+//						if ( var_causality == fmi2_causality_enu_parameter ) {
+//							if ( var_has_start ) {
+//								if ( ! options::specified::zTol ) {
+//									double const zTol( std::abs( var_start ) * options::rTol );
+//									if ( zTol > 0.0 ) {
+//										options::specified::zTol = true;
+//										options::zTol = zTol;
+//										std::cout << " FMU zero crossing value tolerance set to " << zTol << std::endl;
+//									}
+//								}
+//							}
+//						}
+//					}
 				}
 				}
 				break;
@@ -812,6 +842,7 @@ namespace fmu {
 			}
 		}
 		if ( n_ZC_vars > 0u ) {
+			std::cout << "\nZero Crossing Tolerance: zTol = " << options::zTol << std::endl;
 			std::cout << "\nZero Crossing Time Step: dtZC = " << options::dtZC << " (s)" << std::endl;
 		}
 		if ( fmu_generator == FMU_Generator::Dymola ) {
@@ -1388,6 +1419,7 @@ namespace fmu {
 	{
 		// Types
 		using Variables = Variable::Variables;
+		using Variable_ZCs = std::vector< Variable_ZC * >;
 		using size_type = Variables::size_type;
 		using Time = Variable::Time;
 		using Observers_S = Observers_Simultaneous< Variable >;
@@ -1408,6 +1440,7 @@ namespace fmu {
 #endif
 
 		// Simulation loop
+		Variable_ZCs var_ZCs; // Last zero-crossing trigger variables
 		while ( t <= tNext ) {
 			t = events->top_time();
 			if ( doSOut ) { // Sampled and/or FMU outputs
@@ -1493,7 +1526,7 @@ namespace fmu {
 					}
 				}
 				events->set_active_time();
-				if ( event.is_discrete() ) { // Discrete event
+				if ( event.is_discrete() ) { // Discrete event(s)
 					++n_discrete_events;
 					if ( events->single() ) { // Single trigger
 						Variable * trigger( event.sub< Variable >() );
@@ -1606,13 +1639,17 @@ namespace fmu {
 							}
 						}
 					}
-				} else if ( event.is_ZC() ) { // Zero-crossing event
+				} else if ( event.is_ZC() ) { // Zero-crossing event(s)
 					++n_ZC_events;
+					var_ZCs.clear();
+					Time t_bump( t ); // Bump time for FMU crossing detection
 					while ( events->top_superdense_time() == s ) {
-						Variable * trigger( events->top_sub< Variable >() );
+						Variable_ZC * trigger( events->top_sub< Variable_ZC >() );
+						var_ZCs.push_back( trigger );
 						assert( trigger->tZC() == t );
 						trigger->st = s; // Set trigger superdense time
 						trigger->advance_ZC();
+						t_bump = std::max( t_bump, trigger->tZC_bump( t ) );
 						if ( doTOut ) { // Time event output
 							if ( options::output::a ) { // All variables output
 								for ( size_type i = 0; i < n_vars; ++i ) {
@@ -1628,18 +1665,19 @@ namespace fmu {
 							}
 						}
 					}
-				} else if ( event.is_conditional() ) { // Conditional event
+					for ( Variable_ZC const * trigger : var_ZCs ) { // Advance zero-crossing variables observees to bump time
+						trigger->bump_time( t_bump );
+					}
+					set_time( t_bump ); // Advance FMU to bump time
+				} else if ( event.is_conditional() ) { // Conditional event(s)
 					while ( events->top_superdense_time() == s ) {
 						Conditional< Variable > * trigger( events->top_sub< Conditional< Variable > >() );
 						trigger->st = s; // Set trigger superdense time
 						trigger->advance_conditional();
 					}
-				} else if ( event.is_handler() ) { // Zero-crossing handler event
+				} else if ( event.is_handler() ) { // Zero-crossing handler event(s)
 
 					// Perform FMU event mode handler processing /////
-
-					// Advance FMU time to help it detect zero-crossing event
-					set_time( t + options::dtZC );
 
 					// Get event indicators
 					std::swap( event_indicators, event_indicators_last );
@@ -1654,7 +1692,7 @@ namespace fmu {
 						}
 					}
 
-					// Handle zero-crossing events
+					// FMU zero-crossing event processing
 					if ( enterEventMode || zero_crossing_event ) {
 						fmi2_import_enter_event_mode( fmu );
 						do_event_iteration( fmu, &eventInfo );
@@ -1665,9 +1703,6 @@ namespace fmu {
 					} else {
 						if ( options::output::d ) std::cout << "Zero-crossing does not trigger FMU-ME event at t=" << t << std::endl;
 					}
-
-					// Restore FMU simulation time
-					set_time( t );
 
 					// Perform handler operations on QSS side
 					if ( enterEventMode || zero_crossing_event ) {
@@ -1791,6 +1826,46 @@ namespace fmu {
 								}
 							}
 						}
+
+						// Re-run FMU event processing after handlers run since event indicator signs may have changed (such as in "bounce" events)
+
+						// Re-bump zero-crossing state
+						Time t_bump( t ); // Bump time for FMU zero crossing detection
+						for ( Variable_ZC const * trigger : var_ZCs ) {
+							t_bump = std::max( t_bump, trigger->tZC_bump( t ) );
+						}
+						for ( Variable_ZC const * trigger : var_ZCs ) {
+							trigger->bump_time( t_bump );
+						}
+						set_time( t_bump ); // Advance FMU to bump time
+
+						// Perform FMU event mode handler processing /////
+
+						// Get event indicators
+						std::swap( event_indicators, event_indicators_last );
+						fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
+
+						// Check if an event indicator has triggered
+						zero_crossing_event = false;
+						for ( size_type k = 0; k < n_event_indicators; ++k ) {
+							if ( ( event_indicators[ k ] > 0 ) != ( event_indicators_last[ k ] > 0 ) ) {
+								zero_crossing_event = true;
+								break;
+							}
+						}
+
+						// FMU zero-crossing event processing
+						if ( zero_crossing_event ) {
+							fmi2_import_enter_event_mode( fmu );
+							do_event_iteration( fmu, &eventInfo );
+							fmi2_import_enter_continuous_time_mode( fmu );
+							fmi2_import_get_continuous_states( fmu, states, n_states );
+							fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
+							if ( options::output::d ) std::cout << "Zero-crossing handler triggers FMU-ME event at t=" << t << std::endl;
+						} else {
+							if ( options::output::d ) std::cout << "Zero-crossing handler does not trigger FMU-ME event at t=" << t << std::endl;
+						}
+
 					} else { // Update event queue entries for no-action handler event
 						if ( events->single() ) { // Single handler
 							Variable * handler( event.sub< Variable >() );
@@ -1801,7 +1876,11 @@ namespace fmu {
 							}
 						}
 					}
-				} else if ( event.is_QSS() ) { // QSS requantization event
+
+					// Restore FMU simulation time
+					set_time( t );
+
+				} else if ( event.is_QSS() ) { // QSS requantization event(s)
 					++n_QSS_events;
 					if ( events->single() ) { // Single trigger
 						Variable * trigger( event.sub< Variable >() );
@@ -1902,7 +1981,7 @@ namespace fmu {
 							}
 						}
 					}
-				} else if ( event.is_QSS_ZC() ) { // QSS ZC requantization event
+				} else if ( event.is_QSS_ZC() ) { // QSS ZC requantization event(s)
 					++n_QSS_events;
 					Variable * trigger( event.sub< Variable >() );
 					assert( trigger->tE == t );
@@ -1941,6 +2020,7 @@ namespace fmu {
 
 			// FMU end of step processing
 // Not sure we need to set continuous states: It would be a performance hit
+//ZC and this wipes out ZC bump values between ZC and Handler event calls
 //			set_time( t );
 //			for ( size_type i = 0; i < n_states; ++i ) {
 //				states[ i ] = state_vars[ i ]->x( t );
