@@ -1086,7 +1086,7 @@ public: // Data
 	Time dt_max{ infinity }; // Time step max
 	Time dt_inf{ infinity }; // Time step inf
 	Time dt_inf_rlx{ infinity }; // Relaxed time step inf
-	bool self_observer{ false }; // Variable appears in its function/derivative?
+	bool self_observer{ false }; // Appears in its function/derivative?
 	Conditional< Variable > * conditional{ nullptr }; // Conditional (non-owning)
 	FMU_ME * fmu_me{ nullptr }; // FMU-ME (non-owning) pointer
 	FMU_Variable var; // FMU variables specs

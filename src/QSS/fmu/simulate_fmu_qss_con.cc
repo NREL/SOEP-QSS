@@ -62,7 +62,7 @@ simulate_fmu_qss_con( std::vector< std::string > const & paths )
 {
 	// Types
 	using size_type = std::size_t;
-	using Time = double;
+	using Time = FMU_ME::Time;
 	using FMU_QSSs = std::vector< FMU_QSS >;
 	using Contexts = std::vector< fmi2Component >;
 
@@ -78,7 +78,7 @@ simulate_fmu_qss_con( std::vector< std::string > const & paths )
 	// Instantiate models
 	for ( size_type i = 0; i < n_models; ++i ) {
 		std::string const & path( paths[ i ] );
-		fmu_qsss.emplace_back( path );
+		fmu_qsss.emplace_back( FMU_QSS( path ) );
 		FMU_QSS & fmu_qss( fmu_qsss[ i ] );
 
 		// Initialize the FMUs
@@ -146,7 +146,7 @@ simulate_fmu_qss_con( std::vector< std::string > const & paths )
 				}
 			}
 			if ( has_prefix( out, model + '.' ) ) {
-				std::string const var_name( inp.substr( model.length() + 1u ) );
+				std::string const var_name( out.substr( model.length() + 1u ) );
 				auto const ivr( fmu_me.var_name_var.find( var_name ) );
 				if ( ivr == fmu_me.var_name_var.end() ) {
 					std::cerr << "\nError: Connection output variable not found: " << out << std::endl;
@@ -261,7 +261,8 @@ simulate_fmu_qss_con( std::vector< std::string > const & paths )
 					std::cerr << "\nError: fmi2NewDiscreteStates failed for: " << fmu_qsss[ i ].fmu_me.name << std::endl;
 					std::exit( EXIT_FAILURE );
 				}
-				events.erase( i1 ); events.insert( EventQ::value_type( eventInfo.terminateSimulation ? infinity : eventInfo.nextEventTime, i ) );
+				events.erase( i1 );
+				events.insert( EventQ::value_type( eventInfo.terminateSimulation ? infinity : eventInfo.nextEventTime, i ) );
 				time = t2;
 			}
 

@@ -172,7 +172,7 @@ Because there are no QSS dependencies between the FMU-QSS models the input traje
 
 There are two modes for synching the models:
 1. Specifying a `--dtCon` connection sync time step will simulate each model for that time span in loops until finished. This limits the worst-case time sync error.
-2. Simulating without `--dtCon` causes an event queue based sync that only simulates each model until the time of a top-of-queue event in another model, at which time it switches to that model, and so on. This does not assure perfect sync because output requantization and observer updates do not trigger updates in the corresponding input. It also will be less efficient than using a large enough `dtCon` to allow more events to be processed in each model simulation pass.
+2. Simulating without `--dtCon` causes a model event queue based sync that simulates each model until its next event past the first event time will modify a connected output. This allows other models to catch up before their inputs change. While the recommended approach, this does not assure perfect sync because output events do not trigger events in the corresponding inputs at the event time. It also will more accurate but less efficient than using a large enough `dtCon` to allow more events to be processed in each model simulation pass.
 
 Connected FMU-ME models could be run with a QSS-specific master algorithm that used a combined event queue and captured dependencies across models that would eliminate any discrepancies and allow for faster simulation. Parallelization could be used to exploit the likely presence of independent events at the top of the queue in this scenario.
 
@@ -184,6 +184,7 @@ Each connections can be specified via a command line options of this form:
 Models defined by FMUs following the FMI 2.0 API can be run by this QSS solver using QSS1 or QSS2 solvers. Discrete variables and zero crossing functions are supported. This is currently an initial/demonstration capability that cannot yet handle unit conversions (pure SI models are OK), or algebraic relationships. Some simple test model FMUs and a 50-variable room air thermal model have been simulated successfully.
 
 ### FMU Notes
+
 * Mixing QSS methods in an FMU simulation is not yet supported and will require a Modelica annotation to indicate QSS methods on a per-variable basis.
 * The FMU support is performance-limited by the FMI 2.0 API, which requires expensive get-all-derivatives calls where QSS needs individual derivatives.
 * QSS2 performance is limited by the use of numeric differentiation: the FMI ME 2.0 API doesn't provide higher derivatives but they may become available via FMI extensions.

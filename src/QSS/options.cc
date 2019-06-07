@@ -54,7 +54,7 @@ double dtMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits<
 double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Inf time step (s)
 double dtZC( 1.0e-9 ); // FMU zero-crossing time step (s)
 double dtNum( 1.0e-6 ); // Numeric differentiation time step (s)
-double dtCon( 0.0 ); // Connection sync time step (s)
+double dtCon( 0.0 ); // FMU connection sync time step (s)
 double one_over_dtNum( 1.0e6 ); // 1 / dtNum  [computed]
 double one_half_over_dtNum( 5.0e5 ); // 1 / ( 2 * dtNum )  [computed]
 double one_sixth_over_dtNum_squared( 1.0e12 / 6.0 ); // 1 / ( 6 * dtNum^2 )  [computed]
@@ -109,7 +109,7 @@ help_display()
 	std::cout << " --dtInf=STEP   Inf alt time step (s)  [infinity]" << '\n';
 	std::cout << " --dtZC=STEP    FMU zero-crossing time step (s)  [1e-9]" << '\n';
 	std::cout << " --dtNum=STEP   Numeric differentiation time step (s)  [1e-6]" << '\n';
-	std::cout << " --dtCon=STEP   Connection sync time step (s)  [1e-6]" << '\n';
+	std::cout << " --dtCon=STEP   FMU connection sync time step (s)  [1e-6]" << '\n';
 	std::cout << " --dtOut=STEP   Sampled & FMU output time step (s)  [1e-3]" << '\n';
 	std::cout << " --tEnd=TIME    End time (s)  [1|FMU]" << '\n';
 	std::cout << " --pass=COUNT   Pass count limit  [20]" << '\n';
@@ -123,8 +123,8 @@ help_display()
 	std::cout << "           sin[a,b,c] => a * sin( b * t ) + c" << '\n';
 	std::cout << "           step[h0,h,d] => h0 + h * floor( t / d )" << '\n';
 	std::cout << "           toggle[h0,h,d] => h0 + h * ( floor( t / d ) % 2 )" << '\n';
-	std::cout << " --con=INP:OUT  Connect input and output variables" << '\n';
-	std::cout << "       INP and OUT are <model>.<var> with 2+ models" << '\n';
+	std::cout << " --con=INP:OUT  Connect FMU input and output variables" << '\n';
+	std::cout << "       INP and OUT syntax is <model>.<var>" << '\n';
 	std::cout << " --out=OUTPUTS  Outputs  [trfkx]" << '\n';
 	std::cout << "       t  Time events" << '\n';
 	std::cout << "       r  Requantizations" << '\n';

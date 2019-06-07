@@ -970,7 +970,7 @@ public: // Data
 	Time dt_max{ infinity }; // Time step max
 	Time dt_inf{ infinity }; // Time step inf
 	Time dt_inf_rlx{ infinity }; // Relaxed time step inf
-	bool self_observer{ false }; // Variable appears in its function/derivative?
+	bool self_observer{ false }; // Appears in its function/derivative?
 	If_Clauses if_clauses; // Clauses in conditional if blocks
 	When_Clauses when_clauses; // Clauses in conditional when blocks
 

@@ -74,7 +74,7 @@ extern double dtMax; // Max time step (s)
 extern double dtInf; // Inf time step (s)
 extern double dtZC; // FMU zero-crossing time step (s)
 extern double dtNum; // Numeric differentiation time step (s)
-extern double dtCon; // Connection sync time step (s)
+extern double dtCon; // FMU connection sync time step (s)
 extern double dtOut; // Sampled & FMU output time step (s)
 extern double one_over_dtNum; // 1 / dtNum
 extern double one_half_over_dtNum; // 1 / ( 2 * dtNum )

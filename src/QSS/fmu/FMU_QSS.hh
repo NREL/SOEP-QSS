@@ -66,6 +66,7 @@ public: // Creation
 	FMU_QSS() = default;
 
 	// FMU-QSS Path Constructor
+	explicit
 	FMU_QSS( std::string const & path )
 	{
 		init( path );
