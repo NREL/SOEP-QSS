@@ -374,7 +374,7 @@ fmi2NewDiscreteStates(
 {
 	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
-	fmu_qss.fmu_me.simulate( (fmi2_event_info_t *)eventInfo );
+	fmu_qss.fmu_me.simulate( (fmi2_event_info_t *)eventInfo, true );
 	if ( ( fmu_qss.fmu_me.t >= fmu_qss.fmu_me.tE ) || ( eventInfo->terminateSimulation ) ) {
 		eventInfo->terminateSimulation = fmi2_true;
 		fmu_qss.fmu_me.post_simulate();

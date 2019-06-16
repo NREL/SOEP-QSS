@@ -177,6 +177,20 @@ public: // Methods
 		observers_.push_back( v );
 	}
 
+	// Initialize Observers Collection
+	void
+	init_observers()
+	{
+		// Flag if output connection observers
+		connected_output_observer = false;
+		for ( auto const observer : observers_ ) {
+			if ( observer->connected_output ) {
+				connected_output_observer = true;
+				break;
+			}
+		}
+	}
+
 	// Variable Activity Notifier
 	void
 	activity( Time const t )

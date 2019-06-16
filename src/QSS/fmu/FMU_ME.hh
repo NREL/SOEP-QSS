@@ -131,12 +131,31 @@ public: // Creation
 	// Default Constructor
 	FMU_ME();
 
+	// Copy Constructor
+	FMU_ME( FMU_ME const & ) = delete;
+
+	// Move Constructor
+	FMU_ME( FMU_ME && ) = delete;
+
 	// FMU-ME Path Constructor
 	explicit
 	FMU_ME( std::string const & path );
 
+	// FMU-ME Path + Event Queue Constructor
+	FMU_ME( std::string const & path, Events * events );
+
 	// Destructor
 	~FMU_ME();
+
+public: // Assignment
+
+	// Copy Assignment
+	FMU_ME &
+	operator =( FMU_ME const & ) = delete;
+
+	// Move Assignment
+	FMU_ME &
+	operator =( FMU_ME && ) = delete;
 
 public: // Simulation Methods
 
@@ -190,7 +209,7 @@ public: // Simulation Methods
 
 	// Simulation
 	void
-	simulate( fmi2_event_info_t * eventInfoMaster );
+	simulate( fmi2_event_info_t * eventInfoMaster, bool const connected = false );
 
 	// Simulation
 	void
@@ -392,6 +411,7 @@ public: // Data
 
 	// Event queue
 	Events * events; // Event queue
+	bool events_own{ true }; // Own the event queue?
 
 	// Tolerances
 	Real rTol; // Relative tolerance

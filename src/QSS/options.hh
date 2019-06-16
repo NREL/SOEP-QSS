@@ -84,6 +84,7 @@ extern std::size_t pass; // Pass count limit
 extern bool cycles; // Report dependency cycles?
 extern bool inflection; // Requantize at inflections?
 extern bool refine; // Refine FMU zero-crossing roots?
+extern bool perfect; // Perfect FMU-ME connection sync?
 extern InpFxn fxn; // Map from input variables to function specs
 extern InpOut con; // Map from input variables to output variables
 extern std::string out; // Outputs: r, a, s, x, q, f

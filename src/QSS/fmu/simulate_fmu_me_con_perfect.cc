@@ -1,4 +1,4 @@
-// Connected FMU-QSS Simulation Runner
+// Connected FMU-ME Perfect Sync Simulation Runner
 //
 // Project: QSS Solver
 //
@@ -34,16 +34,11 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // QSS Headers
-#include <QSS/fmu/simulate_fmu_qss_con.hh>
-#include <QSS/fmu/FMU_QSS.hh>
-#include <QSS/fmu/FMI.hh>
-#include <QSS/fmu/Variable_Inp.hh>
+#include <QSS/fmu/simulate_fmu_me_con_perfect.hh>
+#include <QSS/fmu/FMU_ME.hh>
+#include <QSS/fmu/Variable_Con.hh>
 #include <QSS/options.hh>
 #include <QSS/string.hh>
-
-// FMI Library Headers
-#include <fmilib.h>
-#include <FMI2/fmi2FunctionTypes.h>
 
 // C++ Headers
 #include <algorithm>
@@ -56,66 +51,50 @@
 namespace QSS {
 namespace fmu {
 
-// Simulate Connected FMU-QSS
+// Simulate Connected FMU-ME with Perfect Sync
 void
-simulate_fmu_qss_con( std::vector< std::string > const & paths )
+simulate_fmu_me_con_perfect( std::vector< std::string > const & paths )
 {
 	// Types
 	using size_type = std::size_t;
 	using Time = FMU_ME::Time;
-	using FMU_QSSs = std::vector< FMU_QSS * >;
-	using Contexts = std::vector< fmi2Component >;
+	using FMU_MEs = std::vector< FMU_ME * >;
 
 	// Locals
 	size_type const n_models( paths.size() );
 	assert( n_models > 1u );
-	FMU_QSSs fmu_qsss;
-	fmu_qsss.reserve( n_models );
-	Contexts contexts;
-	contexts.reserve( n_models );
+	FMU_MEs fmu_mes;
+	fmu_mes.reserve( n_models );
 	Time tStart( 0.0 );
 	Time tEnd( 0.0 );
 
 	// Instantiate models
 	for ( size_type i = 0; i < n_models; ++i ) {
 		std::string const & path( paths[ i ] );
-		fmu_qsss.emplace_back( new FMU_QSS( path ) );
-		FMU_QSS & fmu_qss( *fmu_qsss[ i ] );
-
-		// Initialize the FMUs
-		reg( fmi2_import_get_GUID( fmu_qss.fmu ), &fmu_qss );
-
-		// Instantiation
-		fmi2Component c( fmi2Instantiate( "FMU-QSS model instance", fmi2ModelExchange, fmi2_import_get_GUID( fmu_qss.fmu ), fmu_qss.fmuResourceLocation().c_str(), (fmi2CallbackFunctions*)&fmu_qss.callBackFunctions, 0, 0 ) );
-		if ( c == nullptr ) {
-			std::cerr << "\nError: fmi2Instantiate failed: " << std::endl;
-			std::exit( EXIT_FAILURE );
-		}
-		reg( c, &fmu_qss );
-		contexts.push_back( c );
+		fmu_mes.emplace_back( new FMU_ME( path ) );
+		FMU_ME & fmu_me( *fmu_mes[ i ] );
+		std::cout << "\n\nFMU-ME Instantiation: " << fmu_me.name << std::endl;
+		fmu_me.instantiate();
 
 		// Time initialization
 		if ( i == 0 ) {
-			tStart = fmi2_import_get_default_experiment_start( fmu_qss.fmu );
+			tStart = fmu_me.t0;
 		} else {
-			if ( tStart != fmi2_import_get_default_experiment_start( fmu_qss.fmu ) ) {
-				std::cerr << "\nError: Start times of FMU-QSS differ" << std::endl;
+			if ( tStart != fmu_me.t0 ) {
+				std::cerr << "\nError: Start times of FMU-ME differ" << std::endl;
 				std::exit( EXIT_FAILURE );
 			}
 		}
-		tEnd = std::max( tEnd, fmi2_import_get_default_experiment_stop( fmu_qss.fmu ) ); // Use max of specified end times
-	}
-	tEnd = ( options::specified::tEnd ? options::tEnd : tEnd );
+		tEnd = std::max( tEnd, fmu_me.tE ); // Use max of specified end times
 
-	// Set up models
+		// Pre-simulation setup
+		fmu_me.pre_simulate();
+	}
+
+	// Set uniform end time
+	tEnd = ( options::specified::tEnd ? options::tEnd : tEnd );
 	for ( size_type i = 0; i < n_models; ++i ) {
-		fmi2Component c( contexts[ i ] );
-		FMU_ME & fmu_me( fmu_qsss[ i ]->fmu_me );
-		fmu_me.tE = tEnd;
-		if ( fmi2SetupExperiment( c, options::specified::rTol, options::rTol, tStart, fmi2_true, tEnd ) != fmi2OK ) {
-			std::cerr << "\nError: fmi2SetupExperiment failed: " << std::endl;
-			std::exit( EXIT_FAILURE );
-		}
+		fmu_mes[ i ]->tE = tEnd;
 	}
 
 	// Connect model inputs to outputs
@@ -129,8 +108,7 @@ simulate_fmu_qss_con( std::vector< std::string > const & paths )
 		bool inp_found( false );
 		bool out_found( false );
 		for ( size_type i = 0; i < n_models; ++i ) {
-			FMU_QSS & fmu_qss( *fmu_qsss[ i ] );
-			FMU_ME & fmu_me( fmu_qss.fmu_me );
+			FMU_ME & fmu_me( *fmu_mes[ i ] );
 			std::string const & model( fmu_me.name );
 			if ( has_prefix( inp, model + '.' ) ) {
 				std::string const var_name( inp.substr( model.length() + 1u ) );
@@ -163,17 +141,20 @@ simulate_fmu_qss_con( std::vector< std::string > const & paths )
 			}
 		}
 		if ( inp_found && out_found ) {
-			std::cerr << "Connection: " << fmu_qsss[ inp_ref.first ]->fmu_me.name << '.' << inp_ref.second->name << " <= " << fmu_qsss[ out_ref.first ]->fmu_me.name << '.' << out_ref.second->name << std::endl;
-			Variable_Inp * const inp_var( dynamic_cast< Variable_Inp * >( inp_ref.second ) );
+			std::cerr << "Connection: " << fmu_mes[ inp_ref.first ]->name << '.' << inp_ref.second->name << " <= " << fmu_mes[ out_ref.first ]->name << '.' << out_ref.second->name << std::endl;
+			Variable_Con * const inp_var( dynamic_cast< Variable_Con * >( inp_ref.second ) );
 			if ( inp_var == nullptr ) {
-				std::cerr << "\nError: Connection input variable is not a Modelica input variable: " << fmu_qsss[ inp_ref.first ]->fmu_me.name << '.' << inp_ref.second->name << std::endl;
+				std::cerr << "\nError: Connection input variable is not a Modelica input variable: " << fmu_mes[ inp_ref.first ]->name << '.' << inp_ref.second->name << std::endl;
 				std::exit( EXIT_FAILURE );
 			}
 			if ( out_ref.second->is_ZC() ) { // Don't allow zero-crossing output connections to avoid processing order complexities
 				std::cerr << "\nError: Connection output variable is a zero-crossing variable: " << inp_ref.second->name << std::endl;
 				std::exit( EXIT_FAILURE );
 			}
-			inp_var->f() = [out_ref]( Time const t ){ return out_ref.second->k( t ); };
+			Variable * out_var( out_ref.second );
+			out_var->have_connections = true;
+			out_var->connections.push_back( inp_var );
+			inp_var->out_var() = out_var; // Set connection variable's output variable
 		} else {
 			if ( ! inp_found ) std::cerr << "\nError: Connection input variable not found: " << inp << std::endl;
 			if ( ! out_found ) std::cerr << "\nError: Connection output variable not found: " << out << std::endl;
@@ -182,37 +163,33 @@ simulate_fmu_qss_con( std::vector< std::string > const & paths )
 	}
 
 	// Initialize models
-	for ( size_type k = 0; k < 7u; ++k ) { // Initialization stages
-		for ( size_type i = 0; i < n_models; ++i ) {
-			fmi2Component c( contexts[ i ] );
-			if ( fmi2EnterInitializationMode( c ) != fmi2OK ) {
-				std::cerr << "\nError: fmi2EnterInitializationMode failed: " << std::endl;
-				std::exit( EXIT_FAILURE );
-			}
-		}
-	}
-
-	// Exit model initialization
 	for ( size_type i = 0; i < n_models; ++i ) {
-		fmi2Component c( contexts[ i ] );
-		if ( fmi2ExitInitializationMode( c ) != fmi2OK ) {
-			std::cerr << "\nError: fmi2ExitInitializationMode failed: " << std::endl;
-			std::exit( EXIT_FAILURE );
-		}
+		fmu_mes[ i ]->init_0_1();
 	}
-
-	// Mode loop
 	for ( size_type i = 0; i < n_models; ++i ) {
-		fmi2Component c( contexts[ i ] );
-		fmi2EnterEventMode( c );
-		fmi2EnterContinuousTimeMode( c );
+		fmu_mes[ i ]->init_0_2();
+	}
+	for ( size_type i = 0; i < n_models; ++i ) {
+		fmu_mes[ i ]->init_1_1();
+	}
+	for ( size_type i = 0; i < n_models; ++i ) {
+		fmu_mes[ i ]->init_1_2();
+	}
+	for ( size_type i = 0; i < n_models; ++i ) {
+		fmu_mes[ i ]->init_2_1();
+	}
+	for ( size_type i = 0; i < n_models; ++i ) {
+		fmu_mes[ i ]->init_2_2();
+	}
+	for ( size_type i = 0; i < n_models; ++i ) {
+		fmu_mes[ i ]->init_f();
 	}
 
 	// EventInfo setup
-	std::vector< fmi2EventInfo > eventInfos;
+	std::vector< fmi2_event_info_t > eventInfos;
 	eventInfos.reserve( n_models );
 	for ( size_type i = 0; i < n_models; ++i ) {
-		fmi2EventInfo eventInfo;
+		fmi2_event_info_t eventInfo;
 		eventInfo.newDiscreteStatesNeeded = fmi2_true;
 		eventInfo.terminateSimulation = fmi2_false;
 		eventInfo.nominalsOfContinuousStatesChanged = fmi2_false;
@@ -222,71 +199,42 @@ simulate_fmu_qss_con( std::vector< std::string > const & paths )
 		eventInfos.push_back( eventInfo );
 	}
 
-	// Simulation
-	if ( options::dtCon == 0.0 ) { // Sync before every connected output event time
+	// Event queue setup
+	using Event = size_type;
+	using EventQ = std::multimap< Time, Event >;
+	EventQ events;
+	for ( size_type i = 0; i < n_models; ++i ) {
+		events.insert( EventQ::value_type( fmu_mes[ i ]->events->top_time(), i ) ); // Sorted by top event times
+	}
 
-		// Event queue setup
-		using Event = size_type;
-		using EventQ = std::multimap< Time, Event >;
-		EventQ events;
+	// Simulation loop
+	Time time( tStart );
+	while ( time <= tEnd ) {
+		auto const i1( events.begin() );
+		size_type const i( i1->second );
+		fmi2_event_info_t & eventInfo( eventInfos[ i ] );
+		eventInfo.newDiscreteStatesNeeded = fmi2_true;
+		eventInfo.nextEventTimeDefined = fmi2_false;
+		FMU_ME & fmu_me( *fmu_mes[ i ] );
+		fmu_me.simulate( &eventInfo, true );
+
+		// Refresh the event queue: This could be more efficient via direct coupling to the FMU-ME event queues
+		events.clear();
 		for ( size_type i = 0; i < n_models; ++i ) {
-			events.insert( EventQ::value_type( tStart, i ) );
+			events.insert( EventQ::value_type( fmu_mes[ i ]->events->top_time(), i ) ); // Sorted by top event times
 		}
 
-		// Simulation loop
-		Time time( tStart );
-		while ( time <= tEnd ) {
-			auto const i1( events.begin() );
-			auto i2( i1 ); ++i2;
-			Time const t2( i2->first );
-			size_type const i( i1->second );
-			fmi2Component c( contexts[ i ] );
-			fmi2EventInfo & eventInfo( eventInfos[ i ] );
-			eventInfo.newDiscreteStatesNeeded = fmi2_true;
-			eventInfo.nextEventTimeDefined = fmi2_true;
-			eventInfo.nextEventTime = tEnd; // Signal QSS simulation pass to advance time until connected output will be modified
-			if ( fmi2NewDiscreteStates( c, &eventInfo ) != fmi2OK ) {
-				std::cerr << "\nError: fmi2NewDiscreteStates failed for: " << fmu_qsss[ i ]->fmu_me.name << std::endl;
-				std::exit( EXIT_FAILURE );
-			}
-			events.erase( i1 );
-			events.insert( EventQ::value_type( eventInfo.terminateSimulation ? infinity : eventInfo.nextEventTime, i ) );
-			time = t2;
-		}
+		time = fmu_mes[ events.begin()->second ]->events->top_time();
+	}
 
-	} else { // Sync every dtCon
-
-		Time const dt( options::dtCon );
-		Time time( tStart );
-		Time tNext( tStart + dt );
-		while ( time <= tEnd ) {
-			for ( size_type i = 0; i < n_models; ++i ) {
-				fmi2Component c( contexts[ i ] );
-				fmi2EventInfo & eventInfo( eventInfos[ i ] );
-				if ( ! eventInfo.terminateSimulation ) {
-					eventInfo.newDiscreteStatesNeeded = fmi2_true;
-					eventInfo.nextEventTimeDefined = fmi2_true;
-					eventInfo.nextEventTime = tNext; // Signal QSS simulation pass when to stop
-					if ( fmi2NewDiscreteStates( c, &eventInfo ) != fmi2OK ) {
-						std::cerr << "\nError: fmi2NewDiscreteStates failed for: " << fmu_qsss[ i ]->fmu_me.name << std::endl;
-						std::exit( EXIT_FAILURE );
-					}
-				}
-			}
-			time = tNext;
-			tNext += dt;
-		}
-
+	// Post-simulate
+	for ( size_type i = 0; i < n_models; ++i ) {
+		fmu_mes[ i ]->post_simulate();
 	}
 
 	// Cleanup
 	for ( size_type i = 0; i < n_models; ++i ) {
-		FMU_QSS & fmu_qss( *fmu_qsss[ i ] );
-		fmi2Component c( contexts[ i ] );
-		fmi2Terminate( c );
-		fmi2FreeInstance( c );
-		unreg( &fmu_qss );
-		delete fmu_qsss[ i ];
+		delete fmu_mes[ i ];
 	}
 }
 

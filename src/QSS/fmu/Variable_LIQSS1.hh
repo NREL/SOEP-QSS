@@ -188,6 +188,7 @@ public: // Methods
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 		if ( have_observers_ ) advance_observers();
+		if ( have_connections ) advance_connections();
 	}
 
 	// QSS Advance: Stage 0
@@ -214,6 +215,7 @@ public: // Methods
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( have_connections ) advance_connections();
 	}
 
 	// Observer Advance: Stage 1
@@ -228,6 +230,7 @@ public: // Methods
 		x_1_ = fmu_get_deriv();
 		set_tE_unaligned();
 		shift_QSS( tE );
+		if ( have_connections ) advance_connections_observer();
 	}
 
 	// Observer Advance: Stage 1
@@ -241,6 +244,7 @@ public: // Methods
 		x_1_ = d;
 		set_tE_unaligned();
 		shift_QSS( tE );
+		if ( have_connections ) advance_connections_observer();
 	}
 
 	// Observer Advance: Stage d
@@ -263,6 +267,7 @@ public: // Methods
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 		if ( have_observers_ ) advance_observers();
+		if ( have_connections ) advance_connections();
 	}
 
 	// Handler Advance: Stage 0
@@ -284,6 +289,7 @@ public: // Methods
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( have_connections ) advance_connections();
 	}
 
 	// Handler No-Advance

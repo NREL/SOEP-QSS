@@ -50,7 +50,7 @@
 namespace QSS {
 namespace fmu {
 
-// Simulate an FMU-QSS with QSS
+// Simulate FMU-QSS
 void
 simulate_fmu_qss( std::string const & path )
 {

@@ -65,6 +65,12 @@ public: // Creation
 	// Default Constructor
 	FMU_QSS() = default;
 
+	// Copy Constructor
+	FMU_QSS( FMU_QSS const & ) = delete;
+
+	// Move Constructor
+	FMU_QSS( FMU_QSS && ) = delete;
+
 	// FMU-QSS Path Constructor
 	explicit
 	FMU_QSS( std::string const & path )
@@ -74,6 +80,16 @@ public: // Creation
 
 	// Destructor
 	~FMU_QSS();
+
+public: // Assignment
+
+	// Copy Assignment
+	FMU_QSS &
+	operator =( FMU_QSS const & ) = delete;
+
+	// Move Assignment
+	FMU_QSS &
+	operator =( FMU_QSS && ) = delete;
 
 public: // Properties
 

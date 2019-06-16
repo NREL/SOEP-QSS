@@ -42,7 +42,7 @@
 namespace QSS {
 namespace fmu {
 
-// Simulate an FMU-ME with QSS
+// Simulate FMU-ME
 void
 simulate_fmu_me( std::string const & path );
 

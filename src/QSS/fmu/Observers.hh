@@ -130,6 +130,13 @@ public: // Predicate
 		return zc_.have2_;
 	}
 
+	// Have Connected Output Observer(s)?
+	bool
+	connected_output_observer() const
+	{
+		return connected_output_observer_;
+	}
+
 public: // Properties
 
 	// Size
@@ -166,6 +173,15 @@ public: // Methods
 
 		// Sort observers by NZ|ZC and then order
 		sort_by_ZC_and_order( observers_ );
+
+		// Flag if output connection observer(s)
+		connected_output_observer_ = false;
+		for ( auto const observer : observers_ ) {
+			if ( observer->connected_output ) {
+				connected_output_observer_ = true;
+				break;
+			}
+		}
 
 		// Observer specs
 		have_ = ( ! observers_.empty() );
@@ -539,6 +555,7 @@ private: // Data
 	VariableRefs zc_refs_; // Zero-crossing observer FMU variable refs
 	VariableRefs zc_2_refs_; // Zero-crossing observer FMU variable refs
 	Reals zc_vals_; //  Zero-crossing observer FMU variable values
+	bool connected_output_observer_{ false }; // Output connection observer to another FMU?
 
 	// Non-zero-crossing observer observees
 	Variables nz_observees_; // Non-zero-crossing observer observees (including self-observing observers)

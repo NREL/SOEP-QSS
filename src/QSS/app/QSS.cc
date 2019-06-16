@@ -37,6 +37,8 @@
 #include <QSS/cod/simulate_cod.hh>
 #ifdef QSS_FMU
 #include <QSS/fmu/simulate_fmu_me.hh>
+#include <QSS/fmu/simulate_fmu_me_con.hh>
+#include <QSS/fmu/simulate_fmu_me_con_perfect.hh>
 #include <QSS/fmu/simulate_fmu_qss.hh>
 #include <QSS/fmu/simulate_fmu_qss_con.hh>
 #endif
@@ -121,15 +123,24 @@ main( int argc, char * argv[] )
 #endif
 
 	// Run FMU-QSS, FMU-ME, or code-defined model simulation
-	if ( options::have_connections() ) { // Synched simulations
+	if ( options::have_multiple_models() && options::have_connections() ) { // Synched simulations
 		if ( model_type == ModelType::COD ) { // Code-defined model
 			std::cerr << "Error: Code-defined models with input:output connections not yet supported" << std::endl;
 			std::exit( EXIT_FAILURE );
 		} else if ( model_type == ModelType::FMU_ME ) { // FMU-ME
-			std::cerr << "Error: FMU-ME models with input:output connections not yet supported" << std::endl;
-			std::exit( EXIT_FAILURE );
+#ifdef QSS_FMU
+			if ( options::perfect ) {
+				fmu::simulate_fmu_me_con_perfect( options::models );
+			} else {
+				fmu::simulate_fmu_me_con( options::models );
+			}
+#endif
 		} else if ( model_type == ModelType::FMU_QSS ) { // FMU-QSS
 #ifdef QSS_FMU
+			if ( options::perfect ) {
+				std::cerr << "Error: Perfect sync only supported for FMU-ME, not FMU-QSS" << std::endl;
+				std::exit( EXIT_FAILURE );
+			}
 			fmu::simulate_fmu_qss_con( options::models );
 #endif
 		} else {

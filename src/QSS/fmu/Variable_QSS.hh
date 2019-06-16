@@ -38,6 +38,7 @@
 
 // QSS Headers
 #include <QSS/fmu/Variable.hh>
+#include <QSS/fmu/Variable_Con.hh>
 
 namespace QSS {
 namespace fmu {
@@ -89,6 +90,26 @@ public: // Predicate
 	is_QSS() const
 	{
 		return true;
+	}
+
+public: // Methods
+
+	// Advance Connections
+	void
+	advance_connections()
+	{
+		for ( Variable_Con * connection : connections ) {
+			connection->advance_connection( tQ );
+		}
+	}
+
+	// Advance Connections for Observer Update
+	void
+	advance_connections_observer()
+	{
+		for ( Variable_Con * connection : connections ) {
+			connection->advance_connection_observer();
+		}
 	}
 
 };

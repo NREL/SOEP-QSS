@@ -42,7 +42,7 @@
 namespace QSS {
 namespace cod {
 
-// Simulate an Example Model
+// Simulate Example Model
 void
 simulate( std::string const & model );
 

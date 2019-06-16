@@ -1,4 +1,4 @@
-// FMU-Based All-Variable Convenience Header
+// Connected FMU-ME Perfect Sync Simulation Runner
 //
 // Project: QSS Solver
 //
@@ -33,36 +33,21 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_Variable_all_hh_INCLUDED
-#define QSS_fmu_Variable_all_hh_INCLUDED
+#ifndef QSS_fmu_simulate_fmu_me_con_perfect_hh_INCLUDED
+#define QSS_fmu_simulate_fmu_me_con_perfect_hh_INCLUDED
 
-// QSS Discrete Variable Headers
-#include <QSS/fmu/Variable_B.hh>
-#include <QSS/fmu/Variable_D.hh>
-#include <QSS/fmu/Variable_I.hh>
+// C++ Headers
+#include <string>
+#include <vector>
 
-// QSS Input Variable Headers
-#include <QSS/fmu/Variable_Inp1.hh>
-#include <QSS/fmu/Variable_Inp2.hh>
-#include <QSS/fmu/Variable_InpB.hh>
-#include <QSS/fmu/Variable_InpD.hh>
-#include <QSS/fmu/Variable_InpI.hh>
-#include <QSS/fmu/Variable_xInp1.hh>
-#include <QSS/fmu/Variable_xInp2.hh>
+namespace QSS {
+namespace fmu {
 
-// QSS Connection Variable Headers
-#include <QSS/fmu/Variable_Con.hh>
+// Simulate Connected FMU-ME with Perfect Sync
+void
+simulate_fmu_me_con_perfect( std::vector< std::string > const & paths );
 
-// QSS State Variable Headers
-#include <QSS/fmu/Variable_LIQSS1.hh>
-#include <QSS/fmu/Variable_LIQSS2.hh>
-#include <QSS/fmu/Variable_QSS1.hh>
-#include <QSS/fmu/Variable_QSS2.hh>
-#include <QSS/fmu/Variable_xQSS1.hh>
-#include <QSS/fmu/Variable_xQSS2.hh>
-
-// QSS Zero-Crossing Variable Headers
-#include <QSS/fmu/Variable_ZC1.hh>
-#include <QSS/fmu/Variable_ZC2.hh>
+} // fmu
+} // QSS
 
 #endif

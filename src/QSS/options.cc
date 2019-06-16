@@ -64,6 +64,7 @@ std::size_t pass( 20 ); // Pass count limit
 bool cycles( false ); // Report dependency cycles?
 bool inflection( false ); // Requantize at inflections?
 bool refine( false ); // Refine FMU zero-crossing roots?
+bool perfect( false ); // Perfect FMU-ME connection sync?
 InpFxn fxn; // Map from input variables to function specs
 InpOut con; // Map from input variables to output variables
 std::string out; // Outputs
@@ -116,6 +117,7 @@ help_display()
 	std::cout << " --cycles       Report dependency cycles?  [F]" << '\n';
 	std::cout << " --inflection   Requantize at inflections?  [F]" << '\n';
 	std::cout << " --refine       Refine FMU zero-crossing roots?  [F]" << '\n';
+	std::cout << " --perfect      Perfect FMU-ME connection sync?  [F]" << '\n';
 	std::cout << " --fxn=INP:FXN  FMU input variable function  [step[0|start,1,1]]" << '\n';
 	std::cout << "       INP can be <model>.<var> with 2+ models" << '\n';
 	std::cout << "           FXN is function spec:" << '\n';
@@ -216,6 +218,8 @@ process_args( int argc, char * argv[] )
 			inflection = true;
 		} else if ( has_option( arg, "refine" ) ) {
 			refine = true;
+		} else if ( has_option( arg, "perfect" ) ) {
+			perfect = true;
 		} else if ( has_value_option( arg, "rTol" ) ) {
 			specified::rTol = true;
 			std::string const rTol_str( arg_value( arg ) );

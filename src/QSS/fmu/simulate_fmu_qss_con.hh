@@ -43,7 +43,7 @@
 namespace QSS {
 namespace fmu {
 
-// Simulate connected FMU-QSS with QSS
+// Simulate Connected FMU-QSS
 void
 simulate_fmu_qss_con( std::vector< std::string > const & paths );
 

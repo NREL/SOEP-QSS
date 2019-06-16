@@ -81,6 +81,15 @@ namespace fmu {
 		init( path, false );
 	}
 
+	// FMU-ME Path + Event Queue Constructor
+	FMU_ME::
+	FMU_ME( std::string const & path, Events * events ) :
+	 events( events ),
+	 events_own( false )
+	{
+		init( path, false );
+	}
+
 	// Destructor
 	FMU_ME::
 	~FMU_ME()
@@ -96,7 +105,7 @@ namespace fmu {
 		if ( context ) fmi_import_free_context( context );
 		for ( Variable * var : vars ) delete var;
 		for ( Conditional< Variable > * con : cons ) delete con;
-		delete events;
+		if ( events_own ) delete events;
 	}
 
 	// Initialize
@@ -491,18 +500,29 @@ namespace fmu {
 								std::exit( EXIT_FAILURE );
 							}
 						}
-						Variable_Inp * qss_var( nullptr );
-						if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) ) {
-							qss_var = new Variable_Inp1( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
-						} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) ) {
-							qss_var = new Variable_Inp2( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
-						} else if ( options::qss == options::QSS::xQSS1 ) {
-							qss_var = new Variable_xInp1( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
-						} else if ( options::qss == options::QSS::xQSS2 ) {
-							qss_var = new Variable_xInp2( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
-						} else {
-							std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
-							std::exit( EXIT_FAILURE );
+						Variable * qss_var( nullptr );
+						if ( inp_fxn || !options::perfect ) { // Use input variables for connections
+							if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) ) {
+								qss_var = new Variable_Inp1( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
+							} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) ) {
+								qss_var = new Variable_Inp2( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
+							} else if ( options::qss == options::QSS::xQSS1 ) {
+								qss_var = new Variable_xInp1( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
+							} else if ( options::qss == options::QSS::xQSS2 ) {
+								qss_var = new Variable_xInp2( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
+							} else {
+								std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
+								std::exit( EXIT_FAILURE );
+							}
+						} else { // Use connection variables for connections
+							if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) || ( options::qss == options::QSS::xQSS1 ) ) {
+								qss_var = new Variable_Con( 1, var_name, this, fmu_var );
+							} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) || ( options::qss == options::QSS::xQSS2 ) ) {
+								qss_var = new Variable_Con( 2, var_name, this, fmu_var );
+							} else {
+								std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
+								std::exit( EXIT_FAILURE );
+							}
 						}
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
@@ -1334,6 +1354,9 @@ namespace fmu {
 	FMU_ME::
 	init_f()
 	{
+		// Initialize Conditional observers
+		for ( Conditional< Variable > * con : cons ) con->init_observers();
+
 		// Dependency cycle detection: After init sets up observers
 		if ( options::cycles ) cycles< Variable >( vars );
 
@@ -1415,7 +1438,7 @@ namespace fmu {
 	// Simulation Pass
 	void
 	FMU_ME::
-	simulate( fmi2_event_info_t * eventInfoMaster )
+	simulate( fmi2_event_info_t * eventInfoMaster, bool const connected )
 	{
 		// Types
 		using Variables = Variable::Variables;
@@ -1432,6 +1455,7 @@ namespace fmu {
 
 		// Timing setup
 		Time const tSim( tE - t0 ); // Simulation time span expected
+		Time const tPass( events->top_time() ); // Pass start time
 		Time tNext( eventInfoMaster->nextEventTimeDefined ? std::min( eventInfoMaster->nextEventTime, tE ) : tE );
 		int tPer( 0 ); // Percent of simulation time completed
 		std::clock_t const cpu_time_beg( std::clock() ); // CPU time
@@ -1441,6 +1465,7 @@ namespace fmu {
 
 		// Simulation loop
 		Variable_ZCs var_ZCs; // Last zero-crossing trigger variables
+		bool connected_output_event( false );
 		while ( t <= tNext ) {
 			t = events->top_time();
 			if ( doSOut ) { // Sampled and/or FMU outputs
@@ -1496,6 +1521,33 @@ namespace fmu {
 				}
 			}
 			if ( t <= tNext ) { // Perform event(s)
+
+				// Check if next event(s) will modify a connected output
+				if ( connected ) {
+					if ( options::perfect ) { // Flag whether next event(s) will modify a connected output
+						connected_output_event = false;
+						auto const tops( events->tops() );
+						for ( auto i = tops.first; i != tops.second; ++i ) {
+							Target const * target( i->second.target() );
+							if ( target->connected_output || target->connected_output_observer ) {
+								connected_output_event = true;
+								break;
+							}
+						}
+					} else if ( events->top_time() > tPass ) { // Stop if beyond pass start time and next event(s) will modify a connected output
+						bool connected_output_next( false );
+						auto const tops( events->tops() );
+						for ( auto i = tops.first; i != tops.second; ++i ) {
+							Target const * target( i->second.target() );
+							if ( target->connected_output || target->connected_output_observer ) {
+								connected_output_next = true;
+								break;
+							}
+						}
+						if ( connected_output_next ) break;
+					}
+				}
+
 				set_time( t );
 				Event< Target > & event( events->top() );
 				SuperdenseTime const s( events->top_superdense_time() );
@@ -1656,7 +1708,7 @@ namespace fmu {
 									if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
 									if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
 								}
-							} else { // Time event and observer output
+							} else { // Time event output
 								if ( options::output::t ) { // Time event output
 									size_type const i( var_idx[ trigger ] );
 									if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
@@ -1888,18 +1940,31 @@ namespace fmu {
 						assert( trigger->not_ZC() ); // ZC variable requantizations are QSS_ZC events
 						trigger->st = s; // Set trigger superdense time
 
-						if ( doROut ) { // Requantization output: Quantized rep before to capture its discrete change
-							if ( ( options::output::a ) || ( options::output::r ) ) { // Requantization output
-								if ( options::output::q ) {
+						if ( doROut ) { // Requantization output: before requantization
+							if ( options::output::a ) { // All variables output
+								for ( size_type i = 0; i < n_vars; ++i ) {
+									if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
+									if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
+								}
+							} else { // Requantization and observer output
+								if ( options::output::r ) { // Requantization output
 									size_type const i( var_idx[ trigger ] );
-									q_outs[ i ].append( t, trigger->q( t ) );
+									if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
+									if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
+									for ( Variable const * observer : trigger->observers() ) { // Observer output
+										size_type const io( var_idx[ observer ] );
+										if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
+										if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+											if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
+										}
+									}
 								}
 							}
 						}
 
 						trigger->advance_QSS();
 
-						if ( doROut ) { // Requantization output
+						if ( doROut ) { // Requantization output: after requantization
 							if ( options::output::a ) { // All variables output
 								for ( size_type i = 0; i < n_vars; ++i ) {
 									if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
@@ -1926,12 +1991,25 @@ namespace fmu {
 						Observers_S observers( triggers, this );
 						sort_by_order( triggers );
 
-						if ( doROut ) { // Requantization output: Quantized rep before to capture its discrete change
-							if ( ( options::output::a ) || ( options::output::r ) ) { // Requantization output
-								if ( options::output::q ) {
+						if ( doROut ) { // Requantization output: before requantization
+							if ( options::output::a ) { // All variables output
+								for ( size_type i = 0; i < n_vars; ++i ) {
+									if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
+									if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
+								}
+							} else { // Requantization and observer output
+								if ( options::output::r ) { // Requantization output
 									for ( Variable const * trigger : triggers ) { // Triggers
 										size_type const i( var_idx[ trigger ] );
-										q_outs[ i ].append( t, trigger->q( t ) );
+										if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
+										if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
+									}
+									for ( Variable const * observer : observers ) { // Observer output
+										size_type const io( var_idx[ observer ] );
+										if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
+										if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+											if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
+										}
 									}
 								}
 							}
@@ -1957,7 +2035,7 @@ namespace fmu {
 
 						if ( observers.have() ) observers.advance( t ); // Advance observers
 
-						if ( doROut ) { // Requantization output
+						if ( doROut ) { // Requantization output: after requantization
 							if ( options::output::a ) { // All variables output
 								for ( size_type i = 0; i < n_vars; ++i ) {
 									if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
@@ -2031,9 +2109,15 @@ namespace fmu {
 				eventInfoMaster->terminateSimulation = fmi2_true;
 				break;
 			}
+
+			// Stop if perfect sync and this event modified a connected output
+			if ( connected_output_event ) {
+				t = events->top_time(); // To give master loop event queue the next event time
+				break;
+			}
 		}
 		eventInfoMaster->nextEventTimeDefined = fmi2_true;
-		eventInfoMaster->nextEventTime = t;
+		eventInfoMaster->nextEventTime = t; // For master loop event queue
 
 		sim_cpu_time += std::clock() - cpu_time_beg; // CPU time
 #ifdef _OPENMP

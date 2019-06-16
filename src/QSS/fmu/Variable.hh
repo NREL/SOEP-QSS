@@ -62,6 +62,9 @@
 namespace QSS {
 namespace fmu {
 
+// Forward
+class Variable_Con;
+
 // FMU-Based Variable Abstract Base Class
 class Variable : public Target
 {
@@ -77,6 +80,7 @@ public: // Types
 	using Reals = std::vector< Real >;
 	using Events = FMU_ME::Events;
 	using Variables = std::vector< Variable * >;
+	using Variable_Cons = std::vector< Variable_Con * >;
 	using VariableRefs = std::vector< fmi2_value_reference_t >;
 	using size_type = Variables::size_type;
 	using Indexes = std::vector< size_type >;
@@ -565,6 +569,7 @@ public: // Methods
 		have_observers_2_ = observers_.have2();
 		have_observers_NZ_2_ = observers_.nz_have2();
 		have_observers_ZC_2_ = observers_.zc_have2();
+		connected_output_observer = observers_.connected_output_observer();
 	}
 
 	// Initialize Observees Collection
@@ -909,6 +914,14 @@ public: // Methods
 
 public: // Methods: FMU
 
+	// Get FMU Time
+	Time
+	fmu_get_time() const
+	{
+		assert( fmu_me != nullptr );
+		return fmu_me->get_time();
+	}
+
 	// Get FMU Real Variable Value
 	Real
 	fmu_get_real() const
@@ -963,6 +976,14 @@ public: // Methods: FMU
 	{
 		assert( fmu_me != nullptr );
 		return fmu_me->get_real( der.ref );
+	}
+
+	// Set FMU Time
+	void
+	fmu_set_time( Time const t ) const
+	{
+		assert( fmu_me != nullptr );
+		fmu_me->set_time( t );
 	}
 
 	// Set FMU Variable to Continuous Value at Time t
@@ -1091,6 +1112,10 @@ public: // Data
 	FMU_ME * fmu_me{ nullptr }; // FMU-ME (non-owning) pointer
 	FMU_Variable var; // FMU variables specs
 	FMU_Variable der; // FMU derivative specs
+
+	// Connections
+	Variable_Cons connections; // Input connection variables this one outputs to
+	bool have_connections{ false }; // Have connections?
 
 protected: // Data
 
