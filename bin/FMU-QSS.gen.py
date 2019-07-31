@@ -226,7 +226,7 @@ def fmu_qss_gen():
         causality = a[ 'causality' ] if 'causality' in a else 'local'
         variability = a[ 'variability' ] if 'variability' in a else 'continuous'
         previous = v.getprevious()
-        comment = previous if ( previous is not None ) and ( previous.tag is etree.Comment ) and ( str( previous ).startswith( ( '<!-- Index for next variable = ', '<!-- Variable with index' ) ) ) else None
+        comment = previous if ( previous is not None ) and ( previous.tag is etree.Comment ) and str( previous ).startswith( ( '<!-- Variable with index #', '<!-- Index for next variable = ' ) ) else None
         if causality in ( 'input', 'output' ) and not ( ( causality == 'output' ) and name.startswith( '__zc_' ) ): # Keep (except zero-crossing output variables)
             o += 1 # FMU-QSS variable index
             io[ i ] = o
@@ -273,9 +273,11 @@ def fmu_qss_gen():
             set_comment = False
         if set_comment:
             if comment is not None: # Adjust variable index in comment
-                comment.text = ' Index for next variable = ' + str( o ) + ' (' + str( i ) + ') '
+#               comment.text = ' Index for next variable = ' + str( o ) + ' (' + str( i ) + ') ' # Dymola format
+                comment.text = ' Variable with index #' + str( o ) + ' (' + str( i ) + ') ' # OCT format
             else: # Insert comment
-                v.addprevious( etree.Comment( ' Index for next variable = ' + str( o ) + ' (' + str( i ) + ') ' ) )
+#               v.addprevious( etree.Comment( ' Index for next variable = ' + str( o ) + ' (' + str( i ) + ') ' ) ) # Dymola format
+                v.addprevious( etree.Comment( ' Variable with index #' + str( o ) + ' (' + str( i ) + ') ' ) ) # OCT format
 
     # Re-index derivatives
     ScalarVariables = ModelVariables.findall( 'ScalarVariable' ) # List of ScalarVariable after above pruning

@@ -21,7 +21,7 @@ TAR_OBJ := $(TAR).o
 SRC := $(notdir $(wildcard $(SRC_PATH)/*.cc))
 SRC += $(notdir $(wildcard $(SRC_PATH)/cod/*.cc))
 SRC += $(notdir $(wildcard $(SRC_PATH)/cod/mdl/*.cc))
-#SRC += $(notdir $(wildcard $(SRC_PATH)/fmu/*.cc))
+SRC += $(notdir $(wildcard $(SRC_PATH)/fmu/*.cc))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .o,$(basename $(SRC)))
 SLB := $(BIN_PATH)\lib$(TAR).a
@@ -71,8 +71,7 @@ $(TAR_OBJ) : $(TAR_SRC)
 	$(CXX) $(CXXFLAGS) -c -o $@ $(subst /,\,$<)
 
 $(EXE) : $(SLB) $(TAR_OBJ)
-#	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) -o $@ $(TAR_OBJ) -L$(QSS_bin) -l$(TAR) -L$(FMIL_HOME)\lib -lfmilib_shared.dll # libfmilib.a gives undefined references
-	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) -o $@ $(TAR_OBJ) -L$(QSS_bin) -l$(TAR)
+	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) -o $@ $(TAR_OBJ) -L$(QSS_bin) -l$(TAR) -L$(FMIL_HOME)\lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -lshlwapi
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)

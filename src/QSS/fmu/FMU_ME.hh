@@ -230,22 +230,22 @@ public: // FMU Methods
 
 	// Set FMU Time
 	void
-	set_time( Time const t )
+	set_time( Time const t_fmu_new )
 	{
 		assert( fmu != nullptr );
-		fmi2_import_set_time( fmu, t_fmu = t );
+		fmi2_import_set_time( fmu, t_fmu = t_fmu_new );
 //Do Use below instead when not doing forward time bumps for numeric differentiation or zero crossing
-//		fmi2_status_t const fmi_status = fmi2_import_set_time( fmu, t_fmu = t );
+//		fmi2_status_t const fmi_status = fmi2_import_set_time( fmu, t_fmu = t_fmu_new );
 //		assert( status_check( fmi_status, "set_time" );
+//		(void)fmi_status; // Suppress unused warning
 	}
 
 	// Initialize Derivatives Array Size
 	void
-	init_derivatives( std::size_t const n_der )
+	init_derivatives()
 	{
 		if ( derivatives != nullptr ) delete derivatives;
-		derivatives = new fmi2_real_t[ n_der ];
-		n_derivatives = n_der;
+		derivatives = n_derivatives > 0u ? new fmi2_real_t[ n_derivatives ] : nullptr;
 	}
 
 	// Get a Real FMU Variable Value
@@ -256,6 +256,7 @@ public: // FMU Methods
 		Real val;
 		fmi2_status_t const fmi_status = fmi2_import_get_real( fmu, &ref, std::size_t( 1u ), &val );
 		assert( status_check( fmi_status, "get_real" ) );
+		(void)fmi_status; // Suppress unused warning
 		return val;
 	}
 
@@ -266,6 +267,7 @@ public: // FMU Methods
 		assert( fmu != nullptr );
 		fmi2_status_t const fmi_status = fmi2_import_get_real( fmu, refs, n, vals );
 		assert( status_check( fmi_status, "get_reals" ) );
+		(void)fmi_status; // Suppress unused warning
 	}
 
 	// Set a Real FMU Variable Value
@@ -275,6 +277,7 @@ public: // FMU Methods
 		assert( fmu != nullptr );
 		fmi2_status_t const fmi_status = fmi2_import_set_real( fmu, &ref, std::size_t( 1u ), &val );
 		assert( status_check( fmi_status, "set_real" ) );
+		(void)fmi_status; // Suppress unused warning
 	}
 
 	// Set a Real FMU Variable Value
@@ -284,6 +287,7 @@ public: // FMU Methods
 		assert( fmu != nullptr );
 		fmi2_status_t const fmi_status = fmi2_import_set_real( fmu, refs, n, vals );
 		assert( status_check( fmi_status, "set_reals" ) );
+		(void)fmi_status; // Suppress unused warning
 	}
 
 	// Get All Derivatives Array: FMU Time and Variable Values Must be Set First
@@ -293,6 +297,7 @@ public: // FMU Methods
 		assert( derivatives != nullptr );
 		fmi2_status_t const fmi_status = fmi2_import_get_derivatives( fmu, derivatives, n_derivatives );
 		assert( status_check( fmi_status, "get_derivatives" ) );
+		(void)fmi_status; // Suppress unused warning
 	}
 
 	// Get a Derivative: First call get_derivatives
@@ -311,6 +316,7 @@ public: // FMU Methods
 		Integer val;
 		fmi2_status_t const fmi_status = fmi2_import_get_integer( fmu, &ref, std::size_t( 1u ), &val );
 		assert( status_check( fmi_status, "get_integer" ) );
+		(void)fmi_status; // Suppress unused warning
 		return val;
 	}
 
@@ -321,6 +327,7 @@ public: // FMU Methods
 		assert( fmu != nullptr );
 		fmi2_status_t const fmi_status = fmi2_import_set_integer( fmu, &ref, std::size_t( 1u ), &val );
 		assert( status_check( fmi_status, "set_integer" ) );
+		(void)fmi_status; // Suppress unused warning
 	}
 
 	// Get an Boolean FMU Variable Value
@@ -331,6 +338,7 @@ public: // FMU Methods
 		fmi2_boolean_t fbt;
 		fmi2_status_t const fmi_status = fmi2_import_get_boolean( fmu, &ref, std::size_t( 1u ), &fbt );
 		assert( status_check( fmi_status, "get_boolean" ) );
+		(void)fmi_status; // Suppress unused warning
 		return ( fbt != 0 );
 	}
 
@@ -342,16 +350,17 @@ public: // FMU Methods
 		fmi2_boolean_t const fbt( static_cast< fmi2_boolean_t >( val ) );
 		fmi2_status_t const fmi_status = fmi2_import_set_boolean( fmu, &ref, std::size_t( 1u ), &fbt );
 		assert( status_check( fmi_status, "set_boolean" ) );
+		(void)fmi_status; // Suppress unused warning
 	}
 
 	// Discrete Event Processing
 	void
-	do_event_iteration( fmi2_import_t * fmu, fmi2_event_info_t * eventInfo )
+	do_event_iteration()
 	{
-		eventInfo->newDiscreteStatesNeeded = fmi2_true;
-		eventInfo->terminateSimulation = fmi2_false;
-		while ( eventInfo->newDiscreteStatesNeeded && !eventInfo->terminateSimulation ) {
-			fmi2_import_new_discrete_states( fmu, eventInfo );
+		eventInfo.newDiscreteStatesNeeded = fmi2_true;
+		eventInfo.terminateSimulation = fmi2_false;
+		while ( eventInfo.newDiscreteStatesNeeded && !eventInfo.terminateSimulation ) {
+			fmi2_import_new_discrete_states( fmu, &eventInfo );
 		}
 	}
 

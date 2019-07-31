@@ -359,16 +359,14 @@ simulate( std::string const & model )
 								if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
 							}
 						} else { // Time event and observer output
-							if ( options::output::t ) { // Time event output
-								size_type const i( var_idx[ trigger ] );
-								if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
-								if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
-								for ( Variable const * observer : trigger->observers() ) { // Observer output
-									size_type const io( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-									}
+							size_type const i( var_idx[ trigger ] );
+							if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
+							if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
+							for ( Variable const * observer : trigger->observers() ) { // Observer output
+								size_type const io( var_idx[ observer ] );
+								if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
+								if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+									if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 								}
 							}
 						}
@@ -377,23 +375,14 @@ simulate( std::string const & model )
 					trigger->advance_discrete();
 
 					if ( doTOut ) { // Time event output: after discrete changes
-						if ( options::output::a ) { // All variables output
-							for ( size_type i = 0; i < n_vars; ++i ) {
-								if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
-								if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
-							}
-						} else { // Time event and observer output
-							if ( options::output::t ) { // Time event output
-								size_type const i( var_idx[ trigger ] );
-								if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
-								if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
-								for ( Variable const * observer : trigger->observers() ) { // Observer output
-									size_type const io( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-									}
-								}
+						size_type const i( var_idx[ trigger ] );
+						if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
+						if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
+						for ( Variable const * observer : trigger->observers() ) { // Observer output
+							if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+								size_type const io( var_idx[ observer ] );
+								if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
+								if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 							}
 						}
 					}
@@ -408,18 +397,16 @@ simulate( std::string const & model )
 								if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
 							}
 						} else { // Time event and observer output
-							if ( options::output::t ) { // Time event output
-								for ( Variable const * trigger : triggers ) { // Triggers
-									size_type const i( var_idx[ trigger ] );
-									if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
-									if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
-								}
-								for ( Variable const * observer : observers ) { // Observer output
-									size_type const io( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-									}
+							for ( Variable const * trigger : triggers ) { // Triggers
+								size_type const i( var_idx[ trigger ] );
+								if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
+								if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
+							}
+							for ( Variable const * observer : observers ) { // Observer output
+								size_type const io( var_idx[ observer ] );
+								if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
+								if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+									if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 								}
 							}
 						}
@@ -433,25 +420,16 @@ simulate( std::string const & model )
 					Variable::advance_observers( observers, t );
 
 					if ( doTOut ) { // Time event output: after discrete changes
-						if ( options::output::a ) { // All variables output
-							for ( size_type i = 0; i < n_vars; ++i ) {
-								if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
-								if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
-							}
-						} else { // Time event and observer output
-							if ( options::output::t ) { // Time event output
-								for ( Variable const * trigger : triggers ) { // Triggers
-									size_type const i( var_idx[ trigger ] );
-									if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
-									if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
-								}
-								for ( Variable const * observer : observers ) { // Observer output
-									size_type const io( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-									}
-								}
+						for ( Variable const * trigger : triggers ) { // Triggers
+							size_type const i( var_idx[ trigger ] );
+							if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
+							if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
+						}
+						for ( Variable const * observer : observers ) { // Observer output
+							if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+								size_type const io( var_idx[ observer ] );
+								if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
+								if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 							}
 						}
 					}
@@ -470,11 +448,9 @@ simulate( std::string const & model )
 								if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
 							}
 						} else { // Time event output
-							if ( options::output::t ) { // Time event output
-								size_type const i( var_idx[ trigger ] );
-								if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
-								if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
-							}
+							size_type const i( var_idx[ trigger ] );
+							if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
+							if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
 						}
 					}
 				}
@@ -495,16 +471,14 @@ simulate( std::string const & model )
 								if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
 							}
 						} else { // Requantization and observer output
-							if ( options::output::r ) { // Requantization output
-								size_type const i( var_idx[ handler ] );
-								if ( options::output::x ) x_outs[ i ].append( t, handler->x( t ) );
-								if ( options::output::q ) q_outs[ i ].append( t, handler->q( t ) );
-								for ( Variable const * observer : handler->observers() ) { // Observer output
-									size_type const io( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-									}
+							size_type const i( var_idx[ handler ] );
+							if ( options::output::x ) x_outs[ i ].append( t, handler->x( t ) );
+							if ( options::output::q ) q_outs[ i ].append( t, handler->q( t ) );
+							for ( Variable const * observer : handler->observers() ) { // Observer output
+								size_type const io( var_idx[ observer ] );
+								if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
+								if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+									if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 								}
 							}
 						}
@@ -513,23 +487,14 @@ simulate( std::string const & model )
 					handler->advance_handler( t, event.val() );
 
 					if ( doROut ) { // Requantization output: after handler changes
-						if ( options::output::a ) { // All variables output
-							for ( size_type i = 0; i < n_vars; ++i ) {
-								if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
-								if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
-							}
-						} else { // Requantization and observer output
-							if ( options::output::r ) { // Requantization output
-								size_type const i( var_idx[ handler ] );
-								if ( options::output::x ) x_outs[ i ].append( t, handler->x( t ) );
-								if ( options::output::q ) q_outs[ i ].append( t, handler->q( t ) );
-								for ( Variable const * observer : handler->observers() ) { // Observer output
-									size_type const io( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-									}
-								}
+						size_type const i( var_idx[ handler ] );
+						if ( options::output::x ) x_outs[ i ].append( t, handler->x( t ) );
+						if ( options::output::q ) q_outs[ i ].append( t, handler->q( t ) );
+						for ( Variable const * observer : handler->observers() ) { // Observer output
+							if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+								size_type const io( var_idx[ observer ] );
+								if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
+								if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 							}
 						}
 					}
@@ -545,18 +510,16 @@ simulate( std::string const & model )
 								if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
 							}
 						} else { // Requantization and observer output
-							if ( options::output::r ) { // Requantization output
-								for ( Variable const * handler : handlers ) { // Handlers
-									size_type const i( var_idx[ handler ] );
-									if ( options::output::x ) x_outs[ i ].append( t, handler->x( t ) );
-									if ( options::output::q ) q_outs[ i ].append( t, handler->q( t ) );
-								}
-								for ( Variable const * observer : observers ) { // Observer output
-									size_type const io( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-									}
+							for ( Variable const * handler : handlers ) { // Handlers
+								size_type const i( var_idx[ handler ] );
+								if ( options::output::x ) x_outs[ i ].append( t, handler->x( t ) );
+								if ( options::output::q ) q_outs[ i ].append( t, handler->q( t ) );
+							}
+							for ( Variable const * observer : observers ) { // Observer output
+								size_type const io( var_idx[ observer ] );
+								if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
+								if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+									if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 								}
 							}
 						}
@@ -584,25 +547,16 @@ simulate( std::string const & model )
 					Variable::advance_observers( observers, t );
 
 					if ( doROut ) { // Requantization output: after handler changes
-						if ( options::output::a ) { // All variables output
-							for ( size_type i = 0; i < n_vars; ++i ) {
-								if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
-								if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
-							}
-						} else { // Requantization and observer output
-							if ( options::output::r ) { // Requantization output
-								for ( Variable const * handler : handlers ) { // Handlers
-									size_type const i( var_idx[ handler ] );
-									if ( options::output::x ) x_outs[ i ].append( t, handler->x( t ) );
-									if ( options::output::q ) q_outs[ i ].append( t, handler->q( t ) );
-								}
-								for ( Variable const * observer : observers ) { // Observer output
-									size_type const io( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-									}
-								}
+						for ( Variable const * handler : handlers ) { // Handlers
+							size_type const i( var_idx[ handler ] );
+							if ( options::output::x ) x_outs[ i ].append( t, handler->x( t ) );
+							if ( options::output::q ) q_outs[ i ].append( t, handler->q( t ) );
+						}
+						for ( Variable const * observer : observers ) { // Observer output
+							if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+								size_type const io( var_idx[ observer ] );
+								if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
+								if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 							}
 						}
 					}
@@ -622,16 +576,14 @@ simulate( std::string const & model )
 								if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
 							}
 						} else { // Requantization and observer output
-							if ( options::output::r ) { // Requantization output
-								size_type const i( var_idx[ trigger ] );
-								if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
-								if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
-								for ( Variable const * observer : trigger->observers() ) { // Observer output
-									size_type const io( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-									}
+							size_type const i( var_idx[ trigger ] );
+							if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
+							if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
+							for ( Variable const * observer : trigger->observers() ) { // Observer output
+								size_type const io( var_idx[ observer ] );
+								if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
+								if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+									if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 								}
 							}
 						}
@@ -640,23 +592,13 @@ simulate( std::string const & model )
 					trigger->advance_QSS();
 
 					if ( doROut ) { // Requantization output: after requantization
-						if ( options::output::a ) { // All variables output
-							for ( size_type i = 0; i < n_vars; ++i ) {
-								if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
-								if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
-							}
-						} else { // Requantization and observer output
-							if ( options::output::r ) { // Requantization output
-								size_type const i( var_idx[ trigger ] );
-								if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
-								if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
-								for ( Variable const * observer : trigger->observers() ) { // Observer output
-									size_type const io( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-									}
-								}
+						size_type const i( var_idx[ trigger ] );
+						if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
+						for ( Variable const * observer : trigger->observers() ) { // Observer output
+							if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+								size_type const io( var_idx[ observer ] );
+								if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
+								if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 							}
 						}
 					}
@@ -672,18 +614,16 @@ simulate( std::string const & model )
 								if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
 							}
 						} else { // Requantization and observer output
-							if ( options::output::r ) { // Requantization output
-								for ( Variable const * trigger : triggers ) { // Triggers
-									size_type const i( var_idx[ trigger ] );
-									if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
-									if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
-								}
-								for ( Variable const * observer : observers ) { // Observer output
-									size_type const io( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-									}
+							for ( Variable const * trigger : triggers ) { // Triggers
+								size_type const i( var_idx[ trigger ] );
+								if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
+								if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
+							}
+							for ( Variable const * observer : observers ) { // Observer output
+								size_type const io( var_idx[ observer ] );
+								if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
+								if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+									if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 								}
 							}
 						}
@@ -713,25 +653,15 @@ simulate( std::string const & model )
 					Variable::advance_observers( observers, t );
 
 					if ( doROut ) { // Requantization output: after requantization
-						if ( options::output::a ) { // All variables output
-							for ( size_type i = 0; i < n_vars; ++i ) {
-								if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
-								if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
-							}
-						} else { // Requantization and observer output
-							if ( options::output::r ) { // Requantization output
-								for ( Variable const * trigger : triggers ) { // Triggers
-									size_type const i( var_idx[ trigger ] );
-									if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
-									if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
-								}
-								for ( Variable const * observer : observers ) { // Observer output
-									size_type const io( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-									}
-								}
+						for ( Variable const * trigger : triggers ) { // Triggers
+							size_type const i( var_idx[ trigger ] );
+							if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
+						}
+						for ( Variable const * observer : observers ) { // Observer output
+							if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
+								size_type const io( var_idx[ observer ] );
+								if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
+								if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
 							}
 						}
 					}
@@ -743,21 +673,25 @@ simulate( std::string const & model )
 				assert( trigger->is_ZC() );
 				trigger->st = s; // Set trigger superdense time
 
-				trigger->advance_QSS();
-
-				if ( doROut ) { // Requantization output
+				if ( doROut ) { // Requantization output: before requantization
 					if ( options::output::a ) { // All variables output
 						for ( size_type i = 0; i < n_vars; ++i ) {
 							if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
 							if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
 						}
 					} else { // Requantization output
-						if ( options::output::r ) { // Requantization output
-							size_type const i( var_idx[ trigger ] );
-							if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
-							if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
-						}
+						size_type const i( var_idx[ trigger ] );
+						if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
+						if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
 					}
+				}
+
+				trigger->advance_QSS();
+
+				if ( doROut ) { // Requantization output
+					size_type const i( var_idx[ trigger ] );
+					if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) ); // Zero crossing x trajectory can shift at requantizations
+					if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
 				}
 			} else { // Unsupported event
 				assert( false );
@@ -778,7 +712,7 @@ simulate( std::string const & model )
 	if ( ! options::output::d ) std::cout << '\r' << std::setw( 3 ) << 100 << "% complete" << std::endl;
 
 	// End time outputs
-	if ( ( options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) {
+	if ( ( options::output::t || options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) {
 		for ( size_type i = 0; i < n_vars; ++i ) {
 			Variable const * var( vars[ i ] );
 			if ( var->tQ < tE ) {

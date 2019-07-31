@@ -555,6 +555,7 @@ fmi2GetContinuousStates(
 {
 	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
+	(void)fmu_qss; // Suppress unused warning
 	assert( nx == 0u ); // No continuous states in FMU-QSS
 	(void)nx; // Suppress unused warning
 	return fmi2OK;
@@ -569,6 +570,7 @@ fmi2SetContinuousStates(
 {
 	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
+	(void)fmu_qss; // Suppress unused warning
 	assert( nx == 0u ); // No continuous states in FMU-QSS
 	(void)nx; // Suppress unused warning
 	return fmi2OK;
@@ -583,6 +585,7 @@ fmi2GetDerivatives(
 {
 	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
+	(void)fmu_qss; // Suppress unused warning
 	assert( nx == 0u ); // No continuous states in FMU-QSS
 	(void)nx; // Suppress unused warning
 	return fmi2OK;
@@ -613,6 +616,7 @@ fmi2GetEventIndicators(
 {
 	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
+	(void)fmu_qss; // Suppress unused warning
 	assert( ni == 0u );
 	(void)ni; // Suppress unused warning
 	return fmi2OK;
@@ -627,6 +631,7 @@ fmi2GetNominalsOfContinuousStates(
 {
 	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
+	(void)fmu_qss; // Suppress unused warning
 	assert( nx == 0u ); // No continuous states in FMU-QSS
 	(void)nx; // Suppress unused warning
 	return fmi2OK;
@@ -725,6 +730,7 @@ fmi2FreeFMUstate(
 {
 	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
+	(void)fmu_qss; // Suppress unused warning
 //	return (fmi2Status)fmi2_import_free_fmu_state( fmu_qss.fmu_me.fmu, FMUstate ) : fmi2OK );
 	return fmi2OK; //? Don't have state pointer for FMU-ME
 }

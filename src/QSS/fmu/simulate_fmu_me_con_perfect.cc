@@ -210,13 +210,15 @@ simulate_fmu_me_con_perfect( std::vector< std::string > const & paths )
 	// Simulation loop
 	Time time( tStart );
 	while ( time <= tEnd ) {
-		auto const i1( events.begin() );
-		size_type const i( i1->second );
-		fmi2_event_info_t & eventInfo( eventInfos[ i ] );
-		eventInfo.newDiscreteStatesNeeded = fmi2_true;
-		eventInfo.nextEventTimeDefined = fmi2_false;
-		FMU_ME & fmu_me( *fmu_mes[ i ] );
-		fmu_me.simulate( &eventInfo, true );
+		{ // Scope
+			auto const i1( events.begin() );
+			size_type const i( i1->second );
+			fmi2_event_info_t & eventInfo( eventInfos[ i ] );
+			eventInfo.newDiscreteStatesNeeded = fmi2_true;
+			eventInfo.nextEventTimeDefined = fmi2_false;
+			FMU_ME & fmu_me( *fmu_mes[ i ] );
+			fmu_me.simulate( &eventInfo, true );
+		}
 
 		// Refresh the event queue: This could be more efficient via direct coupling to the FMU-ME event queues
 		events.clear();
