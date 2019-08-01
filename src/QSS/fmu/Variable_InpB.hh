@@ -169,8 +169,9 @@ public: // Methods
 	void
 	advance_discrete()
 	{
-		Boolean const x_new( f_( tX = tQ = tD ).x_0 != 0.0 );
-		tD = f_( tD ).tD;
+		SmoothToken const s( f_( tX = tQ = tD ) );
+		Boolean const x_new( s.x_0 != 0.0 );
+		tD = s.tD;
 		shift_discrete( tD );
 		bool const chg( x_ != x_new );
 		if ( chg ) x_ = x_new;
@@ -182,8 +183,9 @@ public: // Methods
 	void
 	advance_discrete_simultaneous()
 	{
-		Boolean const x_new( f_( tX = tQ = tD ).x_0 != 0.0 );
-		tD = f_( tD ).tD;
+		SmoothToken const s( f_( tX = tQ = tD ) );
+		Boolean const x_new( s.x_0 != 0.0 );
+		tD = s.tD;
 		shift_discrete( tD );
 		bool const chg( x_ != x_new );
 		if ( chg ) x_ = x_new;
