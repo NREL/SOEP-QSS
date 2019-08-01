@@ -2011,7 +2011,7 @@ namespace fmu {
 
 					trigger->advance_QSS();
 
-					if ( doROut ) { // Requantization output
+					if ( doROut ) { // Requantization output: after requantization
 						size_type const i( var_idx[ trigger ] );
 						if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) ); // Zero crossing x trajectory can shift at requantizations
 						if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
