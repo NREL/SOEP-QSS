@@ -115,10 +115,10 @@ public: // Properties
 	tZC_bump( Time const t ) const
 	{
 		if ( zTol > 0.0 ) {
-			Real const x1_t( x1( t ) );
+			Real const x_1_t( x_1_ + ( two * x_2_ * ( t - tX ) ) );
 			Real const zTol2( 2.0 * zTol ); // Hope FMU detects the crossing at 2x the zTol
-			Real dt_bump( min_root_quadratic_both( x_2_, x1_t, zTol2, -zTol2 ) );
-			if ( dt_bump <= 0.0 ) dt_bump = ( x1_t != 0.0 ? zTol2 / std::abs( x1_t ) : options::dtZC ); // Fall back to 1st order estimate
+			Real dt_bump( min_root_quadratic_both( x_2_, x_1_t, zTol2, -zTol2 ) );
+			if ( dt_bump <= 0.0 ) dt_bump = ( x_1_t != 0.0 ? zTol2 / std::abs( x_1_t ) : options::dtZC ); // Fall back to 1st order estimate
 			return t + dt_bump;
 		} else {
 			return t + options::dtZC;
