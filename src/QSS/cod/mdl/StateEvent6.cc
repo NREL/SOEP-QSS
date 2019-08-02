@@ -161,8 +161,7 @@ public: // Types
 public: // Creation
 
 	// Default Constructor
-	Function_x1()
-	{}
+	Function_x1() = default;
 
 public: // Properties
 

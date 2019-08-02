@@ -5,8 +5,8 @@
 # Platform: Windows/VC/64/d
 
 # Variables
-CXXFLAGS := /nologo /TP /EHsc /W4 /wd4068 /wd4996 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DWIN32 /DFMILIB_STATIC_LIB_ONLY /Od /Ob0 /Z7 /RTCsu /MD
-CFLAGS := /nologo /TC /W3 /wd4068 /wd4244 /wd4996 /DWIN32_LEAN_AND_MEAN /DWIN32 /DFMILIB_STATIC_LIB_ONLY /Od /Ob0 /Z7 /RTCsu /MD
+CXXFLAGS := /nologo /TP /EHsc /W4 /wd4068 /wd4996 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DWIN32 /DQSS_FMU /Od /Ob0 /Z7 /RTCsu /MDd
+CFLAGS := /nologo /TC /W3 /wd4068 /wd4244 /wd4996 /DWIN32_LEAN_AND_MEAN /DWIN32 /Od /Ob0 /Z7 /RTCsu /MDd
 # Disabled Warnings:
 #  4068 Unknown pragma
 #  4244 Narrowing conversions

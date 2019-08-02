@@ -7,8 +7,7 @@ set OutputSpec=-o %1.exe
 shift /1
 
 :Build
-g++ -pipe -std=c++11 -pedantic -Wall -Wextra -Winline -fmessage-length=0 -m64 -march=native -DNDEBUG -Ofast -funroll-loops -s %CxxMainSource% %1 %2 %3 %4 %5 %6 %7 %8 %9 %OutputSpec%
+g++ -pipe -std=c++11 -pedantic -Wall -Wextra -Winline -Wno-unknown-pragmas -fmessage-length=0 -m64 -march=native -DNDEBUG -Ofast -funroll-loops -s %CxxMainSource% %1 %2 %3 %4 %5 %6 %7 %8 %9 %OutputSpec%
 
 set CxxMainSource=
 set OutputSpec=
-

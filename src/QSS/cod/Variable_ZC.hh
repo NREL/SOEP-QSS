@@ -65,15 +65,15 @@ public: // Types
 protected: // Creation
 
 	// Constructor
-	explicit
 	Variable_ZC(
+	 int const order,
 	 std::string const & name,
 	 Real const rTol = 1.0e-4,
 	 Real const aTol = 1.0e-6,
 	 Real const zTol = 0.0
 	) :
-	 Super( name, rTol, aTol ),
-	 zTol( zTol ),
+	 Super( order, name, rTol, aTol ),
+	 zTol( std::max( zTol, 0.0 ) ),
 	 zChatter_( zTol > 0.0 )
 	{}
 

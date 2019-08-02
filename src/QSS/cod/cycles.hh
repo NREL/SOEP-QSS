@@ -33,8 +33,8 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_cycles_hh_INCLUDED
-#define QSS_cycles_hh_INCLUDED
+#ifndef QSS_cod_cycles_hh_INCLUDED
+#define QSS_cod_cycles_hh_INCLUDED
 
 // C++ Headers
 #include <cassert>
@@ -43,6 +43,7 @@
 #include <vector>
 
 namespace QSS {
+namespace cod {
 
 // QSS Dependency Cycle Detection
 template< typename Variable >
@@ -188,6 +189,7 @@ cycles( typename Variable::Variables const & vars )
 	}
 }
 
+} // cod
 } // QSS
 
 #endif

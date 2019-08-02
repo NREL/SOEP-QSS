@@ -39,13 +39,15 @@
 // QSS Headers
 #include <QSS/cod/Variable.fwd.hh>
 #include <QSS/cod/Conditional.hh>
-#include <QSS/globals.hh>
+#include <QSS/cod/events.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
+#include <QSS/SmoothToken.hh>
 #include <QSS/Target.hh>
 
 // C++ Headers
 #include <algorithm>
+#include <cassert>
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
@@ -124,12 +126,14 @@ protected: // Creation
 
 	// Name + Tolerance + Value Constructor
 	Variable(
+	 int const order,
 	 std::string const & name,
 	 Real const rTol,
 	 Real const aTol,
 	 Real const xIni = 0.0
 	) :
 	 Target( name ),
+	 order_( order ),
 	 rTol( std::max( rTol, 0.0 ) ),
 	 aTol( std::max( aTol, std::numeric_limits< Real >::min() ) ),
 	 xIni( xIni ),
@@ -140,12 +144,13 @@ protected: // Creation
 	{}
 
 	// Name + Value Constructor
-	explicit
 	Variable(
+	 int const order,
 	 std::string const & name,
 	 Real const xIni = 0.0
 	) :
 	 Target( name ),
+	 order_( order ),
 	 xIni( xIni ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
@@ -154,7 +159,7 @@ protected: // Creation
 	{}
 
 	// Copy Constructor
-	Variable( Variable const & ) = delete;
+	Variable( Variable const & ) = default;
 
 	// Move Constructor
 	Variable( Variable && ) noexcept = default;
@@ -163,7 +168,7 @@ protected: // Assignment
 
 	// Copy Assignment
 	Variable &
-	operator =( Variable const & ) = delete;
+	operator =( Variable const & ) = default;
 
 	// Move Assignment
 	Variable &
@@ -214,9 +219,11 @@ public: // Predicate
 public: // Properties
 
 	// Order of Method
-	virtual
 	int
-	order() const = 0;
+	order() const
+	{
+		return order_;
+	}
 
 	// Boolean Value
 	virtual
@@ -380,6 +387,25 @@ public: // Properties
 		return 0.0;
 	}
 
+	// SmoothToken at Time t
+	SmoothToken
+	k( Time const t ) const
+	{
+		switch ( order_ ) {
+		case 0:
+			return SmoothToken::order_0( x( t ), tD );
+		case 1:
+			return SmoothToken::order_1( x( t ), x1( t ), tD );
+		case 2:
+			return SmoothToken::order_2( x( t ), x1( t ), x2( t ), tD );
+		case 3:
+			return SmoothToken::order_3( x( t ), x1( t ), x2( t ), x3( t ), tD );
+		default: // Should not happen
+			assert( false );
+			return SmoothToken();
+		}
+	}
+
 	// Observers
 	Variables const &
 	observers() const
@@ -439,7 +465,7 @@ public: // Methods
 	void
 	observe( Variable * v )
 	{
-		if ( v == this ) { // Don't need to self-observe
+		if ( v == this ) { // Flag as self-observer
 			self_observer = true;
 		} else {
 			observees_.push_back( v );
@@ -564,33 +590,13 @@ public: // Methods
 		assert( false );
 	}
 
-	// Discrete Advance: Stage 0
+	// Discrete Advance Simultaneous
 	virtual
 	void
-	advance_discrete_0()
+	advance_discrete_simultaneous()
 	{
 		assert( false );
 	}
-
-	// Discrete Advance: Stage 1
-	virtual
-	void
-	advance_discrete_1()
-	{
-		assert( false );
-	}
-
-	// Discrete Advance: Stage 2
-	virtual
-	void
-	advance_discrete_2()
-	{}
-
-	// Discrete Advance: Stage 3
-	virtual
-	void
-	advance_discrete_3()
-	{}
 
 	// QSS Add Event
 	void
@@ -946,6 +952,10 @@ protected: // Methods
 		}
 	}
 
+protected: // Data
+
+	int order_; // Order of method
+
 public: // Data
 
 	Real rTol{ 1.0e-4 }; // Relative tolerance
@@ -960,7 +970,7 @@ public: // Data
 	Time dt_max{ infinity }; // Time step max
 	Time dt_inf{ infinity }; // Time step inf
 	Time dt_inf_rlx{ infinity }; // Relaxed time step inf
-	bool self_observer{ false }; // Variable appears in its function/derivative?
+	bool self_observer{ false }; // Appears in its function/derivative?
 	If_Clauses if_clauses; // Clauses in conditional if blocks
 	When_Clauses when_clauses; // Clauses in conditional when blocks
 

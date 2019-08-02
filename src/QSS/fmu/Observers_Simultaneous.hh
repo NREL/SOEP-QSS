@@ -70,8 +70,11 @@ public: // Types
 public: // Creation
 
 	// Triggers Constructor
+	explicit
 	Observers_Simultaneous( Variables & triggers )
 	{
+		assert( ! triggers.empty() );
+
 		// Collect all observers
 		for ( Variable * trigger : triggers ) {
 			for ( Variable * observer : trigger->observers() ) {
@@ -172,28 +175,28 @@ public: // Predicate
 		return observers_.empty();
 	}
 
-	// Have Observers?
+	// Have Observer(s)?
 	bool
 	have() const
 	{
 		return have_;
 	}
 
-	// Have Order 2+ Observers?
+	// Have Order 2+ Observer(s)?
 	bool
 	have2() const
 	{
 		return have2_;
 	}
 
-	// Have Order 2+ Non-Zero-Crossing Observers?
+	// Have Order 2+ Non-Zero-Crossing Observer(s)?
 	bool
 	nz_have2() const
 	{
 		return nz_.have2_;
 	}
 
-	// Have Order 2+ Zero-Crossing Observers?
+	// Have Order 2+ Zero-Crossing Observer(s)?
 	bool
 	zc_have2() const
 	{

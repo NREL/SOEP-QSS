@@ -38,6 +38,7 @@
 
 // QSS Headers
 #include <QSS/fmu/Variable.hh>
+#include <QSS/fmu/Variable_Con.hh>
 
 namespace QSS {
 namespace fmu {
@@ -53,16 +54,17 @@ public: // Types
 protected: // Creation
 
 	// Constructor
-	explicit
 	Variable_QSS(
+	 int const order,
 	 std::string const & name,
-	 Real const rTol = 1.0e-4,
-	 Real const aTol = 1.0e-6,
-	 Real const xIni = 0.0,
+	 Real const rTol,
+	 Real const aTol,
+	 Real const xIni,
+	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
-	 Super( name, rTol, aTol, xIni, var, der )
+	 Super( order, name, rTol, aTol, xIni, fmu_me, var, der )
 	{}
 
 	// Copy Constructor
@@ -88,6 +90,26 @@ public: // Predicate
 	is_QSS() const
 	{
 		return true;
+	}
+
+public: // Methods
+
+	// Advance Connections
+	void
+	advance_connections()
+	{
+		for ( Variable_Con * connection : connections ) {
+			connection->advance_connection( tQ );
+		}
+	}
+
+	// Advance Connections for Observer Update
+	void
+	advance_connections_observer()
+	{
+		for ( Variable_Con * connection : connections ) {
+			connection->advance_connection_observer();
+		}
 	}
 
 };

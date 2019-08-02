@@ -37,9 +37,9 @@
 #define QSS_fmu_Observers_hh_INCLUDED
 
 // QSS Headers
+#include <QSS/fmu/FMU_ME.hh>
 #include <QSS/container.hh>
 #include <QSS/options.hh>
-#include <QSS/fmu/FMU.hh>
 
 // C++ Headers
 #include <algorithm>
@@ -73,6 +73,12 @@ public: // Types
 
 public: // Creation
 
+	// Constructor
+	explicit
+	Observers( FMU_ME * fmu_me = nullptr ) :
+	 fmu_me_( fmu_me )
+	{}
+
 public: // Conversion
 
 	// Variables Conversion
@@ -96,32 +102,39 @@ public: // Predicate
 		return observers_.empty();
 	}
 
-	// Have Observers?
+	// Have Observer(s)?
 	bool
 	have() const
 	{
 		return have_;
 	}
 
-	// Have Order 2+ Observers?
+	// Have Order 2+ Observer(s)?
 	bool
 	have2() const
 	{
 		return have2_;
 	}
 
-	// Have Order 2+ Non-Zero-Crossing Observers?
+	// Have Order 2+ Non-Zero-Crossing Observer(s)?
 	bool
 	nz_have2() const
 	{
 		return nz_.have2_;
 	}
 
-	// Have Order 2+ Zero-Crossing Observers?
+	// Have Order 2+ Zero-Crossing Observer(s)?
 	bool
 	zc_have2() const
 	{
 		return zc_.have2_;
+	}
+
+	// Have Connected Output Observer(s)?
+	bool
+	connected_output_observer() const
+	{
+		return connected_output_observer_;
 	}
 
 public: // Properties
@@ -160,6 +173,15 @@ public: // Methods
 
 		// Sort observers by NZ|ZC and then order
 		sort_by_ZC_and_order( observers_ );
+
+		// Flag if output connection observer(s)
+		connected_output_observer_ = false;
+		for ( auto const observer : observers_ ) {
+			if ( observer->connected_output ) {
+				connected_output_observer_ = true;
+				break;
+			}
+		}
 
 		// Observer specs
 		have_ = ( ! observers_.empty() );
@@ -272,7 +294,7 @@ public: // Methods
 	void
 	advance_NZ( Time const t )
 	{
-		assert( fmu::get_time() == t );
+		assert( fmu_me_->get_time() == t );
 		for ( auto observee : nz_observees_ ) {
 			observee->fmu_set_q( t );
 		}
@@ -285,7 +307,7 @@ public: // Methods
 	void
 	advance_ZC( Time const t )
 	{
-		assert( fmu::get_time() == t );
+		assert( fmu_me_->get_time() == t );
 		for ( auto observee : zc_observees_ ) {
 			observee->fmu_set_x( t );
 		}
@@ -344,7 +366,8 @@ public: // Iterators
 
 private: // Data
 
-	// Observers
+	FMU_ME * fmu_me_{ nullptr }; // FMU-ME (non-owning) pointer
+
 	Variables observers_; // Observers of a variable
 
 	bool have_{ false }; // Observers present?
@@ -376,6 +399,8 @@ private: // Data
 
 	} nz_, zc_;
 
+	// FMU observer data
+	bool connected_output_observer_{ false }; // Output connection observer to another FMU?
 	// Non-zero-crossing observer observees
 	Variables nz_observees_; // Non-zero-crossing observer observees (including self-observing observers)
 	size_type b2_nz_observees_{ 0 }; // Begin index of observees of order 2+ non-zero-crossing observers

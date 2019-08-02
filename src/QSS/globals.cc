@@ -40,6 +40,5 @@ namespace QSS {
 
 // QSS Globals
 int const max_rep_order( 3 ); // Max representation order
-EventQueue< Target > events; // Event queue
 
 } // QSS

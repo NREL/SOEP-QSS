@@ -53,26 +53,19 @@ public: // Types
 public: // Creation
 
 	// Constructor
-	explicit
 	Variable_ZC3(
 	 std::string const & name,
-	 Real const rTol = 1.0e-4,
-	 Real const aTol = 1.0e-6,
-	 Real const zTol = 0.0,
+	 Real const rTol,
+	 Real const aTol,
+	 Real const zTol,
+	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
-	 Super( name, rTol, aTol, zTol, var, der )
+	 Super( 3, name, rTol, aTol, zTol, fmu_me, var, der )
 	{}
 
 public: // Properties
-
-	// Order of Method
-	int
-	order() const
-	{
-		return 3;
-	}
 
 	// Continuous Value at Time t
 	Real
@@ -105,7 +98,7 @@ public: // Properties
 	x3( Time const t ) const
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		(void)t; // Suppress unused parameter warning
+		(void)t; // Suppress unused warning
 		return six * x_3_;
 	}
 
@@ -131,8 +124,26 @@ public: // Properties
 	q2( Time const t ) const
 	{
 		assert( ( tQ <= t ) && ( t <= tE ) );
-		(void)t; // Suppress unused parameter warning
+		(void)t; // Suppress unused warning
 		return two * x_2_;
+	}
+
+	// Zero-Crossing Bump Time for FMU Detection
+	Time
+	tZC_bump( Time const t ) const
+	{
+		if ( zTol > 0.0 ) {
+			Time const tDel( t - tX );
+			Real const x_1_t( x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_ * tDel ) ) * tDel ) );
+			Real const x_2_t( x_2_ + ( three * x_3_ * tDel ) );
+			Real const zTol2( 2.0 * zTol ); // Hope FMU detects the crossing at 2x the zTol
+			Real dt_bump( min_root_cubic_both( x_3_, x_2_t, x_1_t, zTol2, -zTol2 ) );
+			if ( dt_bump <= 0.0 ) dt_bump = min_root_quadratic_both( x_2_t, x_1_t, zTol2, -zTol2 ); // Fall back to 2nd order estimate
+			if ( dt_bump <= 0.0 ) dt_bump = ( x_1_t != 0.0 ? zTol2 / std::abs( x_1_t ) : options::dtZC ); // Fall back to 1st order estimate
+			return t + dt_bump;
+		} else {
+			return t + options::dtZC;
+		}
 	}
 
 public: // Methods
@@ -188,7 +199,7 @@ public: // Methods
 		x_3_ = fmu_get_poly_3_x();
 		set_tE();
 		set_tZ();
-		tE < tZ ? add_QSS_ZC( tE ) : add_ZC( tZ );
+		( tE < tZ ) ? add_QSS_ZC( tE ) : add_ZC( tZ );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
@@ -221,7 +232,7 @@ public: // Methods
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
 #else
 		set_tZ();
-		tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
+		( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 #endif
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
@@ -259,14 +270,13 @@ public: // Methods
 	void
 	advance_ZC()
 	{
-		for ( typename If::Clause * clause : if_clauses ) clause->activity( tZ );
-		for ( typename When::Clause * clause : when_clauses ) clause->activity( tZ );
+		assert( in_conditional() );
+		conditional->activity( tZ );
 		if ( options::output::d ) std::cout << "Z " << name << '(' << tZ << ')' << '\n';
 		crossing_last = crossing;
 		x_mag_ = 0.0;
 		set_tZ( tZ_last = tZ ); // Next zero-crossing: Might be in active segment
-		tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
-		bump_forward();
+		( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 	}
 
 private: // Methods
@@ -313,8 +323,8 @@ private: // Methods
 					if ( options::refine ) { // Refine root: Expensive!
 						Time t( tZ );
 						//Time t_p( tZ );
-						Time const t_fmu( fmu::get_time() );
-						fmu::set_time( tZ ); // Don't seem to need this
+						Time const t_fmu( fmu_get_time() );
+						fmu_set_time( tZ ); // Don't seem to need this
 						fmu_set_observees_x( tZ );
 						Real const vZ( fmu_get_real() );
 						Real v( vZ ), v_p( vZ );
@@ -327,7 +337,7 @@ private: // Methods
 							if ( d == 0.0 ) break;
 							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 							t -= m * ( v / d );
-							fmu::set_time( t ); // Don't seem to need this
+							fmu_set_time( t ); // Don't seem to need this
 							fmu_set_observees_x( t );
 							v = fmu_get_real();
 							if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
@@ -336,7 +346,7 @@ private: // Methods
 						}
 						if ( ( t >= tX ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
 						if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
-						fmu::set_time( t_fmu ); // Don't seem to need this
+						fmu_set_time( t_fmu ); // Don't seem to need this
 					}
 				} else { // Crossing type not relevant
 					tZ = infinity;
@@ -369,8 +379,8 @@ private: // Methods
 					if ( options::refine ) { // Refine root: Expensive!
 						Time t( tZ );
 						//Time t_p( tZ );
-						Time const t_fmu( fmu::get_time() );
-						fmu::set_time( tZ ); // Don't seem to need this
+						Time const t_fmu( fmu_get_time() );
+						fmu_set_time( tZ ); // Don't seem to need this
 						fmu_set_observees_x( tZ );
 						Real const vZ( fmu_get_real() );
 						Real v( vZ ), v_p( vZ );
@@ -383,7 +393,7 @@ private: // Methods
 							if ( d == 0.0 ) break;
 							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 							t -= m * ( v / d );
-							fmu::set_time( t ); // Don't seem to need this
+							fmu_set_time( t ); // Don't seem to need this
 							fmu_set_observees_x( t );
 							v = fmu_get_real();
 							if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
@@ -392,7 +402,7 @@ private: // Methods
 						}
 						if ( ( t >= tB ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
 						if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
-						fmu::set_time( t_fmu ); // Don't seem to need this
+						fmu_set_time( t_fmu ); // Don't seem to need this
 					}
 				} else { // Crossing type not relevant
 					tZ = infinity;
@@ -412,7 +422,7 @@ private: // Methods
 			shift_QSS_ZC( tE );
 		} else if ( ( ! check_crossing ) || ( sign_old == sign_new ) ) {
 			set_tZ();
-			tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
+			( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 		} else { // Check zero-crossing
 			Crossing const crossing_check( crossing_type( sign_old, sign_new ) );
 			if ( has( crossing_check ) ) { // Crossing type is relevant
@@ -420,7 +430,7 @@ private: // Methods
 				shift_ZC( tZ = tX );
 			} else {
 				set_tZ();
-				tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
+				( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 			}
 		}
 	}

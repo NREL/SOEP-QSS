@@ -150,6 +150,24 @@ has_any_not_of( std::string const & s, std::string const & t ) // Pass lowercase
 	return false;
 }
 
+// Has a Prefix Case-Optionally?
+inline
+bool
+has_prefix( std::string const & s, std::string const & pre )
+{
+	std::string::size_type const pre_len( pre.length() );
+	if ( pre_len == 0 ) {
+		return false;
+	} else if ( s.length() < pre_len ) {
+		return false;
+	} else {
+		for ( std::string::size_type i = 0; i < pre_len; ++i ) {
+			if ( s[ i ] != pre[ i ] ) return false;
+		}
+		return true;
+	}
+}
+
 // Has a Prefix?
 inline
 bool
@@ -165,6 +183,28 @@ has_prefix( std::string const & s, char const * const pre )
 		} else {
 			for ( std::string::size_type i = 0; i < pre_len; ++i ) {
 				if ( s[ i ] != pre[ i ] ) return false;
+			}
+			return true;
+		}
+	}
+}
+
+// Has a Suffix Case-Optionally?
+inline
+bool
+has_suffix( std::string const & s, std::string const & suf )
+{
+	std::string::size_type const suf_len( suf.length() );
+	if ( suf_len == 0 ) {
+		return false;
+	} else {
+		std::string::size_type const s_len( s.length() );
+		if ( s_len < suf_len ) {
+			return false;
+		} else {
+			std::string::size_type const del_len( s_len - suf_len );
+			for ( std::string::size_type i = 0; i < suf_len; ++i ) {
+				if ( s[ del_len + i ] != suf[ i ] ) return false;
 			}
 			return true;
 		}

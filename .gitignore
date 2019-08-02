@@ -1,9 +1,11 @@
 *.a
+*.bin
 *.d
 *.dll
 *.exe
 *.gcda
 *.ilk
+*.ipch
 *.lib
 *.log
 *.map

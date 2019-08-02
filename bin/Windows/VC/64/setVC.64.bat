@@ -1,5 +1,6 @@
 @echo off
 rem Visual C++ Compiler 64-Bit Setup
+
 if exist "%ProgramFiles32%\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" (
   "%ProgramFiles32%\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
 ) else (

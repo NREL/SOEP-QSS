@@ -54,31 +54,36 @@ public: // Types
 
 	using Super = Variable;
 
-	using Function = std::function< SmoothToken const &( Time const ) >;
+	using Function = std::function< SmoothToken ( Time const ) >;
 
 protected: // Creation
 
 	// Name + Tolerance Constructor
 	Variable_Inp(
+	 int const order,
 	 std::string const & name,
 	 Real const rTol,
 	 Real const aTol,
+	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 Function f = Function()
 	) :
-	 Super( name, rTol, aTol, var ),
-	 f_( f )
+	 Super( order, name, rTol, aTol, fmu_me, var ),
+	 f_( f ),
+	 is_connection_( f_ == nullptr )
 	{}
 
 	// Name Constructor
-	explicit
 	Variable_Inp(
+	 int const order,
 	 std::string const & name,
+	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 Function f = Function()
 	) :
-	 Super( name, var ),
-	 f_( f )
+	 Super( order, name, fmu_me, var ),
+	 f_( f ),
+	 is_connection_( f_ == nullptr )
 	{}
 
 	// Copy Constructor
@@ -106,6 +111,13 @@ public: // Predicate
 		return true;
 	}
 
+	// Connection Input Variable?
+	bool
+	is_connection() const
+	{
+		return is_connection_;
+	}
+
 public: // Properties
 
 	// Function
@@ -125,6 +137,7 @@ public: // Properties
 protected: // Data
 
 	Function f_; // Input function
+	bool is_connection_{ false }; // Connection input?
 
 };
 

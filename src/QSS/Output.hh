@@ -36,10 +36,14 @@
 #ifndef QSS_Output_hh_INCLUDED
 #define QSS_Output_hh_INCLUDED
 
+// QSS Headers
+#include <QSS/path.hh>
+
 // C++ Headers
 #include <cassert>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -61,13 +65,33 @@ public: // Creation
 
 	// Name + Type Constructor
 	Output_T(
-	 std::string const & name,
+	 std::string const & var,
 	 char const type
 	) :
-	 file_( name + '.' + type + ".out" )
+	 file_( var + '.' + type + ".out" )
 	{
 		t_.reserve( capacity_ );
 		v_.reserve( capacity_ );
+		std::ofstream( file_, std::ios_base::binary | std::ios_base::out );
+	}
+
+	// Directory + Name + Type Constructor
+	Output_T(
+	 std::string const & dir,
+	 std::string const & var,
+	 char const type
+	) :
+	 file_( var + '.' + type + ".out" )
+	{
+		t_.reserve( capacity_ );
+		v_.reserve( capacity_ );
+		if ( ! dir.empty() ) {
+			if ( ! path::make_dir( dir ) ) { // Model name must be valid directory name
+				std::cerr << "\nError: Output directory creation failed: " << dir << std::endl;
+				std::exit( EXIT_FAILURE );
+			}
+			file_ = dir + path::sep + file_;
+		}
 		std::ofstream( file_, std::ios_base::binary | std::ios_base::out );
 	}
 

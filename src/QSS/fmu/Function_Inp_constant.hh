@@ -48,39 +48,31 @@ class Function_Inp_constant final
 
 public: // Types
 
-	using Time = double;
 	using Real = double;
+	using Time = double;
 
 public: // Creation
 
 	// Constructor
-	Function_Inp_constant( Real const x_0 ) :
-	 s_( 0, x_0 )
+	explicit
+	Function_Inp_constant( Real const x_0 = 0.0 ) :
+	 x_0_( x_0 )
 	{}
 
 public: // Properties
 
 	// State at Time t
-	SmoothToken const &
-	operator ()( Time const t ) const
+	SmoothToken
+	operator ()( Time const ) const
 	{
-		s_.t = t;
-		return s_;
-	}
-
-	// State at Time t (Reevaluated)
-	SmoothToken const &
-	smooth_token( Time const t ) const
-	{
-		s_.t = t;
-		return s_;
+		return SmoothToken( x_0_ );
 	}
 
 	// Value at Time t
 	Real
 	v( Time const ) const
 	{
-		return s_.x_0;
+		return x_0_;
 	}
 
 	// First Derivative at Time t
@@ -113,7 +105,7 @@ public: // Properties
 
 private: // Data
 
-	mutable SmoothToken s_; // Cached state
+	Real const x_0_{ 0.0 }; // Constant value
 
 };
 

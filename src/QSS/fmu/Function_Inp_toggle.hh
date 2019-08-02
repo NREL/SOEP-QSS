@@ -52,48 +52,32 @@ class Function_Inp_toggle final
 
 public: // Types
 
-	using Time = double;
 	using Real = double;
+	using Time = double;
 
 public: // Creation
 
 	// Constructor
+	explicit
 	Function_Inp_toggle(
 	 Real const h_0 = 0.0,
 	 Real const h = 1.0,
 	 Real const d = 1.0
 	) :
-	 s_( 0, h_0 ),
 	 h_0_( h_0 ),
 	 h_( h ),
 	 d_( d )
 	{
 		assert( d_ > 0.0 );
-		s_.tD = d_;
 	}
 
 public: // Properties
 
 	// State at Time t
-	SmoothToken const &
+	SmoothToken
 	operator ()( Time const t ) const
 	{
-		if ( t != s_.t ) { // Reevaluate state
-			s_.t = t;
-			s_.tD = tD( t );
-			s_.x_0 = v( t );
-		}
-		return s_;
-	}
-
-	// State at Time t (Reevaluated)
-	SmoothToken const &
-	smooth_token( Time const t ) const
-	{
-		s_.t = t;
-		s_.tD = tD( t );
-		s_.x_0 = v( t );
-		return s_;
+		return SmoothToken::order_0( v( t ), tD( t ) );
 	}
 
 	// Value at Time t
@@ -144,8 +128,6 @@ private: // Methods
 	}
 
 private: // Data
-
-	mutable SmoothToken s_; // Cached state
 
 	Real const h_0_{ 0.0 }; // Initial height
 	Real const h_{ 1.0 }; // Step height

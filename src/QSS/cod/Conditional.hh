@@ -38,7 +38,7 @@
 
 // QSS Headers
 #include <QSS/Conditional.hh>
-#include <QSS/globals.hh>
+#include <QSS/cod/events.hh>
 
 // C++ Headers
 #include <algorithm>
@@ -70,8 +70,7 @@ public: // Nested Types
 	protected: // Creation
 
 		// Default Constructor
-		Clause()
-		{}
+		Clause() = default;
 
 		// Copy Constructor
 		Clause( Clause const & ) = delete;
@@ -80,6 +79,7 @@ public: // Nested Types
 		Clause( Clause && ) noexcept = default;
 
 		// Constructor
+		explicit
 		Clause( If * conditional ) :
 		 conditional( conditional )
 		{}
@@ -208,6 +208,7 @@ public: // Nested Types
 	public: // Creation
 
 		// Constructor
+		explicit
 		ClauseH( If * conditional ) :
 		 Clause( conditional )
 		{}
@@ -285,15 +286,6 @@ public: // Predicates
 		return clauses.empty();
 	}
 
-public: // Properties
-
-	// Size
-	size_type
-	size() const
-	{
-		return clauses.size();
-	}
-
 	// Valid?
 	bool
 	valid() const
@@ -311,6 +303,15 @@ public: // Properties
 			}
 			return true;
 		}
+	}
+
+public: // Properties
+
+	// Size
+	size_type
+	size() const
+	{
+		return clauses.size();
 	}
 
 public: // Methods
@@ -388,8 +389,7 @@ public: // Nested Types
 	protected: // Creation
 
 		// Default Constructor
-		Clause()
-		{}
+		Clause() = default;
 
 		// Copy Constructor
 		Clause( Clause const & ) = delete;
@@ -398,6 +398,7 @@ public: // Nested Types
 		Clause( Clause && ) noexcept = default;
 
 		// Constructor
+		explicit
 		Clause( When * conditional ) :
 		 conditional( conditional )
 		{}
@@ -514,6 +515,7 @@ public: // Nested Types
 	public: // Creation
 
 		// Constructor
+		explicit
 		ClauseH( When * conditional ) :
 		 Clause( conditional )
 		{}
@@ -591,15 +593,6 @@ public: // Predicates
 		return clauses.empty();
 	}
 
-public: // Properties
-
-	// Size
-	size_type
-	size() const
-	{
-		return clauses.size();
-	}
-
 	// Valid?
 	bool
 	valid() const
@@ -614,6 +607,15 @@ public: // Properties
 			}
 			return true;
 		}
+	}
+
+public: // Properties
+
+	// Size
+	size_type
+	size() const
+	{
+		return clauses.size();
 	}
 
 public: // Methods

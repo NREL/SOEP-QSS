@@ -21,7 +21,7 @@ TAR_OBJ := $(TAR).obj
 SRC := $(notdir $(wildcard $(SRC_PATH)/*.cc))
 SRC += $(notdir $(wildcard $(SRC_PATH)/cod/*.cc))
 SRC += $(notdir $(wildcard $(SRC_PATH)/cod/mdl/*.cc))
-#SRC += $(notdir $(wildcard $(SRC_PATH)/fmu/*.cc))
+SRC += $(notdir $(wildcard $(SRC_PATH)/fmu/*.cc))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .obj,$(basename $(SRC)))
 SLB := $(BIN_PATH)\lib$(TAR).lib
@@ -71,10 +71,11 @@ $(TAR_OBJ) : $(TAR_SRC)
 	$(CXX) $(CXXFLAGS) /c $(subst /,\,$<)
 
 $(EXE) : $(SLB) $(TAR_OBJ)
-	$(LD) $(LDFLAGS) /out:$@ $^
-#	$(CXX) $(CXXFLAGS) $(PGO) /Fe:$@ $^ $(FMIL_HOME)\lib\fmilib.lib /link $(LDFLAGS)
+#	$(LD) $(LDFLAGS) /out:$@ $^
 #	$(CXX) $(CXXFLAGS) $(PGO) /Fe:$@ $^ /link $(LDFLAGS)
-	@-rm -f $(subst \,/,$(BIN_PATH))/$(TAR).exp $(subst \,/,$(BIN_PATH))/$(TAR).lib
+#	$(CXX) $(CXXFLAGS) $(PGO) /Fe:$@ $^ $(FMIL_HOME)\lib\fmilib.lib /link $(LDFLAGS)
+	$(CXX) $(PGO) $(LDFLAGS) /Fe:$@ $(TAR_OBJ) $(LINKFLAGS) $(SLB) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib expat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
+	@-rm -f $(subst \,/,$(BIN_PATH))/$(TAR).exp $(subst \,/,$(BIN_PATH))/$(TAR).ilk $(subst \,/,$(BIN_PATH))/$(TAR).lib
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)

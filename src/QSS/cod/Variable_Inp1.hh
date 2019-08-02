@@ -90,17 +90,10 @@ public: // Creation
 	 Real const rTol = 1.0e-4,
 	 Real const aTol = 1.0e-6
 	) :
-	 Super( name, rTol, aTol )
+	 Super( 1, name, rTol, aTol )
 	{}
 
 public: // Properties
-
-	// Order of Method
-	int
-	order() const
-	{
-		return 1;
-	}
 
 	// Continuous Value at Time t
 	Real
@@ -164,7 +157,7 @@ public: // Methods
 		x_1_ = f_.df1( tQ );
 		set_tE();
 		tD = f_.tD( tQ );
-		tE < tD ? add_QSS( tE ) : add_discrete( tD );
+		( tE < tD ) ? add_QSS( tE ) : add_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
@@ -185,27 +178,21 @@ public: // Methods
 		x_1_ = f_.df1( tD );
 		set_tE();
 		tD = f_.tD( tD );
-		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
+		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 		if ( have_observers_ ) advance_observers();
 	}
 
-	// Discrete Advance: Stage 0
+	// Discrete Advance Simultaneous
 	void
-	advance_discrete_0()
+	advance_discrete_simultaneous()
 	{
 		x_0_ = q_0_ = f_.vs( tX = tQ = tD );
 		set_qTol();
-	}
-
-	// Discrete Advance: Stage 1
-	void
-	advance_discrete_1()
-	{
 		x_1_ = f_.df1( tD );
 		set_tE();
 		tD = f_.tD( tD );
-		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
+		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
@@ -218,7 +205,7 @@ public: // Methods
 		x_1_ = f_.df1( tQ );
 		set_tE();
 		tD = f_.tD( tQ );
-		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
+		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 		if ( have_observers_ ) advance_observers();
 	}
@@ -238,7 +225,7 @@ public: // Methods
 		x_1_ = f_.df1( tQ );
 		set_tE();
 		tD = f_.tD( tQ );
-		tE < tD ? shift_QSS( tE ) : shift_discrete( tD );
+		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 

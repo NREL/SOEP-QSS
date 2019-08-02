@@ -111,6 +111,8 @@ public: // Data
 
 	std::string name;
 	SuperdenseTime st; // Superdense time of latest event
+	bool connected_output{ false }; // Output connection to another FMU?
+	bool connected_output_observer{ false }; // Observer is an output connection to another FMU?
 
 protected: // Data
 

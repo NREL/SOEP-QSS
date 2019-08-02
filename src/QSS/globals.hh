@@ -36,15 +36,10 @@
 #ifndef QSS_globals_hh_INCLUDED
 #define QSS_globals_hh_INCLUDED
 
-// QSS Headers
-#include <QSS/EventQueue.hh>
-#include <QSS/Target.hh>
-
 namespace QSS {
 
 // QSS Globals
 extern int const max_rep_order; // Max representation order
-extern EventQueue< Target > events; // Event queue
 
 } // QSS
 

@@ -110,17 +110,10 @@ public: // Creation
 	 Real const aTol = 1.0e-6,
 	 Real const zTol = 0.0
 	) :
-	 Super( name, rTol, aTol, zTol )
+	 Super( 3, name, rTol, aTol, zTol )
 	{}
 
 public: // Properties
-
-	// Order of Method
-	int
-	order() const
-	{
-		return 3;
-	}
 
 	// Continuous Value at Time t
 	Real
@@ -198,7 +191,7 @@ public: // Methods
 		x_3_ = one_sixth * f_.x3( tQ );
 		set_tE();
 		set_tZ();
-		tE < tZ ? add_QSS_ZC( tE ) : add_ZC( tZ );
+		( tE < tZ ) ? add_QSS_ZC( tE ) : add_ZC( tZ );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
@@ -230,7 +223,7 @@ public: // Methods
 		crossing_detect( sign_old, signum( x_0_ ), check_crossing );
 #else
 		set_tZ();
-		tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
+		( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 #endif
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
@@ -297,7 +290,7 @@ public: // Methods
 		crossing_last = crossing;
 		x_mag_ = 0.0;
 		set_tZ( tZ_last = tZ ); // Next zero-crossing: Might be in active segment
-		tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
+		( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 	}
 
 private: // Methods
@@ -431,7 +424,7 @@ private: // Methods
 			shift_QSS_ZC( tE );
 		} else if ( ( ! check_crossing ) || ( sign_old == sign_new ) ) {
 			set_tZ();
-			tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
+			( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 		} else { // Check zero-crossing
 			Crossing const crossing_check( crossing_type( sign_old, sign_new ) );
 			if ( has( crossing_check ) ) { // Crossing type is relevant
@@ -439,7 +432,7 @@ private: // Methods
 				shift_ZC( tZ = tX );
 			} else {
 				set_tZ();
-				tE < tZ ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
+				( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 			}
 		}
 	}

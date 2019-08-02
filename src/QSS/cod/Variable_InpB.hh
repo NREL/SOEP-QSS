@@ -78,7 +78,7 @@ public: // Creation
 	// Constructor
 	explicit
 	Variable_InpB( std::string const & name ) :
-	 Super( name )
+	 Super( 0, name )
 	{}
 
 public: // Predicate
@@ -91,13 +91,6 @@ public: // Predicate
 	}
 
 public: // Properties
-
-	// Order of Method
-	int
-	order() const
-	{
-		return 0;
-	}
 
 	// Boolean Value
 	Boolean
@@ -203,12 +196,12 @@ public: // Methods
 		if ( chg && have_observers_ ) advance_observers();
 	}
 
-	// Discrete Advance: Stage 0
+	// Discrete Advance Simultaneous
 	void
-	advance_discrete_0()
+	advance_discrete_simultaneous()
 	{
 		Boolean const x_new( f_.vs( tX = tQ = tD ) != 0.0 );
-		tD = f_.tD( tD );
+		tD = f_.tD( tQ );
 		shift_discrete( tD );
 		bool const chg( x_ != x_new );
 		if ( chg ) x_ = x_new;
