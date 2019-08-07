@@ -71,7 +71,6 @@ public: // Properties
 	Real
 	x( Time const t ) const
 	{
-		assert( ( tX <= t ) && ( t <= tE ) );
 		Time const tDel( t - tX );
 		return x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 	}
@@ -80,16 +79,13 @@ public: // Properties
 	Real
 	x1( Time const t ) const
 	{
-		assert( ( tX <= t ) && ( t <= tE ) );
 		return x_1_ + ( two * x_2_ * ( t - tX ) );
 	}
 
 	// Continuous Second Derivative at Time t
 	Real
-	x2( Time const t ) const
+	x2( Time const ) const
 	{
-		assert( ( tX <= t ) && ( t <= tE ) );
-		(void)t; // Suppress unused warning
 		return two * x_2_;
 	}
 
@@ -97,16 +93,13 @@ public: // Properties
 	Real
 	q( Time const t ) const
 	{
-		assert( ( tQ <= t ) && ( t <= tE ) );
 		return x_0_ + ( x_1_ * ( t - tQ ) );
 	}
 
 	// Quantized First Derivative at Time t
 	Real
-	q1( Time const t ) const
+	q1( Time const ) const
 	{
-		assert( ( tQ <= t ) && ( t <= tE ) );
-		(void)t; // Suppress unused warning
 		return x_1_;
 	}
 

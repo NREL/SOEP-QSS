@@ -71,25 +71,20 @@ public: // Properties
 	Real
 	x( Time const t ) const
 	{
-		assert( ( tX <= t ) && ( t <= tE ) );
 		return x_0_ + ( x_1_ * ( t - tX ) );
 	}
 
 	// Continuous First Derivative at Time t
 	Real
-	x1( Time const t ) const
+	x1( Time const ) const
 	{
-		assert( ( tX <= t ) && ( t <= tE ) );
-		(void)t; // Suppress unused warning
 		return x_1_;
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const t ) const
+	q( Time const ) const
 	{
-		assert( ( tQ <= t ) && ( t <= tE ) );
-		(void)t; // Suppress unused warning
 		return x_0_;
 	}
 

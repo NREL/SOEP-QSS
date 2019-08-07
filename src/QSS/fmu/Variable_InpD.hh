@@ -166,7 +166,7 @@ public: // Methods
 
 private: // Data
 
-	Real x_; // Value
+	Real x_{ 0.0 }; // Value
 
 };
 

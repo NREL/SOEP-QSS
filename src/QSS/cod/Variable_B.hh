@@ -210,7 +210,7 @@ public: // Methods
 
 private: // Data
 
-	Boolean x_; // Value
+	Boolean x_{ false }; // Value
 
 };
 

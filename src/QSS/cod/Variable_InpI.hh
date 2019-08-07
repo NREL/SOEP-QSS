@@ -210,7 +210,7 @@ public: // Methods
 
 private: // Data
 
-	Integer x_; // Value
+	Integer x_{ 0 }; // Value
 
 };
 

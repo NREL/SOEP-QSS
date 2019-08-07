@@ -73,6 +73,34 @@ public: // Predicate
 
 public: // Properties
 
+	// Boolean Value
+	Boolean
+	b() const
+	{
+		return Boolean( x_ );
+	}
+
+	// Boolean Value at Time t
+	Boolean
+	b( Time const ) const
+	{
+		return Boolean( x_ );
+	}
+
+	// Integer Value
+	Integer
+	i() const
+	{
+		return Integer( x_ );
+	}
+
+	// Integer Value at Time t
+	Integer
+	i( Time const ) const
+	{
+		return Integer( x_ );
+	}
+
 	// Real Value
 	Real
 	r() const
@@ -180,7 +208,7 @@ public: // Methods
 
 private: // Data
 
-	Real x_; // Value
+	Real x_{ 0.0 }; // Value
 
 };
 
