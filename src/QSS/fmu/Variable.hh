@@ -222,7 +222,7 @@ protected: // Assignment
 	Variable &
 	operator =( Variable && ) noexcept = default;
 
-public: // Predicate
+public: // Predicates
 
 	// Discrete Variable?
 	virtual

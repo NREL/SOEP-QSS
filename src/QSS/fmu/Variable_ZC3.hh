@@ -71,7 +71,6 @@ public: // Properties
 	Real
 	x( Time const t ) const
 	{
-		assert( ( tX <= t ) && ( t <= tE ) );
 		Time const tDel( t - tX );
 		return x_0_ + ( ( x_1_ + ( ( x_2_ + ( x_3_ * tDel ) ) * tDel ) ) * tDel );
 	}
@@ -80,7 +79,6 @@ public: // Properties
 	Real
 	x1( Time const t ) const
 	{
-		assert( ( tX <= t ) && ( t <= tE ) );
 		Time const tDel( t - tX );
 		return x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_ * tDel ) ) * tDel );
 	}
@@ -89,16 +87,13 @@ public: // Properties
 	Real
 	x2( Time const t ) const
 	{
-		assert( ( tX <= t ) && ( t <= tE ) );
 		return ( two * x_2_ ) + ( six * x_3_ * ( t - tX ) );
 	}
 
 	// Continuous Third Derivative at Time t
 	Real
-	x3( Time const t ) const
+	x3( Time const ) const
 	{
-		assert( ( tX <= t ) && ( t <= tE ) );
-		(void)t; // Suppress unused warning
 		return six * x_3_;
 	}
 
@@ -106,7 +101,6 @@ public: // Properties
 	Real
 	q( Time const t ) const
 	{
-		assert( ( tQ <= t ) && ( t <= tE ) );
 		Time const tDel( t - tQ );
 		return x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 	}
@@ -115,16 +109,13 @@ public: // Properties
 	Real
 	q1( Time const t ) const
 	{
-		assert( ( tQ <= t ) && ( t <= tE ) );
 		return x_1_ + ( two * x_2_ * ( t - tQ ) );
 	}
 
 	// Quantized Second Derivative at Time t
 	Real
-	q2( Time const t ) const
+	q2( Time const ) const
 	{
-		assert( ( tQ <= t ) && ( t <= tE ) );
-		(void)t; // Suppress unused warning
 		return two * x_2_;
 	}
 

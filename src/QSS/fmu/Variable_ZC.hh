@@ -88,7 +88,7 @@ protected: // Assignment
 	Variable_ZC &
 	operator =( Variable_ZC && ) noexcept = default;
 
-public: // Predicate
+public: // Predicates
 
 	// Zero-Crossing Variable?
 	bool

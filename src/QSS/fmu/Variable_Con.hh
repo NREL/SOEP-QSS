@@ -63,7 +63,7 @@ public: // Creation
 	 Super( order, name, fmu_me, var )
 	{}
 
-public: // Predicate
+public: // Predicates
 
 	// Input Variable?
 	bool

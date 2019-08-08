@@ -166,7 +166,7 @@ public: // Conversion
 		return observers_;
 	}
 
-public: // Predicate
+public: // Predicates
 
 	// Empty?
 	bool

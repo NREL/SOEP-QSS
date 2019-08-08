@@ -102,7 +102,7 @@ protected: // Assignment
 	Variable_Inp &
 	operator =( Variable_Inp && ) noexcept = default;
 
-public: // Predicate
+public: // Predicates
 
 	// Input Variable?
 	bool

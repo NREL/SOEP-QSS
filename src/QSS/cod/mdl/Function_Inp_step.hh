@@ -63,13 +63,13 @@ public: // Creation
 	Function_Inp_step(
 	 Coefficient const h_0 = 0.0,
 	 Coefficient const h = 1.0,
-	 Coefficient const d = 1.0
+	 Time const d = Time( 1.0 )
 	) :
 	 h_0_( h_0 ),
 	 h_( h ),
 	 d_( d )
 	{
-		assert( d_ > 0.0 );
+		assert( d_ > Time( 0.0 ) );
 	}
 
 public: // Properties
@@ -81,7 +81,7 @@ public: // Properties
 		return h_0_;
 	}
 
-	// Height
+	// Step Height
 	Coefficient
 	h() const
 	{
@@ -89,7 +89,7 @@ public: // Properties
 	}
 
 	// Step Time Delta
-	Coefficient
+	Time
 	d() const
 	{
 		return d_;
@@ -170,7 +170,7 @@ public: // Properties
 	tD( Time const t ) const
 	{
 		Coefficient const n_next( std::floor( t / d_ ) + 1.0 );
-		Coefficient const t_next( d_ * n_next );
+		Time const t_next( d_ * n_next );
 		return ( t_next > t ? t_next : d_ * ( n_next + 1.0 ) );
 	}
 
@@ -178,7 +178,7 @@ public: // Methods
 
 	// Set Initial Height
 	Function_Inp_step &
-	h_0( Coefficient const & h_0 )
+	h_0( Coefficient const h_0 )
 	{
 		h_0_ = h_0;
 		return *this;
@@ -186,7 +186,7 @@ public: // Methods
 
 	// Set Height
 	Function_Inp_step &
-	h( Coefficient const & h )
+	h( Coefficient const h )
 	{
 		h_ = h;
 		return *this;
@@ -194,7 +194,7 @@ public: // Methods
 
 	// Set Step Time Delta
 	Function_Inp_step &
-	d( Coefficient const & d )
+	d( Coefficient const d )
 	{
 		d_ = d;
 		assert( d_ > 0.0 );
@@ -207,6 +207,7 @@ private: // Methods
 	Real
 	step_number( Time const t ) const
 	{
+		assert( d_ > Time( 0.0 ) );
 		Real const ftd( std::floor( t / d_ ) );
 		return ( d_ * ( ftd + 1.0 ) > t ? ftd : ftd + 1.0 );
 	}
@@ -215,7 +216,7 @@ private: // Data
 
 	Coefficient h_0_{ 0.0 }; // Initial height
 	Coefficient h_{ 1.0 }; // Step height
-	Coefficient d_{ 1.0 }; // Step time delta
+	Time d_{ 1.0 }; // Step time delta
 
 };
 

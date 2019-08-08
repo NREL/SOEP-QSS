@@ -83,7 +83,7 @@ protected: // Assignment
 	Variable_QSS &
 	operator =( Variable_QSS && ) noexcept = default;
 
-public: // Predicate
+public: // Predicates
 
 	// QSS Variable?
 	bool

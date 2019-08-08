@@ -75,7 +75,7 @@ public: // Creation
 	explicit
 	FMU_QSS( std::string const & path )
 	{
-		init( path );
+		initialize( path );
 	}
 
 	// Destructor
@@ -101,7 +101,7 @@ public: // Methods
 
 	// Initialize
 	void
-	init( std::string const & path );
+	initialize( std::string const & path );
 
 	// Pre-Instantiation for 3rd-Party Master Algorithms
 	void

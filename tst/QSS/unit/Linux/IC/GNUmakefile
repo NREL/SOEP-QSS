@@ -4,8 +4,6 @@
 #
 # Platform: Linux/IC
 
-# Note: This uses the current QSS static library: We don't update that here
-
 # Paths
 PKG_PATH := $(QSS)/src/QSS
 SRC_PATH := $(PKG_PATH)
@@ -19,6 +17,7 @@ include $(QSS_bin)/GNUmakeinit.mk
 TAR := QSS
 SRC := $(notdir $(wildcard $(TST_PATH)/*.cc))
 SRC += $(notdir $(wildcard $(TST_PATH)/cod/*.cc))
+SRC += $(notdir $(wildcard $(TST_PATH)/fmu/*.cc))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .o,$(basename $(SRC)))
 EXE := $(BIN_PATH)/$(TAR).unit
@@ -29,7 +28,7 @@ LINK_LIBS := -ldl
 .SUFFIXES: .h
 
 # Search Paths
-vpath %.cc  $(TST_PATH) $(TST_PATH)/cod
+vpath %.cc  $(TST_PATH) $(TST_PATH)/cod $(TST_PATH)/fmu
 vpath %.hh  $(TST_PATH)
 vpath %.h   $(GTEST_INC)
 

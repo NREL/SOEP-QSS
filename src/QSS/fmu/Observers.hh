@@ -93,7 +93,7 @@ public: // Conversion
 		return observers_;
 	}
 
-public: // Predicate
+public: // Predicates
 
 	// Empty?
 	bool
@@ -294,6 +294,7 @@ public: // Methods
 	void
 	advance_NZ( Time const t )
 	{
+		assert( fmu_me_ != nullptr );
 		assert( fmu_me_->get_time() == t );
 		for ( auto observee : nz_observees_ ) {
 			observee->fmu_set_q( t );
@@ -307,6 +308,7 @@ public: // Methods
 	void
 	advance_ZC( Time const t )
 	{
+		assert( fmu_me_ != nullptr );
 		assert( fmu_me_->get_time() == t );
 		for ( auto observee : zc_observees_ ) {
 			observee->fmu_set_x( t );
@@ -401,6 +403,7 @@ private: // Data
 
 	// FMU observer data
 	bool connected_output_observer_{ false }; // Output connection observer to another FMU?
+
 	// Non-zero-crossing observer observees
 	Variables nz_observees_; // Non-zero-crossing observer observees (including self-observing observers)
 	size_type b2_nz_observees_{ 0 }; // Begin index of observees of order 2+ non-zero-crossing observers

@@ -21,7 +21,8 @@ CFLAGS := /nologo /Qstd=c99 /Wall /Qdiag-disable:177,869,1478,1684,1786,2259,231
 # 11074 Inlining inhibited by size limit
 # 11075 Inlining report message
 #LDFLAGS := /nologo /subsystem:CONSOLE /STACK:8388608 /DEBUG
-LDFLAGS := /nologo /DEBUG
-LINKFLAGS := /link /LIBPATH:$(QSS_bin) /DEBUG
+CXXLINKFLAGS := /nologo /DEBUG
+LDFLAGS := /nologo /ignore:4099 /DEBUG
+LINKFLAGS := /link /ignore:4099 /LIBPATH:$(QSS_bin) /DEBUG
 
 include $(QSS_bin)\..\GNUmakeinit.mk

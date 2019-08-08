@@ -79,7 +79,7 @@ public: // Creation
 	 Super( 0, name )
 	{}
 
-public: // Predicate
+public: // Predicates
 
 	// Discrete Variable?
 	bool
@@ -180,7 +180,7 @@ public: // Methods
 
 private: // Data
 
-	Real x_; // Value
+	Real x_{ 0.0 }; // Value
 
 };
 

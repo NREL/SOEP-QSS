@@ -62,7 +62,7 @@ public: // Creation
 	 Super( 0, name, fmu_me, var, f )
 	{}
 
-public: // Predicate
+public: // Predicates
 
 	// Discrete Variable?
 	bool
@@ -187,7 +187,7 @@ public: // Methods
 
 private: // Data
 
-	Boolean x_; // Value
+	Boolean x_{ false }; // Value
 
 };
 

@@ -73,7 +73,7 @@ public: // Creation
 	 x_( xIni != 0 )
 	{}
 
-public: // Predicate
+public: // Predicates
 
 	// Discrete Variable?
 	bool
@@ -221,7 +221,7 @@ public: // Methods
 
 private: // Data
 
-	Boolean x_; // Value
+	Boolean x_{ false }; // Value
 
 };
 

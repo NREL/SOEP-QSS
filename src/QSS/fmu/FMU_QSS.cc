@@ -74,7 +74,7 @@ namespace fmu {
 	// Initialize
 	void
 	FMU_QSS::
-	init( std::string const & path )
+	initialize( std::string const & path )
 	{
 		// Check FMU file name form
 		if ( ! has_suffix( path, "_QSS.fmu" ) ) {
@@ -129,7 +129,7 @@ namespace fmu {
 		// Initialize the FMU-ME object
 		std::string const fmu_me_name( name, 0, name.length() - 4 ); // Strip off _QSS
 		std::string const fmu_me_path( unzip_dir + path::sep + std::string( "resources" ) + path::sep + fmu_me_name + ".fmu" );
-		fmu_me.init( fmu_me_path );
+		fmu_me.initialize( fmu_me_path );
 
 		// Load the FMU-QSS library
 		callBackFunctions.logger = fmi2_log_forwarding;
@@ -183,7 +183,7 @@ namespace fmu {
 		// Initialize the FMU-ME object
 		std::string const fmu_me_name( name, 0, name.length() - 4 ); // Strip off _QSS
 		std::string const fmu_me_path( unzip_dir + path::sep + std::string( "resources" ) + path::sep + fmu_me_name + ".fmu" );
-		fmu_me.init( fmu_me_path );
+		fmu_me.initialize( fmu_me_path );
 
 		// Load the FMU-QSS library
 		callBackFunctions.logger = fmi2_log_forwarding;
