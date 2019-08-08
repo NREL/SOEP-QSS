@@ -78,7 +78,7 @@ namespace fmu {
 	FMU_ME( std::string const & path ) :
 	 events( new Events() )
 	{
-		init( path, false );
+		initialize( path, false );
 	}
 
 	// FMU-ME Path + Event Queue Constructor
@@ -87,7 +87,7 @@ namespace fmu {
 	 events( events ),
 	 events_own( false )
 	{
-		init( path, false );
+		initialize( path, false );
 	}
 
 	// Destructor
@@ -108,10 +108,32 @@ namespace fmu {
 		if ( events_own ) delete events;
 	}
 
+	// Variable Lookup by Name (for Testing)
+	Variable const *
+	FMU_ME::
+	var_named( std::string const & var_name ) const
+	{
+		for ( Variable const * var : vars ) {
+			if ( var->name == var_name ) return var;
+		}
+		return nullptr; // Not found
+	}
+
+	// Variable Lookup by Name (for Testing)
+	Variable *
+	FMU_ME::
+	var_named( std::string const & var_name )
+	{
+		for ( Variable * var : vars ) {
+			if ( var->name == var_name ) return var;
+		}
+		return nullptr; // Not found
+	}
+
 	// Initialize
 	void
 	FMU_ME::
-	init( std::string const & path, bool const in_place )
+	initialize( std::string const & path, bool const in_place )
 	{
 		if ( ! has_suffix( path, ".fmu" ) ) {
 			std::cerr << "\nFMU-ME name is not of the form <model>.fmu" << std::endl;
@@ -1357,7 +1379,7 @@ namespace fmu {
 		// Initialize Conditional observers
 		for ( Conditional< Variable > * con : cons ) con->init_observers();
 
-		// Dependency cycle detection: After init sets up observers
+		// Dependency cycle detection: After observers set up
 		if ( options::cycles ) cycles< Variable >( vars );
 
 		// Output initialization

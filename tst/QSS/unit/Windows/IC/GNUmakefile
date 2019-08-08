@@ -4,13 +4,11 @@
 #
 # Platform: Windows/IC
 
-# Note: This uses the current QSS static library: We don't update that here
-
 # Paths
-PKG_PATH := $(QSS)/src/QSS
+PKG_PATH := $(QSS)\src\QSS
 SRC_PATH := $(PKG_PATH)
 INC_PATH := $(INCLUDE)
-TST_PATH := $(QSS)/tst/QSS/unit
+TST_PATH := $(QSS)\tst\QSS\unit
 
 # Initialization
 include $(QSS_bin)/GNUmakeinit.mk
@@ -19,19 +17,19 @@ include $(QSS_bin)/GNUmakeinit.mk
 TAR := QSS
 SRC := $(notdir $(wildcard $(TST_PATH)/*.cc))
 SRC += $(notdir $(wildcard $(TST_PATH)/cod/*.cc))
+SRC += $(notdir $(wildcard $(TST_PATH)/fmu/*.cc))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .obj,$(basename $(SRC)))
-APP_OBJ := $(filter-out $(QSS)/src/QSS/$(PlatformFull)/QSS.obj,$(wildcard $(QSS)/src/QSS/$(PlatformFull)/*.obj))
+APP_OBJ := $(filter-out $(QSS)/src/QSS/app/$(PlatformFull)/QSS.obj,$(wildcard $(QSS)/src/QSS/app/$(PlatformFull)/*.obj))
 EXE := $(BIN_PATH)\$(TAR).unit.exe
 PATH_LIBS := $(BIN_PATH)\lib$(TAR).lib
-LINK_LIBS :=
 #CXXFLAGS += /Qdiag-disable:1684 # 1684 fires on gtest code
 
 # Extensions
 .SUFFIXES: .h
 
 # Search Paths
-vpath %.cc  $(TST_PATH) $(TST_PATH)/cod
+vpath %.cc  $(TST_PATH) $(TST_PATH)/cod $(TST_PATH)/fmu
 vpath %.hh  $(TST_PATH)
 vpath %.h   $(GTEST_INC)
 
@@ -76,17 +74,19 @@ run : $(EXE)
 	@echo Running $(TAR) unit tests: Intel C++
 	@$(EXE)
 
-## Executable from libraries
+# Executable from libraries
 #$(EXE) : $(OBJ) $(PATH_LIBS)
 #	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 #	@-rm -f $(filter-out $(OBJ),$(wildcard *.obj)) # Prune obs objs
-#	$(LD) $(LDFLAGS) /LIBPATH:$(BIN_PATH) /out:$(subst \,/,$@) $^ $(LINKFLAGS) $(LINK_LIBS) $(GTEST_BIN)\gtest.lib $(FMIL_HOME)\lib\fmilib_shared.lib
+#	$(LD) $(LDFLAGS) /out:$(subst \,/,$@) $^ /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib expat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib $(GTEST_BIN)\gtest.lib
+#	@-rm -f $(subst \,/,$(BIN_PATH))/$(TAR).unit.exp $(subst \,/,$(BIN_PATH))/$(TAR).unit.ilk $(subst \,/,$(BIN_PATH))/$(TAR).unit.lib $(subst \,/,$(BIN_PATH))/$(TAR).unit.pdb
 
 # Executable from objects
 $(EXE) : $(OBJ) $(APP_OBJ)
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.obj)) # Prune obs objs
-	$(LD) $(LDFLAGS) /out:$(subst \,/,$@) $^ $(LINKFLAGS) $(LINK_LIBS) $(GTEST_BIN)\gtest.lib $(FMIL_HOME)\lib\fmilib_shared.lib
+	$(LD) $(LDFLAGS) /out:$(subst \,/,$@) $^ /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib expat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib $(GTEST_BIN)\gtest.lib
+	@-rm -f $(subst \,/,$(BIN_PATH))/$(TAR).unit.exp $(subst \,/,$(BIN_PATH))/$(TAR).unit.ilk $(subst \,/,$(BIN_PATH))/$(TAR).unit.lib $(subst \,/,$(BIN_PATH))/$(TAR).unit.pdb
 
 .PRECIOUS : $(EXE)
 

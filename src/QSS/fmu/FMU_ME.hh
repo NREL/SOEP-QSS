@@ -157,11 +157,21 @@ public: // Assignment
 	FMU_ME &
 	operator =( FMU_ME && ) = delete;
 
+public: // Properties
+
+	// Variable Lookup by Name (for Testing)
+	Variable const *
+	var_named( std::string const & var_name ) const;
+
+	// Variable Lookup by Name (for Testing)
+	Variable *
+	var_named( std::string const & var_name );
+
 public: // Simulation Methods
 
 	// Initialize
 	void
-	init( std::string const & path, bool const in_place = true );
+	initialize( std::string const & path, bool const in_place = true );
 
 	// Instantiate FMU
 	void
@@ -178,6 +188,19 @@ public: // Simulation Methods
 	// Pre-Simulation Setup
 	void
 	pre_simulate();
+
+	// Initialization
+	void
+	init()
+	{
+		init_0_1();
+		init_0_2();
+		init_1_1();
+		init_1_2();
+		init_2_1();
+		init_2_2();
+		init_f();
+	}
 
 	// Initialization: Stage 0.1
 	void

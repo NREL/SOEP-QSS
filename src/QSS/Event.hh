@@ -75,7 +75,7 @@ public: // Creation
 	 val_( val )
 	{}
 
-public: // Predicate
+public: // Predicates
 
 	// Discrete Event?
 	bool

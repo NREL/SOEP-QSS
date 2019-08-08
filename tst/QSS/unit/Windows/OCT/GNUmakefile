@@ -22,7 +22,7 @@ SRC += $(notdir $(wildcard $(TST_PATH)/cod/*.cc))
 SRC += $(notdir $(wildcard $(TST_PATH)/fmu/*.cc))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .o,$(basename $(SRC)))
-APP_OBJ := $(filter-out $(QSS)/src/QSS/$(PlatformFull)/QSS.o,$(wildcard $(QSS)/src/QSS/$(PlatformFull)/*.o))
+APP_OBJ := $(filter-out $(QSS)/src/QSS/app/$(PlatformFull)/QSS.o,$(wildcard $(QSS)/src/QSS/app/$(PlatformFull)/*.o))
 EXE := $(BIN_PATH)\$(TAR).unit.exe
 PATH_LIBS := $(BIN_PATH)/lib$(TAR).a
 
@@ -75,7 +75,7 @@ run : $(EXE)
 	@echo Running $(TAR) unit tests: GCC
 	@$(EXE)
 
-## Executable from libraries
+# Executable from libraries
 #$(EXE) : $(OBJ) $(PATH_LIBS)
 #	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 #	@-rm -f $(filter-out $(OBJ),$(wildcard *.o)) # Prune obs objs
@@ -85,7 +85,7 @@ run : $(EXE)
 $(EXE) : $(OBJ) $(APP_OBJ)
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.o)) # Prune obs objs
-	$(CXX) $(LDFLAGS) -o $@ $^ -L$(QSS_bin) -l$(TAR) -L$(FMIL_HOME)\lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -lshlwapi -L$(GTEST_BIN) -lgtest
+	$(CXX) $(LDFLAGS) -o $@ $^ -L$(FMIL_HOME)\lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -lshlwapi -L$(GTEST_BIN) -lgtest
 
 .PRECIOUS : $(EXE)
 

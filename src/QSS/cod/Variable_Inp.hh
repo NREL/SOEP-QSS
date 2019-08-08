@@ -67,7 +67,7 @@ protected: // Creation
 	) :
 	 Super( order, name, rTol, aTol )
 	{
-		xIni = f_.vs( tQ );
+		xIni = Real( f_.vs( tQ ) );
 		tD = f_.tD( tQ );
 	}
 
@@ -87,7 +87,7 @@ protected: // Assignment
 	Variable_Inp &
 	operator =( Variable_Inp && ) noexcept = default;
 
-public: // Predicate
+public: // Predicates
 
 	// Input Variable?
 	bool

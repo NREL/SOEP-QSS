@@ -73,7 +73,7 @@ public: // Creation
 	 x_( static_cast< Integer >( xIni ) )
 	{}
 
-public: // Predicate
+public: // Predicates
 
 	// Discrete Variable?
 	bool

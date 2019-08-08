@@ -73,7 +73,7 @@ public: // Creation
 	 x_( xIni )
 	{}
 
-public: // Predicate
+public: // Predicates
 
 	// Discrete Variable?
 	bool

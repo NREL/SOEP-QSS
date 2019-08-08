@@ -81,7 +81,7 @@ public: // Creation
 	 Super( 0, name )
 	{}
 
-public: // Predicate
+public: // Predicates
 
 	// Discrete Variable?
 	bool
