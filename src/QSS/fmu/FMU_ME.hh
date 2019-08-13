@@ -106,7 +106,7 @@ public: // Types
 		}
 	};
 
-	enum class FMU_Generator { JModelica, Dymola, Other };
+	enum class FMU_Generator { JModelica, Optimica, Dymola, Other };
 
 	using size_type = std::size_t;
 	using Time = double;
@@ -246,7 +246,7 @@ public: // FMU Methods
 
 	// Get FMU Time
 	Time
-	get_time()
+	get_time() const
 	{
 		return t_fmu;
 	}
@@ -273,7 +273,7 @@ public: // FMU Methods
 
 	// Get a Real FMU Variable Value
 	Real
-	get_real( fmi2_value_reference_t const ref )
+	get_real( fmi2_value_reference_t const ref ) const
 	{
 		assert( fmu != nullptr );
 		Real val;
@@ -283,16 +283,6 @@ public: // FMU Methods
 		return val;
 	}
 
-	// Get Real FMU Variable Values
-	void
-	get_reals( std::size_t const n, fmi2_value_reference_t const refs[], Real vals[] )
-	{
-		assert( fmu != nullptr );
-		fmi2_status_t const fmi_status = fmi2_import_get_real( fmu, refs, n, vals );
-		assert( status_check( fmi_status, "get_reals" ) );
-		(void)fmi_status; // Suppress unused warning
-	}
-
 	// Set a Real FMU Variable Value
 	void
 	set_real( fmi2_value_reference_t const ref, Real const val )
@@ -300,6 +290,16 @@ public: // FMU Methods
 		assert( fmu != nullptr );
 		fmi2_status_t const fmi_status = fmi2_import_set_real( fmu, &ref, std::size_t( 1u ), &val );
 		assert( status_check( fmi_status, "set_real" ) );
+		(void)fmi_status; // Suppress unused warning
+	}
+
+	// Get Real FMU Variable Values
+	void
+	get_reals( std::size_t const n, fmi2_value_reference_t const refs[], Real vals[] ) const
+	{
+		assert( fmu != nullptr );
+		fmi2_status_t const fmi_status = fmi2_import_get_real( fmu, refs, n, vals );
+		assert( status_check( fmi_status, "get_reals" ) );
 		(void)fmi_status; // Suppress unused warning
 	}
 
@@ -313,9 +313,17 @@ public: // FMU Methods
 		(void)fmi_status; // Suppress unused warning
 	}
 
+	// Get a Derivative: First call get_derivatives
+	Real
+	get_derivative( std::size_t const der_idx ) const
+	{
+		assert( der_idx - 1 < n_derivatives );
+		return derivatives[ der_idx - 1 ];
+	}
+
 	// Get All Derivatives Array: FMU Time and Variable Values Must be Set First
 	void
-	get_derivatives()
+	get_derivatives() const
 	{
 		assert( derivatives != nullptr );
 		fmi2_status_t const fmi_status = fmi2_import_get_derivatives( fmu, derivatives, n_derivatives );
@@ -323,17 +331,9 @@ public: // FMU Methods
 		(void)fmi_status; // Suppress unused warning
 	}
 
-	// Get a Derivative: First call get_derivatives
-	Real
-	get_derivative( std::size_t const der_idx )
-	{
-		assert( der_idx - 1 < n_derivatives );
-		return derivatives[ der_idx - 1 ];
-	}
-
 	// Get an Integer FMU Variable Value
 	Integer
-	get_integer( fmi2_value_reference_t const ref )
+	get_integer( fmi2_value_reference_t const ref ) const
 	{
 		assert( fmu != nullptr );
 		Integer val;
@@ -355,7 +355,7 @@ public: // FMU Methods
 
 	// Get an Boolean FMU Variable Value
 	bool
-	get_boolean( fmi2_value_reference_t const ref )
+	get_boolean( fmi2_value_reference_t const ref ) const
 	{
 		assert( fmu != nullptr );
 		fmi2_boolean_t fbt;

@@ -58,7 +58,7 @@ public: // Types
 
 	using size_type = std::size_t;
 
-	enum class FMU_Generator { JModelica, Dymola, Other };
+	enum class FMU_Generator { JModelica, Optimica, Dymola, Other };
 
 public: // Creation
 
