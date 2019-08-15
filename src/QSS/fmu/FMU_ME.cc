@@ -253,7 +253,7 @@ namespace fmu {
 		fmi2_import_set_debug_logging( fmu, fmi2_false, 0, 0 );
 
 		fmi2_real_t const tstart( fmi2_import_get_default_experiment_start( fmu ) ); // [0.0]
-		fmi2_real_t const tstop( fmi2_import_get_default_experiment_stop( fmu ) ); // [1.0]
+		fmi2_real_t const tstop( options::specified::tEnd ? options::tEnd : fmi2_import_get_default_experiment_stop( fmu ) ); // [1.0]
 		fmi2_real_t const relativeTolerance( fmi2_import_get_default_experiment_tolerance( fmu ) ); // [0.0001]
 		fmi2_boolean_t const toleranceControlled( fmi2_false ); // FMIL says tolerance control not supported for ME
 		fmi2_boolean_t const stopTimeDefined( fmi2_true );
@@ -263,11 +263,11 @@ namespace fmu {
 			std::cerr << "\nError: fmi2_import_setup_experiment failed" << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
-		rTol = relativeTolerance;
 
 		// QSS time and tolerance run controls
 		t0 = tstart; // Simulation start time
-		tE = ( options::specified::tEnd ? options::tEnd : tstop ); // Simulation end time
+		tE = tstop; // Simulation end time
+		rTol = relativeTolerance;
 
 		fmi2_import_enter_initialization_mode( fmu );
 		fmi2_import_exit_initialization_mode( fmu );

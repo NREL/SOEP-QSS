@@ -179,7 +179,7 @@ public: // Methods
 	void
 	init_2()
 	{
-		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
 		set_tE_aligned();
 		add_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
@@ -216,7 +216,7 @@ public: // Methods
 			fmu_set_q( tN );
 		}
 		fmu_set_observees_q( tN );
-		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
 		if ( have_observers_ZC_2_ ) advance_observers_ZC_2(); // After new x trajectory is set since this needs to set FMU value to x( tN )
 		fmu_set_time( tQ );
 
@@ -245,7 +245,7 @@ public: // Methods
 //		fmu_set_time( tN = tQ + options::dtNum );
 //		fmu_set_observees_q( tN );
 //		if ( self_observer ) fmu_set_q( tN );
-//		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+//		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
 //		fmu_set_time( tQ );
 //		set_tE_aligned();
 //		shift_QSS( tE );
@@ -279,7 +279,7 @@ public: // Methods
 	{
 		fmu_set_observees_sn( tN = tQ + options::dtNum );
 		if ( self_observer ) fmu_set_q( tN );
-		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
@@ -318,7 +318,7 @@ public: // Methods
 		assert( tX <= t );
 		fmu_set_observees_q( t );
 		if ( self_observer ) fmu_set_q( t );
-		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
 		set_tE_unaligned();
 		shift_QSS( tE );
 		if ( have_connections ) advance_connections_observer();
@@ -331,7 +331,7 @@ public: // Methods
 		assert( tX <= t );
 		assert( d == fmu_get_deriv() );
 		(void)t; // Suppress unused warning
-		x_2_ = options::one_half_over_dtNum * ( d - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+		x_2_ = options::one_half_over_dtNum * ( d - x_1_ ); // Forward Euler
 		set_tE_unaligned();
 		shift_QSS( tE );
 		if ( have_connections ) advance_connections_observer();

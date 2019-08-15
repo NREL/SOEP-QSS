@@ -134,7 +134,7 @@ public: // Methods
 	init_0()
 	{
 		// Check no observers
-		if ( ! observers_.empty() ) {
+		if ( self_observer || ( ! observers_.empty() ) ) {
 			std::cerr << "Error: Zero-crossing variable has observers: " << name << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
@@ -161,7 +161,7 @@ public: // Methods
 	init_2()
 	{
 		fmu_set_observees_x( tN = tQ + options::dtNum );
-		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
 		set_tE();
 		set_tZ();
 		( tE < tZ ) ? add_QSS_ZC( tE ) : add_ZC( tZ );
@@ -192,7 +192,7 @@ public: // Methods
 		x_1_ = fmu_get_deriv();
 		fmu_set_time( tN = tQ + options::dtNum );
 		fmu_set_observees_x( tN );
-		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
 		fmu_set_time( tQ );
 		set_tE();
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
@@ -258,7 +258,7 @@ public: // Methods
 	{
 		assert( tX <= t );
 		fmu_set_observees_x( t );
-		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
 		set_tE();
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
 	}
@@ -270,7 +270,7 @@ public: // Methods
 		assert( tX <= t );
 		assert( d == fmu_get_deriv() );
 		(void)t; // Suppress unused warning
-		x_2_ = options::one_half_over_dtNum * ( d - x_1_ ); // Forward Euler //API one_half * fmu_get_deriv2() when 2nd derivative is available
+		x_2_ = options::one_half_over_dtNum * ( d - x_1_ ); // Forward Euler
 		set_tE();
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
 	}

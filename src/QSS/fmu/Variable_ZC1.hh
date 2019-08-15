@@ -114,7 +114,7 @@ public: // Methods
 	init_0()
 	{
 		// Check no observers
-		if ( ! observers_.empty() ) {
+		if ( self_observer || ( ! observers_.empty() ) ) {
 			std::cerr << "Error: Zero-crossing variable has observers: " << name << std::endl;
 			std::exit( EXIT_FAILURE );
 		}

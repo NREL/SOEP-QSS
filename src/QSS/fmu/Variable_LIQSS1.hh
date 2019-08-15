@@ -208,6 +208,7 @@ public: // Methods
 		fmu_set_observees_s( tQ );
 		if ( self_observer ) {
 			advance_LIQSS();
+			fmu_set_real( x_0_ );
 		} else {
 			x_1_ = fmu_get_deriv();
 			q_0_ += signum( x_1_ ) * qTol;
