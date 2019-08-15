@@ -1,4 +1,4 @@
-// FMU-ME Event Indicator Support
+// QSS::cod::Variable_ZC3 Unit Tests
 //
 // Project: QSS Solver
 //
@@ -33,85 +33,70 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// FMI Library Headers
-#include <fmilib.h>
+#define _USE_MATH_DEFINES // For M_E
 
-// C++ Headers
-#include <cstdlib>
-#include <unordered_map>
-#include <vector>
+// Google Test Headers
+#include <gtest/gtest.h>
 
-namespace QSS {
-namespace fmu {
+// QSS Headers
+#include <QSS/cod/mdl/Function_LTI.hh>
+#include <QSS/cod/Variable_ZC3.hh>
+#include <QSS/cod/Variable_QSS3.hh>
 
-// Event Indicator XML Entry Specs
-struct EventIndicator final
+using namespace QSS;
+using namespace QSS::cod;
+using namespace QSS::cod::mdl;
+
+TEST( cod_Variable_ZC3Test, Basic )
 {
-	// Types
-	using size_type = std::size_t;
+	Variable_QSS3< Function_LTI > x( "x" );
+	x.add( -1.0 );
+	x.init( 1.0 );
+	EXPECT_EQ( 1.0e-4, x.rTol );
+	EXPECT_EQ( 1.0e-6, x.aTol );
+	EXPECT_EQ( infinity, x.tE );
 
-	// Data
-	size_type index{ 0u };
-	std::vector< size_type > reverseDependencies;
-};
+	EXPECT_EQ( 1.0, x.x( 0.0 ) );
+	EXPECT_EQ( 1.0, x.q( 0.0 ) );
 
-// FMU-ME EventIndicators Collection
-struct FMUEventIndicators final
-{
-	// Types
-	using EventIndicators = std::vector< EventIndicator >;
+	EXPECT_DOUBLE_EQ( 1.0 - 1.0e-7, x.x( 1.0e-7 ) );
+	EXPECT_DOUBLE_EQ( 1.0 - 1.0e-7, x.q( 1.0e-7 ) );
 
-	// Constructor
-	FMUEventIndicators( void * context ) :
-	 context( context )
-	{}
+	Variable_ZC3< Function_LTI > z( "z" );
+	z.add_crossings_Dn();
+	z.add( &x );
+	z.init();
+	EXPECT_EQ( 1.0e-4, z.rTol );
+	EXPECT_EQ( 1.0e-6, z.aTol );
+	EXPECT_EQ( infinity, z.tE );
+	EXPECT_DOUBLE_EQ( 1.0, z.tZ );
+	EXPECT_EQ( Variable::Crossing::DnPN, z.crossing );
 
-	// Data
-	EventIndicators eventIndicators;
-	bool inEventIndicators{ false };
-	void * context{ nullptr }; // Context pointer to its FMU-ME
-};
+	EXPECT_EQ( 1.0, z.x( 0.0 ) );
+	EXPECT_EQ( 1.0, z.q( 0.0 ) );
 
-// EventIndicator Global Lookup by FMU-ME Context
-using AllEventIndicators = std::vector< FMUEventIndicators >;
-extern AllEventIndicators allEventIndicators;
+	EXPECT_DOUBLE_EQ( 1.0 - 1.0e-7, z.x( 1.0e-7 ) );
+	EXPECT_DOUBLE_EQ( 1.0 - 1.0e-7, z.q( 1.0e-7 ) );
 
-// XML Callbacks Global
-extern fmi2_xml_callbacks_t xml_callbacks;
+	EXPECT_EQ( 0.0, x.x( 1.0 ) );
+	EXPECT_EQ( 0.0, x.q( 1.0 ) );
 
-extern "C" {
-
-int
-annotation_start_handle(
- void * context,
- char const * parentName,
- void * /* parent */,
- char const * elm,
- char const ** attr
-);
-
-inline
-int
-annotation_data_handle(
- void * /* context */,
- char const * /* s */,
- int const /* len */
-)
-{
-	return 0;
+	events.clear();
 }
 
-inline
-int
-annotation_end_handle(
- void * /* context */,
- char const * /* elm */
-)
+TEST( cod_Variable_ZC3Test, Roots )
 {
-	return 0;
+	Variable_QSS3< Function_LTI > x( "x" );
+	x.add( &x ).add( -2.0 * M_E );
+	x.init( 2.0 * ( M_E - 1.0 ) );
+	// x' = x - 2 e, x(0) = 2(e-1) => x = -2 e^t + 2 e with a downward zero crossing at t=1
+	// At t=0 x rep is: x_0 = q_0 = 2(e-1), x_1 = q_1 = -2, x_2 = -1, x_3 = -1/3
+
+	Variable_ZC3< Function_LTI > z( "z" );
+	z.add_crossings_Dn();
+	z.add( &x );
+	z.init();
+	EXPECT_DOUBLE_EQ( 1.0204777568328333243, z.tZ ); // Positive root of t^3 + 3 t^2 + 6 t + 6(1-e) ~ 1.0204777568328333243
+
+	events.clear();
 }
-
-} // extern "C"
-
-} // fmu
-} // QSS

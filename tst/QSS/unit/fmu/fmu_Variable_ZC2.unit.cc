@@ -1,4 +1,4 @@
-// FMU-ME Event Indicator Support
+// QSS::fmu::Variable_ZC2 Unit Tests
 //
 // Project: QSS Solver
 //
@@ -33,85 +33,38 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// FMI Library Headers
-#include <fmilib.h>
+// Google Test Headers
+#include <gtest/gtest.h>
 
-// C++ Headers
-#include <cstdlib>
-#include <unordered_map>
-#include <vector>
+// QSS Headers
+#include <QSS/fmu/Variable_ZC2.hh>
 
-namespace QSS {
-namespace fmu {
+using namespace QSS;
+using namespace QSS::fmu;
 
-// Event Indicator XML Entry Specs
-struct EventIndicator final
+TEST( fmu_Variable_ZC2Test, Basic )
 {
-	// Types
-	using size_type = std::size_t;
+	FMU_ME fmu;
 
-	// Data
-	size_type index{ 0u };
-	std::vector< size_type > reverseDependencies;
-};
+	Variable_ZC2 z( "z", 2.0, 2.0, 1.0e-4, &fmu );
+	EXPECT_EQ( 2.0, z.rTol );
+	EXPECT_EQ( 2.0, z.aTol );
+	EXPECT_EQ( 1.0e-4, z.zTol );
+	EXPECT_EQ( 0.0, z.tQ );
+	EXPECT_EQ( 0.0, z.tX );
+	EXPECT_EQ( infinity, z.tZ );
 
-// FMU-ME EventIndicators Collection
-struct FMUEventIndicators final
-{
-	// Types
-	using EventIndicators = std::vector< EventIndicator >;
+	EXPECT_EQ( 0.0, z.x( 0.0 ) );
+	EXPECT_EQ( 0.0, z.q( 0.0 ) );
+	EXPECT_EQ( 0.0, z.x1( 0.0 ) );
+	EXPECT_EQ( 0.0, z.q1( 0.0 ) );
+	EXPECT_EQ( 0.0, z.x2( 0.0 ) );
+	EXPECT_EQ( 0.0, z.q2( 0.0 ) );
 
-	// Constructor
-	FMUEventIndicators( void * context ) :
-	 context( context )
-	{}
-
-	// Data
-	EventIndicators eventIndicators;
-	bool inEventIndicators{ false };
-	void * context{ nullptr }; // Context pointer to its FMU-ME
-};
-
-// EventIndicator Global Lookup by FMU-ME Context
-using AllEventIndicators = std::vector< FMUEventIndicators >;
-extern AllEventIndicators allEventIndicators;
-
-// XML Callbacks Global
-extern fmi2_xml_callbacks_t xml_callbacks;
-
-extern "C" {
-
-int
-annotation_start_handle(
- void * context,
- char const * parentName,
- void * /* parent */,
- char const * elm,
- char const ** attr
-);
-
-inline
-int
-annotation_data_handle(
- void * /* context */,
- char const * /* s */,
- int const /* len */
-)
-{
-	return 0;
+	EXPECT_EQ( 0.0, z.x( 1.0 ) );
+	EXPECT_EQ( 0.0, z.q( 1.0 ) );
+	EXPECT_EQ( 0.0, z.x1( 1.0 ) );
+	EXPECT_EQ( 0.0, z.q1( 1.0 ) );
+	EXPECT_EQ( 0.0, z.x2( 1.0 ) );
+	EXPECT_EQ( 0.0, z.q2( 1.0 ) );
 }
-
-inline
-int
-annotation_end_handle(
- void * /* context */,
- char const * /* elm */
-)
-{
-	return 0;
-}
-
-} // extern "C"
-
-} // fmu
-} // QSS

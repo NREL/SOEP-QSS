@@ -45,7 +45,7 @@ namespace QSS {
 namespace fmu {
 
 // EventIndicator Global Lookup by FMU-ME Context
-EventIndicatorLookup eventIndicatorLookup;
+AllEventIndicators allEventIndicators;
 
 // XML Callbacks Global
 fmi2_xml_callbacks_t xml_callbacks = {
@@ -67,12 +67,16 @@ annotation_start_handle(
 )
 {
 	if ( std::strcmp( parentName, "OCT_StateEvents" ) == 0 ) {
-		EventIndicatorState & eventIndicatorState( eventIndicatorLookup[ context ] );
+		FMUEventIndicators & fmuEventIndicators( allEventIndicators.back() ); // This is not thread safe!
 		if ( std::strcmp( elm, "EventIndicators" ) == 0 ) {
-			eventIndicatorState.inEventIndicators = true;
+			if ( fmuEventIndicators.inEventIndicators || ( ! fmuEventIndicators.eventIndicators.empty() ) ) {
+				std::cerr << "\nError: XML EventIndicators block is ill-formed" << std::endl;
+				std::exit( EXIT_FAILURE );
+			}
+			fmuEventIndicators.inEventIndicators = true;
 			std::cout << "\nEventIndicators" << std::endl;
-		} else if ( eventIndicatorState.inEventIndicators && ( std::strcmp( elm, "Element" ) == 0 ) ) {
-			int i = 0;
+		} else if ( fmuEventIndicators.inEventIndicators && ( std::strcmp( elm, "Element" ) == 0 ) ) {
+			int i( 0 );
 			EventIndicator ei;
 			bool has_index( false );
 			bool has_reverseDependencies( false );
@@ -113,14 +117,14 @@ annotation_start_handle(
 				std::cerr << "\nError: XML EventIndicators Element has no reverseDependencies attribute" << std::endl;
 				std::exit( EXIT_FAILURE );
 			}
-			eventIndicatorState.eventIndicators.push_back( ei );
+			fmuEventIndicators.eventIndicators.push_back( ei );
 			std::cout << "\n EventIndicator Element\n";
 			std::cout << "  index: " << ei.index << '\n';
 			std::cout << "  reverseDependencies:";
 			for ( EventIndicator::size_type const d : ei.reverseDependencies ) std::cout << ' ' << d;
 			std::cout << std::endl;
 		} else {
-			eventIndicatorState.inEventIndicators = false;
+			fmuEventIndicators.inEventIndicators = false;
 		}
 	}
 	return 0;

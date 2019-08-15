@@ -251,6 +251,7 @@ public: // Methods
 	advance_QSS_1()
 	{
 		fmu_set_observees_s( tQ );
+		if ( self_observer ) fmu_set_real( x_0_ );
 		x_1_ = q_1_ = fmu_get_poly_1();
 	}
 

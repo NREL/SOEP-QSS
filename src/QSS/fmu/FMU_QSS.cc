@@ -207,8 +207,8 @@ namespace fmu {
 		fmu_generator = (
 		 fmu_generation_tool.find( "JModelica" ) == 0u ? FMU_Generator::JModelica : (
 		 fmu_generation_tool.find( "Optimica" ) == 0u ? FMU_Generator::Optimica : (
-		 fmu_generation_tool.find( "Dymola" ) == 0u ? FMU_Generator::Dymola : FMU_Generator::Other )
-		) );
+		 fmu_generation_tool.find( "Dymola" ) == 0u ? FMU_Generator::Dymola : FMU_Generator::Other ) )
+		);
 
 		// Check SI units
 		fmi2_import_unit_definitions_t * unit_defs( fmi2_import_get_unit_definitions( fmu ) );

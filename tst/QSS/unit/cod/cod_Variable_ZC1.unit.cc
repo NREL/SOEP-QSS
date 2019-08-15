@@ -1,4 +1,4 @@
-// FMU-ME Event Indicator Support
+// QSS::cod::Variable_ZC1 Unit Tests
 //
 // Project: QSS Solver
 //
@@ -33,85 +33,51 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// FMI Library Headers
-#include <fmilib.h>
+// Google Test Headers
+#include <gtest/gtest.h>
 
-// C++ Headers
-#include <cstdlib>
-#include <unordered_map>
-#include <vector>
+// QSS Headers
+#include <QSS/cod/mdl/Function_LTI.hh>
+#include <QSS/cod/Variable_ZC1.hh>
+#include <QSS/cod/Variable_QSS2.hh>
 
-namespace QSS {
-namespace fmu {
+using namespace QSS;
+using namespace QSS::cod;
+using namespace QSS::cod::mdl;
 
-// Event Indicator XML Entry Specs
-struct EventIndicator final
+TEST( cod_Variable_ZC1Test, Basic )
 {
-	// Types
-	using size_type = std::size_t;
+	Variable_QSS2< Function_LTI > x( "x" );
+	x.add( -1.0 );
+	x.init( 1.0 );
+	EXPECT_EQ( 1.0e-4, x.rTol );
+	EXPECT_EQ( 1.0e-6, x.aTol );
+	EXPECT_EQ( infinity, x.tE );
 
-	// Data
-	size_type index{ 0u };
-	std::vector< size_type > reverseDependencies;
-};
+	EXPECT_EQ( 1.0, x.x( 0.0 ) );
+	EXPECT_EQ( 1.0, x.q( 0.0 ) );
 
-// FMU-ME EventIndicators Collection
-struct FMUEventIndicators final
-{
-	// Types
-	using EventIndicators = std::vector< EventIndicator >;
+	EXPECT_DOUBLE_EQ( 1.0 - 1.0e-7, x.x( 1.0e-7 ) );
+	EXPECT_DOUBLE_EQ( 1.0 - 1.0e-7, x.q( 1.0e-7 ) );
 
-	// Constructor
-	FMUEventIndicators( void * context ) :
-	 context( context )
-	{}
+	Variable_ZC1< Function_LTI > z( "z", 2.0, 2.0 ); // Big tolerances to make tE > tZ
+	z.add_crossings_Dn();
+	z.add( &x );
+	z.init();
+	EXPECT_EQ( 2.0, z.rTol );
+	EXPECT_EQ( 2.0, z.aTol );
+	EXPECT_DOUBLE_EQ( 0.0 + std::max( z.rTol * 1.0, z.aTol ) / 1.0, z.tE );
+	EXPECT_DOUBLE_EQ( 1.0, z.tZ );
+	EXPECT_EQ( Variable::Crossing::DnPN, z.crossing );
 
-	// Data
-	EventIndicators eventIndicators;
-	bool inEventIndicators{ false };
-	void * context{ nullptr }; // Context pointer to its FMU-ME
-};
+	EXPECT_EQ( 1.0, z.x( 0.0 ) );
+	EXPECT_EQ( 1.0, z.q( 0.0 ) );
 
-// EventIndicator Global Lookup by FMU-ME Context
-using AllEventIndicators = std::vector< FMUEventIndicators >;
-extern AllEventIndicators allEventIndicators;
+	EXPECT_DOUBLE_EQ( 1.0 - 1.0e-7, z.x( 1.0e-7 ) );
+	EXPECT_EQ( 1.0, z.q( 1.0e-7 ) );
 
-// XML Callbacks Global
-extern fmi2_xml_callbacks_t xml_callbacks;
+	EXPECT_EQ( 0.0, x.x( 1.0 ) );
+	EXPECT_EQ( 0.0, x.q( 1.0 ) );
 
-extern "C" {
-
-int
-annotation_start_handle(
- void * context,
- char const * parentName,
- void * /* parent */,
- char const * elm,
- char const ** attr
-);
-
-inline
-int
-annotation_data_handle(
- void * /* context */,
- char const * /* s */,
- int const /* len */
-)
-{
-	return 0;
+	events.clear();
 }
-
-inline
-int
-annotation_end_handle(
- void * /* context */,
- char const * /* elm */
-)
-{
-	return 0;
-}
-
-} // extern "C"
-
-} // fmu
-} // QSS

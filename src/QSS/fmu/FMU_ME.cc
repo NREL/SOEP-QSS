@@ -178,6 +178,7 @@ namespace fmu {
 		}
 
 		// Parse the XML
+		allEventIndicators.push_back( FMUEventIndicators( this ) );
 		fmu = fmi2_import_parse_xml( context, unzip_dir.c_str(), &xml_callbacks );
 		if ( !fmu ) {
 			std::cerr << "\nError: FMU-ME XML parsing error" << std::endl;
@@ -206,8 +207,8 @@ namespace fmu {
 		fmu_generator = (
 		 fmu_generation_tool.find( "JModelica" ) == 0u ? FMU_Generator::JModelica : (
 		 fmu_generation_tool.find( "Optimica" ) == 0u ? FMU_Generator::Optimica : (
-		 fmu_generation_tool.find( "Dymola" ) == 0u ? FMU_Generator::Dymola : FMU_Generator::Other )
-		) );
+		 fmu_generation_tool.find( "Dymola" ) == 0u ? FMU_Generator::Dymola : FMU_Generator::Other ) )
+		);
 
 		// Check SI units
 		fmi2_import_unit_definitions_t * unit_defs( fmi2_import_get_unit_definitions( fmu ) );
@@ -253,7 +254,7 @@ namespace fmu {
 		fmi2_import_set_debug_logging( fmu, fmi2_false, 0, 0 );
 
 		fmi2_real_t const tstart( fmi2_import_get_default_experiment_start( fmu ) ); // [0.0]
-		fmi2_real_t const tstop( fmi2_import_get_default_experiment_stop( fmu ) ); // [1.0]
+		fmi2_real_t const tstop( options::specified::tEnd ? options::tEnd : fmi2_import_get_default_experiment_stop( fmu ) ); // [1.0]
 		fmi2_real_t const relativeTolerance( fmi2_import_get_default_experiment_tolerance( fmu ) ); // [0.0001]
 		fmi2_boolean_t const toleranceControlled( fmi2_false ); // FMIL says tolerance control not supported for ME
 		fmi2_boolean_t const stopTimeDefined( fmi2_true );
@@ -263,11 +264,11 @@ namespace fmu {
 			std::cerr << "\nError: fmi2_import_setup_experiment failed" << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
-		rTol = relativeTolerance;
 
 		// QSS time and tolerance run controls
 		t0 = tstart; // Simulation start time
-		tE = ( options::specified::tEnd ? options::tEnd : tstop ); // Simulation end time
+		tE = tstop; // Simulation end time
+		rTol = relativeTolerance;
 
 		fmi2_import_enter_initialization_mode( fmu );
 		fmi2_import_exit_initialization_mode( fmu );
@@ -845,101 +846,54 @@ namespace fmu {
 		}
 		size_type const n_state_vars( state_vars.size() );
 
-		// Process FMU zero-crossing variables
+		// Process FMU zero-crossing (event indicator) variables
 		std::cout << "\nFMU Zero Crossing Processing =====" << std::endl;
 		size_type n_ZC_vars( 0 );
-
-		// Interim approach requiring __zc_<name> and __zc_der_<name> variables to be explicity added to Modelica model for all zero crossing functions
-		for ( size_type i = 0; i < n_fmu_vars; ++i ) {
-			fmi2_import_variable_t * var( fmi2_import_get_variable( var_list, i ) );
-			if ( ( fmi2_import_get_variability( var ) == fmi2_variability_enu_continuous ) && ( fmi2_import_get_variable_base_type( var ) == fmi2_base_type_real ) ) {
-				std::string const var_name( fmi2_import_get_variable_name( var ) );
-				if ( ( var_name.find( "__zc_" ) == 0 ) && ( var_name.length() > 5 ) ) { // Zero-crossing variable by convention (temporary work-around)
-					std::string const der_name( "__zc_der_" + var_name.substr( 5 ) );
-					for ( size_type j = 0; j < n_fmu_vars; ++j ) { // Scan FMU variables for matching derivative
-						fmi2_import_variable_t * der( fmi2_import_get_variable( var_list, j ) );
-						if ( ( fmi2_import_get_variability( der ) == fmi2_variability_enu_continuous ) && ( fmi2_import_get_variable_base_type( der ) == fmi2_base_type_real ) ) {
-							if ( fmi2_import_get_variable_name( der ) == der_name ) { // Found derivative
-								fmi2_import_real_variable_t * var_real( fmi2_import_get_variable_as_real( var ) );
-								fmi2_import_real_variable_t * der_real( fmi2_import_get_variable_as_real( der ) );
-								FMU_Variable & fmu_var( fmu_vars[ var_real ] );
-								FMU_Variable & fmu_der( fmu_vars[ der_real ] );
-								if ( ( fmu_ders.find( var_real ) == fmu_ders.end() ) && ( fmu_dvrs.find( der_real ) == fmu_dvrs.end() ) ) { // Not processed above
-									std::cout << "\nZero Crossing Der: " << der_name << " of Var: " << var_name << std::endl;
-									fmu_ders[ var_real ] = fmu_der;
-									fmu_dvrs[ der_real ] = fmu_var;
-									Variable_ZC * qss_var( nullptr );
-									if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) || ( options::qss == options::QSS::xQSS1 ) ) {
-										qss_var = new Variable_ZC1( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var, fmu_der );
-									} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) || ( options::qss == options::QSS::xQSS2 ) ) {
-										qss_var = new Variable_ZC2( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var, fmu_der );
-									} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) || ( options::qss == options::QSS::xQSS3 ) ) {
-										qss_var = new Variable_ZC3( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var, fmu_der );
-									} else {
-										std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
-										std::exit( EXIT_FAILURE );
-									}
-									vars.push_back( qss_var ); // Add to QSS variables
-									qss_var_of_ref[ fmi2_import_get_variable_vr( fmu_var.var ) ] = qss_var;
-									var_name_var[ var_name ] = qss_var;
-									if ( fmi2_import_get_causality( fmu_var.var ) == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
-										outs.push_back( qss_var );
-										fmu_outs.erase( fmu_var.rvr ); // Remove it from non-QSS FMU outputs
-									}
-									fmu_idxs[ fmu_var.idx ] = qss_var; // Add to map from FMU variable index to QSS variable
-									std::cout << " FMU-ME idx: " << fmu_var.idx << " maps to QSS var: " << qss_var->name << std::endl;
-									++n_ZC_vars;
-
-									// Create conditional for the zero-crossing variable for now: FMU conditional block info would allow us to do more
-									cons.push_back( new Conditional< Variable >( qss_var, events ) );
-								}
-								break; // Found derivative so stop scanning
-							}
-						}
-					}
-				}
-			}
+		auto const ieis( std::find_if( allEventIndicators.begin(), allEventIndicators.end(), [this]( FMUEventIndicators const & feis ){ return feis.context == this; } ) );
+		if ( ieis == allEventIndicators.end() ) {
+			std::cerr << "\nError: FMU event indicators collection lookup failed for FMU-ME " << name << std::endl;
+			std::exit( EXIT_FAILURE );
 		}
-
-		// New approach with OCT addition of event indicator variables and XML vendor annotations
-		// Change Variable_ZC to obtain derivative from directional derivatives if no derivative variable is provided in the ctor
-		if ( eventIndicatorLookup.find( context ) != eventIndicatorLookup.end() ) { // EventIndicators found in XML
-			for ( EventIndicator const & ei : eventIndicatorLookup[ context ].eventIndicators ) {
-				size_type const var_idx( ei.index );
-				fmi2_import_variable_t * var( fmi2_import_get_variable( var_list, var_idx ) );
-				std::string const var_name( fmi2_import_get_variable_name( var ) );
-				if ( ( fmi2_import_get_variability( var ) == fmi2_variability_enu_continuous ) && ( fmi2_import_get_variable_base_type( var ) == fmi2_base_type_real ) ) {
-					fmi2_import_real_variable_t * var_real( fmi2_import_get_variable_as_real( var ) );
-					FMU_Variable & fmu_var( fmu_vars[ var_real ] );
-					Variable_ZC * qss_var( nullptr );
-					if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) || ( options::qss == options::QSS::xQSS1 ) ) {
-						qss_var = new Variable_ZC1( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var );
-					} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) || ( options::qss == options::QSS::xQSS2 ) ) {
-						qss_var = new Variable_ZC2( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var );
-					} else {
-						std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
-						std::exit( EXIT_FAILURE );
-					}
-					vars.push_back( qss_var ); // Add to QSS variables
-					qss_var_of_ref[ fmi2_import_get_variable_vr( fmu_var.var ) ] = qss_var;
-					var_name_var[ var_name ] = qss_var;
-					if ( fmi2_import_get_causality( fmu_var.var ) == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
-						outs.push_back( qss_var );
-						fmu_outs.erase( fmu_var.rvr ); // Remove it from non-QSS FMU outputs
-					}
-					fmu_idxs[ fmu_var.idx ] = qss_var; // Add to map from FMU variable index to QSS variable
-					std::cout << " FMU-ME idx: " << fmu_var.idx << " maps to QSS var: " << qss_var->name << std::endl;
-					++n_ZC_vars;
-
-					// Create conditional for the zero-crossing variable for now: FMU conditional block info would allow us to do more
-					cons.push_back( new Conditional< Variable >( qss_var, events ) );
+		for ( EventIndicator const & ei : ieis->eventIndicators ) {
+			size_type const var_idx( ei.index - 1 );
+			fmi2_import_variable_t * var( fmi2_import_get_variable( var_list, var_idx ) );
+			std::string const var_name( fmi2_import_get_variable_name( var ) );
+			if ( ( fmi2_import_get_variability( var ) == fmi2_variability_enu_continuous ) && ( fmi2_import_get_variable_base_type( var ) == fmi2_base_type_real ) ) {
+				fmi2_import_real_variable_t * var_real( fmi2_import_get_variable_as_real( var ) );
+				FMU_Variable & fmu_var( fmu_vars[ var_real ] );
+				Variable_ZC * qss_var( nullptr );
+				if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) || ( options::qss == options::QSS::xQSS1 ) ) {
+					qss_var = new Variable_ZC1( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var );
+				} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) || ( options::qss == options::QSS::xQSS2 ) ) {
+					qss_var = new Variable_ZC2( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var );
+				} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) || ( options::qss == options::QSS::xQSS3 ) ) {
+					qss_var = new Variable_ZC3( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var );
 				} else {
-					std::cerr << "\nError: FMU event indicator variable is not real-valued and continuous: " << var_name << std::endl;
+					std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 					std::exit( EXIT_FAILURE );
 				}
+				vars.push_back( qss_var ); // Add to QSS variables
+				qss_var_of_ref[ fmi2_import_get_variable_vr( fmu_var.var ) ] = qss_var;
+				var_name_var[ var_name ] = qss_var;
+				if ( fmi2_import_get_causality( fmu_var.var ) == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
+					outs.push_back( qss_var );
+					fmu_outs.erase( fmu_var.rvr ); // Remove it from non-QSS FMU outputs
+				}
+				fmu_idxs[ fmu_var.idx ] = qss_var; // Add to map from FMU variable index to QSS variable
+				std::cout << " FMU-ME idx: " << fmu_var.idx << " maps to QSS var: " << qss_var->name << std::endl;
+				++n_ZC_vars;
+
+				// Create conditional for the zero-crossing variable for now: FMU conditional block info would allow us to do more
+				Conditional< Variable > * con( new Conditional< Variable >( qss_var, events ) );
+				cons.push_back( con );
+				for ( auto revDep : ei.reverseDependencies ) { // Add reverse (handler) dependency observer to conditional
+					con->add_observer( fmu_idxs[ revDep ] );
+				}
+			} else {
+				std::cerr << "\nError: FMU event indicator variable is not real-valued and continuous: " << var_name << std::endl;
+				std::exit( EXIT_FAILURE );
 			}
 		}
-
 		if ( n_ZC_vars > 0u ) {
 			std::cout << "\nZero Crossing Tolerance: zTol = " << options::zTol << std::endl;
 			std::cout << "\nZero Crossing Time Step: dtZC = " << options::dtZC << " (s)" << std::endl;
