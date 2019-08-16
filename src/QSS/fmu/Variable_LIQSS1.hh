@@ -166,9 +166,8 @@ public: // Methods
 	void
 	advance_QSS()
 	{
-		Time const tDel( tE - tX );
+		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
 		tX = tQ = tE;
-		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * tDel );
 		set_qTol();
 		fmu_set_observees_q( tQ );
 		if ( self_observer ) {
@@ -188,9 +187,8 @@ public: // Methods
 	void
 	advance_QSS_0()
 	{
-		Time const tDel( tE - tX );
+		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
 		tX = tQ = tE;
-		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * tDel );
 		set_qTol();
 	}
 
@@ -217,9 +215,8 @@ public: // Methods
 	advance_observer( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		Time const tDel( t - tX );
+		x_0_ = x_0_ + ( x_1_ * ( t - tX ) );
 		tX = t;
-		x_0_ = x_0_ + ( x_1_ * tDel );
 		x_1_ = fmu_get_poly_1();
 		set_tE_unaligned();
 		shift_QSS( tE );

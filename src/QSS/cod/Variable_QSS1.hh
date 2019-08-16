@@ -195,9 +195,8 @@ public: // Methods
 	void
 	advance_QSS()
 	{
-		Time const tDel( tE - tX );
+		x_0_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
 		tX = tQ = tE;
-		x_0_ = q_0_ = x_0_ + ( x_1_ * tDel );
 		set_qTol();
 		x_1_ = d_.q( tQ );
 		set_tE_aligned();
@@ -210,9 +209,8 @@ public: // Methods
 	void
 	advance_QSS_0()
 	{
-		Time const tDel( tE - tX );
+		x_0_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
 		tX = tQ = tE;
-		x_0_ = q_0_ = x_0_ + ( x_1_ * tDel );
 		set_qTol();
 	}
 

@@ -59,7 +59,7 @@ extern "C" {
 
 int
 annotation_start_handle(
- void * context,
+ void * /* context */,
  char const * parentName,
  void * /* parent */,
  char const * elm,
