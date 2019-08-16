@@ -582,13 +582,24 @@ public: // Methods
 			observees_.erase( std::unique( observees_.begin(), observees_.end() ), observees_.end() ); // Remove duplicates
 			observees_.shrink_to_fit();
 		}
+
+		// FMU directional derivative call argument initialization
+		for ( Variable * observee : observees_ ) {
+			observees_v_ref_.push_back( observee->var.ref );
+			observees_dv_.push_back( 0.0 );
+		}
+		if ( self_observer ) {
+			observees_v_ref_.push_back( var.ref );
+			observees_dv_.push_back( 0.0 );
+		}
+		observees_nv_ = observees_v_ref_.size();
 	}
 
 	// Time Initialization
 	void
 	init_time( Time const t )
 	{
-		tQ = tX = tE = tN = t;
+		tQ = tX = tE = t;
 	}
 
 	// Initialization
@@ -818,50 +829,27 @@ public: // Methods
 		assert( false ); // Not a QSS or discrete variable
 	}
 
-	// Advance Observers: Stage 1
-	void
-	advance_observers_1()
-	{
-		observers_.advance_1( tQ );
-	}
-
-	// Advance Observers: Stage 2
-	void
-	advance_observers_2()
-	{
-		assert( tN == tQ + options::dtNum );
-		observers_.advance_2( tN );
-	}
-
-	// Advance Observers: Non-Zero-Crossing: Stage 2
-	void
-	advance_observers_NZ_2()
-	{
-		assert( tN == tQ + options::dtNum );
-		observers_.advance_NZ_2( tN );
-	}
-
-	// Advance Observers: Zero-Crossing: Stage 2
-	void
-	advance_observers_ZC_2()
-	{
-		assert( tN == tQ + options::dtNum );
-		observers_.advance_ZC_2( tN );
-	}
-
-	// Advance Observers: Stage d
-	void
-	advance_observers_d()
-	{
-		assert( options::output::d );
-		observers_.advance_d();
-	}
-
 	// Advance Observers
 	void
 	advance_observers()
 	{
 		observers_.advance( tQ );
+	}
+
+	// Observer Advance
+	virtual
+	void
+	advance_observer( Time const )
+	{
+		assert( false );
+	}
+
+	// Observer Advance: Simultaneous
+	virtual
+	void
+	advance_observer_s( Time const )
+	{
+		assert( false );
 	}
 
 	// Observer Advance: Stage 1
@@ -872,18 +860,10 @@ public: // Methods
 		assert( false );
 	}
 
-	// Observer Advance: Stage 1
+	// Observer Advance: Simultaneous Stage 1
 	virtual
 	void
-	advance_observer_1( Time const, Real const )
-	{
-		assert( false );
-	}
-
-	// Zero-Crossing Observer Advance: Stage 1
-	virtual
-	void
-	advance_observer_ZC_1( Time const, Real const, Real const )
+	advance_observer_s_1( Time const )
 	{
 		assert( false );
 	}
@@ -891,15 +871,15 @@ public: // Methods
 	// Observer Advance: Stage 2
 	virtual
 	void
-	advance_observer_2( Time const )
+	advance_observer_2()
 	{
 		assert( false );
 	}
 
-	// Observer Advance: Stage 2
+	// Observer Advance: Simultaneous Stage 2
 	virtual
 	void
-	advance_observer_2( Time const, Real const )
+	advance_observer_s_2( Time const )
 	{
 		assert( false );
 	}
@@ -970,12 +950,25 @@ public: // Methods: FMU
 		fmu_me->set_boolean( var.ref, v );
 	}
 
-	// Get FMU Variable Derivative
+	// Get Polynomial Trajectory Term 1 from FMU
 	Real
-	fmu_get_deriv() const
+	fmu_get_poly_1() const
 	{
 		assert( fmu_me != nullptr );
 		return fmu_me->get_real( der.ref );
+	}
+
+	// Get Polynomial Trajectory Term 2 from FMU
+	Real
+	fmu_get_poly_2() const
+	{
+		assert( fmu_me != nullptr );
+		for ( Variables::size_type i = 0, ie = observees_.size(); i < ie; ++i ) { // Get observee derivatives
+			observees_dv_[ i ] = observees_[ i ]->q1( tQ );
+//			observees_dv_[ i ] = observees_[ i ]->fmu_get_poly_1(); // Requires setting observees observees FMU values: Probably too expensive
+		}
+		if ( self_observer ) observees_dv_[ observees_nv_ - 1 ] = q1( tQ );
+		return one_half * fmu_me->get_directional_derivative( observees_v_ref_.data(), observees_nv_, der.ref, observees_dv_.data() );
 	}
 
 	// Set FMU Time
@@ -1101,7 +1094,6 @@ public: // Data
 	Time tQ{ 0.0 }; // Quantized time range begin
 	Time tX{ 0.0 }; // Continuous time range begin
 	Time tE{ 0.0 }; // Time range end: tQ <= tE and tX <= tE
-	Time tN{ 0.0 }; // Numeric differentiation time
 	Time tD{ infinity }; // Discrete event time: tQ <= tD and tX <= tD
 	Time dt_min{ 0.0 }; // Time step min
 	Time dt_max{ infinity }; // Time step max
@@ -1128,6 +1120,9 @@ protected: // Data
 
 	// Observees
 	Variables observees_; // Variables this one depends on
+	std::vector< fmi2_value_reference_t > observees_v_ref_; // Observee value references for FMU directional derivative
+	mutable std::vector< fmi2_real_t > observees_dv_; // Observee derivatives for FMU directional derivative lookup
+	std::size_t observees_nv_{ 0u }; // Observee count for FMU directional derivative lookup
 
 	// Event queue
 	Events * events_{ nullptr };

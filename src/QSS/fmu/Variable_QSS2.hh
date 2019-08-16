@@ -172,14 +172,14 @@ public: // Methods
 	void
 	init_1()
 	{
-		x_1_ = q_1_ = fmu_get_deriv();
+		x_1_ = q_1_ = fmu_get_poly_1();
 	}
 
 	// Initialization: Stage 2
 	void
 	init_2()
 	{
-		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
+		x_2_ = fmu_get_poly_2();
 		set_tE_aligned();
 		add_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
@@ -201,58 +201,16 @@ public: // Methods
 		tX = tQ = tE;
 		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 		set_qTol();
-		if ( have_observers_ ) {
-			advance_observers_1();
-		} else if ( self_observer ) {
-			fmu_set_real( q_0_ );
-		}
 		fmu_set_observees_q( tQ );
-		x_1_ = q_1_ = fmu_get_deriv();
-
-		fmu_set_time( tN = tQ + options::dtNum );
-		if ( have_observers_NZ_2_ ) {
-			advance_observers_NZ_2();
-		} else if ( self_observer ) {
-			fmu_set_q( tN );
-		}
-		fmu_set_observees_q( tN );
-		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
-		if ( have_observers_ZC_2_ ) advance_observers_ZC_2(); // After new x trajectory is set since this needs to set FMU value to x( tN )
-		fmu_set_time( tQ );
-
+		if ( self_observer ) fmu_set_real( q_0_ );
+		x_1_ = q_1_ = fmu_get_poly_1();
+		x_2_ = fmu_get_poly_2();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) {
-			std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-			if ( have_observers_ ) advance_observers_d();
-		}
-
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( have_observers_ ) advance_observers();
 		if ( have_connections ) advance_connections();
 	}
-
-// This simpler version is much slower doe to current FMIL internals
-//	// QSS Advance
-//	void
-//	advance_QSS()
-//	{
-//		Time const tDel( tE - tX );
-//		tX = tQ = tE;
-//		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
-//		set_qTol();
-//		fmu_set_observees_q( tQ );
-//		if ( self_observer ) fmu_set_real( q_0_ );
-//		x_1_ = q_1_ = fmu_get_deriv();
-//		fmu_set_time( tN = tQ + options::dtNum );
-//		fmu_set_observees_q( tN );
-//		if ( self_observer ) fmu_set_q( tN );
-//		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
-//		fmu_set_time( tQ );
-//		set_tE_aligned();
-//		shift_QSS( tE );
-//		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-//		if ( have_observers_ ) advance_observers();
-//		if ( have_connections ) advance_connections();
-//	}
 
 	// QSS Advance: Stage 0
 	void
@@ -270,71 +228,43 @@ public: // Methods
 	{
 		fmu_set_observees_s( tQ );
 		if ( self_observer ) fmu_set_real( q_0_ );
-		x_1_ = q_1_ = fmu_get_deriv();
+		x_1_ = q_1_ = fmu_get_poly_1();
 	}
 
 	// QSS Advance: Stage 2
 	void
 	advance_QSS_2()
 	{
-		fmu_set_observees_sn( tN = tQ + options::dtNum );
-		if ( self_observer ) fmu_set_q( tN );
-		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
+		x_2_ = fmu_get_poly_2();
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 		if ( have_connections ) advance_connections();
 	}
 
-	// Observer Advance: Stage 1
+	// Observer Advance
 	void
-	advance_observer_1( Time const t )
+	advance_observer( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		fmu_set_observees_q( t );
-		if ( self_observer ) fmu_set_q( t );
 		Time const tDel( t - tX );
 		tX = t;
 		x_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
-		x_1_ = fmu_get_deriv();
-	}
-
-	// Observer Advance: Stage 1
-	void
-	advance_observer_1( Time const t, Real const d )
-	{
-		assert( ( tX <= t ) && ( t <= tE ) );
-		assert( d == fmu_get_deriv() );
-		Time const tDel( t - tX );
-		tX = t;
-		x_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
-		x_1_ = d;
-	}
-
-	// Observer Advance: Stage 2
-	void
-	advance_observer_2( Time const t )
-	{
-		assert( tX <= t );
-		fmu_set_observees_q( t );
-		if ( self_observer ) fmu_set_q( t );
-		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
+		x_1_ = fmu_get_poly_1();
+		x_2_ = fmu_get_poly_2();
 		set_tE_unaligned();
 		shift_QSS( tE );
 		if ( have_connections ) advance_connections_observer();
 	}
 
-	// Observer Advance: Stage 2
+	// Observer Advance: Simultaneous
 	void
-	advance_observer_2( Time const t, Real const d )
+	advance_observer_s( Time const t )
 	{
-		assert( tX <= t );
-		assert( d == fmu_get_deriv() );
-		(void)t; // Suppress unused warning
-		x_2_ = options::one_half_over_dtNum * ( d - x_1_ ); // Forward Euler
-		set_tE_unaligned();
-		shift_QSS( tE );
-		if ( have_connections ) advance_connections_observer();
+		assert( ( tX <= t ) && ( t <= tE ) );
+		fmu_set_observees_q( t );
+		if ( self_observer ) fmu_set_q( t );
+		advance_observer( t );
 	}
 
 	// Observer Advance: Stage d
@@ -352,12 +282,8 @@ public: // Methods
 		x_0_ = q_0_ = fmu_get_real(); // Assume FMU ran zero-crossing handler
 		set_qTol();
 		fmu_set_observees_q( tX = tQ = t );
-		x_1_ = q_1_ = fmu_get_deriv();
-		fmu_set_time( tN = tQ + options::dtNum );
-		fmu_set_observees_q( tN );
-		if ( self_observer ) fmu_set_q( tN );
-		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
-		fmu_set_time( tQ );
+		x_1_ = q_1_ = fmu_get_poly_1();
+		x_2_ = fmu_get_poly_2();
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
@@ -380,16 +306,14 @@ public: // Methods
 	advance_handler_1()
 	{
 		fmu_set_observees_q( tQ );
-		x_1_ = q_1_ = fmu_get_deriv();
+		x_1_ = q_1_ = fmu_get_poly_1();
 	}
 
 	// Handler Advance: Stage 2
 	void
 	advance_handler_2()
 	{
-		fmu_set_observees_q( tN = tQ + options::dtNum );
-		if ( self_observer ) fmu_set_q( tN );
-		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
+		x_2_ = fmu_get_poly_2();
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';

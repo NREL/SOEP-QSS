@@ -11,7 +11,8 @@ Currently the code has:
 * Input variables/functions.
 * Discrete-valued variables.
 * Numeric differentiation support.
-* Zero-crossing event support.
+* Zero-crossing event support via OCT EventIndicators.
+* Directional derivatives used for 2nd derivatives of state variables and 1st derivatives of zero-crossing variables.
 * Conditional if and when block framework.
 * A simple "baseline" event queue built on `std::multimap`.
 * Simultaneous event support.
@@ -110,7 +111,7 @@ At startup and simultaneous requantization trigger events the LIQSS approach def
 
 ### xQSS Variant
 
-An experimental variant of the QSS method with methods named `xQSS1`, `xQSS2`, and `xQSS3` has been implemented. In this variant the broadcast (quantized) representation has the same order as the internal (continuous) representation. The concept is based on using all available knowledge of the variable trajectory in the broadcast representation. This has been found to provide significantly higher accuracy solutions at the same tolerance (or, equivalently, faster solutions at the same accuracy). More experience is needed to determine whether there are drawbacks to this approach.
+An experimental variant of the QSS method with methods named `xQSS1`, `xQSS2`, and `xQSS3` has been implemented. In this variant the broadcast (quantized) representation has the same order as the internal (continuous) representation. The concept is based on using all available knowledge of the variable trajectory in the broadcast representation. This has been found to provide significantly higher accuracy solutions at the same tolerance (or, equivalently, faster solutions at the same accuracy) for some models. More experience is needed to determine whether there are drawbacks to this approach.
 * LIQSS methods did not benefit from this approach since it tends to put the quantum-shifted quantized representation farther from the continuous representation.
 
 ### Event Queue
@@ -198,8 +199,8 @@ Models defined by FMUs following the FMI 2.0 API can be run by this QSS solver u
 * Mixing QSS methods in an FMU simulation is not yet supported and will require a Modelica annotation to indicate QSS methods on a per-variable basis.
 * The FMU support is performance-limited by the FMI 2.0 API, which requires expensive get-all-derivatives calls where QSS needs individual derivatives.
 * QSS2 performance is limited by the use of numeric differentiation: the FMI ME 2.0 API doesn't provide higher derivatives but they may become available via FMI extensions.
-* Zero crossings are problematic because the FMI spec doesn't expose the dependency of variables that are modified when each zero crossing occurs. Until such information is added our approach is to add the dependencies to the xml file. A fallback strategy of assuming that any continuous or discrete variable may have been modified could be used, at some cost to efficiency.
-* QSS3 and LIQSS3 solvers can be added when they become more practical with the planned FMI Library FMI 2.0 API extensions.
+* Zero crossings are problematic because the FMI spec doesn't expose the dependency of variables that are modified when each zero crossing occurs. Our initial approach was to add the zero crossing variables and their dependencies to the xml file. The current approach is to use the OCT event indicator support to define the zero crossing variables and the related dependencies.
+* QSS3 and LIQSS3 solvers can be added when they become more practical with the planned FMI Library FMI 2.0 API extensions with higher derivative support.
 * Input function evaluations will be provided by JModelica when QSS is integrated. For stand-alone QSS testing purposes a few input functions are provided for use with FMUs.
 * Only SI units are supported in FMUs at this time as per LBNL specifications. Support for other units could be added in the future.
 
@@ -215,11 +216,7 @@ Much of the source code is split into separate directories for the code-defined 
 
 ### Numeric Differentiation
 
-Higher derivatives are needed for QSS2+ methods. These are available analytically for linear functions and we provide them for the nonlinear functions in `cod`. In general analytical higher derivatives may not be provided by the model description or via automatic differentiation and may not be available across the FMU interface so we need some support for numeric differentiation. Numeric differentiation variants of some of the function classes are included to allow emulation of an environment where analytical higher derivatives are not available. A simple and fast approach suffices for this purpose:
-* QSS2 does 2-point forward difference differentiation to allow reuse of one derivative evaluation.
-* QSS3 does 2 and 3-point centered difference differentiation to allow reuse of derivative evaluations.
-* Input variables of orders 2 and 3 are handled analogously.
-* A mechanism to specify global and per-variable differentiation time steps is provided.
+Second order and higher derivatives are needed for QSS2+ methods. These are available analytically for linear functions and we provide them for the nonlinear functions in `cod`. When simulating FMUs we now use the FMI directional derivatives API for the second derivatives of integrated state variables and for the first derivatives of zero crossing variables. Higher derivatives for FMUs must be computed numerically until they become available from the FMU. A mechanism to specify global and per-variable differentiation time steps is provided.
 
 At startup and simultaneous or self-observer requantization events, numeric differentiation of QSS3+ and xQSS2+ variables has a cyclic dependency problem: the derivative function evaluations at time step offsets used to compute the higher derivatives depend on those same order 2+ coefficients of the representation. This causes some variables to use "stale" values of their order 2+ coefficients in their derivative computation. The impact of this flaw will vary across models and could be severe in some situations so these higher order QSS variables should not be used for production simulations of code-defined models using numeric differentiation and of FMU-based models until the planned JModelica FMI Library version with higher derivative support is available.
 
@@ -233,16 +230,12 @@ The time advance functions solve for the roots of polynomials of the QSS method 
 
 ### Zero-Crossing Support
 
-Zero crossing implementation must deal with some obstacles:
-* Some combinations of zero-crossing functions and QSS method orders cannot predict zero crossings, such as a zero-crossing function that is simply the value of a QSS1 variable (whose quantized representation is always a constant). The QSS system will detect zero crossings during requantization and observer updates of the zero-crossing variables but these will lag the precise zero crossing times.
-
 Some of the tasks remaining for a robust, production-quality implementation are:
 * Detect and warn about cyclic dependencies that could lead to infinite update cascades.
 * Detect the occurrence of infinite update cascades and terminate with an error.
 * Zero-crossing root finding is a complicated for the case of large tolerance and/or complex zero-crossing functions, where multiple zero crossings might occur within the active quantization time segment. A combination of long and short range algorithms is needed to minimize the possibility of missing roots. Careful development of such an approach is recommended for production use. The current code is only robust for small tolerances and sufficiently simple zero-crossing functions that the continuous trajectory representation is able to localize the root to good accuracy and only one root is present in any quantized time segment.
 * LIQSS variables present a problem with zero crossings since the quantized and continuous representations do not generally start at the same value in a requantization event. To avoid this LIQSS handler advances set the zero order quantized and continuous coefficients to the same value rather than using the normal LIQSS behavior.
-* Zero-crossing "chattering" can occur for some models so a threshold mechanism to avoid this should be added.
-* Startup behavior is not well-handled by zero-crossings: the initial model state may put the zero-crossing function in any of its conditions but no zero crossing occurred to get there so it isn't detected. Think of a bouncing ball model where the ball starts on or below the floor: no crossing from above the floor occurs so the ball will fall to negative infinity unless a startup procedure is used. A set of rules and a mechanism for dealing with startup state of zero crossings needs to be developed.
+* Startup behavior is not well-handled by zero-crossings: the initial model state may put the zero-crossing function in any of its conditions but no zero crossing occurred to get there so it isn't detected. For example, a bouncing ball model where the ball starts on or below the floor: no crossing from above the floor occurs so the ball will fall to negative infinity unless a startup procedure is used. A set of rules and a mechanism for dealing with startup state of zero crossings needs to be developed.
 
 Bulletproofing present in the implementation:
 * Attempting to change the same variable to different values in two zero-crossing handlers in the same superdense time pass is detected as a (non-fatal) error.
@@ -250,16 +243,16 @@ Bulletproofing present in the implementation:
 * When zero crossing events cluster up closer and closer (such as a bouncing ball) eventually time may not progress and an infinite loop can occur. The bball model shows how a handler should be designed to detect and address this. For Modelica-based models such a set of rules may not be possible in which case the chattering prevention will be needed.
 
 FMU zero crossing support has some additional complications and limitations:
-* Zero-crossing functions are implicitly defined by if and when blocks in the Modelica file and are not directly exposed via the FMI API. Until this is addressed we have created a convention of defining output variables and their derivatives for each zero-crossing function with names of the form \_\_zc\__name_ and \_\_zc\_der\__name_.
+* Zero-crossing functions are implicitly defined by if and when blocks in the Modelica file and are not directly exposed via the FMI API. The OCT addresses this by generating event indicator variables that are documented as XML file annotations with the "reverse" (handler) dependencies. (Before this OCT capability was added we created a convention of defining output variables and their derivatives for each zero-crossing function with names of the form \_\_zc\__name_ and \_\_zc\_der\__name_ and added the reverse dependencies to the XML file `DiscreteStates` block for discrete variables and `InitialUnknowns` for continuous state variables.)
 * The FMI API doesn't expose crossing directions of interest so we enable all of them. If this will never be available we should eliminate crossing check logic to avoid wasted effort.
-* When zero crossings occur a "handler" function within the FMU makes the required changes to state and discrete variables. The QSS solver needs to know the dependency of these modified variables on its zero-crossing variable to maintain its state but neither the FMI API nor the generated xml files expose these dependencies. We are adding such dependencies to `DiscreteStates` (dropped from FMI 2.0 but supported by FMI Library) of the xml for discrete variables and `InitialUnknowns` for continuous state variables.
-* There is no FMI API to directly trigger the zero-crossing handlers to run when the QSS solver reaches zero-crossing events. Instead we set the FMU variables to a time slightly beyond the zero-crossing time with the hope that the zero crossing will be detected by the FMU. The `--zTol` and `--dtZC` options allows control over this time "bump". JModelica FMUs may have a parameter called `_events_default_tol` that will be used as the default `zTol` value to match the QSS time bump to the FMU behavior. The `dtZC` value is only a fallback when no `zTol` is present or when the trajectory doesn't allow a time bump step to be computed. Using the uniform `dtZC` bump step is not robust as it doesn't adjust for solution behavior. This is also not highly robust because the output variables used to track the zero crossing derivatives are (at least for Dymola-generated FMUs) numerically, not analytically, based so the QSS zero-crossing function does not track the actual FMU zero-crossing function to high precision.
+* There is no FMI API to directly trigger the zero-crossing handlers to run when the QSS solver reaches zero-crossing events. Instead we set the relevant FMU variables to a time slightly beyond the zero-crossing time with the hope that the zero crossing will be detected by the FMU. The `--zTol` and `--dtZC` options allows control over this time "bump". JModelica and OCT FMUs may have a parameter called `_events_default_tol` that will be used as the default `zTol` value to match the QSS time bump to the FMU behavior. The `dtZC` value is only a fallback when no `zTol` is present or when the trajectory doesn't allow a time bump step to be computed. Using the uniform `dtZC` bump step is not robust as it doesn't adjust for solution behavior. This is also not highly robust because the output variables used to track the zero crossing derivatives are (at least for Dymola-generated FMUs) numerically, not analytically, based so the QSS zero-crossing function does not track the actual FMU zero-crossing function to high precision.
+The automatically computed `zTol` approach worked well when we were adding zero crossing variables and their derivatives but the current OCT requires numeric differentiation for the second and higher order zero crossing variables, causing some late crossing detection.
 * Zero-crossing root refinement is expensive due to the overhead of FMU operations so it is disabled by default (the `--refine` option enables it). Once atomic FMU variable get/set operations are provided the overhead will be lower.
 
 #### Notes
-* Zero-crossing variables should not need and are required to have no observers (but they do have dependents: the variables modified by their handlers).
+* Zero-crossing variables should not need and are required to have no observers (but they do have indirect dependents: the variables modified by their handlers).
 * Zero-crossing variables must initialize and advance after other variables because their zero-order coefficients come from their function evaluation that depends on the zero-order coefficients of other variables being advanced.
-* Zero-crossing variables use the quantized, not continuous, representations of variables appearing in their functions. This is what the literature indicates and it prevents additional updating operations and potential event cascades. But it also provides a lower accuracy representation, making root finding and refinement more critical. It also means that QSS1 variables appearing linearly in zero-crossing functions only contribute a constant to the function at any time: if all variables are QSS1 and/or discrete then no zero crossings can be predicted so zero crossings will only occur as a result of observer updates of the zero-crossing variable. For this reason QSS1 is not suggested when zero crossings are in use.
+* Zero-crossing variables now use the continuous, not quantized, representations of variables appearing in their functions. This is not indicated by the literature but it also provides a higher accuracy representation that is more likely to cause QSS-predicted zero crossings to be detected by the FMU.
 
 #### Root Refinement
 

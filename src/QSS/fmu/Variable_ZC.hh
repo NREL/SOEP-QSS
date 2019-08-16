@@ -155,6 +155,18 @@ public: // Methods
 		fmu_set_observees_x( t_bump );
 	}
 
+	// Get Polynomial Trajectory Term 1 for a Zero-Crossing Variable from FMU
+	Real
+	fmu_get_poly_ZC_1() const
+	{
+		assert( fmu_me != nullptr );
+		for ( Variables::size_type i = 0, ie = observees_.size(); i < ie; ++i ) { // Get observee derivatives
+			observees_dv_[ i ] = observees_[ i ]->x1( tQ );
+//			observees_dv_[ i ] = observees_[ i ]->fmu_get_poly_1(); // Requires setting observees observees FMU values: Probably too expensive
+		}
+		return fmu_me->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var.ref, observees_dv_.data() );
+	}
+
 public: // Crossing Methods
 
 	// Add Crossing Type

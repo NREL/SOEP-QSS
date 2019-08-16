@@ -162,7 +162,7 @@ public: // Methods
 	void
 	init_1()
 	{
-		x_1_ = q_1_ = fmu_get_deriv();
+		x_1_ = q_1_ = fmu_get_poly_1();
 		set_tE_aligned();
 		add_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
@@ -183,47 +183,15 @@ public: // Methods
 		x_0_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
 		tX = tQ = tE;
 		set_qTol();
-		if ( have_observers_ ) {
-			advance_observers_1();
-		} else if ( self_observer ) {
-			fmu_set_real( q_0_ );
-		}
 		fmu_set_observees_q( tQ );
-		x_1_ = q_1_ = fmu_get_deriv();
-
-		if ( have_observers_2_ ) {
-			fmu_set_time( tN = tQ + options::dtNum );
-			advance_observers_2();
-			fmu_set_time( tQ );
-		}
-
+		if ( self_observer ) fmu_set_real( q_0_ );
+		x_1_ = q_1_ = fmu_get_poly_1();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) {
-			std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-			if ( have_observers_ ) advance_observers_d();
-		}
-
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( have_observers_ ) advance_observers();
 		if ( have_connections ) advance_connections();
 	}
-
-// This simpler version is much slower doe to current FMIL internals
-//	// QSS Advance
-//	void
-//	advance_QSS()
-//	{
-//		x_0_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
-//		tX = tQ = tE;
-//		set_qTol();
-//		fmu_set_observees_q( tQ );
-//		if ( self_observer ) fmu_set_real( q_0_ );
-//		x_1_ = q_1_ = fmu_get_deriv();
-//		set_tE_aligned();
-//		shift_QSS( tE );
-//		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-//		if ( have_observers_ ) advance_observers();
-//		if ( have_connections ) advance_connections();
-//	}
 
 	// QSS Advance: Stage 0
 	void
@@ -240,40 +208,34 @@ public: // Methods
 	{
 		fmu_set_observees_s( tQ );
 		if ( self_observer ) fmu_set_real( q_0_ );
-		x_1_ = q_1_ = fmu_get_deriv();
+		x_1_ = q_1_ = fmu_get_poly_1();
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 		if ( have_connections ) advance_connections();
 	}
 
-	// Observer Advance: Stage 1
+	// Observer Advance
 	void
-	advance_observer_1( Time const t )
+	advance_observer( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		fmu_set_observees_q( t );
-		if ( self_observer ) fmu_set_q( t );
 		x_0_ = x_0_ + ( x_1_ * ( t - tX ) );
 		tX = t;
-		x_1_ = fmu_get_deriv();
+		x_1_ = fmu_get_poly_1();
 		set_tE_unaligned();
 		shift_QSS( tE );
 		if ( have_connections ) advance_connections_observer();
 	}
 
-	// Observer Advance: Stage 1
+	// Observer Advance: Simultaneous
 	void
-	advance_observer_1( Time const t, Real const d )
+	advance_observer_s( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		assert( d == fmu_get_deriv() );
-		x_0_ = x_0_ + ( x_1_ * ( t - tX ) );
-		tX = t;
-		x_1_ = d;
-		set_tE_unaligned();
-		shift_QSS( tE );
-		if ( have_connections ) advance_connections_observer();
+		fmu_set_observees_q( t );
+		if ( self_observer ) fmu_set_q( t );
+		advance_observer( t );
 	}
 
 	// Observer Advance: Stage d
@@ -291,7 +253,7 @@ public: // Methods
 		x_0_ = q_0_ = fmu_get_real(); // Assume FMU ran zero-crossing handler
 		set_qTol();
 		fmu_set_observees_q( tX = tQ = t );
-		x_1_ = q_1_ = fmu_get_deriv();
+		x_1_ = q_1_ = fmu_get_poly_1();
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
@@ -314,7 +276,7 @@ public: // Methods
 	advance_handler_1()
 	{
 		fmu_set_observees_q( tQ );
-		x_1_ = q_1_ = fmu_get_deriv();
+		x_1_ = q_1_ = fmu_get_poly_1();
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';

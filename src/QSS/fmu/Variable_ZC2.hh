@@ -153,15 +153,15 @@ public: // Methods
 	void
 	init_1()
 	{
-		x_1_ = fmu_get_deriv();
+		x_1_ = fmu_get_poly_ZC_1();
 	}
 
 	// Initialization: Stage 2
 	void
 	init_2()
 	{
-		fmu_set_observees_x( tN = tQ + options::dtNum );
-		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
+		fmu_set_observees_x( tQ + options::dtNum );
+		x_2_ = options::one_half_over_dtNum * ( fmu_get_poly_ZC_1() - x_1_ ); // Forward Euler
 		set_tE();
 		set_tZ();
 		( tE < tZ ) ? add_QSS_ZC( tE ) : add_ZC( tZ );
@@ -189,10 +189,11 @@ public: // Methods
 		x_0_ = fmu_get_real();
 		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 		set_qTol();
-		x_1_ = fmu_get_deriv();
-		fmu_set_time( tN = tQ + options::dtNum );
+		x_1_ = fmu_get_poly_ZC_1();
+		Time const tN( tQ + options::dtNum );
+		fmu_set_time( tN );
 		fmu_set_observees_x( tN );
-		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
+		x_2_ = options::one_half_over_dtNum * ( fmu_get_poly_ZC_1() - x_1_ ); // Forward Euler
 		fmu_set_time( tQ );
 		set_tE();
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
@@ -209,22 +210,6 @@ public: // Methods
 	advance_observer_1( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		fmu_set_observees_x( tX = tQ = t );
-		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
-		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
-		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = fmu_get_real();
-		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
-		set_qTol();
-		x_1_ = fmu_get_deriv();
-	}
-
-	// Observer Advance: Stage 1
-	void
-	advance_observer_1( Time const t, Real const d )
-	{
-		assert( ( tX <= t ) && ( t <= tE ) );
-		assert( d == fmu_get_deriv() );
 		tX = tQ = t;
 		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
@@ -232,47 +217,34 @@ public: // Methods
 		x_0_ = fmu_get_real();
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		set_qTol();
-		x_1_ = d;
+		x_1_ = fmu_get_poly_ZC_1();
 	}
 
-	// Zero-Crossing Observer Advance: Stage 1
+	// Observer Advance: Simultaneous Stage 1
 	void
-	advance_observer_ZC_1( Time const t, Real const d, Real const v )
+	advance_observer_s_1( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		assert( d == fmu_get_deriv() );
-		assert( v == fmu_get_real() );
-		tX = tQ = t;
-		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
-		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
-		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = v;
-		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
-		set_qTol();
-		x_1_ = d;
+		fmu_set_observees_x( t );
+		advance_observer_1( t );
 	}
 
 	// Observer Advance: Stage 2
 	void
-	advance_observer_2( Time const t )
+	advance_observer_2()
+	{
+		x_2_ = options::one_half_over_dtNum * ( fmu_get_poly_ZC_1() - x_1_ ); // Forward Euler
+		set_tE();
+		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
+	}
+
+	// Observer Advance: Simultaneous Stage 2
+	void
+	advance_observer_s_2( Time const t )
 	{
 		assert( tX <= t );
 		fmu_set_observees_x( t );
-		x_2_ = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1_ ); // Forward Euler
-		set_tE();
-		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
-	}
-
-	// Observer Advance: Stage 2
-	void
-	advance_observer_2( Time const t, Real const d )
-	{
-		assert( tX <= t );
-		assert( d == fmu_get_deriv() );
-		(void)t; // Suppress unused warning
-		x_2_ = options::one_half_over_dtNum * ( d - x_1_ ); // Forward Euler
-		set_tE();
-		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
+		advance_observer_2();
 	}
 
 	// Observer Advance: Stage d
@@ -348,7 +320,7 @@ private: // Methods
 						std::size_t const n( 10u ); // Max iterations
 						//int const sign_0( signum( x_0_ ) );
 						while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-							Real const d( fmu_get_deriv() );
+							Real const d( fmu_get_poly_ZC_1() );
 							if ( d == 0.0 ) break;
 							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 							t -= m * ( v / d );
@@ -404,7 +376,7 @@ private: // Methods
 						std::size_t const n( 10u ); // Max iterations
 						//int const sign_0( signum( x_0 ) );
 						while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-							Real const d( fmu_get_deriv() );
+							Real const d( fmu_get_poly_ZC_1() );
 							if ( d == 0.0 ) break;
 							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 							t -= m * ( v / d );

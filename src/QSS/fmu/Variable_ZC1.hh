@@ -133,7 +133,7 @@ public: // Methods
 	void
 	init_1()
 	{
-		x_1_ = fmu_get_deriv();
+		x_1_ = fmu_get_poly_ZC_1();
 		set_tE();
 		set_tZ();
 		( tE < tZ ) ? add_QSS_ZC( tE ) : add_ZC( tZ );
@@ -161,7 +161,7 @@ public: // Methods
 		x_0_ = fmu_get_real();
 		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 		set_qTol();
-		x_1_ = fmu_get_deriv();
+		x_1_ = fmu_get_poly_ZC_1();
 		set_tE();
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
@@ -177,24 +177,6 @@ public: // Methods
 	advance_observer_1( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		fmu_set_observees_x( tX = tQ = t );
-		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
-		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
-		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = fmu_get_real();
-		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
-		set_qTol();
-		x_1_ = fmu_get_deriv();
-		set_tE();
-		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
-	}
-
-	// Observer Advance: Stage 1
-	void
-	advance_observer_1( Time const t, Real const d )
-	{
-		assert( ( tX <= t ) && ( t <= tE ) );
-		assert( d == fmu_get_deriv() );
 		tX = tQ = t;
 		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
@@ -202,28 +184,18 @@ public: // Methods
 		x_0_ = fmu_get_real();
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		set_qTol();
-		x_1_ = d;
+		x_1_ = fmu_get_poly_ZC_1();
 		set_tE();
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
 	}
 
-	// Zero-Crossing Observer Advance: Stage 1
+	// Observer Advance: Simultaneous Stage 1
 	void
-	advance_observer_ZC_1( Time const t, Real const d, Real const v )
+	advance_observer_s_1( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		assert( d == fmu_get_deriv() );
-		assert( v == fmu_get_real() );
-		tX = tQ = t;
-		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
-		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
-		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = v;
-		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
-		set_qTol();
-		x_1_ = d;
-		set_tE();
-		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
+		fmu_set_observees_x( t );
+		advance_observer_1( t );
 	}
 
 	// Observer Advance: Stage d
@@ -289,7 +261,7 @@ private: // Methods
 							std::size_t i( 0 );
 							std::size_t const n( 10u ); // Max iterations
 							while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-								Real const d( fmu_get_deriv() );
+								Real const d( fmu_get_poly_ZC_1() );
 								if ( d == 0.0 ) break;
 								//if ( ( signum( d ) != sign_old ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 								t -= m * ( v / d );

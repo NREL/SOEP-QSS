@@ -153,7 +153,7 @@ public: // Methods
 			advance_LIQSS();
 			fmu_set_real( x_0_ );
 		} else {
-			x_1_ = fmu_get_deriv();
+			x_1_ = fmu_get_poly_1();
 			q_0_ += signum( x_1_ ) * qTol;
 		}
 		set_tE_aligned();
@@ -180,7 +180,7 @@ public: // Methods
 		if ( self_observer ) {
 			advance_LIQSS();
 		} else {
-			x_1_ = fmu_get_deriv();
+			x_1_ = fmu_get_poly_1();
 			q_0_ += signum( x_1_ ) * qTol;
 		}
 		set_tE_aligned();
@@ -208,7 +208,7 @@ public: // Methods
 			advance_LIQSS();
 			fmu_set_real( x_0_ );
 		} else {
-			x_1_ = fmu_get_deriv();
+			x_1_ = fmu_get_poly_1();
 			q_0_ += signum( x_1_ ) * qTol;
 		}
 		set_tE_aligned();
@@ -217,33 +217,27 @@ public: // Methods
 		if ( have_connections ) advance_connections();
 	}
 
-	// Observer Advance: Stage 1
+	// Observer Advance
 	void
-	advance_observer_1( Time const t )
+	advance_observer( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		fmu_set_observees_q( t );
-		if ( self_observer ) fmu_set_q( t );
 		x_0_ = x_0_ + ( x_1_ * ( t - tX ) );
 		tX = t;
-		x_1_ = fmu_get_deriv();
+		x_1_ = fmu_get_poly_1();
 		set_tE_unaligned();
 		shift_QSS( tE );
 		if ( have_connections ) advance_connections_observer();
 	}
 
-	// Observer Advance: Stage 1
+	// Observer Advance: Simultaneous
 	void
-	advance_observer_1( Time const t, Real const d )
+	advance_observer_s( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		assert( d == fmu_get_deriv() );
-		x_0_ = x_0_ + ( x_1_ * ( t - tX ) );
-		tX = t;
-		x_1_ = d;
-		set_tE_unaligned();
-		shift_QSS( tE );
-		if ( have_connections ) advance_connections_observer();
+		fmu_set_observees_q( t );
+		if ( self_observer ) fmu_set_q( t );
+		advance_observer( t );
 	}
 
 	// Observer Advance: Stage d
@@ -261,7 +255,7 @@ public: // Methods
 		x_0_ = q_c_ = q_0_ = fmu_get_real(); // Assume FMU ran zero-crossing handler
 		set_qTol();
 		fmu_set_observees_q( tX = tQ = t );
-		x_1_ = fmu_get_deriv();
+		x_1_ = fmu_get_poly_1();
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
@@ -284,7 +278,7 @@ public: // Methods
 	advance_handler_1()
 	{
 		fmu_set_observees_q( tQ );
-		x_1_ = fmu_get_deriv();
+		x_1_ = fmu_get_poly_1();
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
@@ -342,10 +336,10 @@ private: // Methods
 
 		// Derivative at +/- qTol
 		fmu_set_real( q_l );
-		Real const x_1_l( fmu_get_deriv() );
+		Real const x_1_l( fmu_get_poly_1() );
 		int const x_1_l_s( signum( x_1_l ) );
 		fmu_set_real( q_u );
-		Real const x_1_u( fmu_get_deriv() );
+		Real const x_1_u( fmu_get_poly_1() );
 		int const x_1_u_s( signum( x_1_u ) );
 
 		// Set coefficients based on derivative signs
