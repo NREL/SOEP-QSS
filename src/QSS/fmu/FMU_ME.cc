@@ -306,6 +306,7 @@ namespace fmu {
 		using Real = Variable::Real;
 		using Var_Names = std::unordered_set< std::string >; // FMU Variables names
 		using Function = std::function< SmoothToken ( Time const ) >;
+		using Var_Idx_Lookup = std::unordered_map< size_type, size_type >;
 
 		// I/o setup
 		std::cout << std::setprecision( 15 );
@@ -357,6 +358,7 @@ namespace fmu {
 
 		// Collections
 		Var_Names var_names; // Variable names (to check for duplicates)
+		Var_Idx_Lookup der_to_var_idx; // Derivative to Variable index lookup
 
 		// Process FMU variables
 		var_list = fmi2_import_get_variable_list( fmu, 0 ); // sort order = 0 for original order
@@ -774,6 +776,7 @@ namespace fmu {
 					fmu_der.ics = fmu_var.ics = ++ics;
 					fmu_ders[ var_real ] = fmu_der;
 					fmu_dvrs[ der_real ] = fmu_var;
+					der_to_var_idx[ fmu_der.idx ] = fmu_var.idx;
 					std::string const var_name( fmi2_import_get_variable_name( fmu_var.var ) );
 					std::cout << " Initial value of " << var_name << " = " << states_initial << std::endl;
 					bool const start( fmi2_import_get_variable_has_start( fmu_var.var ) == 1 );
@@ -809,6 +812,7 @@ namespace fmu {
 						outs.push_back( qss_var );
 						fmu_outs.erase( fmu_var.rvr ); // Remove it from non-QSS FMU outputs
 					}
+					assert( fmu_idxs.find( fmu_var.idx ) != fmu_idxs.end() );
 					fmu_idxs[ fmu_var.idx ] = qss_var; // Add to map from FMU variable index to QSS variable
 					std::cout << " FMU-ME idx: " << fmu_var.idx << " maps to QSS var: " << qss_var->name << std::endl;
 				} else {
@@ -871,6 +875,7 @@ namespace fmu {
 					outs.push_back( qss_var );
 					fmu_outs.erase( fmu_var.rvr ); // Remove it from non-QSS FMU outputs
 				}
+				assert( fmu_idxs.find( fmu_var.idx ) != fmu_idxs.end() );
 				fmu_idxs[ fmu_var.idx ] = qss_var; // Add to map from FMU variable index to QSS variable
 				std::cout << " FMU-ME idx: " << fmu_var.idx << " maps to QSS var: " << qss_var->name << std::endl;
 				++n_ZC_vars;
@@ -878,8 +883,26 @@ namespace fmu {
 				// Create conditional for the zero-crossing variable for now: FMU conditional block info would allow us to do more
 				Conditional< Variable > * con( new Conditional< Variable >( qss_var, events ) );
 				cons.push_back( con );
-				for ( auto revDep : ei.reverseDependencies ) { // Add reverse (handler) dependency observer to conditional
-					con->add_observer( fmu_idxs[ revDep ] );
+				for ( auto const revDep : ei.reverseDependencies ) { // Add reverse (handler) dependency observer to conditional
+					auto const irevDep( fmu_idxs.find( revDep ) );
+					if ( irevDep != fmu_idxs.end() ) { // Reverse dependency is a QSS variable
+						con->add_observer( irevDep->second );
+					} else {
+						auto const irevDepVarIdx( der_to_var_idx.find( revDep ) );
+						if ( irevDepVarIdx != der_to_var_idx.end() ) { // Reverse dependency is a derivative of a QSS variable
+							size_type const revDepVar( irevDepVarIdx->second );
+							auto const irevDepVar( fmu_idxs.find( revDepVar ) );
+							if ( irevDep != fmu_idxs.end() ) {
+								con->add_observer( irevDepVar->second );
+							} else {
+								std::cerr << "\nError: FMU event indicator variable reverse dependency not found: " << revDep << std::endl;
+								std::exit( EXIT_FAILURE );
+							}
+						} else {
+							std::cerr << "\nError: FMU event indicator variable reverse dependency not found: " << revDep << std::endl;
+							std::exit( EXIT_FAILURE );
+						}
+					}
 				}
 			} else {
 				std::cerr << "\nError: FMU event indicator variable is not real-valued and continuous: " << var_name << std::endl;
@@ -911,46 +934,55 @@ namespace fmu {
 					std::string const der_name( fmi2_import_get_variable_name( der ) );
 					std::cout << " Name: " << der_name << std::endl;
 					fmi2_import_real_variable_t * der_real( fmi2_import_get_variable_as_real( der ) );
+					assert( fmu_dvrs.find( der_real ) != fmu_dvrs.end() );
 					size_type const idx( fmu_dvrs[ der_real ].idx );
-					Variable * var( fmu_idxs[ idx ] );
-					std::cout << " Var: " << var->name << "  Index: " << idx << std::endl;
-					for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
-						size_type const dep_idx( dependency[ j ] );
-						std::cout << "  Dep Index: " << dep_idx << std::endl;
-						if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
-							std::cerr << "\n   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
-						} else { // Process based on kind of dependent
-							fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
-							if ( kind == fmi2_dependency_factor_kind_dependent ) {
-								std::cout << "  Kind: Dependent (" << kind << ')' << std::endl;
-							} else if ( kind == fmi2_dependency_factor_kind_constant ) {
-								std::cout << "  Kind: Constant (" << kind << ')' << std::endl;
-							} else if ( kind == fmi2_dependency_factor_kind_fixed ) {
-								std::cout << "  Kind: Fixed (" << kind << ')' << std::endl;
-							} else if ( kind == fmi2_dependency_factor_kind_tunable ) {
-								std::cout << "  Kind: Tunable (" << kind << ')' << std::endl;
-							} else if ( kind == fmi2_dependency_factor_kind_discrete ) {
-								std::cout << "  Kind: Discrete (" << kind << ')' << std::endl;
-							} else if ( kind == fmi2_dependency_factor_kind_num ) {
-								std::cout << "  Kind: Num (" << kind << ')' << std::endl;
+					auto const ivar( fmu_idxs.find( idx ) );
+					if ( ivar != fmu_idxs.end() ) {
+						Variable * var( ivar->second );
+						std::cout << " Var: " << var->name << "  Index: " << idx << std::endl;
+						for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
+							size_type const dep_idx( dependency[ j ] );
+							std::cout << "  Dep Index: " << dep_idx << std::endl;
+							if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
+								std::cerr << "\n   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
+								std::exit( EXIT_FAILURE );
+							} else { // Process based on kind of dependent
+								fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
+								if ( kind == fmi2_dependency_factor_kind_dependent ) {
+									std::cout << "  Kind: Dependent (" << kind << ')' << std::endl;
+								} else if ( kind == fmi2_dependency_factor_kind_constant ) {
+									std::cout << "  Kind: Constant (" << kind << ')' << std::endl;
+								} else if ( kind == fmi2_dependency_factor_kind_fixed ) {
+									std::cout << "  Kind: Fixed (" << kind << ')' << std::endl;
+								} else if ( kind == fmi2_dependency_factor_kind_tunable ) {
+									std::cout << "  Kind: Tunable (" << kind << ')' << std::endl;
+								} else if ( kind == fmi2_dependency_factor_kind_discrete ) {
+									std::cout << "  Kind: Discrete (" << kind << ')' << std::endl;
+								} else if ( kind == fmi2_dependency_factor_kind_num ) {
+									std::cout << "  Kind: Num (" << kind << ')' << std::endl;
+								}
 							}
-						}
-						auto idep( fmu_idxs.find( dep_idx ) ); //Do Add support for input variable dependents
-						if ( idep != fmu_idxs.end() ) {
-							Variable * dep( idep->second );
-							if ( dep == var ) {
-								std::cout << "  Var: " << dep->name << " is self-observer" << std::endl;
-								var->self_observer = true;
-							} else if ( dep->is_ZC() ) {
-								std::cout << "  Zero Crossing Var: " << dep->name << " handler modifies " << var->name << std::endl;
-								if ( dep->in_conditional() ) dep->conditional->add_observer( var );
+							auto const idep( fmu_idxs.find( dep_idx ) ); //Do Add support for input variable dependents
+							if ( idep != fmu_idxs.end() ) {
+								Variable * dep( idep->second );
+								if ( dep == var ) {
+									std::cout << "  Var: " << dep->name << " is self-observer" << std::endl;
+									var->self_observer = true;
+								} else if ( dep->is_ZC() ) {
+									std::cout << "  Zero Crossing Var: " << dep->name << " handler modifies " << var->name << std::endl;
+									if ( dep->in_conditional() ) dep->conditional->add_observer( var );
+								} else {
+									std::cout << "  Var: " << dep->name << " has observer " << var->name << std::endl;
+									var->observe( dep );
+								}
 							} else {
-								std::cout << "  Var: " << dep->name << " has observer " << var->name << std::endl;
-								var->observe( dep );
+								std::cerr << "\n   Error: FMU-ME derivative " << der_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
+								std::exit( EXIT_FAILURE );
 							}
-						} else {
-							//std::cout << "FMU-ME derivative " << der_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
 						}
+					} else {
+						std::cerr << "\n   Error: QSS variable with index " << idx << " referenced in derivative not found" << std::endl;
+						std::exit( EXIT_FAILURE );
 					}
 				}
 			} else { // Assume no observers in model (this may not be true: FMI spec says no dependencies => dependent on all)
@@ -981,15 +1013,16 @@ namespace fmu {
 					fmi2_import_real_variable_t * inu_real( fmi2_import_get_variable_as_real( inu ) );
 					FMU_Variable & fmu_inu( fmu_vars[ inu_real ] );
 					size_type const idx( fmu_inu.idx );
-					auto ivar( fmu_idxs.find( idx ) );
+					auto const ivar( fmu_idxs.find( idx ) );
 					if ( ivar != fmu_idxs.end() ) {
-						Variable * var( fmu_idxs[ idx ] );
+						Variable * var( ivar->second );
 						std::cout << " Var: " << var->name << "  Index: " << idx << std::endl;
 						for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
 							size_type const dep_idx( dependency[ j ] );
 							std::cout << "  Dep Index: " << dep_idx << std::endl;
 							if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
 								std::cerr << "\n   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
+								std::exit( EXIT_FAILURE );
 							} else { // Process based on kind of dependent
 								fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
 								if ( kind == fmi2_dependency_factor_kind_dependent ) {
@@ -1020,9 +1053,13 @@ namespace fmu {
 									var->observe( dep );
 								}
 							} else {
-								//std::cout << "FMU-ME variable " << var_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
+								std::cerr << "\n   Error: FMU-ME InitialUnknown " << inu_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
+								std::exit( EXIT_FAILURE );
 							}
 						}
+					} else {
+						std::cerr << "\n   Error: QSS variable with index " << idx << " for InitialUnknown not found" << std::endl;
+						std::exit( EXIT_FAILURE );
 					}
 				}
 			} else { // Assume no observers in model (this may not be true: FMI spec says no dependencies => dependent on all)
@@ -1084,7 +1121,8 @@ namespace fmu {
 						std::cout << " Type: Unknown" << std::endl;
 						break;
 					}
-					auto idis( fmu_idxs.find( fmu_dis->idx ) ); //Do Add support for input variable dependents
+					size_type const idx( fmu_dis->idx );
+					auto const idis( fmu_idxs.find( idx ) ); //Do Add support for input variable dependents
 					if ( idis != fmu_idxs.end() ) {
 						Variable * dis_var( idis->second );
 						assert( dis_var->is_Discrete() );
@@ -1093,6 +1131,7 @@ namespace fmu {
 							std::cout << "  Dep Index: " << dep_idx << std::endl;
 							if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
 								std::cerr << "\n   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
+								std::exit( EXIT_FAILURE );
 							} else { // Process based on kind of dependent
 								fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
 								if ( kind == fmi2_dependency_factor_kind_dependent ) {
@@ -1123,9 +1162,13 @@ namespace fmu {
 									std::exit( EXIT_FAILURE );
 								}
 							} else {
-								//std::cout << "FMU-ME discrete variable " << dis_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
+								std::cerr << "\n   Error: FMU-ME discrete variable " << dis_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
+								std::exit( EXIT_FAILURE );
 							}
 						}
+					} else {
+						std::cerr << "\n   Error: QSS variable with index " << idx << " for Discrete variable not found" << std::endl;
+						std::exit( EXIT_FAILURE );
 					}
 				}
 			} else { // Assume no discrete variables dependent on ZC variables in model
@@ -1179,7 +1222,8 @@ namespace fmu {
 						std::cout << " Type: Unknown" << std::endl;
 						break;
 					}
-					auto iout( fmu_idxs.find( fmu_out->idx ) ); //Do Add support for input variable dependents
+					size_type const idx( fmu_out->idx );
+					auto iout( fmu_idxs.find( idx ) ); //Do Add support for input variable dependents
 					if ( ( iout == fmu_idxs.end() ) && ( fmu_var != nullptr ) ) iout = fmu_idxs.find( fmu_var->idx ); // Use variable that output variable is derivative of
 					if ( iout != fmu_idxs.end() ) {
 						Variable * out_var( iout->second );
@@ -1190,6 +1234,7 @@ namespace fmu {
 							std::cout << "  Dep Index: " << dep_idx << std::endl;
 							if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
 								std::cerr << "\n   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
+								std::exit( EXIT_FAILURE );
 							} else { // Process based on kind of dependent
 								fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
 								if ( kind == fmi2_dependency_factor_kind_dependent ) {
@@ -1206,7 +1251,7 @@ namespace fmu {
 									std::cout << "  Kind: Num (" << kind << ')' << std::endl;
 								}
 							}
-							auto idep( fmu_idxs.find( dep_idx ) ); //Do Add support for input variable dependents
+							auto const idep( fmu_idxs.find( dep_idx ) ); //Do Add support for input variable dependents
 							if ( idep != fmu_idxs.end() ) {
 								Variable * dep( idep->second );
 								if ( dep == out_var ) {
@@ -1220,9 +1265,13 @@ namespace fmu {
 									out_var->observe( dep );
 								}
 							} else {
-								//std::cout << "FMU-ME output variable " << out_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
+								std::cerr << "\n   Error: FMU-ME output variable " << out_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
+								std::exit( EXIT_FAILURE );
 							}
 						}
+					} else {
+						std::cerr << "\n   Error: QSS variable corresponding to Output variable not found" << std::endl;
+						std::exit( EXIT_FAILURE );
 					}
 				}
 			} else { // Assume no output variables dependent on ZC variables in model
