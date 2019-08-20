@@ -205,10 +205,10 @@ public: // Methods
 	advance_observer( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
+		tX = tQ = t;
 		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		tX = tQ = t;
 		x_0_ = fmu_get_real();
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		set_qTol();
