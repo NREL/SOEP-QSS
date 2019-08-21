@@ -812,7 +812,6 @@ namespace fmu {
 						outs.push_back( qss_var );
 						fmu_outs.erase( fmu_var.rvr ); // Remove it from non-QSS FMU outputs
 					}
-					assert( fmu_idxs.find( fmu_var.idx ) != fmu_idxs.end() );
 					fmu_idxs[ fmu_var.idx ] = qss_var; // Add to map from FMU variable index to QSS variable
 					std::cout << " FMU-ME idx: " << fmu_var.idx << " maps to QSS var: " << qss_var->name << std::endl;
 				} else {
@@ -875,7 +874,6 @@ namespace fmu {
 					outs.push_back( qss_var );
 					fmu_outs.erase( fmu_var.rvr ); // Remove it from non-QSS FMU outputs
 				}
-				assert( fmu_idxs.find( fmu_var.idx ) != fmu_idxs.end() );
 				fmu_idxs[ fmu_var.idx ] = qss_var; // Add to map from FMU variable index to QSS variable
 				std::cout << " FMU-ME idx: " << fmu_var.idx << " maps to QSS var: " << qss_var->name << std::endl;
 				++n_ZC_vars;
@@ -892,14 +890,14 @@ namespace fmu {
 						if ( irevDepVarIdx != der_to_var_idx.end() ) { // Reverse dependency is a derivative of a QSS variable
 							size_type const revDepVar( irevDepVarIdx->second );
 							auto const irevDepVar( fmu_idxs.find( revDepVar ) );
-							if ( irevDep != fmu_idxs.end() ) {
+							if ( irevDepVar != fmu_idxs.end() ) {
 								con->add_observer( irevDepVar->second );
 							} else {
-								std::cerr << "\nError: FMU event indicator variable reverse dependency not found: " << revDep << std::endl;
+								std::cerr << "\nError: FMU event indicator variable reverse dependency " << revDep << " derivative's variable with index " << revDepVar << " not found" << std::endl;
 								std::exit( EXIT_FAILURE );
 							}
 						} else {
-							std::cerr << "\nError: FMU event indicator variable reverse dependency not found: " << revDep << std::endl;
+							std::cerr << "\nError: FMU event indicator variable reverse dependency " << revDep << " derivative's variable not found" << std::endl;
 							std::exit( EXIT_FAILURE );
 						}
 					}
@@ -976,8 +974,7 @@ namespace fmu {
 									var->observe( dep );
 								}
 							} else {
-								std::cerr << "\n   Error: FMU-ME derivative " << der_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
-								std::exit( EXIT_FAILURE );
+								//std::cout << "\n   Note: FMU-ME derivative " << der_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
 							}
 						}
 					} else {
@@ -1053,13 +1050,11 @@ namespace fmu {
 									var->observe( dep );
 								}
 							} else {
-								std::cerr << "\n   Error: FMU-ME InitialUnknown " << inu_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
-								std::exit( EXIT_FAILURE );
+								//std::cout << "\n   Note: FMU-ME InitialUnknown " << inu_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
 							}
 						}
 					} else {
-						std::cerr << "\n   Error: QSS variable with index " << idx << " for InitialUnknown not found" << std::endl;
-						std::exit( EXIT_FAILURE );
+						//std::cout << "\n   Note: QSS variable with index " << idx << " for InitialUnknown not found" << std::endl;
 					}
 				}
 			} else { // Assume no observers in model (this may not be true: FMI spec says no dependencies => dependent on all)
@@ -1162,8 +1157,7 @@ namespace fmu {
 									std::exit( EXIT_FAILURE );
 								}
 							} else {
-								std::cerr << "\n   Error: FMU-ME discrete variable " << dis_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
-								std::exit( EXIT_FAILURE );
+								//std::cout << "\n   Note: FMU-ME discrete variable " << dis_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
 							}
 						}
 					} else {
@@ -1265,8 +1259,7 @@ namespace fmu {
 									out_var->observe( dep );
 								}
 							} else {
-								std::cerr << "\n   Error: FMU-ME output variable " << out_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
-								std::exit( EXIT_FAILURE );
+								//std::cout << "\n   Note: FMU-ME output variable " << out_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
 							}
 						}
 					} else {
