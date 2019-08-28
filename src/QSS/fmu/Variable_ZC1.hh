@@ -261,7 +261,7 @@ private: // Methods
 							std::size_t i( 0 );
 							std::size_t const n( 10u ); // Max iterations
 							while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-								Real const d( fmu_get_poly_ZC_1() );
+								Real const d( fmu_get_poly_ZC_1( t ) );
 								if ( d == 0.0 ) break;
 								//if ( ( signum( d ) != sign_old ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 								t -= m * ( v / d );

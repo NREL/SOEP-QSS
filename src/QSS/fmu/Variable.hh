@@ -871,7 +871,7 @@ public: // Methods
 	// Observer Advance: Stage 2
 	virtual
 	void
-	advance_observer_2()
+	advance_observer_2( Time const )
 	{
 		assert( false );
 	}

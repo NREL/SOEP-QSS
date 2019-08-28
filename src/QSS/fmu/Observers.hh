@@ -333,7 +333,7 @@ public: // Methods
 			zc_observees_[ i ]->fmu_set_x( tN );
 		}
 		for ( size_type i = zc_.b2_, j = 0, e = zc_.e_; i < e; ++i, ++j ) { // Order 2+ observers
-			observers_[ i ]->advance_observer_2();
+			observers_[ i ]->advance_observer_2( tN );
 		}
 		fmu_me_->set_time( t );
 	}

@@ -1400,13 +1400,6 @@ namespace fmu {
 		}
 		if ( order_max_ZC >= 2 ) {
 			set_time( t0 + options::dtNum ); // Set time to t0 + delta for numeric differentiation
-			for ( auto var : vars_NC ) {
-				if ( ! var->is_Discrete() ) var->fmu_set_sn( t );
-			}
-			for ( auto var : vars_CI ) {
-				var->fmu_set_sn( t );
-			}
-			get_derivatives();
 			for ( auto var : vars_ZC ) {
 				var->init_2();
 			}
@@ -1982,13 +1975,6 @@ namespace fmu {
 						if ( doROut ) { // Requantization output: after requantization
 							size_type const i( var_idx[ trigger ] );
 							if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
-							for ( Variable const * observer : trigger->observers() ) { // Observer output
-								if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-									size_type const io( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-									if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-								}
-							}
 						}
 					} else { // Simultaneous triggers
 						++n_QSS_simultaneous_events;
@@ -2040,13 +2026,6 @@ namespace fmu {
 							for ( Variable const * trigger : triggers ) { // Triggers
 								size_type const i( var_idx[ trigger ] );
 								if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
-							}
-							for ( Variable const * observer : observers_s ) { // Observer output
-								if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-									size_type const io( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-									if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-								}
 							}
 						}
 					}
