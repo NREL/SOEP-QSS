@@ -71,7 +71,7 @@ $(TAR_OBJ) : $(TAR_SRC)
 	$(CXX) $(CXXFLAGS) /c $(subst /,\,$<)
 
 $(EXE) : $(SLB) $(TAR_OBJ)
-	$(CXX) $(PGO) $(LDFLAGS) /Fe:$@ $(TAR_OBJ) $(LINKFLAGS) $(SLB) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib expat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
+	$(CXX) $(CXXLINKFLAGS) $(PGO) /Fe:$@ $(TAR_OBJ) $(LINKFLAGS) $(SLB) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib expat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
 	@-rm -f $(subst \,/,$(BIN_PATH))/$(TAR).exp $(subst \,/,$(BIN_PATH))/$(TAR).ilk $(subst \,/,$(BIN_PATH))/$(TAR).lib
 
 # Dependencies

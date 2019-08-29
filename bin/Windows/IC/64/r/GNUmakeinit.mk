@@ -6,7 +6,6 @@
 
 # Variables
 CXXFLAGS := /nologo /Qstd=c++11 /Qcxx-features /Wall /Qdiag-disable:809,1786,2259,3280,10382,11074,11075 /QxHOST /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DWIN32 /DQSS_FMU /DNDEBUG /Qansi-alias /Qopenmp /O3 /fp:fast=2 /Qprec-div- /Qip /Qinline-factor:225 /MD
-CFLAGS := /nologo /Qstd=c99 /Wall /Qdiag-disable:177,869,1478,1684,1786,2259,2312,2557,3280,10382,11074,11075 /QxHOST /DWIN32_LEAN_AND_MEAN /DWIN32 /DNDEBUG /Qansi-alias /Qopenmp /O3 /fp:fast=2 /Qprec-div- /Qip /MD
 # Disabled Warnings:
 #   177 Variable declared but never referenced
 #   869 Parameter never referenced
@@ -20,8 +19,6 @@ CFLAGS := /nologo /Qstd=c99 /Wall /Qdiag-disable:177,869,1478,1684,1786,2259,231
 # 10382 /QxHOST remark
 # 11074 Inlining inhibited by size limit
 # 11075 Inlining report message
-#LDFLAGS := /nologo /subsystem:CONSOLE /STACK:8388608
-LDFLAGS := /nologo
-LINKFLAGS := /link /LIBPATH:$(QSS_bin)
+LINKFLAGS := /link /nologo /SUBSYSTEM:CONSOLE /STACK:8388608
 
 include $(QSS_bin)\..\GNUmakeinit.mk

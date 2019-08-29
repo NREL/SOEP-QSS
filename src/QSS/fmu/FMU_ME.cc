@@ -852,8 +852,7 @@ namespace fmu {
 			std::exit( EXIT_FAILURE );
 		}
 		for ( EventIndicator const & ei : ieis->eventIndicators ) {
-			size_type const var_idx( ei.index - 1 );
-			fmi2_import_variable_t * var( fmi2_import_get_variable( var_list, var_idx ) );
+			fmi2_import_variable_t * var( fmi2_import_get_variable( var_list, ei.index - 1 ) );
 			std::string const var_name( fmi2_import_get_variable_name( var ) );
 			if ( ( fmi2_import_get_variability( var ) == fmi2_variability_enu_continuous ) && ( fmi2_import_get_variable_base_type( var ) == fmi2_base_type_real ) ) {
 				fmi2_import_real_variable_t * var_real( fmi2_import_get_variable_as_real( var ) );

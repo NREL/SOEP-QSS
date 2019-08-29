@@ -2,7 +2,7 @@
 
 # Build QSS
 # Usage: bld [<compiler> <build> [make args]]
-# Example: bld GCC r -j12
+# Example: bld GCC r
 
 # Set build
 if [ "$1" != "" ] && [ "$2" != "" ]; then
@@ -11,10 +11,10 @@ fi
 
 # Build QSS
 cd $QSS/src/QSS/app
-mak -j8 $3 $4 $5 $6 $7 $8 $9
+mak $3 $4 $5 $6 $7 $8 $9
 if [ "$2" = "d" ]; then
   if [ "$3" != "clean" ]; then
     cd $QSS/tst/QSS/unit
-    mak -j8 $3 $4 $5 $6 $7 $8 $9 run
+    mak $3 $4 $5 $6 $7 $8 $9 run
   fi
 fi

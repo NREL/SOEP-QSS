@@ -54,7 +54,7 @@ clean :
 $(DLB) : $(OBJ)
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.obj)) # Prune obs objs
-	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) $^ $(FMIL_HOME)\lib\fmilib.lib /link /dll /out:$@
+	$(CXX) $(CXXLINKFLAGS) $(PGO) $^ $(LINKFLAGS) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib expat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib /out:$@ /dll
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)
