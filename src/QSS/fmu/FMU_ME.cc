@@ -1018,7 +1018,7 @@ namespace fmu {
 							std::cout << "  Dep Index: " << dep_idx << std::endl;
 							if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
 								std::cerr << "\n   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
-								std::exit( EXIT_FAILURE );
+//								std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes so we can profile
 							} else { // Process based on kind of dependent
 								fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
 								if ( kind == fmi2_dependency_factor_kind_dependent ) {
@@ -1227,7 +1227,7 @@ namespace fmu {
 							std::cout << "  Dep Index: " << dep_idx << std::endl;
 							if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
 								std::cerr << "\n   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
-								std::exit( EXIT_FAILURE );
+//								std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes so we can profile
 							} else { // Process based on kind of dependent
 								fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
 								if ( kind == fmi2_dependency_factor_kind_dependent ) {
@@ -1263,7 +1263,7 @@ namespace fmu {
 						}
 					} else {
 						std::cerr << "\n   Error: QSS variable corresponding to Output variable not found" << std::endl;
-						std::exit( EXIT_FAILURE );
+//						std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes so we can profile
 					}
 				}
 			} else { // Assume no output variables dependent on ZC variables in model

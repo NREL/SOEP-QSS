@@ -38,7 +38,6 @@
 
 // QSS Headers
 #include <QSS/Conditional.hh>
-#include <QSS/EventQueue.hh>
 
 // C++ Headers
 #include <algorithm>

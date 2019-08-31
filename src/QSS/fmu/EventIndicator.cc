@@ -98,12 +98,12 @@ annotation_start_handle(
 					while ( reverseDependencies_stream >> reverseDependency_string ) {
 						if ( is_int( reverseDependency_string ) ) {
 							ei.reverseDependencies.push_back( int_of( reverseDependency_string ) );
+							has_reverseDependencies = true;
 						} else {
 							std::cerr << "\nError: XML EventIndicators Element has non-integer reverseDependencies entry: " << reverseDependency_string << std::endl;
 							std::exit( EXIT_FAILURE );
 						}
 					}
-					has_reverseDependencies = true;
 				} else {
 					std::cerr << "\nWarning: XML EventIndicators Element has unsupported attribute: " << attr[ i + 1 ] << std::endl;
 				}
@@ -114,8 +114,8 @@ annotation_start_handle(
 				std::exit( EXIT_FAILURE );
 			}
 			if ( ! has_reverseDependencies ) {
-				std::cerr << "\nError: XML EventIndicators Element has no reverseDependencies attribute" << std::endl;
-				std::exit( EXIT_FAILURE );
+				std::cerr << "\nError: XML EventIndicators Element has no reverseDependencies" << std::endl;
+//				std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes so we can profile
 			}
 			fmuEventIndicators.eventIndicators.push_back( ei );
 			std::cout << "\n EventIndicator Element\n";
