@@ -38,7 +38,7 @@
 
 // QSS Headers
 #include <QSS/Target.fwd.hh>
-#include <QSS/Event.hh>
+#include <QSS/EventQueue.hh>
 #include <QSS/SuperdenseTime.hh>
 
 // C++ Headers
@@ -54,7 +54,7 @@ class Target
 
 public: // Types
 
-	using EventMap = std::multimap< SuperdenseTime, Event< Target > >;
+	using EventMap = EventQueue< Target >::EventMap;
 
 protected: // Creation
 
