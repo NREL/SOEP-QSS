@@ -76,7 +76,7 @@ public: // Types
 	using Events = std::vector< EventT >;
 
 //	using EventMap = std::multimap< SuperdenseTime, EventT >; // Uses standard C++ allocator
-	using EventMap = std::multimap< SuperdenseTime, EventT, std::less< SuperdenseTime >, Moya::Allocator< T > >; // Default 1024 grow size was best
+	using EventMap = std::multimap< SuperdenseTime, EventT, std::less< SuperdenseTime >, Moya::Allocator< std::pair< SuperdenseTime const, EventT > > >; // Default 1024 grow size was best
 	using size_type = typename EventMap::size_type;
 	using const_iterator = typename EventMap::const_iterator;
 	using iterator = typename EventMap::iterator;
