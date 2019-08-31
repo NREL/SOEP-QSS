@@ -43,7 +43,6 @@
 #  lxml should be faster than ElementTree other than initial parsing
 #  lxml is not included with most Python distributions but can be installed with pip or, on Linux, from a package
 #  Discrete variables that aren't output variables are elided from the FMU-QSS XML
-#  Zero-crossing variables (__zc_*) are output variables in our FMU-ME for now but are elided from the FMU-QSS XML
 
 # Do
 #  Add more QSS options->annotations as needed
@@ -227,7 +226,7 @@ def fmu_qss_gen():
         variability = a[ 'variability' ] if 'variability' in a else 'continuous'
         previous = v.getprevious()
         comment = previous if ( previous is not None ) and ( previous.tag is etree.Comment ) and str( previous ).startswith( ( '<!-- Variable with index #', '<!-- Index for next variable = ' ) ) else None
-        if causality in ( 'input', 'output' ) and not ( ( causality == 'output' ) and name.startswith( '__zc_' ) ): # Keep (except zero-crossing output variables)
+        if causality in ( 'input', 'output' ): # Keep
             o += 1 # FMU-QSS variable index
             io[ i ] = o
             # oi[ o ] = i
