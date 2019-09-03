@@ -6,10 +6,12 @@
 
 # Variables
 CXXFLAGS := /nologo /TP /EHsc /W4 /wd4068 /wd4996 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DWIN32 /DQSS_FMU /Od /Ob0 /Z7 /RTCsu /MDd
-CXXFLAGS += /wd4100 /wd4505 # For FMIL headers
+CXXFLAGS += /wd4100 /wd4505 # For FMIL
+CXXFLAGS += /wd4127 # For momo
 # Disabled Warnings:
 #  4068 Unknown pragma
 #  4100 Unreferenced formal parameter
+#  4127 Conditional expression is constant
 #  4505 Unreferenced local function has been removed
 #  4996 Deprecated functions (/D_SCL_SECURE_NO_WARNINGS /D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS)
 # Notes:
