@@ -75,7 +75,7 @@ run : $(EXE)
 $(EXE) : $(OBJ) $(PATH_LIBS)
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.o)) # Prune obs objs
-	$(CXX) $(LDFLAGS) -L$(BIN_PATH) -L$(GTEST_BIN) -o $@ $^ $(LINK_LIBS) -lgtest -lpthread
+	$(CXX) $(LDFLAGS) -o $@ $^ $(LINK_LIBS) -L$(FMIL_HOME)/lib -lfmilib -L$(GTEST_BIN) -lgtest -lpthread
 
 .PRECIOUS : $(EXE)
 
