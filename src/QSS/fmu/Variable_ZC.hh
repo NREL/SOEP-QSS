@@ -134,47 +134,12 @@ public: // Properties
 
 public: // Methods
 
-	// Initialization: Stage 0 ZC
-	void
-	init_0_ZC()
-	{
-		// Add drill-through observees
-		for ( size_type i = 0, n = observees_.size(); i < n; ++i ) {
-			Variable * vo( observees_[ i ] );
-			for ( Variable * voo : vo->observees() ) {
-				observe_ZC( voo ); // Only need back-observer to force observer updates when observees update since ZC variable value doesn't depend on these 2nd level observees
-			}
-		}
-	}
-
 	// Bump Time for FMU Detection
 	void
 	bump_time( Time const t_bump ) const
 	{
 		fmu_set_x( t_bump ); // Does FMU need this?
 		fmu_set_observees_x( t_bump );
-	}
-
-	// Get Polynomial Trajectory Term 1 for a Zero-Crossing Variable from FMU
-	Real
-	fmu_get_poly_ZC_1() const
-	{
-		assert( fmu_me != nullptr );
-		for ( Variables::size_type i = 0, ie = observees_.size(); i < ie; ++i ) { // Get observee derivatives
-			observees_dv_[ i ] = observees_[ i ]->x1( tQ ); // Use trajectory instead of FMU for speed
-		}
-		return fmu_me->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var.ref, observees_dv_.data() );
-	}
-
-	// Get Polynomial Trajectory Term 1 for a Zero-Crossing Variable from FMU
-	Real
-	fmu_get_poly_ZC_1( Time const t ) const
-	{
-		assert( fmu_me != nullptr );
-		for ( Variables::size_type i = 0, ie = observees_.size(); i < ie; ++i ) { // Get observee derivatives
-			observees_dv_[ i ] = observees_[ i ]->x1( t ); // Use trajectory instead of FMU for speed
-		}
-		return fmu_me->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var.ref, observees_dv_.data() );
 	}
 
 public: // Crossing Methods
@@ -289,6 +254,28 @@ protected: // Methods
 		} else {
 			return Crossing::DnPN;
 		}
+	}
+
+	// Get FMU Polynomial Trajectory Term 1
+	Real
+	fmu_get_poly_1_ZC() const
+	{
+		assert( fmu_me != nullptr );
+		for ( Variables::size_type i = 0, ie = observees_.size(); i < ie; ++i ) { // Get observee derivatives
+			observees_dv_[ i ] = observees_[ i ]->x1( tQ ); // Use trajectory instead of FMU for speed
+		}
+		return fmu_me->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var.ref, observees_dv_.data() );
+	}
+
+	// Get FMU Polynomial Trajectory Term 1
+	Real
+	fmu_get_poly_1_ZC( Time const t ) const
+	{
+		assert( fmu_me != nullptr );
+		for ( Variables::size_type i = 0, ie = observees_.size(); i < ie; ++i ) { // Get observee derivatives
+			observees_dv_[ i ] = observees_[ i ]->x1( t ); // Use trajectory instead of FMU for speed
+		}
+		return fmu_me->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var.ref, observees_dv_.data() );
 	}
 
 public: // Data

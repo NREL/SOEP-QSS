@@ -577,6 +577,17 @@ public: // Methods
 	init_observees()
 	{
 		if ( ! observees_.empty() ) {
+			// Add drill-through observees to zero-crossing variables
+			if ( is_ZC() ) {
+				for ( size_type i = 0, n = observees_.size(); i < n; ++i ) {
+					Variable * vo( observees_[ i ] );
+					for ( Variable * voo : vo->observees() ) {
+						observe_ZC( voo ); // Only need back-observer to force observer updates when observees update since ZC variable value doesn't depend on these 2nd level observees
+					}
+				}
+			}
+
+			// Remove duplicates and discrete variables
 			observees_.erase( std::remove_if( observees_.begin(), observees_.end(), []( Variable * v ){ return v->is_Discrete(); } ), observees_.end() ); // Remove discrete variables: Don't need them after ZC drill-thru observees set up
 			std::sort( observees_.begin(), observees_.end() );
 			observees_.erase( std::unique( observees_.begin(), observees_.end() ), observees_.end() ); // Remove duplicates
@@ -613,14 +624,6 @@ public: // Methods
 	void
 	init( Real const )
 	{}
-
-	// Initialization: Stage 0 ZC
-	virtual
-	void
-	init_0_ZC()
-	{
-		assert( false ); // Not a ZC variable
-	}
 
 	// Initialization: Stage 0
 	virtual
@@ -950,7 +953,7 @@ public: // Methods: FMU
 		fmu_me->set_boolean( var.ref, v );
 	}
 
-	// Get Polynomial Trajectory Term 1 from FMU
+	// Get FMU Polynomial Trajectory Term 1
 	Real
 	fmu_get_poly_1() const
 	{
@@ -958,7 +961,7 @@ public: // Methods: FMU
 		return fmu_me->get_real( der.ref );
 	}
 
-	// Get Polynomial Trajectory Term 2 from FMU
+	// Get FMU Polynomial Trajectory Term 2
 	Real
 	fmu_get_poly_2() const
 	{

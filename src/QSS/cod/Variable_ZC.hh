@@ -158,15 +158,7 @@ public: // Methods
 			std::exit( EXIT_FAILURE );
 		}
 
-		// Add drill-through observees
-		for ( size_type i = 0, n = observees_.size(); i < n; ++i ) {
-			Variable * vo( observees_[ i ] );
-			for ( Variable * voo : vo->observees() ) {
-				observe_ZC( voo ); // Only need back-observer to force observer updates when observees update since ZC variable value doesn't depend on these 2nd level observees
-			}
-		}
-
-		// Shrink observees
+		// Initialize observees
 		init_observees();
 	}
 

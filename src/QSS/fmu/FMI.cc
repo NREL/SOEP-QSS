@@ -332,6 +332,9 @@ fmi2EnterInitializationMode( fmi2Component c )
 		fmu_me.init_2_2();
 		return fmi2OK;
 	case 6:
+		fmu_me.init_ZC();
+		return fmi2OK;
+	case 7:
 		fmu_me.init_f();
 		return (fmi2Status)fmi2_import_enter_initialization_mode( fmu_qss.fmu_me.fmu );
 	default:

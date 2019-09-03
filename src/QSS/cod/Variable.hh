@@ -516,6 +516,17 @@ public: // Methods
 	init_observees()
 	{
 		if ( ! observees_.empty() ) {
+			// Add drill-through observees to zero-crossing variables
+			if ( is_ZC() ) {
+				for ( size_type i = 0, n = observees_.size(); i < n; ++i ) {
+					Variable * vo( observees_[ i ] );
+					for ( Variable * voo : vo->observees() ) {
+						observe_ZC( voo ); // Only need back-observer to force observer updates when observees update since ZC variable value doesn't depend on these 2nd level observees
+					}
+				}
+			}
+
+			// Remove duplicates and discrete variables
 			observees_.erase( std::remove_if( observees_.begin(), observees_.end(), []( Variable * v ){ return v->is_Discrete(); } ), observees_.end() ); // Remove discrete variables: Don't need them after ZC drill-through observees set up
 			std::sort( observees_.begin(), observees_.end() );
 			observees_.erase( std::unique( observees_.begin(), observees_.end() ), observees_.end() ); // Remove duplicates

@@ -119,7 +119,7 @@ public: // Methods
 			std::exit( EXIT_FAILURE );
 		}
 
-		// Shrink observees
+		// Initialize observees
 		init_observees();
 
 		// Initialize trajectory specs
@@ -133,7 +133,7 @@ public: // Methods
 	void
 	init_1()
 	{
-		x_1_ = fmu_get_poly_ZC_1();
+		x_1_ = fmu_get_poly_1_ZC();
 		set_tE();
 		set_tZ();
 		( tE < tZ ) ? add_QSS_ZC( tE ) : add_ZC( tZ );
@@ -144,7 +144,7 @@ public: // Methods
 	void
 	set_qTol()
 	{
-		qTol = std::max( rTol * std::abs( x_0_ ), aTol );
+		qTol = std::max( rTol * std::abs( x_0_ ), aTol ) * options::zFac;
 		assert( qTol > 0.0 );
 	}
 
@@ -161,7 +161,7 @@ public: // Methods
 		x_0_ = fmu_get_real();
 		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 		set_qTol();
-		x_1_ = fmu_get_poly_ZC_1();
+		x_1_ = fmu_get_poly_1_ZC();
 		set_tE();
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
@@ -184,7 +184,7 @@ public: // Methods
 		x_0_ = fmu_get_real();
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		set_qTol();
-		x_1_ = fmu_get_poly_ZC_1();
+		x_1_ = fmu_get_poly_1_ZC();
 		set_tE();
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
 	}
@@ -261,7 +261,7 @@ private: // Methods
 							std::size_t i( 0 );
 							std::size_t const n( 10u ); // Max iterations
 							while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-								Real const d( fmu_get_poly_ZC_1( t ) );
+								Real const d( fmu_get_poly_1_ZC( t ) );
 								if ( d == 0.0 ) break;
 								//if ( ( signum( d ) != sign_old ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 								t -= m * ( v / d );

@@ -182,7 +182,7 @@ simulate_fmu_qss_con( std::vector< std::string > const & paths )
 	}
 
 	// Initialize models
-	for ( size_type k = 0; k < 7u; ++k ) { // Initialization stages
+	for ( size_type k = 0; k < 8u; ++k ) { // Initialization stages
 		for ( size_type i = 0; i < n_models; ++i ) {
 			fmi2Component c( contexts[ i ] );
 			if ( fmi2EnterInitializationMode( c ) != fmi2OK ) {

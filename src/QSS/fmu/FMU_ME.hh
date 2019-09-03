@@ -199,6 +199,7 @@ public: // Simulation Methods
 		init_1_2();
 		init_2_1();
 		init_2_2();
+		init_ZC();
 		init_f();
 	}
 
@@ -225,6 +226,10 @@ public: // Simulation Methods
 	// Initialization: Stage 2.2
 	void
 	init_2_2();
+
+	// Initialization: Stage ZC
+	void
+	init_ZC();
 
 	// Initialization: Stage Final
 	void

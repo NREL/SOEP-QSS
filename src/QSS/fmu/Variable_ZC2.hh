@@ -139,7 +139,7 @@ public: // Methods
 			std::exit( EXIT_FAILURE );
 		}
 
-		// Shrink observees
+		// Initialize observees
 		init_observees();
 
 		// Initialize trajectory specs
@@ -153,7 +153,7 @@ public: // Methods
 	void
 	init_1()
 	{
-		x_1_ = fmu_get_poly_ZC_1();
+		x_1_ = fmu_get_poly_1_ZC();
 	}
 
 	// Initialization: Stage 2
@@ -162,7 +162,7 @@ public: // Methods
 	{
 		Time const tN( tQ + options::dtNum );
 		fmu_set_observees_x( tN );
-		x_2_ = options::one_half_over_dtNum * ( fmu_get_poly_ZC_1( tN ) - x_1_ ); // Forward Euler
+		x_2_ = options::one_over_two_dtNum * ( fmu_get_poly_1_ZC( tN ) - x_1_ ); // Forward Euler
 		set_tE();
 		set_tZ();
 		( tE < tZ ) ? add_QSS_ZC( tE ) : add_ZC( tZ );
@@ -173,7 +173,7 @@ public: // Methods
 	void
 	set_qTol()
 	{
-		qTol = std::max( rTol * std::abs( x_0_ ), aTol );
+		qTol = std::max( rTol * std::abs( x_0_ ), aTol ) * options::zFac;
 		assert( qTol > 0.0 );
 	}
 
@@ -190,11 +190,11 @@ public: // Methods
 		x_0_ = fmu_get_real();
 		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 		set_qTol();
-		x_1_ = fmu_get_poly_ZC_1();
+		x_1_ = fmu_get_poly_1_ZC();
 		Time const tN( tQ + options::dtNum );
 		fmu_set_time( tN );
 		fmu_set_observees_x( tN );
-		x_2_ = options::one_half_over_dtNum * ( fmu_get_poly_ZC_1( tN ) - x_1_ ); // Forward Euler
+		x_2_ = options::one_over_two_dtNum * ( fmu_get_poly_1_ZC( tN ) - x_1_ ); // Forward Euler
 		fmu_set_time( tQ );
 		set_tE();
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
@@ -218,7 +218,7 @@ public: // Methods
 		x_0_ = fmu_get_real();
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		set_qTol();
-		x_1_ = fmu_get_poly_ZC_1();
+		x_1_ = fmu_get_poly_1_ZC();
 	}
 
 	// Observer Advance: Simultaneous Stage 1
@@ -235,7 +235,7 @@ public: // Methods
 	advance_observer_2( Time const tN )
 	{
 		assert( tX <= tN );
-		x_2_ = options::one_half_over_dtNum * ( fmu_get_poly_ZC_1( tN ) - x_1_ ); // Forward Euler
+		x_2_ = options::one_over_two_dtNum * ( fmu_get_poly_1_ZC( tN ) - x_1_ ); // Forward Euler
 		set_tE();
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
 	}
@@ -321,7 +321,7 @@ private: // Methods
 						std::size_t const n( 10u ); // Max iterations
 						//int const sign_0( signum( x_0_ ) );
 						while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-							Real const d( fmu_get_poly_ZC_1( t ) );
+							Real const d( fmu_get_poly_1_ZC( t ) );
 							if ( d == 0.0 ) break;
 							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 							t -= m * ( v / d );
@@ -377,7 +377,7 @@ private: // Methods
 						std::size_t const n( 10u ); // Max iterations
 						//int const sign_0( signum( x_0 ) );
 						while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-							Real const d( fmu_get_poly_ZC_1( t ) );
+							Real const d( fmu_get_poly_1_ZC( t ) );
 							if ( d == 0.0 ) break;
 							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 							t -= m * ( v / d );

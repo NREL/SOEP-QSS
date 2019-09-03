@@ -49,15 +49,16 @@ QSS qss( QSS::QSS2 ); // QSS method: (x)(LI)QSS(1|2|3)
 double rTol( 1.0e-4 ); // Relative tolerance  [1e-4|FMU]
 double aTol( 1.0e-6 ); // Absolute tolerance
 double zTol( 0.0 ); // Zero-crossing tolerance
+double zFac( 1.01 ); // Zero-crossing tolerance factor
 double dtMin( 0.0 ); // Min time step (s)
 double dtMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Max time step (s)
 double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Inf time step (s)
 double dtZC( 1.0e-9 ); // FMU zero-crossing time step (s)
 double dtNum( 1.0e-6 ); // Numeric differentiation time step (s)
 double dtCon( 0.0 ); // FMU connection sync time step (s)
-double one_over_dtNum( 1.0e6 ); // 1 / dtNum  [computed]
-double one_half_over_dtNum( 5.0e5 ); // 1 / ( 2 * dtNum )  [computed]
-double one_sixth_over_dtNum_squared( 1.0e12 / 6.0 ); // 1 / ( 6 * dtNum^2 )  [computed]
+double one_over_dtNum( 1.0e6 ); // 1 / dtNum
+double one_over_two_dtNum( 5.0e5 ); // 1 / ( 2 * dtNum )
+double one_over_six_dtNum_squared( 1.0e12 / 6.0 ); // 1 / ( 6 * dtNum^2 )
 double dtOut( 1.0e-3 ); // Sampled & FMU output time step (s)
 double tEnd( 1.0 ); // End time (s)  [1|FMU]
 std::size_t pass( 20 ); // Pass count limit
@@ -105,6 +106,7 @@ help_display()
 	std::cout << " --rTol=TOL     Relative tolerance  [1e-4|FMU]" << '\n';
 	std::cout << " --aTol=TOL     Absolute tolerance  [1e-6]" << '\n';
 	std::cout << " --zTol=TOL     Zero-crossing tolerance  [0]" << '\n';
+	std::cout << " --zFac=FAC     Zero-crossing tolerance factor  [1.01]" << '\n';
 	std::cout << " --dtMin=STEP   Min time step (s)  [0]" << '\n';
 	std::cout << " --dtMax=STEP   Max time step (s)  [infinity]" << '\n';
 	std::cout << " --dtInf=STEP   Inf alt time step (s)  [infinity]" << '\n';
@@ -262,6 +264,18 @@ process_args( int argc, char * argv[] )
 				std::cerr << "Error: Nonnumeric zTol: " << zTol_str << std::endl;
 				fatal = true;
 			}
+		} else if ( has_value_option( arg, "zFac" ) ) {
+			std::string const zFac_str( arg_value( arg ) );
+			if ( is_double( zFac_str ) ) {
+				zFac = double_of( zFac_str );
+				if ( zFac < 1.0 ) {
+					std::cerr << "Error: zFac < 1.0: " << zFac_str << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::cerr << "Error: Nonnumeric zFac: " << zFac_str << std::endl;
+				fatal = true;
+			}
 		} else if ( has_value_option( arg, "dtMin" ) ) {
 			std::string const dtMin_str( arg_value( arg ) );
 			if ( is_double( dtMin_str ) ) {
@@ -320,8 +334,8 @@ process_args( int argc, char * argv[] )
 					fatal = true;
 				}
 				one_over_dtNum = 1.0 / dtNum;
-				one_half_over_dtNum = 1.0 / ( 2.0 * dtNum );
-				one_sixth_over_dtNum_squared = 1.0 / ( 6.0 * ( dtNum * dtNum ) );
+				one_over_two_dtNum = 1.0 / ( 2.0 * dtNum );
+				one_over_six_dtNum_squared = 1.0 / ( 6.0 * ( dtNum * dtNum ) );
 			} else {
 				std::cerr << "Error: Nonnumeric dtNum: " << dtNum_str << std::endl;
 				fatal = true;
