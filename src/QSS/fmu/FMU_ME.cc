@@ -1332,9 +1332,6 @@ namespace fmu {
 				var->init_time( t0 );
 			}
 		}
-		for ( auto var : vars_ZC ) {
-			var->init_0_ZC(); // Adds drill-through observees
-		}
 		for ( auto var : vars_NC ) {
 			var->init_0();
 		}
@@ -1347,9 +1344,6 @@ namespace fmu {
 	{
 		std::cout << '\n' + name + " Initialization: Stage 0.2 =====" << std::endl;
 		for ( auto var : vars_CI ) {
-			var->init_0();
-		}
-		for ( auto var : vars_ZC ) {
 			var->init_0();
 		}
 	}
@@ -1373,9 +1367,6 @@ namespace fmu {
 	{
 		std::cout << '\n' + name + " Initialization: Stage 1.2 =====" << std::endl;
 		for ( auto var : vars_CI ) {
-			var->init_1();
-		}
-		for ( auto var : vars_ZC ) {
 			var->init_1();
 		}
 	}
@@ -1402,11 +1393,6 @@ namespace fmu {
 		std::cout << '\n' + name + " Initialization: Stage 2.2 =====" << std::endl;
 		if ( order_max_CI >= 2 ) {
 			for ( auto var : vars_CI ) {
-				var->init_2();
-			}
-		}
-		if ( order_max_ZC >= 2 ) {
-			for ( auto var : vars_ZC ) {
 				var->init_2();
 			}
 		}
@@ -1437,9 +1423,29 @@ namespace fmu {
 				var->init_3();
 			}
 		}
-		if ( order_max_ZC >= 3 ) {
+	}
+
+	// Initialization: Stage ZC
+	void
+	FMU_ME::
+	init_ZC()
+	{
+		std::cout << '\n' + name + " Initialization: Stage ZC =====" << std::endl;
+		for ( auto var : vars_ZC ) {
+			var->init_0();
+		}
+		for ( auto var : vars_ZC ) {
+			var->init_1();
+		}
+		if ( order_max_ZC >= 2 ) {
 			for ( auto var : vars_ZC ) {
-				var->init_3();
+				var->init_2();
+			}
+			set_time( t0 );
+			if ( order_max_ZC >= 3 ) {
+				for ( auto var : vars_ZC ) {
+					var->init_3();
+				}
 			}
 		}
 	}

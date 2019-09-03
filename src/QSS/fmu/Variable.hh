@@ -544,6 +544,17 @@ public: // Methods
 	init_observees()
 	{
 		if ( ! observees_.empty() ) {
+			// Add drill-through observees to zero-crossing variables
+			if ( is_ZC() ) {
+				for ( size_type i = 0, n = observees_.size(); i < n; ++i ) {
+					Variable * vo( observees_[ i ] );
+					for ( Variable * voo : vo->observees() ) {
+						observe_ZC( voo ); // Only need back-observer to force observer updates when observees update since ZC variable value doesn't depend on these 2nd level observees
+					}
+				}
+			}
+
+			// Remove duplicates and discrete variables
 			observees_.erase( std::remove_if( observees_.begin(), observees_.end(), []( Variable * v ){ return v->is_Discrete(); } ), observees_.end() ); // Remove discrete variables: Don't need them after ZC drill-thru observees set up
 			std::sort( observees_.begin(), observees_.end() );
 			observees_.erase( std::unique( observees_.begin(), observees_.end() ), observees_.end() ); // Remove duplicates
@@ -569,14 +580,6 @@ public: // Methods
 	void
 	init( Real const )
 	{}
-
-	// Initialization: Stage 0 ZC
-	virtual
-	void
-	init_0_ZC()
-	{
-		assert( false ); // Not a ZC variable
-	}
 
 	// Initialization: Stage 0
 	virtual
@@ -874,13 +877,135 @@ public: // Methods: FMU
 		fmu_me->set_boolean( var.ref, v );
 	}
 
-	// Get FMU Variable Derivative
+	// Get FMU Polynomial Trajectory Term 1
 	Real
-	fmu_get_deriv() const
+	fmu_get_poly_1() const
 	{
 		assert( fmu_me != nullptr );
 		return fmu_me->get_real( der.ref );
 	}
+
+// The fmu_get_poly function implementations below are placeholders until new FMI API is available
+// This also does not produce correct results for variables with order 2+ terms in simultaenous QSS
+//  events if the trigger and observee sets overlap because we can't correctly set the FMU variable
+//  values at time > t when order 2+ terms are not yet set
+
+	// Get FMU Polynomial Trajectory Term 2
+	Real
+	fmu_get_poly_2() const
+	{ // Numeric differentiation placeholder pending FMI API for higher derivatives
+		Time const t( fmu_get_time() ); // Assume FMU time is already set
+		Real const x_1( fmu_get_poly_1() );
+		Time const tND( t + options::dtNum );
+		fmu_set_time( tND ); // Advance FMU time for numeric differentiation
+		fmu_set_observees_q( tND );
+		if ( self_observer ) fmu_set_q( tND );
+		Real const x_2( options::one_over_two_dtNum * ( fmu_get_poly_1() - x_1 ) );
+		fmu_set_time( t ); // Restore FMU time
+		fmu_set_observees_q( t );
+		if ( self_observer ) fmu_set_q( t );
+		return x_2;
+	}
+
+	// Get FMU Polynomial Trajectory Term 3
+	Real
+	fmu_get_poly_3() const
+	{ // Numeric differentiation placeholder pending FMI API for higher derivatives
+		Time const t( fmu_get_time() ); // Assume FMU time is already set
+		Real const d_1( fmu_get_poly_1() );
+		Time tND( t + options::dtNum );
+		fmu_set_time( tND ); // Advance FMU time for numeric differentiation
+		fmu_set_observees_q( tND );
+		if ( self_observer ) fmu_set_q( tND );
+		Real const d_2( fmu_get_poly_1() );
+		tND += options::dtNum;
+		fmu_set_time( tND ); // Advance FMU time for numeric differentiation
+		fmu_set_observees_q( tND );
+		if ( self_observer ) fmu_set_q( tND );
+		Real const d_3( fmu_get_poly_1() );
+		Real const x_3( options::one_over_six_dtNum_squared * ( d_1 - ( 2.0 * d_2 ) + d_3 ) );
+		fmu_set_time( t ); // Restore FMU time
+		fmu_set_observees_q( t );
+		if ( self_observer ) fmu_set_q( t );
+		return x_3;
+	}
+
+// Eliminate these variants when FMI API for higher derivatives is available
+
+	// Get FMU Polynomial Trajectory Term 2
+	Real
+	fmu_get_poly_2_x() const
+	{ // Numeric differentiation placeholder pending FMI API for higher derivatives
+		Time const t( fmu_get_time() ); // Assume FMU time is already set
+		Real const x_1( fmu_get_poly_1() );
+		Time const tND( t + options::dtNum );
+		fmu_set_time( tND ); // Advance FMU time for numeric differentiation
+		fmu_set_observees_x( tND );
+		if ( self_observer ) fmu_set_x( tND );
+		Real const x_2( options::one_over_two_dtNum * ( fmu_get_poly_1() - x_1 ) );
+		fmu_set_time( t ); // Restore FMU time
+		fmu_set_observees_x( t );
+		if ( self_observer ) fmu_set_x( t );
+		return x_2;
+	}
+
+	// Get FMU Polynomial Trajectory Term 3
+	Real
+	fmu_get_poly_3_x() const
+	{ // Numeric differentiation placeholder pending FMI API for higher derivatives
+		Time const t( fmu_get_time() ); // Assume FMU time is already set
+		Real const d_1( fmu_get_poly_1() );
+		Time tND( t + options::dtNum );
+		fmu_set_time( tND ); // Advance FMU time for numeric differentiation
+		fmu_set_observees_x( tND );
+		if ( self_observer ) fmu_set_x( tND );
+		Real const d_2( fmu_get_poly_1() );
+		tND += options::dtNum;
+		fmu_set_time( tND ); // Advance FMU time for numeric differentiation
+		fmu_set_observees_x( tND );
+		if ( self_observer ) fmu_set_x( tND );
+		Real const d_3( fmu_get_poly_1() );
+		Real const x_3( options::one_over_six_dtNum_squared * ( d_1 - ( 2.0 * d_2 ) + d_3 ) );
+		fmu_set_time( t ); // Restore FMU time
+		fmu_set_observees_x( t );
+		if ( self_observer ) fmu_set_x( t );
+		return x_3;
+	}
+
+//	// Get FMU Polynomial Trajectory Terms 1,2
+//	void
+//	fmu_get_poly_1_2( Real & x_1, Real & x_2 ) const
+//	{ // Numeric differentiation placeholder pending FMI API for higher derivatives
+//		Time const t( fmu_get_time() ); // Assume FMU time is already set
+//		x_1 = fmu_get_poly_1();
+//		Time const tND( t + options::dtNum );
+//		fmu_set_time( tND ); // Advance FMU time for numeric differentiation
+//		fmu_set_observees_q( tND );
+//		if ( self_observer ) fmu_set_q( tND );
+//		x_2 = options::one_over_two_dtNum * ( fmu_get_poly_1() - x_1 );
+//		fmu_set_time( t ); // Restore FMU time
+//	}
+//
+//	// Get FMU Polynomial Trajectory Terms 1,2,3
+//	void
+//	fmu_get_poly_1_2_3( Real & x_1, Real & x_2, Real & x_3 ) const
+//	{ // Numeric differentiation placeholder pending FMI API for higher derivatives
+//		Time const t( fmu_get_time() ); // Assume FMU time is already set
+//		x_1 = fmu_get_poly_1();
+//		Time tND( t + options::dtNum );
+//		fmu_set_time( tND ); // Advance FMU time for numeric differentiation
+//		fmu_set_observees_q( tND );
+//		if ( self_observer ) fmu_set_q( tND );
+//		Real const d_2( fmu_get_poly_1() );
+//		x_2 = options::one_over_two_dtNum * ( d_2 - x_1 );
+//		tND += options::dtNum;
+//		fmu_set_time( tND ); // Advance FMU time for numeric differentiation
+//		fmu_set_observees_q( tND );
+//		if ( self_observer ) fmu_set_q( tND );
+//		Real const d_3( fmu_get_poly_1() );
+//		x_3 = options::one_over_six_dtNum_squared * ( x_1 - ( 2.0 * d_2 ) + d_3 );
+//		fmu_set_time( t ); // Restore FMU time
+//	}
 
 	// Set FMU Time
 	void
@@ -940,136 +1065,6 @@ public: // Methods: FMU
 			observee->fmu_set_s( t );
 		}
 	}
-
-	// Get Polynomial Trajectory Term 1 from FMU
-	Real
-	fmu_get_poly_1() const
-	{
-		return fmu_get_deriv();
-	}
-
-// The fmu_get_poly function implementations below are placeholders until new FMI API is available
-// They set observee x (continuous) state to do numeric differentiation but context may want x or s state
-// This also does not produce correct results for variables with order 2+ terms in simultaenous QSS
-//  events if the trigger and observee sets overlap because we can't correctly set the FMU variable values
-//  at time > t when order 2+ terms are not yet set
-
-	// Get Polynomial Trajectory Term 2 from FMU
-	Real
-	fmu_get_poly_2() const
-	{ // Numeric differentiation placeholder pending FMI API for higher derivatives
-		Time const t( fmu_get_time() ); // Assume FMU time is already set
-		Real const x_1( fmu_get_deriv() );
-		Time const tND( t + options::dtNum );
-		fmu_set_time( tND ); // Advance FMU time for numeric differentiation
-		fmu_set_observees_q( tND );
-		if ( self_observer ) fmu_set_q( tND );
-		Real const x_2( options::one_half_over_dtNum * ( fmu_get_deriv() - x_1 ) );
-		fmu_set_time( t ); // Restore FMU time
-		fmu_set_observees_q( t );
-		if ( self_observer ) fmu_set_q( t );
-		return x_2;
-	}
-
-	// Get Polynomial Trajectory Term 3 from FMU
-	Real
-	fmu_get_poly_3() const
-	{ // Numeric differentiation placeholder pending FMI API for higher derivatives
-		Time const t( fmu_get_time() ); // Assume FMU time is already set
-		Real const d_1( fmu_get_deriv() );
-		Time tND( t + options::dtNum );
-		fmu_set_time( tND ); // Advance FMU time for numeric differentiation
-		fmu_set_observees_q( tND );
-		if ( self_observer ) fmu_set_q( tND );
-		Real const d_2( fmu_get_deriv() );
-		tND += options::dtNum;
-		fmu_set_time( tND ); // Advance FMU time for numeric differentiation
-		fmu_set_observees_q( tND );
-		if ( self_observer ) fmu_set_q( tND );
-		Real const d_3( fmu_get_deriv() );
-		Real const x_3( options::one_sixth_over_dtNum_squared * ( d_1 - ( 2.0 * d_2 ) + d_3 ) );
-		fmu_set_time( t ); // Restore FMU time
-		fmu_set_observees_q( t );
-		if ( self_observer ) fmu_set_q( t );
-		return x_3;
-	}
-
-// Eliminate these variants when FMI API for higher derivatives is available
-
-	// Get Polynomial Trajectory Term 2 from FMU
-	Real
-	fmu_get_poly_2_x() const
-	{ // Numeric differentiation placeholder pending FMI API for higher derivatives
-		Time const t( fmu_get_time() ); // Assume FMU time is already set
-		Real const x_1( fmu_get_deriv() );
-		Time const tND( t + options::dtNum );
-		fmu_set_time( tND ); // Advance FMU time for numeric differentiation
-		fmu_set_observees_x( tND );
-		if ( self_observer ) fmu_set_x( tND );
-		Real const x_2( options::one_half_over_dtNum * ( fmu_get_deriv() - x_1 ) );
-		fmu_set_time( t ); // Restore FMU time
-		fmu_set_observees_x( t );
-		if ( self_observer ) fmu_set_x( t );
-		return x_2;
-	}
-
-	// Get Polynomial Trajectory Term 3 from FMU
-	Real
-	fmu_get_poly_3_x() const
-	{ // Numeric differentiation placeholder pending FMI API for higher derivatives
-		Time const t( fmu_get_time() ); // Assume FMU time is already set
-		Real const d_1( fmu_get_deriv() );
-		Time tND( t + options::dtNum );
-		fmu_set_time( tND ); // Advance FMU time for numeric differentiation
-		fmu_set_observees_x( tND );
-		if ( self_observer ) fmu_set_x( tND );
-		Real const d_2( fmu_get_deriv() );
-		tND += options::dtNum;
-		fmu_set_time( tND ); // Advance FMU time for numeric differentiation
-		fmu_set_observees_x( tND );
-		if ( self_observer ) fmu_set_x( tND );
-		Real const d_3( fmu_get_deriv() );
-		Real const x_3( options::one_sixth_over_dtNum_squared * ( d_1 - ( 2.0 * d_2 ) + d_3 ) );
-		fmu_set_time( t ); // Restore FMU time
-		fmu_set_observees_x( t );
-		if ( self_observer ) fmu_set_x( t );
-		return x_3;
-	}
-
-//	// Get Polynomial Trajectory Terms 1,2 from FMU
-//	void
-//	fmu_get_poly_1_2( Real & x_1, Real & x_2 ) const
-//	{ // Numeric differentiation placeholder pending FMI API for higher derivatives
-//		Time const t( fmu_get_time() ); // Assume FMU time is already set
-//		x_1 = fmu_get_deriv();
-//		Time const tND( t + options::dtNum );
-//		fmu_set_time( tND ); // Advance FMU time for numeric differentiation
-//		fmu_set_observees_q( tND );
-//		if ( self_observer ) fmu_set_q( tND );
-//		x_2 = options::one_half_over_dtNum * ( fmu_get_deriv() - x_1 );
-//		fmu_set_time( t ); // Restore FMU time
-//	}
-//
-//	// Get Polynomial Trajectory Terms 1,2,3 from FMU
-//	void
-//	fmu_get_poly_1_2_3( Real & x_1, Real & x_2, Real & x_3 ) const
-//	{ // Numeric differentiation placeholder pending FMI API for higher derivatives
-//		Time const t( fmu_get_time() ); // Assume FMU time is already set
-//		x_1 = fmu_get_deriv();
-//		Time tND( t + options::dtNum );
-//		fmu_set_time( tND ); // Advance FMU time for numeric differentiation
-//		fmu_set_observees_q( tND );
-//		if ( self_observer ) fmu_set_q( tND );
-//		Real const d_2( fmu_get_deriv() );
-//		x_2 = options::one_half_over_dtNum * ( d_2 - x_1 );
-//		tND += options::dtNum;
-//		fmu_set_time( tND ); // Advance FMU time for numeric differentiation
-//		fmu_set_observees_q( tND );
-//		if ( self_observer ) fmu_set_q( tND );
-//		Real const d_3( fmu_get_deriv() );
-//		x_3 = options::one_sixth_over_dtNum_squared * ( x_1 - ( 2.0 * d_2 ) + d_3 );
-//		fmu_set_time( t ); // Restore FMU time
-//	}
 
 protected: // Methods
 

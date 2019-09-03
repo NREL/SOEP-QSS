@@ -69,6 +69,7 @@ extern QSS qss; // QSS method: (x)(LI)QSS(1|2|3)
 extern double rTol; // Relative tolerance
 extern double aTol; // Absolute tolerance
 extern double zTol; // Zero-crossing tolerance
+extern double zFac; // Zero-crossing tolerance factor
 extern double dtMin; // Min time step (s)
 extern double dtMax; // Max time step (s)
 extern double dtInf; // Inf time step (s)
@@ -77,8 +78,8 @@ extern double dtNum; // Numeric differentiation time step (s)
 extern double dtCon; // FMU connection sync time step (s)
 extern double dtOut; // Sampled & FMU output time step (s)
 extern double one_over_dtNum; // 1 / dtNum
-extern double one_half_over_dtNum; // 1 / ( 2 * dtNum )
-extern double one_sixth_over_dtNum_squared; // 1 / ( 6 * dtNum^2 )  [computed]
+extern double one_over_two_dtNum; // 1 / ( 2 * dtNum )
+extern double one_over_six_dtNum_squared; // 1 / ( 6 * dtNum^2 )
 extern double tEnd; // End time (s)
 extern std::size_t pass; // Pass count limit
 extern bool cycles; // Report dependency cycles?

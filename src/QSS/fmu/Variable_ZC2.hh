@@ -139,7 +139,7 @@ public: // Methods
 			std::exit( EXIT_FAILURE );
 		}
 
-		// Shrink observees
+		// Initialize observees
 		init_observees();
 
 		// Initialize trajectory specs
@@ -171,7 +171,7 @@ public: // Methods
 	void
 	set_qTol()
 	{
-		qTol = std::max( rTol * std::abs( x_0_ ), aTol );
+		qTol = std::max( rTol * std::abs( x_0_ ), aTol ) * options::zFac;
 		assert( qTol > 0.0 );
 	}
 
@@ -294,7 +294,7 @@ private: // Methods
 						std::size_t const n( 10u ); // Max iterations
 						//int const sign_0( signum( x_0_ ) );
 						while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-							Real const d( fmu_get_deriv() );
+							Real const d( fmu_get_poly_1() );
 							if ( d == 0.0 ) break;
 							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 							t -= m * ( v / d );
@@ -350,7 +350,7 @@ private: // Methods
 						std::size_t const n( 10u ); // Max iterations
 						//int const sign_0( signum( x_0 ) );
 						while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-							Real const d( fmu_get_deriv() );
+							Real const d( fmu_get_poly_1() );
 							if ( d == 0.0 ) break;
 							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 							t -= m * ( v / d );
