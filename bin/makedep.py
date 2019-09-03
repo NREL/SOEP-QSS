@@ -6,7 +6,7 @@
 #
 # Version: 1.0.0
 #
-# Copyright (c) 2000-2018 Objexx Engineering, Inc. All Rights Reserved.
+# Copyright (c) 2000-2019 Objexx Engineering, Inc. All Rights Reserved.
 
 # Notes:
 # . Dependency files for use with GNU make
@@ -71,7 +71,7 @@ def main():
     dep_str = ' '.join( dep )
 
     # Write dependency file
-    dep_file = open( dep_name, 'w' )
+    dep_file = open( dep_name, mode = 'w' )
     dep_file.write( tar + ' : ' + dep_str + '\n' )
     dep_file.write( dep_str + ' :\n' )
     dep_file.close()
@@ -97,9 +97,9 @@ def C_deps( fname, fdeps = None, par_dir = None, quoted = False, add = True ):
                         break
         if gname is None: gname = fname
         if sys.version_info >= ( 3, 0 ):
-            dfile = open( gname, 'r', newline = None )
+            dfile = open( gname, mode = 'r', newline = None )
         else:
-            dfile = open( gname, 'rU' )
+            dfile = open( gname, mode = 'rU' )
         if add: fdeps.add( fname ) # Only add dependency if it is found
         par_new = os.path.dirname( os.path.abspath( gname ) )
         if ( not par_dir ) or ( par_dir[ 0 ] != par_new ): # Push parent dir onto front of list

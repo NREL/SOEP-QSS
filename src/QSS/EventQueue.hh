@@ -47,7 +47,8 @@
 #include <QSS/SuperdenseTime.hh>
 
 // momo Headers
-#include <Allocator/Allocator.h>
+#include <momo/pool_allocator.h>
+//#include <Allocator/Allocator.h>
 
 // C++ Headers
 #include <cassert>
@@ -76,7 +77,8 @@ public: // Types
 	using Events = std::vector< EventT >;
 
 //	using EventMap = std::multimap< SuperdenseTime, EventT >; // Uses standard C++ allocator
-	using EventMap = std::multimap< SuperdenseTime, EventT, std::less< SuperdenseTime >, Moya::Allocator< std::pair< SuperdenseTime const, EventT > > >; // Default 1024 grow size was best
+	using EventMap = std::multimap< SuperdenseTime, EventT, std::less< SuperdenseTime >, momo::unsynchronized_pool_allocator< std::pair< SuperdenseTime const, EventT > > >;
+//	using EventMap = std::multimap< SuperdenseTime, EventT, std::less< SuperdenseTime >, Moya::Allocator< std::pair< SuperdenseTime const, EventT > > >; // Default 1024 grow size was best // Fastest but gives access violation in unit test exe
 	using size_type = typename EventMap::size_type;
 	using const_iterator = typename EventMap::const_iterator;
 	using iterator = typename EventMap::iterator;
