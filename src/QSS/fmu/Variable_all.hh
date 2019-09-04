@@ -64,5 +64,7 @@
 // QSS Zero-Crossing Variable Headers
 #include <QSS/fmu/Variable_ZC1.hh>
 #include <QSS/fmu/Variable_ZC2.hh>
+#include <QSS/fmu/Variable_ZCe1.hh>
+#include <QSS/fmu/Variable_ZCe2.hh>
 
 #endif

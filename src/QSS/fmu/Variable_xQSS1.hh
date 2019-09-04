@@ -176,7 +176,38 @@ public: // Methods
 		assert( qTol > 0.0 );
 	}
 
-	// QSS Advance
+//	// QSS Advance: Faster with current FMIL but incorrect with event indicators needing numeric first derivatives
+//	void
+//	advance_QSS()
+//	{
+//		x_0_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
+//		tX = tQ = tE;
+//		set_qTol();
+//		if ( have_observers_ ) {
+//			advance_observers_1();
+//		} else if ( self_observer ) {
+//			fmu_set_real( q_0_ );
+//		}
+//		fmu_set_observees_q( tQ );
+//		x_1_ = q_1_ = fmu_get_poly_1();
+//
+//		if ( have_observers_2_ ) {
+//			fmu_set_time( tN = tQ + options::dtNum );
+//			advance_observers_2();
+//			fmu_set_time( tQ );
+//		}
+//
+//		set_tE_aligned();
+//		shift_QSS( tE );
+//		if ( options::output::d ) {
+//			std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+//			if ( have_observers_ ) advance_observers_d();
+//		}
+//
+//		if ( have_connections ) advance_connections();
+//	}
+
+	// QSS Advance: Slower with current FMIL but needed with event indicators needing numeric first derivatives
 	void
 	advance_QSS()
 	{
@@ -215,11 +246,13 @@ public: // Methods
 		if ( have_connections ) advance_connections();
 	}
 
-	// Observer Advance
+	// Observer Advance: Stage 1
 	void
-	advance_observer( Time const t )
+	advance_observer_1( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
+		fmu_set_observees_q( t );
+		if ( self_observer ) fmu_set_q( t );
 		x_0_ = x_0_ + ( x_1_ * ( t - tX ) );
 		tX = t;
 		x_1_ = fmu_get_poly_1();
@@ -228,14 +261,18 @@ public: // Methods
 		if ( have_connections ) advance_connections_observer();
 	}
 
-	// Observer Advance: Simultaneous
+	// Observer Advance: Stage 1
 	void
-	advance_observer_s( Time const t )
+	advance_observer_1( Time const t, Real const d )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		fmu_set_observees_q( t );
-		if ( self_observer ) fmu_set_q( t );
-		advance_observer( t );
+		assert( d == fmu_get_poly_1() );
+		x_0_ = x_0_ + ( x_1_ * ( t - tX ) );
+		tX = t;
+		x_1_ = d;
+		set_tE_unaligned();
+		shift_QSS( tE );
+		if ( have_connections ) advance_connections_observer();
 	}
 
 	// Observer Advance: Stage d

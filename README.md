@@ -11,8 +11,7 @@ Currently the code has:
 * Input variables/functions.
 * Discrete-valued variables.
 * Numeric differentiation support.
-* Zero-crossing event support via OCT event indicator variables.
-* Directional derivatives used for 2nd derivatives of state variables and 1st derivatives of zero-crossing variables.
+* Zero-crossing event support via OCT event indicator variables or explicit zero crossing variables.
 * Conditional if and when block framework.
 * A simple "baseline" event queue built on `std::multimap`.
 * Simultaneous event support.
@@ -199,7 +198,7 @@ Models defined by FMUs following the FMI 2.0 API can be run by this QSS solver u
 * Mixing QSS methods in an FMU simulation is not yet supported and will require a Modelica annotation to indicate QSS methods on a per-variable basis.
 * The FMU support is performance-limited by the FMI 2.0 API, which requires expensive get-all-derivatives calls where QSS needs individual derivatives.
 * QSS2 performance is limited by the use of numeric differentiation: the FMI ME 2.0 API doesn't provide higher derivatives but they may become available via FMI extensions.
-* Zero crossings are problematic because the FMI spec doesn't expose the dependency of variables that are modified when each zero crossing occurs. Our initial approach was to add the zero crossing variables to the Modelica models and to add their dependencies to the FMU's modelDescription.xml file. The current approach uses the OCT event indicator system that defines the zero crossing variables and their dependencies.
+* Zero crossings are problematic because the FMI spec doesn't expose the dependency of variables that are modified when each zero crossing occurs. Our initial approach was to add the zero crossing variables to the Modelica models and to add their dependencies to the FMU's modelDescription.xml file. Additionally, we now support the OCT event indicator system that defines the zero crossing variables and their dependencies.
   * The OCT event indicator system is not yet fully functional, omitting some zero crossing variables and/or their forward and/or reverse (handler) dependencies.
 * QSS3 and LIQSS3 solvers can be added when they become more practical with the planned FMI Library FMI 2.0 API extensions with higher derivative support.
 * Input function evaluations will be provided by JModelica when QSS is integrated. For stand-alone QSS testing purposes a few input functions are provided for use with FMUs.
@@ -217,13 +216,10 @@ Much of the source code is split into separate directories for the code-defined 
 
 ### Numeric Differentiation
 
-Second order and higher derivatives are needed for QSS2+ methods. These are available analytically for linear functions and we provide them for the nonlinear functions in `cod`. For FMUs we use directional derivatives for one higher order and then numeric differentiation:
+Second order and higher derivatives are needed for QSS2+ methods. These are available analytically for linear functions and we provide them for the nonlinear functions in `cod`. For FMUs we use numeric differentiation for the higher derivatives:
 * Directional derivatives can provide one additional higher order derivative for state variable derivatives and zero-crossing functions without an explicit time dependence.
 * The current OCT directional derivative implementation is not efficiently scalable for QSS atomic operations so its use is impractical for models of real-world size.
-* OCT event indicator variables do not have a derivative variable in the FMU so the directional derivative is used for the first derivative and numeric differentiation is used for the second derivative.
-* Directional derivatives are used for the 2nd derivative of state variables and for the first derivatives of event indicator based zero crossing variables.
-* For second-order QSS we do numeric differentiation for the event indicator zero crossing variable 2nd derivatives.
-* Third-order QSS could be implemented with another level of numeric differentiation.
+* OCT event indicator variables do not have a derivative variable in the FMU so numeric differentiation is used for the first and second derivative. A 3-point centered difference method is used.
 
 At startup and simultaneous or self-observer requantization events, numeric differentiation of QSS3+ and xQSS2+ variables has a cyclic dependency problem: the derivative function evaluations at time step offsets used to compute the higher derivatives depend on those same order 2+ coefficients of the representation. This causes some variables to use "stale" values of their order 2+ coefficients in their derivative computation. The impact of this flaw will vary across models and could be severe in some situations so these higher order QSS variables should not be used for production simulations of code-defined models using numeric differentiation and of FMU-based models until the planned JModelica FMI Library version with higher derivative support is available.
 

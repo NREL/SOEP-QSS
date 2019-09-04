@@ -258,24 +258,14 @@ protected: // Methods
 
 	// Get FMU Polynomial Trajectory Term 1
 	Real
-	fmu_get_poly_1_ZC() const
+	fmu_get_poly_1_ZC( Real const v, Time const t ) const
 	{
-		assert( fmu_me != nullptr );
-		for ( Variables::size_type i = 0, ie = observees_.size(); i < ie; ++i ) { // Get observee derivatives
-			observees_dv_[ i ] = observees_[ i ]->x1( tQ ); // Use trajectory instead of FMU for speed
-		}
-		return fmu_me->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var.ref, observees_dv_.data() );
-	}
-
-	// Get FMU Polynomial Trajectory Term 1
-	Real
-	fmu_get_poly_1_ZC( Time const t ) const
-	{
-		assert( fmu_me != nullptr );
-		for ( Variables::size_type i = 0, ie = observees_.size(); i < ie; ++i ) { // Get observee derivatives
-			observees_dv_[ i ] = observees_[ i ]->x1( t ); // Use trajectory instead of FMU for speed
-		}
-		return fmu_me->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var.ref, observees_dv_.data() );
+		Time const tND( t + options::dtNum );
+		fmu_set_time( tND );
+		fmu_set_observees_x( tND );
+		Real const x_1( options::one_over_dtNum * ( fmu_get_real() - v ) ); // Forward Euler
+		fmu_set_time( t );
+		return x_1;
 	}
 
 public: // Data

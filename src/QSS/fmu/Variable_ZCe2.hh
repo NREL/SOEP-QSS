@@ -1,4 +1,4 @@
-// FMU-Based QSS2 Zero-Crossing Variable
+// FMU-Based QSS2 Explicit Zero-Crossing Variable
 //
 // Project: QSS Solver
 //
@@ -33,8 +33,8 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_Variable_ZC2_hh_INCLUDED
-#define QSS_fmu_Variable_ZC2_hh_INCLUDED
+#ifndef QSS_fmu_Variable_ZCe2_hh_INCLUDED
+#define QSS_fmu_Variable_ZCe2_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/fmu/Variable_ZC.hh>
@@ -43,29 +43,26 @@ namespace QSS {
 namespace fmu {
 
 // FMU-Based QSS2 Zero-Crossing Variable
-class Variable_ZC2 final : public Variable_ZC
+class Variable_ZCe2 final : public Variable_ZC
 {
 
 public: // Types
 
 	using Super = Variable_ZC;
 
-private: // Types
-
-	using Super::fmu_get_poly_1_ZC;
-
 public: // Creation
 
 	// Constructor
-	Variable_ZC2(
+	Variable_ZCe2(
 	 std::string const & name,
 	 Real const rTol,
 	 Real const aTol,
 	 Real const zTol,
 	 FMU_ME * fmu_me,
-	 FMU_Variable const var = FMU_Variable()
+	 FMU_Variable const var = FMU_Variable(),
+	 FMU_Variable const der = FMU_Variable()
 	) :
-	 Super( 2, name, rTol, aTol, zTol, fmu_me, var )
+	 Super( 2, name, rTol, aTol, zTol, fmu_me, var, der )
 	{}
 
 public: // Properties
@@ -156,14 +153,15 @@ public: // Methods
 	void
 	init_1()
 	{
-		x_1_ = fmu_get_poly_1_ZC();
+		x_1_ = fmu_get_poly_1();
 	}
 
 	// Initialization: Stage 2
 	void
 	init_2()
 	{
-		x_2_ = fmu_get_poly_2();
+		fmu_set_observees_x( tN = tQ + options::dtNum );
+		x_2_ = options::one_over_two_dtNum * ( fmu_get_poly_1() - x_1_ ); // Forward Euler
 		set_tE();
 		set_tZ();
 		( tE < tZ ) ? add_QSS_ZC( tE ) : add_ZC( tZ );
@@ -191,8 +189,11 @@ public: // Methods
 		x_0_ = fmu_get_real();
 		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 		set_qTol();
-		x_1_ = fmu_get_poly_1_ZC();
-		x_2_ = fmu_get_poly_2();
+		x_1_ = fmu_get_poly_1();
+		fmu_set_time( tN = tQ + options::dtNum );
+		fmu_set_observees_x( tN );
+		x_2_ = options::one_over_two_dtNum * ( fmu_get_poly_1() - x_1_ ); // Forward Euler
+		fmu_set_time( tQ );
 		set_tE();
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
@@ -215,18 +216,48 @@ public: // Methods
 		x_0_ = fmu_get_real();
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		set_qTol();
-		x_1_ = fmu_get_poly_1_ZC();
+		x_1_ = fmu_get_poly_1();
 	}
+
+//	// Zero-Crossing Observer Advance: Stage 1
+//	void
+//	advance_observer_ZC_1( Time const t, Real const d, Real const v )
+//	{
+//		assert( ( tX <= t ) && ( t <= tE ) );
+//		assert( d == fmu_get_poly_1() );
+//		assert( v == fmu_get_real() );
+//		tX = tQ = t;
+//		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
+//		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
+//		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
+//		x_0_ = v;
+//		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
+//		set_qTol();
+//		x_1_ = d;
+//	}
 
 	// Observer Advance: Stage 2
 	void
 	advance_observer_2( Time const t )
 	{
 		assert( tX <= t );
-		x_2_ = fmu_get_poly_2();
+		fmu_set_observees_x( t );
+		x_2_ = options::one_over_two_dtNum * ( fmu_get_poly_1() - x_1_ ); // Forward Euler
 		set_tE();
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
 	}
+
+//	// Observer Advance: Stage 2
+//	void
+//	advance_observer_2( Time const t, Real const d )
+//	{
+//		assert( tX <= t );
+//		assert( d == fmu_get_poly_1() );
+//		(void)t; // Suppress unused warning
+//		x_2_ = options::one_over_two_dtNum * ( d - x_1_ ); // Forward Euler
+//		set_tE();
+//		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
+//	}
 
 	// Observer Advance: Stage d
 	void
@@ -301,7 +332,7 @@ private: // Methods
 						std::size_t const n( 10u ); // Max iterations
 						//int const sign_0( signum( x_0_ ) );
 						while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-							Real const d( fmu_get_poly_1_ZC( v, t ) );
+							Real const d( fmu_get_poly_1() );
 							if ( d == 0.0 ) break;
 							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 							t -= m * ( v / d );
@@ -357,7 +388,7 @@ private: // Methods
 						std::size_t const n( 10u ); // Max iterations
 						//int const sign_0( signum( x_0 ) );
 						while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-							Real const d( fmu_get_poly_1_ZC( v, t ) );
+							Real const d( fmu_get_poly_1() );
 							if ( d == 0.0 ) break;
 							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 							t -= m * ( v / d );
@@ -403,33 +434,9 @@ private: // Methods
 		}
 	}
 
-	// Get FMU Polynomial Trajectory Term 1
-	Real
-	fmu_get_poly_1_ZC() const
-	{
-		Time tND( tQ - options::dtNum );
-		fmu_set_time( tND );
-		fmu_set_observees_x( tND );
-		x_m_ = fmu_get_real();
-		tND = tQ + options::dtNum;
-		fmu_set_time( tND );
-		fmu_set_observees_x( tND );
-		x_p_ = fmu_get_real();
-		fmu_set_time( tQ );
-		return options::one_over_two_dtNum * ( x_p_ - x_m_ ); // Centered difference
-	}
-
-	// Get Polynomial Trajectory Term 2 from FMU
-	Real
-	fmu_get_poly_2() const
-	{
-		return options::one_over_two_dtNum_squared * ( x_p_ - ( two * x_0_ ) + x_m_ ); // Centered difference
-	}
-
 private: // Data
 
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous rep coefficients
-	mutable Real x_m_{ 0.0 }, x_p_{ 0.0 }; // Values at minus and plus delta-t for numeric differentiation
 
 };
 

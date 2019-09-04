@@ -210,12 +210,6 @@ namespace fmu {
 		 fmu_generation_tool.find( "Dymola" ) == 0u ? FMU_Generator::Dymola : FMU_Generator::Other ) )
 		);
 
-		// Check FMU capabilities includes directional derivatives
-		if ( ! bool( fmi2_import_get_capability( fmu, fmi2_me_providesDirectionalDerivatives ) ) ) {
-			std::cerr << "\nError: " + name + " FMU-ME does not have directional derivative support" << std::endl;
-			std::exit( EXIT_FAILURE );
-		}
-
 		// Check SI units
 		fmi2_import_unit_definitions_t * unit_defs( fmi2_import_get_unit_definitions( fmu ) );
 		if ( unit_defs != nullptr ) {
@@ -846,6 +840,8 @@ namespace fmu {
 		// Process FMU zero-crossing (event indicator) variables
 		std::cout << "\nFMU Zero Crossing Processing =====" << std::endl;
 		size_type n_ZC_vars( 0 );
+
+		// Event indicators added by OCT
 		auto const ieis( std::find_if( allEventIndicators.begin(), allEventIndicators.end(), [this]( FMUEventIndicators const & feis ){ return feis.context == this; } ) );
 		if ( ieis == allEventIndicators.end() ) {
 			std::cerr << "\nError: FMU event indicators collection lookup failed for FMU-ME " << name << std::endl;
@@ -906,6 +902,57 @@ namespace fmu {
 				std::exit( EXIT_FAILURE );
 			}
 		}
+
+		// Explicit zero-crossing variables
+		for ( size_type i = 0; i < n_fmu_vars; ++i ) {
+			fmi2_import_variable_t * var( fmi2_import_get_variable( var_list, i ) );
+			if ( ( fmi2_import_get_variability( var ) == fmi2_variability_enu_continuous ) && ( fmi2_import_get_variable_base_type( var ) == fmi2_base_type_real ) ) {
+				std::string const var_name( fmi2_import_get_variable_name( var ) );
+				if ( ( var_name.find( "__zc_" ) == 0 ) && ( var_name.length() > 5 ) ) { // Zero-crossing variable by naming convention
+					std::string const der_name( "__zc_der_" + var_name.substr( 5 ) );
+					for ( size_type j = 0; j < n_fmu_vars; ++j ) { // Scan FMU variables for matching derivative
+						fmi2_import_variable_t * der( fmi2_import_get_variable( var_list, j ) );
+						if ( ( fmi2_import_get_variability( der ) == fmi2_variability_enu_continuous ) && ( fmi2_import_get_variable_base_type( der ) == fmi2_base_type_real ) ) {
+							if ( fmi2_import_get_variable_name( der ) == der_name ) { // Found derivative
+								fmi2_import_real_variable_t * var_real( fmi2_import_get_variable_as_real( var ) );
+								fmi2_import_real_variable_t * der_real( fmi2_import_get_variable_as_real( der ) );
+								FMU_Variable & fmu_var( fmu_vars[ var_real ] );
+								FMU_Variable & fmu_der( fmu_vars[ der_real ] );
+								if ( ( fmu_ders.find( var_real ) == fmu_ders.end() ) && ( fmu_dvrs.find( der_real ) == fmu_dvrs.end() ) ) { // Not processed above
+									std::cout << "\nZero Crossing Der: " << der_name << " of Var: " << var_name << std::endl;
+									fmu_ders[ var_real ] = fmu_der;
+									fmu_dvrs[ der_real ] = fmu_var;
+									Variable_ZC * qss_var( nullptr );
+									if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) || ( options::qss == options::QSS::xQSS1 ) ) {
+										qss_var = new Variable_ZCe1( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var, fmu_der );
+									} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) || ( options::qss == options::QSS::xQSS2 ) ) {
+										qss_var = new Variable_ZCe2( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var, fmu_der );
+									} else {
+										std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
+										std::exit( EXIT_FAILURE );
+									}
+									vars.push_back( qss_var ); // Add to QSS variables
+									qss_var_of_ref[ fmi2_import_get_variable_vr( fmu_var.var ) ] = qss_var;
+									var_name_var[ var_name ] = qss_var;
+									if ( fmi2_import_get_causality( fmu_var.var ) == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
+										outs.push_back( qss_var );
+										fmu_outs.erase( fmu_var.rvr ); // Remove it from non-QSS FMU outputs
+									}
+									fmu_idxs[ fmu_var.idx ] = qss_var; // Add to map from FMU variable index to QSS variable
+									std::cout << " FMU-ME idx: " << fmu_var.idx << " maps to QSS var: " << qss_var->name << std::endl;
+									++n_ZC_vars;
+
+									// Create conditional for the zero-crossing variable for now: FMU conditional block info would allow us to do more
+									cons.push_back( new Conditional< Variable >( qss_var, events ) );
+								}
+								break; // Found derivative so stop scanning
+							}
+						}
+					}
+				}
+			}
+		}
+
 		if ( n_ZC_vars > 0u ) {
 			std::cout << "\nZero Crossing Tolerance: zTol = " << options::zTol << std::endl;
 			std::cout << "\nZero Crossing Time Step: dtZC = " << options::dtZC << " (s)" << std::endl;
@@ -1371,9 +1418,18 @@ namespace fmu {
 		std::cout << '\n' + name + " Initialization: Stage 2.1 =====" << std::endl;
 		get_derivatives();
 		if ( order_max_NC >= 2 ) {
+			set_time( t = t0 + options::dtNum ); // Set time to t0 + delta for numeric differentiation
+			for ( auto var : vars_NC ) {
+				if ( ! var->is_Discrete() ) var->fmu_set_sn( t );
+			}
+			for ( auto var : vars_CI ) {
+				var->fmu_set_sn( t );
+			}
+			get_derivatives();
 			for ( auto var : vars_NC ) {
 				var->init_2();
 			}
+			set_time( t = t0 );
 		}
 	}
 
@@ -1869,9 +1925,11 @@ namespace fmu {
 									handlers[ i ]->advance_handler_1();
 								}
 								if ( handlers_order_max >= 2 ) { // 2nd order pass
+									set_time( t + options::dtNum ); // Advance time to t + delta for numeric differentiation
 									for ( size_type i = begin_order_index( handlers, 2 ), n = handlers.size(); i < n; ++i ) {
 										handlers[ i ]->advance_handler_2();
 									}
+									set_time( t );
 								}
 							}
 
@@ -2019,9 +2077,11 @@ namespace fmu {
 						}
 						int const triggers_order_max( triggers.back()->order() );
 						if ( triggers_order_max >= 2 ) { // 2nd order pass
+							set_time( t + options::dtNum ); // Set time to t + delta for numeric differentiation
 							for ( size_type i = begin_order_index( triggers, 2 ), n = triggers.size(); i < n; ++i ) {
 								triggers[ i ]->advance_QSS_2();
 							}
+							set_time( t );
 						}
 
 						if ( observers_s.have() ) observers_s.advance( t ); // Advance observers

@@ -223,6 +223,48 @@ public: // Methods
 			max_order_ = std::max( nz_.max_order_, zc_.max_order_ );
 		}
 
+		// Non-zero-crossing observer FMU pooled data set up
+		nz_der_refs_.clear();
+		nz_der_vals_.clear();
+		nz_der_refs_.reserve( nz_.n_ );
+		nz_der_vals_.reserve( nz_.n_ );
+		nz_2_der_refs_.clear();
+		nz_2_der_vals_.clear();
+		nz_2_der_refs_.reserve( nz_.n2_ );
+		nz_2_der_vals_.reserve( nz_.n2_ );
+		for ( size_type i = nz_.b_, e = nz_.e_; i < e; ++i ) {
+			nz_der_refs_.push_back( observers_[ i ]->der.ref );
+			nz_der_vals_.push_back( 0.0 );
+		}
+		for ( size_type i = nz_.b2_, e = nz_.e_; i < e; ++i ) {
+			nz_2_der_refs_.push_back( observers_[ i ]->der.ref );
+			nz_2_der_vals_.push_back( 0.0 );
+		}
+
+		// Zero-crossing observer FMU pooled data set up
+//		zc_der_refs_.clear();
+//		zc_der_vals_.clear();
+//		zc_refs_.clear();
+//		zc_vals_.clear();
+//		zc_der_refs_.reserve( zc_.n_ );
+//		zc_der_vals_.reserve( zc_.n_ );
+//		zc_refs_.reserve( zc_.n_ );
+//		zc_vals_.reserve( zc_.n_ );
+//		zc_2_der_refs_.clear();
+//		zc_2_der_vals_.clear();
+//		zc_2_der_refs_.reserve( zc_.n2_ );
+//		zc_2_der_vals_.reserve( zc_.n2_ );
+//		for ( size_type i = zc_.b_, e = zc_.e_; i < e; ++i ) {
+//			zc_der_refs_.push_back( observers_[ i ]->der.ref );
+//			zc_der_vals_.push_back( 0.0 );
+//			zc_refs_.push_back( observers_[ i ]->var.ref );
+//			zc_vals_.push_back( 0.0 );
+//		}
+//		for ( size_type i = zc_.b2_, e = zc_.e_; i < e; ++i ) {
+//			zc_2_der_refs_.push_back( observers_[ i ]->der.ref );
+//			zc_2_der_vals_.push_back( 0.0 );
+//		}
+
 		// Non-zero-crossing observer observees set up
 		std::unordered_set< Variable * > nz_oo2s; // Observees of observers of order 2+
 		for ( size_type i = nz_.b2_, e = nz_.e_; i < e; ++i ) {
@@ -280,31 +322,73 @@ public: // Methods
 			zc_observees_.push_back( observee );
 		}
 		b2_zc_observees_ = zc_oo1s.size();
+
+//		// Non-zero-crossing observee FMU pooled data set up
+//		nz_observee_refs_.clear();
+//		nz_observee_vals_.clear();
+//		nz_observee_refs_.reserve( nz_observees_.size() );
+//		nz_observee_vals_.reserve( nz_observees_.size() );
+//		for ( size_type i = 0, e = nz_observees_.size(); i < e; ++i ) {
+//			nz_observee_refs_.push_back( nz_observees_[ i ]->var.ref );
+//			nz_observee_vals_.push_back( 0.0 );
+//		}
 	}
 
 	// Advance
 	void
 	advance( Time const t )
 	{
-		if ( nz_.have_ ) advance_NZ( t );
+		assert( fmu_me_ != nullptr );
+		assert( fmu_me_->get_time() == t );
+		if ( nz_.have_ ) {
+			advance_NZ_1( t );
+			if ( nz_.have2_ ) {
+				Time const tN( t + options::dtNum );
+				fmu_me_->set_time( tN );
+				advance_NZ_2( tN );
+				fmu_me_->set_time( t );
+			}
+		}
 		if ( zc_.have_ ) {
 			advance_ZC_1( t );
-			if ( zc_.have2_ ) advance_ZC_2( t );
+			if ( zc_.have2_ ) {
+				Time const tN( t + options::dtNum );
+				fmu_me_->set_time( tN );
+				advance_ZC_2( tN );
+				fmu_me_->set_time( t );
+			}
 		}
 		if ( options::output::d ) advance_d();
 	}
 
-	// Advance Non-Zero-Crossing Observers
+	// Advance: Stage 1
 	void
-	advance_NZ( Time const t )
+	advance_1( Time const t )
+	{
+		if ( nz_.have_ ) advance_NZ_1( t );
+		if ( zc_.have_ ) advance_ZC_1( t );
+	}
+
+	// Advance: Stage 2
+	void
+	advance_2( Time const t )
+	{
+		if ( nz_.have2_ ) advance_NZ_2( t );
+		if ( zc_.have2_ ) advance_ZC_2( t );
+	}
+
+	// Advance Non-Zero-Crossing Observers: Stage 1
+	void
+	advance_NZ_1( Time const t )
 	{
 		assert( fmu_me_ != nullptr );
 		assert( fmu_me_->get_time() == t );
 		for ( auto observee : nz_observees_ ) {
 			observee->fmu_set_q( t );
 		}
+		fmu_me_->get_reals( nz_der_refs_.size(), &nz_der_refs_[ 0 ], &nz_der_vals_[ 0 ] );
 		for ( size_type i = nz_.b_, e = nz_.e_; i < e; ++i ) {
-			observers_[ i ]->advance_observer( t );
+			observers_[ i ]->advance_observer_1( t, nz_der_vals_[ i ] );
 		}
 	}
 
@@ -317,8 +401,26 @@ public: // Methods
 		for ( auto observee : zc_observees_ ) {
 			observee->fmu_set_x( t );
 		}
-		for ( size_type i = zc_.b_, e = zc_.e_; i < e; ++i ) {
-			observers_[ i ]->advance_observer_1( t );
+//		fmu_me_->get_reals( zc_der_refs_.size(), &zc_der_refs_[ 0 ], &zc_der_vals_[ 0 ] );
+//		fmu_me_->get_reals( zc_refs_.size(), &zc_refs_[ 0 ], &zc_vals_[ 0 ] );
+		for ( size_type i = zc_.b_, j = 0, e = zc_.e_; i < e; ++i, ++j ) {
+//			 observers_[ i ]->advance_observer_ZC_1( t, zc_der_vals_[ j ], zc_vals_[ j ] );
+			 observers_[ i ]->advance_observer_1( t );
+		}
+	}
+
+	// Advance Non-Zero-Crossing Observers: Stage 2
+	void
+	advance_NZ_2( Time const t )
+	{
+		assert( fmu_me_ != nullptr );
+		assert( fmu_me_->get_time() == t );
+		for ( size_type i = b2_nz_observees_, n = nz_observees_.size(); i < n; ++i ) {
+			nz_observees_[ i ]->fmu_set_q( t );
+		}
+		fmu_me_->get_reals( nz_2_der_refs_.size(), &nz_2_der_refs_[ 0 ], &nz_2_der_vals_[ 0 ] );
+		for ( size_type i = nz_.b2_, j = 0, e = nz_.e_; i < e; ++i, ++j ) { // Order 2+ observers
+			observers_[ i ]->advance_observer_2( t, nz_2_der_vals_[ j ] );
 		}
 	}
 
@@ -327,15 +429,15 @@ public: // Methods
 	advance_ZC_2( Time const t )
 	{
 		assert( fmu_me_ != nullptr );
-		Time const tN( t + options::dtNum ); // Set time to t + delta for numeric differentiation
-		fmu_me_->set_time( tN );
+		assert( fmu_me_->get_time() == t );
 		for ( size_type i = b2_zc_observees_, n = zc_observees_.size(); i < n; ++i ) {
-			zc_observees_[ i ]->fmu_set_x( tN );
+			zc_observees_[ i ]->fmu_set_x( t );
 		}
+//		fmu_me_->get_reals( zc_2_der_refs_.size(), &zc_2_der_refs_[ 0 ], &zc_2_der_vals_[ 0 ] );
 		for ( size_type i = zc_.b2_, j = 0, e = zc_.e_; i < e; ++i, ++j ) { // Order 2+ observers
-			observers_[ i ]->advance_observer_2( tN );
+//			observers_[ i ]->advance_observer_2( t, zc_2_der_vals_[ j ] );
+			observers_[ i ]->advance_observer_2( t );
 		}
-		fmu_me_->set_time( t );
 	}
 
 	// Advance: Stage d
@@ -432,6 +534,16 @@ private: // Data
 	} nz_, zc_;
 
 	// FMU observer data
+	VariableRefs nz_der_refs_; // Non-zero-crossing observer FMU derivative refs
+	VariableRefs nz_2_der_refs_; // Non-zero-crossing observer FMU derivative refs
+	Reals nz_der_vals_; // Non-zero-crossing observer FMU derivative values
+	Reals nz_2_der_vals_; // Non-zero-crossing observer FMU derivative values
+//	VariableRefs zc_der_refs_; // Zero-crossing observer FMU derivative refs
+//	VariableRefs zc_2_der_refs_; // Zero-crossing observer FMU derivative refs
+//	Reals zc_der_vals_; // Zero-crossing observer FMU derivative values
+//	Reals zc_2_der_vals_; // Zero-crossing observer FMU derivative values
+//	VariableRefs zc_refs_; // Zero-crossing observer FMU variable refs
+//	Reals zc_vals_; //  Zero-crossing observer FMU variable values
 	bool connected_output_observer_{ false }; // Output connection observer to another FMU?
 
 	// Non-zero-crossing observer observees
@@ -441,6 +553,10 @@ private: // Data
 	// Zero-crossing observer observees
 	Variables zc_observees_; // Zero-crossing observer observees (including self-observing observers)
 	size_type b2_zc_observees_{ 0 }; // Begin index of observees of order 2+ zero-crossing observers
+
+//	// FMU observee data
+//	VariableRefs nz_observee_refs_; // Non-zero-crossing observee FMU refs
+//	Reals nz_observee_vals_; // Non-zero-crossing observee FMU values
 
 };
 

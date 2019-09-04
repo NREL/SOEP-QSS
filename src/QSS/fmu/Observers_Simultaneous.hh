@@ -238,7 +238,15 @@ public: // Methods
 	advance_NZ( Time const t )
 	{
 		for ( size_type i = nz_.b_, e = nz_.e_; i < e; ++i ) {
-			observers_[ i ]->advance_observer_s( t );
+			observers_[ i ]->advance_observer_1( t );
+		}
+		if ( nz_.max_order_ >= 2 ) { // 2nd order pass
+			Time const tN( t + options::dtNum ); // Set time to t + delta for numeric differentiation
+			fmu_me_->set_time( tN );
+			for ( size_type i = nz_.b2_, e = nz_.e_; i < e; ++i ) {
+				observers_[ i ]->advance_observer_2( tN );
+			}
+			fmu_me_->set_time( t );
 		}
 	}
 
@@ -247,13 +255,13 @@ public: // Methods
 	advance_ZC( Time const t )
 	{
 		for ( size_type i = zc_.b_, e = zc_.e_; i < e; ++i ) {
-			observers_[ i ]->advance_observer_s_1( t );
+			observers_[ i ]->advance_observer_1( t );
 		}
 		if ( zc_.max_order_ >= 2 ) { // 2nd order pass
 			Time const tN( t + options::dtNum ); // Set time to t + delta for numeric differentiation
 			fmu_me_->set_time( tN );
 			for ( size_type i = zc_.b2_, e = zc_.e_; i < e; ++i ) {
-				observers_[ i ]->advance_observer_s_2( tN );
+				observers_[ i ]->advance_observer_2( tN );
 			}
 			fmu_me_->set_time( t );
 		}

@@ -217,11 +217,13 @@ public: // Methods
 		if ( have_connections ) advance_connections();
 	}
 
-	// Observer Advance
+	// Observer Advance: Stage 1
 	void
-	advance_observer( Time const t )
+	advance_observer_1( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
+		fmu_set_observees_q( t );
+		if ( self_observer ) fmu_set_q( t );
 		x_0_ = x_0_ + ( x_1_ * ( t - tX ) );
 		tX = t;
 		x_1_ = fmu_get_poly_1();
@@ -230,14 +232,18 @@ public: // Methods
 		if ( have_connections ) advance_connections_observer();
 	}
 
-	// Observer Advance: Simultaneous
+	// Observer Advance: Stage 1
 	void
-	advance_observer_s( Time const t )
+	advance_observer_1( Time const t, Real const d )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		fmu_set_observees_q( t );
-		if ( self_observer ) fmu_set_q( t );
-		advance_observer( t );
+		assert( d == fmu_get_poly_1() );
+		x_0_ = x_0_ + ( x_1_ * ( t - tX ) );
+		tX = t;
+		x_1_ = d;
+		set_tE_unaligned();
+		shift_QSS( tE );
+		if ( have_connections ) advance_connections_observer();
 	}
 
 	// Observer Advance: Stage d
