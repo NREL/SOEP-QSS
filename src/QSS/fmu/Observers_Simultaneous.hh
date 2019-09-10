@@ -73,6 +73,175 @@ public: // Creation
 	explicit
 	Observers_Simultaneous( Variables & triggers )
 	{
+		init_empty( triggers );
+	}
+
+public: // Conversion
+
+	// Variables Conversion
+	operator Variables const &() const
+	{
+		return observers_;
+	}
+
+	// Variables Conversion
+	operator Variables &()
+	{
+		return observers_;
+	}
+
+public: // Predicates
+
+	// Empty?
+	bool
+	empty() const
+	{
+		return observers_.empty();
+	}
+
+	// Have Observer(s)?
+	bool
+	have() const
+	{
+		return have_;
+	}
+
+	// Have Order 2+ Observer(s)?
+	bool
+	have2() const
+	{
+		return have2_;
+	}
+
+	// Have Order 2+ Non-Zero-Crossing Observer(s)?
+	bool
+	nz_have2() const
+	{
+		return nz_.have2_;
+	}
+
+	// Have Order 2+ Zero-Crossing Observer(s)?
+	bool
+	zc_have2() const
+	{
+		return zc_.have2_;
+	}
+
+public: // Properties
+
+	// Size
+	size_type
+	size() const
+	{
+		return observers_.size();
+	}
+
+public: // Methods
+
+	// Initialize
+	void
+	init( Variables & triggers )
+	{
+		clear();
+		init_empty( triggers );
+	}
+
+	// Advance
+	void
+	advance( Time const t )
+	{
+		if ( nz_.have_ ) advance_NZ( t );
+		if ( zc_.have_ ) advance_ZC( t );
+	}
+
+	// Advance Non-Zero-Crossing Observers
+	void
+	advance_NZ( Time const t )
+	{
+		for ( size_type i = nz_.b_, e = nz_.e_; i < e; ++i ) {
+			observers_[ i ]->advance_observer_s( t );
+		}
+	}
+
+	// Advance Zero-Crossing Observers
+	void
+	advance_ZC( Time const t )
+	{
+		for ( size_type i = zc_.b_, e = zc_.e_; i < e; ++i ) {
+			observers_[ i ]->advance_observer_s( t );
+		}
+	}
+
+	// Clear/Reset
+	void
+	clear()
+	{
+		observers_.clear();
+		have_ = false;
+		have2_ = false;
+		b_ = 0;
+		e_ = 0;
+		n_ = 0;
+		max_order_ = 0;
+		nz_.clear();
+		zc_.clear();
+	}
+
+public: // Indexing
+
+	// Index-Based Lookup
+	Variable const *
+	operator []( size_type const i ) const
+	{
+		assert( i < observers_.size() );
+		return observers_[ i ];
+	}
+
+	// Index-Based Lookup
+	Variable *
+	operator []( size_type const i )
+	{
+		assert( i < observers_.size() );
+		return observers_[ i ];
+	}
+
+public: // Iterators
+
+	// Begin Iterator
+	const_iterator
+	begin() const
+	{
+		return observers_.begin();
+	}
+
+	// Begin Iterator
+	iterator
+	begin()
+	{
+		return observers_.begin();
+	}
+
+	// End Iterator
+	const_iterator
+	end() const
+	{
+		return observers_.end();
+	}
+
+	// End Iterator
+	iterator
+	end()
+	{
+		return observers_.end();
+	}
+
+private: // Methods
+
+	// Initialize When Empty
+	void
+	init_empty( Variables & triggers )
+	{
+		assert( observers_.empty() );
 		assert( ! triggers.empty() );
 
 		// Collect all observers
@@ -150,142 +319,6 @@ public: // Creation
 			have2_ = ( nz_.have2_ || zc_.have2_ );
 			max_order_ = std::max( nz_.max_order_, zc_.max_order_ );
 		}
-	}
-
-public: // Conversion
-
-	// Variables Conversion
-	operator Variables const &() const
-	{
-		return observers_;
-	}
-
-	// Variables Conversion
-	operator Variables &()
-	{
-		return observers_;
-	}
-
-public: // Predicates
-
-	// Empty?
-	bool
-	empty() const
-	{
-		return observers_.empty();
-	}
-
-	// Have Observer(s)?
-	bool
-	have() const
-	{
-		return have_;
-	}
-
-	// Have Order 2+ Observer(s)?
-	bool
-	have2() const
-	{
-		return have2_;
-	}
-
-	// Have Order 2+ Non-Zero-Crossing Observer(s)?
-	bool
-	nz_have2() const
-	{
-		return nz_.have2_;
-	}
-
-	// Have Order 2+ Zero-Crossing Observer(s)?
-	bool
-	zc_have2() const
-	{
-		return zc_.have2_;
-	}
-
-public: // Properties
-
-	// Size
-	size_type
-	size() const
-	{
-		return observers_.size();
-	}
-
-public: // Methods
-
-	// Advance
-	void
-	advance( Time const t )
-	{
-		if ( nz_.have_ ) advance_NZ( t );
-		if ( zc_.have_ ) advance_ZC( t );
-	}
-
-	// Advance Non-Zero-Crossing Observers
-	void
-	advance_NZ( Time const t )
-	{
-		for ( size_type i = nz_.b_, e = nz_.e_; i < e; ++i ) {
-			observers_[ i ]->advance_observer_s( t );
-		}
-	}
-
-	// Advance Zero-Crossing Observers
-	void
-	advance_ZC( Time const t )
-	{
-		for ( size_type i = zc_.b_, e = zc_.e_; i < e; ++i ) {
-			observers_[ i ]->advance_observer_s( t );
-		}
-	}
-
-public: // Indexing
-
-	// Index-Based Lookup
-	Variable const *
-	operator []( size_type const i ) const
-	{
-		assert( i < observers_.size() );
-		return observers_[ i ];
-	}
-
-	// Index-Based Lookup
-	Variable *
-	operator []( size_type const i )
-	{
-		assert( i < observers_.size() );
-		return observers_[ i ];
-	}
-
-public: // Iterators
-
-	// Begin Iterator
-	const_iterator
-	begin() const
-	{
-		return observers_.begin();
-	}
-
-	// Begin Iterator
-	iterator
-	begin()
-	{
-		return observers_.begin();
-	}
-
-	// End Iterator
-	const_iterator
-	end() const
-	{
-		return observers_.end();
-	}
-
-	// End Iterator
-	iterator
-	end()
-	{
-		return observers_.end();
 	}
 
 private: // Data
