@@ -71,14 +71,212 @@ public: // Types
 
 public: // Creation
 
-	// Triggers Constructor
+	// FMU_ME Constructor
 	explicit
+	Observers_Simultaneous( FMU_ME * fmu_me ) :
+	 fmu_me_( fmu_me )
+	{
+		assert( fmu_me != nullptr );
+	}
+
+	// FMU_ME + Triggers Constructor
 	Observers_Simultaneous(
-	 Variables & triggers,
-	 FMU_ME * fmu_me = nullptr
+	 FMU_ME * fmu_me,
+	 Variables & triggers
 	) :
 	 fmu_me_( fmu_me )
 	{
+		assert( fmu_me != nullptr );
+		init_empty( triggers );
+	}
+
+public: // Conversion
+
+	// Variables Conversion
+	operator Variables const &() const
+	{
+		return observers_;
+	}
+
+	// Variables Conversion
+	operator Variables &()
+	{
+		return observers_;
+	}
+
+public: // Predicates
+
+	// Empty?
+	bool
+	empty() const
+	{
+		return observers_.empty();
+	}
+
+	// Have Observer(s)?
+	bool
+	have() const
+	{
+		return have_;
+	}
+
+	// Have Order 2+ Observer(s)?
+	bool
+	have2() const
+	{
+		return have2_;
+	}
+
+	// Have Order 2+ Non-Zero-Crossing Observer(s)?
+	bool
+	nz_have2() const
+	{
+		return nz_.have2_;
+	}
+
+	// Have Order 2+ Zero-Crossing Observer(s)?
+	bool
+	zc_have2() const
+	{
+		return zc_.have2_;
+	}
+
+public: // Properties
+
+	// Size
+	size_type
+	size() const
+	{
+		return observers_.size();
+	}
+
+public: // Methods
+
+	// Initialize
+	void
+	init( Variables & triggers )
+	{
+		clear();
+		init_empty( triggers );
+	}
+
+	// Advance
+	void
+	advance( Time const t )
+	{
+		if ( nz_.have_ ) advance_NZ( t );
+		if ( zc_.have_ ) advance_ZC( t );
+		if ( options::output::d ) {
+			for ( Variable const * observer : observers_ ) {
+				observer->advance_observer_d();
+			}
+		}
+	}
+
+	// Advance Non-Zero-Crossing Observers
+	void
+	advance_NZ( Time const t )
+	{
+		for ( size_type i = nz_.b_, e = nz_.e_; i < e; ++i ) {
+			observers_[ i ]->advance_observer_1( t );
+		}
+		if ( nz_.max_order_ >= 2 ) { // 2nd order pass
+			Time const tN( t + options::dtNum ); // Set time to t + delta for numeric differentiation
+			fmu_me_->set_time( tN );
+			for ( size_type i = nz_.b2_, e = nz_.e_; i < e; ++i ) {
+				observers_[ i ]->advance_observer_2( tN );
+			}
+			fmu_me_->set_time( t );
+		}
+	}
+
+	// Advance Zero-Crossing Observers
+	void
+	advance_ZC( Time const t )
+	{
+		for ( size_type i = zc_.b_, e = zc_.e_; i < e; ++i ) {
+			observers_[ i ]->advance_observer_1( t );
+		}
+		if ( zc_.max_order_ >= 2 ) { // 2nd order pass
+			Time const tN( t + options::dtNum ); // Set time to t + delta for numeric differentiation
+			fmu_me_->set_time( tN );
+			for ( size_type i = zc_.b2_, e = zc_.e_; i < e; ++i ) {
+				observers_[ i ]->advance_observer_2( tN );
+			}
+			fmu_me_->set_time( t );
+		}
+	}
+
+	// Clear/Reset
+	void
+	clear()
+	{
+		observers_.clear();
+		have_ = false;
+		have2_ = false;
+		b_ = 0;
+		e_ = 0;
+		n_ = 0;
+		max_order_ = 0;
+		nz_.clear();
+		zc_.clear();
+	}
+
+public: // Indexing
+
+	// Index-Based Lookup
+	Variable const *
+	operator []( size_type const i ) const
+	{
+		assert( i < observers_.size() );
+		return observers_[ i ];
+	}
+
+	// Index-Based Lookup
+	Variable *
+	operator []( size_type const i )
+	{
+		assert( i < observers_.size() );
+		return observers_[ i ];
+	}
+
+public: // Iterators
+
+	// Begin Iterator
+	const_iterator
+	begin() const
+	{
+		return observers_.begin();
+	}
+
+	// Begin Iterator
+	iterator
+	begin()
+	{
+		return observers_.begin();
+	}
+
+	// End Iterator
+	const_iterator
+	end() const
+	{
+		return observers_.end();
+	}
+
+	// End Iterator
+	iterator
+	end()
+	{
+		return observers_.end();
+	}
+
+private: // Methods
+
+	// Initialize When Empty
+	void
+	init_empty( Variables & triggers )
+	{
+		assert( observers_.empty() );
 		assert( ! triggers.empty() );
 
 		// Collect all observers
@@ -156,163 +354,6 @@ public: // Creation
 			have2_ = ( nz_.have2_ || zc_.have2_ );
 			max_order_ = std::max( nz_.max_order_, zc_.max_order_ );
 		}
-	}
-
-public: // Conversion
-
-	// Variables Conversion
-	operator Variables const &() const
-	{
-		return observers_;
-	}
-
-	// Variables Conversion
-	operator Variables &()
-	{
-		return observers_;
-	}
-
-public: // Predicates
-
-	// Empty?
-	bool
-	empty() const
-	{
-		return observers_.empty();
-	}
-
-	// Have Observer(s)?
-	bool
-	have() const
-	{
-		return have_;
-	}
-
-	// Have Order 2+ Observer(s)?
-	bool
-	have2() const
-	{
-		return have2_;
-	}
-
-	// Have Order 2+ Non-Zero-Crossing Observer(s)?
-	bool
-	nz_have2() const
-	{
-		return nz_.have2_;
-	}
-
-	// Have Order 2+ Zero-Crossing Observer(s)?
-	bool
-	zc_have2() const
-	{
-		return zc_.have2_;
-	}
-
-public: // Properties
-
-	// Size
-	size_type
-	size() const
-	{
-		return observers_.size();
-	}
-
-public: // Methods
-
-	// Advance
-	void
-	advance( Time const t )
-	{
-		if ( nz_.have_ ) advance_NZ( t );
-		if ( zc_.have_ ) advance_ZC( t );
-		if ( options::output::d ) {
-			for ( Variable const * observer : observers_ ) {
-				observer->advance_observer_d();
-			}
-		}
-	}
-
-	// Advance Non-Zero-Crossing Observers
-	void
-	advance_NZ( Time const t )
-	{
-		for ( size_type i = nz_.b_, e = nz_.e_; i < e; ++i ) {
-			observers_[ i ]->advance_observer_1( t );
-		}
-		if ( nz_.max_order_ >= 2 ) { // 2nd order pass
-			Time const tN( t + options::dtNum ); // Set time to t + delta for numeric differentiation
-			fmu_me_->set_time( tN );
-			for ( size_type i = nz_.b2_, e = nz_.e_; i < e; ++i ) {
-				observers_[ i ]->advance_observer_2( tN );
-			}
-			fmu_me_->set_time( t );
-		}
-	}
-
-	// Advance Zero-Crossing Observers
-	void
-	advance_ZC( Time const t )
-	{
-		for ( size_type i = zc_.b_, e = zc_.e_; i < e; ++i ) {
-			observers_[ i ]->advance_observer_1( t );
-		}
-		if ( zc_.max_order_ >= 2 ) { // 2nd order pass
-			Time const tN( t + options::dtNum ); // Set time to t + delta for numeric differentiation
-			fmu_me_->set_time( tN );
-			for ( size_type i = zc_.b2_, e = zc_.e_; i < e; ++i ) {
-				observers_[ i ]->advance_observer_2( tN );
-			}
-			fmu_me_->set_time( t );
-		}
-	}
-
-public: // Indexing
-
-	// Index-Based Lookup
-	Variable const *
-	operator []( size_type const i ) const
-	{
-		assert( i < observers_.size() );
-		return observers_[ i ];
-	}
-
-	// Index-Based Lookup
-	Variable *
-	operator []( size_type const i )
-	{
-		assert( i < observers_.size() );
-		return observers_[ i ];
-	}
-
-public: // Iterators
-
-	// Begin Iterator
-	const_iterator
-	begin() const
-	{
-		return observers_.begin();
-	}
-
-	// Begin Iterator
-	iterator
-	begin()
-	{
-		return observers_.begin();
-	}
-
-	// End Iterator
-	const_iterator
-	end() const
-	{
-		return observers_.end();
-	}
-
-	// End Iterator
-	iterator
-	end()
-	{
-		return observers_.end();
 	}
 
 private: // Data

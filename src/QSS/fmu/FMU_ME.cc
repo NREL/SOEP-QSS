@@ -1583,6 +1583,7 @@ namespace fmu {
 
 		// Simulation loop
 		Variable_ZCs var_ZCs; // Last zero-crossing trigger variables
+		Observers_S observers_s( this ); // Simultaneous observers
 		bool connected_output_event( false );
 		while ( t <= tNext ) {
 			t = events->top_time();
@@ -1740,7 +1741,7 @@ namespace fmu {
 						}
 					} else { // Simultaneous triggers
 						Variables triggers( events->top_subs< Variable >() );
-						Observers_S observers_s( triggers, this );
+						observers_s.init( triggers );
 						sort_by_order( triggers );
 
 						if ( doTOut ) { // Time event output: before discrete changes
@@ -1891,7 +1892,7 @@ namespace fmu {
 							}
 						} else { // Simultaneous handlers
 							Variables handlers( events->top_subs< Variable >() );
-							Observers_S observers_s( handlers, this );
+							observers_s.init( handlers );
 							sort_by_order( handlers );
 
 							if ( doROut ) { // Requantization output: before handler changes
@@ -2041,7 +2042,7 @@ namespace fmu {
 					} else { // Simultaneous triggers
 						++n_QSS_simultaneous_events;
 						Variables triggers( events->top_subs< Variable >() );
-						Observers_S observers_s( triggers, this );
+						observers_s.init( triggers );
 						sort_by_order( triggers );
 
 						if ( doROut ) { // Requantization output: before requantization
