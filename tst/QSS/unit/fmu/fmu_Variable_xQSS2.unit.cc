@@ -118,7 +118,7 @@ TEST( fmu_Variable_xQSS2Test, Achilles )
 		return;
 	}
 
-	EXPECT_EQ( 2U, fmu.events->size() );
+	EXPECT_EQ( 2U, fmu.eventq->size() );
 
 	EXPECT_EQ( 100.0, x1->rTol );
 	EXPECT_EQ( 1.0, x1->aTol );

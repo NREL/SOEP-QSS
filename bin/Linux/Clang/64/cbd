@@ -7,4 +7,4 @@ if [ -f $1.cc ]; then
   shift
 fi
 
-clang++ -pipe -std=c++11 -pedantic -Wall -Wextra -Wno-unknown-pragmas -m64 -march=native -fsanitize=undefined -fno-omit-frame-pointer -O0 -ggdb $CxxMainSource $@ $OutputSpec
+clang++ -pipe -std=c++11 -pedantic -Wall -Wextra -Wno-unknown-pragmas -m64 -march=native -DQSS_FMU -fsanitize=undefined -fno-omit-frame-pointer -O0 -ggdb $CxxMainSource $@ $OutputSpec

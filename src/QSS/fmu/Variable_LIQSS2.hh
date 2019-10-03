@@ -112,8 +112,8 @@ public: // Properties
 	Real
 	s( Time const t ) const
 	{
-		assert( ( t == tQ ) || ( st != events_->active_superdense_time() ) );
-		return ( st == events_->active_superdense_time() ? q_c_ : q_0_ + ( q_1_ * ( t - tQ ) ) );
+		assert( ( t == tQ ) || ( st != eventq_->active_superdense_time() ) );
+		return ( st == eventq_->active_superdense_time() ? q_c_ : q_0_ + ( q_1_ * ( t - tQ ) ) );
 	}
 
 public: // Methods

@@ -97,7 +97,7 @@ public: // Properties
 	Real
 	s( Time const ) const
 	{
-		return ( st == events_->active_superdense_time() ? q_c_ : q_0_ );
+		return ( st == eventq_->active_superdense_time() ? q_c_ : q_0_ );
 	}
 
 public: // Methods
