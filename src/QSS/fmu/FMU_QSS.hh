@@ -129,14 +129,14 @@ public: // Data
 	std::string unzip_dir;
 
 	// FMU
-	fmi2_import_t * fmu = nullptr; // FMU pointer
-	fmi2_real_t * states = nullptr;
-	fmi2_real_t * derivatives = nullptr;
-	fmi2_real_t * event_indicators = nullptr;
-	fmi2_real_t * event_indicators_last = nullptr;
-	fmi_import_context_t * context = nullptr;
-	fmi2_import_variable_list_t * var_list = nullptr;
-	fmi2_import_variable_list_t * der_list = nullptr;
+	fmi2_import_t * fmu{ nullptr }; // FMU pointer
+	fmi2_real_t * states{ nullptr };
+	fmi2_real_t * derivatives{ nullptr };
+	fmi2_real_t * event_indicators{ nullptr };
+	fmi2_real_t * event_indicators_last{ nullptr };
+	fmi_import_context_t * context{ nullptr };
+	fmi2_import_variable_list_t * var_list{ nullptr };
+	fmi2_import_variable_list_t * der_list{ nullptr };
 	std::vector< fmi2_value_reference_t > var_refs;
 	std::vector< fmi2_value_reference_t > inp_var_refs;
 	std::vector< fmi2_value_reference_t > out_var_refs;
@@ -145,8 +145,8 @@ public: // Data
 	FMU_Generator fmu_generator;
 
 	// FMU counts
-	size_type n_states = 0;
-	size_type n_event_indicators = 0;
+	size_type n_states{ 0u };
+	size_type n_event_indicators{ 0u };
 
 	// Contained FMU-ME
 	FMU_ME fmu_me;

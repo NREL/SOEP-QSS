@@ -148,25 +148,33 @@ main( int argc, char * argv[] )
 		}
 	} else { // Independent simulations
 		std::int64_t const n_models( options::models.size() );
-//#ifdef _OPENMP // Can enable if global event queue eliminated
-//		#pragma omp parallel for schedule(dynamic) if ( n_models > 1 )
-//#endif
-		for ( std::int64_t i = 0; i < n_models; ++i ) {
-			std::string const & model( options::models[ i ] );
-			std::cout << '\n' + path::base( model ) + " Simulation =====" << std::endl;
-			if ( model_type == ModelType::COD ) { // Code-defined model
+		if ( model_type == ModelType::COD ) { // Code-defined model
+			// Can parallelize if global event queue is eliminated
+			for ( std::int64_t i = 0; i < n_models; ++i ) {
+				std::string const & model( options::models[ i ] );
+				std::cout << '\n' + path::base( model ) + " Simulation =====" << std::endl;
 				cod::simulate( model );
-			} else if ( model_type == ModelType::FMU_ME ) { // FMU-ME
-#ifdef QSS_FMU
-				fmu::simulate_fmu_me( model );
-#endif
-			} else if ( model_type == ModelType::FMU_QSS ) { // FMU-QSS
-#ifdef QSS_FMU
-				fmu::simulate_fmu_qss( model );
-#endif
-			} else {
-				assert( false );
 			}
+		} else if ( model_type == ModelType::FMU_ME ) { // FMU-ME
+#ifdef QSS_FMU
+			#pragma omp parallel for schedule(dynamic) if ( n_models > 1 )
+			for ( std::int64_t i = 0; i < n_models; ++i ) {
+				std::string const & model( options::models[ i ] );
+				std::cout << '\n' + path::base( model ) + " Simulation =====" << std::endl;
+				fmu::simulate_fmu_me( model );
+			}
+#endif
+		} else if ( model_type == ModelType::FMU_QSS ) { // FMU-QSS
+#ifdef QSS_FMU
+			#pragma omp parallel for schedule(dynamic) if ( n_models > 1 )
+			for ( std::int64_t i = 0; i < n_models; ++i ) {
+				std::string const & model( options::models[ i ] );
+				std::cout << '\n' + path::base( model ) + " Simulation =====" << std::endl;
+				fmu::simulate_fmu_qss( model );
+			}
+#endif
+		} else {
+			assert( false );
 		}
 	}
 }

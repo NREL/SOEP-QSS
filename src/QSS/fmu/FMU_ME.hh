@@ -48,7 +48,6 @@
 // C++ Headers
 #include <cassert>
 #include <cstdlib>
-#include <ctime>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -113,7 +112,7 @@ public: // Types
 	using Real = double;
 	using Integer = int;
 	using Boolean = bool;
-	using Events = EventQueue< Target >;
+	using EventQ = EventQueue< Target >;
 	using Variables = std::vector< Variable * >;
 	using FMU_Variables = std::vector< FMU_Variable >;
 	using Var_Idx = std::unordered_map< Variable const *, size_type >; // Map from Variables to their indexes
@@ -142,7 +141,7 @@ public: // Creation
 	FMU_ME( std::string const & path );
 
 	// FMU-ME Path + Event Queue Constructor
-	FMU_ME( std::string const & path, Events * events );
+	FMU_ME( std::string const & path, EventQ * eventq );
 
 	// Destructor
 	~FMU_ME();
@@ -447,8 +446,8 @@ public: // Data
 	size_type iOut{ 1u }; // Output step index
 
 	// Event queue
-	Events * events; // Event queue
-	bool events_own{ true }; // Own the event queue?
+	EventQ * eventq; // Event queue
+	bool eventq_own{ true }; // Own the event queue?
 
 	// Tolerances
 	Real rTol; // Relative tolerance
@@ -500,7 +499,7 @@ public: // Data
 	Variables observers;
 	fmi2_boolean_t enterEventMode{ fmi2_false };
 	fmi2_boolean_t terminateSimulation{ fmi2_false };
-	std::clock_t sim_cpu_time{ 0 }; // Simulation CPU time
+	double sim_cpu_time{ 0.0 }; // Simulation CPU time
 	double sim_wall_time{ 0.0 }; // Simulation sall time
 
 };

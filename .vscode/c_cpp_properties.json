@@ -58,8 +58,9 @@
                 "C:/gtest/include"
             ],
             "defines": [
-                "_OPENMP",
+                "NOMINMAX",
                 "_DEBUG",
+                "_OPENMP",
                 "UNICODE"
             ],
             "intelliSenseMode": "msvc-x64",

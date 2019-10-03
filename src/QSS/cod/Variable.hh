@@ -806,7 +806,7 @@ public: // Methods
 				}
 			}
 
-			} // omp
+			} // omp parallel
 
 			if ( options::output::d ) {
 				for ( Variable * observer : observers_ ) {
@@ -878,7 +878,7 @@ public: // Methods
 				}
 			}
 
-			} // omp
+			} // omp parallel
 
 			if ( options::output::d ) {
 				for ( Variable * observer : observers ) {

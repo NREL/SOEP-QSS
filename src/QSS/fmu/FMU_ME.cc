@@ -45,6 +45,7 @@
 #include <QSS/fmu/Observers_Simultaneous.hh>
 #include <QSS/fmu/Variable_all.hh>
 #include <QSS/container.hh>
+#include <QSS/get_cpu_time.hh>
 #include <QSS/options.hh>
 #include <QSS/path.hh>
 #include <QSS/string.hh>
@@ -71,22 +72,22 @@ namespace fmu {
 	// Default Constructor
 	FMU_ME::
 	FMU_ME() :
-	 events( new Events() )
+	 eventq( new EventQ() )
 	{}
 
 	// FMU-ME Path Constructor
 	FMU_ME::
 	FMU_ME( std::string const & path ) :
-	 events( new Events() )
+	 eventq( new EventQ() )
 	{
 		initialize( path, false );
 	}
 
 	// FMU-ME Path + Event Queue Constructor
 	FMU_ME::
-	FMU_ME( std::string const & path, Events * events ) :
-	 events( events ),
-	 events_own( false )
+	FMU_ME( std::string const & path, EventQ * eventq ) :
+	 eventq( eventq ),
+	 eventq_own( false )
 	{
 		initialize( path, false );
 	}
@@ -106,7 +107,7 @@ namespace fmu {
 		if ( context ) fmi_import_free_context( context );
 		for ( Variable * var : vars ) delete var;
 		for ( Conditional< Variable > * con : cons ) delete con;
-		if ( events_own ) delete events;
+		if ( eventq_own ) delete eventq;
 	}
 
 	// Variable Lookup by Name (for Testing)
@@ -874,7 +875,7 @@ namespace fmu {
 				++n_ZC_vars;
 
 				// Create conditional for the zero-crossing variable for now: FMU conditional block info would allow us to do more
-				Conditional< Variable > * con( new Conditional< Variable >( qss_var, events ) );
+				Conditional< Variable > * con( new Conditional< Variable >( qss_var, eventq ) );
 				cons.push_back( con );
 				for ( auto const revDep : ei.reverseDependencies ) { // Add reverse (handler) dependency observer to conditional
 					auto const irevDep( fmu_idxs.find( revDep ) );
@@ -943,7 +944,7 @@ namespace fmu {
 									++n_ZC_vars;
 
 									// Create conditional for the zero-crossing variable for now: FMU conditional block info would allow us to do more
-									cons.push_back( new Conditional< Variable >( qss_var, events ) );
+									cons.push_back( new Conditional< Variable >( qss_var, eventq ) );
 								}
 								break; // Found derivative so stop scanning
 							}
@@ -1573,10 +1574,10 @@ namespace fmu {
 
 		// Timing setup
 		Time const tSim( tE - t0 ); // Simulation time span expected
-		Time const tPass( events->top_time() ); // Pass start time
+		Time const tPass( eventq->top_time() ); // Pass start time
 		Time tNext( eventInfoMaster->nextEventTimeDefined ? std::min( eventInfoMaster->nextEventTime, tE ) : tE );
 		int tPer( 0 ); // Percent of simulation time completed
-		std::clock_t const cpu_time_beg( std::clock() ); // CPU time
+		double const cpu_time_beg( get_cpu_time() ); // CPU time
 #ifdef _OPENMP
 		double const wall_time_beg( omp_get_wtime() ); // Wall time
 #endif
@@ -1586,7 +1587,7 @@ namespace fmu {
 		Observers_S observers_s( this ); // Simultaneous observers
 		bool connected_output_event( false );
 		while ( t <= tNext ) {
-			t = events->top_time();
+			t = eventq->top_time();
 			if ( doSOut ) { // Sampled and/or FMU outputs
 				Time const tStop( std::min( t, tNext ) );
 				while ( tOut < tStop ) {
@@ -1645,7 +1646,7 @@ namespace fmu {
 				if ( connected ) {
 					if ( options::perfect ) { // Flag whether next event(s) will modify a connected output
 						connected_output_event = false;
-						auto const tops( events->tops() );
+						auto const tops( eventq->tops() );
 						for ( auto i = tops.first; i != tops.second; ++i ) {
 							Target const * target( i->second.target() );
 							if ( target->connected_output || target->connected_output_observer ) {
@@ -1653,9 +1654,9 @@ namespace fmu {
 								break;
 							}
 						}
-					} else if ( events->top_time() > tPass ) { // Stop if beyond pass start time and next event(s) will modify a connected output
+					} else if ( eventq->top_time() > tPass ) { // Stop if beyond pass start time and next event(s) will modify a connected output
 						bool connected_output_next( false );
-						auto const tops( events->tops() );
+						auto const tops( eventq->tops() );
 						for ( auto i = tops.first; i != tops.second; ++i ) {
 							Target const * target( i->second.target() );
 							if ( target->connected_output || target->connected_output_observer ) {
@@ -1668,8 +1669,8 @@ namespace fmu {
 				}
 
 				set_time( t );
-				Event< Target > & event( events->top() );
-				SuperdenseTime const s( events->top_superdense_time() );
+				Event< Target > & event( eventq->top() );
+				SuperdenseTime const s( eventq->top_superdense_time() );
 				if ( s.i >= options::pass ) { // Pass count limit reached
 					if ( s.i <= max_pass_count_multiplier * options::pass ) { // Use time step controls
 						if ( sim_dtMin > 0.0 ) { // Double dtMin
@@ -1696,10 +1697,10 @@ namespace fmu {
 						break;
 					}
 				}
-				events->set_active_time();
+				eventq->set_active_time();
 				if ( event.is_discrete() ) { // Discrete event(s)
 					++n_discrete_events;
-					if ( events->single() ) { // Single trigger
+					if ( eventq->single() ) { // Single trigger
 						Variable * trigger( event.sub< Variable >() );
 						assert( trigger->tD == t );
 
@@ -1740,7 +1741,7 @@ namespace fmu {
 							}
 						}
 					} else { // Simultaneous triggers
-						Variables triggers( events->top_subs< Variable >() );
+						Variables triggers( eventq->top_subs< Variable >() );
 						observers_s.init( triggers );
 						sort_by_order( triggers );
 
@@ -1792,8 +1793,8 @@ namespace fmu {
 					++n_ZC_events;
 					var_ZCs.clear();
 					Time t_bump( t ); // Bump time for FMU crossing detection
-					while ( events->top_superdense_time() == s ) {
-						Variable_ZC * trigger( events->top_sub< Variable_ZC >() );
+					while ( eventq->top_superdense_time() == s ) {
+						Variable_ZC * trigger( eventq->top_sub< Variable_ZC >() );
 						var_ZCs.push_back( trigger );
 						assert( trigger->tZC() == t );
 						trigger->st = s; // Set trigger superdense time
@@ -1817,8 +1818,8 @@ namespace fmu {
 					}
 					set_time( t_bump ); // Advance FMU to bump time
 				} else if ( event.is_conditional() ) { // Conditional event(s)
-					while ( events->top_superdense_time() == s ) {
-						Conditional< Variable > * trigger( events->top_sub< Conditional< Variable > >() );
+					while ( eventq->top_superdense_time() == s ) {
+						Conditional< Variable > * trigger( eventq->top_sub< Conditional< Variable > >() );
 						trigger->st = s; // Set trigger superdense time
 						trigger->advance_conditional();
 					}
@@ -1853,7 +1854,7 @@ namespace fmu {
 
 					// Perform handler operations on QSS side
 					if ( enterEventMode || zero_crossing_event ) {
-						if ( events->single() ) { // Single handler
+						if ( eventq->single() ) { // Single handler
 							Variable * handler( event.sub< Variable >() );
 
 							if ( doROut ) { // Requantization output: before handler changes
@@ -1891,7 +1892,7 @@ namespace fmu {
 								}
 							}
 						} else { // Simultaneous handlers
-							Variables handlers( events->top_subs< Variable >() );
+							Variables handlers( eventq->top_subs< Variable >() );
 							observers_s.init( handlers );
 							sort_by_order( handlers );
 
@@ -1992,11 +1993,11 @@ namespace fmu {
 						}
 
 					} else { // Update event queue entries for no-action handler event
-						if ( events->single() ) { // Single handler
+						if ( eventq->single() ) { // Single handler
 							Variable * handler( event.sub< Variable >() );
 							handler->no_advance_handler();
 						} else { // Simultaneous handlers
-							for ( Variable * handler : events->top_subs< Variable >() ) {
+							for ( Variable * handler : eventq->top_subs< Variable >() ) {
 								handler->no_advance_handler();
 							}
 						}
@@ -2007,7 +2008,7 @@ namespace fmu {
 
 				} else if ( event.is_QSS() ) { // QSS requantization event(s)
 					++n_QSS_events;
-					if ( events->single() ) { // Single trigger
+					if ( eventq->single() ) { // Single trigger
 						Variable * trigger( event.sub< Variable >() );
 						assert( trigger->tE == t );
 						assert( trigger->not_ZC() ); // ZC variable requantizations are QSS_ZC events
@@ -2041,7 +2042,7 @@ namespace fmu {
 						}
 					} else { // Simultaneous triggers
 						++n_QSS_simultaneous_events;
-						Variables triggers( events->top_subs< Variable >() );
+						Variables triggers( eventq->top_subs< Variable >() );
 						observers_s.init( triggers );
 						sort_by_order( triggers );
 
@@ -2151,14 +2152,14 @@ namespace fmu {
 
 			// Stop if perfect sync and this event modified a connected output
 			if ( connected_output_event ) {
-				t = events->top_time(); // To give master loop event queue the next event time
+				t = eventq->top_time(); // To give master loop event queue the next event time
 				break;
 			}
 		}
 		eventInfoMaster->nextEventTimeDefined = fmi2_true;
 		eventInfoMaster->nextEventTime = t; // For master loop event queue
 
-		sim_cpu_time += std::clock() - cpu_time_beg; // CPU time
+		sim_cpu_time += get_cpu_time() - cpu_time_beg; // CPU time
 #ifdef _OPENMP
 		sim_wall_time += omp_get_wtime() - wall_time_beg; // Wall time
 #endif
@@ -2171,7 +2172,7 @@ namespace fmu {
 			if ( n_QSS_events > 0 ) std::cout << n_QSS_events << " requantization event passes" << std::endl;
 			if ( n_QSS_simultaneous_events > 0 ) std::cout << n_QSS_simultaneous_events << " simultaneous requantization event passes" << std::endl;
 			if ( n_ZC_events > 0 ) std::cout << n_ZC_events << " zero-crossing event passes" << std::endl;
-			std::cout << "Simulation CPU time: " << double( sim_cpu_time ) / CLOCKS_PER_SEC << " (s)" << std::endl; // CPU time
+			std::cout << "Simulation CPU time:  " << sim_cpu_time << " (s)" << std::endl; // CPU time
 #ifdef _OPENMP
 			std::cout << "Simulation wall time: " << sim_wall_time << " (s)" << std::endl; // Wall time
 #endif

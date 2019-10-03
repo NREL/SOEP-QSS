@@ -56,6 +56,7 @@
 #include <QSS/cod/mdl/xy.hh>
 #include <QSS/cod/mdl/xyz.hh>
 #include <QSS/container.hh>
+#include <QSS/get_cpu_time.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
 #include <QSS/Output.hh>
@@ -70,7 +71,6 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
-#include <ctime> // CPU time
 #include <iomanip>
 #include <iostream>
 #include <iterator>
@@ -297,7 +297,7 @@ simulate( std::string const & model )
 	double sim_dtMin( options::dtMin );
 	bool pass_warned( false );
 	Variables observers;
-	std::clock_t const cpu_time_beg( std::clock() ); // CPU time
+	double const cpu_time_beg( get_cpu_time() ); // CPU time
 #ifdef _OPENMP
 	double const wall_time_beg( omp_get_wtime() ); // Wall time
 #endif
@@ -691,7 +691,7 @@ simulate( std::string const & model )
 			}
 		}
 	}
-	std::clock_t const cpu_time_end( std::clock() ); // CPU time
+	double const cpu_time_end( get_cpu_time() ); // CPU time
 #ifdef _OPENMP
 	double const wall_time_end( omp_get_wtime() ); // Wall time
 #endif
@@ -718,7 +718,7 @@ simulate( std::string const & model )
 	if ( n_QSS_events > 0 ) std::cout << n_QSS_events << " requantization event passes" << std::endl;
 	if ( n_QSS_simultaneous_events > 0 ) std::cout << n_QSS_simultaneous_events << " simultaneous requantization event passes" << std::endl;
 	if ( n_ZC_events > 0 ) std::cout << n_ZC_events << " zero-crossing event passes" << std::endl;
-	std::cout << "Simulation CPU time: " << double( cpu_time_end - cpu_time_beg ) / CLOCKS_PER_SEC << " (s)" << std::endl; // CPU time
+	std::cout << "Simulation CPU time:  " << cpu_time_end - cpu_time_beg << " (s)" << std::endl; // CPU time
 #ifdef _OPENMP
 	std::cout << "Simulation wall time: " << wall_time_end - wall_time_beg << " (s)" << std::endl; // Wall time
 #endif

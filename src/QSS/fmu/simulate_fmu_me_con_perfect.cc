@@ -207,7 +207,7 @@ simulate_fmu_me_con_perfect( std::vector< std::string > const & paths )
 	using EventQ = std::multimap< Time, Event >;
 	EventQ events;
 	for ( size_type i = 0; i < n_models; ++i ) {
-		events.insert( EventQ::value_type( fmu_mes[ i ]->events->top_time(), i ) ); // Sorted by top event times
+		events.insert( EventQ::value_type( fmu_mes[ i ]->eventq->top_time(), i ) ); // Sorted by top event times
 	}
 
 	// Simulation loop
@@ -226,10 +226,10 @@ simulate_fmu_me_con_perfect( std::vector< std::string > const & paths )
 		// Refresh the event queue: This could be more efficient via direct coupling to the FMU-ME event queues
 		events.clear();
 		for ( size_type i = 0; i < n_models; ++i ) {
-			events.insert( EventQ::value_type( fmu_mes[ i ]->events->top_time(), i ) ); // Sorted by top event times
+			events.insert( EventQ::value_type( fmu_mes[ i ]->eventq->top_time(), i ) ); // Sorted by top event times
 		}
 
-		time = fmu_mes[ events.begin()->second ]->events->top_time();
+		time = fmu_mes[ events.begin()->second ]->eventq->top_time();
 	}
 
 	// Post-simulate
