@@ -60,36 +60,36 @@ public: // Types
 	using Time = typename Variable::Time;
 	using Real = typename Variable::Real;
 	using size_type = typename Variables::size_type;
-	using Events = EventQueue< Target >;
+	using EventQ = EventQueue< Target >;
 
 public: // Creation
 
-	// Variable + Events Constructor
+	// Variable + EventQ Constructor
 	Conditional(
 	 Variable * var,
-	 Events * events
+	 EventQ * eventq
 	) :
 	 var_( var ),
-	 events_( events )
+	 eventq_( eventq )
 	{
 		assert( var_ != nullptr );
-		assert( events_ != nullptr );
+		assert( eventq_ != nullptr );
 		var_->conditional = this;
 		add_conditional();
 	}
 
-	// Name + Variable + Events Constructor
+	// Name + Variable + Event Queue Constructor
 	Conditional(
 	 std::string const & name,
 	 Variable * var,
-	 Events * events
+	 EventQ * eventq
 	) :
 	 QSS::Conditional( name ),
 	 var_( var ),
-	 events_( events )
+	 eventq_( eventq )
 	{
 		assert( var_ != nullptr );
-		assert( events_ != nullptr );
+		assert( eventq_ != nullptr );
 		var_->conditional = this;
 		add_conditional();
 	}
@@ -210,21 +210,21 @@ public: // Methods
 	void
 	add_conditional()
 	{
-		event_ = events_->add_conditional( this );
+		event_ = eventq_->add_conditional( this );
 	}
 
 	// Shift Event to Time Infinity
 	void
 	shift_conditional()
 	{
-		event_ = events_->shift_conditional( event_ );
+		event_ = eventq_->shift_conditional( event_ );
 	}
 
 	// Shift Event to Time t
 	void
 	shift_conditional( Time const t )
 	{
-		event_ = events_->shift_conditional( t, event_ );
+		event_ = eventq_->shift_conditional( t, event_ );
 	}
 
 	// Run Handler
@@ -237,9 +237,9 @@ public: // Methods
 
 private: // Data
 
-	Variable * var_ = nullptr; // Event variable
+	Variable * var_{ nullptr }; // Event variable
 	Variables observers_; // Variables dependent on this one (modified by handler)
-	Events * events_ = nullptr; // Event queue
+	EventQ * eventq_{ nullptr }; // Event queue
 
 }; // Conditional
 

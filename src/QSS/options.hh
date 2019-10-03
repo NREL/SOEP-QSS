@@ -79,6 +79,7 @@ extern double dtCon; // FMU connection sync time step (s)
 extern double dtOut; // Sampled & FMU output time step (s)
 extern double one_over_dtNum; // 1 / dtNum
 extern double one_over_two_dtNum; // 1 / ( 2 * dtNum )
+extern double one_over_two_dtNum_squared; // 1 / ( 2 * dtNum^2 )
 extern double one_over_six_dtNum_squared; // 1 / ( 6 * dtNum^2 )
 extern double tEnd; // End time (s)
 extern std::size_t pass; // Pass count limit

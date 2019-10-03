@@ -1,3 +1,3 @@
 @echo off
 rem MinGW C++ Compile Debug
-g++ -pipe -std=c++11 -pedantic -Wall -Wextra -Wno-unknown-pragmas -m64 -march=native -ffloat-store -fsignaling-nans -O0 -ggdb -c %*
+g++ -pipe -std=c++11 -pedantic -Wall -Wextra -Wno-unknown-pragmas -m64 -march=native -DWIN32 -DQSS_FMU -ffloat-store -fsignaling-nans -fno-omit-frame-pointer -O0 -ggdb -c %*

@@ -78,7 +78,7 @@ public: // Types
 	using Real = double;
 	using Time = double;
 	using Reals = std::vector< Real >;
-	using Events = FMU_ME::Events;
+	using EventQ = FMU_ME::EventQ;
 	using Variables = std::vector< Variable * >;
 	using Variable_Cons = std::vector< Variable_Con * >;
 	using VariableRefs = std::vector< fmi2_value_reference_t >;
@@ -124,7 +124,7 @@ protected: // Creation
 	 var( var ),
 	 der( der ),
 	 observers_( fmu_me ),
-	 events_( fmu_me->events )
+	 eventq_( fmu_me->eventq )
 	{}
 
 	// Name + Tolerance Constructor
@@ -150,7 +150,7 @@ protected: // Creation
 	 var( var ),
 	 der( der ),
 	 observers_( fmu_me ),
-	 events_( fmu_me->events )
+	 eventq_( fmu_me->eventq )
 	{}
 
 	// Name + Value Constructor
@@ -173,7 +173,7 @@ protected: // Creation
 	 var( var ),
 	 der( der ),
 	 observers_( fmu_me ),
-	 events_( fmu_me->events )
+	 eventq_( fmu_me->eventq )
 	{}
 
 	// Name Constructor
@@ -195,7 +195,7 @@ protected: // Creation
 	 var( var ),
 	 der( der ),
 	 observers_( fmu_me ),
-	 events_( fmu_me->events )
+	 eventq_( fmu_me->eventq )
 	{}
 
 	// Copy Constructor
@@ -508,17 +508,17 @@ public: // Properties
 	}
 
 	// Event Queue
-	Events const *
-	events() const
+	EventQ const *
+	eventq() const
 	{
-		return events_;
+		return eventq_;
 	}
 
 	// Event Queue
-	Events *
-	events()
+	EventQ *
+	eventq()
 	{
-		return events_;
+		return eventq_;
 	}
 
 public: // Methods
@@ -659,14 +659,14 @@ public: // Methods
 	void
 	add_discrete( Time const t )
 	{
-		event_ = events_->add_discrete( t, this );
+		event_ = eventq_->add_discrete( t, this );
 	}
 
 	// Discrete Shift Event to Time t
 	void
 	shift_discrete( Time const t )
 	{
-		event_ = events_->shift_discrete( t, event_ );
+		event_ = eventq_->shift_discrete( t, event_ );
 	}
 
 	// Discrete Advance
@@ -689,28 +689,28 @@ public: // Methods
 	void
 	add_QSS( Time const t )
 	{
-		event_ = events_->add_QSS( t, this );
+		event_ = eventq_->add_QSS( t, this );
 	}
 
 	// QSS Shift Event to Time t
 	void
 	shift_QSS( Time const t )
 	{
-		event_ = events_->shift_QSS( t, event_ );
+		event_ = eventq_->shift_QSS( t, event_ );
 	}
 
 	// QSS ZC Add Event
 	void
 	add_QSS_ZC( Time const t )
 	{
-		event_ = events_->add_QSS_ZC( t, this );
+		event_ = eventq_->add_QSS_ZC( t, this );
 	}
 
 	// QSS ZC Shift Event to Time t
 	void
 	shift_QSS_ZC( Time const t )
 	{
-		event_ = events_->shift_QSS_ZC( t, event_ );
+		event_ = eventq_->shift_QSS_ZC( t, event_ );
 	}
 
 	// QSS Advance
@@ -753,14 +753,14 @@ public: // Methods
 	void
 	add_ZC( Time const t )
 	{
-		event_ = events_->add_ZC( t, this );
+		event_ = eventq_->add_ZC( t, this );
 	}
 
 	// Zero-Crossing Shift Event to Time t
 	void
 	shift_ZC( Time const t )
 	{
-		event_ = events_->shift_ZC( t, event_ );
+		event_ = eventq_->shift_ZC( t, event_ );
 	}
 
 	// Zero-Crossing Advance
@@ -775,21 +775,21 @@ public: // Methods
 	void
 	add_handler()
 	{
-		event_ = events_->add_handler( this );
+		event_ = eventq_->add_handler( this );
 	}
 
 	// Handler Shift Event to Time t
 	void
 	shift_handler( Time const t )
 	{
-		event_ = events_->shift_handler( t, event_ );
+		event_ = eventq_->shift_handler( t, event_ );
 	}
 
 	// Handler Shift Event to Time Infinity
 	void
 	shift_handler()
 	{
-		event_ = events_->shift_handler( event_ );
+		event_ = eventq_->shift_handler( event_ );
 	}
 
 	// Handler Advance
@@ -905,6 +905,14 @@ public: // Methods: FMU
 		return fmu_me->get_time();
 	}
 
+	// Set FMU Time
+	void
+	fmu_set_time( Time const t ) const
+	{
+		assert( fmu_me != nullptr );
+		fmu_me->set_time( t );
+	}
+
 	// Get FMU Real Variable Value
 	Real
 	fmu_get_real() const
@@ -972,14 +980,6 @@ public: // Methods: FMU
 		}
 		if ( self_observer ) observees_dv_[ observees_nv_ - 1 ] = q1( tQ );
 		return one_half * fmu_me->get_directional_derivative( observees_v_ref_.data(), observees_nv_, der.ref, observees_dv_.data() );
-	}
-
-	// Set FMU Time
-	void
-	fmu_set_time( Time const t ) const
-	{
-		assert( fmu_me != nullptr );
-		fmu_me->set_time( t );
 	}
 
 	// Set FMU Variable to Continuous Value at Time t
@@ -1128,7 +1128,7 @@ protected: // Data
 	std::size_t observees_nv_{ 0u }; // Observee count for FMU directional derivative lookup
 
 	// Event queue
-	Events * events_{ nullptr };
+	EventQ * eventq_{ nullptr };
 
 };
 

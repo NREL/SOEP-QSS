@@ -79,6 +79,7 @@ public: // Types
 //	using EventMap = std::multimap< SuperdenseTime, EventT >; // Uses standard C++ allocator
 	using EventMap = std::multimap< SuperdenseTime, EventT, std::less< SuperdenseTime >, momo::unsynchronized_pool_allocator< std::pair< SuperdenseTime const, EventT > > >;
 //	using EventMap = std::multimap< SuperdenseTime, EventT, std::less< SuperdenseTime >, Moya::Allocator< std::pair< SuperdenseTime const, EventT > > >; // Default 1024 grow size was best // Fastest but gives access violation in unit test exe
+	using value_type = typename EventMap::value_type;
 	using size_type = typename EventMap::size_type;
 	using const_iterator = typename EventMap::const_iterator;
 	using iterator = typename EventMap::iterator;
@@ -335,6 +336,27 @@ public: // Iterators
 
 public: // Methods
 
+	// Insert
+	iterator
+	insert( value_type const & value )
+	{
+		return m_.insert( value );
+	}
+
+	// Insert
+	iterator
+	insert( value_type && value )
+	{
+		return m_.insert( value );
+	}
+
+	// Clear
+	void
+	clear()
+	{
+		m_.clear();
+	}
+
 	// Simultaneous Events at Front of Queue
 	Events
 	top_events()
@@ -342,7 +364,7 @@ public: // Methods
 		Events tops;
 		if ( ! m_.empty() ) {
 			iterator i( m_.begin() );
-			iterator e( m_.end() );
+			iterator const e( m_.end() );
 			SuperdenseTime const & s( i->first );
 			while ( ( i != e ) && ( i->first == s ) ) {
 				tops.push_back( i->second );
@@ -359,7 +381,7 @@ public: // Methods
 		Targets targets;
 		if ( ! m_.empty() ) {
 			iterator i( m_.begin() );
-			iterator e( m_.end() );
+			iterator const e( m_.end() );
 			SuperdenseTime const & s( i->first );
 			while ( ( i != e ) && ( i->first == s ) ) {
 				targets.push_back( i->second.tar() );
@@ -377,7 +399,7 @@ public: // Methods
 		std::vector< S * > subs;
 		if ( ! m_.empty() ) {
 			iterator i( m_.begin() );
-			iterator e( m_.end() );
+			iterator const e( m_.end() );
 			SuperdenseTime const & s( i->first );
 			while ( ( i != e ) && ( i->first == s ) ) {
 				subs.push_back( i->second.template sub< S >() );
@@ -393,13 +415,6 @@ public: // Methods
 	{
 		s_ = ( ! m_.empty() ? m_.begin()->first : sZero_ );
 		t_ = s_.t;
-	}
-
-	// Clear
-	void
-	clear()
-	{
-		m_.clear();
 	}
 
 public: // Discrete Event Methods

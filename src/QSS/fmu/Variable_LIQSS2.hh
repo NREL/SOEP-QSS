@@ -112,22 +112,22 @@ public: // Properties
 	Real
 	s( Time const t ) const
 	{
-		assert( ( t == tQ ) || ( st != events_->active_superdense_time() ) );
-		return ( st == events_->active_superdense_time() ? q_c_ : q_0_ + ( q_1_ * ( t - tQ ) ) );
+		assert( ( t == tQ ) || ( st != eventq_->active_superdense_time() ) );
+		return ( st == eventq_->active_superdense_time() ? q_c_ : q_0_ + ( q_1_ * ( t - tQ ) ) );
 	}
 
 	// Simultaneous Numeric Differentiation Value at Time t
 	Real
 	sn( Time const t ) const
 	{
-		return ( st == events_->active_superdense_time() ? q_c_ + ( s_1_ * ( t - tQ ) ) : q_0_ + ( q_1_ * ( t - tQ ) ) );
+		return ( st == eventq_->active_superdense_time() ? q_c_ + ( s_1_ * ( t - tQ ) ) : q_0_ + ( q_1_ * ( t - tQ ) ) );
 	}
 
 	// Simultaneous First Derivative at Time t
 	Real
 	s1( Time const ) const
 	{
-		return ( st == events_->active_superdense_time() ? s_1_ : q_1_ );
+		return ( st == eventq_->active_superdense_time() ? s_1_ : q_1_ );
 	}
 
 public: // Methods
