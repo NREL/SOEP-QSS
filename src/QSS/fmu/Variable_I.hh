@@ -73,7 +73,7 @@ public: // Creation
 	 x_( static_cast< Integer >( xIni ) )
 	{}
 
-public: // Predicates
+public: // Predicate
 
 	// Discrete Variable?
 	bool
@@ -82,7 +82,7 @@ public: // Predicates
 		return true;
 	}
 
-public: // Properties
+public: // Property
 
 	// Boolean Value
 	Boolean
@@ -140,20 +140,6 @@ public: // Properties
 		return Real( x_ );
 	}
 
-	// Simultaneous Value at Time t
-	Real
-	s( Time const ) const
-	{
-		return Real( x_ );
-	}
-
-	// Simultaneous Numeric Differentiation Value at Time t
-	Real
-	sn( Time const ) const
-	{
-		return Real( x_ );
-	}
-
 public: // Methods
 
 	// Initialization
@@ -198,12 +184,11 @@ public: // Methods
 	{
 		assert( tX <= t );
 		tX = tQ = t;
+		Integer const x_old( x_ );
+		x_ = fmu_get_integer(); // Assume FMU ran event handler
 		shift_handler();
-		Integer const x_new( fmu_get_integer() ); // Assume FMU ran event handler
-		bool const chg( x_ != x_new );
-		if ( chg ) x_ = x_new;
-		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
-		if ( chg && have_observers_ ) advance_observers();
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( have_observers_ && ( x_ != x_old ) ) advance_observers();
 	}
 
 	// Handler Advance: Stage 0
@@ -212,11 +197,15 @@ public: // Methods
 	{
 		assert( tX <= t );
 		tX = tQ = t;
+		x_ = fmu_get_integer(); // Assume FMU ran event handler
+	}
+
+	// Handler Advance: Stage Final
+	void
+	advance_handler_F()
+	{
 		shift_handler();
-		Integer const x_new( fmu_get_integer() ); // Assume FMU ran event handler
-		bool const chg( x_ != x_new );
-		if ( chg ) x_ = x_new;
-		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Handler No-Advance

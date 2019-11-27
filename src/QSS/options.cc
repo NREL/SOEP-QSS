@@ -59,7 +59,10 @@ double dtCon( 0.0 ); // FMU connection sync time step (s)
 double one_over_dtNum( 1.0e6 ); // 1 / dtNum
 double one_over_two_dtNum( 5.0e5 ); // 1 / ( 2 * dtNum )
 double one_over_two_dtNum_squared( 5.0e11 ); // 1 / ( 2 * dtNum^2 )
+double one_over_four_dtNum( 2.5e5 ); // 1 / ( 4 * dtNum )
+double one_over_six_dtNum( 1.0e6 / 6.0 ); // 1 / ( 6 * dtNum )
 double one_over_six_dtNum_squared( 1.0e12 / 6.0 ); // 1 / ( 6 * dtNum^2 )
+double one_over_six_dtNum_cubed( 1.0e18 / 6.0 ); // 1 / ( 6 * dtNum^3 )
 double dtOut( 1.0e-3 ); // Sampled & FMU output time step (s)
 double tEnd( 1.0 ); // End time (s)  [1|FMU]
 std::size_t pass( 20 ); // Pass count limit
@@ -337,7 +340,10 @@ process_args( int argc, char * argv[] )
 				one_over_dtNum = 1.0 / dtNum;
 				one_over_two_dtNum = 1.0 / ( 2.0 * dtNum );
 				one_over_two_dtNum_squared = 1.0 / ( 2.0 * ( dtNum * dtNum ) );
+				one_over_four_dtNum = 1.0 / ( 4.0 * dtNum );
+				one_over_six_dtNum = 1.0 / ( 6.0 * dtNum );
 				one_over_six_dtNum_squared = 1.0 / ( 6.0 * ( dtNum * dtNum ) );
+				one_over_six_dtNum_cubed = 1.0 / ( 6.0 * ( dtNum * dtNum * dtNum ) );
 			} else {
 				std::cerr << "Error: Nonnumeric dtNum: " << dtNum_str << std::endl;
 				fatal = true;

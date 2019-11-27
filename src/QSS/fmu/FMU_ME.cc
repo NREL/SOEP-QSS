@@ -215,20 +215,20 @@ namespace fmu {
 		fmi2_import_unit_definitions_t * unit_defs( fmi2_import_get_unit_definitions( fmu ) );
 		if ( unit_defs != nullptr ) {
 			size_type const n_units( fmi2_import_get_unit_definitions_number( unit_defs ) );
-			std::cout << n_units << " units defined" << std::endl;
-			//bool units_error( false );
-			for ( size_type i = 0; i < n_units; ++i ) {
-				fmi2_import_unit_t * unit( fmi2_import_get_unit( unit_defs, static_cast< unsigned >( i ) ) );
-				if ( unit != nullptr ) {
-					double const scl( fmi2_import_get_SI_unit_factor( unit ) );
-					double const del( fmi2_import_get_SI_unit_offset( unit ) );
-					if ( ( scl != 1.0 ) || ( del != 0.0 ) ) {
-						std::cerr << "\nError: Non-SI unit present: " << fmi2_import_get_unit_name( unit ) << std::endl;
-						//units_error = true;
-					}
-				}
-			}
-			//if ( units_error ) std::exit( EXIT_FAILURE ); // Not a fatal error since some non-SI units don't affect integration
+			std::cout << "\nUnits: " << n_units << " units defined" << std::endl;
+//			for ( size_type i = 0; i < n_units; ++i ) {
+//				fmi2_import_unit_t * unit( fmi2_import_get_unit( unit_defs, static_cast< unsigned >( i ) ) );
+//				if ( unit != nullptr ) {
+//					std::string const unit_name( fmi2_import_get_unit_name( unit ) );
+//					double const unit_scl( fmi2_import_get_SI_unit_factor( unit ) );
+//					double const unit_del( fmi2_import_get_SI_unit_offset( unit ) );
+//					unsigned int const unit_dun( fmi2_import_get_unit_display_unit_number( unit ) );
+//					std::cout << unit_name << "  Scale: " << unit_scl << "  Offset: " << unit_del << "  Display unit: " << unit_dun << std::endl;
+//					if ( ( unit_scl != 1.0 ) || ( unit_del != 0.0 ) ) {
+//						std::cerr << "\nWarning: Non-SI unit present: " << unit_name << std::endl;
+//					}
+//				}
+//			}
 		}
 
 		n_states = fmi2_import_get_number_of_continuous_states( fmu );
@@ -312,14 +312,20 @@ namespace fmu {
 			std::cout << "\nQSS Method: QSS1" << std::endl;
 		} else if ( options::qss == options::QSS::QSS2 ) {
 			std::cout << "\nQSS Method: QSS2" << std::endl;
+		} else if ( options::qss == options::QSS::QSS3 ) {
+			std::cout << "\nQSS Method: QSS3" << std::endl;
 		} else if ( options::qss == options::QSS::LIQSS1 ) {
 			std::cout << "\nQSS Method: LIQSS1" << std::endl;
 		} else if ( options::qss == options::QSS::LIQSS2 ) {
 			std::cout << "\nQSS Method: LIQSS2" << std::endl;
+		} else if ( options::qss == options::QSS::LIQSS3 ) {
+			std::cout << "\nQSS Method: LIQSS3" << std::endl;
 		} else if ( options::qss == options::QSS::xQSS1 ) {
 			std::cout << "\nQSS Method: xQSS1" << std::endl;
 		} else if ( options::qss == options::QSS::xQSS2 ) {
 			std::cout << "\nQSS Method: xQSS2" << std::endl;
+		} else if ( options::qss == options::QSS::xQSS3 ) {
+			std::cout << "\nQSS Method: xQSS3" << std::endl;
 		} else {
 			std::cerr << "\nError: Unsupported QSS method" << std::endl;
 			std::exit( EXIT_FAILURE );
@@ -527,16 +533,24 @@ namespace fmu {
 								std::exit( EXIT_FAILURE );
 							}
 						}
+						if ( ! SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) { // May not be necessary: LBL preference
+							std::cerr << "\n Error: Non-SI unit used for input variable: Not currently supported" << std::endl;
+							std::exit( EXIT_FAILURE );
+						}
 						Variable * qss_var( nullptr );
 						if ( inp_fxn || !options::perfect ) { // Use input variables for connections
 							if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) ) {
 								qss_var = new Variable_Inp1( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
 							} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) ) {
 								qss_var = new Variable_Inp2( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
+							} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) ) {
+								qss_var = new Variable_Inp3( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
 							} else if ( options::qss == options::QSS::xQSS1 ) {
 								qss_var = new Variable_xInp1( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
 							} else if ( options::qss == options::QSS::xQSS2 ) {
 								qss_var = new Variable_xInp2( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
+							} else if ( options::qss == options::QSS::xQSS3 ) {
+								qss_var = new Variable_xInp3( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
 							} else {
 								std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 								std::exit( EXIT_FAILURE );
@@ -546,6 +560,8 @@ namespace fmu {
 								qss_var = new Variable_Con( 1, var_name, this, fmu_var );
 							} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) || ( options::qss == options::QSS::xQSS2 ) ) {
 								qss_var = new Variable_Con( 2, var_name, this, fmu_var );
+							} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) || ( options::qss == options::QSS::xQSS3 ) ) {
+								qss_var = new Variable_Con( 3, var_name, this, fmu_var );
 							} else {
 								std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 								std::exit( EXIT_FAILURE );
@@ -559,6 +575,10 @@ namespace fmu {
 					}
 				} else if ( var_variability == fmi2_variability_enu_discrete ) {
 					std::cout << " Type: Real: Discrete" << std::endl;
+					if ( ! SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) { // May not be necessary: LBL preference
+						std::cerr << "\n Error: Non-SI unit used for discrete variable: Not currently supported" << std::endl;
+						std::exit( EXIT_FAILURE );
+					}
 					FMU_Variable const fmu_var( var, var_real, var_ref, i+1 );
 					fmu_vars[ var_real ] = fmu_var;
 					fmu_var_of_ref[ var_ref ] = fmu_var;
@@ -765,6 +785,10 @@ namespace fmu {
 				if ( der_start ) std::cout << " Start: " << fmi2_import_get_real_variable_start( der_real ) << std::endl;
 				fmi2_import_real_variable_t * var_real( fmi2_import_get_real_variable_derivative_of( der_real ) );
 				if ( var_real != nullptr ) { // Add to Variable to Derivative Map
+					if ( ( ! SI_unit_check( fmi2_import_get_real_variable_unit( der_real ) ) ) || ( ! SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) ) {
+						std::cerr << "\n Error: Non-SI unit used for state variable and/or its derivative: Not currently supported" << std::endl;
+						std::exit( EXIT_FAILURE );
+					}
 					FMU_Variable & fmu_der( fmu_vars[ der_real ] );
 					FMU_Variable & fmu_var( fmu_vars[ var_real ] );
 					Real const states_initial( states[ ics ] ); // Initial value from fmi2_import_get_continuous_states()
@@ -787,14 +811,20 @@ namespace fmu {
 						qss_var = new Variable_QSS1( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::QSS2 ) {
 						qss_var = new Variable_QSS2( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
+					} else if ( options::qss == options::QSS::QSS3 ) {
+						qss_var = new Variable_QSS3( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS1 ) {
 						qss_var = new Variable_LIQSS1( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS2 ) {
 						qss_var = new Variable_LIQSS2( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
+					} else if ( options::qss == options::QSS::LIQSS3 ) {
+						qss_var = new Variable_LIQSS3( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::xQSS1 ) {
 						qss_var = new Variable_xQSS1( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::xQSS2 ) {
 						qss_var = new Variable_xQSS2( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
+					} else if ( options::qss == options::QSS::xQSS3 ) {
+						qss_var = new Variable_xQSS3( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
 					} else {
 						std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 						std::exit( EXIT_FAILURE );
@@ -843,6 +873,7 @@ namespace fmu {
 		size_type n_ZC_vars( 0 );
 
 		// Event indicators added by OCT
+		bool has_event_indicators( false );
 		auto const ieis( std::find_if( allEventIndicators.begin(), allEventIndicators.end(), [this]( FMUEventIndicators const & feis ){ return feis.context == this; } ) );
 		if ( ieis == allEventIndicators.end() ) {
 			std::cerr << "\nError: FMU event indicators collection lookup failed for FMU-ME " << name << std::endl;
@@ -853,12 +884,18 @@ namespace fmu {
 			std::string const var_name( fmi2_import_get_variable_name( var ) );
 			if ( ( fmi2_import_get_variability( var ) == fmi2_variability_enu_continuous ) && ( fmi2_import_get_variable_base_type( var ) == fmi2_base_type_real ) ) {
 				fmi2_import_real_variable_t * var_real( fmi2_import_get_variable_as_real( var ) );
+				if ( ! SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) { // May not be necessary: LBL preference
+					std::cerr << "\n Error: Non-SI unit used for event indicator variable: Not currently supported" << std::endl;
+					std::exit( EXIT_FAILURE );
+				}
 				FMU_Variable & fmu_var( fmu_vars[ var_real ] );
 				Variable_ZC * qss_var( nullptr );
 				if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) || ( options::qss == options::QSS::xQSS1 ) ) {
 					qss_var = new Variable_ZC1( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var );
 				} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) || ( options::qss == options::QSS::xQSS2 ) ) {
 					qss_var = new Variable_ZC2( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var );
+				} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) || ( options::qss == options::QSS::xQSS3 ) ) {
+					qss_var = new Variable_ZC3( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var );
 				} else {
 					std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 					std::exit( EXIT_FAILURE );
@@ -898,6 +935,7 @@ namespace fmu {
 						}
 					}
 				}
+				has_event_indicators = true;
 			} else {
 				std::cerr << "\nError: FMU event indicator variable is not real-valued and continuous: " << var_name << std::endl;
 				std::exit( EXIT_FAILURE );
@@ -915,8 +953,16 @@ namespace fmu {
 						fmi2_import_variable_t * der( fmi2_import_get_variable( var_list, j ) );
 						if ( ( fmi2_import_get_variability( der ) == fmi2_variability_enu_continuous ) && ( fmi2_import_get_variable_base_type( der ) == fmi2_base_type_real ) ) {
 							if ( fmi2_import_get_variable_name( der ) == der_name ) { // Found derivative
+								if ( has_event_indicators ) {
+									std::cerr << "\n Error: Mix of event indicator and explicit zero-crossing variables: Not currently supported" << std::endl;
+									std::exit( EXIT_FAILURE );
+								}
 								fmi2_import_real_variable_t * var_real( fmi2_import_get_variable_as_real( var ) );
 								fmi2_import_real_variable_t * der_real( fmi2_import_get_variable_as_real( der ) );
+								if ( ( ! SI_unit_check( fmi2_import_get_real_variable_unit( der_real ) ) ) || ( ! SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) ) { // May not be necessary: LBL preference
+									std::cerr << "\n Error: Non-SI unit used for zero-crossing variable and/or its derivative: Not currently supported" << std::endl;
+									std::exit( EXIT_FAILURE );
+								}
 								FMU_Variable & fmu_var( fmu_vars[ var_real ] );
 								FMU_Variable & fmu_der( fmu_vars[ der_real ] );
 								if ( ( fmu_ders.find( var_real ) == fmu_ders.end() ) && ( fmu_dvrs.find( der_real ) == fmu_dvrs.end() ) ) { // Not processed above
@@ -928,6 +974,8 @@ namespace fmu {
 										qss_var = new Variable_ZCe1( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var, fmu_der );
 									} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) || ( options::qss == options::QSS::xQSS2 ) ) {
 										qss_var = new Variable_ZCe2( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var, fmu_der );
+									} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) || ( options::qss == options::QSS::xQSS3 ) ) {
+										qss_var = new Variable_ZCe3( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var, fmu_der );
 									} else {
 										std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 										std::exit( EXIT_FAILURE );
@@ -1066,7 +1114,7 @@ namespace fmu {
 							std::cout << "  Dep Index: " << dep_idx << std::endl;
 							if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
 								std::cerr << "\n   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
-//								std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes so we can profile
+//								std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes
 							} else { // Process based on kind of dependent
 								fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
 								if ( kind == fmi2_dependency_factor_kind_dependent ) {
@@ -1275,7 +1323,7 @@ namespace fmu {
 							std::cout << "  Dep Index: " << dep_idx << std::endl;
 							if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
 								std::cerr << "\n   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
-//								std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes so we can profile
+//								std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes
 							} else { // Process based on kind of dependent
 								fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
 								if ( kind == fmi2_dependency_factor_kind_dependent ) {
@@ -1311,7 +1359,7 @@ namespace fmu {
 						}
 					} else {
 						std::cerr << "\n   Error: QSS variable corresponding to Output variable not found" << std::endl;
-//						std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes so we can profile
+//						std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes
 					}
 				}
 			} else { // Assume no output variables dependent on ZC variables in model
@@ -1335,22 +1383,25 @@ namespace fmu {
 			var_idx[ vars[ i ] ] = i;
 		}
 
-		// Containers of non-zero-crossing and zero-crossing variables
+		// Variable subtype containers and specs
 		order_max_NZ = order_max_ZC = order_max_NC = order_max_CI = 0;
 		for ( auto var : vars ) {
 			if ( var->not_ZC() ) { // Non-zero-crossing variable
 				vars_NZ.push_back( var );
-				order_max_NZ = std::max( order_max_NZ, var->order() ); // Max QSS order of non-zero-crossing variables
-				if ( ! var->is_connection() ) { // Non-connection variable
+				order_max_NZ = std::max( order_max_NZ, var->order() );
+				if ( var->not_connection() ) { // Non-connection variable
 					vars_NC.push_back( var );
-					order_max_NC = std::max( order_max_NC, var->order() ); // Max QSS order of non-zero-crossing non-connection variables
-				} else {
+					order_max_NC = std::max( order_max_NC, var->order() );
+					if ( var->is_QSS() ) {
+						vars_QSS.push_back( var );
+					}
+				} else { // Connection variable
 					vars_CI.push_back( var );
-					order_max_CI = std::max( order_max_CI, var->order() ); // Max QSS order of connection variables
+					order_max_CI = std::max( order_max_CI, var->order() );
 				}
 			} else { // Zero-crossing variable
 				vars_ZC.push_back( var );
-				order_max_ZC = std::max( order_max_ZC, var->order() ); // Max QSS order of zero-crossing variables
+				order_max_ZC = std::max( order_max_ZC, var->order() );
 			}
 		}
 		assert( order_max_NZ <= 3 );
@@ -1417,20 +1468,13 @@ namespace fmu {
 	init_2_1()
 	{
 		std::cout << '\n' + name + " Initialization: Stage 2.1 =====" << std::endl;
-		get_derivatives();
 		if ( order_max_NC >= 2 ) {
-			set_time( t = t0 + options::dtNum ); // Set time to t0 + delta for numeric differentiation
-			for ( auto var : vars_NC ) {
-				if ( ! var->is_Discrete() ) var->fmu_set_sn( t );
-			}
-			for ( auto var : vars_CI ) {
-				var->fmu_set_sn( t );
-			}
-			get_derivatives();
 			for ( auto var : vars_NC ) {
 				var->init_2();
 			}
-			set_time( t = t0 );
+			for ( auto var : vars_NC ) {
+				var->init_2_1();
+			}
 		}
 	}
 
@@ -1447,31 +1491,48 @@ namespace fmu {
 		}
 	}
 
-	// Initialization: Stage ZC
+	// Initialization: Stage 3.1
 	void
 	FMU_ME::
-	init_ZC()
+	init_3_1()
 	{
-		std::cout << '\n' + name + " Initialization: Stage ZC =====" << std::endl;
-		for ( auto var : vars_ZC ) {
-			var->init_0();
-		}
-		for ( auto var : vars_ZC ) {
-			var->init_1();
-		}
-		if ( order_max_ZC >= 2 ) {
-			set_time( t0 + options::dtNum ); // Set time to t0 + delta for numeric differentiation
-			for ( auto var : vars_ZC ) {
-				var->init_2();
+		std::cout << '\n' + name + " Initialization: Stage 3.1 =====" << std::endl;
+		if ( order_max_NC >= 2 ) {
+			for ( auto var : vars_NC ) {
+				var->init_3();
 			}
-			set_time( t0 );
 		}
 	}
 
 	// Initialization: Stage Final
 	void
 	FMU_ME::
-	init_f()
+	init_F()
+	{
+		std::cout << '\n' + name + " Initialization: Stage Final =====" << std::endl;
+		for ( auto var : vars_NC ) {
+			var->init_F();
+		}
+	}
+
+	// Initialization: Stage ZC
+	void
+	FMU_ME::
+	init_ZC()
+	{
+		std::cout << '\n' + name + " Initialization: Stage ZC =====" << std::endl;
+		for ( auto var : vars_NC ) {
+			var->fmu_set_x( t0 );
+		}
+		for ( auto var : vars_ZC ) {
+			var->init();
+		}
+	}
+
+	// Initialization: Stage Pre-Simulate
+	void
+	FMU_ME::
+	init_pre_simulate()
 	{
 		// Initialize Conditional observers
 		for ( Conditional< Variable > * con : cons ) con->init_observers();
@@ -1584,7 +1645,7 @@ namespace fmu {
 
 		// Simulation loop
 		Variable_ZCs var_ZCs; // Last zero-crossing trigger variables
-		Observers_S observers_s( this ); // Simultaneous observers
+		Observers_S observers_s; // Simultaneous observers
 		bool connected_output_event( false );
 		while ( t <= tNext ) {
 			t = eventq->top_time();
@@ -1770,8 +1831,9 @@ namespace fmu {
 						for ( Variable * trigger : triggers ) {
 							assert( trigger->tD == t );
 							trigger->st = s; // Set trigger superdense time
-							trigger->advance_discrete_simultaneous();
+							trigger->advance_discrete_s();
 						}
+
 						if ( observers_s.have() ) observers_s.advance( t ); // Advance observers
 
 						if ( doTOut ) { // Time event output: after discrete changes
@@ -1927,12 +1989,21 @@ namespace fmu {
 									handlers[ i ]->advance_handler_1();
 								}
 								if ( handlers_order_max >= 2 ) { // 2nd order pass
-									set_time( t + options::dtNum ); // Advance time to t + delta for numeric differentiation
 									for ( size_type i = begin_order_index( handlers, 2 ), n = handlers.size(); i < n; ++i ) {
 										handlers[ i ]->advance_handler_2();
 									}
-									set_time( t );
+									for ( size_type i = begin_order_index( handlers, 2 ), n = handlers.size(); i < n; ++i ) {
+										handlers[ i ]->advance_handler_2_1();
+									}
+									if ( handlers_order_max >= 3 ) { // 3rd order pass
+										for ( size_type i = begin_order_index( handlers, 3 ), n = handlers.size(); i < n; ++i ) {
+											handlers[ i ]->advance_handler_3();
+										}
+									}
 								}
+							}
+							for ( Variable * handler : handlers ) {
+								handler->advance_handler_F();
 							}
 
 							if ( observers_s.have() ) observers_s.advance( t ); // Advance observers
@@ -2079,11 +2150,20 @@ namespace fmu {
 						}
 						int const triggers_order_max( triggers.back()->order() );
 						if ( triggers_order_max >= 2 ) { // 2nd order pass
-							set_time( t + options::dtNum ); // Set time to t + delta for numeric differentiation
 							for ( size_type i = begin_order_index( triggers, 2 ), n = triggers.size(); i < n; ++i ) {
 								triggers[ i ]->advance_QSS_2();
 							}
-							set_time( t );
+							for ( size_type i = begin_order_index( triggers, 2 ), n = triggers.size(); i < n; ++i ) {
+								triggers[ i ]->advance_QSS_2_1();
+							}
+							if ( triggers_order_max >= 3 ) { // 3rd order pass
+								for ( size_type i = begin_order_index( triggers, 3 ), n = triggers.size(); i < n; ++i ) {
+									triggers[ i ]->advance_QSS_3();
+								}
+							}
+						}
+						for ( Variable * trigger : triggers ) {
+							trigger->advance_QSS_F();
 						}
 
 						if ( observers_s.have() ) observers_s.advance( t ); // Advance observers
@@ -2279,6 +2359,22 @@ namespace fmu {
 		default:
 			return false;
 		}
+	}
+
+	// FMI SI Unit Check
+	bool
+	FMU_ME::
+	SI_unit_check( fmi2_import_unit_t * unit, bool const msg )
+	{
+		if ( unit != nullptr ) {
+			double const unit_scl( fmi2_import_get_SI_unit_factor( unit ) );
+			double const unit_del( fmi2_import_get_SI_unit_offset( unit ) );
+			if ( ( unit_scl != 1.0 ) || ( unit_del != 0.0 ) ) {
+				if ( msg ) std::cerr << "\n Non-SI unit: " << fmi2_import_get_unit_name( unit ) << "  Scale: " << unit_scl << "  Offset: " << unit_del << std::endl;
+				return false;
+			}
+		}
+		return true;
 	}
 
 } // fmu

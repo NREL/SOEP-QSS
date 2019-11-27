@@ -69,7 +69,7 @@ public: // Creation
 	 a_b3_( a * b * b * b )
 	{}
 
-public: // Properties
+public: // Property
 
 	// State at Time t
 	SmoothToken

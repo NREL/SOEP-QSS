@@ -114,8 +114,8 @@ annotation_start_handle(
 				std::exit( EXIT_FAILURE );
 			}
 			if ( ! has_reverseDependencies ) {
-				std::cerr << "\nError: XML EventIndicators Element has no reverseDependencies" << std::endl;
-//				std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes so we can profile
+				std::cerr << "\nError: XML EventIndicators Element with index " << ei.index << " has no reverseDependencies" << std::endl;
+//				std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes
 			}
 			fmuEventIndicators.eventIndicators.push_back( ei );
 			std::cout << "\n EventIndicator Element\n";

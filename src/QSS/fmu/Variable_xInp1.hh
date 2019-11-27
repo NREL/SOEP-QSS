@@ -64,7 +64,7 @@ public: // Creation
 	 Super( 1, name, rTol, aTol, fmu_me, var, f )
 	{}
 
-public: // Properties
+public: // Property
 
 	// Continuous Value at Time t
 	Real
@@ -94,27 +94,6 @@ public: // Properties
 		return x_1_;
 	}
 
-	// Simultaneous Value at Time t
-	Real
-	s( Time const t ) const
-	{
-		return x_0_ + ( x_1_ * ( t - tQ ) );
-	}
-
-	// Simultaneous Numeric Differentiation Value at Time t
-	Real
-	sn( Time const t ) const
-	{
-		return x_0_ + ( x_1_ * ( t - tQ ) );
-	}
-
-	// Simultaneous First Derivative at Time t
-	Real
-	s1( Time const ) const
-	{
-		return x_1_;
-	}
-
 public: // Methods
 
 	// Initialization
@@ -132,55 +111,48 @@ public: // Methods
 		assert( f() );
 		assert( observees_.empty() );
 		init_observers();
-		fmu_set_real( x_0_ = f_( tQ ).x_0 );
-		set_qTol();
+		s_ = f_( tQ );
+		x_0_ = s_.x_0;
+		fmu_set_real( x_0_ );
 	}
 
 	// Initialization: Stage 1
 	void
 	init_1()
 	{
-		SmoothToken const s( f_( tQ ) );
-		x_1_ = s.x_1;
+		x_1_ = s_.x_1;
+		tD = s_.tD;
+		set_qTol();
 		set_tE();
-		tD = s.tD;
 		( tE < tD ) ? add_QSS( tE ) : add_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
-	}
-
-	// Set Current Tolerance
-	void
-	set_qTol()
-	{
-		qTol = std::max( rTol * std::abs( x_0_ ), aTol );
-		assert( qTol > 0.0 );
 	}
 
 	// Discrete Advance
 	void
 	advance_discrete()
 	{
-		SmoothToken const s( f_( tX = tQ = tD ) );
-		x_0_ = s.x_0;
+		s_ = f_( tX = tQ = tD );
+		x_0_ = s_.x_0;
+		x_1_ = s_.x_1;
+		tD = s_.tD;
 		set_qTol();
-		x_1_ = s.x_1;
 		set_tE();
-		tD = s.tD;
 		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 		if ( have_observers_ ) advance_observers();
 	}
 
-	// Discrete Advance Simultaneous
+	// Discrete Advance: Simultaneous
 	void
-	advance_discrete_simultaneous()
+	advance_discrete_s()
 	{
-		SmoothToken const s( f_( tX = tQ = tD ) );
-		x_0_ = s.x_0;
+		s_ = f_( tX = tQ = tD );
+		x_0_ = s_.x_0;
+		x_1_ = s_.x_1;
+		tD = s_.tD;
 		set_qTol();
-		x_1_ = s.x_1;
 		set_tE();
-		tD = s.tD;
 		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
@@ -189,12 +161,12 @@ public: // Methods
 	void
 	advance_QSS()
 	{
-		SmoothToken const s( f_( tX = tQ = tE ) );
-		x_0_ = s.x_0;
+		s_ = f_( tX = tQ = tE );
+		x_0_ = s_.x_0;
+		x_1_ = s_.x_1;
+		tD = s_.tD;
 		set_qTol();
-		x_1_ = s.x_1;
 		set_tE();
-		tD = s.tD;
 		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 		if ( have_observers_ ) advance_observers();
@@ -204,23 +176,37 @@ public: // Methods
 	void
 	advance_QSS_0()
 	{
-		x_0_ = f_( tX = tQ = tE ).x_0;
-		set_qTol();
+		s_ = f_( tX = tQ = tE );
+		x_0_ = s_.x_0;
 	}
 
 	// QSS Advance: Stage 1
 	void
 	advance_QSS_1()
 	{
-		SmoothToken const s( f_( tQ ) );
-		x_1_ = s.x_1;
+		x_1_ = s_.x_1;
+		tD = s_.tD;
+	}
+
+	// QSS Advance: Stage Final
+	void
+	advance_QSS_F()
+	{
+		set_qTol();
 		set_tE();
-		tD = s.tD;
 		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
 private: // Methods
+
+	// Set QSS Tolerance
+	void
+	set_qTol()
+	{
+		qTol = std::max( rTol * std::abs( x_0_ ), aTol );
+		assert( qTol > 0.0 );
+	}
 
 	// Set End Time: Quantized and Continuous Aligned
 	void
@@ -236,7 +222,7 @@ private: // Methods
 
 private: // Data
 
-	Real x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }; // Coefficients
 
 };
 

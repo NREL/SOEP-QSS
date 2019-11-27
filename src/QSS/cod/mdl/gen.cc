@@ -99,7 +99,7 @@ public: // Types
 	using Variable_QSS_LTI = Variable_QSS< Function_LTI >;
 	using Variable_ZC_LTI = Variable_ZC< Function_LTI >;
 
-public: // Properties
+public: // Property
 
 	// Apply at Time t
 	void

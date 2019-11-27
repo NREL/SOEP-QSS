@@ -1,4 +1,4 @@
-// QSS2 Zero-Crossing Variable
+// FMU-Based QSS3 Zero-Crossing Variable
 //
 // Project: QSS Solver
 //
@@ -33,84 +33,35 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_cod_Variable_ZC2_hh_INCLUDED
-#define QSS_cod_Variable_ZC2_hh_INCLUDED
+#ifndef QSS_fmu_Variable_ZC3_hh_INCLUDED
+#define QSS_fmu_Variable_ZC3_hh_INCLUDED
 
 // QSS Headers
-#include <QSS/cod/Variable_ZC.hh>
+#include <QSS/fmu/Variable_ZC.hh>
 
 namespace QSS {
-namespace cod {
+namespace fmu {
 
-// QSS2 Zero-Crossing Variable
-template< template< typename > class F >
-class Variable_ZC2 final : public Variable_ZC< F >
+// FMU-Based QSS3 Zero-Crossing Variable
+class Variable_ZC3 final : public Variable_ZC
 {
 
 public: // Types
 
-	using Super = Variable_ZC< F >;
-
-	using Real = Variable::Real;
-	using Time = Variable::Time;
-
-	using Crossing = Variable::Crossing;
-	using typename Super::If;
-	using typename Super::When;
-
-	using Super::check_crossing_;
-	using Super::crossing;
-	using Super::crossing_last;
-	using Super::if_clauses;
-	using Super::name;
-	using Super::rTol;
-	using Super::aTol;
-	using Super::qTol;
-	using Super::xIni;
-	using Super::tQ;
-	using Super::tX;
-	using Super::tE;
-	using Super::tZ;
-	using Super::tZ_last;
-	using Super::dt_min;
-	using Super::dt_max;
-	using Super::dt_inf;
-	using Super::self_observer;
-	using Super::sign_old_;
-	using Super::when_clauses;
-	using Super::x_mag_;
-	using Super::zChatter_;
-	using Super::zTol;
-
-	using Super::add_QSS_ZC;
-	using Super::add_ZC;
-	using Super::event;
-	using Super::has;
-	using Super::shift_QSS_ZC;
-	using Super::shift_ZC;
-	using Super::tE_infinity_tQ;
-
-protected: // Types
-
-	using Super::crossing_type;
-
-private: // Types
-
-	using Super::event_;
-	using Super::f_;
-	using Super::observers_;
+	using Super = Variable_ZC;
 
 public: // Creation
 
 	// Constructor
-	explicit
-	Variable_ZC2(
+	Variable_ZC3(
 	 std::string const & name,
-	 Real const rTol = 1.0e-4,
-	 Real const aTol = 1.0e-6,
-	 Real const zTol = 0.0
+	 Real const rTol,
+	 Real const aTol,
+	 Real const zTol,
+	 FMU_ME * fmu_me,
+	 FMU_Variable const var = FMU_Variable()
 	) :
-	 Super( 2, name, rTol, aTol, zTol )
+	 Super( 3, name, rTol, aTol, zTol, fmu_me, var )
 	{}
 
 public: // Property
@@ -120,37 +71,69 @@ public: // Property
 	x( Time const t ) const
 	{
 		Time const tDel( t - tX );
-		return x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		return x_0_ + ( ( x_1_ + ( ( x_2_ + ( x_3_ * tDel ) ) * tDel ) ) * tDel );
 	}
 
 	// Continuous First Derivative at Time t
 	Real
 	x1( Time const t ) const
 	{
-		return x_1_ + ( two * x_2_ * ( t - tX ) );
+		Time const tDel( t - tX );
+		return x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_ * tDel ) ) * tDel );
 	}
 
 	// Continuous Second Derivative at Time t
 	Real
 	x2( Time const t ) const
 	{
-		(void)t; // Suppress unused warning
-		return two * x_2_;
+		return ( two * x_2_ ) + ( six * x_3_ * ( t - tX ) );
+	}
+
+	// Continuous Third Derivative at Time t
+	Real
+	x3( Time const ) const
+	{
+		return six * x_3_;
 	}
 
 	// Quantized Value at Time t
 	Real
 	q( Time const t ) const
 	{
-		return x_0_ + ( x_1_ * ( t - tQ ) );
+		Time const tDel( t - tQ );
+		return x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 	}
 
 	// Quantized First Derivative at Time t
 	Real
 	q1( Time const t ) const
 	{
-		(void)t; // Suppress unused warning
-		return x_1_;
+		return x_1_ + ( two * x_2_ * ( t - tQ ) );
+	}
+
+	// Quantized Second Derivative at Time t
+	Real
+	q2( Time const ) const
+	{
+		return two * x_2_;
+	}
+
+	// Zero-Crossing Bump Time for FMU Detection
+	Time
+	tZC_bump( Time const t ) const
+	{
+		if ( zTol > 0.0 ) {
+			Time const tDel( t - tX );
+			Real const x_1_t( x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_ * tDel ) ) * tDel ) );
+			Real const x_2_t( x_2_ + ( three * x_3_ * tDel ) );
+			Real const zTol2( 2.0 * zTol ); // Hope FMU detects the crossing at 2x the zTol
+			Real dt_bump( min_root_cubic_both( x_3_, x_2_t, x_1_t, zTol2, -zTol2 ) );
+			if ( dt_bump <= 0.0 ) dt_bump = min_root_quadratic_both( x_2_t, x_1_t, zTol2, -zTol2 ); // Fall back to 2nd order estimate
+			if ( dt_bump <= 0.0 ) dt_bump = ( x_1_t != 0.0 ? zTol2 / std::abs( x_1_t ) : options::dtZC ); // Fall back to 1st order estimate
+			return t + dt_bump;
+		} else {
+			return t + options::dtZC;
+		}
 	}
 
 public: // Methods
@@ -159,48 +142,60 @@ public: // Methods
 	void
 	init()
 	{
-		// Initialize trajectory specs
-		x_0_ = f_.x( tQ );
+		// Check no observers
+		if ( self_observer || ( ! observers_.empty() ) ) {
+			std::cerr << "Error: Zero-crossing variable has observers: " << name << std::endl;
+			std::exit( EXIT_FAILURE );
+		}
+
+		// Initialize observees
+		init_observees();
+
+		// Initialize specs
+		x_0_ = p_0();
 		x_mag_ = std::abs( x_0_ );
-		x_1_ = f_.x1( tQ );
-		x_2_ = one_half * f_.x2( tQ );
+		x_1_ = z_1();
+		x_2_ = z_2();
+		x_3_ = z_3();
 		set_qTol();
 		set_tE();
 		set_tZ();
 		( tE < tZ ) ? add_QSS_ZC( tE ) : add_ZC( tZ );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
 	// QSS Advance
 	void
 	advance_QSS()
 	{
+		tX = tQ = tE;
 		Real const x_tE( zChatter_ ? x( tE ) : Real( 0.0 ) );
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
-		bool const check_crossing( ( tE > tZ_last ) || ( x_mag_ != 0.0 ) );
-		int const sign_old( check_crossing ? signum( zChatter_ ? x_tE : x( tE ) ) : 0 );
+		check_crossing_ = ( tE > tZ_last ) || ( x_mag_ != 0.0 );
+		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_tE : x( tE ) ) : 0 );
 #endif
-		x_0_ = f_.x( tX = tQ = tE );
+		x_0_ = z_0();
 		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
-		x_1_ = f_.x1( tQ );
-		x_2_ = one_half * f_.x2( tQ );
+		x_1_ = z_1();
+		x_2_ = z_2();
+		x_3_ = z_3();
 		set_qTol();
 		set_tE();
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
-		crossing_detect( sign_old, signum( x_0_ ), check_crossing );
+		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
 #else
 		set_tZ();
 		( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 #endif
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
+		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
 	// Zero-Crossing Advance
 	void
 	advance_ZC()
 	{
-		for ( typename If::Clause * clause : if_clauses ) clause->activity( tZ );
-		for ( typename When::Clause * clause : when_clauses ) clause->activity( tZ );
+		assert( in_conditional() );
+		conditional->activity( tZ );
 		if ( options::output::d ) std::cout << "Z " << name << '(' << tZ << ')' << '\n';
 		crossing_last = crossing;
 		x_mag_ = 0.0;
@@ -213,49 +208,56 @@ public: // Methods
 	advance_observer( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
-		bool const check_crossing( ( t > tZ_last ) || ( x_mag_ != 0.0 ) );
-		int const sign_old( check_crossing ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = f_.x( tX = tQ = t );
-		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
-		x_1_ = f_.x1( t );
-		x_2_ = one_half * f_.x2( t );
-		set_qTol();
-		set_tE();
-		crossing_detect( sign_old, signum( x_0_ ), check_crossing );
-		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ <<  '\n';
-	}
-
-	// Observer Advance: Parallel
-	void
-	advance_observer_parallel( Time const t )
-	{
-		assert( ( tX <= t ) && ( t <= tE ) );
+		tX = tQ = t;
 		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = f_.x( tX = tQ = t );
+		x_0_ = z_0( t );
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
-		x_1_ = f_.x1( t );
-		x_2_ = one_half * f_.x2( t );
+		x_1_ = z_1();
+		x_2_ = z_2();
+		x_3_ = z_3();
 		set_qTol();
 		set_tE();
-	}
-
-	// Observer Advance: Serial
-	void
-	advance_observer_serial()
-	{
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
 	}
 
-	// Observer Advance: Serial + Diagnostics
+	// Observer Advance: Stage 1
 	void
-	advance_observer_serial_d()
+	advance_observer_1( Time const t, Real const v  )
 	{
-		assert( options::output::d );
+		assert( ( tX <= t ) && ( t <= tE ) );
+		tX = tQ = t;
+		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
+		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
+		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
+		x_0_ = v;
+		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
+		x_1_ = z_1();
+	}
+
+	// Observer Advance: Stage 2
+	void
+	advance_observer_2( Time const )
+	{
+		x_2_ = z_2();
+	}
+
+	// Observer Advance: Stage 3
+	void
+	advance_observer_3( Time const )
+	{
+		x_3_ = z_3();
+		set_qTol();
+		set_tE();
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
-		std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ <<  '\n';
+	}
+
+	// Observer Advance: Stage d
+	void
+	advance_observer_d() const
+	{
+		std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ <<  '\n';
 	}
 
 private: // Methods
@@ -264,7 +266,7 @@ private: // Methods
 	void
 	set_qTol()
 	{
-		qTol = std::max( rTol * std::abs( x_0_ ), aTol );
+		qTol = std::max( rTol * std::abs( x_0_ ), aTol ) * options::zFac;
 		assert( qTol > 0.0 );
 	}
 
@@ -274,11 +276,11 @@ private: // Methods
 	{
 		assert( tX <= tQ );
 		assert( dt_min <= dt_max );
-		Time dt( x_2_ != 0.0 ? std::sqrt( qTol / std::abs( x_2_ ) ) : infinity );
+		Time dt( x_3_ != 0.0 ? std::cbrt( qTol / std::abs( x_3_ ) ) : infinity );
 		dt = std::min( std::max( dt, dt_min ), dt_max );
 		tE = ( dt != infinity ? tQ + dt : infinity );
-		if ( ( options::inflection ) && ( x_2_ != 0.0 ) && ( signum( x_1_ ) != signum( x_2_ ) ) ) {
-			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
+		if ( ( options::inflection ) && ( x_3_ != 0.0 ) && ( signum( x_2_ ) != signum( x_3_ ) ) ) {
+			Time const tI( tX - ( x_2_ / ( three * x_3_ ) ) );
 			if ( tQ < tI ) tE = std::min( tE, tI );
 		}
 		tE_infinity_tQ();
@@ -291,7 +293,7 @@ private: // Methods
 		if ( zChatter_ && ( x_mag_ < zTol ) ) { // Chatter prevention
 			tZ = infinity;
 		} else { // Use root of continuous rep: Only robust for small active segments with continuous rep close to function
-			Time const dt( min_positive_root_quadratic( x_2_, x_1_, x_0_ ) );
+			Time const dt( min_positive_root_cubic( x_3_, x_2_, x_1_, x_0_ ) );
 			assert( dt > 0.0 );
 			if ( dt != infinity ) { // Root exists
 				tZ = tX + dt;
@@ -302,24 +304,28 @@ private: // Methods
 					if ( options::refine ) { // Refine root: Expensive!
 						Time t( tZ );
 						//Time t_p( tZ );
-						Real const vZ( f_.x( tZ ) );
+						Time const t_fmu( fmu_get_time() );
+						fmu_set_time( tZ ); // Don't seem to need this
+						Real const vZ( z_0( tZ ) );
 						Real v( vZ ), v_p( vZ );
 						Real m( 1.0 ); // Multiplier
 						std::size_t i( 0 );
 						std::size_t const n( 10u ); // Max iterations
 						//int const sign_0( signum( x_0_ ) );
 						while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-							Real const d( f_.x1( t ) );
+							Real const d( z_1( t, v ) );
 							if ( d == 0.0 ) break;
 							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 							t -= m * ( v / d );
-							v = f_.x( t );
+							fmu_set_time( t ); // Don't seem to need this
+							v = z_0( t );
 							if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
 							//t_p = t;
 							v_p = v;
 						}
 						if ( ( t >= tX ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
 						if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
+						fmu_set_time( t_fmu ); // Don't seem to need this
 					}
 				} else { // Crossing type not relevant
 					tZ = infinity;
@@ -341,7 +347,7 @@ private: // Methods
 			assert( dB >= 0.0 );
 			Real const x_0( tB == tZ_last ? 0.0 : x_0_ + ( x_1_ * dB ) + ( x_2_ * square( dB ) ) );
 			Real const x_1( x_1_ + ( two * x_2_ * dB ) );
-			Time const dt( min_positive_root_quadratic( x_2_, x_1, x_0 ) ); // Positive root using trajectory shifted to tB
+			Time const dt( min_positive_root_cubic( x_3_, x_2_, x_1, x_0 ) ); // Positive root using trajectory shifted to tB
 			assert( dt > 0.0 );
 			if ( dt != infinity ) { // Root exists
 				tZ = tB + dt;
@@ -352,24 +358,28 @@ private: // Methods
 					if ( options::refine ) { // Refine root: Expensive!
 						Time t( tZ );
 						//Time t_p( tZ );
-						Real const vZ( f_.x( tZ ) );
+						Time const t_fmu( fmu_get_time() );
+						fmu_set_time( tZ ); // Don't seem to need this
+						Real const vZ( z_0( tZ ) );
 						Real v( vZ ), v_p( vZ );
 						Real m( 1.0 ); // Multiplier
 						std::size_t i( 0 );
 						std::size_t const n( 10u ); // Max iterations
 						//int const sign_0( signum( x_0 ) );
 						while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-							Real const d( f_.x1( t ) );
+							Real const d( z_1( t, v ) );
 							if ( d == 0.0 ) break;
 							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 							t -= m * ( v / d );
-							v = f_.x( t );
+							fmu_set_time( t ); // Don't seem to need this
+							v = z_0( t );
 							if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
 							//t_p = t;
 							v_p = v;
 						}
 						if ( ( t >= tB ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
 						if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
+						fmu_set_time( t_fmu ); // Don't seem to need this
 					}
 				} else { // Crossing type not relevant
 					tZ = infinity;
@@ -402,13 +412,53 @@ private: // Methods
 		}
 	}
 
+	// Coefficient 1 from FMU at Time tQ
+	Real
+	z_1() const
+	{
+		Time tN( tQ - options::dtNum );
+		fmu_set_time( tN );
+		x_0m_ = z_0( tN );
+		tN = tQ + options::dtNum;
+		fmu_set_time( tN );
+		x_0p_ = z_0( tN );
+		fmu_set_time( tQ );
+		return options::one_over_two_dtNum * ( x_0p_ - x_0m_ ); //ND Centered difference
+	}
+
+	// Coefficient 1 from FMU at Time t with Value v
+	Real
+	z_1( Time const t, Real const v ) const
+	{
+		return Z_1( t, v );
+	}
+
+	// Coefficient 2 from FMU
+	Real
+	z_2() const
+	{
+		return options::one_over_two_dtNum_squared * ( x_0p_ - ( two * x_0_ ) + x_0m_ ); //ND Centered difference
+	}
+
+	// Coefficient 3 from FMU at Time tQ
+	Real
+	z_3() const
+	{
+		Time const tN( tQ + ( two * options::dtNum ) );
+		fmu_set_time( tN );
+		Real const x_0pp_( z_0( tN ) );
+		fmu_set_time( tQ );
+		return options::one_over_six_dtNum_cubed * ( x_0pp_ - ( three * x_0p_ ) + ( three * x_0_ ) - x_0m_ ); //ND Four-point formula
+	}
+
 private: // Data
 
-	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous rep coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Continuous rep coefficients
+	mutable Real x_0m_{ 0.0 }, x_0p_{ 0.0 }; // Values at minus and plus delta-t for numeric differentiation
 
 };
 
-} // cod
+} // fmu
 } // QSS
 
 #endif

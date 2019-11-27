@@ -91,7 +91,7 @@ public: // Assignment
 	FMU_QSS &
 	operator =( FMU_QSS && ) = delete;
 
-public: // Properties
+public: // Property
 
 	// FMU Resource Location URI
 	std::string

@@ -59,7 +59,7 @@ public: // Creation
 	 x_0_( x_0 )
 	{}
 
-public: // Properties
+public: // Property
 
 	// State at Time t
 	SmoothToken

@@ -68,7 +68,7 @@ cycles( typename Variable::Variables const & vars )
 		 var( var )
 		{}
 
-	public: // Properties
+	public: // Property
 
 		// Active Child Node
 		Node *

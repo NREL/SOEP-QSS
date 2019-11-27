@@ -410,7 +410,7 @@ fmi2FreeFMUstate(
 );
 
 #ifdef __cplusplus
-}
+} // extern "C"
 #endif
 
 #endif

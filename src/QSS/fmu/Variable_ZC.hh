@@ -88,20 +88,13 @@ protected: // Assignment
 	Variable_ZC &
 	operator =( Variable_ZC && ) noexcept = default;
 
-public: // Predicates
+public: // Predicate
 
 	// Zero-Crossing Variable?
 	bool
 	is_ZC() const
 	{
 		return true;
-	}
-
-	// Non-Zero-Crossing Variable?
-	bool
-	not_ZC() const
-	{
-		return false;
 	}
 
 	// Has Crossing Type?
@@ -111,7 +104,7 @@ public: // Predicates
 		return ( std::find( crossings.begin(), crossings.end(), c ) != crossings.end() );
 	}
 
-public: // Properties
+public: // Property
 
 	// Boolean Value at Time t
 	Boolean
@@ -254,18 +247,6 @@ protected: // Methods
 		} else {
 			return Crossing::DnPN;
 		}
-	}
-
-	// Get FMU Polynomial Trajectory Term 1
-	Real
-	fmu_get_poly_1_ZC( Real const v, Time const t ) const
-	{
-		Time const tND( t + options::dtNum );
-		fmu_set_time( tND );
-		fmu_set_observees_x( tND );
-		Real const x_1( options::one_over_dtNum * ( fmu_get_real() - v ) ); // Forward Euler
-		fmu_set_time( t );
-		return x_1;
 	}
 
 public: // Data

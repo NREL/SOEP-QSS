@@ -222,7 +222,7 @@ protected: // Assignment
 	Variable &
 	operator =( Variable && ) noexcept = default;
 
-public: // Predicates
+public: // Predicate
 
 	// Discrete Variable?
 	virtual
@@ -248,10 +248,25 @@ public: // Predicates
 		return false;
 	}
 
+	// Non-Connection Input Variable?
+	bool
+	not_connection() const
+	{
+		return ! is_connection();
+	}
+
 	// QSS Variable?
 	virtual
 	bool
 	is_QSS() const
+	{
+		return false;
+	}
+
+	// LIQSS Variable?
+	virtual
+	bool
+	is_LIQSS() const
 	{
 		return false;
 	}
@@ -265,11 +280,10 @@ public: // Predicates
 	}
 
 	// Non-Zero-Crossing Variable?
-	virtual
 	bool
 	not_ZC() const
 	{
-		return true;
+		return ! is_ZC();
 	}
 
 	// In Conditional?
@@ -280,7 +294,7 @@ public: // Predicates
 		return conditional != nullptr;
 	}
 
-public: // Properties
+public: // Property
 
 	// Order of Method
 	int
@@ -409,48 +423,6 @@ public: // Properties
 		return 0.0;
 	}
 
-	// Simultaneous Value at Time t
-	virtual
-	Real
-	s( Time const ) const
-	{
-		assert( false ); // Missing override
-		return 0.0;
-	}
-
-	// Simultaneous Numeric Differentiation Value at Time t
-	virtual
-	Real
-	sn( Time const ) const
-	{
-		assert( false ); // Missing override
-		return 0.0;
-	}
-
-	// Simultaneous First Derivative at Time t
-	virtual
-	Real
-	s1( Time const ) const
-	{
-		return 0.0;
-	}
-
-	// Simultaneous Second Derivative at Time t
-	virtual
-	Real
-	s2( Time const ) const
-	{
-		return 0.0;
-	}
-
-	// Simultaneous Third Derivative at Time t
-	virtual
-	Real
-	s3( Time const ) const
-	{
-		return 0.0;
-	}
-
 	// SmoothToken at Time t
 	SmoothToken
 	k( Time const t ) const
@@ -566,9 +538,6 @@ public: // Methods
 	{
 		observers_.init();
 		have_observers_ = observers_.have();
-		have_observers_2_ = observers_.have2();
-		have_observers_NZ_2_ = observers_.nz_have2();
-		have_observers_ZC_2_ = observers_.zc_have2();
 		connected_output_observer = observers_.connected_output_observer();
 	}
 
@@ -599,7 +568,7 @@ public: // Methods
 	void
 	init_time( Time const t )
 	{
-		tQ = tX = tE = tN = t;
+		tQ = tX = tE = t;
 	}
 
 	// Initialization
@@ -638,10 +607,22 @@ public: // Methods
 	init_2()
 	{}
 
+	// Initialization: Stage 2.1
+	virtual
+	void
+	init_2_1()
+	{}
+
 	// Initialization: Stage 3
 	virtual
 	void
 	init_3()
+	{}
+
+	// Initialization: Stage Final
+	virtual
+	void
+	init_F()
 	{}
 
 	// Discrete Add Event
@@ -666,10 +647,10 @@ public: // Methods
 		assert( false );
 	}
 
-	// Discrete Advance Simultaneous
+	// Discrete Advance: Simultaneous
 	virtual
 	void
-	advance_discrete_simultaneous()
+	advance_discrete_s()
 	{
 		assert( false );
 	}
@@ -732,10 +713,22 @@ public: // Methods
 	advance_QSS_2()
 	{}
 
+	// QSS Advance: Stage 2.1
+	virtual
+	void
+	advance_QSS_2_1()
+	{}
+
 	// QSS Advance: Stage 3
 	virtual
 	void
 	advance_QSS_3()
+	{}
+
+	// QSS Advance: Stage Final
+	virtual
+	void
+	advance_QSS_F()
 	{}
 
 	// Zero-Crossing Add Event
@@ -813,6 +806,28 @@ public: // Methods
 		assert( false ); // Not a QSS variable
 	}
 
+	// Handler Advance: Stage 2.1
+	virtual
+	void
+	advance_handler_2_1()
+	{}
+
+	// Handler Advance: Stage 3
+	virtual
+	void
+	advance_handler_3()
+	{
+		assert( false ); // Not a QSS variable
+	}
+
+	// Handler Advance: Stage Final
+	virtual
+	void
+	advance_handler_F()
+	{
+		assert( false ); // Not a QSS variable
+	}
+
 	// Handler No-Advance
 	virtual
 	void
@@ -821,50 +836,27 @@ public: // Methods
 		assert( false ); // Not a QSS or discrete variable
 	}
 
-	// Advance Observers: Stage 1
-	void
-	advance_observers_1()
-	{
-		observers_.advance_1( tQ );
-	}
-
-	// Advance Observers: Stage 2
-	void
-	advance_observers_2()
-	{
-		assert( tN == tQ + options::dtNum );
-		observers_.advance_2( tN );
-	}
-
-	// Advance Observers: Non-Zero-Crossing: Stage 2
-	void
-	advance_observers_NZ_2()
-	{
-		assert( tN == tQ + options::dtNum );
-		observers_.advance_NZ_2( tN );
-	}
-
-	// Advance Observers: Zero-Crossing: Stage 2
-	void
-	advance_observers_ZC_2()
-	{
-		assert( tN == tQ + options::dtNum );
-		observers_.advance_ZC_2( tN );
-	}
-
-	// Advance Observers: Stage d
-	void
-	advance_observers_d()
-	{
-		assert( options::output::d );
-		observers_.advance_d();
-	}
-
 	// Advance Observers
 	void
 	advance_observers()
 	{
 		observers_.advance( tQ );
+	}
+
+	// Advance Observers: Stage d
+	void
+	advance_observers_d() const
+	{
+		assert( options::output::d );
+		observers_.advance_d();
+	}
+
+	// Observer Advance
+	virtual
+	void
+	advance_observer( Time const t )
+	{
+		assert( false );
 	}
 
 	// Observer Advance: Stage 1
@@ -883,13 +875,13 @@ public: // Methods
 		assert( false );
 	}
 
-//	// Zero-Crossing Observer Advance: Stage 1
-//	virtual
-//	void
-//	advance_observer_ZC_1( Time const, Real const, Real const )
-//	{
-//		assert( false );
-//	}
+	// Observer Advance: Stage 1
+	virtual
+	void
+	advance_observer_1( Time const, Real const, Real const )
+	{
+		assert( false );
+	}
 
 	// Observer Advance: Stage 2
 	virtual
@@ -903,6 +895,22 @@ public: // Methods
 	virtual
 	void
 	advance_observer_2( Time const, Real const )
+	{
+		assert( false );
+	}
+
+	// Observer Advance: Stage 3
+	virtual
+	void
+	advance_observer_3( Time const )
+	{
+		assert( false );
+	}
+
+	// Observer Advance: Stage 3
+	virtual
+	void
+	advance_observer_3( Time const, Real const )
 	{
 		assert( false );
 	}
@@ -981,14 +989,6 @@ public: // Methods: FMU
 		fmu_me->set_boolean( var.ref, v );
 	}
 
-	// Get FMU Polynomial Trajectory Term 1
-	Real
-	fmu_get_poly_1() const
-	{
-		assert( fmu_me != nullptr );
-		return fmu_me->get_real( der.ref );
-	}
-
 	// Set FMU Variable to Continuous Value at Time t
 	void
 	fmu_set_x( Time const t ) const
@@ -1005,21 +1005,7 @@ public: // Methods: FMU
 		fmu_me->set_real( var.ref, q( t ) );
 	}
 
-	// Set FMU Variable to Simultaneous Value at Time t
-	void
-	fmu_set_s( Time const t ) const
-	{
-		assert( fmu_me != nullptr );
-		fmu_me->set_real( var.ref, s( t ) );
-	}
-
-	// Set FMU Variable to Simultaneous Numeric Differentiation Value at Time t
-	void
-	fmu_set_sn( Time const t ) const
-	{
-		assert( fmu_me != nullptr );
-		fmu_me->set_real( var.ref, sn( t ) );
-	}
+protected: // Methods: FMU
 
 	// Set All Observee FMU Variables to Continuous Value at Time t
 	void
@@ -1039,22 +1025,144 @@ public: // Methods: FMU
 		}
 	}
 
-	// Set All Observee FMU Variables to Simultaneous Value at Time t
-	void
-	fmu_set_observees_s( Time const t ) const
+	// Coefficient 0 from FMU: Observees Set
+	Real
+	p_0() const
 	{
-		for ( auto observee : observees_ ) {
-			observee->fmu_set_s( t );
-		}
+		assert( fmu_me != nullptr );
+		return fmu_me->get_real( var.ref );
 	}
 
-	// Set All Observee FMU Variables to Simultaneous Numeric Differentiation Value at Time t
-	void
-	fmu_set_observees_sn( Time const t ) const
+	// Coefficient 0 from FMU at Time tQ: Zero-Crossing
+	Real
+	z_0() const
 	{
-		for ( auto observee : observees_ ) {
-			observee->fmu_set_sn( t );
-		}
+		fmu_set_observees_x( tQ );
+		return p_0();
+	}
+
+	// Coefficient 0 from FMU at Time t: Zero-Crossing
+	Real
+	z_0( Time const t ) const
+	{
+		fmu_set_observees_x( t );
+		return p_0();
+	}
+
+	// Coefficient 1 from FMU: Observees Set
+	Real
+	p_1() const
+	{
+		assert( fmu_me != nullptr );
+		return fmu_me->get_real( der.ref );
+	}
+
+	// Coefficient 1 from FMU at Time t: QSS
+	Real
+	c_1( Time const t ) const
+	{
+		fmu_set_observees_q( t );
+		if ( self_observer ) fmu_set_q( t );
+		return p_1();
+	}
+
+	// Coefficient 1 from FMU at Time tQ: QSS
+	Real
+	c_1( Time const t, Real const q_0 ) const
+	{
+		assert( t == tQ );
+		fmu_set_observees_q( t );
+		if ( self_observer ) fmu_set_real( q_0 );
+		return p_1();
+	}
+
+	// Coefficient 1 from FMU at Time tQ: No Self-Observer Assignment
+	Real
+	h_1() const
+	{
+		fmu_set_observees_q( tQ );
+		return p_1();
+	}
+
+	// Coefficient 1 from FMU at Time t: No Self-Observer Assignment
+	Real
+	h_1( Time const t ) const
+	{
+		fmu_set_observees_q( t );
+		return p_1();
+	}
+
+	// Coefficient 1 from FMU at Time t: Zero-Crossing
+	Real
+	z_1( Time const t ) const
+	{
+		fmu_set_observees_x( t );
+		return p_1();
+	}
+
+	// Coefficient 1 from FMU at Time t: Zero-Crossing with ND First Derivative
+	Real
+	Z_1( Time const t, Real const x_0 ) const
+	{
+		Time const tN( t + options::dtNum );
+		fmu_set_time( tN );
+		Real const x_1( options::one_over_dtNum * ( z_0( tN ) - x_0 ) ); //ND Forward Euler
+		fmu_set_time( t );
+		return x_1;
+	}
+
+	// Coefficient 2 from FMU: Given Derivative
+	Real
+	p_2( Real const d, Real const x_1 ) const
+	{
+		return options::one_over_two_dtNum * ( d - x_1 ); //ND Forward Euler
+	}
+
+	// Coefficient 2 from FMU at Time t
+	Real
+	c_2( Time const t, Real const x_1 ) const
+	{
+		Time const tN( t + options::dtNum );
+		fmu_set_time( tN );
+		Real const x_2( options::one_over_two_dtNum * ( c_1( tN ) - x_1 ) ); //ND Forward Euler
+		fmu_set_time( t );
+		return x_2;
+	}
+
+	// Get FMU Polynomial Trajectory Term 2 at Time tQ: No Self-Observer Check/Set
+	Real
+	h_2( Time const t, Real const x_1 ) const
+	{
+		Time const tN( t + options::dtNum );
+		fmu_set_time( tN );
+		Real const x_2( options::one_over_two_dtNum * ( h_1( tN ) - x_1 ) ); //ND Forward Euler
+		fmu_set_time( t );
+		return x_2;
+	}
+
+	// Coefficient 2 from FMU at Time t: Zero-Crossing
+	Real
+	z_2(Time const t,  Real const x_1 ) const
+	{
+		Time const tN( t + options::dtNum );
+		fmu_set_time( tN );
+		Real const x_2( options::one_over_two_dtNum * ( z_1( tN ) - x_1 ) ); //ND Forward Euler
+		fmu_set_time( t );
+		return x_2;
+	}
+
+	// Coefficient 3 from FMU at Time t
+	Real
+	c_3( Time const t, Real const x_1 ) const
+	{
+		Time tN( t - options::dtNum );
+		fmu_set_time( tN );
+		Real const x_1_m( c_1( tN ) );
+		tN = t + options::dtNum;
+		fmu_set_time( tN );
+		Real const x_1_p( c_1( tN ) );
+		fmu_set_time( tQ );
+		return options::one_over_six_dtNum_squared * ( x_1_p - ( two * x_1 ) + x_1_m ); //ND Centered difference
 	}
 
 protected: // Methods
@@ -1104,7 +1212,6 @@ public: // Data
 	Time tQ{ 0.0 }; // Quantized time range begin
 	Time tX{ 0.0 }; // Continuous time range begin
 	Time tE{ 0.0 }; // Time range end: tQ <= tE and tX <= tE
-	Time tN{ 0.0 }; // Numeric differentiation time
 	Time tD{ infinity }; // Discrete event time: tQ <= tD and tX <= tD
 	Time dt_min{ 0.0 }; // Time step min
 	Time dt_max{ infinity }; // Time step max
@@ -1125,9 +1232,6 @@ protected: // Data
 	// Observers
 	Observers< Variable > observers_; // Variables dependent on this one
 	bool have_observers_{ false }; // Have observers?
-	bool have_observers_2_{ false }; // Have order 2+ observers?
-	bool have_observers_NZ_2_{ false }; // Have order 2+ non-zero-crossing observers?
-	bool have_observers_ZC_2_{ false }; // Have order 2+ zero-crossing observers?
 
 	// Observees
 	Variables observees_; // Variables this one depends on

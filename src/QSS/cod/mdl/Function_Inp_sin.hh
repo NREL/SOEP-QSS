@@ -65,7 +65,7 @@ public: // Creation
 	 s_( s )
 	{}
 
-public: // Properties
+public: // Property
 
 	// Value Scaling
 	Coefficient

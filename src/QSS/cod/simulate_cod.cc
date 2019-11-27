@@ -219,9 +219,10 @@ simulate( std::string const & model )
 		var_idx[ vars[ i ] ] = i;
 	}
 
-	// Containers of ZC and non-ZC variables
+	// Containers of variables
 	Variables vars_ZC;
 	Variables vars_NZ;
+	Variables vars_LIQSS;
 	int max_QSS_order( 0 );
 	for ( auto var : vars ) {
 		if ( var->is_ZC() ) { // ZC variable
@@ -229,6 +230,9 @@ simulate( std::string const & model )
 		} else { // Non-ZC variable
 			vars_NZ.push_back( var );
 			max_QSS_order = std::max( max_QSS_order, var->order() ); // Max QSS order of non-ZC variables to avoid unnec loop stages
+		}
+		if ( var->is_LIQSS() ) {
+			vars_LIQSS.push_back( var );
 		}
 	}
 	int const QSS_order_max( max_QSS_order ); // Highest QSS order in use
@@ -260,6 +264,9 @@ simulate( std::string const & model )
 				var->init_3();
 			}
 		}
+	}
+	for ( auto var : vars_LIQSS ) {
+		var->init_LIQSS();
 	}
 	for ( auto var : vars_ZC ) {
 		var->init();
@@ -415,7 +422,7 @@ simulate( std::string const & model )
 					for ( Variable * trigger : triggers ) {
 						assert( trigger->tD == t );
 						trigger->st = s; // Set trigger superdense time
-						trigger->advance_discrete_simultaneous();
+						trigger->advance_discrete_s();
 					}
 					Variable::advance_observers( observers, t );
 
@@ -641,6 +648,9 @@ simulate( std::string const & model )
 								triggers[ i ]->advance_QSS_3();
 							}
 						}
+					}
+					for ( Variable * trigger : triggers ) {
+						trigger->advance_QSS_F();
 					}
 
 					Variable::advance_observers( observers, t );

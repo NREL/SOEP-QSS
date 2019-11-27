@@ -65,7 +65,7 @@ public: // Types
 	using AdvanceSpecs_LIQSS1 = typename Variable::AdvanceSpecs_LIQSS1;
 	using AdvanceSpecs_LIQSS2 = typename Variable::AdvanceSpecs_LIQSS2;
 
-public: // Properties
+public: // Property
 
 	// Continuous Value at Time t
 	Real
@@ -151,62 +151,6 @@ public: // Properties
 		return dtn_inv_sq_ * ( v_p_ - ( 2.0 * v_t_ ) + v_m_ );
 	}
 
-	// Simultaneous Value at Time t
-	Real
-	s( Time const t ) const
-	{
-		return ( 1.0 + ( 2.0 * t ) ) / ( y_->s( t ) + 2.0 );
-	}
-
-	// Simultaneous Numeric Differentiation Value at Time t
-	Real
-	sn( Time const t ) const
-	{
-		return ( 1.0 + ( 2.0 * t ) ) / ( y_->sn( t ) + 2.0 );
-	}
-
-	// Simultaneous First Derivative at Time t
-	Real
-	s1( Time const t ) const
-	{
-		return dtn_inv_2_ * ( sn( t + dtn_ ) - sn( t - dtn_ ) );
-	}
-
-	// Simultaneous Second Derivative at Time t
-	Real
-	s2( Time const t ) const
-	{
-		return dtn_inv_sq_ * ( sn( t + dtn_ ) - ( 2.0 * s( t ) ) + sn( t - dtn_ ) );
-	}
-
-	// Simultaneous Sequential Value at Time t
-	Real
-	ss( Time const t ) const
-	{
-		return v_t_ = s( t );
-	}
-
-	// Simultaneous Forward-Difference Sequential First Derivative at Time t
-	Real
-	sf1( Time const t ) const
-	{
-		return dtn_inv_ * ( sn( t + dtn_ ) - v_t_ );
-	}
-
-	// Simultaneous Centered-Difference Sequential First Derivative at Time t
-	Real
-	sc1( Time const t ) const
-	{
-		return dtn_inv_2_ * ( ( v_p_ = sn( t + dtn_ ) ) - ( v_m_ = sn( t - dtn_ ) ) );
-	}
-
-	// Simultaneous Centered-Difference Sequential Second Derivative at Time t
-	Real
-	sc2( Time const ) const
-	{
-		return dtn_inv_sq_ * ( v_p_ - ( 2.0 * v_t_ ) + v_m_ );
-	}
-
 	// Differentiation Time Step
 	Time
 	dtn() const
@@ -216,7 +160,7 @@ public: // Properties
 
 	// Quantized Values at Time t and at Variable +/- Delta
 	AdvanceSpecs_LIQSS1
-	qlu1( Time const t, Real const del ) const
+	qlu1( Time const t, Real const del, Real const = 0.0 ) const
 	{
 		// Value at +/- del
 		Real const num( 1.0 + ( 2.0 * t ) );
@@ -230,25 +174,9 @@ public: // Properties
 		return AdvanceSpecs_LIQSS1{ vl, vu, z };
 	}
 
-	// Simultaneous Values at Time t and at Variable +/- Delta
-	AdvanceSpecs_LIQSS1
-	slu1( Time const t, Real const del ) const
-	{
-		// Value at +/- del
-		Real const num( 1.0 + ( 2.0 * t ) );
-		Real const y2( y_->s( t ) + 2.0 );
-		Real const vl( num / ( y2 - del ) );
-		Real const vu( num / ( y2 + del ) );
-
-		// Zero point: No y gives zero function value at any t >= 0
-		Real const z( 0.0 );
-
-		return AdvanceSpecs_LIQSS1{ vl, vu, z };
-	}
-
 	// Quantized Values and Derivatives at Time t and at Variable +/- Delta
 	AdvanceSpecs_LIQSS2
-	qlu2( Time const t, Real const del ) const
+	qlu2( Time const t, Real const del, Real const = 0.0, Real const = 0.0 ) const
 	{
 		// Value at +/- del
 		Real const num( 1.0 + ( 2.0 * t ) );
@@ -261,33 +189,6 @@ public: // Properties
 		Time const tp( t + dtn_ );
 		Real const y2m( y_->q( tm ) + 2.0 );
 		Real const y2p( y_->q( tp ) + 2.0 );
-		Real const sl( dtn_inv_2_ * ( ndv( tp, y2p, -del ) - ndv( tm, y2m, -del ) ) );
-		Real const su( dtn_inv_2_ * ( ndv( tp, y2p, +del ) - ndv( tm, y2m, +del ) ) );
-
-		// Zero point: No solution points have zero function derivative
-		assert( signum( sl ) == signum( su ) );
-		assert( signum( sl ) != 0 );
-		Real const z1( 0.0 );
-		Real const z0( 0.0 );
-
-		return AdvanceSpecs_LIQSS2{ vl, vu, sl, su, z0, z1 };
-	}
-
-	// Simultaneous Values and Derivatives at Time t and at Variable +/- Delta
-	AdvanceSpecs_LIQSS2
-	slu2( Time const t, Real const del, Real const ) const
-	{
-		// Value at +/- del
-		Real const num( 1.0 + ( 2.0 * t ) );
-		Real const y2( y_->s( t ) + 2.0 );
-		Real const vl( num / ( y2 - del ) );
-		Real const vu( num / ( y2 + del ) );
-
-		// Derivative at +/- del
-		Time const tm( t - dtn_ );
-		Time const tp( t + dtn_ );
-		Real const y2m( y_->s( tm ) + 2.0 );
-		Real const y2p( y_->s( tp ) + 2.0 );
 		Real const sl( dtn_inv_2_ * ( ndv( tp, y2p, -del ) - ndv( tm, y2m, -del ) ) );
 		Real const su( dtn_inv_2_ * ( ndv( tp, y2p, +del ) - ndv( tm, y2m, +del ) ) );
 

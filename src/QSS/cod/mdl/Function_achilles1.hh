@@ -57,7 +57,7 @@ public: // Types
 	using Time = typename Variable::Time;
 	using Real = typename Variable::Real;
 
-public: // Properties
+public: // Property
 
 	// Continuous Value at Time t
 	Real
@@ -134,55 +134,6 @@ public: // Properties
 	qc2( Time const t ) const
 	{
 		return q2( t );
-	}
-
-	// Simultaneous Value at Time t
-	Real
-	s( Time const t ) const
-	{
-		return ( c1_ * x1_->s( t ) ) + ( c2_ * x2_->s( t ) );
-	}
-
-	// Simultaneous First Derivative at Time t
-	Real
-	s1( Time const t ) const
-	{
-		return ( c1_ * x1_->s1( t ) ) + ( c2_ * x2_->s1( t ) );
-	}
-
-	// Simultaneous Second Derivative at Time t
-	Real
-	s2( Time const t ) const
-	{
-		return ( c1_ * x1_->s2( t ) ) + ( c2_ * x2_->s2( t ) );
-	}
-
-	// Simultaneous Sequential Value at Time t
-	Real
-	ss( Time const t ) const
-	{
-		return s( t );
-	}
-
-	// Simultaneous Forward-Difference Sequential First Derivative at Time t
-	Real
-	sf1( Time const t ) const
-	{
-		return s1( t );
-	}
-
-	// Simultaneous Centered-Difference Sequential First Derivative at Time t
-	Real
-	sc1( Time const t ) const
-	{
-		return s1( t );
-	}
-
-	// Simultaneous Centered-Difference Sequential Second Derivative at Time t
-	Real
-	sc2( Time const t ) const
-	{
-		return s2( t );
 	}
 
 public: // Methods

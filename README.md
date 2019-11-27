@@ -23,9 +23,8 @@ Currently the code has:
 * Multiple connected FMU-ME and FMU-QSS model simulation.
 
 ### Notes
-* Modelica input file processing is not provided: test cases are code-defined or loaded from FMUs.
-* Modelica models need zero-crossing variables with names of the form \_\_zc\_*name*.
-* FMU XML files need to be customized for now with zero-crossing dependencies.
+* Modelica input file processing is not provided: test cases are code-defined or loaded from Modelica-generated FMUs.
+* The QSS solver provides two approaches to obtaining the dependencies of Modelica models with zero-crossing function (see Zero-Crossing Functions below).
 
 ## Plan
 
@@ -145,6 +144,10 @@ In traditional solvers a zero crossing is detected after it occurs and time back
 
 The QSS literature indicates that zero-crossing variables should use the quantized, not continuous, representation of their dependent variables. Such zero-crossing representations are less accurate than the variables they depend on and can have discontinuities which make it possible for crossings to occur at unpredicted times. Also, with some zero-crossing functions (such as LTI functions) this approach causes the continuous zero-crossing representation to have a zero highest order coefficient, deactivating its own requantization. QSS simulation of FMUs has the additional complexity of getting the QSs-predicted zero-crossing event to align with the FMU event detection, which benefits from using highly accurate QSS zero-crossing representations. The approach used here has been shifted to base zero-crossing variables on the continuous representation of their dependent variables. This "shadowing" approach requires observer updates whenever a dependent variable has observer (as well as requantization) updates, so there can be a modest performance impact. Since zero-crossing variables don't have observers there is no propagation of these extra updates. The more accurate zero-crossings should improve solution accuracy and reduce FMU zero-crossing event detection misses and it should make zero-crossing root refinement unnecessary in most simulations. More experience with this approach is needed but it is expected to generally provide improved solution accuracy with little or no performance penalty. With zero-crossing functions tracking the continuous representations of their dependent variables it is often most efficient and sufficiently accurate to let the dependent variable requantizations trigger the zero-crossing variable updates: to enable this efficiency the `--zFac` option is provided to bump the zero-crossing requantization tolerance up a bit.
 
+QSS needs to have variables that represent the zero-crossing functions to predict the crossings but they are not provided as FMU variables in standard Modelica implementations. The SOEP QSS solver provides two mechanisms to address this:
+* Modelon's OPTIMICA Compiler Toolkit (OCT) has been extended with compiler options `event_indicator_structure` and `event_output_vars` to generate "event indicator" variables for the zero-crossing functions. These variables should have both their dependencies and the "reverse dependencies" of the variables modified within the "if" or "when" block where the zero-crossing function appears encoded in the modelDescription.xml file. When this is fully functional the support for zero-crossing functions with the SOEP QSS solver will be fully automatic but not all of the event indicator dependencies are captured in the current OCT release so manual checking and addition of dependencies is required for now.
+* For JModelica and other standard Modelica implemntations explicit zero-crossing output variables and their derivatives must be added with names of the form \_\_zc\_*name* and \_\_zc\_der\_*name*. The dependencies of these variables should appear in the Outputs secion of the modelDescription.xml file extracted from the FMU. Variables modified by the "if" or "when" block where a zero-crossing function appears need to be added to the InitialUnknowns or, for discrete variables, a DiscreteStates section of the xml file. The xml file can be updated in the FMU using the `zip -f` command. This approach is not very practical for models with many zero-crossing functions but was useful for development with smaller models before the OCT solution was available.
+
 Zero crossings introduce the potential for cyclic dependencies to cause a cascade of updates that occur at the same time point. Zero crossing handler events change some variable values. Because those changes can be discontinuous this is treated like a requantization event that must update both the quantized and continuous representation of those modified variables, which, in turn, can cause zero-crossing variables to update, possibly triggering another round of zero crossings, and so on. All of these events happen at the same (clock) time but they are logically sequentially triggered so we cannot know or process them simultaneously. To create a deterministic simulation with zero crossings the following approach is used:
 * The phases of zero crossing, handler updates, and resulting requantizations are clustered together by the use of a "superdense time", which is a time value paired with a pass index and an event type ordering offset.
 * In any pass with both new zero crossings and new requantizations the zero crossings are processed first (via superdense time indexing).
@@ -197,7 +200,7 @@ Models defined by FMUs following the FMI 2.0 API can be run by this QSS solver u
 
 * Mixing QSS methods in an FMU simulation is not yet supported and will require a Modelica annotation to indicate QSS methods on a per-variable basis.
 * The FMU support is performance-limited by the FMI 2.0 API, which requires expensive get-all-derivatives calls where QSS needs individual derivatives.
-* QSS2 performance is limited by the use of numeric differentiation: the FMI ME 2.0 API doesn't provide higher derivatives but they may become available via FMI extensions.
+* QSS2+ performance is limited by the use of numeric differentiation: the FMI ME 2.0 API doesn't provide higher derivatives but they may become available via FMI extensions.
 * Zero crossings are problematic because the FMI spec doesn't expose the dependency of variables that are modified when each zero crossing occurs. Our initial approach was to add the zero crossing variables to the Modelica models and to add their dependencies to the FMU's modelDescription.xml file. Additionally, we now support the OCT event indicator system that defines the zero crossing variables and their dependencies.
   * The OCT event indicator system is not yet fully functional, omitting some zero crossing variables and/or their forward and/or reverse (handler) dependencies.
 * QSS3 and LIQSS3 solvers can be added when they become more practical with the planned FMI Library FMI 2.0 API extensions with higher derivative support.
@@ -216,12 +219,12 @@ Much of the source code is split into separate directories for the code-defined 
 
 ### Numeric Differentiation
 
-Second order and higher derivatives are needed for QSS2+ methods. These are available analytically for linear functions and we provide them for the nonlinear functions in `cod`. For FMUs we use numeric differentiation for the higher derivatives:
+Second order and higher derivatives are needed for QSS2+ methods. These are available analytically for linear functions and we provide them for the nonlinear functions in `cod`. For FMUs we use numeric differentiation:
 * Directional derivatives can provide one additional higher order derivative for state variable derivatives and zero-crossing functions without an explicit time dependence.
-* The current OCT directional derivative implementation is not efficiently scalable for QSS atomic operations so its use is impractical for models of real-world size.
-* OCT event indicator variables do not have a derivative variable in the FMU so numeric differentiation is used for the first and second derivative. A 3-point centered difference method is used.
+  * The current OCT directional derivative implementation is not scalable for QSS atomic operations so its use is impractical for models of real-world size.
+* OCT event indicator variables do not currently have a derivative variable so numeric differentiation is used for the first as well as higher derivatives.
 
-At startup and simultaneous or self-observer requantization events, numeric differentiation of QSS3+ and xQSS2+ variables has a cyclic dependency problem: the derivative function evaluations at time step offsets used to compute the higher derivatives depend on those same order 2+ coefficients of the representation. This causes some variables to use "stale" values of their order 2+ coefficients in their derivative computation. The impact of this flaw will vary across models and could be severe in some situations so these higher order QSS variables should not be used for production simulations of code-defined models using numeric differentiation and of FMU-based models until the planned JModelica FMI Library version with higher derivative support is available.
+At variable initialization and other simultaneous requantization or zero-crossing handler events, the numeric differentiation currently required for QSS3+ and xQSS2+ variables has an order dependency problem: the derivative evaluations at time step offsets used to compute the numeric derivatives can depend on QSS trajectory coefficients being computed in other variables being updated, so the results can depend on the order in which variables are processed. SOEP QSS addresses this issue by deferring applying updates to the quantized trajectory coefficients until after the update pass for each coefficient order. To avoid these issues, QSS is best implemented with non-numeric higher derivatives: automatic differentiation support is being considered for future OCT releases.
 
 ### Numeric Bulletproofing
 
@@ -345,7 +348,7 @@ FMIL:
   * `sudo cp <path>/FMIL/trunk/ThirdParty/Expat/expat-2.1.0/lib/expat*.h /opt/FMIL.<Compiler>.<Build>/include`
 
 Googletest:
-* The unit tests use googletest. The `setGTest` scripts under `bin` set up the necessary environment variables to find googletest: put a custom version of `setGTest` in your `PATH` to adapt it to your system.
+* The unit tests use googletest. The `setGTest` scripts under `bin` set up the necessary environment variables to find googletest when you run the `setProject` script for your compiler: put a custom version of `setGTest` in your `PATH` to adapt it to your system.
 
 To build the QSS application on Linux:
 * `cd <repository_directory>`
@@ -368,8 +371,6 @@ At this time an Achilles.fmu FMU built from Achilles.mo in the SOEP-QSS-Test rep
 
 #### Note
 
-FMU support is not yet available on Windows. We will need binary compatibility with FMUs built by JModelica's pymodelica but on Windows that currently includes/uses a very old MinGW GCC compiler. If that can't be updated we would need to install that compiler and try to build FMIL and QSS with it: building QSS could be a challenge due to our use of C++11 features. Due to this and other challenges with Windows support QSS will build on Windows without FMU model support, allowing code-defined models to be run.
-
 FMIL:
 * You will need a build of the latest [FMI Library](http://www.jmodelica.org/FMILibrary).
 * If your FMI Library is not installed to directories the `setFMIL` scripts expect (such as `C:\FMIL.VC.r`) copy the corresponding `bin\Windows\<compiler>\setFMIL.bat` to a directory in your PATH and adapt it to the location of you FMI Library installation.
@@ -383,7 +384,7 @@ FMIL:
   * `copy \Projects\FMIL\trunk\src\XML\include\FMI2\*.h C:\FMIL.<Compiler>.<Build>\include\FMI2`
 
 Googletest:
-* The unit tests use googletest so you will need to have a googletest build for your complier available. The `setGTest.bat` scripts under `\bin\Windows` set up the necessary environment variables to find googletest: put a custom version of `setGTest.bat` in your `PATH` to adapt it to your system.
+* The unit tests use googletest. The `setGTest` scripts under `bin` set up the necessary environment variables to find googletest when you run the `setProject` script for your compiler: put a custom version of `setGTest.bat` in your `PATH` to adapt it to your system.
 
 To build the QSS application on Windows:
 * `cd <repository_directory>`

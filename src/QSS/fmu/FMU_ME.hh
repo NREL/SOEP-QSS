@@ -156,7 +156,7 @@ public: // Assignment
 	FMU_ME &
 	operator =( FMU_ME && ) = delete;
 
-public: // Properties
+public: // Property
 
 	// Variable Lookup by Name (for Testing)
 	Variable const *
@@ -198,8 +198,10 @@ public: // Simulation Methods
 		init_1_2();
 		init_2_1();
 		init_2_2();
+		init_3_1();
+		init_F();
 		init_ZC();
-		init_f();
+		init_pre_simulate();
 	}
 
 	// Initialization: Stage 0.1
@@ -226,13 +228,21 @@ public: // Simulation Methods
 	void
 	init_2_2();
 
+	// Initialization: Stage 3.1
+	void
+	init_3_1();
+
+	// Initialization: Stage Final
+	void
+	init_F();
+
 	// Initialization: Stage ZC
 	void
 	init_ZC();
 
-	// Initialization: Stage Final
+	// Initialization: Stage Pre-Simulate
 	void
-	init_f();
+	init_pre_simulate();
 
 	// Simulation
 	void
@@ -407,6 +417,11 @@ private: // Static Methods
 	bool
 	status_check( fmi2_status_t const status, std::string const & fxn_name = std::string() );
 
+	// FMI SI Unit Check
+	static
+	bool
+	SI_unit_check( fmi2_import_unit_t * unit, bool const msg = true );
+
 public: // Data
 
 	// Model name and unzip directory
@@ -459,6 +474,7 @@ public: // Data
 	Variables vars_ZC; // Zero-crossing variables
 	Variables vars_NC; // Non-zero-crossing non-connection variables
 	Variables vars_CI; // Connection input variables
+	Variables vars_QSS; // QSS variables
 	Variables state_vars; // FMU state QSS variables
 	Variables outs; // FMU output QSS variables
 	Variables fmu_qss_qss_outs; // FMU-QSS output QSS variables

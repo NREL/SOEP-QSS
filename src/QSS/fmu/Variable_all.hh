@@ -44,11 +44,13 @@
 // QSS Input Variable Headers
 #include <QSS/fmu/Variable_Inp1.hh>
 #include <QSS/fmu/Variable_Inp2.hh>
+#include <QSS/fmu/Variable_Inp3.hh>
 #include <QSS/fmu/Variable_InpB.hh>
 #include <QSS/fmu/Variable_InpD.hh>
 #include <QSS/fmu/Variable_InpI.hh>
 #include <QSS/fmu/Variable_xInp1.hh>
 #include <QSS/fmu/Variable_xInp2.hh>
+#include <QSS/fmu/Variable_xInp3.hh>
 
 // QSS Connection Variable Headers
 #include <QSS/fmu/Variable_Con.hh>
@@ -56,15 +58,20 @@
 // QSS State Variable Headers
 #include <QSS/fmu/Variable_LIQSS1.hh>
 #include <QSS/fmu/Variable_LIQSS2.hh>
+#include <QSS/fmu/Variable_LIQSS3.hh>
 #include <QSS/fmu/Variable_QSS1.hh>
 #include <QSS/fmu/Variable_QSS2.hh>
+#include <QSS/fmu/Variable_QSS3.hh>
 #include <QSS/fmu/Variable_xQSS1.hh>
 #include <QSS/fmu/Variable_xQSS2.hh>
+#include <QSS/fmu/Variable_xQSS3.hh>
 
 // QSS Zero-Crossing Variable Headers
 #include <QSS/fmu/Variable_ZC1.hh>
 #include <QSS/fmu/Variable_ZC2.hh>
+#include <QSS/fmu/Variable_ZC3.hh>
 #include <QSS/fmu/Variable_ZCe1.hh>
 #include <QSS/fmu/Variable_ZCe2.hh>
+#include <QSS/fmu/Variable_ZCe3.hh>
 
 #endif

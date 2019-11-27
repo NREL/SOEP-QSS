@@ -178,7 +178,7 @@ public: // Creation
 		return SmoothToken( x_0, x_1, x_2, x_3, tD );
 	}
 
-public: // Properties
+public: // Property
 
 	// Has a Discrete Event?
 	bool

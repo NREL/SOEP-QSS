@@ -86,7 +86,7 @@ protected: // Assignment
 	Variable_QSS &
 	operator =( Variable_QSS && ) noexcept = default;
 
-public: // Predicates
+public: // Predicate
 
 	// QSS Variable?
 	bool
@@ -95,7 +95,7 @@ public: // Predicates
 		return true;
 	}
 
-public: // Properties
+public: // Property
 
 	// Derivative Function
 	Derivative const &
