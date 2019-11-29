@@ -286,9 +286,9 @@ std::vector< std::string >
 split( std::string const & str, char del = ' ' )
 {
 	std::vector< std::string > toks;
-	std::istringstream ss( str );
+	std::istringstream str_stream( str );
 	std::string tok;
-	while ( std::getline( ss, tok, del ) ) {
+	while ( std::getline( str_stream, tok, del ) ) {
 		toks.push_back( tok );
 	}
 	return toks;

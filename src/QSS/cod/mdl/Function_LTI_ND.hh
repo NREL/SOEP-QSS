@@ -83,7 +83,7 @@ public: // Types
 	using Time = typename Variable::Time;
 	using Real = typename Variable::Real;
 
-public: // Properties
+public: // Property
 
 	// Continuous Value at Time t
 	Real
@@ -177,70 +177,6 @@ public: // Properties
 	// Quantized Centered-Difference Sequential Second Derivative at Time t
 	Real
 	qc2( Time const ) const
-	{
-		return dtn_inv_sq_ * ( v_p_ - ( 2.0 * v_t_ ) + v_m_ );
-	}
-
-	// Simultaneous Value at Time t
-	Real
-	s( Time const t ) const
-	{
-		Real r( c0_ );
-		for ( Term const & term : terms_ ) {
-			r += term.c * term.v->s( t );
-		}
-		return r;
-	}
-
-	// Simultaneous Numeric Differentiation Value at Time t
-	Real
-	sn( Time const t ) const
-	{
-		Real r( c0_ );
-		for ( Term const & term : terms_ ) {
-			r += term.c * term.v->sn( t );
-		}
-		return r;
-	}
-
-	// Simultaneous First Derivative at Time t
-	Real
-	s1( Time const t ) const
-	{
-		return dtn_inv_2_ * ( sn( t + dtn_ ) - sn( t - dtn_ ) );
-	}
-
-	// Simultaneous Second Derivative at Time t
-	Real
-	s2( Time const t ) const
-	{
-		return dtn_inv_sq_ * ( sn( t + dtn_ ) - ( 2.0 * s( t ) ) + sn( t - dtn_ ) );
-	}
-
-	// Simultaneous Sequential Value at Time t
-	Real
-	ss( Time const t ) const
-	{
-		return v_t_ = s( t );
-	}
-
-	// Simultaneous Forward-Difference Sequential First Derivative at Time t
-	Real
-	sf1( Time const t ) const
-	{
-		return dtn_inv_ * ( sn( t + dtn_ ) - v_t_ );
-	}
-
-	// Simultaneous Centered-Difference Sequential First Derivative at Time t
-	Real
-	sc1( Time const t ) const
-	{
-		return dtn_inv_2_ * ( ( v_p_ = sn( t + dtn_ ) ) - ( v_m_ = sn( t - dtn_ ) ) );
-	}
-
-	// Simultaneous Centered-Difference Sequential Second Derivative at Time t
-	Real
-	sc2( Time const ) const
 	{
 		return dtn_inv_sq_ * ( v_p_ - ( 2.0 * v_t_ ) + v_m_ );
 	}

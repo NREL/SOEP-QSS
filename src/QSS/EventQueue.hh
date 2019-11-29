@@ -98,7 +98,7 @@ public: // Types
 		static SuperdenseTime::Offset const QSS_ZC{ 5 };
 	};
 
-public: // Predicates
+public: // Predicate
 
 	// Empty?
 	bool
@@ -142,7 +142,7 @@ public: // Predicates
 		}
 	}
 
-public: // Properties
+public: // Property
 
 	// Size
 	size_type
@@ -304,7 +304,7 @@ public: // Properties
 		return m_.begin()->first.i + Index( 1u );
 	}
 
-public: // Iterators
+public: // Iterator
 
 	// Begin Iterator
 	const_iterator

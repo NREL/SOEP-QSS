@@ -156,7 +156,7 @@ public: // Assignment
 	FMU_ME &
 	operator =( FMU_ME && ) = delete;
 
-public: // Properties
+public: // Property
 
 	// Variable Lookup by Name (for Testing)
 	Variable const *
@@ -199,9 +199,9 @@ public: // Simulation Methods
 		init_2_1();
 		init_2_2();
 		init_3_1();
-		init_3_2();
+		init_F();
 		init_ZC();
-		init_f();
+		init_pre_simulate();
 	}
 
 	// Initialization: Stage 0.1
@@ -232,17 +232,17 @@ public: // Simulation Methods
 	void
 	init_3_1();
 
-	// Initialization: Stage 3.2
+	// Initialization: Stage Final
 	void
-	init_3_2();
+	init_F();
 
 	// Initialization: Stage ZC
 	void
 	init_ZC();
 
-	// Initialization: Stage Final
+	// Initialization: Stage Pre-Simulate
 	void
-	init_f();
+	init_pre_simulate();
 
 	// Simulation
 	void
@@ -271,7 +271,7 @@ public: // FMU Methods
 	{
 		assert( fmu != nullptr );
 		fmi2_import_set_time( fmu, t_fmu = t_fmu_new );
-//Do Use below instead when not doing forward time bumps for numeric differentiation or zero crossing
+//Do Use below instead when not doing forward time bumps for zero crossing
 //		fmi2_status_t const fmi_status = fmi2_import_set_time( fmu, t_fmu = t_fmu_new );
 //		assert( status_check( fmi_status, "set_time" );
 //		(void)fmi_status; // Suppress unused warning
@@ -333,6 +333,50 @@ public: // FMU Methods
 	{
 		assert( der_idx - 1 < n_derivatives );
 		return derivatives[ der_idx - 1 ];
+	}
+
+	// Get a Real FMU Variable Second Derivative
+	Real
+	get_der2( fmi2_value_reference_t const ref ) const
+	{
+		assert( fmu != nullptr );
+		Real val;
+		fmi2_status_t const fmi_status = fmi2_import_get_real( fmu, &ref, std::size_t( 1u ), &val ); //NG Placeholder
+		assert( status_check( fmi_status, "get_der2" ) );
+		(void)fmi_status; // Suppress unused warning
+		return val;
+	}
+
+	// Get Real FMU Variable Second Derivatives
+	void
+	get_der2s( std::size_t const n, fmi2_value_reference_t const refs[], Real vals[] ) const
+	{
+		assert( fmu != nullptr );
+		fmi2_status_t const fmi_status = fmi2_import_get_real( fmu, refs, n, vals ); //NG Placeholder
+		assert( status_check( fmi_status, "get_reals" ) );
+		(void)fmi_status; // Suppress unused warning
+	}
+
+	// Get a Real FMU Variable Third Derivative
+	Real
+	get_der3( fmi2_value_reference_t const ref ) const
+	{
+		assert( fmu != nullptr );
+		Real val;
+		fmi2_status_t const fmi_status = fmi2_import_get_real( fmu, &ref, std::size_t( 1u ), &val ); //NG Placeholder
+		assert( status_check( fmi_status, "get_der2" ) );
+		(void)fmi_status; // Suppress unused warning
+		return val;
+	}
+
+	// Get Real FMU Variable Third Derivatives
+	void
+	get_der3s( std::size_t const n, fmi2_value_reference_t const refs[], Real vals[] ) const
+	{
+		assert( fmu != nullptr );
+		fmi2_status_t const fmi_status = fmi2_import_get_real( fmu, refs, n, vals ); //NG Placeholder
+		assert( status_check( fmi_status, "get_reals" ) );
+		(void)fmi_status; // Suppress unused warning
 	}
 
 	// Get All Derivatives Array: FMU Time and Variable Values Must be Set First
@@ -417,6 +461,11 @@ private: // Static Methods
 	bool
 	status_check( fmi2_status_t const status, std::string const & fxn_name = std::string() );
 
+	// FMI SI Unit Check
+	static
+	bool
+	SI_unit_check( fmi2_import_unit_t * unit, bool const msg = true );
+
 public: // Data
 
 	// Model name and unzip directory
@@ -469,6 +518,7 @@ public: // Data
 	Variables vars_ZC; // Zero-crossing variables
 	Variables vars_NC; // Non-zero-crossing non-connection variables
 	Variables vars_CI; // Connection input variables
+	Variables vars_QSS; // QSS variables
 	Variables state_vars; // FMU state QSS variables
 	Variables outs; // FMU output QSS variables
 	Variables fmu_qss_qss_outs; // FMU-QSS output QSS variables

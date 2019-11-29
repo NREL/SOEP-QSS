@@ -72,7 +72,7 @@ public: // Creation
 		assert( d_ > Time( 0.0 ) );
 	}
 
-public: // Properties
+public: // Property
 
 	// Initial Value
 	Coefficient

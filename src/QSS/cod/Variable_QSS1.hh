@@ -100,7 +100,7 @@ public: // Creation
 		set_qTol();
 	}
 
-public: // Properties
+public: // Property
 
 	// Continuous Value at Time t
 	Real
@@ -119,20 +119,6 @@ public: // Properties
 	// Quantized Value at Time t
 	Real
 	q( Time const ) const
-	{
-		return q_0_;
-	}
-
-	// Simultaneous Value at Time t
-	Real
-	s( Time const ) const
-	{
-		return q_0_;
-	}
-
-	// Simultaneous Numeric Differentiation Value at Time t
-	Real
-	sn( Time const ) const
 	{
 		return q_0_;
 	}
@@ -160,7 +146,6 @@ public: // Methods
 	init_0()
 	{
 		x_0_ = q_0_ = xIni;
-		set_qTol();
 	}
 
 	// Initialization to a Value: Stage 0
@@ -168,7 +153,6 @@ public: // Methods
 	init_0( Real const x )
 	{
 		x_0_ = q_0_ = x;
-		set_qTol();
 	}
 
 	// Initialization: Stage 1
@@ -177,18 +161,11 @@ public: // Methods
 	{
 		init_observers();
 		init_observees();
-		x_1_ = d_.s( tQ );
+		x_1_ = d_.q( tQ );
+		set_qTol();
 		set_tE_aligned();
 		add_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-	}
-
-	// Set Current Tolerance
-	void
-	set_qTol()
-	{
-		qTol = std::max( rTol * std::abs( q_0_ ), aTol );
-		assert( qTol > 0.0 );
 	}
 
 	// QSS Advance
@@ -197,8 +174,8 @@ public: // Methods
 	{
 		x_0_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
 		tX = tQ = tE;
-		set_qTol();
 		x_1_ = d_.q( tQ );
+		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
@@ -211,17 +188,58 @@ public: // Methods
 	{
 		x_0_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
 		tX = tQ = tE;
-		set_qTol();
 	}
 
 	// QSS Advance: Stage 1
 	void
 	advance_QSS_1()
 	{
-		x_1_ = d_.s( tQ );
+		x_1_ = d_.q( tQ );
+	}
+
+	// QSS Advance: Stage Final
+	void
+	advance_QSS_F()
+	{
+		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+	}
+
+	// Handler Advance
+	void
+	advance_handler( Time const t, Real const x )
+	{
+		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
+		tX = tQ = t;
+		x_0_ = q_0_ = x;
+		x_1_ = d_.q( t );
+		set_qTol();
+		set_tE_aligned();
+		shift_QSS( tE );
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( have_observers_ ) advance_observers();
+	}
+
+	// Handler Advance: Stage 0
+	void
+	advance_handler_0( Time const t, Real const x )
+	{
+		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
+		tX = tQ = t;
+		x_0_ = q_0_ = x;
+	}
+
+	// Handler Advance: Stage 1
+	void
+	advance_handler_1()
+	{
+		x_1_ = d_.q( tQ );
+		set_qTol();
+		set_tE_aligned();
+		shift_QSS( tE );
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// Observer Advance
@@ -255,42 +273,15 @@ public: // Methods
 		std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << q_0_ << " [q]" << '(' << std::noshowpos << tQ << std::showpos << ')' << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
-	// Handler Advance
-	void
-	advance_handler( Time const t, Real const x )
-	{
-		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
-		tX = tQ = t;
-		x_0_ = q_0_ = x;
-		set_qTol();
-		x_1_ = d_.q( t );
-		set_tE_aligned();
-		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-		if ( have_observers_ ) advance_observers();
-	}
-
-	// Handler Advance: Stage 0
-	void
-	advance_handler_0( Time const t, Real const x )
-	{
-		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
-		tX = tQ = t;
-		x_0_ = q_0_ = x;
-		set_qTol();
-	}
-
-	// Handler Advance: Stage 1
-	void
-	advance_handler_1()
-	{
-		x_1_ = d_.q( tQ );
-		set_tE_aligned();
-		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-	}
-
 private: // Methods
+
+	// Set QSS Tolerance
+	void
+	set_qTol()
+	{
+		qTol = std::max( rTol * std::abs( q_0_ ), aTol );
+		assert( qTol > 0.0 );
+	}
 
 	// Set End Time: Quantized and Continuous Aligned
 	void

@@ -113,13 +113,12 @@ public: // Creation
 	 Super( 3, name, rTol, aTol, zTol )
 	{}
 
-public: // Properties
+public: // Property
 
 	// Continuous Value at Time t
 	Real
 	x( Time const t ) const
 	{
-		assert( ( tX <= t ) && ( t <= tE ) );
 		Time const tDel( t - tX );
 		return x_0_ + ( ( x_1_ + ( ( x_2_ + ( x_3_ * tDel ) ) * tDel ) ) * tDel );
 	}
@@ -128,7 +127,6 @@ public: // Properties
 	Real
 	x1( Time const t ) const
 	{
-		assert( ( tX <= t ) && ( t <= tE ) );
 		Time const tDel( t - tX );
 		return x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_ * tDel ) ) * tDel );
 	}
@@ -137,7 +135,6 @@ public: // Properties
 	Real
 	x2( Time const t ) const
 	{
-		assert( ( tX <= t ) && ( t <= tE ) );
 		return ( two * x_2_ ) + ( six * x_3_ * ( t - tX ) );
 	}
 
@@ -145,7 +142,6 @@ public: // Properties
 	Real
 	x3( Time const t ) const
 	{
-		assert( ( tX <= t ) && ( t <= tE ) );
 		(void)t; // Suppress unused warning
 		return six * x_3_;
 	}
@@ -154,7 +150,6 @@ public: // Properties
 	Real
 	q( Time const t ) const
 	{
-		assert( ( tQ <= t ) && ( t <= tE ) );
 		Time const tDel( t - tQ );
 		return x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 	}
@@ -163,7 +158,6 @@ public: // Properties
 	Real
 	q1( Time const t ) const
 	{
-		assert( ( tQ <= t ) && ( t <= tE ) );
 		return x_1_ + ( two * x_2_ * ( t - tQ ) );
 	}
 
@@ -171,7 +165,6 @@ public: // Properties
 	Real
 	q2( Time const t ) const
 	{
-		assert( ( tQ <= t ) && ( t <= tE ) );
 		(void)t; // Suppress unused warning
 		return two * x_2_;
 	}
@@ -185,22 +178,14 @@ public: // Methods
 		// Initialize trajectory specs
 		x_0_ = f_.x( tQ );
 		x_mag_ = std::abs( x_0_ );
-		set_qTol();
 		x_1_ = f_.x1( tQ );
 		x_2_ = one_half * f_.x2( tQ );
 		x_3_ = one_sixth * f_.x3( tQ );
+		set_qTol();
 		set_tE();
 		set_tZ();
 		( tE < tZ ) ? add_QSS_ZC( tE ) : add_ZC( tZ );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
-	}
-
-	// Set Current Tolerance
-	void
-	set_qTol()
-	{
-		qTol = std::max( rTol * std::abs( x_0_ ), aTol );
-		assert( qTol > 0.0 );
 	}
 
 	// QSS Advance
@@ -214,10 +199,10 @@ public: // Methods
 #endif
 		x_0_ = f_.x( tX = tQ = tE );
 		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
-		set_qTol();
 		x_1_ = f_.x1( tQ );
 		x_2_ = one_half * f_.x2( tQ );
 		x_3_ = one_sixth * f_.x3( tQ );
+		set_qTol();
 		set_tE();
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
 		crossing_detect( sign_old, signum( x_0_ ), check_crossing );
@@ -226,6 +211,19 @@ public: // Methods
 		( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 #endif
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
+	}
+
+	// Zero-Crossing Advance
+	void
+	advance_ZC()
+	{
+		for ( typename If::Clause * clause : if_clauses ) clause->activity( tZ );
+		for ( typename When::Clause * clause : when_clauses ) clause->activity( tZ );
+		if ( options::output::d ) std::cout << "Z " << name << '(' << tZ << ')' << '\n';
+		crossing_last = crossing;
+		x_mag_ = 0.0;
+		set_tZ( tZ_last = tZ ); // Next zero-crossing: Might be in active segment
+		( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 	}
 
 	// Observer Advance
@@ -238,10 +236,10 @@ public: // Methods
 		int const sign_old( check_crossing ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
 		x_0_ = f_.x( tX = tQ = t );
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
-		set_qTol();
 		x_1_ = f_.x1( t );
 		x_2_ = one_half * f_.x2( t );
 		x_3_ = one_sixth * f_.x3( t );
+		set_qTol();
 		set_tE();
 		crossing_detect( sign_old, signum( x_0_ ), check_crossing );
 		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3"<< std::noshowpos << "   tE=" << tE  << "   tZ=" << tZ << '\n';
@@ -257,10 +255,10 @@ public: // Methods
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
 		x_0_ = f_.x( tX = tQ = t );
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
-		set_qTol();
 		x_1_ = f_.x1( t );
 		x_2_ = one_half * f_.x2( t );
 		x_3_ = one_sixth * f_.x3( t );
+		set_qTol();
 		set_tE();
 	}
 
@@ -280,27 +278,14 @@ public: // Methods
 		std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
-	// Zero-Crossing Advance
-	void
-	advance_ZC()
-	{
-		for ( typename If::Clause * clause : if_clauses ) clause->activity( tZ );
-		for ( typename When::Clause * clause : when_clauses ) clause->activity( tZ );
-		if ( options::output::d ) std::cout << "Z " << name << '(' << tZ << ')' << '\n';
-		crossing_last = crossing;
-		x_mag_ = 0.0;
-		set_tZ( tZ_last = tZ ); // Next zero-crossing: Might be in active segment
-		( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
-	}
-
 private: // Methods
 
-	// Continuous First Derivative at Time t
-	Real
-	x1x( Time const t ) const
+	// Set QSS Tolerance
+	void
+	set_qTol()
 	{
-		Time const tDel( t - tX );
-		return x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_ * tDel ) ) * tDel ); // Allows t beyond tE for set_tZ use
+		qTol = std::max( rTol * std::abs( x_0_ ), aTol );
+		assert( qTol > 0.0 );
 	}
 
 	// Set End Time
@@ -331,7 +316,7 @@ private: // Methods
 			if ( dt != infinity ) { // Root exists
 				tZ = tX + dt;
 				Crossing const crossing_check( x_0_ == 0.0 ? ( tZ == tX ? Crossing::Flat : crossing_type( -x_1_ ) ) :
-				 crossing_type( x_0_ > 0.0 ? std::min( x1x( tZ ), Real( 0.0 ) ) : std::max( x1x( tZ ), Real( 0.0 ) ) ) );
+				 crossing_type( x_0_ > 0.0 ? std::min( x1( tZ ), Real( 0.0 ) ) : std::max( x1( tZ ), Real( 0.0 ) ) ) );
 				if ( has( crossing_check ) ) { // Crossing type is relevant
 					crossing = crossing_check;
 					if ( options::refine ) { // Refine root: Expensive!
@@ -381,7 +366,7 @@ private: // Methods
 			if ( dt != infinity ) { // Root exists
 				tZ = tB + dt;
 				Crossing const crossing_check( x_0 == 0.0 ? ( tZ == tB ? Crossing::Flat : crossing_type( -x_1 ) ) :
-				 crossing_type( x_0 > 0.0 ? std::min( x1x( tZ ), Real( 0.0 ) ) : std::max( x1x( tZ ), Real( 0.0 ) ) ) );
+				 crossing_type( x_0 > 0.0 ? std::min( x1( tZ ), Real( 0.0 ) ) : std::max( x1( tZ ), Real( 0.0 ) ) ) );
 				if ( has( crossing_check ) ) { // Crossing type is relevant
 					crossing = crossing_check;
 					if ( options::refine ) { // Refine root: Expensive!

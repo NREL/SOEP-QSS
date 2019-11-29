@@ -63,7 +63,7 @@ public: // Creation
 	 Super( order, name, fmu_me, var )
 	{}
 
-public: // Predicates
+public: // Predicate
 
 	// Input Variable?
 	bool
@@ -79,12 +79,13 @@ public: // Predicates
 		return true;
 	}
 
-public: // Properties
+public: // Property
 
 	// Continuous Value at Time t
 	Real
 	x( Time const t ) const
 	{
+		assert( out_var_ != nullptr );
 		return out_var_->x( t );
 	}
 
@@ -92,6 +93,7 @@ public: // Properties
 	Real
 	x1( Time const t ) const
 	{
+		assert( out_var_ != nullptr );
 		return out_var_->x1( t );
 	}
 
@@ -99,6 +101,7 @@ public: // Properties
 	Real
 	x2( Time const t ) const
 	{
+		assert( out_var_ != nullptr );
 		return out_var_->x2( t );
 	}
 
@@ -106,6 +109,7 @@ public: // Properties
 	Real
 	x3( Time const t ) const
 	{
+		assert( out_var_ != nullptr );
 		return out_var_->x3( t );
 	}
 
@@ -113,6 +117,7 @@ public: // Properties
 	Real
 	q( Time const t ) const
 	{
+		assert( out_var_ != nullptr );
 		return out_var_->q( t );
 	}
 
@@ -120,6 +125,7 @@ public: // Properties
 	Real
 	q1( Time const t ) const
 	{
+		assert( out_var_ != nullptr );
 		return out_var_->q1( t );
 	}
 
@@ -127,6 +133,7 @@ public: // Properties
 	Real
 	q2( Time const t ) const
 	{
+		assert( out_var_ != nullptr );
 		return out_var_->q2( t );
 	}
 
@@ -134,14 +141,8 @@ public: // Properties
 	Real
 	q3( Time const t ) const
 	{
+		assert( out_var_ != nullptr );
 		return out_var_->q3( t );
-	}
-
-	// Simultaneous Value at Time t
-	Real
-	s( Time const t ) const
-	{
-		return out_var_->s( t );
 	}
 
 	// Output Variable

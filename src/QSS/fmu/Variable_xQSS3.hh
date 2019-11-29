@@ -50,6 +50,12 @@ public: // Types
 
 	using Super = Variable_QSS;
 
+private: // Types
+
+	using Super::c_1;
+	using Super::c_2;
+	using Super::c_3;
+
 public: // Creation
 
 	// Constructor
@@ -69,7 +75,7 @@ public: // Creation
 		set_qTol();
 	}
 
-public: // Properties
+public: // Property
 
 	// Continuous Value at Time t
 	Real
@@ -131,14 +137,6 @@ public: // Properties
 		return six * q_3_;
 	}
 
-	// Simultaneous Value at Time t
-	Real
-	s( Time const t ) const
-	{
-		Time const tDel( t - tQ );
-		return q_0_ + ( ( q_1_ + ( ( q_2_ + ( q_3_ * tDel ) ) * tDel ) ) * tDel );
-	}
-
 public: // Methods
 
 	// Initialization
@@ -149,6 +147,7 @@ public: // Methods
 		init_1();
 		init_2();
 		init_3();
+		init_F();
 	}
 
 	// Initialization to a Value
@@ -159,6 +158,7 @@ public: // Methods
 		init_1();
 		init_2();
 		init_3();
+		init_F();
 	}
 
 	// Initialization: Stage 0
@@ -168,7 +168,6 @@ public: // Methods
 		init_observers();
 		init_observees();
 		fmu_set_real( x_0_ = q_0_ = xIni );
-		set_qTol();
 	}
 
 	// Initialization to a Value: Stage 0
@@ -178,39 +177,37 @@ public: // Methods
 		init_observers();
 		init_observees();
 		fmu_set_real( x_0_ = q_0_ = x );
-		set_qTol();
 	}
 
 	// Initialization: Stage 1
 	void
 	init_1()
 	{
-		x_1_ = q_1_ = fmu_get_poly_1();
+		x_1_ = q_1_ = p_1();
 	}
 
 	// Initialization: Stage 2
 	void
 	init_2()
 	{
-		x_2_ = q_2_ = fmu_get_poly_2();
+		x_2_ = q_2_ = c_2();
 	}
 
 	// Initialization: Stage 3
 	void
 	init_3()
 	{
-		x_3_ = q_3_ = fmu_get_poly_3();
+		x_3_ = q_3_ = c_3();
+	}
+
+	// Initialization: Stage Final
+	void
+	init_F()
+	{
+		set_qTol();
 		set_tE_aligned();
 		add_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << q_3_ << "*t^3" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-	}
-
-	// Set Current Tolerance
-	void
-	set_qTol()
-	{
-		qTol = std::max( rTol * std::abs( q_0_ ), aTol );
-		assert( qTol > 0.0 );
 	}
 
 	// QSS Advance
@@ -220,12 +217,10 @@ public: // Methods
 		Time const tDel( tE - tX );
 		tX = tQ = tE;
 		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
+		x_1_ = q_1_ = c_1();
+		x_2_ = q_2_ = c_2();
+		x_3_ = q_3_ = c_3();
 		set_qTol();
-		fmu_set_observees_q( tQ );
-		if ( self_observer ) fmu_set_real( q_0_ );
-		x_1_ = q_1_ = fmu_get_poly_1();
-		x_2_ = q_2_ = fmu_get_poly_2();
-		x_3_ = q_3_ = fmu_get_poly_3();
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << q_3_ << "*t^3" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
@@ -240,61 +235,38 @@ public: // Methods
 		Time const tDel( tE - tX );
 		tX = tQ = tE;
 		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
-		set_qTol();
 	}
 
 	// QSS Advance: Stage 1
 	void
 	advance_QSS_1()
 	{
-		fmu_set_observees_s( tQ );
-		if ( self_observer ) fmu_set_real( q_0_ );
-		x_1_ = q_1_ = fmu_get_poly_1();
+		x_1_ = q_1_ = c_1();
 	}
 
 	// QSS Advance: Stage 2
 	void
 	advance_QSS_2()
 	{
-		x_2_ = q_2_ = fmu_get_poly_2();
+		x_2_ = q_2_ = c_2();
 	}
 
 	// QSS Advance: Stage 3
 	void
 	advance_QSS_3()
 	{
-		x_3_ = q_3_ = fmu_get_poly_3();
+		x_3_ = q_3_ = c_3();
+	}
+
+	// QSS Advance: Stage Final
+	void
+	advance_QSS_F()
+	{
+		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << q_3_ << "*t^3" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 		if ( have_connections ) advance_connections();
-	}
-
-	// Observer Advance
-	void
-	advance_observer( Time const t )
-	{
-		assert( ( tX <= t ) && ( t <= tE ) );
-		Time const tDel( t - tX );
-		tX = t;
-		x_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
-		x_1_ = fmu_get_poly_1();
-		x_2_ = fmu_get_poly_2();
-		x_3_ = fmu_get_poly_3();
-		set_tE_unaligned();
-		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << q_3_ << "*t^3" << " [q]" << '(' << std::noshowpos << tQ << std::showpos << ')' << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-		if ( have_connections ) advance_connections_observer();
-	}
-
-	// Observer Advance: Simultaneous
-	void
-	advance_observer_s( Time const t )
-	{
-		assert( ( tX <= t ) && ( t <= tE ) );
-		fmu_set_observees_q( t );
-		if ( self_observer ) fmu_set_q( t );
-		advance_observer( t );
 	}
 
 	// Handler Advance
@@ -302,12 +274,12 @@ public: // Methods
 	advance_handler( Time const t )
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
-		x_0_ = q_0_ = fmu_get_real(); // Assume FMU ran zero-crossing handler
+		tX = tQ = t;
+		x_0_ = q_0_ = p_0(); // Assume FMU ran zero-crossing handler
+		x_1_ = q_1_ = h_1();
+		x_2_ = q_2_ = c_2();
+		x_3_ = q_3_ = c_3();
 		set_qTol();
-		fmu_set_observees_q( tX = tQ = t );
-		x_1_ = q_1_ = fmu_get_poly_1();
-		x_2_ = q_2_ = fmu_get_poly_2();
-		x_3_ = q_3_ = fmu_get_poly_3();
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << q_3_ << "*t^3" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
@@ -321,30 +293,35 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
-		x_0_ = q_0_ = fmu_get_real(); // Assume FMU ran zero-crossing handler
-		set_qTol();
+		x_0_ = q_0_ = p_0(); // Assume FMU ran zero-crossing handler
 	}
 
 	// Handler Advance: Stage 1
 	void
 	advance_handler_1()
 	{
-		fmu_set_observees_q( tQ );
-		x_1_ = q_1_ = fmu_get_poly_1();
+		x_1_ = q_1_ = h_1();
 	}
 
 	// Handler Advance: Stage 2
 	void
 	advance_handler_2()
 	{
-		x_2_ = q_2_ = fmu_get_poly_2();
+		x_2_ = q_2_ = c_2();
 	}
 
 	// Handler Advance: Stage 3
 	void
 	advance_handler_3()
 	{
-		x_3_ = q_3_ = fmu_get_poly_3();
+		x_3_ = q_3_ = c_3();
+	}
+
+	// Handler Advance: Stage Final
+	void
+	advance_handler_F()
+	{
+		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << q_3_ << "*t^3" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
@@ -358,7 +335,69 @@ public: // Methods
 		shift_QSS( tE );
 	}
 
+	// Observer Advance
+	void
+	advance_observer( Time const t )
+	{
+		assert( ( tX <= t ) && ( t <= tE ) );
+		Time const tDel( t - tX );
+		tX = t;
+		x_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
+		x_1_ = c_1( t );
+		x_2_ = c_2( t );
+		x_3_ = c_3();
+		set_tE_unaligned();
+		shift_QSS( tE );
+		if ( have_connections ) advance_connections_observer();
+	}
+
+	// Observer Advance: Stage 1
+	void
+	advance_observer_1( Time const t, Real const d )
+	{
+		assert( ( tX <= t ) && ( t <= tE ) );
+		assert( d == p_1() );
+		Time const tDel( t - tX );
+		tX = t;
+		x_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
+		x_1_ = d;
+	}
+
+	// Observer Advance: Stage 2
+	void
+	advance_observer_2( Time const, Real const d )
+	{
+		assert( d == p_2() );
+		x_2_ = d;
+	}
+
+	// Observer Advance: Stage 3
+	void
+	advance_observer_3( Time const, Real const d )
+	{
+		assert( d == p_3() );
+		x_3_ = d;
+		set_tE_unaligned();
+		shift_QSS( tE );
+		if ( have_connections ) advance_connections_observer();
+	}
+
+	// Observer Advance: Stage d
+	void
+	advance_observer_d() const
+	{
+		std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << q_3_ << "*t^3" << " [q]" << '(' << std::noshowpos << tQ << std::showpos << ')' << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+	}
+
 private: // Methods
+
+	// Set QSS Tolerance
+	void
+	set_qTol()
+	{
+		qTol = std::max( rTol * std::abs( q_0_ ), aTol );
+		assert( qTol > 0.0 );
+	}
 
 	// Set End Time: Quantized and Continuous Aligned
 	void
@@ -401,6 +440,27 @@ private: // Methods
 			if ( tX < tI ) tE = std::min( tE, tI );
 		}
 		tE_infinity_tX();
+	}
+
+	// Coefficient 1 from FMU at Time tQ
+	Real
+	c_1() const
+	{
+		return c_1( tQ, q_0_ );
+	}
+
+	// Coefficient 2 from FMU at Time tQ
+	Real
+	c_2() const
+	{
+		return c_2( tQ, q_0_ );
+	}
+
+	// Coefficient 3 from FMU
+	Real
+	c_3() const
+	{
+		return c_3( tQ, x_1_ );
 	}
 
 private: // Data

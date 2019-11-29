@@ -103,7 +103,16 @@ public: // Creation
 		set_qTol();
 	}
 
-public: // Properties
+public: // Predicate
+
+	// LIQSS Variable?
+	bool
+	is_LIQSS() const
+	{
+		return true;
+	}
+
+public: // Property
 
 	// Continuous Value at Time t
 	Real
@@ -126,20 +135,6 @@ public: // Properties
 		return q_0_;
 	}
 
-	// Simultaneous Value at Time t
-	Real
-	s( Time const ) const
-	{
-		return ( st == events.active_superdense_time() ? q_c_ : q_0_ );
-	}
-
-	// Simultaneous Numeric Differentiation Value at Time t
-	Real
-	sn( Time const ) const
-	{
-		return ( st == events.active_superdense_time() ? q_c_ : q_0_ );
-	}
-
 public: // Methods
 
 	// Initialization
@@ -148,6 +143,7 @@ public: // Methods
 	{
 		init_0();
 		init_1();
+		init_LIQSS();
 	}
 
 	// Initialization to a Value
@@ -156,6 +152,7 @@ public: // Methods
 	{
 		init_0( x );
 		init_1();
+		init_LIQSS();
 	}
 
 	// Initialization: Stage 0
@@ -163,7 +160,6 @@ public: // Methods
 	init_0()
 	{
 		x_0_ = q_c_ = q_0_ = xIni;
-		set_qTol();
 	}
 
 	// Initialization to a Value: Stage 0
@@ -171,7 +167,6 @@ public: // Methods
 	init_0( Real const x )
 	{
 		x_0_ = q_c_ = q_0_ = x;
-		set_qTol();
 	}
 
 	// Initialization: Stage 1
@@ -180,23 +175,26 @@ public: // Methods
 	{
 		init_observers();
 		init_observees();
+		set_qTol();
 		if ( self_observer ) {
-			advance_s( tQ ); // Simultaneous reps used to avoid cyclic dependency
+			advance_LIQSS_s( d_.qlu1( tQ, qTol ) );
 		} else {
-			x_1_ = d_.s( tQ ); // Simultaneous reps used to avoid cyclic dependency
+			x_1_ = d_.q( tQ );
+		}
+	}
+
+	// Initialization: Stage LIQSS
+	void
+	init_LIQSS()
+	{
+		if ( self_observer ) {
+			q_0_ = l_0_;
+		} else {
 			q_0_ += signum( x_1_ ) * qTol;
 		}
 		set_tE_aligned();
 		add_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-	}
-
-	// Set Current Tolerance
-	void
-	set_qTol()
-	{
-		qTol = std::max( rTol * std::abs( q_c_ ), aTol );
-		assert( qTol > 0.0 );
 	}
 
 	// QSS Advance
@@ -207,7 +205,7 @@ public: // Methods
 		tX = tQ = tE;
 		set_qTol();
 		if ( self_observer ) {
-			advance_q( tQ );
+			advance_LIQSS( d_.qlu1( tQ, qTol ) );
 		} else {
 			x_1_ = d_.q( tQ );
 			q_0_ += signum( x_1_ ) * qTol;
@@ -224,22 +222,66 @@ public: // Methods
 	{
 		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
 		tX = tQ = tE;
-		set_qTol();
 	}
 
 	// QSS Advance: Stage 1
 	void
 	advance_QSS_1()
 	{
+		set_qTol();
 		if ( self_observer ) {
-			advance_s( tQ ); // Simultaneous reps used to avoid cyclic dependency
+			advance_LIQSS_s( d_.qlu1( tQ, qTol ) );
 		} else {
-			x_1_ = d_.s( tQ ); // Simultaneous reps used to avoid cyclic dependency
+			x_1_ = d_.q( tQ );
+		}
+	}
+
+	// QSS Advance: Stage Final
+	void
+	advance_QSS_F()
+	{
+		if ( self_observer ) {
+			q_0_ = l_0_;
+		} else {
 			q_0_ += signum( x_1_ ) * qTol;
 		}
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+	}
+
+	// Handler Advance
+	void
+	advance_handler( Time const t, Real const x )
+	{
+		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
+		x_0_ = q_c_ = q_0_ = x;
+		x_1_ = d_.q( tX = tQ = t );
+		set_qTol();
+		set_tE_aligned();
+		shift_QSS( tE );
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( have_observers_ ) advance_observers();
+	}
+
+	// Handler Advance: Stage 0
+	void
+	advance_handler_0( Time const t, Real const x )
+	{
+		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
+		tX = tQ = t;
+		x_0_ = q_c_ = q_0_ = x;
+	}
+
+	// Handler Advance: Stage 1
+	void
+	advance_handler_1()
+	{
+		x_1_ = d_.q( tQ );
+		set_qTol();
+		set_tE_aligned();
+		shift_QSS( tE );
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// Observer Advance
@@ -264,7 +306,7 @@ public: // Methods
 		set_tE_unaligned();
 	}
 
-	// Observer Advance: Serial + Diagnostics + Diagnostics
+	// Observer Advance: Serial + Diagnostics
 	void
 	advance_observer_serial_d()
 	{
@@ -273,41 +315,15 @@ public: // Methods
 		std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << q_0_ << " [q]" << '(' << std::noshowpos << tQ << std::showpos << ')' << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
-	// Handler Advance
-	void
-	advance_handler( Time const t, Real const x )
-	{
-		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
-		x_0_ = q_c_ = q_0_ = x;
-		set_qTol();
-		x_1_ = d_.q( tX = tQ = t );
-		set_tE_aligned();
-		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-		if ( have_observers_ ) advance_observers();
-	}
-
-	// Handler Advance: Stage 0
-	void
-	advance_handler_0( Time const t, Real const x )
-	{
-		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
-		tX = tQ = t;
-		x_0_ = q_c_ = q_0_ = x;
-		set_qTol();
-	}
-
-	// Handler Advance: Stage 1
-	void
-	advance_handler_1()
-	{
-		x_1_ = d_.q( tQ );
-		set_tE_aligned();
-		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-	}
-
 private: // Methods
+
+	// Set QSS Tolerance
+	void
+	set_qTol()
+	{
+		qTol = std::max( rTol * std::abs( q_c_ ), aTol );
+		assert( qTol > 0.0 );
+	}
 
 	// Set End Time: Quantized and Continuous Aligned
 	void
@@ -345,42 +361,64 @@ private: // Methods
 		assert( q_c_ == q_0_ );
 		assert( x_0_ == q_0_ );
 
+		// Value at +/- qTol
+		Real const q_l( q_c_ - qTol );
+		Real const q_u( q_c_ + qTol );
+
 		// Set coefficients based on derivative signs
 		int const dls( signum( specs.l ) );
 		int const dus( signum( specs.u ) );
 		if ( ( dls == -1 ) && ( dus == -1 ) ) { // Downward trajectory
-			q_0_ -= qTol;
+			q_0_ = q_l;
 			x_1_ = specs.l;
 		} else if ( ( dls == +1 ) && ( dus == +1 ) ) { // Upward trajectory
-			q_0_ += qTol;
+			q_0_ = q_u;
 			x_1_ = specs.u;
 		} else if ( ( dls == 0 ) && ( dus == 0 ) ) { // Flat trajectory
 			// Keep q_0_ == q_c_
 			x_1_ = 0.0;
 		} else { // Flat trajectory
-			q_0_ = std::min( std::max( specs.z, q_0_ - qTol ), q_0_ + qTol ); // Clipped in case of roundoff
+			q_0_ = std::min( std::max( specs.z, q_l ), q_u ); // Clipped in case of roundoff
 			x_1_ = 0.0;
 		}
 	}
 
-	// Advance Self-Observing Trigger using Quantized Derivative
+	// Advance Self-Observing Trigger: Simultaneous
 	void
-	advance_q( Time const t )
+	advance_LIQSS_s( AdvanceSpecs_LIQSS1 const & specs )
 	{
-		advance_LIQSS( d_.qlu1( t, qTol ) );
-	}
+		assert( qTol > 0.0 );
+		assert( self_observer );
+		assert( q_c_ == q_0_ );
+		assert( x_0_ == q_0_ );
 
-	// Advance Self-Observing Trigger using Simultaneous Derivative
-	void
-	advance_s( Time const t )
-	{
-		advance_LIQSS( d_.slu1( t, qTol ) );
+		// Value at +/- qTol
+		Real const q_l( q_c_ - qTol );
+		Real const q_u( q_c_ + qTol );
+
+		// Set coefficients based on derivative signs
+		int const dls( signum( specs.l ) );
+		int const dus( signum( specs.u ) );
+		if ( ( dls == -1 ) && ( dus == -1 ) ) { // Downward trajectory
+			l_0_ = q_l;
+			x_1_ = specs.l;
+		} else if ( ( dls == +1 ) && ( dus == +1 ) ) { // Upward trajectory
+			l_0_ = q_u;
+			x_1_ = specs.u;
+		} else if ( ( dls == 0 ) && ( dus == 0 ) ) { // Flat trajectory
+			l_0_ = q_c_;
+			x_1_ = 0.0;
+		} else { // Flat trajectory
+			l_0_ = std::min( std::max( specs.z, q_l ), q_u ); // Clipped in case of roundoff
+			x_1_ = 0.0;
+		}
 	}
 
 private: // Data
 
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
 	Real q_c_{ 0.0 }, q_0_{ 0.0 }; // Quantized rep coefficients
+	Real l_0_{ 0.0 }; // LIQSS-adjusted coefficient
 
 };
 

@@ -174,7 +174,7 @@ protected: // Assignment
 	Variable &
 	operator =( Variable && ) noexcept = default;
 
-public: // Predicates
+public: // Predicate
 
 	// Discrete Variable?
 	virtual
@@ -200,6 +200,14 @@ public: // Predicates
 		return false;
 	}
 
+	// LIQSS Variable?
+	virtual
+	bool
+	is_LIQSS() const
+	{
+		return false;
+	}
+
 	// Zero-Crossing Variable?
 	virtual
 	bool
@@ -209,14 +217,13 @@ public: // Predicates
 	}
 
 	// Non-Zero-Crossing Variable?
-	virtual
 	bool
 	not_ZC() const
 	{
-		return true;
+		return ! is_ZC();
 	}
 
-public: // Properties
+public: // Property
 
 	// Order of Method
 	int
@@ -341,48 +348,6 @@ public: // Properties
 	virtual
 	Real
 	q3( Time const ) const
-	{
-		return 0.0;
-	}
-
-	// Simultaneous Value at Time t
-	virtual
-	Real
-	s( Time const ) const
-	{
-		assert( false ); // Missing override
-		return 0.0;
-	}
-
-	// Simultaneous Numeric Differentiation Value at Time t
-	virtual
-	Real
-	sn( Time const ) const
-	{
-		assert( false ); // Missing override
-		return 0.0;
-	}
-
-	// Simultaneous First Derivative at Time t
-	virtual
-	Real
-	s1( Time const ) const
-	{
-		return 0.0;
-	}
-
-	// Simultaneous Second Derivative at Time t
-	virtual
-	Real
-	s2( Time const ) const
-	{
-		return 0.0;
-	}
-
-	// Simultaneous Third Derivative at Time t
-	virtual
-	Real
-	s3( Time const ) const
 	{
 		return 0.0;
 	}
@@ -579,6 +544,12 @@ public: // Methods
 	init_3()
 	{}
 
+	// Initialization: Stage LIQSS
+	virtual
+	void
+	init_LIQSS()
+	{}
+
 	// Discrete Add Event
 	void
 	add_discrete( Time const t )
@@ -601,10 +572,10 @@ public: // Methods
 		assert( false );
 	}
 
-	// Discrete Advance Simultaneous
+	// Discrete Advance: Simultaneous
 	virtual
 	void
-	advance_discrete_simultaneous()
+	advance_discrete_s()
 	{
 		assert( false );
 	}
@@ -671,6 +642,12 @@ public: // Methods
 	virtual
 	void
 	advance_QSS_3()
+	{}
+
+	// QSS Advance: Stage Final
+	virtual
+	void
+	advance_QSS_F()
 	{}
 
 	// Zero-Crossing Add Event

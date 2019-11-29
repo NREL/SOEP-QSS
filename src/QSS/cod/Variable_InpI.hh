@@ -81,7 +81,7 @@ public: // Creation
 	 Super( 0, name )
 	{}
 
-public: // Predicates
+public: // Predicate
 
 	// Discrete Variable?
 	bool
@@ -90,7 +90,7 @@ public: // Predicates
 		return true;
 	}
 
-public: // Properties
+public: // Property
 
 	// Boolean Value
 	Boolean
@@ -148,20 +148,6 @@ public: // Properties
 		return Real( x_ );
 	}
 
-	// Simultaneous Value at Time t
-	Real
-	s( Time const ) const
-	{
-		return Real( x_ );
-	}
-
-	// Simultaneous Numeric Differentiation Value at Time t
-	Real
-	sn( Time const ) const
-	{
-		return Real( x_ );
-	}
-
 public: // Methods
 
 	// Initialization
@@ -196,9 +182,9 @@ public: // Methods
 		if ( chg && have_observers_ ) advance_observers();
 	}
 
-	// Discrete Advance Simultaneous
+	// Discrete Advance: Simultaneous
 	void
-	advance_discrete_simultaneous()
+	advance_discrete_s()
 	{
 		Integer const x_new( static_cast< Integer >( f_.vs( tX = tQ = tD ) ) );
 		tD = f_.tD( tQ );

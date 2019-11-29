@@ -62,7 +62,7 @@ public: // Creation
 	 x_( xIni )
 	{}
 
-public: // Predicates
+public: // Predicate
 
 	// Discrete Variable?
 	bool
@@ -71,7 +71,7 @@ public: // Predicates
 		return true;
 	}
 
-public: // Properties
+public: // Property
 
 	// Boolean Value
 	Boolean
@@ -125,20 +125,6 @@ public: // Properties
 	// Quantized Value at Time t
 	Real
 	q( Time const ) const
-	{
-		return x_;
-	}
-
-	// Simultaneous Value at Time t
-	Real
-	s( Time const ) const
-	{
-		return x_;
-	}
-
-	// Simultaneous Numeric Differentiation Value at Time t
-	Real
-	sn( Time const ) const
 	{
 		return x_;
 	}

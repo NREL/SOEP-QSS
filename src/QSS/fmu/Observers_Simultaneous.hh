@@ -38,6 +38,7 @@
 
 // QSS Headers
 #include <QSS/container.hh>
+#include <QSS/options.hh>
 
 // C++ Headers
 #include <algorithm>
@@ -69,6 +70,9 @@ public: // Types
 
 public: // Creation
 
+	// Default Constructor
+	Observers_Simultaneous() = default;
+
 	// Triggers Constructor
 	explicit
 	Observers_Simultaneous( Variables & triggers )
@@ -90,7 +94,7 @@ public: // Conversion
 		return observers_;
 	}
 
-public: // Predicates
+public: // Predicate
 
 	// Empty?
 	bool
@@ -106,28 +110,7 @@ public: // Predicates
 		return have_;
 	}
 
-	// Have Order 2+ Observer(s)?
-	bool
-	have2() const
-	{
-		return have2_;
-	}
-
-	// Have Order 2+ Non-Zero-Crossing Observer(s)?
-	bool
-	nz_have2() const
-	{
-		return nz_.have2_;
-	}
-
-	// Have Order 2+ Zero-Crossing Observer(s)?
-	bool
-	zc_have2() const
-	{
-		return zc_.have2_;
-	}
-
-public: // Properties
+public: // Property
 
 	// Size
 	size_type
@@ -152,6 +135,11 @@ public: // Methods
 	{
 		if ( nz_.have_ ) advance_NZ( t );
 		if ( zc_.have_ ) advance_ZC( t );
+		if ( options::output::d ) {
+			for ( Variable const * observer : observers_ ) {
+				observer->advance_observer_d();
+			}
+		}
 	}
 
 	// Advance Non-Zero-Crossing Observers
@@ -159,7 +147,7 @@ public: // Methods
 	advance_NZ( Time const t )
 	{
 		for ( size_type i = nz_.b_, e = nz_.e_; i < e; ++i ) {
-			observers_[ i ]->advance_observer_s( t );
+			observers_[ i ]->advance_observer( t );
 		}
 	}
 
@@ -168,7 +156,7 @@ public: // Methods
 	advance_ZC( Time const t )
 	{
 		for ( size_type i = zc_.b_, e = zc_.e_; i < e; ++i ) {
-			observers_[ i ]->advance_observer_s( t );
+			observers_[ i ]->advance_observer( t );
 		}
 	}
 
@@ -178,11 +166,7 @@ public: // Methods
 	{
 		observers_.clear();
 		have_ = false;
-		have2_ = false;
-		b_ = 0;
-		e_ = 0;
-		n_ = 0;
-		max_order_ = 0;
+		b_ = e_ = n_ = 0;
 		nz_.clear();
 		zc_.clear();
 	}
@@ -205,7 +189,7 @@ public: // Indexing
 		return observers_[ i ];
 	}
 
-public: // Iterators
+public: // Iterator
 
 	// Begin Iterator
 	const_iterator
@@ -299,7 +283,9 @@ private: // Methods
 				nz_.n2_ = ( nz_.b2_ < nz_.e_ ? nz_.e_ - nz_.b2_ : 0u );
 				nz_.have2_ = ( nz_.n2_ > 0u );
 
-				nz_.max_order_ = ( nz_.b2_ < nz_.e_ ? 2 : 1 );
+				nz_.b3_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return v->not_ZC() && ( v->order() >= 3 ); } ) ) );
+				nz_.n3_ = ( nz_.b3_ < nz_.e_ ? nz_.e_ - nz_.b3_ : 0u );
+				nz_.have3_ = ( nz_.n3_ > 0u );
 			}
 
 			if ( observers_.back()->is_ZC() ) { // Zero-crossing observers present
@@ -313,11 +299,10 @@ private: // Methods
 				zc_.n2_ = ( zc_.b2_ < zc_.e_ ? zc_.e_ - zc_.b2_ : 0u );
 				zc_.have2_ = ( zc_.n2_ > 0u );
 
-				zc_.max_order_ = ( zc_.b2_ < zc_.e_ ? 2 : 1 );
+				zc_.b3_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return v->is_ZC() && ( v->order() >= 3 ); } ) ) );
+				zc_.n3_ = ( zc_.b3_ < zc_.e_ ? zc_.e_ - zc_.b3_ : 0u );
+				zc_.have3_ = ( zc_.n3_ > 0u );
 			}
-
-			have2_ = ( nz_.have2_ || zc_.have2_ );
-			max_order_ = std::max( nz_.max_order_, zc_.max_order_ );
 		}
 	}
 
@@ -326,30 +311,29 @@ private: // Data
 	Variables observers_; // Observers of a variable
 
 	bool have_{ false }; // Observers present?
-	bool have2_{ false }; // Order 2+ observers present?
 	size_type b_{ 0 }; // Begin index
 	size_type e_{ 0 }; // End index
 	size_type n_{ 0 }; // Count
-	int max_order_{ 0 }; // Max order
 
 	struct {
 
 		bool have_{ false }; // Observers of this type present?
 		bool have2_{ false }; // Order 2+ observers of this type present?
+		bool have3_{ false }; // Order 3+ observers of this type present?
 		size_type b_{ 0 }; // Begin index
 		size_type b2_{ 0 }; // Order 2+ begin index
+		size_type b3_{ 0 }; // Order 3+ begin index
 		size_type e_{ 0 }; // End index
 		size_type n_{ 0 }; // Count
 		size_type n2_{ 0 }; // Order 2+ count
-		int max_order_{ 0 }; // Max order
+		size_type n3_{ 0 }; // Order 3+ count
 
 		void
 		clear()
 		{
-			have_ = have2_ = false;
-			b_ = b2_ = e_ = 0;
-			n_ = n2_ = 0;
-			max_order_ = 0;
+			have_ = have2_ = have3_ = false;
+			b_ = b2_ = b3_ = e_ = 0;
+			n_ = n2_ = n3_ = 0;
 		}
 
 	} nz_, zc_;

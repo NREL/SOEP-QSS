@@ -101,7 +101,7 @@ public: // Nested Types
 		Clause &
 		operator =( Clause && ) noexcept = default;
 
-	public: // Predicates
+	public: // Predicate
 
 		// Empty?
 		bool
@@ -110,7 +110,7 @@ public: // Nested Types
 			return vars.empty();
 		}
 
-	public: // Properties
+	public: // Property
 
 		// Size
 		size_type
@@ -213,7 +213,7 @@ public: // Nested Types
 		 Clause( conditional )
 		{}
 
-	public: // Properties
+	public: // Property
 
 		// Handler-Modified Variables
 		Variables const &
@@ -277,7 +277,7 @@ public: // Creation
 		for ( Clause * clause : clauses ) delete clause;
 	}
 
-public: // Predicates
+public: // Predicate
 
 	// Empty?
 	bool
@@ -305,7 +305,7 @@ public: // Predicates
 		}
 	}
 
-public: // Properties
+public: // Property
 
 	// Size
 	size_type
@@ -420,7 +420,7 @@ public: // Nested Types
 		Clause &
 		operator =( Clause && ) noexcept = default;
 
-	public: // Predicates
+	public: // Predicate
 
 		// Empty?
 		bool
@@ -429,7 +429,7 @@ public: // Nested Types
 			return vars.empty();
 		}
 
-	public: // Properties
+	public: // Property
 
 		// Size
 		size_type
@@ -520,7 +520,7 @@ public: // Nested Types
 		 Clause( conditional )
 		{}
 
-	public: // Properties
+	public: // Property
 
 		// Handler-Modified Variables
 		Variables const &
@@ -584,7 +584,7 @@ public: // Creation
 		for ( Clause * clause : clauses ) delete clause;
 	}
 
-public: // Predicates
+public: // Predicate
 
 	// Empty?
 	bool
@@ -609,7 +609,7 @@ public: // Predicates
 		}
 	}
 
-public: // Properties
+public: // Property
 
 	// Size
 	size_type

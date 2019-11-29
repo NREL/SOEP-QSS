@@ -88,20 +88,13 @@ protected: // Assignment
 	Variable_ZC &
 	operator =( Variable_ZC && ) noexcept = default;
 
-public: // Predicates
+public: // Predicate
 
 	// Zero-Crossing Variable?
 	bool
 	is_ZC() const
 	{
 		return true;
-	}
-
-	// Non-Zero-Crossing Variable?
-	bool
-	not_ZC() const
-	{
-		return false;
 	}
 
 	// Has Crossing Type?
@@ -111,7 +104,7 @@ public: // Predicates
 		return ( std::find( crossings.begin(), crossings.end(), c ) != crossings.end() );
 	}
 
-public: // Properties
+public: // Property
 
 	// Boolean Value at Time t
 	Boolean
