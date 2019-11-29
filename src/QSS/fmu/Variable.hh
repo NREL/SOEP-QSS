@@ -1129,7 +1129,7 @@ protected: // Methods: FMU
 		return x_2;
 	}
 
-	// Get FMU Polynomial Trajectory Term 2 at Time tQ: No Self-Observer Check/Set
+	// Coefficient 2 from FMU at Time t: No Self-Observer Check/Set
 	Real
 	h_2( Time const t, Real const x_1 ) const
 	{
@@ -1142,7 +1142,7 @@ protected: // Methods: FMU
 
 	// Coefficient 2 from FMU at Time t: Zero-Crossing
 	Real
-	z_2(Time const t,  Real const x_1 ) const
+	z_2( Time const t, Real const x_1 ) const
 	{
 		Time const tN( t + options::dtNum );
 		fmu_set_time( tN );

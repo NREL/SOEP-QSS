@@ -506,7 +506,7 @@ private: // Methods
 		Real const q_l( q_c_ - qTol );
 		Real const q_u( q_c_ + qTol );
 
-		// Firsrt derivative at +/- qTol
+		// Derivative at +/- qTol
 		fmu_set_observees_q( tQ );
 		fmu_set_real( q_l );
 		Real const x_1_l( p_1() );
@@ -578,7 +578,7 @@ private: // Methods
 		Real const q_l( q_c_ - qTol );
 		Real const q_u( q_c_ + qTol );
 
-		// Firsrt derivative at +/- qTol
+		// Derivative at +/- qTol
 		fmu_set_real( q_l );
 		Real const x_1_l( p_1() );
 		fmu_set_real( q_u );
@@ -652,7 +652,7 @@ private: // Methods
 		Real const q_l( q_c_ - qTol );
 		Real const q_u( q_c_ + qTol );
 
-		// Firsrt derivative at +/- qTol
+		// Derivative at +/- qTol
 		fmu_set_observees_q( tQ );
 		fmu_set_real( q_l );
 		Real const x_1_l( p_1() );

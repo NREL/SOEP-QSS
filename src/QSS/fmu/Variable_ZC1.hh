@@ -50,10 +50,6 @@ public: // Types
 
 	using Super = Variable_ZC;
 
-private: // Types
-
-	using Super::Z_1;
-
 public: // Creation
 
 	// Constructor
@@ -257,7 +253,7 @@ private: // Methods
 							std::size_t i( 0 );
 							std::size_t const n( 10u ); // Max iterations
 							while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-								Real const d( Z_1( t, v ) );
+								Real const d( z_1( t, v ) );
 								if ( d == 0.0 ) break;
 								//if ( ( signum( d ) != sign_old ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
 								t -= m * ( v / d );
@@ -319,6 +315,13 @@ private: // Methods
 	z_1() const
 	{
 		return Z_1( tQ, x_0_ );
+	}
+
+	// Coefficient 1 from FMU at Time t with Value v
+	Real
+	z_1( Time const t, Real const v ) const
+	{
+		return Z_1( t, v );
 	}
 
 private: // Data
