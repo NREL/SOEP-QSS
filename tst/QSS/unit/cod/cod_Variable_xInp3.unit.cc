@@ -37,8 +37,8 @@
 #include <gtest/gtest.h>
 
 // QSS Headers
-#include <QSS/cod/mdl/Function_Inp_sin.hh>
 #include <QSS/cod/Variable_xInp3.hh>
+#include <QSS/cod/mdl/Function_Inp_sin.hh>
 
 // C++ Headers
 #include <cmath>
@@ -78,6 +78,6 @@ TEST( cod_Variable_xInp3Test, Basic )
 	u.advance_QSS();
 	EXPECT_EQ( u_tE, u.tQ );
 
-	EXPECT_EQ( 1U, events.size() );
+	EXPECT_EQ( 1u, events.size() );
 	events.clear();
 }

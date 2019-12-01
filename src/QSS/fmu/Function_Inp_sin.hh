@@ -126,7 +126,7 @@ private: // Data
 	Real const a_{ 1.0 }; // Amplitude
 	Real const b_{ 1.0 }; // Time scaling (2*pi/period)
 	Real const c_{ 0.0 }; // Shift
-	Real const a_b_{ 1.0 }; // a * b^2
+	Real const a_b_{ 1.0 }; // a * b
 	Real const a_b2_{ 1.0 }; // a * b^2
 	Real const a_b3_{ 1.0 }; // a * b^3
 

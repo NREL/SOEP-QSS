@@ -528,7 +528,7 @@ namespace fmu {
 							std::cout << " Type: Real: Continuous: Input: Function" << std::endl;
 						}
 						if ( inp_fxn ) {
-							if ( var_has_start && var_start != inp_fxn( 0.0 ).x_0 ) {
+							if ( var_has_start && var_start != inp_fxn( 0.0 ).x0 ) {
 								std::cerr << "\n Error: Specified start value does not match function value at t=0 for " << var_name << std::endl;
 								std::exit( EXIT_FAILURE );
 							}
@@ -1422,6 +1422,9 @@ namespace fmu {
 			for ( auto var : vars ) {
 				var->init_time( t0 );
 			}
+		}
+		for ( auto var : vars_ZC ) {
+			var->add_drill_through_observees();
 		}
 		for ( auto var : vars_NC ) {
 			var->init_0();

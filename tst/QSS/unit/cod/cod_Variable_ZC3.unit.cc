@@ -39,9 +39,9 @@
 #include <gtest/gtest.h>
 
 // QSS Headers
-#include <QSS/cod/mdl/Function_LTI.hh>
 #include <QSS/cod/Variable_ZC3.hh>
 #include <QSS/cod/Variable_QSS3.hh>
+#include <QSS/cod/mdl/Function_LTI.hh>
 
 using namespace QSS;
 using namespace QSS::cod;

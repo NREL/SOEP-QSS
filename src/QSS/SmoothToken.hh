@@ -64,61 +64,61 @@ public: // Creation
 	// Order-0 Constructor
 	explicit
 	SmoothToken(
-	 Real const x_0
+	 Real const x0
 	) :
 	 order( 0 ),
-	 x_0( x_0 )
+	 x0( x0 )
 	{}
 
 	// Order-1 Constructor
 	SmoothToken(
-	 Real const x_0,
-	 Real const x_1
+	 Real const x0,
+	 Real const x1
 	) :
 	 order( 1 ),
-	 x_0( x_0 ),
-	 x_1( x_1 )
+	 x0( x0 ),
+	 x1( x1 )
 	{}
 
 	// Order-2 Constructor
 	SmoothToken(
-	 Real const x_0,
-	 Real const x_1,
-	 Real const x_2
+	 Real const x0,
+	 Real const x1,
+	 Real const x2
 	) :
 	 order( 2 ),
-	 x_0( x_0 ),
-	 x_1( x_1 ),
-	 x_2( x_2 )
+	 x0( x0 ),
+	 x1( x1 ),
+	 x2( x2 )
 	{}
 
 	// Order-3 Constructor
 	SmoothToken(
-	 Real const x_0,
-	 Real const x_1,
-	 Real const x_2,
-	 Real const x_3
+	 Real const x0,
+	 Real const x1,
+	 Real const x2,
+	 Real const x3
 	) :
 	 order( 3 ),
-	 x_0( x_0 ),
-	 x_1( x_1 ),
-	 x_2( x_2 ),
-	 x_3( x_3 )
+	 x0( x0 ),
+	 x1( x1 ),
+	 x2( x2 ),
+	 x3( x3 )
 	{}
 
 	// Order-3 Constructor with Discrete Event Time
 	SmoothToken(
-	 Real const x_0,
-	 Real const x_1,
-	 Real const x_2,
-	 Real const x_3,
+	 Real const x0,
+	 Real const x1,
+	 Real const x2,
+	 Real const x3,
 	 Time const tD
 	) :
 	 order( 3 ),
-	 x_0( x_0 ),
-	 x_1( x_1 ),
-	 x_2( x_2 ),
-	 x_3( x_3 ),
+	 x0( x0 ),
+	 x1( x1 ),
+	 x2( x2 ),
+	 x3( x3 ),
 	 tD( tD )
 	{}
 
@@ -126,11 +126,11 @@ public: // Creation
 	static
 	SmoothToken
 	order_0(
-	 Real const x_0,
+	 Real const x0,
 	 Time const tD = infinity
 	)
 	{
-		SmoothToken s( x_0 );
+		SmoothToken s( x0 );
 		s.tD = tD;
 		return s;
 	}
@@ -139,12 +139,12 @@ public: // Creation
 	static
 	SmoothToken
 	order_1(
-	 Real const x_0,
-	 Real const x_1,
+	 Real const x0,
+	 Real const x1,
 	 Time const tD = infinity
 	)
 	{
-		SmoothToken s( x_0, x_1 );
+		SmoothToken s( x0, x1 );
 		s.tD = tD;
 		return s;
 	}
@@ -153,13 +153,13 @@ public: // Creation
 	static
 	SmoothToken
 	order_2(
-	 Real const x_0,
-	 Real const x_1,
-	 Real const x_2,
+	 Real const x0,
+	 Real const x1,
+	 Real const x2,
 	 Time const tD = infinity
 	)
 	{
-		SmoothToken s( x_0, x_1, x_2 );
+		SmoothToken s( x0, x1, x2 );
 		s.tD = tD;
 		return s;
 	}
@@ -168,14 +168,14 @@ public: // Creation
 	static
 	SmoothToken
 	order_3(
-	 Real const x_0,
-	 Real const x_1,
-	 Real const x_2,
-	 Real const x_3,
+	 Real const x0,
+	 Real const x1,
+	 Real const x2,
+	 Real const x3,
 	 Time const tD = infinity
 	)
 	{
-		return SmoothToken( x_0, x_1, x_2, x_3, tD );
+		return SmoothToken( x0, x1, x2, x3, tD );
 	}
 
 public: // Property
@@ -192,12 +192,12 @@ public: // Property
 	rep() const
 	{
 		std::ostringstream stream;
-		stream << std::setprecision( 15 ) << x_0;
+		stream << std::setprecision( 15 ) << x0;
 		if ( order >= 1 ) {
-			stream << ' ' << x_1;
+			stream << ' ' << x1;
 			if ( order >= 2 ) {
-				stream << ' ' << x_2;
-				if ( order >= 3 ) stream << ' ' << x_3;
+				stream << ' ' << x2;
+				if ( order >= 3 ) stream << ' ' << x3;
 			}
 		}
 		if ( tD < infinity ) stream << " ->| " << tD << " s";
@@ -211,12 +211,12 @@ public: // I/O
 	std::ostream &
 	operator <<( std::ostream & stream, SmoothToken const & s )
 	{
-		stream << std::setprecision( 15 ) << s.x_0;
+		stream << std::setprecision( 15 ) << s.x0;
 		if ( s.order >= 1 ) {
-			stream << '\t' << s.x_1;
+			stream << '\t' << s.x1;
 			if ( s.order >= 2 ) {
-				stream << '\t' << s.x_2;
-				if ( s.order >= 3 ) stream << '\t' << s.x_3;
+				stream << '\t' << s.x2;
+				if ( s.order >= 3 ) stream << '\t' << s.x3;
 			}
 		}
 		return stream;
@@ -225,7 +225,7 @@ public: // I/O
 public: // Data
 
 	int order{ 3 }; // Highest derivative order set
-	Real x_0{ 0.0 }, x_1{ 0.0 }, x_2{ 0.0 }, x_3{ 0.0 }; // Value and derivatives
+	Real x0{ 0.0 }, x1{ 0.0 }, x2{ 0.0 }, x3{ 0.0 }; // Value and derivatives
 	Time tD{ infinity }; // Next discrete event time
 
 };

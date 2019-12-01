@@ -176,8 +176,8 @@ public: // Methods
 		shift_handler();
 		Boolean const x_new( x != 0.0 );
 		bool const chg( x_ != x_new );
-		if ( chg ) x_ = x_new;
-		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		x_ = x_new;
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 		if ( chg && have_observers_ ) advance_observers();
 	}
 
@@ -189,9 +189,8 @@ public: // Methods
 		tX = tQ = t;
 		shift_handler();
 		Boolean const x_new( x != 0.0 );
-		bool const chg( x_ != x_new );
-		if ( chg ) x_ = x_new;
-		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		x_ = x_new;
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 private: // Data

@@ -38,6 +38,7 @@
 
 // QSS Headers
 #include <QSS/fmu/Variable_ZC1.hh>
+#include <QSS/fmu/Variable_QSS1.hh>
 
 using namespace QSS;
 using namespace QSS::fmu;
@@ -47,11 +48,13 @@ TEST( fmu_Variable_ZC1Test, Basic )
 	FMU_ME fmu;
 
 	Variable_ZC1 z( "z", 2.0, 2.0, 1.0e-4, &fmu );
+
 	EXPECT_EQ( 2.0, z.rTol );
 	EXPECT_EQ( 2.0, z.aTol );
 	EXPECT_EQ( 1.0e-4, z.zTol );
 	EXPECT_EQ( 0.0, z.tQ );
 	EXPECT_EQ( 0.0, z.tX );
+	EXPECT_EQ( 0.0, z.tE );
 	EXPECT_EQ( infinity, z.tZ );
 
 	EXPECT_EQ( 0.0, z.x( 0.0 ) );
@@ -63,4 +66,85 @@ TEST( fmu_Variable_ZC1Test, Basic )
 	EXPECT_EQ( 0.0, z.q( 1.0 ) );
 	EXPECT_EQ( 0.0, z.x1( 1.0 ) );
 	EXPECT_EQ( 0.0, z.q1( 1.0 ) );
+}
+
+TEST( fmu_Variable_ZC1Test, BouncingBall )
+{
+	std::string const model( "BouncingBall.fmu" );
+	if ( ! path::is_file( model ) ) {
+		std::cout << ">>>>>>>>>>>> fmu::Variable_ZC1 BouncingBall test not run: BouncingBall.fmu not present" << std::endl;
+		return;
+	}
+
+	options::qss = options::QSS::QSS1;
+	options::specified::qss = true;
+	options::rTol = 1.0;
+	options::specified::rTol = true;
+	options::aTol = 1.0;
+	options::specified::aTol = true;
+	options::zFac = 1.0;
+
+	std::streambuf * coutBuf( std::cout.rdbuf() ); std::ostringstream strCout; std::cout.rdbuf( strCout.rdbuf() ); // Redirect cout
+	FMU_ME fmu( model );
+	fmu.instantiate();
+	fmu.pre_simulate();
+	fmu.init();
+	std::cout.rdbuf( coutBuf ); // Re-redirect cout
+
+	Variable_QSS1 * h( dynamic_cast< Variable_QSS1 * >( fmu.var_named( "h" ) ) );
+	Variable_QSS1 * v( dynamic_cast< Variable_QSS1 * >( fmu.var_named( "v" ) ) );
+	Variable_ZC1 * z( dynamic_cast< Variable_ZC1 * >( fmu.var_named( "_eventIndicator_1" ) ) );
+	if ( ( h == nullptr ) || ( v == nullptr ) || ( z == nullptr ) ) {
+		std::cout << ">>>>>>>>>>>> fmu::Variable_ZC1 BouncingBall test not run: Variables h and/or v and/or _eventIndicator_1 not found in FMU" << std::endl;
+		return;
+	}
+
+	EXPECT_EQ( 1.0, h->rTol );
+	EXPECT_EQ( 1.0, h->aTol );
+	EXPECT_EQ( 1.0, h->qTol );
+	EXPECT_EQ( 0.0, h->tQ );
+	EXPECT_EQ( 0.0, h->tX );
+	EXPECT_EQ( infinity, h->tE );
+	EXPECT_EQ( 1.0, h->x( 0.0 ) );
+	EXPECT_EQ( 1.0, h->q( 0.0 ) );
+	EXPECT_EQ( 0.0, h->x1( 0.0 ) );
+
+	EXPECT_EQ( 1.0, v->rTol );
+	EXPECT_EQ( 1.0, v->aTol );
+	EXPECT_EQ( 1.0, v->qTol );
+	EXPECT_EQ( 0.0, v->tQ );
+	EXPECT_EQ( 0.0, v->tX );
+	EXPECT_EQ( 1.0 / 9.81, v->tE );
+	EXPECT_EQ( 0.0, v->x( 0.0 ) );
+	EXPECT_EQ( 0.0, v->q( 0.0 ) );
+	EXPECT_EQ( -9.81, v->x1( 0.0 ) );
+
+	EXPECT_EQ( 1.0, z->rTol );
+	EXPECT_EQ( 1.0, z->aTol );
+	EXPECT_EQ( 1.0, z->qTol );
+	EXPECT_EQ( 0.0, z->tQ );
+	EXPECT_EQ( 0.0, z->tX );
+	EXPECT_EQ( infinity, z->tE );
+	EXPECT_EQ( 1.0, z->x( 0.0 ) );
+	EXPECT_EQ( 1.0, z->q( 0.0 ) );
+	EXPECT_EQ( 0.0, z->x1( 0.0 ) );
+
+	double const v_tE( v->tE );
+	fmu.set_time( v->tE );
+	v->advance_QSS();
+
+	EXPECT_EQ( 0.0, h->tQ );
+	EXPECT_EQ( v_tE, h->tX );
+	EXPECT_EQ( 1.0, h->x( h->tX ) );
+	EXPECT_EQ( -1.0, h->x1( h->tX ) );
+
+	EXPECT_EQ( v_tE, v->tQ );
+	EXPECT_EQ( v_tE, v->tX );
+	EXPECT_EQ( -1.0, v->x( v->tX ) );
+	EXPECT_EQ( -1.0, v->q( v->tX ) );
+
+	EXPECT_EQ( v_tE, z->tQ );
+	EXPECT_EQ( v_tE, z->tX );
+	EXPECT_EQ( 1.0, z->x( z->tX ) );
+	EXPECT_NEAR( -1.0, z->x1( z->tX ), 1e-9 );
 }

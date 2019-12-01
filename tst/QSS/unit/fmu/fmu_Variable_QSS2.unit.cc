@@ -49,6 +49,7 @@ TEST( fmu_Variable_QSS2Test, Basic )
 	Variable_QSS2 x1( "x1", 1.0e-4, 1.0e-6, 42.0, &fmu );
 	EXPECT_EQ( 1.0e-4, x1.rTol );
 	EXPECT_EQ( 1.0e-6, x1.aTol );
+	EXPECT_EQ( std::max( x1.rTol * 42.0, x1.aTol ), x1.qTol );
 	EXPECT_EQ( 0.0, x1.tQ );
 
 	EXPECT_EQ( 42.0, x1.x( 0.0 ) );
@@ -68,6 +69,7 @@ TEST( fmu_Variable_QSS2Test, Basic )
 	Variable_QSS2 x2( "x2", 1.0e-4, 1.0e-3, 99.0, &fmu );
 	EXPECT_EQ( 1.0e-4, x2.rTol );
 	EXPECT_EQ( 1.0e-3, x2.aTol );
+	EXPECT_EQ( std::max( x2.rTol * 99.0, x2.aTol ), x2.qTol );
 	EXPECT_EQ( 0.0, x2.tQ );
 
 	EXPECT_EQ( 99.0, x2.x( 0.0 ) );
@@ -114,7 +116,7 @@ TEST( fmu_Variable_QSS2Test, Achilles )
 		return;
 	}
 
-	EXPECT_EQ( 2U, fmu.eventq->size() );
+	EXPECT_EQ( 2u, fmu.eventq->size() );
 
 	EXPECT_EQ( 100.0, x1->rTol );
 	EXPECT_EQ( 1.0, x1->aTol );
@@ -142,8 +144,8 @@ TEST( fmu_Variable_QSS2Test, Achilles )
 	fmu.set_time( x1_tE );
 	x1->advance_QSS();
 
-	EXPECT_DOUBLE_EQ( x1_tE, x1->tQ );
-	EXPECT_DOUBLE_EQ( x1_tE, x1->tX );
+	EXPECT_EQ( x1_tE, x1->tQ );
+	EXPECT_EQ( x1_tE, x1->tX );
 	EXPECT_NEAR( 24.7662458998049, x1->tE, 1e-9 );
 	EXPECT_NEAR( 2.46410161489565, x1->x( x1->tX ), 1e-9 );
 	EXPECT_NEAR( 2.46410161489565, x1->q( x1->tQ ), 1e-9 );
@@ -152,7 +154,7 @@ TEST( fmu_Variable_QSS2Test, Achilles )
 	EXPECT_NEAR( 2 * -0.441987298094304, x1->x2( x1->tX ), 1e-9 );
 
 	EXPECT_EQ( 0.0, x2->tQ );
-	EXPECT_DOUBLE_EQ( x1_tE, x2->tX );
+	EXPECT_EQ( x1_tE, x2->tX );
 	EXPECT_NEAR( 14.7919362126951, x2->tE, 1e-9 );
 	EXPECT_NEAR( 2.79555933957454e-10, x2->x( x2->tX ), 1e-9 );
 	EXPECT_EQ( 2.0, x2->q( x2->tQ ) );

@@ -37,8 +37,8 @@
 #include <gtest/gtest.h>
 
 // QSS Headers
-#include <QSS/cod/mdl/Function_InpB_step.hh>
 #include <QSS/cod/Variable_InpB.hh>
+#include <QSS/cod/mdl/Function_InpB_step.hh>
 
 using namespace QSS;
 using namespace QSS::cod;
@@ -76,6 +76,6 @@ TEST( cod_Variable_InpBTest, Basic )
 	EXPECT_EQ( 1.0, u.x( 0.15 ) );
 	EXPECT_EQ( 1.0, u.q( 0.15 ) );
 
-	EXPECT_EQ( 1U, events.size() );
+	EXPECT_EQ( 1u, events.size() );
 	events.clear();
 }
