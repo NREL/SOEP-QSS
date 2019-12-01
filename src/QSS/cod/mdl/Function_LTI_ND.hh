@@ -83,7 +83,7 @@ public: // Types
 	using Time = typename Variable::Time;
 	using Real = typename Variable::Real;
 
-public: // Properties
+public: // Property
 
 	// Continuous Value at Time t
 	Real

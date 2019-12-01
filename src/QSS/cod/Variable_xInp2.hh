@@ -93,7 +93,7 @@ public: // Creation
 	 Super( 2, name, rTol, aTol )
 	{}
 
-public: // Properties
+public: // Property
 
 	// Continuous Value at Time t
 	Real

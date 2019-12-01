@@ -90,7 +90,7 @@ protected: // Assignment
 	Target &
 	operator =( Target && ) noexcept = default;
 
-public: // Properties
+public: // Property
 
 	// Event Queue Iterator
 	EventMap::iterator &

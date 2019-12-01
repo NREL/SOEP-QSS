@@ -63,7 +63,7 @@ public: // Creation
 	 Super( order, name, fmu_me, var )
 	{}
 
-public: // Predicates
+public: // Predicate
 
 	// Input Variable?
 	bool
@@ -79,7 +79,7 @@ public: // Predicates
 		return true;
 	}
 
-public: // Properties
+public: // Property
 
 	// Continuous Value at Time t
 	Real

@@ -73,7 +73,7 @@ public: // Creation
 	 x_( xIni )
 	{}
 
-public: // Predicates
+public: // Predicate
 
 	// Discrete Variable?
 	bool
@@ -82,7 +82,7 @@ public: // Predicates
 		return true;
 	}
 
-public: // Properties
+public: // Property
 
 	// Boolean Value
 	Boolean

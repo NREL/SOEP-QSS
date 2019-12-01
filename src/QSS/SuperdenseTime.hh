@@ -118,7 +118,7 @@ public: // Conversion
 		return t;
 	}
 
-public: // Properties
+public: // Property
 
 	// Next Index
 	Index

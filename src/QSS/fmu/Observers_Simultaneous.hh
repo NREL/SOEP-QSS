@@ -104,7 +104,7 @@ public: // Conversion
 		return observers_;
 	}
 
-public: // Predicates
+public: // Predicate
 
 	// Empty?
 	bool
@@ -141,7 +141,7 @@ public: // Predicates
 		return zc_.have2_;
 	}
 
-public: // Properties
+public: // Property
 
 	// Size
 	size_type
@@ -240,7 +240,7 @@ public: // Indexing
 		return observers_[ i ];
 	}
 
-public: // Iterators
+public: // Iterator
 
 	// Begin Iterator
 	const_iterator

@@ -156,7 +156,7 @@ public: // Assignment
 	FMU_ME &
 	operator =( FMU_ME && ) = delete;
 
-public: // Properties
+public: // Property
 
 	// Variable Lookup by Name (for Testing)
 	Variable const *

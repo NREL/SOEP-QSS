@@ -70,7 +70,7 @@ public: // Creation
 		assert( d_ > 0.0 );
 	}
 
-public: // Properties
+public: // Property
 
 	// State at Time t
 	SmoothToken

@@ -75,7 +75,7 @@ public: // Creation
 	 val_( val )
 	{}
 
-public: // Predicates
+public: // Predicate
 
 	// Discrete Event?
 	bool
@@ -119,7 +119,7 @@ public: // Predicates
 		return ( typ_ == Type::QSS_ZC );
 	}
 
-public: // Properties
+public: // Property
 
 	// Event Type
 	Type

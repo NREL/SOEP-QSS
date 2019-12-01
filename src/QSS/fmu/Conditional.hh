@@ -100,7 +100,7 @@ public: // Creation
 		if ( var_ != nullptr ) var_->conditional = nullptr;
 	}
 
-public: // Predicates
+public: // Predicate
 
 	// Empty?
 	bool
@@ -116,7 +116,7 @@ public: // Predicates
 		return true;
 	}
 
-public: // Properties
+public: // Property
 
 	// Size
 	size_type

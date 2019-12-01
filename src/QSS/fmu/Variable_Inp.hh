@@ -102,7 +102,7 @@ protected: // Assignment
 	Variable_Inp &
 	operator =( Variable_Inp && ) noexcept = default;
 
-public: // Predicates
+public: // Predicate
 
 	// Input Variable?
 	bool
@@ -118,7 +118,7 @@ public: // Predicates
 		return is_connection_;
 	}
 
-public: // Properties
+public: // Property
 
 	// Function
 	Function const &

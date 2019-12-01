@@ -62,7 +62,7 @@ public: // Creation
 	 Super( 0, name, fmu_me, var, f )
 	{}
 
-public: // Predicates
+public: // Predicate
 
 	// Discrete Variable?
 	bool
@@ -71,7 +71,7 @@ public: // Predicates
 		return true;
 	}
 
-public: // Properties
+public: // Property
 
 	// Boolean Value
 	Boolean

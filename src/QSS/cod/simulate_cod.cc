@@ -219,7 +219,7 @@ simulate( std::string const & model )
 		var_idx[ vars[ i ] ] = i;
 	}
 
-	// Containers of ZC and non-ZC variables
+	// Containers of variables
 	Variables vars_ZC;
 	Variables vars_NZ;
 	int max_QSS_order( 0 );
@@ -245,6 +245,9 @@ simulate( std::string const & model )
 
 	// Variable initialization
 	std::cout << "\nInitialization =====" << std::endl;
+	for ( auto var : vars_ZC ) {
+		var->add_drill_through_observees();
+	}
 	for ( auto var : vars ) {
 		var->init_0();
 	}

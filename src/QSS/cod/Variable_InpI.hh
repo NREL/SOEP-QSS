@@ -81,7 +81,7 @@ public: // Creation
 	 Super( 0, name )
 	{}
 
-public: // Predicates
+public: // Predicate
 
 	// Discrete Variable?
 	bool
@@ -90,7 +90,7 @@ public: // Predicates
 		return true;
 	}
 
-public: // Properties
+public: // Property
 
 	// Boolean Value
 	Boolean

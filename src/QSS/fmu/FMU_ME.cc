@@ -1325,6 +1325,9 @@ namespace fmu {
 				var->init_time( t0 );
 			}
 		}
+		for ( auto var : vars_ZC ) {
+			var->add_drill_through_observees();
+		}
 		for ( auto var : vars_NC ) {
 			var->init_0();
 		}

@@ -64,7 +64,7 @@ public: // Creation
 	 Super( 2, name, rTol, aTol, fmu_me, var, f )
 	{}
 
-public: // Properties
+public: // Property
 
 	// Continuous Value at Time t
 	Real

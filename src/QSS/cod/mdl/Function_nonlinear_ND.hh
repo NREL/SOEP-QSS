@@ -65,7 +65,7 @@ public: // Types
 	using AdvanceSpecs_LIQSS1 = typename Variable::AdvanceSpecs_LIQSS1;
 	using AdvanceSpecs_LIQSS2 = typename Variable::AdvanceSpecs_LIQSS2;
 
-public: // Properties
+public: // Property
 
 	// Continuous Value at Time t
 	Real

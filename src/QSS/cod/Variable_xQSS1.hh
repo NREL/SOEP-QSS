@@ -100,7 +100,7 @@ public: // Creation
 		set_qTol();
 	}
 
-public: // Properties
+public: // Property
 
 	// Continuous Value at Time t
 	Real
