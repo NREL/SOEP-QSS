@@ -1,4 +1,4 @@
-// QSS::fmu::Variable_ZC2 Unit Tests
+// QSS::fmu::Variable_ZC3 Unit Tests
 //
 // Project: QSS Solver
 //
@@ -37,17 +37,17 @@
 #include <gtest/gtest.h>
 
 // QSS Headers
-#include <QSS/fmu/Variable_ZC2.hh>
-#include <QSS/fmu/Variable_QSS2.hh>
+#include <QSS/fmu/Variable_ZC3.hh>
+#include <QSS/fmu/Variable_QSS3.hh>
 
 using namespace QSS;
 using namespace QSS::fmu;
 
-TEST( fmu_Variable_ZC2Test, Basic )
+TEST( fmu_Variable_ZC3Test, Basic )
 {
 	FMU_ME fmu;
 
-	Variable_ZC2 z( "z", 2.0, 2.0, 1.0e-4, &fmu );
+	Variable_ZC3 z( "z", 2.0, 2.0, 1.0e-4, &fmu );
 
 	EXPECT_EQ( 2.0, z.rTol );
 	EXPECT_EQ( 2.0, z.aTol );
@@ -63,6 +63,8 @@ TEST( fmu_Variable_ZC2Test, Basic )
 	EXPECT_EQ( 0.0, z.q1( 0.0 ) );
 	EXPECT_EQ( 0.0, z.x2( 0.0 ) );
 	EXPECT_EQ( 0.0, z.q2( 0.0 ) );
+	EXPECT_EQ( 0.0, z.x3( 0.0 ) );
+	EXPECT_EQ( 0.0, z.q3( 0.0 ) );
 
 	EXPECT_EQ( 0.0, z.x( 1.0 ) );
 	EXPECT_EQ( 0.0, z.q( 1.0 ) );
@@ -70,17 +72,19 @@ TEST( fmu_Variable_ZC2Test, Basic )
 	EXPECT_EQ( 0.0, z.q1( 1.0 ) );
 	EXPECT_EQ( 0.0, z.x2( 1.0 ) );
 	EXPECT_EQ( 0.0, z.q2( 1.0 ) );
+	EXPECT_EQ( 0.0, z.x3( 1.0 ) );
+	EXPECT_EQ( 0.0, z.q3( 1.0 ) );
 }
 
-TEST( fmu_Variable_ZC2Test, BouncingBall )
+TEST( fmu_Variable_ZC3Test, BouncingBall )
 {
 	std::string const model( "BouncingBall.fmu" );
 	if ( ! path::is_file( model ) ) {
-		std::cout << ">>>>>>>>>>>> fmu::Variable_ZC2 BouncingBall test not run: BouncingBall.fmu not present" << std::endl;
+		std::cout << ">>>>>>>>>>>> fmu::Variable_ZC3 BouncingBall test not run: BouncingBall.fmu not present" << std::endl;
 		return;
 	}
 
-	options::qss = options::QSS::QSS2;
+	options::qss = options::QSS::QSS3;
 	options::specified::qss = true;
 	options::rTol = 1.0;
 	options::specified::rTol = true;
@@ -95,11 +99,11 @@ TEST( fmu_Variable_ZC2Test, BouncingBall )
 	fmu.init();
 	std::cout.rdbuf( coutBuf ); // Re-redirect cout
 
-	Variable_QSS2 * h( dynamic_cast< Variable_QSS2 * >( fmu.var_named( "h" ) ) );
-	Variable_QSS2 * v( dynamic_cast< Variable_QSS2 * >( fmu.var_named( "v" ) ) );
-	Variable_ZC2 * z( dynamic_cast< Variable_ZC2 * >( fmu.var_named( "_eventIndicator_1" ) ) );
+	Variable_QSS3 * h( dynamic_cast< Variable_QSS3 * >( fmu.var_named( "h" ) ) );
+	Variable_QSS3 * v( dynamic_cast< Variable_QSS3 * >( fmu.var_named( "v" ) ) );
+	Variable_ZC3 * z( dynamic_cast< Variable_ZC3 * >( fmu.var_named( "_eventIndicator_1" ) ) );
 	if ( ( h == nullptr ) || ( v == nullptr ) || ( z == nullptr ) ) {
-		std::cout << ">>>>>>>>>>>> fmu::Variable_ZC2 BouncingBall test not run: Variables h and/or v and/or _eventIndicator_1 not found in FMU" << std::endl;
+		std::cout << ">>>>>>>>>>>> fmu::Variable_ZC3 BouncingBall test not run: Variables h and/or v and/or _eventIndicator_1 not found in FMU" << std::endl;
 		return;
 	}
 
@@ -108,12 +112,14 @@ TEST( fmu_Variable_ZC2Test, BouncingBall )
 	EXPECT_EQ( 1.0, h->qTol );
 	EXPECT_EQ( 0.0, h->tQ );
 	EXPECT_EQ( 0.0, h->tX );
-	EXPECT_DOUBLE_EQ( std::sqrt( 1.0 / ( 0.5 * 9.81 ) ), h->tE );
+	EXPECT_EQ( infinity, h->tE );
 	EXPECT_EQ( 1.0, h->x( 0.0 ) );
 	EXPECT_EQ( 1.0, h->q( 0.0 ) );
 	EXPECT_EQ( 0.0, h->x1( 0.0 ) );
 	EXPECT_EQ( 0.0, h->q1( 0.0 ) );
 	EXPECT_DOUBLE_EQ( -9.81, h->x2( 0.0 ) );
+	EXPECT_DOUBLE_EQ( -9.81, h->q2( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 0.0, h->x3( 0.0 ) );
 
 	EXPECT_EQ( 1.0, v->rTol );
 	EXPECT_EQ( 1.0, v->aTol );
@@ -126,19 +132,24 @@ TEST( fmu_Variable_ZC2Test, BouncingBall )
 	EXPECT_EQ( -9.81, v->x1( 0.0 ) );
 	EXPECT_EQ( -9.81, v->q1( 0.0 ) );
 	EXPECT_EQ( 0.0, v->x2( 0.0 ) );
+	EXPECT_EQ( 0.0, v->q2( 0.0 ) );
+	EXPECT_EQ( 0.0, v->x3( 0.0 ) );
 
 	EXPECT_EQ( 1.0, z->rTol );
 	EXPECT_EQ( 1.0, z->aTol );
 	EXPECT_EQ( 1.0, z->qTol );
 	EXPECT_EQ( 0.0, z->tQ );
 	EXPECT_EQ( 0.0, z->tX );
-	EXPECT_NEAR( std::sqrt( 1.0 / ( 0.5 * 9.81 ) ), z->tE, 1e-5 );
+	EXPECT_EQ( infinity, z->tE );
 	EXPECT_EQ( 1.0, z->x( 0.0 ) );
 	EXPECT_EQ( 1.0, z->q( 0.0 ) );
 	EXPECT_EQ( 0.0, z->x1( 0.0 ) );
 	EXPECT_EQ( 0.0, z->q1( 0.0 ) );
 	EXPECT_NEAR( -9.81, z->x2( 0.0 ), 1e-4 );
+	EXPECT_NEAR( -9.81, z->q2( 0.0 ), 1e-4 );
+	EXPECT_EQ( 0.0, z->x3( 0.0 ) );
 
+	h->tE = 0.1; // Choose a requantization time
 	double const h_tE( h->tE );
 	fmu.set_time( h->tE );
 	h->advance_QSS();
@@ -153,6 +164,6 @@ TEST( fmu_Variable_ZC2Test, BouncingBall )
 
 	EXPECT_EQ( h_tE, z->tQ );
 	EXPECT_EQ( h_tE, z->tX );
-	EXPECT_NEAR( 1.0 - ( 0.5 * 9.81 ) * square( h_tE ), z->x( z->tX ), 1e-12 );
-	EXPECT_NEAR( 1.0 - ( 0.5 * 9.81 ) * square( h_tE ), z->q( z->tQ ), 1e-12 );
+	EXPECT_NEAR( 1.0 - ( 0.5 * 9.81 ) * square( h_tE ), z->x( z->tX ), 1e-1 );
+	EXPECT_NEAR( 1.0 - ( 0.5 * 9.81 ) * square( h_tE ), z->q( z->tQ ), 1e-1 );
 }

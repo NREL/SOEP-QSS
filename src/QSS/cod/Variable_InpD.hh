@@ -147,8 +147,8 @@ public: // Methods
 		tD = f_.tD( tD );
 		shift_discrete( tD );
 		bool const chg( x_ != x_new );
-		if ( chg ) x_ = x_new;
-		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
+		x_ = x_new;
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
 		if ( chg && have_observers_ ) advance_observers();
 	}
 
@@ -159,9 +159,8 @@ public: // Methods
 		Real const x_new( f_.vs( tX = tQ = tD ) );
 		tD = f_.tD( tD );
 		shift_discrete( tD );
-		bool const chg( x_ != x_new );
-		if ( chg ) x_ = x_new;
-		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
+		x_ = x_new;
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
 	}
 
 private: // Data

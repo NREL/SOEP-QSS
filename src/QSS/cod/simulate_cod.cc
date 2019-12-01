@@ -249,6 +249,9 @@ simulate( std::string const & model )
 
 	// Variable initialization
 	std::cout << "\nInitialization =====" << std::endl;
+	for ( auto var : vars_ZC ) {
+		var->add_drill_through_observees();
+	}
 	for ( auto var : vars ) {
 		var->init_0();
 	}

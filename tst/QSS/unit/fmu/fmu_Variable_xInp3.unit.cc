@@ -1,4 +1,4 @@
-// QSS::fmu::Variable_xInp1 Unit Tests
+// QSS::fmu::Variable_xInp3 Unit Tests
 //
 // Project: QSS Solver
 //
@@ -37,17 +37,17 @@
 #include <gtest/gtest.h>
 
 // QSS Headers
-#include <QSS/fmu/Variable_xInp1.hh>
-#include <QSS/fmu/Variable_xQSS1.hh>
+#include <QSS/fmu/Variable_xInp3.hh>
+#include <QSS/fmu/Variable_xQSS3.hh>
 
 using namespace QSS;
 using namespace QSS::fmu;
 
-TEST( fmu_Variable_xInp1Test, Basic )
+TEST( fmu_Variable_xInp3Test, Basic )
 {
 	FMU_ME fmu;
 
-	Variable_xInp1 u( "u", 1.0e-4, 1.0e-6, &fmu );
+	Variable_xInp3 u( "u", 1.0e-4, 1.0e-6, &fmu );
 
 	EXPECT_EQ( 1.0e-4, u.rTol );
 	EXPECT_EQ( 1.0e-6, u.aTol );
@@ -61,6 +61,8 @@ TEST( fmu_Variable_xInp1Test, Basic )
 	EXPECT_EQ( 0.0, u.q1( 0.0 ) );
 	EXPECT_EQ( 0.0, u.x2( 0.0 ) );
 	EXPECT_EQ( 0.0, u.q2( 0.0 ) );
+	EXPECT_EQ( 0.0, u.x3( 0.0 ) );
+	EXPECT_EQ( 0.0, u.q3( 0.0 ) );
 
 	EXPECT_EQ( 0.0, u.x( 1.0 ) );
 	EXPECT_EQ( 0.0, u.q( 1.0 ) );
@@ -68,23 +70,25 @@ TEST( fmu_Variable_xInp1Test, Basic )
 	EXPECT_EQ( 0.0, u.q1( 1.0 ) );
 	EXPECT_EQ( 0.0, u.x2( 1.0 ) );
 	EXPECT_EQ( 0.0, u.q2( 1.0 ) );
+	EXPECT_EQ( 0.0, u.x3( 1.0 ) );
+	EXPECT_EQ( 0.0, u.q3( 1.0 ) );
 }
 
-TEST( fmu_Variable_xInp1Test, InputFunction )
+TEST( fmu_Variable_xInp3Test, InputFunction )
 {
 	std::string const model( "InputFunction.fmu" );
 	if ( ! path::is_file( model ) ) {
-		std::cout << ">>>>>>>>>>>> fmu::Variable_xInp1 InputFunction test not run: InputFunction.fmu not present" << std::endl;
+		std::cout << ">>>>>>>>>>>> fmu::Variable_xInp3 InputFunction test not run: InputFunction.fmu not present" << std::endl;
 		return;
 	}
 
-	options::qss = options::QSS::xQSS1;
+	options::qss = options::QSS::xQSS3;
 	options::specified::qss = true;
 	options::rTol = 100.0;
 	options::specified::rTol = true;
 	options::aTol = 1.0;
 	options::specified::aTol = true;
-	options::fxn[ "u" ] = "constant[1]";
+	options::fxn[ "u" ] = "sin[1,1,1]";
 
 	std::streambuf * coutBuf( std::cout.rdbuf() ); std::ostringstream strCout; std::cout.rdbuf( strCout.rdbuf() ); // Redirect cout
 	FMU_ME fmu( model );
@@ -93,10 +97,10 @@ TEST( fmu_Variable_xInp1Test, InputFunction )
 	fmu.init();
 	std::cout.rdbuf( coutBuf ); // Re-redirect cout
 
-	Variable_xQSS1 * x( dynamic_cast< Variable_xQSS1 * >( fmu.var_named( "x" ) ) );
-	Variable_xInp1 * u( dynamic_cast< Variable_xInp1 * >( fmu.var_named( "u" ) ) );
+	Variable_xQSS3 * x( dynamic_cast< Variable_xQSS3 * >( fmu.var_named( "x" ) ) );
+	Variable_xInp3 * u( dynamic_cast< Variable_xInp3 * >( fmu.var_named( "u" ) ) );
 	if ( ( x == nullptr ) || ( u == nullptr ) ) {
-		std::cout << ">>>>>>>>>>>> fmu::Variable_xInp1 InputFunction test not run: Variables x and/or u not found in FMU" << std::endl;
+		std::cout << ">>>>>>>>>>>> fmu::Variable_xInp3 InputFunction test not run: Variables x and/or u not found in FMU" << std::endl;
 		return;
 	}
 
@@ -107,38 +111,47 @@ TEST( fmu_Variable_xInp1Test, InputFunction )
 	EXPECT_EQ( 1.0, x->qTol );
 	EXPECT_EQ( 0.0, x->tQ );
 	EXPECT_EQ( 0.0, x->tX );
-	EXPECT_EQ( 1.0, x->tE );
+	EXPECT_NEAR( std::cbrt( x->qTol * 6.0 / std::abs( x->x3( 0.0 ) ) ), x->tE, 1e-9 );
 	EXPECT_EQ( 0.0, x->x( 0.0 ) );
 	EXPECT_EQ( 0.0, x->q( 0.0 ) );
 	EXPECT_EQ( 1.0, x->x1( 0.0 ) );
 	EXPECT_EQ( 1.0, x->q1( 0.0 ) );
+	EXPECT_NEAR( 1.0, x->x2( 0.0 ), 1e-9 );
+	EXPECT_NEAR( 1.0, x->q2( 0.0 ), 1e-9 );
+	EXPECT_NEAR( 0.0, x->x3( 0.0 ), 1e-3 );
+	EXPECT_NEAR( 0.0, x->q3( 0.0 ), 1e-3 );
 
 	EXPECT_EQ( 100.0, u->rTol );
 	EXPECT_EQ( 1.0, u->aTol );
 	EXPECT_EQ( 100.0, u->qTol );
 	EXPECT_EQ( 0.0, u->tQ );
 	EXPECT_EQ( 0.0, u->tX );
-	EXPECT_EQ( infinity, u->tE );
+	EXPECT_EQ( std::cbrt( u->qTol * 6.0 / std::abs( u->x3( 0.0 ) ) ), u->tE );
 	EXPECT_EQ( 1.0, u->x( 0.0 ) );
 	EXPECT_EQ( 1.0, u->q( 0.0 ) );
-	EXPECT_EQ( 0.0, u->x1( 0.0 ) );
+	EXPECT_EQ( 1.0, u->x1( 0.0 ) );
+	EXPECT_EQ( 1.0, u->q1( 0.0 ) );
+	EXPECT_EQ( 0.0, u->x2( 0.0 ) );
+	EXPECT_EQ( 0.0, u->q2( 0.0 ) );
+	EXPECT_EQ( -1.0, u->x3( 0.0 ) );
+	EXPECT_EQ( -1.0, u->q3( 0.0 ) );
 
-	fmu.set_time( 1.0 );
+	double const x_tE( x->tE );
+	fmu.set_time( x->tE );
 	x->advance_QSS();
 
-	EXPECT_EQ( 1.0, x->tQ );
-	EXPECT_EQ( 1.0, x->tX );
-	EXPECT_EQ( 100.0, x->qTol );
-	EXPECT_EQ( 101.0, x->tE );
-	EXPECT_EQ( 1.0, x->x( x->tX ) );
-	EXPECT_EQ( 1.0, x->q( x->tQ ) );
-	EXPECT_EQ( 1.0, x->x1( x->tX ) );
-	EXPECT_EQ( 1.0, x->q1( x->tX ) );
+	EXPECT_EQ( x_tE, x->tQ );
+	EXPECT_EQ( x_tE, x->tX );
 
 	EXPECT_EQ( 0.0, u->tQ );
 	EXPECT_EQ( 0.0, u->tX );
-	EXPECT_EQ( infinity, u->tE );
+	EXPECT_EQ( std::cbrt( u->qTol * 6.0 / std::abs( u->x3( 0.0 ) ) ), u->tE );
 	EXPECT_EQ( 1.0, u->x( u->tX ) );
 	EXPECT_EQ( 1.0, u->q( u->tQ ) );
-	EXPECT_EQ( 0.0, u->x1( u->tX ) );
+	EXPECT_EQ( 1.0, u->x1( 0.0 ) );
+	EXPECT_EQ( 1.0, u->q1( 0.0 ) );
+	EXPECT_EQ( 0.0, u->x2( 0.0 ) );
+	EXPECT_EQ( 0.0, u->q2( 0.0 ) );
+	EXPECT_EQ( -1.0, u->x3( 0.0 ) );
+	EXPECT_EQ( -1.0, u->q3( 0.0 ) );
 }

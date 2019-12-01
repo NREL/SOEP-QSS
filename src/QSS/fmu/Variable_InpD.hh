@@ -117,8 +117,9 @@ public: // Methods
 		assert( f() );
 		assert( observees_.empty() );
 		init_observers();
-		x_ = f_( tQ ).x_0;
-		tD = f_( tQ ).tD;
+		s_ = f_( tQ );
+		x_ = s_.x0;
+		tD = s_.tD;
 		add_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
 	}
@@ -127,13 +128,13 @@ public: // Methods
 	void
 	advance_discrete()
 	{
-		SmoothToken const s( f_( tX = tQ = tD ) );
-		Real const x_new( s.x_0 );
-		tD = s.tD;
+		s_ = f_( tX = tQ = tD );
+		Real const x_new( s_.x0 );
+		tD = s_.tD;
 		shift_discrete( tD );
 		bool const chg( x_ != x_new );
-		if ( chg ) x_ = x_new;
-		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
+		x_ = x_new;
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
 		if ( chg && have_observers_ ) advance_observers();
 	}
 
@@ -141,13 +142,12 @@ public: // Methods
 	void
 	advance_discrete_s()
 	{
-		SmoothToken const s( f_( tX = tQ = tD ) );
-		Real const x_new( s.x_0 );
-		tD = s.tD;
+		s_ = f_( tX = tQ = tD );
+		Real const x_new( s_.x0 );
+		tD = s_.tD;
 		shift_discrete( tD );
-		bool const chg( x_ != x_new );
-		if ( chg ) x_ = x_new;
-		if ( options::output::d ) std::cout << ( chg ? '*' : '#' ) << ' ' << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
+		x_ = x_new;
+		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
 	}
 
 private: // Data

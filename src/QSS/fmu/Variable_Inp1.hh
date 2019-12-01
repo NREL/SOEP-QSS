@@ -105,7 +105,7 @@ public: // Methods
 		assert( observees_.empty() );
 		init_observers();
 		s_ = f_( tQ );
-		x_0_ = s_.x_0;
+		x_0_ = s_.x0;
 		fmu_set_real( x_0_ );
 	}
 
@@ -113,7 +113,7 @@ public: // Methods
 	void
 	init_1()
 	{
-		x_1_ = s_.x_1;
+		x_1_ = s_.x1;
 		tD = s_.tD;
 		set_qTol();
 		set_tE();
@@ -126,8 +126,8 @@ public: // Methods
 	advance_discrete()
 	{
 		s_ = f_( tX = tQ = tD );
-		x_0_ = s_.x_0;
-		x_1_ = s_.x_1;
+		x_0_ = s_.x0;
+		x_1_ = s_.x1;
 		tD = s_.tD;
 		set_qTol();
 		set_tE();
@@ -141,8 +141,8 @@ public: // Methods
 	advance_discrete_s()
 	{
 		s_ = f_( tX = tQ = tD );
-		x_0_ = s_.x_0;
-		x_1_ = s_.x_1;
+		x_0_ = s_.x0;
+		x_1_ = s_.x1;
 		tD = s_.tD;
 		set_qTol();
 		set_tE();
@@ -155,8 +155,8 @@ public: // Methods
 	advance_QSS()
 	{
 		s_ = f_( tX = tQ = tE );
-		x_0_ = s_.x_0;
-		x_1_ = s_.x_1;
+		x_0_ = s_.x0;
+		x_1_ = s_.x1;
 		tD = s_.tD;
 		set_qTol();
 		set_tE();
@@ -170,14 +170,14 @@ public: // Methods
 	advance_QSS_0()
 	{
 		s_ = f_( tX = tQ = tE );
-		x_0_ = s_.x_0;
+		x_0_ = s_.x0;
 	}
 
 	// QSS Advance: Stage 1
 	void
 	advance_QSS_1()
 	{
-		x_1_ = s_.x_1;
+		x_1_ = s_.x1;
 		tD = s_.tD;
 	}
 

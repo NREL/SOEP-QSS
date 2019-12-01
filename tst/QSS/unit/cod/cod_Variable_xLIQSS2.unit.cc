@@ -37,8 +37,8 @@
 #include <gtest/gtest.h>
 
 // QSS Headers
-#include <QSS/cod/mdl/Function_LTI.hh>
 #include <QSS/cod/Variable_xLIQSS2.hh>
+#include <QSS/cod/mdl/Function_LTI.hh>
 
 // C++ Headers
 #include <algorithm>
@@ -51,13 +51,19 @@ using namespace QSS::cod::mdl;
 TEST( cod_Variable_xLIQSS2Test, Basic )
 {
 	Variable_xLIQSS2< Function_LTI > x1( "x1" );
+	Variable_xLIQSS2< Function_LTI > x2( "x2", 1.0e-4, 1.0e-3 );
+
 	x1.add( 12.0 ).add( 2.0, &x1 );
+	x2.add( 12.0 ).add( &x2 ).add( &x1 );
+
 	x1.init( 2.5 );
+	x2.init( 2.5 );
+
 	EXPECT_EQ( 1.0e-4, x1.rTol );
 	EXPECT_EQ( 1.0e-6, x1.aTol );
 	EXPECT_DOUBLE_EQ( 2.5e-4, x1.qTol );
 	EXPECT_EQ( 0.0, x1.tQ );
-	EXPECT_DOUBLE_EQ( std::sqrt( std::max( x1.rTol * 2.5, x1.aTol ) / 17.0005 ), x1.tE );
+	EXPECT_DOUBLE_EQ( std::sqrt( x1.qTol / 17.0005 ), x1.tE );
 
 	EXPECT_EQ( 2.5, x1.x( 0.0 ) );
 	EXPECT_DOUBLE_EQ( 2.5 + 2.5e-4, x1.q( 0.0 ) );
@@ -73,26 +79,30 @@ TEST( cod_Variable_xLIQSS2Test, Basic )
 	EXPECT_DOUBLE_EQ( 34.001, x1.x2( 1.0 ) );
 	EXPECT_DOUBLE_EQ( 34.001, x1.q2( 1.0 ) );
 
-	double const x1_tE( x1.tE );
-	x1.advance_QSS();
-	EXPECT_EQ( x1_tE, x1.tQ );
-
-	Variable_xLIQSS2< Function_LTI > x2( "x2", 1.0e-4, 1.0e-3 );
-	x2.add( 12.0 ).add( 2.0, &x2 );
-	x2.init( 2.5 );
 	EXPECT_EQ( 1.0e-4, x2.rTol );
 	EXPECT_EQ( 1.0e-3, x2.aTol );
 	EXPECT_DOUBLE_EQ( 1.0e-3, x2.qTol );
 	EXPECT_EQ( 0.0, x2.tQ );
-	EXPECT_DOUBLE_EQ( std::sqrt( std::max( x2.rTol * 2.5, x2.aTol ) / 17.002 ), x2.tE );
+	EXPECT_DOUBLE_EQ( std::sqrt( x2.qTol / ( 17.0 + ( 0.5 * x2.qTol ) + ( 1.5 * x1.qTol ) ) ), x2.tE );
 
-	EXPECT_DOUBLE_EQ( 2.5 + x2.aTol, x2.q( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 2.5, x2.x( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 2.5 + x2.qTol, x2.q( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 17.0 + x2.qTol + x1.qTol, x2.x1( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 17.0 + x2.qTol + x1.qTol, x2.q1( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 17.0005 + 17.00125, x2.x2( 0.0 ) );
+	EXPECT_DOUBLE_EQ( 17.0005 + 17.00125, x2.q2( 0.0 ) );
+
+	double const x1_tE( x1.tE );
+	double const x2_x1( x2.x1( 0.0 ) );
+	x1.advance_QSS();
+	EXPECT_EQ( x1_tE, x1.tQ );
+	EXPECT_EQ( x1_tE, x2.tX );
+	EXPECT_DOUBLE_EQ( 2.5 + ( x2_x1 * x2.tX ) + ( 17.000875 * square( x2.tX ) ), x2.x( x2.tX ) );
 
 	x2.tE = 2.0; // To allow advance to 1.0
 	x2.advance_observer( 1.0 );
 	EXPECT_EQ( 1.0, x2.tX );
-	EXPECT_DOUBLE_EQ( 36.504, x2.x( x2.tX ) );
 
-	EXPECT_EQ( 2U, events.size() );
+	EXPECT_EQ( 2u, events.size() );
 	events.clear();
 }

@@ -37,8 +37,8 @@
 #include <gtest/gtest.h>
 
 // QSS Headers
-#include <QSS/cod/mdl/Function_Inp_sin.hh>
 #include <QSS/cod/Variable_Inp2.hh>
+#include <QSS/cod/mdl/Function_Inp_sin.hh>
 
 using namespace QSS;
 using namespace QSS::cod;
@@ -73,6 +73,6 @@ TEST( cod_Variable_Inp2Test, Basic )
 	u.advance_QSS();
 	EXPECT_EQ( u_tE, u.tQ );
 
-	EXPECT_EQ( 1U, events.size() );
+	EXPECT_EQ( 1u, events.size() );
 	events.clear();
 }

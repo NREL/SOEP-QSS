@@ -1,4 +1,4 @@
-// QSS::cod::Variable_xQSS2 Unit Tests
+// QSS::fmu::Variable_ZCe1 Unit Tests
 //
 // Project: QSS Solver
 //
@@ -37,67 +37,32 @@
 #include <gtest/gtest.h>
 
 // QSS Headers
-#include <QSS/cod/Variable_xQSS2.hh>
-#include <QSS/cod/mdl/Function_LTI.hh>
-
-// C++ Headers
-#include <algorithm>
-#include <cmath>
+#include <QSS/fmu/Variable_ZCe1.hh>
 
 using namespace QSS;
-using namespace QSS::cod;
-using namespace QSS::cod::mdl;
+using namespace QSS::fmu;
 
-TEST( cod_Variable_xQSS2Test, Basic )
+TEST( fmu_Variable_ZCe1Test, Basic )
 {
-	Variable_xQSS2< Function_LTI > x1( "x1" );
-	Variable_xQSS2< Function_LTI > x2( "x2", 1.0e-4, 1.0e-3 );
+	FMU_ME fmu;
 
-	x1.add( 12.0 ).add( 2.0, &x1 );
-	x2.add( 12.0 ).add( &x2 ).add( &x1 );
+	Variable_ZCe1 z( "z", 2.0, 2.0, 1.0e-4, &fmu );
 
-	x1.init( 2.5 );
-	x2.init( 2.5 );
+	EXPECT_EQ( 2.0, z.rTol );
+	EXPECT_EQ( 2.0, z.aTol );
+	EXPECT_EQ( 1.0e-4, z.zTol );
+	EXPECT_EQ( 0.0, z.tQ );
+	EXPECT_EQ( 0.0, z.tX );
+	EXPECT_EQ( 0.0, z.tE );
+	EXPECT_EQ( infinity, z.tZ );
 
-	EXPECT_EQ( 1.0e-4, x1.rTol );
-	EXPECT_EQ( 1.0e-6, x1.aTol );
-	EXPECT_EQ( std::max( x1.rTol * 2.5, x1.aTol ), x1.qTol );
-	EXPECT_EQ( 0.0, x1.tQ );
-	EXPECT_DOUBLE_EQ( std::sqrt( x1.qTol / 17.0 ), x1.tE );
+	EXPECT_EQ( 0.0, z.x( 0.0 ) );
+	EXPECT_EQ( 0.0, z.q( 0.0 ) );
+	EXPECT_EQ( 0.0, z.x1( 0.0 ) );
+	EXPECT_EQ( 0.0, z.q1( 0.0 ) );
 
-	EXPECT_EQ( 2.5, x1.x( 0.0 ) );
-	EXPECT_EQ( 2.5, x1.q( 0.0 ) );
-	EXPECT_EQ( 17.0, x1.x1( 0.0 ) );
-	EXPECT_EQ( 17.0, x1.q1( 0.0 ) );
-	EXPECT_EQ( 34.0, x1.x2( 0.0 ) );
-	EXPECT_EQ( 34.0, x1.q2( 0.0 ) );
-
-	EXPECT_EQ( 2.5 + 17.0 + 17.0, x1.x( 1.0 ) );
-	EXPECT_EQ( 2.5 + 17.0 + 17.0, x1.q( 1.0 ) );
-	EXPECT_EQ( 17.0 + ( 2.0 * 17.0 ), x1.x1( 1.0 ) );
-	EXPECT_EQ( 17.0 + ( 2.0 * 17.0 ), x1.q1( 1.0 ) );
-	EXPECT_EQ( 34.0, x1.x2( 1.0 ) );
-	EXPECT_EQ( 34.0, x1.q2( 1.0 ) );
-
-	EXPECT_EQ( 1.0e-4, x2.rTol );
-	EXPECT_EQ( 1.0e-3, x2.aTol );
-	EXPECT_EQ( std::max( x2.rTol * 2.5, x2.aTol ), x2.qTol );
-	EXPECT_EQ( 0.0, x2.tQ );
-	EXPECT_DOUBLE_EQ( std::sqrt( x2.qTol / 17.0 ), x2.tE );
-
-	EXPECT_EQ( 2.5, x2.x( 0.0 ) );
-	EXPECT_EQ( 2.5, x2.q( 0.0 ) );
-	EXPECT_EQ( 17.0, x2.x1( 0.0 ) );
-	EXPECT_EQ( 17.0, x2.q1( 0.0 ) );
-	EXPECT_EQ( 34.0, x2.x2( 0.0 ) );
-	EXPECT_EQ( 34.0, x2.q2( 0.0 ) );
-
-	double const x1_tE( x1.tE );
-	x1.advance_QSS();
-	EXPECT_EQ( x1_tE, x1.tQ );
-	EXPECT_EQ( x1_tE, x2.tX );
-	EXPECT_DOUBLE_EQ( 2.5 + ( 17.0 * x1.tQ ) + ( 17.0 * square( x1.tQ ) ), x2.x( x2.tX ) );
-
-	EXPECT_EQ( 2u, events.size() );
-	events.clear();
+	EXPECT_EQ( 0.0, z.x( 1.0 ) );
+	EXPECT_EQ( 0.0, z.q( 1.0 ) );
+	EXPECT_EQ( 0.0, z.x1( 1.0 ) );
+	EXPECT_EQ( 0.0, z.q1( 1.0 ) );
 }

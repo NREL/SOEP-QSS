@@ -49,6 +49,7 @@ TEST( fmu_Variable_xQSS1Test, Basic )
 	Variable_xQSS1 x1( "x1", 1.0e-4, 1.0e-6, 42.0, &fmu );
 	EXPECT_EQ( 1.0e-4, x1.rTol );
 	EXPECT_EQ( 1.0e-6, x1.aTol );
+	EXPECT_EQ( std::max( x1.rTol * 42.0, x1.aTol ), x1.qTol );
 	EXPECT_EQ( 0.0, x1.tQ );
 
 	EXPECT_EQ( 42.0, x1.x( 0.0 ) );
@@ -64,6 +65,7 @@ TEST( fmu_Variable_xQSS1Test, Basic )
 	Variable_xQSS1 x2( "x2", 1.0e-4, 1.0e-3, 99.0, &fmu );
 	EXPECT_EQ( 1.0e-4, x2.rTol );
 	EXPECT_EQ( 1.0e-3, x2.aTol );
+	EXPECT_EQ( std::max( x2.rTol * 99.0, x2.aTol ), x2.qTol );
 	EXPECT_EQ( 0.0, x2.tQ );
 
 	EXPECT_EQ( 99.0, x2.x( 0.0 ) );
@@ -106,7 +108,7 @@ TEST( fmu_Variable_xQSS1Test, Achilles )
 		return;
 	}
 
-	EXPECT_EQ( 2U, fmu.eventq->size() );
+	EXPECT_EQ( 2u, fmu.eventq->size() );
 
 	EXPECT_EQ( 100.0, x1->rTol );
 	EXPECT_EQ( 1.0, x1->aTol );

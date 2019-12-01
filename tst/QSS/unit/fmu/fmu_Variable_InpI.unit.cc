@@ -47,6 +47,7 @@ TEST( fmu_Variable_InpITest, Basic )
 	FMU_ME fmu;
 
 	Variable_InpI u( "u", &fmu );
+
 	EXPECT_EQ( 0.0, u.tQ );
 
 	EXPECT_EQ( 0, u.i( 0.0 ) );
