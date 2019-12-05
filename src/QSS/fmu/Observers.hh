@@ -338,6 +338,9 @@ public: // Methods
 		for ( auto observee : zc_oo2s ) {
 			zc_observees_.push_back( observee );
 		}
+		for ( auto observee : zc_oo3s ) {
+			zc_observees_.push_back( observee );
+		}
 		b2_zc_observees_ = zc_oo1s.size();
 		b3_zc_observees_ = zc_oo1s.size() + zc_oo2s.size();
 	}
