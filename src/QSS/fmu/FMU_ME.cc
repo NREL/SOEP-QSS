@@ -1565,17 +1565,9 @@ namespace fmu {
 		doKOut = options::output::k && ( out_var_refs.size() > 0u );
 		std::string const output_dir( options::have_multiple_models() ? name : std::string() );
 		if ( ( options::output::t || options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) { // QSS t0 outputs
-			if ( options::output::x ) x_outs.reserve( vars.size() );
-			if ( options::output::q ) q_outs.reserve( vars.size() );
 			for ( auto var : vars ) {
-				if ( options::output::x ) {
-					x_outs.push_back( Output( output_dir, var->name, 'x' ) );
-					x_outs.back().append( t, var->x( t ) );
-				}
-				if ( options::output::q ) {
-					q_outs.push_back( Output( output_dir, var->name, 'q' ) );
-					q_outs.back().append( t, var->q( t ) );
-				}
+				var->init_out( output_dir );
+				var->out( t );
 			}
 		}
 		if ( options::output::f && ( n_all_outs > 0u ) ) { // FMU t0 outputs
@@ -1656,9 +1648,8 @@ namespace fmu {
 				Time const tStop( std::min( t, tNext ) );
 				while ( tOut < tStop ) {
 					if ( options::output::s ) { // QSS outputs
-						for ( size_type i = 0; i < n_vars; ++i ) {
-							if ( options::output::x ) x_outs[ i ].append( tOut, vars[ i ]->x( tOut ) );
-							if ( options::output::q ) q_outs[ i ].append( tOut, vars[ i ]->q( tOut ) );
+						for ( auto var : vars ) {
+							var->out( tOut );
 						}
 					}
 					if ( options::output::f ) { // FMU outputs
@@ -1772,37 +1763,20 @@ namespace fmu {
 
 						if ( doTOut ) { // Time event output: before discrete changes
 							if ( options::output::a ) { // All variables output
-								for ( size_type i = 0; i < n_vars; ++i ) {
-									if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
-									if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
+								for ( auto var : vars ) {
+									var->out( t );
 								}
 							} else { // Time event and observer output
-								size_type const i( var_idx[ trigger ] );
-								if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
-								if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
-								for ( Variable const * observer : trigger->observers() ) { // Observer output
-									size_type const io( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-									}
-								}
+								trigger->out( t );
+								trigger->observers_out_pre( t );
 							}
 						}
 
 						trigger->advance_discrete();
 
 						if ( doTOut ) { // Time event output: after discrete changes
-							size_type const i( var_idx[ trigger ] );
-							if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
-							if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
-							for ( Variable const * observer : trigger->observers() ) { // Observer output
-								if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-									size_type const io( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-									if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-								}
-							}
+							trigger->out( t );
+							trigger->observers_out_post( t );
 						}
 					} else { // Simultaneous triggers
 						Variables triggers( eventq->top_subs< Variable >() );
@@ -1811,22 +1785,15 @@ namespace fmu {
 
 						if ( doTOut ) { // Time event output: before discrete changes
 							if ( options::output::a ) { // All variables output
-								for ( size_type i = 0; i < n_vars; ++i ) {
-									if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
-									if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
+								for ( auto var : vars ) {
+									var->out( t );
 								}
 							} else { // Time event and observer output
-								for ( Variable const * trigger : triggers ) { // Triggers
-									size_type const i( var_idx[ trigger ] );
-									if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
-									if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
+								for ( Variable * trigger : triggers ) {
+									trigger->out( t );
 								}
-								for ( Variable const * observer : observers_s ) { // Observer output
-									size_type const io( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-									}
+								for ( Variable * observer : observers_s ) { // Observer output
+									observer->observer_out_pre( t );
 								}
 							}
 						}
@@ -1836,21 +1803,14 @@ namespace fmu {
 							trigger->st = s; // Set trigger superdense time
 							trigger->advance_discrete_s();
 						}
-
 						if ( observers_s.have() ) observers_s.advance( t ); // Advance observers
 
 						if ( doTOut ) { // Time event output: after discrete changes
-							for ( Variable const * trigger : triggers ) { // Triggers
-								size_type const i( var_idx[ trigger ] );
-								if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
-								if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
+							for ( Variable * trigger : triggers ) {
+								trigger->out( t );
 							}
-							for ( Variable const * observer : observers_s ) { // Observer output
-								if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-									size_type const io( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-									if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-								}
+							for ( Variable * observer : observers_s ) { // Observer output
+								observer->observer_out_post( t );
 							}
 						}
 					}
@@ -1864,17 +1824,15 @@ namespace fmu {
 						assert( trigger->tZC() == t );
 						trigger->st = s; // Set trigger superdense time
 						trigger->advance_ZC();
+						++c_ZC_events[ trigger ];
 						t_bump = std::max( t_bump, trigger->tZC_bump( t ) );
 						if ( doTOut ) { // Time event output
 							if ( options::output::a ) { // All variables output
-								for ( size_type i = 0; i < n_vars; ++i ) {
-									if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
-									if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
+								for ( auto var : vars ) {
+									var->out( t );
 								}
 							} else { // Time event output
-								size_type const i( var_idx[ trigger ] );
-								if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
-								if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
+								trigger->out( t );
 							}
 						}
 					}
@@ -1924,37 +1882,20 @@ namespace fmu {
 
 							if ( doROut ) { // Requantization output: before handler changes
 								if ( options::output::a ) { // All variables output
-									for ( size_type i = 0; i < n_vars; ++i ) {
-										if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
-										if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
+									for ( auto var : vars ) {
+										var->out( t );
 									}
 								} else { // Requantization and observer output
-									size_type const i( var_idx[ handler ] );
-									if ( options::output::x ) x_outs[ i ].append( t, handler->x( t ) );
-									if ( options::output::q ) q_outs[ i ].append( t, handler->q( t ) );
-									for ( Variable const * observer : handler->observers() ) { // Observer output
-										size_type const io( var_idx[ observer ] );
-										if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-										if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-											if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-										}
-									}
+									handler->out( t );
+									handler->observers_out_pre( t );
 								}
 							}
 
 							handler->advance_handler( t );
 
 							if ( doROut ) { // Requantization output: after handler changes
-								size_type const i( var_idx[ handler ] );
-								if ( options::output::x ) x_outs[ i ].append( t, handler->x( t ) );
-								if ( options::output::q ) q_outs[ i ].append( t, handler->q( t ) );
-								for ( Variable const * observer : handler->observers() ) { // Observer output
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										size_type const io( var_idx[ observer ] );
-										if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-									}
-								}
+								handler->out( t );
+								handler->observers_out_post( t );
 							}
 						} else { // Simultaneous handlers
 							Variables handlers( eventq->top_subs< Variable >() );
@@ -1963,22 +1904,15 @@ namespace fmu {
 
 							if ( doROut ) { // Requantization output: before handler changes
 								if ( options::output::a ) { // All variables output
-									for ( size_type i = 0; i < n_vars; ++i ) {
-										if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
-										if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
+									for ( auto var : vars ) {
+										var->out( t );
 									}
 								} else { // Requantization and observer output
-									for ( Variable const * handler : handlers ) { // Handlers
-										size_type const i( var_idx[ handler ] );
-										if ( options::output::x ) x_outs[ i ].append( t, handler->x( t ) );
-										if ( options::output::q ) q_outs[ i ].append( t, handler->q( t ) );
+									for ( Variable * handler : handlers ) {
+										handler->out( t );
 									}
-									for ( Variable const * observer : observers_s ) { // Observer output
-										size_type const io( var_idx[ observer ] );
-										if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-										if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-											if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-										}
+									for ( Variable * observer : observers_s ) { // Observer output
+										observer->observer_out_pre( t );
 									}
 								}
 							}
@@ -2008,21 +1942,14 @@ namespace fmu {
 							for ( Variable * handler : handlers ) {
 								handler->advance_handler_F();
 							}
-
 							if ( observers_s.have() ) observers_s.advance( t ); // Advance observers
 
 							if ( doROut ) { // Requantization output: after handler changes
-								for ( Variable const * handler : handlers ) {
-									size_type const i( var_idx[ handler ] );
-									if ( options::output::x ) x_outs[ i ].append( t, handler->x( t ) );
-									if ( options::output::q ) q_outs[ i ].append( t, handler->q( t ) );
+								for ( Variable * handler : handlers ) {
+									handler->out( t );
 								}
-								for ( Variable const * observer : observers_s ) { // Observer output
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										size_type const io( var_idx[ observer ] );
-										if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-									}
+								for ( Variable * observer : observers_s ) { // Observer output
+									observer->observer_out_post( t );
 								}
 							}
 						}
@@ -2087,32 +2014,23 @@ namespace fmu {
 						assert( trigger->tE == t );
 						assert( trigger->not_ZC() ); // ZC variable requantizations are QSS_ZC events
 						trigger->st = s; // Set trigger superdense time
+						++c_QSS_events[ trigger ];
 
 						if ( doROut ) { // Requantization output: before requantization
 							if ( options::output::a ) { // All variables output
-								for ( size_type i = 0; i < n_vars; ++i ) {
-									if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
-									if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
+								for ( auto var : vars ) {
+									var->out( t );
 								}
 							} else { // Requantization and observer output
-								size_type const i( var_idx[ trigger ] );
-								if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
-								if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
-								for ( Variable const * observer : trigger->observers() ) { // Observer output
-									size_type const io( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-									}
-								}
+								trigger->out( t );
+								trigger->observers_out_pre( t );
 							}
 						}
 
 						trigger->advance_QSS();
 
 						if ( doROut ) { // Requantization output: after requantization
-							size_type const i( var_idx[ trigger ] );
-							if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
+							trigger->out_q( t );
 						}
 					} else { // Simultaneous triggers
 						++n_QSS_simultaneous_events;
@@ -2122,22 +2040,15 @@ namespace fmu {
 
 						if ( doROut ) { // Requantization output: before requantization
 							if ( options::output::a ) { // All variables output
-								for ( size_type i = 0; i < n_vars; ++i ) {
-									if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
-									if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
+								for ( auto var : vars ) {
+									var->out( t );
 								}
 							} else { // Requantization and observer output
-								for ( Variable const * trigger : triggers ) { // Triggers
-									size_type const i( var_idx[ trigger ] );
-									if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
-									if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
+								for ( Variable * trigger : triggers ) {
+									trigger->out( t );
 								}
-								for ( Variable const * observer : observers_s ) { // Observer output
-									size_type const io( var_idx[ observer ] );
-									if ( options::output::x ) x_outs[ io ].append( t, observer->x( t ) );
-									if ( observer->is_ZC() ) { // Zero-crossing variables requantize in observer advance
-										if ( options::output::q ) q_outs[ io ].append( t, observer->q( t ) );
-									}
+								for ( Variable * observer : observers_s ) { // Observer output
+									observer->observer_out_pre( t );
 								}
 							}
 						}
@@ -2147,6 +2058,7 @@ namespace fmu {
 							assert( trigger->not_ZC() ); // ZC variable requantizations are QSS_ZC events
 							trigger->st = s; // Set trigger superdense time
 							trigger->advance_QSS_0();
+							++c_QSS_events[ trigger ];
 						}
 						for ( Variable * trigger : triggers ) {
 							trigger->advance_QSS_1();
@@ -2168,13 +2080,11 @@ namespace fmu {
 						for ( Variable * trigger : triggers ) {
 							trigger->advance_QSS_F();
 						}
-
 						if ( observers_s.have() ) observers_s.advance( t ); // Advance observers
 
 						if ( doROut ) { // Requantization output: after requantization
-							for ( Variable const * trigger : triggers ) { // Triggers
-								size_type const i( var_idx[ trigger ] );
-								if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
+							for ( Variable * trigger : triggers ) {
+								trigger->out_q( t );
 							}
 						}
 					}
@@ -2184,26 +2094,22 @@ namespace fmu {
 					assert( trigger->tE == t );
 					assert( trigger->is_ZC() );
 					trigger->st = s; // Set trigger superdense time
+					++c_QSS_events[ trigger ];
 
 					if ( doROut ) { // Requantization output: before requantization
 						if ( options::output::a ) { // All variables output
-							for ( size_type i = 0; i < n_vars; ++i ) {
-								if ( options::output::x ) x_outs[ i ].append( t, vars[ i ]->x( t ) );
-								if ( options::output::q ) q_outs[ i ].append( t, vars[ i ]->q( t ) );
+							for ( auto var : vars ) {
+								var->out( t );
 							}
 						} else { // Requantization output
-							size_type const i( var_idx[ trigger ] );
-							if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) );
-							if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
+							trigger->out( t );
 						}
 					}
 
 					trigger->advance_QSS();
 
 					if ( doROut ) { // Requantization output: after requantization
-						size_type const i( var_idx[ trigger ] );
-						if ( options::output::x ) x_outs[ i ].append( t, trigger->x( t ) ); // Zero crossing x trajectory can shift at requantizations
-						if ( options::output::q ) q_outs[ i ].append( t, trigger->q( t ) );
+						trigger->out( t );
 					}
 				} else { // Unsupported event
 					assert( false );
@@ -2259,6 +2165,20 @@ namespace fmu {
 #ifdef _OPENMP
 			std::cout << "Simulation wall time: " << sim_wall_time << " (s)" << std::endl; // Wall time
 #endif
+			if ( options::statistics ) {
+				if ( n_QSS_events > 0 ) {
+					std::cout << "\nQSS Requantization Events:" << std::endl;
+					for ( Variable const * var : vars ) {
+						if ( c_QSS_events[ var ] > 0u ) std::cout << ' ' << var->name << ' ' << c_QSS_events[ var ] << " (" <<  100u * c_QSS_events[ var ] / n_QSS_events << "%)" << std::endl;
+					}
+				}
+				if ( n_ZC_events > 0 ) {
+					std::cout << "\nQSS Zero-Crossing Events:" << std::endl;
+					for ( Variable const * var : vars_ZC ) {
+						if ( c_ZC_events[ var ] > 0u ) std::cout << ' ' << var->name << ' ' << c_ZC_events[ var ] << " (" <<  100u * c_ZC_events[ var ] / n_ZC_events << "%)" << std::endl;
+					}
+				}
+			}
 		}
 	}
 
@@ -2283,16 +2203,8 @@ namespace fmu {
 	{
 		// End time outputs
 		if ( ( options::output::t || options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) { // QSS tE outputs
-			for ( size_type i = 0; i < n_vars; ++i ) {
-				Variable const * var( vars[ i ] );
-				if ( var->tQ < tE ) {
-					if ( options::output::x ) {
-						x_outs[ i ].append( tE, var->x( tE ) );
-					}
-					if ( options::output::q ) {
-						q_outs[ i ].append( tE, var->q( tE ) );
-					}
-				}
+			for ( auto var : vars ) {
+				if ( var->tQ < tE ) var->out( tE );
 			}
 		}
 		if ( options::output::f ) { // FMU tE outputs

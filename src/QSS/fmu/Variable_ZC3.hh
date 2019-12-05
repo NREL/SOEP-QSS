@@ -227,6 +227,7 @@ public: // Methods
 	advance_observer_1( Time const t, Real const v  )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
+		assert( v == z_0( t ) );
 		tX = tQ = t;
 		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );

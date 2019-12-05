@@ -182,6 +182,9 @@ simulate_fmu_me_con( std::vector< std::string > const & paths )
 		fmu_mes[ i ]->init_3_1();
 	}
 	for ( size_type i = 0; i < n_models; ++i ) {
+		fmu_mes[ i ]->init_F();
+	}
+	for ( size_type i = 0; i < n_models; ++i ) {
 		fmu_mes[ i ]->init_ZC();
 	}
 	for ( size_type i = 0; i < n_models; ++i ) {

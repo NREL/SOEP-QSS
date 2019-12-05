@@ -38,14 +38,15 @@
 
 // QSS Headers
 #include <QSS/fmu/Variable.fwd.hh>
+#include <QSS/Target.hh>
 #include <QSS/fmu/Conditional.hh>
 #include <QSS/fmu/FMU_ME.hh>
 #include <QSS/fmu/FMU_Variable.hh>
 #include <QSS/fmu/Observers.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
+#include <QSS/Output.hh>
 #include <QSS/SmoothToken.hh>
-#include <QSS/Target.hh>
 
 // FMI Library Headers
 #include <fmilib.h>
@@ -927,6 +928,67 @@ public: // Methods
 		assert( false );
 	}
 
+public: // Methods: Output
+
+	// Initialize Outputs
+	void
+	init_out( std::string const & dir )
+	{
+		if ( options::output::x ) out_x_.init( dir, name, 'x' );
+		if ( options::output::q ) out_q_.init( dir, name, 'q' );
+	}
+
+	// Output at Time t
+	void
+	out( Time const t )
+	{
+		if ( options::output::x ) out_x_.append( t, x( t ) );
+		if ( options::output::q ) out_q_.append( t, q( t ) );
+	}
+
+	// Output Quantized at Time t
+	void
+	out_q( Time const t )
+	{
+		if ( options::output::q ) out_q_.append( t, q( t ) );
+	}
+
+	// Pre-Event Observer Output at Time t
+	void
+	observer_out_pre( Time const t )
+	{
+		if ( options::output::x ) out_x_.append( t, x( t ) );
+		if ( options::output::q && is_ZC() ) out_q_.append( t, q( t ) );
+	}
+
+	// Post-Event Observer Output at Time t
+	void
+	observer_out_post( Time const t )
+	{
+		if ( is_ZC() ) {
+			if ( options::output::x ) out_x_.append( t, x( t ) );
+			if ( options::output::q ) out_q_.append( t, q( t ) );
+		}
+	}
+
+	// Pre-Event Observers Output at Time t
+	void
+	observers_out_pre( Time const t )
+	{
+		for ( Variable * observer : observers_ ) {
+			observer->observer_out_pre( t );
+		}
+	}
+
+	// Post-Event Observers Output at Time t
+	void
+	observers_out_post( Time const t )
+	{
+		for ( Variable * observer : observers_ ) {
+			observer->observer_out_post( t );
+		}
+	}
+
 public: // Methods: FMU
 
 	// Get FMU Time
@@ -1242,6 +1304,12 @@ protected: // Data
 
 	// Event queue
 	EventQ * eventq_{ nullptr };
+
+private: // Data
+
+	// Outputs
+	Output out_x_; // Continuous rep output
+	Output out_q_; // Quantized rep output
 
 };
 

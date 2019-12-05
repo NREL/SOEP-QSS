@@ -124,6 +124,7 @@ public: // Types
 	using FMU_Vars = std::unordered_map< FMUVarPtr, FMU_Variable, FMUVarPtrHash >; // Map from FMU variables to FMU_Variable objects
 	using FMU_Idxs = std::unordered_map< size_type, Variable * >; // Map from FMU variable indexes to QSS Variables
 	using SmoothTokenOutput = Output_T< SmoothToken >;
+	using Counts = std::unordered_map< Variable const *, size_type >; // Map from Variables to counters
 
 public: // Creation
 
@@ -489,8 +490,6 @@ public: // Data
 	FMU_Idxs fmu_idxs; // Map from FMU variable index to QSS variable
 	Ref_Var qss_var_of_ref;
 	Var_Refs out_var_refs;
-	std::vector< Output > x_outs; // Continuous rep outputs
-	std::vector< Output > q_outs; // Quantized rep outputs
 	std::vector< Output > f_outs; // FMU outputs
 	std::vector< SmoothTokenOutput > k_qss_outs; // FMU-QSS QSS variable smooth token outputs
 	int order_max_NZ{ 0 }; // Non-zero-crossing QSS variable max order
@@ -516,7 +515,9 @@ public: // Data
 	fmi2_boolean_t enterEventMode{ fmi2_false };
 	fmi2_boolean_t terminateSimulation{ fmi2_false };
 	double sim_cpu_time{ 0.0 }; // Simulation CPU time
-	double sim_wall_time{ 0.0 }; // Simulation sall time
+	double sim_wall_time{ 0.0 }; // Simulation wall time
+	Counts c_QSS_events;
+	Counts c_ZC_events;
 
 };
 

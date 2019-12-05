@@ -172,20 +172,29 @@ public: // Methods
 	void
 	init_0()
 	{
+		assert( out_var_ != nullptr );
 		assert( observees_.empty() );
 		init_observers();
 		tQ = out_var_->tQ;
 		tX = out_var_->tX;
 		tE = out_var_->tE;
-		Real const x_( out_var_->x( tQ ) );
-		fmu_set_real( x_ );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		Real const x_0( out_var_->x( tQ ) );
+		fmu_set_real( x_0 );
+		if ( options::output::d ) {
+			std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0;
+			int const out_var_order( out_var_->order() );
+			if ( out_var_order >= 1 ) std::cout << out_var_->x1( tQ ) << "*t";
+			if ( out_var_order >= 2 ) std::cout << one_half * out_var_->x2( tQ ) << "*t^2";
+			if ( out_var_order >= 3 ) std::cout << one_sixth * out_var_->x3( tQ ) << "*t^3";
+			std::cout << std::noshowpos << "   tD=" << out_var_->tD << '\n';
+		}
 	}
 
 	// Connection Advance
 	void
 	advance_connection( Time const t )
 	{
+		assert( out_var_ != nullptr );
 		tQ = out_var_->tQ;
 		tX = out_var_->tX;
 		tE = out_var_->tE;
@@ -200,6 +209,7 @@ public: // Methods
 	void
 	advance_connection_observer()
 	{
+		assert( out_var_ != nullptr );
 		tX = out_var_->tX;
 		tE = out_var_->tE;
 	}

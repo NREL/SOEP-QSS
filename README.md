@@ -169,9 +169,12 @@ Since FMUs are not going expose the full conditional block and clause structure 
 
 Simulation of multiple subsystems models with some outputs connected to inputs in other models is important for SOEP. For this purpose the QSS application was extended to support multiple models and support for a `--con` option to specify interconnections was added. When connections are specified the models run in a synched mode to provide the "current" inputs.
 
+Each connection is specified via a command line options of this form:
+`--con=`_model1_`.`_inp\_var_`:`_model2_`.`_out\_var_
+
 Connected model simulations are supported for FMU-QSS and FMU-ME models.
 
-### Connected FMU-QSS Models
+#### Connected FMU-QSS Models
 
 Connected FMU-QSS models are treated as loosely coupled. Inputs manage their own state and trajectory independent of the corresponding outputs, getting the output state via "smooth tokens" that are packets containing the output value and derivative state. This loose coupling means there is some potential for discrepancy between outputs and inputs. The "smooth tokens" used to communicate output state to inputs has a next discrete even time field so that predicted discrete events will force a refresh of the inputs.
 
@@ -179,16 +182,11 @@ There are two modes for synching the FMU-QSS models:
 1. Specifying a `--dtCon` connection sync time step will simulate each model for that time span in loops until finished. This limits the worst-case time sync error.
 2. Simulating without `--dtCon` causes a model event queue based sync that simulates each model until its next event past the first event time will modify a connected output. This allows other models to catch up before their inputs change. While the recommended approach, this does not assure perfect sync because output events do not trigger events in the corresponding inputs at the event time. It also will more accurate but less efficient than using a large enough `dtCon` to allow more events to be processed in each model simulation pass.
 
-Each connections can be specified via a command line options of this form:
-`--con=`_model1_`.`_inp\_var_`:`_model2_`.`_out\_var_
-
-### Connected FMU-ME Models
+#### Connected FMU-ME Models
 
 There are two methods available for simulating connected FMU-ME models: a loosely coupled approach analogous to the the FMU-QSS method and a "perfect sync" approach.
 
-The perfect sync approach builds a direct connection from the output variable to its inputs in other FMUs. When the output variable has a requantization, discrete, or handler event, changing its quantized state, its connection variables update their state and do observer advances on their own observers. The connection variable is a proxy rather than holding its own trajectory and getting smooth token packet updates. The master simulation loop runs the FMU with the soonest next event time and each FMU simulation runs until it completes an event pass that changes an output variable. This approach assures that all the models are using the same representation for the connected variables so no accuracy loss should occur.
-
-Perfect sync is enabled by using the `--perfect` option with connected FMU-ME models.
+The perfect sync approach builds a direct connection from the output variable to its inputs in other FMUs. When the output variable has a requantization, discrete, or handler event, changing its quantized state, its connection variables update their state and do observer advances on their own observers. The connection variable is a proxy rather than holding its own trajectory and getting smooth token packet updates. The master simulation loop runs the FMU with the soonest next event time and each FMU simulation runs until it completes an event pass that changes an output variable. This approach assures that all the models are using the same representation for the connected variables so no accuracy loss should occur. Perfect sync is enabled by using the `--perfect` option with connected FMU-ME models.
 
 Note: Currently the connected input variables and their observers do not generate output file entries at output variable events. Time sampled output can be used to add more output times to these files to aid in visualization. A reworking of the output logic to move it from the FMU-ME simulation loop to the variable level is anticipated to address this issue.
 

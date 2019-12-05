@@ -46,7 +46,7 @@ namespace QSS {
 namespace options {
 
 QSS qss( QSS::QSS2 ); // QSS method: (x)(LI)QSS(1|2|3)
-double rTol( 1.0e-4 ); // Relative tolerance  [1e-4|FMU]
+double rTol( 1.0e-4 ); // Relative tolerance
 double aTol( 1.0e-6 ); // Absolute tolerance
 double zTol( 0.0 ); // Zero-crossing tolerance
 double zFac( 1.01 ); // Zero-crossing tolerance factor
@@ -70,6 +70,7 @@ bool cycles( false ); // Report dependency cycles?
 bool inflection( false ); // Requantize at inflections?
 bool refine( false ); // Refine FMU zero-crossing roots?
 bool perfect( false ); // Perfect FMU-ME connection sync?
+bool statistics( false ); // Report detailed statistics
 InpFxn fxn; // Map from input variables to function specs
 InpOut con; // Map from input variables to output variables
 std::string out; // Outputs
@@ -124,6 +125,7 @@ help_display()
 	std::cout << " --inflection   Requantize at inflections?  [F]" << '\n';
 	std::cout << " --refine       Refine FMU zero-crossing roots?  [F]" << '\n';
 	std::cout << " --perfect      Perfect FMU-ME connection sync?  [F]" << '\n';
+	std::cout << " --statistics   Report detailed statistics?  [F]" << '\n';
 	std::cout << " --fxn=INP:FXN  FMU input variable function  [step[0|start,1,1]]" << '\n';
 	std::cout << "       INP can be <model>.<var> with 2+ models" << '\n';
 	std::cout << "           FXN is function spec:" << '\n';
@@ -226,6 +228,8 @@ process_args( int argc, char * argv[] )
 			refine = true;
 		} else if ( has_option( arg, "perfect" ) ) {
 			perfect = true;
+		} else if ( has_option( arg, "statistics" ) ) {
+			statistics = true;
 		} else if ( has_value_option( arg, "rTol" ) ) {
 			specified::rTol = true;
 			std::string const rTol_str( arg_value( arg ) );
