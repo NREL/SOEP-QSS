@@ -118,6 +118,8 @@ public: // Methods
 		file_ = std::string( var + '.' + type + ".out" );
 		t_.clear();
 		v_.clear();
+		t_.reserve( capacity_ );
+		v_.reserve( capacity_ );
 		std::ofstream( file_, std::ios_base::binary | std::ios_base::out );
 	}
 
@@ -132,6 +134,8 @@ public: // Methods
 		file_ = std::string( var + '.' + type + ".out" );
 		t_.clear();
 		v_.clear();
+		t_.reserve( capacity_ );
+		v_.reserve( capacity_ );
 		if ( ! dir.empty() ) {
 			if ( ! path::make_dir( dir ) ) { // Model name must be valid directory name
 				std::cerr << "\nError: Output directory creation failed: " << dir << std::endl;
@@ -171,8 +175,6 @@ private: // Methods
 		}
 		t_.clear();
 		v_.clear();
-		t_.reserve( capacity_ );
-		v_.reserve( capacity_ );
 	}
 
 private: // Data
