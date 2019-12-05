@@ -63,6 +63,9 @@ public: // Types
 
 public: // Creation
 
+	// Default Constructor
+	Output_T() = default;
+
 	// Name + Type Constructor
 	Output_T(
 	 std::string const & var,
@@ -104,6 +107,44 @@ public: // Creation
 	}
 
 public: // Methods
+
+	// Initialize Without Output Directory
+	void
+	init(
+	 std::string const & var,
+	 char const type
+	)
+	{
+		file_ = std::string( var + '.' + type + ".out" );
+		t_.clear();
+		v_.clear();
+		t_.reserve( capacity_ );
+		v_.reserve( capacity_ );
+		std::ofstream( file_, std::ios_base::binary | std::ios_base::out );
+	}
+
+	// Initialize With Output Directory
+	void
+	init(
+	 std::string const & dir,
+	 std::string const & var,
+	 char const type
+	)
+	{
+		file_ = std::string( var + '.' + type + ".out" );
+		t_.clear();
+		v_.clear();
+		t_.reserve( capacity_ );
+		v_.reserve( capacity_ );
+		if ( ! dir.empty() ) {
+			if ( ! path::make_dir( dir ) ) { // Model name must be valid directory name
+				std::cerr << "\nError: Output directory creation failed: " << dir << std::endl;
+				std::exit( EXIT_FAILURE );
+			}
+			file_ = dir + path::sep + file_;
+		}
+		std::ofstream( file_, std::ios_base::binary | std::ios_base::out );
+	}
 
 	// Append Time and Value Pair
 	void

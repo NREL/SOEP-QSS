@@ -113,16 +113,16 @@ annotation_start_handle(
 				std::cerr << "\nError: XML EventIndicators Element has no index attribute" << std::endl;
 				std::exit( EXIT_FAILURE );
 			}
-			if ( ! has_reverseDependencies ) {
-				std::cerr << "\nError: XML EventIndicators Element with index " << ei.index << " has no reverseDependencies" << std::endl;
-//				std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes
+			if ( has_reverseDependencies ) {
+				fmuEventIndicators.eventIndicators.push_back( ei );
+				std::cout << "\n EventIndicator Element\n";
+				std::cout << "  index: " << ei.index << '\n';
+				std::cout << "  reverseDependencies:";
+				for ( EventIndicator::size_type const d : ei.reverseDependencies ) std::cout << ' ' << d;
+				std::cout << std::endl;
+			} else {
+				std::cerr << "\nError: XML EventIndicators Element with index " << ei.index << " has no reverseDependencies: Omitting" << std::endl;
 			}
-			fmuEventIndicators.eventIndicators.push_back( ei );
-			std::cout << "\n EventIndicator Element\n";
-			std::cout << "  index: " << ei.index << '\n';
-			std::cout << "  reverseDependencies:";
-			for ( EventIndicator::size_type const d : ei.reverseDependencies ) std::cout << ' ' << d;
-			std::cout << std::endl;
 		} else {
 			fmuEventIndicators.inEventIndicators = false;
 		}

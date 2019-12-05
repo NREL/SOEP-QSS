@@ -38,12 +38,13 @@
 
 // QSS Headers
 #include <QSS/cod/Variable.fwd.hh>
+#include <QSS/Target.hh>
 #include <QSS/cod/Conditional.hh>
 #include <QSS/cod/events.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
+#include <QSS/Output.hh>
 #include <QSS/SmoothToken.hh>
-#include <QSS/Target.hh>
 
 // C++ Headers
 #include <algorithm>
@@ -910,6 +911,67 @@ public: // Methods
 		shift_QSS( tE );
 	}
 
+public: // Methods: Output
+
+	// Initialize Outputs
+	void
+	init_out()
+	{
+		if ( options::output::x ) out_x_.init( name, 'x' );
+		if ( options::output::q ) out_q_.init( name, 'q' );
+	}
+
+	// Output at Time t
+	void
+	out( Time const t )
+	{
+		if ( options::output::x ) out_x_.append( t, x( t ) );
+		if ( options::output::q ) out_q_.append( t, q( t ) );
+	}
+
+	// Output Quantized at Time t
+	void
+	out_q( Time const t )
+	{
+		if ( options::output::q ) out_q_.append( t, q( t ) );
+	}
+
+	// Pre-Event Observer Output at Time t
+	void
+	observer_out_pre( Time const t )
+	{
+		if ( options::output::x ) out_x_.append( t, x( t ) );
+		if ( options::output::q && is_ZC() ) out_q_.append( t, q( t ) );
+	}
+
+	// Post-Event Observer Output at Time t
+	void
+	observer_out_post( Time const t )
+	{
+		if ( is_ZC() ) {
+			if ( options::output::x ) out_x_.append( t, x( t ) );
+			if ( options::output::q ) out_q_.append( t, q( t ) );
+		}
+	}
+
+	// Pre-Event Observers Output at Time t
+	void
+	observers_out_pre( Time const t )
+	{
+		for ( Variable * observer : observers_ ) {
+			observer->observer_out_pre( t );
+		}
+	}
+
+	// Post-Event Observers Output at Time t
+	void
+	observers_out_post( Time const t )
+	{
+		for ( Variable * observer : observers_ ) {
+			observer->observer_out_post( t );
+		}
+	}
+
 protected: // Methods
 
 	// Infinite Aligned Time Step Processing
@@ -973,6 +1035,12 @@ protected: // Data
 	size_type i_beg_ZC_observers_{ 0u }; // Index of first ZC observer
 
 	Variables observees_; // Variables this one depends on
+
+private: // Data
+
+	// Outputs
+	Output out_x_; // Continuous rep output
+	Output out_q_; // Quantized rep output
 
 };
 
