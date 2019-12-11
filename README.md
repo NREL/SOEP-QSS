@@ -186,7 +186,7 @@ There are two modes for synching the FMU-QSS models:
 
 There are two methods available for simulating connected FMU-ME models: a loosely coupled approach analogous to the the FMU-QSS method and a "perfect sync" approach.
 
-The loosely couple approach allows the input variable updates to lag changes to the corresponding outputs by a user-specifiable time step. Inputs also do not generate output file entries at their output variable event times. This approach is provided as a demonstration of how connected FMU-ME could be simulated from a master algorithm that doesn't allow direct communication between the FMUs: the perfect sync approach is recommended instead and should provide better accuracy and efficiency.
+The loosely coupled approach allows the input variable updates to lag changes to the corresponding outputs by a user-specifiable time step. Inputs also do not generate output file entries at their output variable event times. This approach is provided as a demonstration of how connected FMU-ME could be simulated from a master algorithm that doesn't allow direct communication between the FMUs: the perfect sync approach is recommended instead and should provide better accuracy and efficiency.
 
 The perfect sync approach builds a direct connection from the output variable to its inputs in other FMUs. When the output variable has a requantization, discrete, or handler event, changing its quantized state, its connection variables update their state and do observer advances on their own observers. The connection variable is a proxy rather than holding its own trajectory and getting smooth token packet updates. The master simulation loop runs the FMU with the soonest next event time and each FMU simulation runs until it completes an event pass that changes an output variable. This approach assures that all the models are using the same representation for the connected variables so no accuracy loss should occur. It also allows inputs to generate entries to their output files at output variable event times. Perfect sync is enabled by using the `--perfect` option with connected FMU-ME models.
 
@@ -204,6 +204,12 @@ Models defined by FMUs following the FMI 2.0 API can be run by this QSS solver u
 * QSS3 and LIQSS3 solvers can be added when they become more practical with the planned FMI Library FMI 2.0 API extensions with higher derivative support.
 * Input function evaluations will be provided by JModelica when QSS is integrated. For stand-alone QSS testing purposes a few input functions are provided for use with FMUs.
 * Only SI units are supported in FMUs at this time as per LBNL specifications. Support for other units could be added in the future.
+
+### Next-Gen FMU Support
+
+In preparation for anticipated FMI API extensions to JModelica's FMI Library a NextGen branch of this repository has been developed. NextGen assumes that the FMU can provide higher derivatives directly for a variable when its observee variables are set to their values at the evaluation time. This significantly simplifies the QSS code and makes it more practical to implement 3rd order QSS methods. It will also eliminate the cyclic dependency flaw with QSS3+ and xQSS2+ methods.
+The purpose of the NextGen branch is to show approximately how the code will look when this advanced support becomes available and to simplify migration at that time.
+Using placeholder calls to current the FMI API enables this NextGen branch code to compile but it will not run correctly.
 
 ## FMU-QSS
 
