@@ -101,6 +101,7 @@ TEST( fmu_Variable_QSS2Test, Achilles )
 	options::specified::rTol = true;
 	options::aTol = 1.0;
 	options::specified::aTol = true;
+	options::output::x = false;
 
 	std::streambuf * coutBuf( std::cout.rdbuf() ); std::ostringstream strCout; std::cout.rdbuf( strCout.rdbuf() ); // Redirect cout
 	FMU_ME fmu( model );

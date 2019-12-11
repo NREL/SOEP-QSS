@@ -245,7 +245,7 @@ public: // Methods
 
 	// Observer Advance: Stage 2
 	void
-	advance_observer_2( Time const, Real const d )
+	advance_observer_2( Real const d )
 	{
 		assert( d == p_1() );
 		x_2_ = p_2( d );
@@ -253,7 +253,7 @@ public: // Methods
 
 	// Observer Advance: Stage 3
 	void
-	advance_observer_3( Time const t, Real const d )
+	advance_observer_3( Real const d )
 	{
 		assert( d == p_1() );
 		x_3_ = p_3( d );
@@ -425,7 +425,7 @@ private: // Methods
 	Real
 	p_2( Real const d ) const
 	{
-		return p_2( x_1p_ = d, x_1_ );
+		return p_2( x_1_p_ = d, x_1_ );
 	}
 
 	// Coefficient 2 from FMU at Time tQ
@@ -434,32 +434,32 @@ private: // Methods
 	{
 		Time tN( tQ - options::dtNum );
 		fmu_set_time( tN );
-		x_1m_ = z_1( tN );
+		x_1_m_ = z_1( tN );
 		tN = tQ + options::dtNum;
 		fmu_set_time( tN );
-		x_1p_ = z_1( tN );
+		x_1_p_ = z_1( tN );
 		fmu_set_time( tQ );
-		return options::one_over_four_dtNum * ( x_1p_ - x_1m_ ); //ND Centered difference
+		return options::one_over_four_dtNum * ( x_1_p_ - x_1_m_ ); //ND Centered difference
 	}
 
 	// Coefficient 3 from FMU
 	Real
 	p_3( Real const d ) const
 	{
-		return options::one_over_six_dtNum_squared * ( x_1p_ - ( two * x_1_ ) + d ); //ND Centered difference
+		return options::one_over_six_dtNum_squared * ( x_1_p_ - ( two * x_1_ ) + d ); //ND Centered difference
 	}
 
 	// Coefficient 3 from FMU
 	Real
 	z_3() const
 	{
-		return options::one_over_two_dtNum_squared * ( x_1p_ - ( two * x_1_ ) + x_1m_ ); //ND Centered difference
+		return options::one_over_two_dtNum_squared * ( x_1_p_ - ( two * x_1_ ) + x_1_m_ ); //ND Centered difference
 	}
 
 private: // Data
 
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Continuous rep coefficients
-	mutable Real x_1m_{ 0.0 }, x_1p_{ 0.0 }; // Coefficient 1 at minus and plus delta-t for numeric differentiation
+	mutable Real x_1_m_{ 0.0 }, x_1_p_{ 0.0 }; // Coefficient 1 at minus and plus delta-t for numeric differentiation
 
 };
 

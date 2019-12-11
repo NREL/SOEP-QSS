@@ -163,7 +163,7 @@ public: // Methods
 		bool const chg( x_ != x_new );
 		x_ = x_new;
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
-		if ( chg && have_observers_ ) advance_observers();
+		if ( chg && observed_ ) advance_observers();
 	}
 
 	// Discrete Advance: Simultaneous
@@ -176,6 +176,20 @@ public: // Methods
 		shift_discrete( tD );
 		x_ = x_new;
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
+	}
+
+	// Set FMU Variable to Continuous Value at Time t
+	void
+	fmu_set_x( Time const ) const
+	{
+		fmu_set_boolean( x_ );
+	}
+
+	// Set FMU Variable to Quantized Value at Time t
+	void
+	fmu_set_q( Time const ) const
+	{
+		fmu_set_boolean( x_ );
 	}
 
 private: // Data

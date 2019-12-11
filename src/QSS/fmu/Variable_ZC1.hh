@@ -180,17 +180,16 @@ public: // Methods
 
 	// Observer Advance: Stage 1
 	void
-	advance_observer_1( Time const t, Real const v )
+	advance_observer_1( Time const t, Real const x_0, Real const x_0_p )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		assert( v == z_0( t ) );
 		tX = tQ = t;
 		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = v;
+		x_0_ = x_0;
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
-		x_1_ = z_1();
+		x_1_ = z_1( x_0_p );
 		set_qTol();
 		set_tE();
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
@@ -315,6 +314,13 @@ private: // Methods
 	z_1() const
 	{
 		return Z_1( tQ, x_0_ );
+	}
+
+	// Coefficient 1 from FMU at Time tQ
+	Real
+	z_1( Real const x_0_p ) const
+	{
+		return options::one_over_dtNum * ( x_0_p - x_0_ ); //ND Forward Euler
 	}
 
 	// Coefficient 1 from FMU at Time t with Value v

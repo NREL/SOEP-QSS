@@ -170,7 +170,7 @@ public: // Methods
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-		if ( have_observers_ ) advance_observers();
+		if ( observed_ ) advance_observers();
 		if ( have_connections ) advance_connections();
 	}
 
@@ -213,7 +213,7 @@ public: // Methods
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-		if ( have_observers_ ) advance_observers();
+		if ( observed_ ) advance_observers();
 		if ( have_connections ) advance_connections();
 	}
 

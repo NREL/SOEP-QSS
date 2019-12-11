@@ -393,9 +393,18 @@ namespace fmu {
 				fmi2_import_real_variable_t * var_real( fmi2_import_get_variable_as_real( var ) );
 				fmi2_real_t const var_start( var_has_start ? fmi2_import_get_real_variable_start( var_real ) : 0.0 );
 				if ( var_has_start ) std::cout << " Start: " << var_start << std::endl;
-				if ( var_causality == fmi2_causality_enu_output ) {
-					std::cout << " Type: Real: Output" << std::endl;
-					fmu_outs[ var_real ] = FMU_Variable( var, var_real, var_ref, i+1 );
+				if ( ( var_causality == fmi2_causality_enu_local ) || ( var_causality == fmi2_causality_enu_output ) ) {
+					if ( var_causality == fmi2_causality_enu_local ) std::cout << " Type: Real: Local" << std::endl;
+					if ( var_causality == fmi2_causality_enu_output ) std::cout << " Type: Real: Output" << std::endl;
+					if ( ( var_variability == fmi2_variability_enu_continuous ) || ( var_variability == fmi2_variability_enu_discrete ) ) {
+						if ( has_prefix( var_name, "der(" ) && has_suffix( var_name, ")" ) ) {
+							// Skip derivatives
+						} else if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) {
+							// Skip temporaries
+						} else { // Add to FMU outputs
+							fmu_outs[ var_real ] = FMU_Variable( var, var_real, var_ref, i+1 );
+						}
+					}
 				}
 				if ( var_variability == fmi2_variability_enu_continuous ) {
 					std::cout << " Type: Real: Continuous" << std::endl;
@@ -833,8 +842,9 @@ namespace fmu {
 					qss_var_of_ref[ fmi2_import_get_variable_vr( fmu_var.var ) ] = qss_var;
 					var_name_var[ var_name ] = qss_var;
 					state_vars.push_back( qss_var ); // Add to state variables
-					if ( fmi2_import_get_causality( fmu_var.var ) == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
-						outs.push_back( qss_var );
+					fmi2_causality_enu_t const var_causality( fmi2_import_get_causality( fmu_var.var ) );
+					if ( ( var_causality == fmi2_causality_enu_local ) || ( var_causality == fmi2_causality_enu_output ) ) { // Add to FMU QSS variable outputs
+						if ( var_causality == fmi2_causality_enu_output ) outs.push_back( qss_var ); // Skip FMU output of local QSS variables for now
 						fmu_outs.erase( fmu_var.rvr ); // Remove it from non-QSS FMU outputs
 					}
 					fmu_idxs[ fmu_var.idx ] = qss_var; // Add to map from FMU variable index to QSS variable
@@ -873,7 +883,7 @@ namespace fmu {
 		size_type n_ZC_vars( 0 );
 
 		// Event indicators added by OCT
-		bool has_event_indicators( false );
+		has_event_indicators = false;
 		auto const ieis( std::find_if( allEventIndicators.begin(), allEventIndicators.end(), [this]( FMUEventIndicators const & feis ){ return feis.context == this; } ) );
 		if ( ieis == allEventIndicators.end() ) {
 			std::cerr << "\nError: FMU event indicators collection lookup failed for FMU-ME " << name << std::endl;
@@ -943,6 +953,7 @@ namespace fmu {
 		}
 
 		// Explicit zero-crossing variables
+		has_explicit_ZCs = false;
 		for ( size_type i = 0; i < n_fmu_vars; ++i ) {
 			fmi2_import_variable_t * var( fmi2_import_get_variable( var_list, i ) );
 			if ( ( fmi2_import_get_variability( var ) == fmi2_variability_enu_continuous ) && ( fmi2_import_get_variable_base_type( var ) == fmi2_base_type_real ) ) {
@@ -990,6 +1001,7 @@ namespace fmu {
 									fmu_idxs[ fmu_var.idx ] = qss_var; // Add to map from FMU variable index to QSS variable
 									std::cout << " FMU-ME idx: " << fmu_var.idx << " maps to QSS var: " << qss_var->name << std::endl;
 									++n_ZC_vars;
+									has_explicit_ZCs = true;
 
 									// Create conditional for the zero-crossing variable for now: FMU conditional block info would allow us to do more
 									cons.push_back( new Conditional< Variable >( qss_var, eventq ) );
@@ -1042,17 +1054,17 @@ namespace fmu {
 							} else { // Process based on kind of dependent
 								fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
 								if ( kind == fmi2_dependency_factor_kind_dependent ) {
-									std::cout << "  Kind: Dependent (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Dependent (" << kind << ')' << std::endl;
 								} else if ( kind == fmi2_dependency_factor_kind_constant ) {
-									std::cout << "  Kind: Constant (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Constant (" << kind << ')' << std::endl;
 								} else if ( kind == fmi2_dependency_factor_kind_fixed ) {
-									std::cout << "  Kind: Fixed (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Fixed (" << kind << ')' << std::endl;
 								} else if ( kind == fmi2_dependency_factor_kind_tunable ) {
-									std::cout << "  Kind: Tunable (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Tunable (" << kind << ')' << std::endl;
 								} else if ( kind == fmi2_dependency_factor_kind_discrete ) {
-									std::cout << "  Kind: Discrete (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Discrete (" << kind << ')' << std::endl;
 								} else if ( kind == fmi2_dependency_factor_kind_num ) {
-									std::cout << "  Kind: Num (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Num (" << kind << ')' << std::endl;
 								}
 							}
 							auto const idep( fmu_idxs.find( dep_idx ) ); //Do Add support for input variable dependents
@@ -1078,7 +1090,7 @@ namespace fmu {
 					}
 				}
 			} else { // Assume no observers in model (this may not be true: FMI spec says no dependencies => dependent on all)
-				std::cout << "No Derivatives dependency info in FMU-ME XML" << std::endl;
+				std::cout << "\nNo Derivatives dependency info in FMU-ME XML" << std::endl;
 			}
 		}
 
@@ -1118,17 +1130,17 @@ namespace fmu {
 							} else { // Process based on kind of dependent
 								fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
 								if ( kind == fmi2_dependency_factor_kind_dependent ) {
-									std::cout << "  Kind: Dependent (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Dependent (" << kind << ')' << std::endl;
 								} else if ( kind == fmi2_dependency_factor_kind_constant ) {
-									std::cout << "  Kind: Constant (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Constant (" << kind << ')' << std::endl;
 								} else if ( kind == fmi2_dependency_factor_kind_fixed ) {
-									std::cout << "  Kind: Fixed (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Fixed (" << kind << ')' << std::endl;
 								} else if ( kind == fmi2_dependency_factor_kind_tunable ) {
-									std::cout << "  Kind: Tunable (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Tunable (" << kind << ')' << std::endl;
 								} else if ( kind == fmi2_dependency_factor_kind_discrete ) {
-									std::cout << "  Kind: Discrete (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Discrete (" << kind << ')' << std::endl;
 								} else if ( kind == fmi2_dependency_factor_kind_num ) {
-									std::cout << "  Kind: Num (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Num (" << kind << ')' << std::endl;
 								}
 							}
 							auto idep( fmu_idxs.find( dep_idx ) ); //Do Add support for input variable dependents
@@ -1153,7 +1165,7 @@ namespace fmu {
 					}
 				}
 			} else { // Assume no observers in model (this may not be true: FMI spec says no dependencies => dependent on all)
-				std::cout << "No InitialUknowns dependency info in FMU-ME XML" << std::endl;
+				std::cout << "\nNo InitialUknowns dependency info in FMU-ME XML" << std::endl;
 			}
 		}
 
@@ -1225,17 +1237,17 @@ namespace fmu {
 							} else { // Process based on kind of dependent
 								fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
 								if ( kind == fmi2_dependency_factor_kind_dependent ) {
-									std::cout << "  Kind: Dependent (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Dependent (" << kind << ')' << std::endl;
 								} else if ( kind == fmi2_dependency_factor_kind_constant ) {
-									std::cout << "  Kind: Constant (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Constant (" << kind << ')' << std::endl;
 								} else if ( kind == fmi2_dependency_factor_kind_fixed ) {
-									std::cout << "  Kind: Fixed (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Fixed (" << kind << ')' << std::endl;
 								} else if ( kind == fmi2_dependency_factor_kind_tunable ) {
-									std::cout << "  Kind: Tunable (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Tunable (" << kind << ')' << std::endl;
 								} else if ( kind == fmi2_dependency_factor_kind_discrete ) {
-									std::cout << "  Kind: Discrete (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Discrete (" << kind << ')' << std::endl;
 								} else if ( kind == fmi2_dependency_factor_kind_num ) {
-									std::cout << "  Kind: Num (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Num (" << kind << ')' << std::endl;
 								}
 							}
 							auto idep( fmu_idxs.find( dep_idx ) ); //Do Add support for input variable dependents
@@ -1261,7 +1273,7 @@ namespace fmu {
 					}
 				}
 			} else { // Assume no discrete variables dependent on ZC variables in model
-				std::cout << "No discrete variable dependency info in FMU-ME XML" << std::endl;
+				std::cout << "\nNo discrete variable dependency info in FMU-ME XML" << std::endl;
 			}
 		}
 
@@ -1327,17 +1339,17 @@ namespace fmu {
 							} else { // Process based on kind of dependent
 								fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
 								if ( kind == fmi2_dependency_factor_kind_dependent ) {
-									std::cout << "  Kind: Dependent (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Dependent (" << kind << ')' << std::endl;
 								} else if ( kind == fmi2_dependency_factor_kind_constant ) {
-									std::cout << "  Kind: Constant (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Constant (" << kind << ')' << std::endl;
 								} else if ( kind == fmi2_dependency_factor_kind_fixed ) {
-									std::cout << "  Kind: Fixed (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Fixed (" << kind << ')' << std::endl;
 								} else if ( kind == fmi2_dependency_factor_kind_tunable ) {
-									std::cout << "  Kind: Tunable (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Tunable (" << kind << ')' << std::endl;
 								} else if ( kind == fmi2_dependency_factor_kind_discrete ) {
-									std::cout << "  Kind: Discrete (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Discrete (" << kind << ')' << std::endl;
 								} else if ( kind == fmi2_dependency_factor_kind_num ) {
-									std::cout << "  Kind: Num (" << kind << ')' << std::endl;
+									std::cout << "   Kind: Num (" << kind << ')' << std::endl;
 								}
 							}
 							auto const idep( fmu_idxs.find( dep_idx ) ); //Do Add support for input variable dependents
@@ -1363,13 +1375,37 @@ namespace fmu {
 					}
 				}
 			} else { // Assume no output variables dependent on ZC variables in model
-				std::cout << "No output variable dependency info in FMU-ME XML" << std::endl;
+				std::cout << "\nNo output variable dependency info in FMU-ME XML" << std::endl;
 			}
 		}
 
 		// Size checks
 		if ( n_state_vars != n_states ) {
 			std::cerr << "\nError: Number of state variables found (" << n_state_vars << ") is not equal to number in FMU-ME (" << n_states << ')' << std::endl;
+		}
+
+		// Prune non-zero-crossing variables with no observers
+		if ( options::prune ) {
+			std::cout << "\nPruning variables with no observers" << std::endl;
+			Variables vars_new;
+			for ( auto var : vars ) {
+				if ( var->not_ZC() ) { // Non-zero-crossing variable
+					if ( var->observers().size() > 0u ) { // Keep it
+						vars_new.push_back( var );
+					} else { // Prune it
+						std::cout << ' ' << var->name << " pruned" << std::endl;
+						map_remove_value( qss_var_of_ref, var );
+						map_remove_value( var_name_var, var );
+						map_remove_value( fmu_idxs, var );
+						vector_remove_value( outs, var );
+						vector_nullify_value( state_vars, var );
+						delete var;
+					}
+				} else { // Zero-crossing variable
+					vars_new.push_back( var );
+				}
+			}
+			if ( vars_new.size() < vars.size() ) vars = std::move( vars_new );
 		}
 
 		// Sizes
@@ -1607,7 +1643,7 @@ namespace fmu {
 		sim_wall_time = 0.0; // Wall time
 #endif
 
-		std::cout << '\n' + name + " Simulation =====" << std::endl;
+		std::cout << '\n' + name + " Simulation Starting =====" << std::endl;
 	}
 
 	// Simulation Pass
@@ -1661,10 +1697,13 @@ namespace fmu {
 						}
 						if ( n_fmu_outs > 0u ) { // FMU (non-QSS) variables
 							set_time( tOut );
-							for ( size_type i = 0; i < n_states; ++i ) {
-								states[ i ] = state_vars[ i ]->x( tOut );
+//							for ( size_type i = 0; i < n_states; ++i ) {
+//								if ( state_vars[ i ] != nullptr ) states[ i ] = state_vars[ i ]->x( tOut );
+//							}
+//							fmi2_import_set_continuous_states( fmu, states, n_states );
+							for ( auto var : vars_NC ) {
+								var->fmu_set_x( tOut );
 							}
-							fmi2_import_set_continuous_states( fmu, states, n_states );
 							size_type i( n_outs );
 							for ( auto const & e : fmu_outs ) {
 								FMU_Variable const & var( e.second );
@@ -1682,7 +1721,7 @@ namespace fmu {
 //						if ( fmu_qss_fmu_outs.size() > 0u ) {
 //							set_time( tOut );
 //							for ( size_type i = 0; i < n_states; ++i ) {
-//								states[ i ] = state_vars[ i ]->x( tOut );
+//								if ( state_vars[ i ] != nullptr ) states[ i ] = state_vars[ i ]->x( tOut );
 //							}
 //							fmi2_import_set_continuous_states( fmu, states, n_states );
 //							size_type i( n_fmu_qss_qss_outs );
@@ -1792,8 +1831,10 @@ namespace fmu {
 								for ( Variable * trigger : triggers ) {
 									trigger->out( t );
 								}
-								for ( Variable * observer : observers_s ) { // Observer output
-									observer->observer_out_pre( t );
+								if ( options::output::o ) {
+									for ( Variable * observer : observers_s ) { // Observer output
+										observer->observer_out_pre( t );
+									}
 								}
 							}
 						}
@@ -1911,8 +1952,10 @@ namespace fmu {
 									for ( Variable * handler : handlers ) {
 										handler->out( t );
 									}
-									for ( Variable * observer : observers_s ) { // Observer output
-										observer->observer_out_pre( t );
+									if ( options::output::o ) {
+										for ( Variable * observer : observers_s ) { // Observer output
+											observer->observer_out_pre( t );
+										}
 									}
 								}
 							}
@@ -2047,8 +2090,10 @@ namespace fmu {
 								for ( Variable * trigger : triggers ) {
 									trigger->out( t );
 								}
-								for ( Variable * observer : observers_s ) { // Observer output
-									observer->observer_out_pre( t );
+								if ( options::output::o ) {
+									for ( Variable * observer : observers_s ) { // Observer output
+										observer->observer_out_pre( t );
+									}
 								}
 							}
 						}
@@ -2114,23 +2159,24 @@ namespace fmu {
 				} else { // Unsupported event
 					assert( false );
 				}
+				tProc = t;
 			}
 
 			// Report % complete
 			if ( ! options::output::d ) {
-				int const tPerNow( static_cast< int >( 100 * ( t - t0 ) / tSim ) );
+				int const tPerNow( static_cast< int >( 100 * ( tProc - t0 ) / tSim ) );
 				if ( tPerNow > tPer ) { // Report % complete
 					tPer = tPerNow;
-					std::cout << '\r' << std::setw( 3 ) << tPer << "% complete" << std::flush;
+					std::cout << '\r' + name + " Simulation " << std::setw( 3 ) << tPer << "% =====" << std::flush;
 				}
 			}
 
 			// FMU end of step processing
 // Not sure we need to set continuous states: It would be a performance hit
 //ZC and this wipes out ZC bump values between ZC and Handler event calls
-//			set_time( t );
+//			set_time( tProc );
 //			for ( size_type i = 0; i < n_states; ++i ) {
-//				states[ i ] = state_vars[ i ]->x( t );
+//				if ( state_vars[ i ] != nullptr ) states[ i ] = state_vars[ i ]->x( tProc );
 //			}
 //			fmi2_import_set_continuous_states( fmu, states, n_states );
 			fmi2_import_completed_integrator_step( fmu, fmi2_true, &enterEventMode, &terminateSimulation );
@@ -2155,7 +2201,7 @@ namespace fmu {
 
 		// Reporting
 		if ( t >= tE ) {
-			if ( ! options::output::d ) std::cout << '\r' << std::setw( 3 ) << 100 << "% complete" << std::endl;
+			if ( ! options::output::d ) std::cout << '\r' + name + " Simulation 100% =====" << std::endl;
 			std::cout << '\n' + name + " Simulation Complete =====" << std::endl;
 			if ( n_discrete_events > 0 ) std::cout << n_discrete_events << " discrete event passes" << std::endl;
 			if ( n_QSS_events > 0 ) std::cout << n_QSS_events << " requantization event passes" << std::endl;
@@ -2165,7 +2211,7 @@ namespace fmu {
 #ifdef _OPENMP
 			std::cout << "Simulation wall time: " << sim_wall_time << " (s)" << std::endl; // Wall time
 #endif
-			if ( options::statistics ) {
+			if ( options::statistics ) { // Statistics
 				if ( n_QSS_events > 0 ) {
 					std::cout << "\nQSS Requantization Events:" << std::endl;
 					for ( Variable const * var : vars ) {
@@ -2216,10 +2262,13 @@ namespace fmu {
 			}
 			if ( n_fmu_outs > 0u ) { // FMU (non-QSS) variables
 				set_time( tE );
-				for ( size_type i = 0; i < n_states; ++i ) {
-					states[ i ] = state_vars[ i ]->x( tE );
+//				for ( size_type i = 0; i < n_states; ++i ) {
+//					if ( state_vars[ i ] != nullptr ) states[ i ] = state_vars[ i ]->x( tE );
+//				}
+//				fmi2_import_set_continuous_states( fmu, states, n_states );
+				for ( auto var : vars_NC ) {
+					var->fmu_set_x( tE );
 				}
-				fmi2_import_set_continuous_states( fmu, states, n_states );
 				size_type i( n_outs );
 				for ( auto const & e : fmu_outs ) {
 					FMU_Variable const & var( e.second );
@@ -2237,7 +2286,7 @@ namespace fmu {
 //			if ( fmu_qss_fmu_outs.size() > 0u ) {
 //				set_time( tE );
 //				for ( size_type i = 0; i < n_states; ++i ) {
-//					states[ i ] = state_vars[ i ]->x( tE );
+//					if ( state_vars[ i ] != nullptr ) states[ i ] = state_vars[ i ]->x( tE );
 //				}
 //				fmi2_import_set_continuous_states( fmu, states, n_states );
 //				size_type i( n_fmu_qss_qss_outs );
@@ -2257,19 +2306,19 @@ namespace fmu {
 		case fmi2_status_ok:
 			return true;
 		case fmi2_status_warning:
-			if ( ! fxn_name.empty() ) std::cerr << fxn_name << " FMI status = warning" << std::endl;
+			if ( ! fxn_name.empty() ) std::cerr << '\n' << fxn_name << " FMI status = warning" << std::endl;
 			return false;
 		case fmi2_status_discard:
-			if ( ! fxn_name.empty() ) std::cerr << fxn_name << " FMI status = discard" << std::endl;
+			if ( ! fxn_name.empty() ) std::cerr << '\n' << fxn_name << " FMI status = discard" << std::endl;
 			return false;
 		case fmi2_status_error:
-			if ( ! fxn_name.empty() ) std::cerr << fxn_name << " FMI status = error" << std::endl;
+			if ( ! fxn_name.empty() ) std::cerr << '\n' << fxn_name << " FMI status = error" << std::endl;
 			return false;
 		case fmi2_status_fatal:
-			if ( ! fxn_name.empty() ) std::cerr << fxn_name << " FMI status = fatal" << std::endl;
+			if ( ! fxn_name.empty() ) std::cerr << '\n' << fxn_name << " FMI status = fatal" << std::endl;
 			return false;
 		case fmi2_status_pending:
-			if ( ! fxn_name.empty() ) std::cerr << fxn_name << " FMI status = pending" << std::endl;
+			if ( ! fxn_name.empty() ) std::cerr << '\n' << fxn_name << " FMI status = pending" << std::endl;
 			return false;
 		default:
 			return false;

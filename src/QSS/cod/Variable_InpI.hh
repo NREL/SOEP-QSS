@@ -60,7 +60,7 @@ public: // Types
 	using Super::tQ;
 	using Super::tX;
 	using Super::tD;
-	using Super::have_observers_;
+	using Super::observed_;
 	using Super::observees_;
 
 	using Super::add_discrete;
@@ -179,7 +179,7 @@ public: // Methods
 		bool const chg( x_ != x_new );
 		x_ = x_new;
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
-		if ( chg && have_observers_ ) advance_observers();
+		if ( chg && observed_ ) advance_observers();
 	}
 
 	// Discrete Advance: Simultaneous

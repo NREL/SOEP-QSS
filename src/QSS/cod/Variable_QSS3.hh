@@ -66,7 +66,7 @@ public: // Types
 	using Super::dt_max;
 	using Super::dt_inf;
 	using Super::self_observer;
-	using Super::have_observers_;
+	using Super::observed_;
 
 	using Super::add_QSS;
 	using Super::advance_observers;
@@ -231,7 +231,7 @@ public: // Methods
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-		if ( have_observers_ ) advance_observers();
+		if ( observed_ ) advance_observers();
 	}
 
 	// QSS Advance: Stage 0
@@ -288,7 +288,7 @@ public: // Methods
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-		if ( have_observers_ ) advance_observers();
+		if ( observed_ ) advance_observers();
 	}
 
 	// Handler Advance: Stage 0

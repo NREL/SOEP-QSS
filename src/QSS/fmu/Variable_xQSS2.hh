@@ -207,7 +207,7 @@ public: // Methods
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-		if ( have_observers_ ) advance_observers();
+		if ( observed_ ) advance_observers();
 		if ( have_connections ) advance_connections();
 	}
 
@@ -265,7 +265,7 @@ public: // Methods
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-		if ( have_observers_ ) advance_observers();
+		if ( observed_ ) advance_observers();
 		if ( have_connections ) advance_connections();
 	}
 
@@ -346,7 +346,7 @@ public: // Methods
 
 	// Observer Advance: Stage 2
 	void
-	advance_observer_2( Time const, Real const d )
+	advance_observer_2( Real const d )
 	{
 		x_2_ = p_2( d );
 		set_tE_unaligned();

@@ -89,6 +89,7 @@ extern std::size_t pass; // Pass count limit
 extern bool cycles; // Report dependency cycles?
 extern bool inflection; // Requantize at inflections?
 extern bool refine; // Refine FMU zero-crossing roots?
+extern bool prune; // Prune variables with no observers?
 extern bool perfect; // Perfect FMU-ME connection sync?
 extern bool statistics; // Report detailed statistics
 extern InpFxn fxn; // Map from input variables to function specs
@@ -117,6 +118,7 @@ extern bool f; // FMU outputs?
 extern bool k; // FMU smooth tokens?
 extern bool x; // Continuous trajectories?
 extern bool q; // Quantized trajectories?
+extern bool o; // Observer updates?
 extern bool d; // Diagnostic output?
 
 } // output

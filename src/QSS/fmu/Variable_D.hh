@@ -188,7 +188,7 @@ public: // Methods
 		x_ = fmu_get_real(); // Assume FMU ran event handler
 		shift_handler();
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
-		if ( have_observers_ && ( x_ != x_old ) ) advance_observers();
+		if ( observed_ && ( x_ != x_old ) ) advance_observers();
 	}
 
 	// Handler Advance: Stage 0

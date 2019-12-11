@@ -457,6 +457,7 @@ public: // Data
 	Time t0{ 0.0 }; // Simulation start time
 	Time tE{ 0.0 }; // Simulation end time
 	Time t{ 0.0 }; // Simulation current time
+	Time tProc{ 0.0 }; // Time of last processed event
 	Time t_fmu{ 0.0 }; // FMU time
 	Time tOut{ 0.0 }; // Simulation output time
 	size_type iOut{ 1u }; // Output step index
@@ -469,7 +470,7 @@ public: // Data
 	Real rTol; // Relative tolerance
 	Real aTol; // Absolute tolerance
 
-	// Collections
+	// Variables
 	Variables vars; // QSS variables
 	Variables vars_NZ; // Non-zero-crossing variables
 	Variables vars_ZC; // Zero-crossing variables
@@ -496,6 +497,8 @@ public: // Data
 	int order_max_ZC{ 0 }; // Zero-crossing QSS variable max order
 	int order_max_NC{ 0 }; // Non-zero-crossing non-connection QSS variable max order
 	int order_max_CI{ 0 }; // Connection input QSS variable max order
+	bool has_event_indicators{ false };
+	bool has_explicit_ZCs{ false };
 
 	// Output controls
 	bool doSOut{ false };

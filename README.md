@@ -14,13 +14,13 @@ Currently the code has:
 * Zero-crossing event support via OCT event indicator variables or explicit zero crossing variables.
 * Conditional if and when block framework.
 * A simple "baseline" event queue built on `std::multimap`.
-* Simultaneous event support.
+* Simultaneous event support that produces deterministic (non-order-dependent) results.
 * Numeric bulletproofing of root solvers.
 * A master algorithm with sampling and diagnostic output controls.
 * A few simple code-defined example cases.
 * FMU for Model Exchange simulation support.
 * FMU-QSS generation and simulation support.
-* Multiple connected FMU-ME and FMU-QSS model simulation.
+* Connected FMU-ME and FMU-QSS simulation support.
 
 ### Notes
 * Modelica input file processing is not provided: test cases are code-defined or loaded from Modelica-generated FMUs.
@@ -44,7 +44,7 @@ Planned development in anticipated sequence order are:
 * FMU simulation support.
 * FMU-QSS generation and simulation of FMU-ME.
 * Support a mix of different QSS solvers.
-* Support traditional discrete-time solvers.
+* Support for traditional discrete-time solvers.
 
 ## Design
 
@@ -58,7 +58,7 @@ The design concepts are still emerging. The basic constituents of a fast QSS sol
 
 ### Notes
 * For efficiency variables handle their own integration and quantization operations so we don't consider those as separate entities.
-* Parallel updating of variables dependent on the trigger variable is anticipated.
+* Parallel updating of observer variables on trigger variable events has the potential for performance benefits.
 * Priority queues with good concurrency and cache efficiency is a wide research topic: if the event queue is found to be a bottleneck experiments with advanced concepts are planned.
 
 ### Variable
@@ -186,9 +186,9 @@ There are two modes for synching the FMU-QSS models:
 
 There are two methods available for simulating connected FMU-ME models: a loosely coupled approach analogous to the the FMU-QSS method and a "perfect sync" approach.
 
-The perfect sync approach builds a direct connection from the output variable to its inputs in other FMUs. When the output variable has a requantization, discrete, or handler event, changing its quantized state, its connection variables update their state and do observer advances on their own observers. The connection variable is a proxy rather than holding its own trajectory and getting smooth token packet updates. The master simulation loop runs the FMU with the soonest next event time and each FMU simulation runs until it completes an event pass that changes an output variable. This approach assures that all the models are using the same representation for the connected variables so no accuracy loss should occur. Perfect sync is enabled by using the `--perfect` option with connected FMU-ME models.
+The loosely couple approach allows the input variable updates to lag changes to the corresponding outputs by a user-specifiable time step. Inputs also do not generate output file entries at their output variable event times. This approach is provided as a demonstration of how connected FMU-ME could be simulated from a master algorithm that doesn't allow direct communication between the FMUs: the perfect sync approach is recommended instead and should provide better accuracy and efficiency.
 
-Note: Currently the connected input variables and their observers do not generate output file entries at output variable events. Time sampled output can be used to add more output times to these files to aid in visualization. A reworking of the output logic to move it from the FMU-ME simulation loop to the variable level is anticipated to address this issue.
+The perfect sync approach builds a direct connection from the output variable to its inputs in other FMUs. When the output variable has a requantization, discrete, or handler event, changing its quantized state, its connection variables update their state and do observer advances on their own observers. The connection variable is a proxy rather than holding its own trajectory and getting smooth token packet updates. The master simulation loop runs the FMU with the soonest next event time and each FMU simulation runs until it completes an event pass that changes an output variable. This approach assures that all the models are using the same representation for the connected variables so no accuracy loss should occur. It also allows inputs to generate entries to their output files at output variable event times. Perfect sync is enabled by using the `--perfect` option with connected FMU-ME models.
 
 ## FMU Support
 

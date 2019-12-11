@@ -224,31 +224,30 @@ public: // Methods
 
 	// Observer Advance: Stage 1
 	void
-	advance_observer_1( Time const t, Real const v  )
+	advance_observer_1( Time const t, Real const x_0, Real const x_0_p )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		assert( v == z_0( t ) );
 		tX = tQ = t;
 		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = v;
+		x_0_ = x_0;
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
-		x_1_ = z_1();
+		x_1_ = z_1( x_0_p );
 	}
 
 	// Observer Advance: Stage 2
 	void
-	advance_observer_2( Time const )
+	advance_observer_2( Real const x_0_m )
 	{
-		x_2_ = z_2();
+		x_2_ = z_2( x_0_m );
 	}
 
 	// Observer Advance: Stage 3
 	void
-	advance_observer_3( Time const )
+	advance_observer_3( Real const x_0_2p )
 	{
-		x_3_ = z_3();
+		x_3_ = z_3( x_0_2p );
 		set_qTol();
 		set_tE();
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
@@ -419,12 +418,19 @@ private: // Methods
 	{
 		Time tN( tQ - options::dtNum );
 		fmu_set_time( tN );
-		x_0m_ = z_0( tN );
+		x_0_m_ = z_0( tN );
 		tN = tQ + options::dtNum;
 		fmu_set_time( tN );
-		x_0p_ = z_0( tN );
+		x_0_p_ = z_0( tN );
 		fmu_set_time( tQ );
-		return options::one_over_two_dtNum * ( x_0p_ - x_0m_ ); //ND Centered difference
+		return options::one_over_two_dtNum * ( x_0_p_ - x_0_m_ ); //ND Centered difference
+	}
+
+	// Coefficient 1 from FMU at Time tQ
+	Real
+	z_1( Real const x_0_p ) const
+	{
+		return options::one_over_dtNum * ( ( x_0_p_ = x_0_p ) - x_0_ ); //ND Forward Euler
 	}
 
 	// Coefficient 1 from FMU at Time t with Value v
@@ -438,7 +444,14 @@ private: // Methods
 	Real
 	z_2() const
 	{
-		return options::one_over_two_dtNum_squared * ( x_0p_ - ( two * x_0_ ) + x_0m_ ); //ND Centered difference
+		return options::one_over_two_dtNum_squared * ( x_0_p_ - ( two * x_0_ ) + x_0_m_ ); //ND Centered difference
+	}
+
+	// Coefficient 2 from FMU
+	Real
+	z_2( Real const x_0_m ) const
+	{
+		return options::one_over_two_dtNum_squared * ( x_0_p_ - ( two * x_0_ ) + ( x_0_m_ = x_0_m ) ); //ND Centered difference
 	}
 
 	// Coefficient 3 from FMU at Time tQ
@@ -447,15 +460,22 @@ private: // Methods
 	{
 		Time const tN( tQ + ( two * options::dtNum ) );
 		fmu_set_time( tN );
-		Real const x_0pp_( z_0( tN ) );
+		Real const x_0_2p( z_0( tN ) );
 		fmu_set_time( tQ );
-		return options::one_over_six_dtNum_cubed * ( x_0pp_ - ( three * x_0p_ ) + ( three * x_0_ ) - x_0m_ ); //ND Four-point formula
+		return options::one_over_six_dtNum_cubed * ( x_0_2p - ( three * x_0_p_ ) + ( three * x_0_ ) - x_0_m_ ); //ND Four-point formula
+	}
+
+	// Coefficient 3 from FMU
+	Real
+	z_3( Real const x_0_2p ) const
+	{
+		return options::one_over_six_dtNum_cubed * ( x_0_2p - ( three * x_0_p_ ) + ( three * x_0_ ) - x_0_m_ ); //ND Four-point formula
 	}
 
 private: // Data
 
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Continuous rep coefficients
-	mutable Real x_0m_{ 0.0 }, x_0p_{ 0.0 }; // Values at minus and plus delta-t for numeric differentiation
+	mutable Real x_0_m_{ 0.0 }, x_0_p_{ 0.0 }; // Values at minus and plus delta-t for numeric differentiation
 
 };
 

@@ -65,7 +65,7 @@ public: // Types
 	using Super::dt_min;
 	using Super::dt_max;
 	using Super::dt_inf;
-	using Super::have_observers_;
+	using Super::observed_;
 	using Super::observees_;
 
 	using Super::add_discrete;
@@ -165,7 +165,7 @@ public: // Methods
 		set_tE();
 		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
-		if ( have_observers_ ) advance_observers();
+		if ( observed_ ) advance_observers();
 	}
 
 	// Discrete Advance: Simultaneous
@@ -192,7 +192,7 @@ public: // Methods
 		set_tE();
 		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
-		if ( have_observers_ ) advance_observers();
+		if ( observed_ ) advance_observers();
 	}
 
 	// QSS Advance: Stage 0

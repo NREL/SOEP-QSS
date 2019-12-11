@@ -211,6 +211,14 @@ public: // Creation
 	~Variable()
 	{
 		if ( conditional != nullptr ) conditional->var() = nullptr;
+		for ( Variable * observer : observers_ ) {
+			Variables & oos( observer->observees_ );
+			Variables::iterator const i( std::find( oos.begin(), oos.end(), this ) );
+			if ( i != oos.end() ) oos.erase( i );
+		}
+		for ( Variable * observee : observees_ ) {
+			observee->observers_.del( this );
+		}
 	}
 
 protected: // Assignment
@@ -293,6 +301,13 @@ public: // Predicate
 	in_conditional() const
 	{
 		return conditional != nullptr;
+	}
+
+	// Observed?
+	bool
+	observed() const
+	{
+		return observed_;
 	}
 
 public: // Property
@@ -552,7 +567,7 @@ public: // Methods
 	init_observers()
 	{
 		observers_.init();
-		have_observers_ = observers_.have();
+		observed_ = observers_.have();
 		connected_output_observer = observers_.connected_output_observer();
 	}
 
@@ -890,15 +905,7 @@ public: // Methods
 	// Observer Advance: Stage 2
 	virtual
 	void
-	advance_observer_2( Time const )
-	{
-		assert( false );
-	}
-
-	// Observer Advance: Stage 2
-	virtual
-	void
-	advance_observer_2( Time const, Real const )
+	advance_observer_2( Real const )
 	{
 		assert( false );
 	}
@@ -906,15 +913,7 @@ public: // Methods
 	// Observer Advance: Stage 3
 	virtual
 	void
-	advance_observer_3( Time const )
-	{
-		assert( false );
-	}
-
-	// Observer Advance: Stage 3
-	virtual
-	void
-	advance_observer_3( Time const, Real const )
+	advance_observer_3( Real const )
 	{
 		assert( false );
 	}
@@ -943,6 +942,7 @@ public: // Methods: Output
 	{
 		if ( options::output::x ) out_x_.append( t, x( t ) );
 		if ( options::output::q ) out_q_.append( t, q( t ) );
+		if ( have_connections ) connections_out( t );
 	}
 
 	// Output Quantized at Time t
@@ -950,6 +950,7 @@ public: // Methods: Output
 	out_q( Time const t )
 	{
 		if ( options::output::q ) out_q_.append( t, q( t ) );
+		if ( have_connections ) connections_out_q( t );
 	}
 
 	// Pre-Event Observer Output at Time t
@@ -958,6 +959,7 @@ public: // Methods: Output
 	{
 		if ( options::output::x ) out_x_.append( t, x( t ) );
 		if ( options::output::q && is_ZC() ) out_q_.append( t, q( t ) );
+		if ( have_connections ) connections_observer_out_pre( t );
 	}
 
 	// Post-Event Observer Output at Time t
@@ -967,6 +969,7 @@ public: // Methods: Output
 		if ( is_ZC() ) {
 			if ( options::output::x ) out_x_.append( t, x( t ) );
 			if ( options::output::q ) out_q_.append( t, q( t ) );
+			if ( have_connections ) connections_observer_out_post( t );
 		}
 	}
 
@@ -974,8 +977,10 @@ public: // Methods: Output
 	void
 	observers_out_pre( Time const t )
 	{
-		for ( Variable * observer : observers_ ) {
-			observer->observer_out_pre( t );
+		if ( options::output::o ) {
+			for ( Variable * observer : observers_ ) {
+				observer->observer_out_pre( t );
+			}
 		}
 	}
 
@@ -983,10 +988,28 @@ public: // Methods: Output
 	void
 	observers_out_post( Time const t )
 	{
-		for ( Variable * observer : observers_ ) {
-			observer->observer_out_post( t );
+		if ( options::output::o ) {
+			for ( Variable * observer : observers_ ) {
+				observer->observer_out_post( t );
+			}
 		}
 	}
+
+	// Connections Output at Time t
+	void
+	connections_out( Time const t );
+
+	// Connections Output at Time t
+	void
+	connections_out_q( Time const t );
+
+	// Connections Pre-Event Observer Output at Time t
+	void
+	connections_observer_out_pre( Time const t );
+
+	// Connections Post-Event Observer Output at Time t
+	void
+	connections_observer_out_post( Time const t );
 
 public: // Methods: FMU
 
@@ -1055,6 +1078,7 @@ public: // Methods: FMU
 	}
 
 	// Set FMU Variable to Continuous Value at Time t
+	virtual
 	void
 	fmu_set_x( Time const t ) const
 	{
@@ -1063,6 +1087,7 @@ public: // Methods: FMU
 	}
 
 	// Set FMU Variable to Quantized Value at Time t
+	virtual
 	void
 	fmu_set_q( Time const t ) const
 	{
@@ -1296,7 +1321,7 @@ protected: // Data
 
 	// Observers
 	Observers< Variable > observers_; // Variables dependent on this one
-	bool have_observers_{ false }; // Have observers?
+	bool observed_{ false }; // Has observers?
 
 	// Observees
 	Variables observees_; // Variables this one depends on

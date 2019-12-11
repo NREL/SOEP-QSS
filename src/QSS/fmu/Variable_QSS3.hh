@@ -226,7 +226,7 @@ public: // Methods
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-		if ( have_observers_ ) advance_observers();
+		if ( observed_ ) advance_observers();
 		if ( have_connections ) advance_connections();
 	}
 
@@ -292,7 +292,7 @@ public: // Methods
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-		if ( have_observers_ ) advance_observers();
+		if ( observed_ ) advance_observers();
 		if ( have_connections ) advance_connections();
 	}
 
@@ -381,14 +381,14 @@ public: // Methods
 
 	// Observer Advance: Stage 2
 	void
-	advance_observer_2( Time const, Real const d )
+	advance_observer_2( Real const d )
 	{
 		x_2_ = p_2( d );
 	}
 
 	// Observer Advance: Stage 3
 	void
-	advance_observer_3( Time const, Real const d )
+	advance_observer_3( Real const d )
 	{
 		x_3_ = p_3( d );
 		set_tE_unaligned();
@@ -467,7 +467,7 @@ private: // Methods
 	Real
 	p_2( Real const d ) const
 	{
-		return p_2( x_1p_ = d, x_1_ );
+		return p_2( x_1_p_ = d, x_1_ );
 	}
 
 	// Coefficient 2 from FMU at Time tQ
@@ -483,12 +483,12 @@ private: // Methods
 	{
 		Time tN( t - options::dtNum );
 		fmu_set_time( tN );
-		x_1m_ = c_1( tN );
+		x_1_m_ = c_1( tN );
 		tN = t + options::dtNum;
 		fmu_set_time( tN );
-		x_1p_ = c_1( tN );
+		x_1_p_ = c_1( tN );
 		fmu_set_time( t );
-		return options::one_over_four_dtNum * ( x_1p_ - x_1m_ ); //ND Centered difference
+		return options::one_over_four_dtNum * ( x_1_p_ - x_1_m_ ); //ND Centered difference
 	}
 
 	// Coefficient 2 from FMU at Time tQ
@@ -502,14 +502,14 @@ private: // Methods
 	Real
 	p_3( Real const d ) const
 	{
-		return options::one_over_six_dtNum_squared * ( x_1p_ - ( two * x_1_ ) + d ); //ND Centered difference
+		return options::one_over_six_dtNum_squared * ( x_1_p_ - ( two * x_1_ ) + d ); //ND Centered difference
 	}
 
 	// Coefficient 3 from FMU
 	Real
 	c_3() const
 	{
-		return options::one_over_six_dtNum_squared * ( x_1p_ - ( two * x_1_ ) + x_1m_ ); //ND Centered difference
+		return options::one_over_six_dtNum_squared * ( x_1_p_ - ( two * x_1_ ) + x_1_m_ ); //ND Centered difference
 	}
 
 	// Coefficient 3 from FMU
@@ -523,7 +523,7 @@ private: // Data
 
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Continuous rep coefficients
 	Real q_0_{ 0.0 }, q_1_{ 0.0 }, q_2_{ 0.0 }; // Quantized rep coefficients
-	mutable Real x_1m_{ 0.0 }, x_1p_{ 0.0 }; // Coefficient 1 at minus and plus delta-t for numeric differentiation
+	mutable Real x_1_m_{ 0.0 }, x_1_p_{ 0.0 }; // Coefficient 1 at minus and plus delta-t for numeric differentiation
 
 };
 
