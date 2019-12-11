@@ -69,6 +69,7 @@ std::size_t pass( 20 ); // Pass count limit
 bool cycles( false ); // Report dependency cycles?
 bool inflection( false ); // Requantize at inflections?
 bool refine( false ); // Refine FMU zero-crossing roots?
+bool prune( false ); // Prune variables with no observers?
 bool perfect( false ); // Perfect FMU-ME connection sync?
 bool statistics( false ); // Report detailed statistics
 InpFxn fxn; // Map from input variables to function specs
@@ -97,6 +98,7 @@ bool f( true ); // FMU outputs?
 bool k( true ); // FMU-QSS smooth tokens?
 bool x( true ); // Continuous trajectories?
 bool q( false ); // Quantized trajectories?
+bool o( true ); // Observer updates?
 bool d( false ); // Diagnostic output?
 
 } // output
@@ -117,13 +119,14 @@ help_display()
 	std::cout << " --dtInf=STEP   Inf alt time step (s)  [infinity]" << '\n';
 	std::cout << " --dtZC=STEP    FMU zero-crossing time step (s)  [1e-9]" << '\n';
 	std::cout << " --dtNum=STEP   Numeric differentiation time step (s)  [1e-6]" << '\n';
-	std::cout << " --dtCon=STEP   FMU connection sync time step (s)  [1e-6]" << '\n';
+	std::cout << " --dtCon=STEP   FMU connection sync time step (s)  [0]" << '\n';
 	std::cout << " --dtOut=STEP   Sampled & FMU output time step (s)  [1e-3]" << '\n';
 	std::cout << " --tEnd=TIME    End time (s)  [1|FMU]" << '\n';
 	std::cout << " --pass=COUNT   Pass count limit  [20]" << '\n';
 	std::cout << " --cycles       Report dependency cycles?  [F]" << '\n';
 	std::cout << " --inflection   Requantize at inflections?  [F]" << '\n';
 	std::cout << " --refine       Refine FMU zero-crossing roots?  [F]" << '\n';
+	std::cout << " --prune        Prune variables with no observers?  [F]" << '\n';
 	std::cout << " --perfect      Perfect FMU-ME connection sync?  [F]" << '\n';
 	std::cout << " --statistics   Report detailed statistics?  [F]" << '\n';
 	std::cout << " --fxn=INP:FXN  FMU input variable function  [step[0|start,1,1]]" << '\n';
@@ -135,7 +138,7 @@ help_display()
 	std::cout << "           toggle[h0,h,d] => h0 + h * ( floor( t / d ) % 2 )" << '\n';
 	std::cout << " --con=INP:OUT  Connect FMU input and output variables" << '\n';
 	std::cout << "       INP and OUT syntax is <model>.<var>" << '\n';
-	std::cout << " --out=OUTPUTS  Outputs  [trfkx]" << '\n';
+	std::cout << " --out=OUTPUTS  Outputs  [trfkxo]" << '\n';
 	std::cout << "       t  Time events" << '\n';
 	std::cout << "       r  Requantizations" << '\n';
 	std::cout << "       a  All variables" << '\n';
@@ -144,6 +147,7 @@ help_display()
 	std::cout << "       k  FMU smooth tokens" << '\n';
 	std::cout << "       x  Continuous trajectories" << '\n';
 	std::cout << "       q  Quantized trajectories" << '\n';
+	std::cout << "       o  Observer updates" << '\n';
 	std::cout << "       d  Diagnostic output" << '\n';
 	std::cout << '\n';
 	std::cout << "Models:" << "\n\n";
@@ -217,7 +221,7 @@ process_args( int argc, char * argv[] )
 			} else if ( qss_name == "XLIQSS3" ) {
 				qss = QSS::xLIQSS3;
 			} else {
-				std::cerr << "Error: Unsupported QSS method: " << qss_name << std::endl;
+				std::cerr << "\nError: Unsupported QSS method: " << qss_name << std::endl;
 				fatal = true;
 			}
 		} else if ( has_option( arg, "cycles" ) ) {
@@ -226,6 +230,8 @@ process_args( int argc, char * argv[] )
 			inflection = true;
 		} else if ( has_option( arg, "refine" ) ) {
 			refine = true;
+		} else if ( has_option( arg, "prune" ) ) {
+			prune = true;
 		} else if ( has_option( arg, "perfect" ) ) {
 			perfect = true;
 		} else if ( has_option( arg, "statistics" ) ) {
@@ -236,11 +242,11 @@ process_args( int argc, char * argv[] )
 			if ( is_double( rTol_str ) ) {
 				rTol = double_of( rTol_str );
 				if ( rTol < 0.0 ) {
-					std::cerr << "Error: Negative rTol: " << rTol_str << std::endl;
+					std::cerr << "\nError: Negative rTol: " << rTol_str << std::endl;
 					fatal = true;
 				}
 			} else {
-				std::cerr << "Error: Nonnumeric rTol: " << rTol_str << std::endl;
+				std::cerr << "\nError: Nonnumeric rTol: " << rTol_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "aTol" ) ) {
@@ -250,13 +256,13 @@ process_args( int argc, char * argv[] )
 				aTol = double_of( aTol_str );
 				if ( aTol == 0.0 ) {
 					aTol = std::numeric_limits< double >::min();
-					std::cerr << "Warning: aTol set to: " << aTol << std::endl;
+					std::cerr << "\nWarning: aTol set to: " << aTol << std::endl;
 				} else if ( aTol < 0.0 ) {
-					std::cerr << "Error: Negative aTol: " << aTol_str << std::endl;
+					std::cerr << "\nError: Negative aTol: " << aTol_str << std::endl;
 					fatal = true;
 				}
 			} else {
-				std::cerr << "Error: Nonnumeric aTol: " << aTol_str << std::endl;
+				std::cerr << "\nError: Nonnumeric aTol: " << aTol_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "zTol" ) ) {
@@ -265,11 +271,11 @@ process_args( int argc, char * argv[] )
 			if ( is_double( zTol_str ) ) {
 				zTol = double_of( zTol_str );
 				if ( zTol < 0.0 ) {
-					std::cerr << "Error: Negative zTol: " << zTol_str << std::endl;
+					std::cerr << "\nError: Negative zTol: " << zTol_str << std::endl;
 					fatal = true;
 				}
 			} else {
-				std::cerr << "Error: Nonnumeric zTol: " << zTol_str << std::endl;
+				std::cerr << "\nError: Nonnumeric zTol: " << zTol_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "zFac" ) ) {
@@ -277,11 +283,11 @@ process_args( int argc, char * argv[] )
 			if ( is_double( zFac_str ) ) {
 				zFac = double_of( zFac_str );
 				if ( zFac < 1.0 ) {
-					std::cerr << "Error: zFac < 1.0: " << zFac_str << std::endl;
+					std::cerr << "\nError: zFac < 1.0: " << zFac_str << std::endl;
 					fatal = true;
 				}
 			} else {
-				std::cerr << "Error: Nonnumeric zFac: " << zFac_str << std::endl;
+				std::cerr << "\nError: Nonnumeric zFac: " << zFac_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtMin" ) ) {
@@ -289,11 +295,11 @@ process_args( int argc, char * argv[] )
 			if ( is_double( dtMin_str ) ) {
 				dtMin = double_of( dtMin_str );
 				if ( dtMin < 0.0 ) {
-					std::cerr << "Error: Negative dtMin: " << dtMin_str << std::endl;
+					std::cerr << "\nError: Negative dtMin: " << dtMin_str << std::endl;
 					fatal = true;
 				}
 			} else {
-				std::cerr << "Error: Nonnumeric dtMin: " << dtMin_str << std::endl;
+				std::cerr << "\nError: Nonnumeric dtMin: " << dtMin_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtMax" ) ) {
@@ -301,11 +307,11 @@ process_args( int argc, char * argv[] )
 			if ( is_double( dtMax_str ) ) {
 				dtMax = double_of( dtMax_str );
 				if ( dtMax < 0.0 ) {
-					std::cerr << "Error: Negative dtMax: " << dtMax_str << std::endl;
+					std::cerr << "\nError: Negative dtMax: " << dtMax_str << std::endl;
 					fatal = true;
 				}
 			} else {
-				std::cerr << "Error: Nonnumeric dtMax: " << dtMax_str << std::endl;
+				std::cerr << "\nError: Nonnumeric dtMax: " << dtMax_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtInf" ) ) {
@@ -313,11 +319,11 @@ process_args( int argc, char * argv[] )
 			if ( is_double( dtInf_str ) ) {
 				dtInf = double_of( dtInf_str );
 				if ( dtInf < 0.0 ) {
-					std::cerr << "Error: Negative dtInf: " << dtInf_str << std::endl;
+					std::cerr << "\nError: Negative dtInf: " << dtInf_str << std::endl;
 					fatal = true;
 				}
 			} else {
-				std::cerr << "Error: Nonnumeric dtInf: " << dtInf_str << std::endl;
+				std::cerr << "\nError: Nonnumeric dtInf: " << dtInf_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtZC" ) ) {
@@ -326,11 +332,11 @@ process_args( int argc, char * argv[] )
 			if ( is_double( dtZC_str ) ) {
 				dtZC = double_of( dtZC_str );
 				if ( dtZC < 0.0 ) {
-					std::cerr << "Error: Negative dtZC: " << dtZC_str << std::endl;
+					std::cerr << "\nError: Negative dtZC: " << dtZC_str << std::endl;
 					fatal = true;
 				}
 			} else {
-				std::cerr << "Error: Nonnumeric dtZC: " << dtZC_str << std::endl;
+				std::cerr << "\nError: Nonnumeric dtZC: " << dtZC_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtNum" ) ) {
@@ -338,7 +344,7 @@ process_args( int argc, char * argv[] )
 			if ( is_double( dtNum_str ) ) {
 				dtNum = double_of( dtNum_str );
 				if ( dtNum <= 0.0 ) {
-					std::cerr << "Error: Nonpositive dtNum: " << dtNum_str << std::endl;
+					std::cerr << "\nError: Nonpositive dtNum: " << dtNum_str << std::endl;
 					fatal = true;
 				}
 				one_over_dtNum = 1.0 / dtNum;
@@ -349,19 +355,19 @@ process_args( int argc, char * argv[] )
 				one_over_six_dtNum_squared = 1.0 / ( 6.0 * ( dtNum * dtNum ) );
 				one_over_six_dtNum_cubed = 1.0 / ( 6.0 * ( dtNum * dtNum * dtNum ) );
 			} else {
-				std::cerr << "Error: Nonnumeric dtNum: " << dtNum_str << std::endl;
+				std::cerr << "\nError: Nonnumeric dtNum: " << dtNum_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtCon" ) ) {
 			std::string const dtCon_str( arg_value( arg ) );
 			if ( is_double( dtCon_str ) ) {
 				dtCon = double_of( dtCon_str );
-				if ( dtCon <= 0.0 ) {
-					std::cerr << "Error: Nonpositive dtCon: " << dtCon_str << std::endl;
+				if ( dtCon < 0.0 ) {
+					std::cerr << "\nError: Negative dtCon: " << dtCon_str << std::endl;
 					fatal = true;
 				}
 			} else {
-				std::cerr << "Error: Nonnumeric dtCon: " << dtCon_str << std::endl;
+				std::cerr << "\nError: Nonnumeric dtCon: " << dtCon_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtOut" ) ) {
@@ -369,11 +375,11 @@ process_args( int argc, char * argv[] )
 			if ( is_double( dtOut_str ) ) {
 				dtOut = double_of( dtOut_str );
 				if ( dtOut < 0.0 ) {
-					std::cerr << "Error: Negative dtOut: " << dtOut_str << std::endl;
+					std::cerr << "\nError: Negative dtOut: " << dtOut_str << std::endl;
 					fatal = true;
 				}
 			} else {
-				std::cerr << "Error: Nonnumeric dtOut: " << dtOut_str << std::endl;
+				std::cerr << "\nError: Nonnumeric dtOut: " << dtOut_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "tEnd" ) ) {
@@ -382,11 +388,11 @@ process_args( int argc, char * argv[] )
 			if ( is_double( tEnd_str ) ) {
 				tEnd = double_of( tEnd_str );
 				if ( tEnd < 0.0 ) {
-					std::cerr << "Error: Negative tEnd: " << tEnd_str << std::endl;
+					std::cerr << "\nError: Negative tEnd: " << tEnd_str << std::endl;
 					fatal = true;
 				}
 			} else {
-				std::cerr << "Error: Nonnumeric tEnd: " << tEnd_str << std::endl;
+				std::cerr << "\nError: Nonnumeric tEnd: " << tEnd_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "pass" ) ) {
@@ -394,11 +400,11 @@ process_args( int argc, char * argv[] )
 			if ( is_size( pass_str ) ) {
 				pass = size_of( pass_str );
 				if ( pass < 1 ) {
-					std::cerr << "Error: Nonpositive pass: " << pass_str << std::endl;
+					std::cerr << "\nError: Nonpositive pass: " << pass_str << std::endl;
 					fatal = true;
 				}
 			} else {
-				std::cerr << "Error: Nonintegral pass: " << pass_str << std::endl;
+				std::cerr << "\nError: Nonintegral pass: " << pass_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "fxn" ) ) {
@@ -414,11 +420,11 @@ process_args( int argc, char * argv[] )
 						fxn_spec = var_fxn.substr( isep + 1 );
 						fxn[ var_name ] = fxn_spec;
 					} else {
-						std::cerr << "Error: Input function spec not in variable:function format: " << var_fxn << std::endl;
+						std::cerr << "\nError: Input function spec not in variable:function format: " << var_fxn << std::endl;
 						fatal = true;
 					}
 				} else {
-					std::cerr << "Error: Input function quoted variable name missing end quote: " << var_fxn << std::endl;
+					std::cerr << "\nError: Input function quoted variable name missing end quote: " << var_fxn << std::endl;
 					fatal = true;
 				}
 			} else {
@@ -428,7 +434,7 @@ process_args( int argc, char * argv[] )
 					fxn_spec = var_fxn.substr( isep + 1 );
 					fxn[ var_name ] = fxn_spec;
 				} else {
-					std::cerr << "Error: Input variable function spec not in variable:function format: " << var_fxn << std::endl;
+					std::cerr << "\nError: Input variable function spec not in variable:function format: " << var_fxn << std::endl;
 					fatal = true;
 				}
 			}
@@ -444,11 +450,11 @@ process_args( int argc, char * argv[] )
 					if ( isep != std::string::npos ) {
 						out_name = inp_out.substr( isep + 1 );
 					} else {
-						std::cerr << "Error: Input-output connection spec not in input:output format: " << inp_out << std::endl;
+						std::cerr << "\nError: Input-output connection spec not in input:output format: " << inp_out << std::endl;
 						fatal = true;
 					}
 				} else {
-					std::cerr << "Error: Input-output connection spec quoted input variable name missing end quote: " << inp_out << std::endl;
+					std::cerr << "\nError: Input-output connection spec quoted input variable name missing end quote: " << inp_out << std::endl;
 					fatal = true;
 				}
 			} else {
@@ -457,7 +463,7 @@ process_args( int argc, char * argv[] )
 					inp_name = inp_out.substr( 0, isep );
 					out_name = inp_out.substr( isep + 1 );
 				} else {
-					std::cerr << "Error: Input-output connection spec not in input:output format: " << inp_out << std::endl;
+					std::cerr << "\nError: Input-output connection spec not in input:output format: " << inp_out << std::endl;
 					fatal = true;
 				}
 			}
@@ -466,15 +472,16 @@ process_args( int argc, char * argv[] )
 				if ( qe != std::string::npos ) {
 					out_name = out_name.substr( 1, qe );
 				} else {
-					std::cerr << "Error: Input-output connection spec quoted output variable name missing end quote: " << inp_out << std::endl;
+					std::cerr << "\nError: Input-output connection spec quoted output variable name missing end quote: " << inp_out << std::endl;
 					fatal = true;
 				}
 			}
 			con[ inp_name ] = out_name;
 		} else if ( has_value_option( arg, "out" ) ) {
+			static std::string const out_flags( "trasfkxqod" );
 			out = arg_value( arg );
-			if ( has_any_not_of( out, "trasfkxqd" ) ) {
-				std::cerr << "Error: Output flag not in trasfkxqd: " << out << std::endl;
+			if ( has_any_not_of( out, out_flags ) ) {
+				std::cerr << "\nError: Output flag not in " << out_flags << ": " << out << std::endl;
 				fatal = true;
 			}
 			output::t = has( out, 't' );
@@ -485,15 +492,16 @@ process_args( int argc, char * argv[] )
 			output::k = has( out, 'k' );
 			output::x = has( out, 'x' );
 			output::q = has( out, 'q' );
+			output::o = has( out, 'o' );
 			output::d = has( out, 'd' );
 		} else if ( arg[ 0 ] == '-' ) {
-			std::cerr << "Error: Unsupported option: " << arg << std::endl;
+			std::cerr << "\nError: Unsupported option: " << arg << std::endl;
 			fatal = true;
 		} else { // Treat non-option argument as model
 			models.push_back( arg );
 		}
 		if ( ( dtMax != infinity ) && ( dtInf != infinity ) ) {
-			std::cerr << "Warning: dtInf has no effect when dtMax is specified" << std::endl;
+			std::cerr << "\nWarning: dtInf has no effect when dtMax is specified" << std::endl;
 		}
 	}
 

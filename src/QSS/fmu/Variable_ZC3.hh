@@ -241,7 +241,7 @@ public: // Methods
 
 	// Observer Advance: Stage 2
 	void
-	advance_observer_2( Time const, Real const d )
+	advance_observer_2( Real const d )
 	{
 		assert( d == p_2() );
 		x_2_ = d;
@@ -249,7 +249,7 @@ public: // Methods
 
 	// Observer Advance: Stage 3
 	void
-	advance_observer_3( Time const, Real const d )
+	advance_observer_3( Real const d )
 	{
 		assert( d == p_3() );
 		x_3_ = d;

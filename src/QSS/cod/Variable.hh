@@ -466,9 +466,9 @@ public: // Methods
 	void
 	init_observers()
 	{
-		have_observers_ = ( ! observers_.empty() );
+		observed_ = ( ! observers_.empty() );
 
-		if ( have_observers_ ) {
+		if ( observed_ ) {
 			// Remove duplicates
 			std::sort( observers_.begin(), observers_.end() );
 			observers_.erase( std::unique( observers_.begin(), observers_.end() ), observers_.end() );
@@ -957,8 +957,10 @@ public: // Methods: Output
 	void
 	observers_out_pre( Time const t )
 	{
-		for ( Variable * observer : observers_ ) {
-			observer->observer_out_pre( t );
+		if ( options::output::o ) {
+			for ( Variable * observer : observers_ ) {
+				observer->observer_out_pre( t );
+			}
 		}
 	}
 
@@ -966,8 +968,10 @@ public: // Methods: Output
 	void
 	observers_out_post( Time const t )
 	{
-		for ( Variable * observer : observers_ ) {
-			observer->observer_out_post( t );
+		if ( options::output::o ) {
+			for ( Variable * observer : observers_ ) {
+				observer->observer_out_post( t );
+			}
 		}
 	}
 
@@ -1030,7 +1034,7 @@ public: // Data
 protected: // Data
 
 	Variables observers_; // Variables dependent on this one
-	bool have_observers_{ false }; // Have any observers?
+	bool observed_{ false }; // Have any observers?
 	size_type i_beg_ZC_observers_{ 0u }; // Index of first ZC observer
 
 	Variables observees_; // Variables this one depends on

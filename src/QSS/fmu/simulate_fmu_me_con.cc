@@ -227,8 +227,7 @@ simulate_fmu_me_con( std::vector< std::string > const & paths )
 			eventInfo.newDiscreteStatesNeeded = fmi2_true;
 			eventInfo.nextEventTimeDefined = fmi2_true;
 			eventInfo.nextEventTime = tEnd; // Signal QSS simulation pass to advance time until connected output will be modified
-			FMU_ME & fmu_me( *fmu_mes[ i ] );
-			fmu_me.simulate( &eventInfo, true );
+			fmu_mes[ i ]->simulate( &eventInfo, true );
 			events.erase( i1 );
 			events.insert( EventQ::value_type( eventInfo.terminateSimulation ? infinity : eventInfo.nextEventTime, i ) );
 			time = t2;
@@ -247,7 +246,7 @@ simulate_fmu_me_con( std::vector< std::string > const & paths )
 					eventInfo.nextEventTimeDefined = fmi2_true;
 					eventInfo.nextEventTime = tNext; // Signal QSS simulation pass when to stop
 					FMU_ME & fmu_me( *fmu_mes[ i ] );
-					fmu_me.simulate( &eventInfo, true );
+					if ( fmu_me.t <= tEnd ) fmu_me.simulate( &eventInfo, true );
 				}
 			}
 			time = tNext;

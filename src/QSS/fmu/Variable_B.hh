@@ -188,7 +188,7 @@ public: // Methods
 		x_ = fmu_get_boolean(); // Assume FMU ran event handler
 		shift_handler();
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
-		if ( have_observers_ && ( x_ != x_old ) ) advance_observers();
+		if ( observed_ && ( x_ != x_old ) ) advance_observers();
 	}
 
 	// Handler Advance: Stage 0
@@ -213,6 +213,20 @@ public: // Methods
 	no_advance_handler()
 	{
 		shift_handler();
+	}
+
+	// Set FMU Variable to Continuous Value at Time t
+	void
+	fmu_set_x( Time const ) const
+	{
+		fmu_set_boolean( x_ );
+	}
+
+	// Set FMU Variable to Quantized Value at Time t
+	void
+	fmu_set_q( Time const ) const
+	{
+		fmu_set_boolean( x_ );
 	}
 
 private: // Data

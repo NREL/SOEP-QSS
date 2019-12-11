@@ -202,7 +202,7 @@ public: // Methods
 		fmu_set_time( t ); // Different FMU-ME than trigger
 		fmu_set_real( x_ );
 		if ( options::output::d ) std::cout << "| " << name << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
-		if ( have_observers_ ) advance_observers();
+		if ( observed_ ) advance_observers();
 	}
 
 	// Connection Observer Advance

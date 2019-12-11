@@ -141,6 +141,14 @@ public: // Methods
 		observers_.push_back( v );
 	}
 
+	// Delete Observer
+	void
+	del( Variable * const v )
+	{
+		typename Variables::iterator const i( std::find( observers_.begin(), observers_.end(), v ) );
+		if ( i != observers_.end() ) observers_.erase( i );
+	}
+
 	// Initialize
 	void
 	init()
@@ -231,12 +239,8 @@ public: // Methods
 		// Zero-crossing observer FMU pooled data set up
 		zc_der_refs_.clear();
 		zc_der_vals_.clear();
-		zc_refs_.clear();
-		zc_vals_.clear();
 		zc_der_refs_.reserve( zc_.n_ );
 		zc_der_vals_.reserve( zc_.n_ );
-		zc_refs_.reserve( zc_.n_ );
-		zc_vals_.reserve( zc_.n_ );
 		zc_2_der_refs_.clear();
 		zc_2_der_vals_.clear();
 		zc_2_der_refs_.reserve( zc_.n2_ );
@@ -245,6 +249,10 @@ public: // Methods
 		zc_3_der_vals_.clear();
 		zc_3_der_refs_.reserve( zc_.n3_ );
 		zc_3_der_vals_.reserve( zc_.n3_ );
+		zc_refs_.clear();
+		zc_vals_.clear();
+		zc_refs_.reserve( zc_.n_ );
+		zc_vals_.reserve( zc_.n_ );
 		for ( size_type i = zc_.b_, e = zc_.e_; i < e; ++i ) {
 			zc_der_refs_.push_back( observers_[ i ]->der.ref );
 			zc_der_vals_.push_back( 0.0 );
@@ -372,12 +380,12 @@ public: // Methods
 		if ( nz_.have2_ ) {
 			fmu_me_->get_der2s( nz_2_der_refs_.size(), &nz_2_der_refs_[ 0 ], &nz_2_der_vals_[ 0 ] );
 			for ( size_type i = nz_.b2_, j = 0, e = nz_.e_; i < e; ++i, ++j ) { // Order 2+ observers
-				observers_[ i ]->advance_observer_2( t, nz_2_der_vals_[ j ] );
+				observers_[ i ]->advance_observer_2( nz_2_der_vals_[ j ] );
 			}
 			if ( nz_.have3_ ) {
 				fmu_me_->get_der3s( nz_3_der_refs_.size(), &nz_3_der_refs_[ 0 ], &nz_3_der_vals_[ 0 ] );
 				for ( size_type i = nz_.b3_, j = 0, e = nz_.e_; i < e; ++i, ++j ) { // Order 3+ observers
-					observers_[ i ]->advance_observer_3( t, nz_3_der_vals_[ j ] );
+					observers_[ i ]->advance_observer_3( nz_3_der_vals_[ j ] );
 				}
 			}
 		}
@@ -395,29 +403,17 @@ public: // Methods
 		fmu_me_->get_reals( zc_der_refs_.size(), &zc_der_refs_[ 0 ], &zc_der_vals_[ 0 ] );
 		fmu_me_->get_reals( zc_refs_.size(), &zc_refs_[ 0 ], &zc_vals_[ 0 ] );
 		for ( size_type i = zc_.b_, j = 0, e = zc_.e_; i < e; ++i, ++j ) {
-			if ( zc_der_refs_[ j ] != 0 ) {
-				observers_[ i ]->advance_observer_1( t, zc_der_vals_[ j ], zc_vals_[ j ] );
-			} else {
-				observers_[ i ]->advance_observer_1( t, zc_vals_[ j ] );
-			}
+			observers_[ i ]->advance_observer_1( t, zc_der_vals_[ j ], zc_vals_[ j ] );
 		}
 		if ( zc_.have2_ ) {
 			fmu_me_->get_der2s( zc_2_der_refs_.size(), &zc_2_der_refs_[ 0 ], &zc_2_der_vals_[ 0 ] );
 			for ( size_type i = zc_.b2_, j = 0, e = zc_.e_; i < e; ++i, ++j ) { // Order 2+ observers
-				if ( zc_2_der_refs_[ j ] != 0 ) {
-					observers_[ i ]->advance_observer_2( t, zc_2_der_vals_[ j ] );
-				} else {
-					observers_[ i ]->advance_observer_2( t );
-				}
+				observers_[ i ]->advance_observer_2( zc_2_der_vals_[ j ] );
 			}
 			if ( zc_.have3_ ) {
 				fmu_me_->get_der3s( zc_3_der_refs_.size(), &zc_3_der_refs_[ 0 ], &zc_3_der_vals_[ 0 ] );
 				for ( size_type i = zc_.b3_, j = 0, e = zc_.e_; i < e; ++i, ++j ) { // Order 3+ observers
-					if ( zc_3_der_refs_[ j ] != 0 ) {
-						observers_[ i ]->advance_observer_3( t, zc_3_der_vals_[ j ] );
-					} else {
-						observers_[ i ]->advance_observer_3( t );
-					}
+					observers_[ i ]->advance_observer_3( zc_3_der_vals_[ j ] );
 				}
 			}
 		}

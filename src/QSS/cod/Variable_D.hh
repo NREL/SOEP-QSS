@@ -177,7 +177,7 @@ public: // Methods
 		bool const chg( x_ != x );
 		x_ = x;
 		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
-		if ( chg && have_observers_ ) advance_observers();
+		if ( chg && observed_ ) advance_observers();
 	}
 
 	// Handler Advance: Stage 0

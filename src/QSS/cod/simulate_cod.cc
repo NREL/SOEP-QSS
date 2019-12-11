@@ -288,7 +288,7 @@ simulate( std::string const & model )
 	}
 
 	// Simulation loop
-	std::cout << "\nSimulation Loop =====" << std::endl;
+	std::cout << "\nSimulation Starting =====" << std::endl;
 	size_type const max_pass_count_multiplier( 2 );
 	size_type n_discrete_events( 0 );
 	size_type n_QSS_events( 0 );
@@ -381,8 +381,10 @@ simulate( std::string const & model )
 							for ( Variable * trigger : triggers ) { // Triggers
 								trigger->out( t );
 							}
-							for ( Variable * observer : observers ) { // Observer output
-								observer->observer_out_pre( t );
+							if ( options::output::o ) {
+								for ( Variable * observer : observers ) { // Observer output
+									observer->observer_out_pre( t );
+								}
 							}
 						}
 					}
@@ -461,8 +463,10 @@ simulate( std::string const & model )
 							for ( Variable * handler : handlers ) { // Handlers
 								handler->out( t );
 							}
-							for ( Variable * observer : observers ) { // Observer output
-								observer->observer_out_pre( t );
+							if ( options::output::o ) {
+								for ( Variable * observer : observers ) { // Observer output
+									observer->observer_out_pre( t );
+								}
 							}
 						}
 					}
@@ -535,8 +539,10 @@ simulate( std::string const & model )
 							for ( Variable * trigger : triggers ) { // Triggers
 								trigger->out( t );
 							}
-							for ( Variable * observer : observers ) { // Observer output
-								observer->observer_out_pre( t );
+							if ( options::output::o ) {
+								for ( Variable * observer : observers ) { // Observer output
+									observer->observer_out_pre( t );
+								}
 							}
 						}
 					}
@@ -600,10 +606,10 @@ simulate( std::string const & model )
 			}
 		}
 		if ( ! options::output::d ) { // % complete reporting
-			int const tPerNow( static_cast< int >( 100 * ( t - t0 ) / tSim ) );
+			int const tPerNow( std::min( static_cast< int >( 100 * ( t - t0 ) / tSim ), 100 ) );
 			if ( tPerNow > tPer ) { // Report % complete
 				tPer = tPerNow;
-				std::cout << '\r' << std::setw( 3 ) << tPer << "% complete" << std::flush;
+				std::cout << '\r' << std::setw( 3 ) << tPer << "% =====" << std::flush;
 			}
 		}
 	}
@@ -611,7 +617,7 @@ simulate( std::string const & model )
 #ifdef _OPENMP
 	double const wall_time_end( omp_get_wtime() ); // Wall time
 #endif
-	if ( ! options::output::d ) std::cout << '\r' << std::setw( 3 ) << 100 << "% complete" << std::endl;
+	if ( ! options::output::d ) std::cout << "\r100% =====" << std::endl;
 
 	// End time outputs
 	if ( ( options::output::t || options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) {
