@@ -45,7 +45,6 @@
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
-#include <map>
 #include <utility>
 
 namespace QSS {
@@ -208,33 +207,36 @@ simulate_fmu_me_con_perfect( std::vector< std::string > const & paths )
 		eventInfos.push_back( eventInfo );
 	}
 
-	// Event queue setup
-	using Event = size_type;
-	using EventQ = std::multimap< Time, Event >;
-	EventQ events;
-	for ( size_type i = 0; i < n_models; ++i ) {
-		events.insert( EventQ::value_type( fmu_mes[ i ]->eventq->top_time(), i ) ); // Sorted by top event times
+	// Top event time initialization
+	Time top_time( fmu_mes[ 0u ]->eventq->top_time() );
+	size_type top_model( 0u );
+	for ( size_type i = 1; i < n_models; ++i ) {
+		Time const model_top_time( fmu_mes[ i ]->eventq->top_time() );
+		if ( model_top_time < top_time ) {
+			top_time = model_top_time;
+			top_model = i;
+		}
 	}
 
 	// Simulation loop
 	Time time( tStart );
 	while ( time <= tEnd ) {
-		{ // Scope
-			auto const i1( events.begin() );
-			size_type const i( i1->second );
-			fmi2_event_info_t & eventInfo( eventInfos[ i ] );
-			eventInfo.newDiscreteStatesNeeded = fmi2_true;
-			eventInfo.nextEventTimeDefined = fmi2_false;
-			fmu_mes[ i ]->simulate( &eventInfo, true );
-		}
+		fmi2_event_info_t & eventInfo( eventInfos[ top_model ] );
+		eventInfo.newDiscreteStatesNeeded = fmi2_true;
+		eventInfo.nextEventTimeDefined = fmi2_false;
+		fmu_mes[ top_model ]->simulate( &eventInfo, true );
 
-		// Refresh the event queue: This could be more efficient via direct coupling to the FMU-ME event queues
-		events.clear();
-		for ( size_type i = 0; i < n_models; ++i ) {
-			events.insert( EventQ::value_type( fmu_mes[ i ]->eventq->top_time(), i ) ); // Sorted by top event times
+		// Top event time update: Any model might have event queue changes due to connections
+		top_time = fmu_mes[ 0u ]->eventq->top_time();
+		top_model = 0u;
+		for ( size_type i = 1; i < n_models; ++i ) {
+			Time const model_top_time( fmu_mes[ i ]->eventq->top_time() );
+			if ( model_top_time < top_time ) {
+				top_time = model_top_time;
+				top_model = i;
+			}
 		}
-
-		time = fmu_mes[ events.begin()->second ]->eventq->top_time();
+		time = top_time;
 	}
 
 	// Post-simulate
