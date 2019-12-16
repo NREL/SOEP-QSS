@@ -54,17 +54,17 @@ protected: // Creation
 	// Default Constructor
 	Conditional() = default;
 
-	// Name Constructor
-	explicit
-	Conditional( std::string const & name ) :
-	 Target( name )
-	{}
-
 	// Copy Constructor
 	Conditional( Conditional const & ) = default;
 
 	// Move Constructor
 	Conditional( Conditional && ) noexcept = default;
+
+	// Name Constructor
+	explicit
+	Conditional( std::string const & name ) :
+	 Target( name )
+	{}
 
 protected: // Assignment
 

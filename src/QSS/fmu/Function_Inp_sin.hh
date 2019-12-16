@@ -130,7 +130,7 @@ private: // Data
 	Real const a_b2_{ 1.0 }; // a * b^2
 	Real const a_b3_{ 1.0 }; // a * b^3
 
-};
+}; // Function_Inp_sin
 
 } // fmu
 } // QSS

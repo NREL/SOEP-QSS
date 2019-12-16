@@ -35,6 +35,7 @@
 
 // QSS Headers
 #include <QSS/fmu/FMU_QSS.hh>
+#include <QSS/options.hh>
 #include <QSS/path.hh>
 #include <QSS/string.hh>
 
@@ -88,7 +89,29 @@ namespace fmu {
 		callbacks.realloc = std::realloc;
 		callbacks.free = std::free;
 		callbacks.logger = jm_default_logger;
-		callbacks.log_level = jm_log_level_warning;
+		switch ( options::log ) {
+		case options::LogLevel::fatal:
+			callbacks.log_level = jm_log_level_fatal;
+			break;
+		case options::LogLevel::error:
+			callbacks.log_level = jm_log_level_error;
+			break;
+		case options::LogLevel::warning:
+			callbacks.log_level = jm_log_level_warning;
+			break;
+		case options::LogLevel::info:
+			callbacks.log_level = jm_log_level_info;
+			break;
+		case options::LogLevel::verbose:
+			callbacks.log_level = jm_log_level_verbose;
+			break;
+		case options::LogLevel::debug:
+			callbacks.log_level = jm_log_level_debug;
+			break;
+		case options::LogLevel::all:
+			callbacks.log_level = jm_log_level_all;
+			break;
+		}
 		callbacks.context = 0;
 		context = fmi_import_allocate_context( &callbacks );
 
@@ -155,7 +178,29 @@ namespace fmu {
 		callbacks.realloc = std::realloc;
 		callbacks.free = std::free;
 		callbacks.logger = jm_default_logger;
-		callbacks.log_level = jm_log_level_warning;
+		switch ( options::log ) {
+		case options::LogLevel::fatal:
+			callbacks.log_level = jm_log_level_fatal;
+			break;
+		case options::LogLevel::error:
+			callbacks.log_level = jm_log_level_error;
+			break;
+		case options::LogLevel::warning:
+			callbacks.log_level = jm_log_level_warning;
+			break;
+		case options::LogLevel::info:
+			callbacks.log_level = jm_log_level_info;
+			break;
+		case options::LogLevel::verbose:
+			callbacks.log_level = jm_log_level_verbose;
+			break;
+		case options::LogLevel::debug:
+			callbacks.log_level = jm_log_level_debug;
+			break;
+		case options::LogLevel::all:
+			callbacks.log_level = jm_log_level_all;
+			break;
+		}
 		callbacks.context = 0;
 		context = fmi_import_allocate_context( &callbacks );
 
@@ -215,19 +260,16 @@ namespace fmu {
 		if ( unit_defs != nullptr ) {
 			size_type const n_units( fmi2_import_get_unit_definitions_number( unit_defs ) );
 			std::cout << n_units << " units defined" << std::endl;
-			//bool units_error( false );
 			for ( size_type i = 0; i < n_units; ++i ) {
 				fmi2_import_unit_t * unit( fmi2_import_get_unit( unit_defs, static_cast< unsigned >( i ) ) );
 				if ( unit != nullptr ) {
 					double const scl( fmi2_import_get_SI_unit_factor( unit ) );
 					double const del( fmi2_import_get_SI_unit_offset( unit ) );
 					if ( ( scl != 1.0 ) || ( del != 0.0 ) ) {
-						std::cerr << "\nError: Non-SI unit present: " << fmi2_import_get_unit_name( unit ) << std::endl;
-						//units_error = true;
+						std::cerr << "\n Non-SI unit present: " << fmi2_import_get_unit_name( unit ) << std::endl;
 					}
 				}
 			}
-			//if ( units_error ) std::exit( EXIT_FAILURE ); // Not a fatal error since some non-SI units don't affect integration
 		}
 
 		n_states = fmi2_import_get_number_of_continuous_states( fmu );

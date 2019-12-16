@@ -145,7 +145,7 @@ public: // Methods
 	init_1()
 	{
 		set_qTol();
-		if ( self_observer ) {
+		if ( self_observer() ) {
 			advance_LIQSS_i();
 		} else {
 			x_1_ = p_1();
@@ -156,14 +156,14 @@ public: // Methods
 	void
 	init_F()
 	{
-		if ( self_observer ) {
+		if ( self_observer() ) {
 			q_0_ = l_0_;
 		} else {
 			q_0_ += signum( x_1_ ) * qTol;
 		}
 		set_tE_aligned();
 		add_QSS( tE );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// QSS Advance
@@ -174,7 +174,7 @@ public: // Methods
 		tX = tQ = tE;
 		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * tDel );
 		set_qTol();
-		if ( self_observer ) {
+		if ( self_observer() ) {
 			advance_LIQSS();
 		} else {
 			x_1_ = h_1();
@@ -182,9 +182,9 @@ public: // Methods
 		}
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-		if ( observed_ ) advance_observers();
-		if ( have_connections ) advance_connections();
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( observed() ) advance_observers();
+		if ( connected() ) advance_connections();
 	}
 
 	// QSS Advance: Stage 0
@@ -201,7 +201,7 @@ public: // Methods
 	advance_QSS_1()
 	{
 		set_qTol();
-		if ( self_observer ) {
+		if ( self_observer() ) {
 			advance_LIQSS_s();
 		} else {
 			x_1_ = h_1();
@@ -212,15 +212,15 @@ public: // Methods
 	void
 	advance_QSS_F()
 	{
-		if ( self_observer ) {
+		if ( self_observer() ) {
 			q_0_ = l_0_;
 		} else {
 			q_0_ += signum( x_1_ ) * qTol;
 		}
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-		if ( have_connections ) advance_connections();
+		if ( options::output::d ) std::cout << "= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( connected() ) advance_connections();
 	}
 
 	// Handler Advance
@@ -234,9 +234,9 @@ public: // Methods
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-		if ( observed_ ) advance_observers();
-		if ( have_connections ) advance_connections();
+		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( observed() ) advance_observers();
+		if ( connected() ) advance_connections();
 	}
 
 	// Handler Advance: Stage 0
@@ -262,8 +262,8 @@ public: // Methods
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-		if ( have_connections ) advance_connections();
+		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( connected() ) advance_connections();
 	}
 
 	// Handler No-Advance
@@ -284,7 +284,7 @@ public: // Methods
 		x_1_ = c_1( t );
 		set_tE_unaligned();
 		shift_QSS( tE );
-		if ( have_connections ) advance_connections_observer();
+		if ( connected() ) advance_connections_observer();
 	}
 
 	// Observer Advance: Stage 1
@@ -299,14 +299,14 @@ public: // Methods
 		x_1_ = d;
 		set_tE_unaligned();
 		shift_QSS( tE );
-		if ( have_connections ) advance_connections_observer();
+		if ( connected() ) advance_connections_observer();
 	}
 
 	// Observer Advance: Stage d
 	void
 	advance_observer_d() const
 	{
-		std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << q_0_ << " [q]" << '(' << std::noshowpos << tQ << std::showpos << ')' << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		std::cout << "  " << name() << '(' << tX << ')' << " = " << std::showpos << q_0_ << " [q]" << '(' << std::noshowpos << tQ << std::showpos << ')' << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 private: // Methods
@@ -348,117 +348,15 @@ private: // Methods
 
 	// Advance Self-Observing Trigger
 	void
-	advance_LIQSS()
-	{
-		assert( qTol > 0.0 );
-		assert( self_observer );
-		assert( q_c_ == q_0_ );
-		assert( x_0_ == q_0_ );
-
-		// Value at +/- qTol
-		Real const q_l( q_c_ - qTol );
-		Real const q_u( q_c_ + qTol );
-
-		// Derivative at +/- qTol
-		fmu_set_observees_q( tQ );
-		fmu_set_real( q_l );
-		Real const x_1_l( p_1() );
-		int const x_1_l_s( signum( x_1_l ) );
-		fmu_set_real( q_u );
-		Real const x_1_u( p_1() );
-		int const x_1_u_s( signum( x_1_u ) );
-
-		// Set coefficients based on derivative signs
-		if ( ( x_1_l_s == -1 ) && ( x_1_u_s == -1 ) ) { // Downward trajectory
-			q_0_ = q_l;
-			x_1_ = x_1_l;
-		} else if ( ( x_1_l_s == +1 ) && ( x_1_u_s == +1 ) ) { // Upward trajectory
-			q_0_ = q_u;
-			x_1_ = x_1_u;
-		} else if ( ( x_1_l_s == 0 ) && ( x_1_u_s == 0 ) ) { // Flat trajectory
-			// Keep q_0_ == q_c_
-			x_1_ = 0.0;
-		} else { // Flat trajectory
-			q_0_ = std::min( std::max( ( ( q_l * x_1_u ) - ( q_u * x_1_l ) ) / ( x_1_u - x_1_l ), q_l ), q_u ); // Value where deriv is ~ 0 // Clipped in case of roundoff
-			x_1_ = 0.0;
-		}
-	}
+	advance_LIQSS();
 
 	// Advance Self-Observing Trigger: Initialization
 	void
-	advance_LIQSS_i()
-	{
-		assert( qTol > 0.0 );
-		assert( self_observer );
-		assert( q_c_ == q_0_ );
-		assert( x_0_ == q_0_ );
-
-		// Value at +/- qTol
-		Real const q_l( q_c_ - qTol );
-		Real const q_u( q_c_ + qTol );
-
-		// Derivative at +/- qTol
-		fmu_set_real( q_l );
-		Real const x_1_l( p_1() );
-		int const x_1_l_s( signum( x_1_l ) );
-		fmu_set_real( q_u );
-		Real const x_1_u( p_1() );
-		int const x_1_u_s( signum( x_1_u ) );
-		fmu_set_real( q_c_ );
-
-		// Set coefficients based on derivative signs
-		if ( ( x_1_l_s == -1 ) && ( x_1_u_s == -1 ) ) { // Downward trajectory
-			l_0_ = q_l;
-			x_1_ = x_1_l;
-		} else if ( ( x_1_l_s == +1 ) && ( x_1_u_s == +1 ) ) { // Upward trajectory
-			l_0_ = q_u;
-			x_1_ = x_1_u;
-		} else if ( ( x_1_l_s == 0 ) && ( x_1_u_s == 0 ) ) { // Flat trajectory
-			l_0_ = q_c_;
-			x_1_ = 0.0;
-		} else { // Flat trajectory
-			l_0_ = std::min( std::max( ( ( q_l * x_1_u ) - ( q_u * x_1_l ) ) / ( x_1_u - x_1_l ), q_l ), q_u ); // Value where deriv is ~ 0 // Clipped in case of roundoff
-			x_1_ = 0.0;
-		}
-	}
+	advance_LIQSS_i();
 
 	// Advance Self-Observing Trigger: Simultaneous
 	void
-	advance_LIQSS_s()
-	{
-		assert( qTol > 0.0 );
-		assert( self_observer );
-		assert( q_c_ == q_0_ );
-		assert( x_0_ == q_0_ );
-
-		// Value at +/- qTol
-		Real const q_l( q_c_ - qTol );
-		Real const q_u( q_c_ + qTol );
-
-		// Derivative at +/- qTol
-		fmu_set_observees_q( tQ );
-		fmu_set_real( q_l );
-		Real const x_1_l( p_1() );
-		int const x_1_l_s( signum( x_1_l ) );
-		fmu_set_real( q_u );
-		Real const x_1_u( p_1() );
-		int const x_1_u_s( signum( x_1_u ) );
-
-		// Set coefficients based on derivative signs
-		if ( ( x_1_l_s == -1 ) && ( x_1_u_s == -1 ) ) { // Downward trajectory
-			l_0_ = q_l;
-			x_1_ = x_1_l;
-		} else if ( ( x_1_l_s == +1 ) && ( x_1_u_s == +1 ) ) { // Upward trajectory
-			l_0_ = q_u;
-			x_1_ = x_1_u;
-		} else if ( ( x_1_l_s == 0 ) && ( x_1_u_s == 0 ) ) { // Flat trajectory
-			l_0_ = q_c_;
-			x_1_ = 0.0;
-		} else { // Flat trajectory
-			l_0_ = std::min( std::max( ( ( q_l * x_1_u ) - ( q_u * x_1_l ) ) / ( x_1_u - x_1_l ), q_l ), q_u ); // Value where deriv is ~ 0 // Clipped in case of roundoff
-			x_1_ = 0.0;
-		}
-	}
+	advance_LIQSS_s();
 
 private: // Data
 
@@ -466,7 +364,7 @@ private: // Data
 	Real q_c_{ 0.0 }, q_0_{ 0.0 }; // Quantized rep coefficients
 	Real l_0_{ 0.0 }; // LIQSS-adjusted coefficient
 
-};
+}; // Variable_LIQSS1
 
 } // fmu
 } // QSS

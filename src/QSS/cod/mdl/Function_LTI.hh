@@ -583,12 +583,12 @@ private: // Data
 
 	Coefficient c0_{ 0.0 }; // Constant term
 	Terms terms_; // Coefficient * Variable terms
-	size_type iBeg1{ 0 }; // Index of first Variable of QSS orders 1+
-	size_type iBeg2{ 0 }; // Index of first Variable of QSS orders 2+
-	size_type iBeg3{ 0 }; // Index of first Variable of QSS orders 3+
-	size_type ioBeg1{ 0 }; // Index of first non-self Variable of QSS order 1+
-	size_type ioBeg2{ 0 }; // Index of first non-self Variable of QSS order 2+
-	size_type ioBeg3{ 0 }; // Index of first non-self Variable of QSS order 3+
+	size_type iBeg1{ 0u }; // Index of first Variable of QSS orders 1+
+	size_type iBeg2{ 0u }; // Index of first Variable of QSS orders 2+
+	size_type iBeg3{ 0u }; // Index of first Variable of QSS orders 3+
+	size_type ioBeg1{ 0u }; // Index of first non-self Variable of QSS order 1+
+	size_type ioBeg2{ 0u }; // Index of first non-self Variable of QSS order 2+
+	size_type ioBeg3{ 0u }; // Index of first non-self Variable of QSS order 3+
 
 	Variable * v_{ nullptr }; // Self Variable
 	Coefficient cv_{ 0.0 }; // Coefficient of self Variable

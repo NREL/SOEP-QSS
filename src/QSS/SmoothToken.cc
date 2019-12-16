@@ -1,4 +1,4 @@
-// FMU-Based QSS Variable Abstract Base Class
+// SmoothToken Class
 //
 // Project: QSS Solver
 //
@@ -33,67 +33,47 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_Variable_QSS_hh_INCLUDED
-#define QSS_fmu_Variable_QSS_hh_INCLUDED
-
 // QSS Headers
-#include <QSS/fmu/Variable.hh>
+#include <QSS/SmoothToken.hh>
+
+// C++ Headers
+#include <iomanip>
+#include <ostream>
+#include <sstream>
 
 namespace QSS {
-namespace fmu {
 
-// FMU-Based QSS Variable Abstract Base Class
-class Variable_QSS : public Variable
-{
-
-public: // Types
-
-	using Super = Variable;
-
-protected: // Creation
-
-	// Copy Constructor
-	Variable_QSS( Variable_QSS const & ) = default;
-
-	// Move Constructor
-	Variable_QSS( Variable_QSS && ) noexcept = default;
-
-	// Constructor
-	Variable_QSS(
-	 int const order,
-	 std::string const & name,
-	 Real const rTol,
-	 Real const aTol,
-	 Real const xIni,
-	 FMU_ME * fmu_me,
-	 FMU_Variable const var = FMU_Variable(),
-	 FMU_Variable const der = FMU_Variable()
-	) :
-	 Super( order, name, rTol, aTol, xIni, fmu_me, var, der )
-	{}
-
-protected: // Assignment
-
-	// Copy Assignment
-	Variable_QSS &
-	operator =( Variable_QSS const & ) = default;
-
-	// Move Assignment
-	Variable_QSS &
-	operator =( Variable_QSS && ) noexcept = default;
-
-public: // Predicate
-
-	// QSS Variable?
-	bool
-	is_QSS() const
+	// String Representation
+	std::string
+	SmoothToken::
+	rep() const
 	{
-		return true;
+		std::ostringstream stream;
+		stream << std::setprecision( 15 ) << x0;
+		if ( order >= 1 ) {
+			stream << ' ' << x1;
+			if ( order >= 2 ) {
+				stream << ' ' << x2;
+				if ( order >= 3 ) stream << ' ' << x3;
+			}
+		}
+		if ( tD < infinity ) stream << " ->| " << tD << " s";
+		return stream.str();
 	}
 
-}; // Variable_QSS
+	// Stream << SmoothToken (For Plotting so tD Omitted)
+	std::ostream &
+	operator <<( std::ostream & stream, SmoothToken const & s )
+	{
+		stream << std::setprecision( 15 ) << s.x0;
+		if ( s.order >= 1 ) {
+			stream << '\t' << s.x1;
+			if ( s.order >= 2 ) {
+				stream << '\t' << s.x2;
+				if ( s.order >= 3 ) stream << '\t' << s.x3;
+			}
+		}
+		return stream;
+	}
 
-} // fmu
 } // QSS
-
-#endif

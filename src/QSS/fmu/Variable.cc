@@ -39,12 +39,32 @@
 namespace QSS {
 namespace fmu {
 
+	// Advance Connections
+	void
+	Variable::
+	advance_connections()
+	{
+		for ( Variable_Con * connection : connections_ ) {
+			connection->advance_connection( tQ );
+		}
+	}
+
+	// Advance Connections for Observer Update
+	void
+	Variable::
+	advance_connections_observer()
+	{
+		for ( Variable_Con * connection : connections_ ) {
+			connection->advance_connection_observer();
+		}
+	}
+
 	// Connections Output at Time t
 	void
 	Variable::
 	connections_out( Time const t )
 	{
-		for ( Variable_Con * connection : connections ) {
+		for ( Variable_Con * connection : connections_ ) {
 			connection->out( t );
 		}
 	}
@@ -54,7 +74,7 @@ namespace fmu {
 	Variable::
 	connections_out_q( Time const t )
 	{
-		for ( Variable_Con * connection : connections ) {
+		for ( Variable_Con * connection : connections_ ) {
 			connection->out_q( t );
 		}
 	}
@@ -64,7 +84,7 @@ namespace fmu {
 	Variable::
 	connections_observer_out_pre( Time const t )
 	{
-		for ( Variable_Con * connection : connections ) {
+		for ( Variable_Con * connection : connections_ ) {
 			connection->observer_out_pre( t );
 		}
 	}
@@ -74,7 +94,7 @@ namespace fmu {
 	Variable::
 	connections_observer_out_post( Time const t )
 	{
-		for ( Variable_Con * connection : connections ) {
+		for ( Variable_Con * connection : connections_ ) {
 			connection->observer_out_post( t );
 		}
 	}

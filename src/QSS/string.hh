@@ -37,38 +37,17 @@
 #define QSS_string_hh_INCLUDED
 
 // C++ Headers
-#include <cassert>
-#include <cctype>
 #include <cstdlib>
 #include <cstring>
 #include <limits>
-#include <sstream>
 #include <string>
 #include <vector>
 
 namespace QSS {
 
-// Uppercased string
-inline
-std::string
-uppercased( std::string const & s )
-{
-	std::string u( s.length(), ' ' );
-	for ( std::string::size_type i = 0, e = s.length(); i < e; ++i ) {
-		u[ i ] = static_cast< char >( std::toupper( s[ i ] ) );
-	}
-	return u;
-}
-
 // Is char Pointer Pointing to String Whitespace Tail
-inline
 bool
-is_tail( char * end )
-{
-	if ( end == nullptr ) return false;
-	while ( std::isspace( *end ) ) ++end;
-	return ( *end == '\0' );
-}
+is_tail( char * end );
 
 // string is Readable as a int?
 inline
@@ -79,14 +58,6 @@ is_int( std::string const & s )
 	char * end;
 	long int const i( std::strtol( str, &end, 10 ) );
 	return ( ( end != str ) && is_tail( end ) && ( std::numeric_limits< int >::min() <= i ) && ( i <= std::numeric_limits< int >::max() ) );
-}
-
-// int of a string
-inline
-int
-int_of( std::string const & s )
-{
-	return std::stoi( s ); // Check is_int first
 }
 
 // string is Readable as a size?
@@ -100,14 +71,6 @@ is_size( std::string const & s )
 	return ( ( end != str ) && is_tail( end ) );
 }
 
-// size of a string
-inline
-std::size_t
-size_of( std::string const & s )
-{
-	return std::stoull( s ); // Check is_size first
-}
-
 // string is Readable as a double?
 inline
 bool
@@ -119,6 +82,54 @@ is_double( std::string const & s )
 	return ( ( end != str ) && is_tail( end ) );
 }
 
+// Has a Character Case-Insensitively?
+bool
+has( std::string const & s, char const c );
+
+// Has any Character not in a String Case-Insensitively?
+bool
+has_any_not_of( std::string const & s, std::string const & t ); // Pass lowercase t
+
+// Has a Prefix Case-Optionally?
+bool
+has_prefix( std::string const & s, std::string const & pre );
+
+// Has a Prefix?
+bool
+has_prefix( std::string const & s, char const * const pre );
+
+// Has a Suffix Case-Optionally?
+bool
+has_suffix( std::string const & s, std::string const & suf );
+
+// Has a Suffix?
+bool
+has_suffix( std::string const & s, char const * const suf );
+
+// Has an Option (Case-Insensitive)?
+bool
+has_option( std::string const & s, char const * const option );
+
+// Has a Value Option (Case-Insensitive)?
+bool
+has_value_option( std::string const & s, char const * const option );
+
+// int of a string
+inline
+int
+int_of( std::string const & s )
+{
+	return std::stoi( s ); // Check is_int first
+}
+
+// size of a string
+inline
+std::size_t
+size_of( std::string const & s )
+{
+	return std::stoull( s ); // Check is_size first
+}
+
 // double of a string
 inline
 double
@@ -127,145 +138,13 @@ double_of( std::string const & s )
 	return std::stod( s ); // Check is_double first
 }
 
-// Has a Character Case-Insensitively?
-inline
-bool
-has( std::string const & s, char const c )
-{
-	char const b( static_cast< char >( std::tolower( c ) ) );
-	for ( char const a : s ) {
-		if ( std::tolower( a ) == b ) return true;
-	}
-	return false;
-}
+// Lowercased Copy
+std::string
+lowercased( std::string const & s );
 
-// Has any Character not in a String Case-Insensitively?
-inline
-bool
-has_any_not_of( std::string const & s, std::string const & t ) // Pass lowercase t
-{
-	for ( char const a : s ) {
-		if ( t.find( static_cast< char >( std::tolower( a ) ) ) == std::string::npos ) return true;
-	}
-	return false;
-}
-
-// Has a Prefix Case-Optionally?
-inline
-bool
-has_prefix( std::string const & s, std::string const & pre )
-{
-	std::string::size_type const pre_len( pre.length() );
-	if ( pre_len == 0 ) {
-		return false;
-	} else if ( s.length() < pre_len ) {
-		return false;
-	} else {
-		for ( std::string::size_type i = 0; i < pre_len; ++i ) {
-			if ( s[ i ] != pre[ i ] ) return false;
-		}
-		return true;
-	}
-}
-
-// Has a Prefix?
-inline
-bool
-has_prefix( std::string const & s, char const * const pre )
-{
-	std::string::size_type const pre_len( std::strlen( pre ) );
-	if ( pre_len == 0 ) {
-		return false;
-	} else {
-		std::string::size_type const s_len( s.length() );
-		if ( s_len < pre_len ) {
-			return false;
-		} else {
-			for ( std::string::size_type i = 0; i < pre_len; ++i ) {
-				if ( s[ i ] != pre[ i ] ) return false;
-			}
-			return true;
-		}
-	}
-}
-
-// Has a Suffix Case-Optionally?
-inline
-bool
-has_suffix( std::string const & s, std::string const & suf )
-{
-	std::string::size_type const suf_len( suf.length() );
-	if ( suf_len == 0 ) {
-		return false;
-	} else {
-		std::string::size_type const s_len( s.length() );
-		if ( s_len < suf_len ) {
-			return false;
-		} else {
-			std::string::size_type const del_len( s_len - suf_len );
-			for ( std::string::size_type i = 0; i < suf_len; ++i ) {
-				if ( s[ del_len + i ] != suf[ i ] ) return false;
-			}
-			return true;
-		}
-	}
-}
-
-// Has a Suffix?
-inline
-bool
-has_suffix( std::string const & s, char const * const suf )
-{
-	std::string::size_type const suf_len( std::strlen( suf ) );
-	if ( suf_len == 0 ) {
-		return false;
-	} else {
-		std::string::size_type const s_len( s.length() );
-		if ( s_len < suf_len ) {
-			return false;
-		} else {
-			std::string::size_type const del_len( s_len - suf_len );
-			for ( std::string::size_type i = 0; i < suf_len; ++i ) {
-				if ( s[ del_len + i ] != suf[ i ] ) return false;
-			}
-			return true;
-		}
-	}
-}
-
-// Has an Option (Case-Insensitive)?
-inline
-bool
-has_option( std::string const & s, char const * const option )
-{
-	std::string const opt( "--" + std::string( option ) );
-	std::string::size_type const opt_len( opt.length() );
-	if ( s.length() != opt_len ) {
-		return false;
-	} else {
-		for ( std::string::size_type i = 0; i < opt_len; ++i ) {
-			if ( std::tolower( s[ i ] ) != std::tolower( opt[ i ] ) ) return false;
-		}
-		return true;
-	}
-}
-
-// Has a Value Option (Case-Insensitive)?
-inline
-bool
-has_value_option( std::string const & s, char const * const option )
-{
-	std::string const opt( "--" + std::string( option ) );
-	std::string::size_type const opt_len( opt.length() );
-	if ( s.length() <= opt_len ) {
-		return false;
-	} else {
-		for ( std::string::size_type i = 0; i < opt_len; ++i ) {
-			if ( std::tolower( s[ i ] ) != std::tolower( opt[ i ] ) ) return false;
-		}
-		return ( s[ opt_len ] == '=' ) || ( s[ opt_len ] == ':' );
-	}
-}
+// Uppercased Copy
+std::string
+uppercased( std::string const & s );
 
 // Argument Value
 inline
@@ -273,26 +152,12 @@ std::string
 arg_value( std::string const & arg )
 {
 	std::string::size_type const i( arg.find_first_of( "=:" ) );
-	if ( i != std::string::npos ) {
-		return arg.substr( i + 1 );
-	} else {
-		return std::string();
-	}
+	return ( i != std::string::npos ? arg.substr( i + 1 ) : std::string() );
 }
 
 // Split into Tokens
-inline
 std::vector< std::string >
-split( std::string const & str, char del = ' ' )
-{
-	std::vector< std::string > toks;
-	std::istringstream str_stream( str );
-	std::string tok;
-	while ( std::getline( str_stream, tok, del ) ) {
-		toks.push_back( tok );
-	}
-	return toks;
-}
+split( std::string const & str, char del = ' ' );
 
 } // QSS
 

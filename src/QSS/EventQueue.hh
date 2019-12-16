@@ -76,9 +76,9 @@ public: // Types
 	using Targets = std::vector< T * >;
 	using Events = std::vector< EventT >;
 
-//	using EventMap = std::multimap< SuperdenseTime, EventT >; // Uses standard C++ allocator
-	using EventMap = std::multimap< SuperdenseTime, EventT, std::less< SuperdenseTime >, momo::unsynchronized_pool_allocator< std::pair< SuperdenseTime const, EventT > > >;
-//	using EventMap = std::multimap< SuperdenseTime, EventT, std::less< SuperdenseTime >, Moya::Allocator< std::pair< SuperdenseTime const, EventT > > >; // Default 1024 grow size was best // Fastest but gives access violation in unit test exe
+//	using EventMap = std::multimap< SuperdenseTime, EventT >; // C++ allocator
+	using EventMap = std::multimap< SuperdenseTime, EventT, std::less< SuperdenseTime >, momo::unsynchronized_pool_allocator< std::pair< SuperdenseTime const, EventT > > >; // momo allocator
+//	using EventMap = std::multimap< SuperdenseTime, EventT, std::less< SuperdenseTime >, Moya::Allocator< std::pair< SuperdenseTime const, EventT > > >; // Moya allocator // Default 1024 grow size was best // Fastest but gives access violation in unit tests
 	using value_type = typename EventMap::value_type;
 	using size_type = typename EventMap::size_type;
 	using const_iterator = typename EventMap::const_iterator;
@@ -529,7 +529,7 @@ public: // Handler Event Methods
 		if ( ( s.t == t ) && ( s.i == idx ) && ( s.o == Off::Handler ) ) { // Target already has event in same pass
 			EventT const & e( i->second );
 			assert( e.is_handler() );
-			if ( e.val() != val ) std::cerr << "Error: Conditional handler events in the same pass but with different values occurred for: " << tar->name << std::endl;
+			if ( e.val() != val ) std::cerr << "Error: Conditional handler events in the same pass but with different values occurred for: " << tar->name() << std::endl;
 		}
 		m_.erase( i );
 		return m_.emplace( SuperdenseTime( t, idx, Off::Handler ), EventT( Type::Handler, tar, val ) );

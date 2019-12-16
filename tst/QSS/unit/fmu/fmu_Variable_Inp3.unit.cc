@@ -39,6 +39,7 @@
 // QSS Headers
 #include <QSS/fmu/Variable_Inp3.hh>
 #include <QSS/fmu/Variable_QSS3.hh>
+#include <QSS/fmu/EventIndicator.hh>
 
 using namespace QSS;
 using namespace QSS::fmu;
@@ -95,6 +96,7 @@ TEST( fmu_Variable_Inp3Test, InputFunction )
 	FMU_ME fmu( model );
 	fmu.instantiate();
 	fmu.pre_simulate();
+	allEventIndicators.clear();
 	fmu.init();
 	std::cout.rdbuf( coutBuf ); // Re-redirect cout
 

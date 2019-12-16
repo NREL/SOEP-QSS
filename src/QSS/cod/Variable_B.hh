@@ -149,22 +149,22 @@ public: // Methods
 	void
 	init_0()
 	{
-		assert( observees_.empty() );
+		assert( ! observes() );
 		init_observers();
 		x_ = ( xIni != 0 );
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Initialization to a Value: Stage 0
 	void
 	init_0( Real const x )
 	{
-		assert( observees_.empty() );
+		assert( ! observes() );
 		init_observers();
 		x_ = ( x != 0 );
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Handler Advance
@@ -177,8 +177,8 @@ public: // Methods
 		Boolean const x_new( x != 0.0 );
 		bool const chg( x_ != x_new );
 		x_ = x_new;
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
-		if ( chg && observed_ ) advance_observers();
+		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( chg && observed() ) advance_observers();
 	}
 
 	// Handler Advance: Stage 0
@@ -190,14 +190,14 @@ public: // Methods
 		shift_handler();
 		Boolean const x_new( x != 0.0 );
 		x_ = x_new;
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 private: // Data
 
 	Boolean x_{ false }; // Value
 
-};
+}; // Variable_B
 
 } // cod
 } // QSS

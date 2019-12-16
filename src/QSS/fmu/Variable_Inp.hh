@@ -58,6 +58,12 @@ public: // Types
 
 protected: // Creation
 
+	// Copy Constructor
+	Variable_Inp( Variable_Inp const & ) = default;
+
+	// Move Constructor
+	Variable_Inp( Variable_Inp && ) noexcept = default;
+
 	// Name + Tolerance Constructor
 	Variable_Inp(
 	 int const order,
@@ -85,12 +91,6 @@ protected: // Creation
 	 f_( f ),
 	 is_connection_( f_ == nullptr )
 	{}
-
-	// Copy Constructor
-	Variable_Inp( Variable_Inp const & ) = default;
-
-	// Move Constructor
-	Variable_Inp( Variable_Inp && ) noexcept = default;
 
 protected: // Assignment
 
@@ -137,10 +137,13 @@ public: // Property
 protected: // Data
 
 	Function f_; // Input function
-	bool is_connection_{ false }; // Connection input?
-	SmoothToken s_; // Smooth token cached from last update
+	SmoothToken s_; // Smooth token
 
-};
+private: // Data
+
+	bool is_connection_{ false }; // Connection input?
+
+}; // Variable_Inp
 
 } // fmu
 } // QSS

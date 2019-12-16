@@ -143,13 +143,13 @@ public: // Methods
 	init_0()
 	{
 		assert( f() );
-		assert( observees_.empty() );
+		assert( ! observes() );
 		init_observers();
 		s_ = f_( tQ );
 		x_ = static_cast< Integer >( s_.x0 );
 		tD = s_.tD;
 		add_discrete( tD );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
 	}
 
 	// Discrete Advance
@@ -162,8 +162,8 @@ public: // Methods
 		shift_discrete( tD );
 		bool const chg( x_ != x_new );
 		x_ = x_new;
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
-		if ( chg && observed_ ) advance_observers();
+		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
+		if ( chg && observed() ) advance_observers();
 	}
 
 	// Discrete Advance: Simultaneous
@@ -175,7 +175,7 @@ public: // Methods
 		tD = s_.tD;
 		shift_discrete( tD );
 		x_ = x_new;
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
 	}
 
 	// Set FMU Variable to Continuous Value at Time t
@@ -196,7 +196,7 @@ private: // Data
 
 	Integer x_{ 0 }; // Value
 
-};
+}; // Variable_InpI
 
 } // fmu
 } // QSS

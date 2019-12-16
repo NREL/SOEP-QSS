@@ -241,7 +241,7 @@ gen(
 		V * x( static_cast< V * >( vars[ i ] ) );
 		Real const c0( uniform_random_real( -c_mag, c_mag ) ); // Constant
 		x->add( c0 );
-		std::cout << '\n' << x->name << "\n der = " << c0;
+		std::cout << '\n' << x->name() << "\n der = " << c0;
 		size_type const n_deps( uniform_random_integer( size_type( 1 ), deg_QSS ) ); // Number of QSS derivative dependencies
 		Indexes ks;
 		for ( size_type j = 0; j < n_deps; ++j ) {
@@ -251,7 +251,7 @@ gen(
 			assert( k < nQSS );
 			ks.insert( k );
 			x->add( c, vars[ k ] );
-			std::cout << "\n     + ( " << c << " * " << vars[ k ]->name << " )";
+			std::cout << "\n     + ( " << c << " * " << vars[ k ]->name() << " )";
 		}
 		std::cout << '\n';
 	}
@@ -275,7 +275,7 @@ gen(
 		// Function
 		Real const c0( uniform_random_real( -c_mag, c_mag ) ); // Constant
 		z->add( c0 );
-		std::cout << '\n' << z->name << "\n fxn = " << c0;
+		std::cout << '\n' << z->name() << "\n fxn = " << c0;
 		size_type const n_deps( uniform_random_integer( size_type( 1 ), deg_ZC ) ); // Number of ZC dependencies
 		Indexes ks;
 		for ( size_type j = 0; j < n_deps; ++j ) {
@@ -285,13 +285,13 @@ gen(
 			assert( k < nQSS );
 			ks.insert( k );
 			z->add( c, vars[ k ] );
-			std::cout << "\n     + ( " << c << " * " << vars[ k ]->name << " )";
+			std::cout << "\n     + ( " << c << " * " << vars[ k ]->name() << " )";
 		}
 		std::cout << '\n';
 
 		// Conditional
 		using When = Conditional_When< Variable >;
-		When * hit( new When( z->name + "_When" ) );
+		When * hit( new When( z->name() + "_When" ) );
 		cons.push_back( hit );
 		When::ClauseH< Handler_gen > * hit_clause( hit->add_clause< Handler_gen >() );
 		hit_clause->add( z );
@@ -307,7 +307,7 @@ gen(
 			Real const d( uniform_random_real( -h_mag, h_mag ) ); // Downward crossing value
 			Real const u( uniform_random_real( -h_mag, h_mag ) ); // Upward crossing value
 			hit_clause->h.add( static_cast< V * >( vars[ k ] ), d, u );
-			std::cout << "\n  " << vars[ k ]->name << ": ( " << d << ", " << u << " )";
+			std::cout << "\n  " << vars[ k ]->name() << ": ( " << d << ", " << u << " )";
 		}
 		std::cout << '\n';
 	}

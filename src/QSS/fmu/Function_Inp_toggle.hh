@@ -133,7 +133,7 @@ private: // Data
 	Real const h_{ 1.0 }; // Step height
 	Real const d_{ 1.0 }; // Step time delta
 
-};
+}; // Function_Inp_toggle
 
 } // fmu
 } // QSS

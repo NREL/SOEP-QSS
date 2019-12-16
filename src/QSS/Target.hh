@@ -61,17 +61,17 @@ protected: // Creation
 	// Default Constructor
 	Target() = default;
 
-	// Name Constructor
-	explicit
-	Target( std::string const & name ) :
-	 name( name )
-	{}
-
 	// Copy Constructor
 	Target( Target const & ) = default;
 
 	// Move Constructor
 	Target( Target && ) noexcept = default;
+
+	// Name Constructor
+	explicit
+	Target( std::string const & name ) :
+	 name_( name )
+	{}
 
 public: // Creation
 
@@ -92,24 +92,19 @@ protected: // Assignment
 
 public: // Property
 
-	// Event Queue Iterator
-	EventMap::iterator &
-	event()
+	// Name
+	std::string const &
+	name() const
 	{
-		return event_;
+		return name_;
 	}
 
-	// Event Queue Iterator Assignment
-	void
-	event( EventMap::iterator const i )
-	{
-		event_ = i;
-		assert( event_->second.tar() == this );
-	}
+private: // Data
+
+	std::string name_;
 
 public: // Data
 
-	std::string name;
 	SuperdenseTime st; // Superdense time of latest event
 	bool connected_output{ false }; // Output connection to another FMU?
 	bool connected_output_observer{ false }; // Observer is an output connection to another FMU?

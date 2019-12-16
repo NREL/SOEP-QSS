@@ -311,34 +311,34 @@ private: // Data
 	Variables observers_; // Observers of a variable
 
 	bool have_{ false }; // Observers present?
-	size_type b_{ 0 }; // Begin index
-	size_type e_{ 0 }; // End index
-	size_type n_{ 0 }; // Count
+	size_type b_{ 0u }; // Begin index
+	size_type e_{ 0u }; // End index
+	size_type n_{ 0u }; // Count
 
 	struct {
 
 		bool have_{ false }; // Observers of this type present?
 		bool have2_{ false }; // Order 2+ observers of this type present?
 		bool have3_{ false }; // Order 3+ observers of this type present?
-		size_type b_{ 0 }; // Begin index
-		size_type b2_{ 0 }; // Order 2+ begin index
-		size_type b3_{ 0 }; // Order 3+ begin index
-		size_type e_{ 0 }; // End index
-		size_type n_{ 0 }; // Count
-		size_type n2_{ 0 }; // Order 2+ count
-		size_type n3_{ 0 }; // Order 3+ count
+		size_type b_{ 0u }; // Begin index
+		size_type b2_{ 0u }; // Order 2+ begin index
+		size_type b3_{ 0u }; // Order 3+ begin index
+		size_type e_{ 0u }; // End index
+		size_type n_{ 0u }; // Count
+		size_type n2_{ 0u }; // Order 2+ count
+		size_type n3_{ 0u }; // Order 3+ count
 
 		void
 		clear()
 		{
 			have_ = have2_ = have3_ = false;
-			b_ = b2_ = b3_ = e_ = 0;
-			n_ = n2_ = n3_ = 0;
+			b_ = b2_ = b3_ = e_ = 0u;
+			n_ = n2_ = n3_ = 0u;
 		}
 
 	} nz_, zc_;
 
-};
+}; // Observers_Simultaneous
 
 } // fmu
 } // QSS

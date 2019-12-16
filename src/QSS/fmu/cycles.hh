@@ -52,8 +52,8 @@ void
 cycles( typename Variable::Variables const & vars )
 {
 
-	// Node Class
-	class Node
+	// Node Type
+	struct Node
 	{
 
 	public: // Types
@@ -91,17 +91,18 @@ cycles( typename Variable::Variables const & vars )
 		bool
 		advance_child()
 		{
+			assert( ! observers.empty() );
 			return ++i != observers.end();
 		}
 
 	public: // Data
 
-		Variable const * var;
+		Variable const * var{ nullptr };
 		State state{ State::None };
 		Observers observers;
 		typename Observers::const_iterator i;
 
-	};
+	}; // Node
 
 	// Types
 	using Nodes = std::vector< Node >;
@@ -153,7 +154,7 @@ cycles( typename Variable::Variables const & vars )
 						bool active( false );
 						for ( typename Branch::const_iterator i = branch.begin(); i != branch.end(); ++i ) {
 							if ( ( ! active ) && ( *i == node ) ) active = true;
-							if ( active ) std::cerr << ' ' << (*i)->var->name << std::endl;
+							if ( active ) std::cerr << ' ' << (*i)->var->name() << std::endl;
 						}
 						branch.pop_front();
 						step = Step::Pop;

@@ -58,11 +58,15 @@ public: // Types
 	using Crossing = Variable::Crossing;
 	using Crossings = std::vector< Crossing >;
 
-	using Super::observees_;
-
 	using Super::init_observees;
 
 protected: // Creation
+
+	// Copy Constructor
+	Variable_ZC( Variable_ZC const & ) = default;
+
+	// Move Constructor
+	Variable_ZC( Variable_ZC && ) noexcept = default;
 
 	// Constructor
 	Variable_ZC(
@@ -76,12 +80,6 @@ protected: // Creation
 	 zTol( std::max( zTol, 0.0 ) ),
 	 zChatter_( zTol > 0.0 )
 	{}
-
-	// Copy Constructor
-	Variable_ZC( Variable_ZC const & ) = default;
-
-	// Move Constructor
-	Variable_ZC( Variable_ZC && ) noexcept = default;
 
 protected: // Assignment
 
@@ -106,7 +104,7 @@ public: // Predicate
 	bool
 	has( Crossing const c )
 	{
-		return ( std::find( crossings.begin(), crossings.end(), c ) != crossings.end() );
+		return ( std::find( crossings_.begin(), crossings_.end(), c ) != crossings_.end() );
 	}
 
 public: // Property
@@ -146,8 +144,8 @@ public: // Methods
 	init_0()
 	{
 		// Check no observers
-		if ( ! observers_.empty() ) {
-			std::cerr << "Error: Zero-crossing variable has observers: " << name << std::endl;
+		if ( observed() ) {
+			std::cerr << "Error: Zero-crossing variable has observers: " << name() << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
 
@@ -192,7 +190,7 @@ public: // Crossing Methods
 	Variable_ZC &
 	add( Crossing const c )
 	{
-		crossings.push_back( c );
+		crossings_.push_back( c );
 		return *this;
 	}
 
@@ -201,9 +199,9 @@ public: // Crossing Methods
 	add_crossings_all()
 	{
 		add_crossings_Dn();
-		crossings.push_back( Crossing::DnZN );
-		crossings.push_back( Crossing::Flat );
-		crossings.push_back( Crossing::UpZP );
+		crossings_.push_back( Crossing::DnZN );
+		crossings_.push_back( Crossing::Flat );
+		crossings_.push_back( Crossing::UpZP );
 		add_crossings_Up();
 		return *this;
 	}
@@ -213,8 +211,8 @@ public: // Crossing Methods
 	add_crossings_non_Flat()
 	{
 		add_crossings_Dn();
-		crossings.push_back( Crossing::DnZN );
-		crossings.push_back( Crossing::UpZP );
+		crossings_.push_back( Crossing::DnZN );
+		crossings_.push_back( Crossing::UpZP );
 		add_crossings_Up();
 		return *this;
 	}
@@ -223,9 +221,9 @@ public: // Crossing Methods
 	Variable_ZC &
 	add_crossings_Dn()
 	{
-		crossings.push_back( Crossing::DnPN );
-		crossings.push_back( Crossing::DnPZ );
-		crossings.push_back( Crossing::Dn );
+		crossings_.push_back( Crossing::DnPN );
+		crossings_.push_back( Crossing::DnPZ );
+		crossings_.push_back( Crossing::Dn );
 		return *this;
 	}
 
@@ -234,8 +232,8 @@ public: // Crossing Methods
 	add_crossings_Dn_Flat()
 	{
 		add_crossings_Dn();
-		crossings.push_back( Crossing::DnZN );
-		crossings.push_back( Crossing::Flat );
+		crossings_.push_back( Crossing::DnZN );
+		crossings_.push_back( Crossing::Flat );
 		return *this;
 	}
 
@@ -243,9 +241,9 @@ public: // Crossing Methods
 	Variable_ZC &
 	add_crossings_Up()
 	{
-		crossings.push_back( Crossing::Up );
-		crossings.push_back( Crossing::UpNZ );
-		crossings.push_back( Crossing::UpNP );
+		crossings_.push_back( Crossing::Up );
+		crossings_.push_back( Crossing::UpNZ );
+		crossings_.push_back( Crossing::UpNP );
 		return *this;
 	}
 
@@ -253,8 +251,8 @@ public: // Crossing Methods
 	Variable_ZC &
 	add_crossings_Up_Flat()
 	{
-		crossings.push_back( Crossing::Flat );
-		crossings.push_back( Crossing::UpZP );
+		crossings_.push_back( Crossing::Flat );
+		crossings_.push_back( Crossing::UpZP );
 		add_crossings_Up();
 		return *this;
 	}
@@ -300,6 +298,29 @@ protected: // Methods
 		}
 	}
 
+	// Refine Zero-Crossing Time
+	void
+	refine_root_ZC( Time const tBeg )
+	{
+		assert( options::refine );
+		Time t( tZ );
+		Real const vZ( f_.x( tZ ) );
+		Real v( vZ ), v_p( vZ );
+		Real m( 1.0 ); // Multiplier
+		std::size_t i( 0 );
+		std::size_t const n( 10u ); // Max iterations
+		while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
+			Real const d( f_.x1( t ) );
+			if ( d == 0.0 ) break;
+			t -= m * ( v / d );
+			v = f_.x( t );
+			if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
+			v_p = v;
+		}
+		if ( ( t >= tBeg ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
+		if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name() << '(' << t << ')' << " tZ may not have converged" <<  '\n';
+	}
+
 public: // Data
 
 	Real zTol{ 0.0 }; // Zero-crossing anti-chatter tolerance
@@ -307,7 +328,6 @@ public: // Data
 	Time tZ_last{ 0.0 }; // Zero-crossing time of last crossing
 	Crossing crossing{ Crossing::Flat }; // Zero-crossing type
 	Crossing crossing_last{ Crossing::Flat }; // Zero-crossing type of last crossing
-	Crossings crossings; // Zero-crossing types handled
 
 protected: // Data
 
@@ -317,7 +337,11 @@ protected: // Data
 	int sign_old_{ 0 }; // Sign of zero-crossing function before advance
 	Function f_; // Zero-crossing function
 
-};
+private: // Data
+
+	Crossings crossings_; // Zero-crossing types handled
+
+}; // Variable_ZC
 
 } // cod
 } // QSS

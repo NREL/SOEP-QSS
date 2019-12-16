@@ -140,19 +140,19 @@ simulate_fmu_me_con_perfect( std::vector< std::string > const & paths )
 			}
 		}
 		if ( inp_found && out_found ) {
-			std::cerr << "Connection: " << fmu_mes[ inp_ref.first ]->name << '.' << inp_ref.second->name << " <= " << fmu_mes[ out_ref.first ]->name << '.' << out_ref.second->name << std::endl;
+			std::cerr << "Connection: " << fmu_mes[ inp_ref.first ]->name << '.' << inp_ref.second->name() << " <= " << fmu_mes[ out_ref.first ]->name << '.' << out_ref.second->name() << std::endl;
 			Variable_Con * const inp_var( dynamic_cast< Variable_Con * >( inp_ref.second ) );
 			if ( inp_var == nullptr ) {
-				std::cerr << "\nError: Connection input variable is not a Modelica input variable: " << fmu_mes[ inp_ref.first ]->name << '.' << inp_ref.second->name << std::endl;
+				std::cerr << "\nError: Connection input variable is not a Modelica input variable: " << fmu_mes[ inp_ref.first ]->name << '.' << inp_ref.second->name() << std::endl;
 				std::exit( EXIT_FAILURE );
 			}
 			if ( out_ref.second->is_ZC() ) { // Don't allow zero-crossing output connections to avoid processing order complexities
-				std::cerr << "\nError: Connection output variable is a zero-crossing variable: " << inp_ref.second->name << std::endl;
+				std::cerr << "\nError: Connection output variable is a zero-crossing variable: " << inp_ref.second->name() << std::endl;
 				std::exit( EXIT_FAILURE );
 			}
 			Variable * out_var( out_ref.second );
-			out_var->have_connections = true;
-			out_var->connections.push_back( inp_var );
+			out_var->connect();
+			out_var->connections().push_back( inp_var );
 			inp_var->out_var() = out_var; // Set connection variable's output variable
 		} else {
 			if ( ! inp_found ) std::cerr << "\nError: Connection input variable not found: " << inp << std::endl;

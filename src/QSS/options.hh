@@ -65,6 +65,17 @@ enum class QSS {
  xLIQSS3
 };
 
+// Logging Level Enumerator
+enum class LogLevel {
+ fatal,
+ error,
+ warning,
+ info,
+ verbose,
+ debug,
+ all
+};
+
 extern QSS qss; // QSS method: (x)(LI)QSS(1|2|3)
 extern double rTol; // Relative tolerance
 extern double aTol; // Absolute tolerance
@@ -92,6 +103,7 @@ extern bool refine; // Refine FMU zero-crossing roots?
 extern bool prune; // Prune variables with no observers?
 extern bool perfect; // Perfect FMU-ME connection sync?
 extern bool statistics; // Report detailed statistics
+extern LogLevel log; // Logging level
 extern InpFxn fxn; // Map from input variables to function specs
 extern InpOut con; // Map from input variables to output variables
 extern std::string out; // Outputs: r, a, s, x, q, f
@@ -133,7 +145,7 @@ have_multiple_models();
 
 // Input-output connections?
 bool
-have_connections();
+connected();
 
 } // options
 } // QSS

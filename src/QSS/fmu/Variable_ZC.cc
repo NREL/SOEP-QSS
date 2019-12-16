@@ -1,4 +1,4 @@
-// FMU-Based QSS Variable Abstract Base Class
+// FMU-Based QSS Zero-Crossing Variable Abstract Base Class
 //
 // Project: QSS Solver
 //
@@ -33,67 +33,39 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_Variable_QSS_hh_INCLUDED
-#define QSS_fmu_Variable_QSS_hh_INCLUDED
-
 // QSS Headers
-#include <QSS/fmu/Variable.hh>
+#include <QSS/fmu/Variable_ZC.hh>
 
 namespace QSS {
 namespace fmu {
 
-// FMU-Based QSS Variable Abstract Base Class
-class Variable_QSS : public Variable
-{
-
-public: // Types
-
-	using Super = Variable;
-
-protected: // Creation
-
-	// Copy Constructor
-	Variable_QSS( Variable_QSS const & ) = default;
-
-	// Move Constructor
-	Variable_QSS( Variable_QSS && ) noexcept = default;
-
-	// Constructor
-	Variable_QSS(
-	 int const order,
-	 std::string const & name,
-	 Real const rTol,
-	 Real const aTol,
-	 Real const xIni,
-	 FMU_ME * fmu_me,
-	 FMU_Variable const var = FMU_Variable(),
-	 FMU_Variable const der = FMU_Variable()
-	) :
-	 Super( order, name, rTol, aTol, xIni, fmu_me, var, der )
-	{}
-
-protected: // Assignment
-
-	// Copy Assignment
-	Variable_QSS &
-	operator =( Variable_QSS const & ) = default;
-
-	// Move Assignment
-	Variable_QSS &
-	operator =( Variable_QSS && ) noexcept = default;
-
-public: // Predicate
-
-	// QSS Variable?
-	bool
-	is_QSS() const
+	// Refine Zero-Crossing Time
+	void
+	Variable_ZC::
+	refine_root_ZC( Time const tBeg )
 	{
-		return true;
+		assert( options::refine );
+		Time t( tZ );
+		Time const t_fmu( fmu_get_time() );
+		fmu_set_time( tZ );
+		Real const vZ( z_0( tZ ) );
+		Real v( vZ ), v_p( vZ );
+		Real m( 1.0 ); // Multiplier
+		std::size_t i( 0 );
+		std::size_t const n( 10u ); // Max iterations
+		while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
+			Real const d( p_1() );
+			if ( d == 0.0 ) break;
+			t -= m * ( v / d );
+			fmu_set_time( t );
+			v = z_0( t );
+			if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
+			v_p = v;
+		}
+		if ( ( t >= tBeg ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
+		if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name() << '(' << t << ')' << " tZ may not have converged" <<  '\n';
+		fmu_set_time( t_fmu );
 	}
-
-}; // Variable_QSS
 
 } // fmu
 } // QSS
-
-#endif

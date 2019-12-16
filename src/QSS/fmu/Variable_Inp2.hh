@@ -118,7 +118,7 @@ public: // Methods
 	init_0()
 	{
 		assert( f() );
-		assert( observees_.empty() );
+		assert( ! observes() );
 		init_observers();
 		s_ = f_( tQ );
 		x_0_ = s_.x0;
@@ -141,7 +141,7 @@ public: // Methods
 		set_qTol();
 		set_tE();
 		( tE < tD ) ? add_QSS( tE ) : add_discrete( tD );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
 	// Discrete Advance
@@ -156,8 +156,8 @@ public: // Methods
 		set_qTol();
 		set_tE();
 		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
-		if ( observed_ ) advance_observers();
+		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
+		if ( observed() ) advance_observers();
 	}
 
 	// Discrete Advance: Simultaneous
@@ -172,7 +172,7 @@ public: // Methods
 		set_qTol();
 		set_tE();
 		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
 	// QSS Advance
@@ -187,8 +187,8 @@ public: // Methods
 		set_qTol();
 		set_tE();
 		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
-		if ( observed_ ) advance_observers();
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
+		if ( observed() ) advance_observers();
 	}
 
 	// QSS Advance: Stage 0
@@ -221,7 +221,7 @@ public: // Methods
 		set_qTol();
 		set_tE();
 		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
-		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
 private: // Methods
@@ -254,7 +254,7 @@ private: // Data
 
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Coefficients
 
-};
+}; // Variable_Inp2
 
 } // fmu
 } // QSS

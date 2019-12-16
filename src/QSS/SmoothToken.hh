@@ -40,15 +40,13 @@
 #include <QSS/math.hh>
 
 // C++ Headers
-#include <iomanip>
-#include <ostream>
-#include <sstream>
+#include <iosfwd>
 #include <string>
 
 namespace QSS {
 
-// SmoothToken Class
-class SmoothToken final
+// SmoothToken Type
+struct SmoothToken final
 {
 
 public: // Types
@@ -189,38 +187,14 @@ public: // Property
 
 	// String Representation
 	std::string
-	rep() const
-	{
-		std::ostringstream stream;
-		stream << std::setprecision( 15 ) << x0;
-		if ( order >= 1 ) {
-			stream << ' ' << x1;
-			if ( order >= 2 ) {
-				stream << ' ' << x2;
-				if ( order >= 3 ) stream << ' ' << x3;
-			}
-		}
-		if ( tD < infinity ) stream << " ->| " << tD << " s";
-		return stream.str();
-	}
+	rep() const;
 
 public: // I/O
 
 	// Stream << SmoothToken (For Plotting so tD Omitted)
 	friend
 	std::ostream &
-	operator <<( std::ostream & stream, SmoothToken const & s )
-	{
-		stream << std::setprecision( 15 ) << s.x0;
-		if ( s.order >= 1 ) {
-			stream << '\t' << s.x1;
-			if ( s.order >= 2 ) {
-				stream << '\t' << s.x2;
-				if ( s.order >= 3 ) stream << '\t' << s.x3;
-			}
-		}
-		return stream;
-	}
+	operator <<( std::ostream & stream, SmoothToken const & s );
 
 public: // Data
 
@@ -228,7 +202,7 @@ public: // Data
 	Real x0{ 0.0 }, x1{ 0.0 }, x2{ 0.0 }, x3{ 0.0 }; // Value and derivatives
 	Time tD{ infinity }; // Next discrete event time
 
-};
+}; // SmoothToken
 
 } // QSS
 

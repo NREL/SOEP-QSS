@@ -63,27 +63,22 @@ public: // Types
 	using Super::tQ;
 	using Super::tX;
 	using Super::tE;
-	using Super::st;
 	using Super::dt_min;
 	using Super::dt_max;
-	using Super::dt_inf;
 	using Super::self_observer;
-	using Super::observed_;
+	using Super::observed;
 
 	using Super::add_QSS;
 	using Super::advance_observers;
-	using Super::event;
-	using Super::shift_QSS;
 	using Super::init_observees;
 	using Super::init_observers;
+	using Super::shift_QSS;
 	using Super::tE_infinity_tQ;
 	using Super::tE_infinity_tX;
 
 private: // Types
 
 	using Super::d_;
-	using Super::event_;
-	using Super::observers_;
 
 public: // Creation
 
@@ -200,7 +195,7 @@ public: // Methods
 	init_2()
 	{
 		set_qTol();
-		if ( self_observer ) {
+		if ( self_observer() ) {
 			advance_LIQSS_s( d_.qlu2( tQ, qTol, q_1_ ) );
 		} else {
 			x_2_ = one_half * d_.qf1( tQ );
@@ -211,7 +206,7 @@ public: // Methods
 	void
 	init_LIQSS()
 	{
-		if ( self_observer ) {
+		if ( self_observer() ) {
 			q_0_ = l_0_;
 			q_1_ = x_1_;
 		} else {
@@ -219,7 +214,7 @@ public: // Methods
 		}
 		set_tE_aligned();
 		add_QSS( tE );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// QSS Advance
@@ -230,7 +225,7 @@ public: // Methods
 		tX = tQ = tE;
 		x_0_ = q_c_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 		set_qTol();
-		if ( self_observer ) {
+		if ( self_observer() ) {
 			advance_LIQSS( d_.qlu2( tQ, qTol ) );
 		} else {
 			x_1_ = q_1_ = d_.qs( tQ );
@@ -239,8 +234,8 @@ public: // Methods
 		}
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-		if ( observed_ ) advance_observers();
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( observed() ) advance_observers();
 	}
 
 	// QSS Advance: Stage 0
@@ -264,7 +259,7 @@ public: // Methods
 	advance_QSS_2()
 	{
 		set_qTol();
-		if ( self_observer ) {
+		if ( self_observer() ) {
 			advance_LIQSS_s( d_.qlu2( tQ, qTol, q_1_ ) );
 		} else {
 			x_2_ = one_half * d_.qf1( tQ );
@@ -275,7 +270,7 @@ public: // Methods
 	void
 	advance_QSS_F()
 	{
-		if ( self_observer ) {
+		if ( self_observer() ) {
 			q_0_ = l_0_;
 			q_1_ = x_1_;
 		} else {
@@ -283,7 +278,7 @@ public: // Methods
 		}
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "= " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// Handler Advance
@@ -297,8 +292,8 @@ public: // Methods
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
-		if ( observed_ ) advance_observers();
+		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( observed() ) advance_observers();
 	}
 
 	// Handler Advance: Stage 0
@@ -325,7 +320,7 @@ public: // Methods
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// Observer Advance
@@ -339,7 +334,7 @@ public: // Methods
 		x_2_ = one_half * d_.qf1( tX = t );
 		set_tE_unaligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << '(' << std::noshowpos << tQ << std::showpos << ')' << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "  " << name() << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << '(' << std::noshowpos << tQ << std::showpos << ')' << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// Observer Advance: Parallel
@@ -360,7 +355,7 @@ public: // Methods
 	{
 		assert( options::output::d );
 		shift_QSS( tE );
-		std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << '(' << std::noshowpos << tQ << std::showpos << ')' << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		std::cout << "  " << name() << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << " [q]" << '(' << std::noshowpos << tQ << std::showpos << ')' << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 private: // Methods
@@ -419,7 +414,7 @@ private: // Methods
 	advance_LIQSS( AdvanceSpecs_LIQSS2 const & specs )
 	{
 		assert( qTol > 0.0 );
-		assert( self_observer );
+		assert( self_observer() );
 		assert( q_c_ == q_0_ );
 		assert( x_0_ == q_0_ );
 
@@ -454,7 +449,7 @@ private: // Methods
 	advance_LIQSS_s( AdvanceSpecs_LIQSS2 const & specs )
 	{
 		assert( qTol > 0.0 );
-		assert( self_observer );
+		assert( self_observer() );
 		assert( q_c_ == q_0_ );
 		assert( x_0_ == q_0_ );
 
@@ -490,7 +485,7 @@ private: // Data
 	Real q_c_{ 0.0 }, q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized rep coefficients
 	Real l_0_{ 0.0 }; // LIQSS-adjusted coefficient
 
-};
+}; // Variable_LIQSS2
 
 } // cod
 } // QSS
