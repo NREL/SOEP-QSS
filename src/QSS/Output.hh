@@ -177,14 +177,20 @@ private: // Methods
 		v_.clear();
 	}
 
+private: // Static Data
+
+	static size_type const capacity_{ 2048 }; // Buffer size
+
 private: // Data
 
 	std::string file_; // File name
 	Times t_; // Time buffer
 	Values v_; // Value buffer
-	size_type const capacity_{ 2048 }; // Buffer size
 
 };
+
+	// Static Data Member Template Definitions
+	template< typename Value > typename Output_T< Value >::size_type const Output_T< Value >::capacity_;
 
 // Types
 using Output = Output_T< double >;
