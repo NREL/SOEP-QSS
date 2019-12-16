@@ -5,7 +5,7 @@
 # Platform: Linux/Clang/64/d
 
 # Variables
-CXXFLAGS := -pipe -std=c++11 -pedantic -Wall -Wextra -Wno-unknown-pragmas -m64 -march=native -DQSS_FMU -pthread -fPIC -fsanitize=undefined -fno-omit-frame-pointer -O0 -ggdb
+CXXFLAGS := -pipe -std=c++17 -pedantic -Wall -Wextra -Wno-unknown-pragmas -m64 -march=native -DQSS_FMU -pthread -fPIC -fsanitize=undefined -fno-omit-frame-pointer -O0 -ggdb
 CXXFLAGS += -Wno-unused-function -Wno-unused-parameter # For FMIL
 CXXFLAGS += -Wno-unused-local-typedef # Suppress false-positive warnings
 CFLAGS := -pipe -std=c11 -pedantic -Wall -Wextra -Wno-unknown-pragmas -m64 -march=native -pthread -fPIC -fsanitize=undefined -fno-omit-frame-pointer -O0 -ggdb
