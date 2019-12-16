@@ -54,6 +54,12 @@ public: // Types
 
 protected: // Creation
 
+	// Copy Constructor
+	Variable_ZC( Variable_ZC const & ) = default;
+
+	// Move Constructor
+	Variable_ZC( Variable_ZC && ) noexcept = default;
+
 	// Constructor
 	Variable_ZC(
 	 int const order,
@@ -71,12 +77,6 @@ protected: // Creation
 	{
 		add_crossings_Dn_Up(); // FMI API doesn't currently expose crossing information
 	}
-
-	// Copy Constructor
-	Variable_ZC( Variable_ZC const & ) = default;
-
-	// Move Constructor
-	Variable_ZC( Variable_ZC && ) noexcept = default;
 
 protected: // Assignment
 
@@ -101,7 +101,7 @@ public: // Predicate
 	bool
 	has( Crossing const c )
 	{
-		return ( std::find( crossings.begin(), crossings.end(), c ) != crossings.end() );
+		return ( std::find( crossings_.begin(), crossings_.end(), c ) != crossings_.end() );
 	}
 
 public: // Property
@@ -141,7 +141,7 @@ public: // Crossing Methods
 	Variable_ZC &
 	add( Crossing const c )
 	{
-		crossings.push_back( c );
+		crossings_.push_back( c );
 		return *this;
 	}
 
@@ -150,9 +150,9 @@ public: // Crossing Methods
 	add_crossings_all()
 	{
 		add_crossings_Dn();
-		crossings.push_back( Crossing::DnZN );
-		crossings.push_back( Crossing::Flat );
-		crossings.push_back( Crossing::UpZP );
+		crossings_.push_back( Crossing::DnZN );
+		crossings_.push_back( Crossing::Flat );
+		crossings_.push_back( Crossing::UpZP );
 		add_crossings_Up();
 		return *this;
 	}
@@ -162,8 +162,8 @@ public: // Crossing Methods
 	add_crossings_non_Flat()
 	{
 		add_crossings_Dn();
-		crossings.push_back( Crossing::DnZN );
-		crossings.push_back( Crossing::UpZP );
+		crossings_.push_back( Crossing::DnZN );
+		crossings_.push_back( Crossing::UpZP );
 		add_crossings_Up();
 		return *this;
 	}
@@ -172,9 +172,9 @@ public: // Crossing Methods
 	Variable_ZC &
 	add_crossings_Dn()
 	{
-		crossings.push_back( Crossing::DnPN );
-		crossings.push_back( Crossing::DnPZ );
-		crossings.push_back( Crossing::Dn );
+		crossings_.push_back( Crossing::DnPN );
+		crossings_.push_back( Crossing::DnPZ );
+		crossings_.push_back( Crossing::Dn );
 		return *this;
 	}
 
@@ -183,8 +183,8 @@ public: // Crossing Methods
 	add_crossings_Dn_Flat()
 	{
 		add_crossings_Dn();
-		crossings.push_back( Crossing::DnZN );
-		crossings.push_back( Crossing::Flat );
+		crossings_.push_back( Crossing::DnZN );
+		crossings_.push_back( Crossing::Flat );
 		return *this;
 	}
 
@@ -192,9 +192,9 @@ public: // Crossing Methods
 	Variable_ZC &
 	add_crossings_Up()
 	{
-		crossings.push_back( Crossing::Up );
-		crossings.push_back( Crossing::UpNZ );
-		crossings.push_back( Crossing::UpNP );
+		crossings_.push_back( Crossing::Up );
+		crossings_.push_back( Crossing::UpNZ );
+		crossings_.push_back( Crossing::UpNP );
 		return *this;
 	}
 
@@ -202,8 +202,8 @@ public: // Crossing Methods
 	Variable_ZC &
 	add_crossings_Up_Flat()
 	{
-		crossings.push_back( Crossing::Flat );
-		crossings.push_back( Crossing::UpZP );
+		crossings_.push_back( Crossing::Flat );
+		crossings_.push_back( Crossing::UpZP );
 		add_crossings_Up();
 		return *this;
 	}
@@ -249,6 +249,14 @@ protected: // Methods
 		}
 	}
 
+	// Refine Zero-Crossing Time
+	void
+	refine_root_ZC( Time const tBeg );
+
+	// Refine Zero-Crossing Time
+	void
+	refine_root_ZCe( Time const tBeg );
+
 public: // Data
 
 	Real zTol{ 0.0 }; // Zero-crossing anti-chatter tolerance
@@ -256,7 +264,6 @@ public: // Data
 	Time tZ_last{ 0.0 }; // Zero-crossing time of last crossing
 	Crossing crossing{ Crossing::Flat }; // Zero-crossing type
 	Crossing crossing_last{ Crossing::Flat }; // Zero-crossing type of last crossing
-	Crossings crossings; // Zero-crossing types handled
 
 protected: // Data
 
@@ -265,7 +272,11 @@ protected: // Data
 	bool check_crossing_{ false }; // Check for zero crossing?
 	int sign_old_{ 0 }; // Sign of zero-crossing function before advance
 
-};
+private: // Data
+
+	Crossings crossings_; // Zero-crossing types handled
+
+}; // Variable_ZC
 
 } // fmu
 } // QSS

@@ -163,14 +163,14 @@ simulate_fmu_qss_con( std::vector< std::string > const & paths )
 			}
 		}
 		if ( inp_found && out_found ) {
-			std::cerr << "Connection: " << fmu_qsss[ inp_ref.first ]->fmu_me.name << '.' << inp_ref.second->name << " <= " << fmu_qsss[ out_ref.first ]->fmu_me.name << '.' << out_ref.second->name << std::endl;
+			std::cerr << "Connection: " << fmu_qsss[ inp_ref.first ]->fmu_me.name << '.' << inp_ref.second->name() << " <= " << fmu_qsss[ out_ref.first ]->fmu_me.name << '.' << out_ref.second->name() << std::endl;
 			Variable_Inp * const inp_var( dynamic_cast< Variable_Inp * >( inp_ref.second ) );
 			if ( inp_var == nullptr ) {
-				std::cerr << "\nError: Connection input variable is not a Modelica input variable: " << fmu_qsss[ inp_ref.first ]->fmu_me.name << '.' << inp_ref.second->name << std::endl;
+				std::cerr << "\nError: Connection input variable is not a Modelica input variable: " << fmu_qsss[ inp_ref.first ]->fmu_me.name << '.' << inp_ref.second->name() << std::endl;
 				std::exit( EXIT_FAILURE );
 			}
 			if ( out_ref.second->is_ZC() ) { // Don't allow zero-crossing output connections to avoid processing order complexities
-				std::cerr << "\nError: Connection output variable is a zero-crossing variable: " << inp_ref.second->name << std::endl;
+				std::cerr << "\nError: Connection output variable is a zero-crossing variable: " << inp_ref.second->name() << std::endl;
 				std::exit( EXIT_FAILURE );
 			}
 			inp_var->f() = [out_ref]( Time const t ){ return out_ref.second->k( t ); };

@@ -157,6 +157,7 @@ public: // Property
 	bool
 	b( SuperdenseTime const & s ) const
 	{
+		assert( var_ != nullptr );
 		return var_->b( s.t );
 	}
 
@@ -164,6 +165,7 @@ public: // Property
 	bool
 	b( Time const t ) const
 	{
+		assert( var_ != nullptr );
 		return var_->b( t );
 	}
 
@@ -210,6 +212,7 @@ public: // Methods
 	void
 	add_conditional()
 	{
+		assert( eventq_ != nullptr );
 		event_ = eventq_->add_conditional( this );
 	}
 
@@ -217,6 +220,7 @@ public: // Methods
 	void
 	shift_conditional()
 	{
+		assert( eventq_ != nullptr );
 		event_ = eventq_->shift_conditional( event_ );
 	}
 
@@ -224,6 +228,7 @@ public: // Methods
 	void
 	shift_conditional( Time const t )
 	{
+		assert( eventq_ != nullptr );
 		event_ = eventq_->shift_conditional( t, event_ );
 	}
 
@@ -231,6 +236,7 @@ public: // Methods
 	void
 	advance_conditional()
 	{
+		assert( var_ != nullptr );
 		if ( var_->b( st.t ) ) handler( st.t );
 		shift_conditional();
 	}

@@ -1,4 +1,4 @@
-// QSS FMU Variable Specifications
+// FMU Variable Specifications
 //
 // Project: QSS Solver
 //
@@ -45,8 +45,8 @@
 namespace QSS {
 namespace fmu {
 
-// QSS FMU Variable Specifications
-class FMU_Variable final
+// FMU Variable Specifications
+struct FMU_Variable final
 {
 
 public: // Types
@@ -115,7 +115,7 @@ public: // Data
 	size_type idx{ 0u }; // FMU variable index
 	size_type ics{ 0u }; // FMU continuous state index
 
-};
+}; // FMU_Variable
 
 } // fmu
 } // QSS

@@ -125,6 +125,12 @@ public: // Types
 
 protected: // Creation
 
+	// Copy Constructor
+	Variable( Variable const & ) = default;
+
+	// Move Constructor
+	Variable( Variable && ) noexcept = default;
+
 	// Name + Tolerance + Value Constructor
 	Variable(
 	 int const order,
@@ -140,8 +146,8 @@ protected: // Creation
 	 xIni( xIni ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
-	 dt_inf( options::dtInf ),
-	 dt_inf_rlx( options::dtInf == infinity ? infinity : 0.5 * options::dtInf )
+	 dt_inf_( options::dtInf ),
+	 dt_inf_rlx_( options::dtInf == infinity ? infinity : 0.5 * options::dtInf )
 	{}
 
 	// Name + Value Constructor
@@ -155,15 +161,9 @@ protected: // Creation
 	 xIni( xIni ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
-	 dt_inf( options::dtInf ),
-	 dt_inf_rlx( options::dtInf == infinity ? infinity : 0.5 * options::dtInf )
+	 dt_inf_( options::dtInf ),
+	 dt_inf_rlx_( options::dtInf == infinity ? infinity : 0.5 * options::dtInf )
 	{}
-
-	// Copy Constructor
-	Variable( Variable const & ) = default;
-
-	// Move Constructor
-	Variable( Variable && ) noexcept = default;
 
 protected: // Assignment
 
@@ -222,6 +222,27 @@ public: // Predicate
 	not_ZC() const
 	{
 		return ! is_ZC();
+	}
+
+	// Self-Observer?
+	bool
+	self_observer() const
+	{
+		return self_observer_;
+	}
+
+	// Observed?
+	bool
+	observed() const
+	{
+		return observed_;
+	}
+
+	// Observes?
+	bool
+	observes() const
+	{
+		return observes_;
 	}
 
 public: // Property
@@ -432,7 +453,7 @@ public: // Methods
 	observe( Variable * v )
 	{
 		if ( v == this ) { // Flag as self-observer
-			self_observer = true;
+			self_observer_ = true;
 		} else {
 			observees_.push_back( v );
 			v->observers_.push_back( this );
@@ -455,7 +476,7 @@ public: // Methods
 		assert( is_ZC() );
 		if ( ! observees_.empty() ) {
 			for ( Variable * vo : observees_ ) {
-				for ( Variable * voo : vo->observees() ) {
+				for ( Variable * voo : vo->observees_ ) {
 					observe_ZC( voo ); // Only need back-observer to force observer updates when observees update since ZC variable value doesn't depend on these 2nd level observees
 				}
 			}
@@ -467,7 +488,6 @@ public: // Methods
 	init_observers()
 	{
 		observed_ = ( ! observers_.empty() );
-
 		if ( observed_ ) {
 			// Remove duplicates
 			std::sort( observers_.begin(), observers_.end() );
@@ -495,7 +515,8 @@ public: // Methods
 	void
 	init_observees()
 	{
-		if ( ! observees_.empty() ) { // Remove duplicates and discrete variables
+		observes_ = ( ! observees_.empty() );
+		if ( observes_ ) { // Remove duplicates and discrete variables
 			observees_.erase( std::remove_if( observees_.begin(), observees_.end(), []( Variable * v ){ return v->is_Discrete(); } ), observees_.end() ); // Remove discrete variables: Don't need them after ZC drill-through observees set up
 			std::sort( observees_.begin(), observees_.end() );
 			observees_.erase( std::unique( observees_.begin(), observees_.end() ), observees_.end() ); // Remove duplicates
@@ -503,6 +524,8 @@ public: // Methods
 
 			// Put ZC variables at end
 			std::sort( observees_.begin(), observees_.end(), []( Variable const * v1, Variable const * v2 ){ return v1->not_ZC() && v2->is_ZC(); } );
+
+			observes_ = ( ! observees_.empty() ); // In case all were discrete
 		}
 	}
 
@@ -916,8 +939,8 @@ public: // Methods: Output
 	void
 	init_out()
 	{
-		if ( options::output::x ) out_x_.init( name, 'x' );
-		if ( options::output::q ) out_q_.init( name, 'q' );
+		if ( options::output::x ) out_x_.init( name(), 'x' );
+		if ( options::output::q ) out_q_.init( name(), 'q' );
 	}
 
 	// Output at Time t
@@ -981,14 +1004,14 @@ protected: // Methods
 	void
 	tE_infinity_tQ()
 	{
-		if ( dt_inf != infinity ) { // Deactivation control is enabled
+		if ( dt_inf_ != infinity ) { // Deactivation control is enabled
 			if ( tE == infinity ) { // Deactivation has occurred
-				if ( dt_inf_rlx < half_infinity ) { // Relax and use deactivation time step
-					dt_inf_rlx *= 2.0;
-					tE = tQ + dt_inf_rlx;
+				if ( dt_inf_rlx_ < half_infinity ) { // Relax and use deactivation time step
+					dt_inf_rlx_ *= 2.0;
+					tE = tQ + dt_inf_rlx_;
 				}
 			} else { // Reset deactivation time step
-				dt_inf_rlx = dt_inf;
+				dt_inf_rlx_ = dt_inf_;
 			}
 		}
 	}
@@ -997,21 +1020,21 @@ protected: // Methods
 	void
 	tE_infinity_tX()
 	{
-		if ( dt_inf != infinity ) { // Deactivation control is enabled
+		if ( dt_inf_ != infinity ) { // Deactivation control is enabled
 			if ( tE == infinity ) { // Deactivation has occurred
-				if ( dt_inf_rlx < half_infinity ) { // Relax and use deactivation time step
-					dt_inf_rlx *= 2.0;
-					tE = tX + dt_inf_rlx;
+				if ( dt_inf_rlx_ < half_infinity ) { // Relax and use deactivation time step
+					dt_inf_rlx_ *= 2.0;
+					tE = tX + dt_inf_rlx_;
 				}
 			} else { // Reset deactivation time step
-				dt_inf_rlx = dt_inf;
+				dt_inf_rlx_ = dt_inf_;
 			}
 		}
 	}
 
-protected: // Data
+private: // Data
 
-	int order_; // Order of method
+	int order_{ 0 }; // Order of method
 
 public: // Data
 
@@ -1025,21 +1048,21 @@ public: // Data
 	Time tD{ infinity }; // Discrete event time: tQ <= tD and tX <= tD
 	Time dt_min{ 0.0 }; // Time step min
 	Time dt_max{ infinity }; // Time step max
-	Time dt_inf{ infinity }; // Time step inf
-	Time dt_inf_rlx{ infinity }; // Relaxed time step inf
-	bool self_observer{ false }; // Appears in its function/derivative?
 	If_Clauses if_clauses; // Clauses in conditional if blocks
 	When_Clauses when_clauses; // Clauses in conditional when blocks
 
-protected: // Data
+private: // Data
+
+	Time dt_inf_{ infinity }; // Time step inf
+	Time dt_inf_rlx_{ infinity }; // Relaxed time step inf
 
 	Variables observers_; // Variables dependent on this one
 	bool observed_{ false }; // Have any observers?
+	bool self_observer_{ false }; // Appears in its function/derivative?
 	size_type i_beg_ZC_observers_{ 0u }; // Index of first ZC observer
 
 	Variables observees_; // Variables this one depends on
-
-private: // Data
+	bool observes_{ false }; // Has observees?
 
 	// Outputs
 	Output out_x_; // Continuous rep output

@@ -173,7 +173,7 @@ public: // Methods
 	init_0()
 	{
 		assert( out_var_ != nullptr );
-		assert( observees_.empty() );
+		assert( ! observes() );
 		init_observers();
 		tQ = out_var_->tQ;
 		tX = out_var_->tX;
@@ -181,7 +181,7 @@ public: // Methods
 		Real const x_0( out_var_->x( tQ ) );
 		fmu_set_real( x_0 );
 		if ( options::output::d ) {
-			std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0;
+			std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0;
 			int const out_var_order( out_var_->order() );
 			if ( out_var_order >= 1 ) std::cout << out_var_->x1( tQ ) << "*t";
 			if ( out_var_order >= 2 ) std::cout << one_half * out_var_->x2( tQ ) << "*t^2";
@@ -201,8 +201,8 @@ public: // Methods
 		Real const x_( out_var_->x( t ) );
 		fmu_set_time( t ); // Different FMU-ME than trigger
 		fmu_set_real( x_ );
-		if ( options::output::d ) std::cout << "| " << name << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
-		if ( observed_ ) advance_observers();
+		if ( options::output::d ) std::cout << "| " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( observed() ) advance_observers();
 	}
 
 	// Connection Observer Advance
@@ -218,7 +218,7 @@ private: // Data
 
 	Variable * out_var_{ nullptr }; // Connected output variable
 
-};
+}; // Variable_Con
 
 } // fmu
 } // QSS

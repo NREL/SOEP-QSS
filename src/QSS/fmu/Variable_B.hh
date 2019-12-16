@@ -160,22 +160,22 @@ public: // Methods
 	void
 	init_0()
 	{
-		assert( observees_.empty() );
+		assert( ! observes() );
 		init_observers();
 		x_ = ( xIni != 0 );
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Initialization to a Value: Stage 0
 	void
 	init_0( Real const x )
 	{
-		assert( observees_.empty() );
+		assert( ! observes() );
 		init_observers();
 		x_ = ( x != 0 );
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Handler Advance
@@ -187,8 +187,8 @@ public: // Methods
 		Boolean const x_old( x_ );
 		x_ = fmu_get_boolean(); // Assume FMU ran event handler
 		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
-		if ( observed_ && ( x_ != x_old ) ) advance_observers();
+		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( observed() && ( x_ != x_old ) ) advance_observers();
 	}
 
 	// Handler Advance: Stage 0
@@ -205,7 +205,7 @@ public: // Methods
 	advance_handler_F()
 	{
 		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Handler No-Advance
@@ -233,7 +233,7 @@ private: // Data
 
 	Boolean x_{ false }; // Value
 
-};
+}; // Variable_B
 
 } // fmu
 } // QSS

@@ -58,6 +58,12 @@ public: // Types
 
 protected: // Creation
 
+	// Copy Constructor
+	Variable_Inp( Variable_Inp const & ) = default;
+
+	// Move Constructor
+	Variable_Inp( Variable_Inp && ) noexcept = default;
+
 	// Constructor
 	Variable_Inp(
 	 int const order,
@@ -70,12 +76,6 @@ protected: // Creation
 		xIni = Real( f_.vs( tQ ) );
 		tD = f_.tD( tQ );
 	}
-
-	// Copy Constructor
-	Variable_Inp( Variable_Inp const & ) = default;
-
-	// Move Constructor
-	Variable_Inp( Variable_Inp && ) noexcept = default;
 
 protected: // Assignment
 
@@ -116,7 +116,7 @@ protected: // Data
 
 	Function f_; // Input function
 
-};
+}; // Variable_Inp
 
 } // cod
 } // QSS

@@ -38,8 +38,10 @@
 #include <QSS/string.hh>
 
 // C++ Headers
+#include <cassert>
 #include <cstring>
 #include <iostream>
+#include <sstream>
 
 namespace QSS {
 namespace fmu {
@@ -66,6 +68,9 @@ annotation_start_handle(
  char const ** attr
 )
 {
+	assert( parentName != nullptr );
+	assert( elm != nullptr );
+	assert( attr != nullptr );
 	if ( std::strcmp( parentName, "OCT_StateEvents" ) == 0 ) {
 		FMUEventIndicators & fmuEventIndicators( allEventIndicators.back() ); // This is not thread safe!
 		if ( std::strcmp( elm, "EventIndicators" ) == 0 ) {
@@ -80,6 +85,7 @@ annotation_start_handle(
 			EventIndicator ei;
 			bool has_index( false );
 			bool has_reverseDependencies( false );
+			assert( attr[ i ] != nullptr );
 			while ( attr[ i ] ) {
 				if ( std::strcmp( attr[ i ], "index" ) == 0 ) {
 					if ( has_index ) std::cerr << "\nWarning: XML EventIndicators Element has multiple index attributes: Last one is used" << std::endl;

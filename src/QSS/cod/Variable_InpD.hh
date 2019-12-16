@@ -58,12 +58,11 @@ public: // Types
 	using Super::tQ;
 	using Super::tX;
 	using Super::tD;
-	using Super::observed_;
-	using Super::observees_;
+	using Super::observed;
+	using Super::observes;
 
 	using Super::add_discrete;
 	using Super::advance_observers;
-	using Super::event;
 	using Super::shift_discrete;
 	using Super::init_observers;
 
@@ -131,12 +130,12 @@ public: // Methods
 	void
 	init_0()
 	{
-		assert( observees_.empty() );
+		assert( ! observes() );
 		init_observers();
 		x_ = f_.vs( tQ );
 		tD = f_.tD( tQ );
 		add_discrete( tD );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
 	}
 
 	// Discrete Advance
@@ -148,8 +147,8 @@ public: // Methods
 		shift_discrete( tD );
 		bool const chg( x_ != x_new );
 		x_ = x_new;
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
-		if ( chg && observed_ ) advance_observers();
+		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
+		if ( chg && observed() ) advance_observers();
 	}
 
 	// Discrete Advance: Simultaneous
@@ -160,14 +159,14 @@ public: // Methods
 		tD = f_.tD( tD );
 		shift_discrete( tD );
 		x_ = x_new;
-		if ( options::output::d ) std::cout << "* " << name << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
 	}
 
 private: // Data
 
 	Real x_{ 0.0 }; // Value
 
-};
+}; // Variable_InpD
 
 } // cod
 } // QSS

@@ -57,6 +57,7 @@ struct FMU_QSS final
 public: // Types
 
 	using size_type = std::size_t;
+	using FMU_Value_Refs = std::vector< fmi2_value_reference_t >;
 
 	enum class FMU_Generator { JModelica, Optimica, Dymola, Other };
 
@@ -137,9 +138,9 @@ public: // Data
 	fmi_import_context_t * context{ nullptr };
 	fmi2_import_variable_list_t * var_list{ nullptr };
 	fmi2_import_variable_list_t * der_list{ nullptr };
-	std::vector< fmi2_value_reference_t > var_refs;
-	std::vector< fmi2_value_reference_t > inp_var_refs;
-	std::vector< fmi2_value_reference_t > out_var_refs;
+	FMU_Value_Refs var_refs;
+	FMU_Value_Refs inp_var_refs;
+	FMU_Value_Refs out_var_refs;
 	fmi2_callback_functions_t callBackFunctions;
 	jm_callbacks callbacks;
 	FMU_Generator fmu_generator;
@@ -151,7 +152,7 @@ public: // Data
 	// Contained FMU-ME
 	FMU_ME fmu_me;
 
-};
+}; // FMU_QSS
 
 } // fmu
 } // QSS

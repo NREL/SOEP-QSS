@@ -62,7 +62,7 @@ namespace QSS {
 //
 // Poorly defined models can create an infinite loop of simultaneous events. This
 // implementation will seek to detect such situations and terminate with an error.
-class SuperdenseTime final
+struct SuperdenseTime final
 {
 
 public: // Types
@@ -319,7 +319,7 @@ public: // Data
 	Index i{ 0 }; // Pass
 	Offset o{ 0 }; // Offset
 
-};
+}; // SuperdenseTime
 
 } // QSS
 

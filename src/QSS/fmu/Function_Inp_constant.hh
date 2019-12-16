@@ -107,7 +107,7 @@ private: // Data
 
 	Real const x_0_{ 0.0 }; // Constant value
 
-};
+}; // Function_Inp_constant
 
 } // fmu
 } // QSS

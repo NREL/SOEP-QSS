@@ -123,7 +123,7 @@ main( int argc, char * argv[] )
 #endif
 
 	// Run FMU-QSS, FMU-ME, or code-defined model simulation
-	if ( options::have_multiple_models() && options::have_connections() ) { // Synched simulations
+	if ( options::have_multiple_models() && options::connected() ) { // Synched simulations
 		if ( model_type == ModelType::COD ) { // Code-defined model
 			std::cerr << "Error: Code-defined models with input:output connections not yet supported" << std::endl;
 			std::exit( EXIT_FAILURE );

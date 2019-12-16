@@ -106,8 +106,8 @@ public: // Methods
 	init()
 	{
 		// Check no observers
-		if ( self_observer || ( ! observers_.empty() ) ) {
-			std::cerr << "Error: Zero-crossing variable has observers: " << name << std::endl;
+		if ( self_observer() || observed() ) {
+			std::cerr << "Error: Zero-crossing variable has observers: " << name() << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
 
@@ -122,7 +122,7 @@ public: // Methods
 		set_tE();
 		set_tZ();
 		( tE < tZ ) ? add_QSS_ZC( tE ) : add_ZC( tZ );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
 	// QSS Advance
@@ -146,7 +146,7 @@ public: // Methods
 		set_tZ();
 		( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 #endif
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
 	// Zero-Crossing Advance
@@ -155,7 +155,7 @@ public: // Methods
 	{
 		assert( in_conditional() );
 		conditional->activity( tZ );
-		if ( options::output::d ) std::cout << "Z " << name << '(' << tZ << ')' << '\n';
+		if ( options::output::d ) std::cout << "Z " << name() << '(' << tZ << ')' << '\n';
 		crossing_last = crossing;
 		x_mag_ = 0.0;
 		set_tZ( tZ_last = tZ ); // Next zero-crossing: Might be in active segment
@@ -202,7 +202,7 @@ public: // Methods
 	void
 	advance_observer_d() const
 	{
-		std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ <<  '\n';
+		std::cout << "  " << name() << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ <<  '\n';
 	}
 
 private: // Methods
@@ -244,31 +244,7 @@ private: // Methods
 					tZ = tX - ( x_0_ / x_1_ ); // Root of continuous rep
 					if ( tZ > tX ) {
 						crossing = crossing_check;
-						if ( options::refine ) { // Refine root: Expensive!
-							Time t( tZ );
-							//Time t_p( tZ );
-							Time const t_fmu( fmu_get_time() );
-							fmu_set_time( tZ ); // Don't seem to need this
-							Real const vZ( z_0( tZ ) );
-							Real v( vZ ), v_p( vZ );
-							Real m( 1.0 ); // Multiplier
-							std::size_t i( 0 );
-							std::size_t const n( 10u ); // Max iterations
-							while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-								Real const d( p_1() );
-								if ( d == 0.0 ) break;
-								//if ( ( signum( d ) != sign_old ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
-								t -= m * ( v / d );
-								fmu_set_time( t ); // Don't seem to need this
-								v = z_0( t );
-								if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
-								//t_p = t;
-								v_p = v;
-							}
-							if ( ( t >= tX ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
-							if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
-							fmu_set_time( t_fmu ); // Don't seem to need this
-						}
+						if ( options::refine ) refine_root_ZCe( tX ); // Refine root: Expensive!
 					} else { // Essentially flat
 						tZ = infinity;
 					}
@@ -316,7 +292,7 @@ private: // Data
 
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
 
-};
+}; // Variable_ZCe1
 
 } // fmu
 } // QSS

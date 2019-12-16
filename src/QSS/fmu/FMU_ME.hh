@@ -191,19 +191,7 @@ public: // Simulation Methods
 
 	// Initialization
 	void
-	init()
-	{
-		init_0_1();
-		init_0_2();
-		init_1_1();
-		init_1_2();
-		init_2_1();
-		init_2_2();
-		init_3_1();
-		init_F();
-		init_ZC();
-		init_pre_simulate();
-	}
+	init();
 
 	// Initialization: Stage 0.1
 	void
@@ -444,14 +432,14 @@ public: // Data
 	FMU_Generator fmu_generator;
 
 	// FMU counts
-	size_type n_vars{ 0 };
-	size_type n_states{ 0 };
-	size_type n_derivatives{ 0 };
-	size_type n_event_indicators{ 0 };
-	size_type n_outs{ 0 };
-	size_type n_fmu_outs{ 0 };
-	size_type n_all_outs{ 0 };
-	size_type n_fmu_qss_qss_outs{ 0 };
+	size_type n_vars{ 0u };
+	size_type n_states{ 0u };
+	size_type n_derivatives{ 0u };
+	size_type n_event_indicators{ 0u };
+	size_type n_outs{ 0u };
+	size_type n_fmu_outs{ 0u };
+	size_type n_all_outs{ 0u };
+	size_type n_fmu_qss_qss_outs{ 0u };
 
 	// Timing
 	Time t0{ 0.0 }; // Simulation start time
@@ -508,10 +496,10 @@ public: // Data
 
 	// Simulation
 	size_type const max_pass_count_multiplier{ 2 };
-	size_type n_discrete_events{ 0 };
-	size_type n_QSS_events{ 0 };
-	size_type n_QSS_simultaneous_events{ 0 };
-	size_type n_ZC_events{ 0 };
+	size_type n_discrete_events{ 0u };
+	size_type n_QSS_events{ 0u };
+	size_type n_QSS_simultaneous_events{ 0u };
+	size_type n_ZC_events{ 0u };
 	double sim_dtMin{ 0.0 };
 	bool pass_warned{ false };
 	Variables observers;
@@ -522,7 +510,7 @@ public: // Data
 	Counts c_QSS_events;
 	Counts c_ZC_events;
 
-};
+}; // FMU_ME
 
 } // fmu
 } // QSS

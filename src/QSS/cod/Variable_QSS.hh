@@ -59,6 +59,12 @@ public: // Types
 
 protected: // Creation
 
+	// Copy Constructor
+	Variable_QSS( Variable_QSS const & ) = default;
+
+	// Move Constructor
+	Variable_QSS( Variable_QSS && ) noexcept = default;
+
 	// Constructor
 	Variable_QSS(
 	 int const order,
@@ -69,12 +75,6 @@ protected: // Creation
 	) :
 	 Super( order, name, rTol, aTol, xIni )
 	{}
-
-	// Copy Constructor
-	Variable_QSS( Variable_QSS const & ) = default;
-
-	// Move Constructor
-	Variable_QSS( Variable_QSS && ) noexcept = default;
 
 protected: // Assignment
 
@@ -146,7 +146,7 @@ protected: // Data
 
 	Derivative d_; // Derivative function
 
-};
+}; // Variable_QSS
 
 } // cod
 } // QSS

@@ -143,8 +143,8 @@ public: // Methods
 	init()
 	{
 		// Check no observers
-		if ( self_observer || ( ! observers_.empty() ) ) {
-			std::cerr << "Error: Zero-crossing variable has observers: " << name << std::endl;
+		if ( self_observer() || observed() ) {
+			std::cerr << "Error: Zero-crossing variable has observers: " << name() << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
 
@@ -161,7 +161,7 @@ public: // Methods
 		set_tE();
 		set_tZ();
 		( tE < tZ ) ? add_QSS_ZC( tE ) : add_ZC( tZ );
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
 	// QSS Advance
@@ -187,7 +187,7 @@ public: // Methods
 		set_tZ();
 		( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 #endif
-		if ( options::output::d ) std::cout << "! " << name << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
 	// Zero-Crossing Advance
@@ -196,7 +196,7 @@ public: // Methods
 	{
 		assert( in_conditional() );
 		conditional->activity( tZ );
-		if ( options::output::d ) std::cout << "Z " << name << '(' << tZ << ')' << '\n';
+		if ( options::output::d ) std::cout << "Z " << name() << '(' << tZ << ')' << '\n';
 		crossing_last = crossing;
 		x_mag_ = 0.0;
 		set_tZ( tZ_last = tZ ); // Next zero-crossing: Might be in active segment
@@ -257,7 +257,7 @@ public: // Methods
 	void
 	advance_observer_d() const
 	{
-		std::cout << "  " << name << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ <<  '\n';
+		std::cout << "  " << name() << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ <<  '\n';
 	}
 
 private: // Methods
@@ -301,32 +301,7 @@ private: // Methods
 				 crossing_type( x_0_ > 0.0 ? std::min( x1( tZ ), Real( 0.0 ) ) : std::max( x1( tZ ), Real( 0.0 ) ) ) );
 				if ( has( crossing_check ) ) { // Crossing type is relevant
 					crossing = crossing_check;
-					if ( options::refine ) { // Refine root: Expensive!
-						Time t( tZ );
-						//Time t_p( tZ );
-						Time const t_fmu( fmu_get_time() );
-						fmu_set_time( tZ ); // Don't seem to need this
-						Real const vZ( z_0( tZ ) );
-						Real v( vZ ), v_p( vZ );
-						Real m( 1.0 ); // Multiplier
-						std::size_t i( 0 );
-						std::size_t const n( 10u ); // Max iterations
-						//int const sign_0( signum( x_0_ ) );
-						while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-							Real const d( z_1( t, v ) );
-							if ( d == 0.0 ) break;
-							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
-							t -= m * ( v / d );
-							fmu_set_time( t ); // Don't seem to need this
-							v = z_0( t );
-							if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
-							//t_p = t;
-							v_p = v;
-						}
-						if ( ( t >= tX ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
-						if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
-						fmu_set_time( t_fmu ); // Don't seem to need this
-					}
+					if ( options::refine ) refine_root_ZC( tX ); // Refine root: Expensive!
 				} else { // Crossing type not relevant
 					tZ = infinity;
 				}
@@ -355,32 +330,7 @@ private: // Methods
 				 crossing_type( x_0 > 0.0 ? std::min( x1( tZ ), Real( 0.0 ) ) : std::max( x1( tZ ), Real( 0.0 ) ) ) );
 				if ( has( crossing_check ) ) { // Crossing type is relevant
 					crossing = crossing_check;
-					if ( options::refine ) { // Refine root: Expensive!
-						Time t( tZ );
-						//Time t_p( tZ );
-						Time const t_fmu( fmu_get_time() );
-						fmu_set_time( tZ ); // Don't seem to need this
-						Real const vZ( z_0( tZ ) );
-						Real v( vZ ), v_p( vZ );
-						Real m( 1.0 ); // Multiplier
-						std::size_t i( 0 );
-						std::size_t const n( 10u ); // Max iterations
-						//int const sign_0( signum( x_0 ) );
-						while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-							Real const d( z_1( t, v ) );
-							if ( d == 0.0 ) break;
-							//if ( ( signum( d ) != sign_0 ) && ( tE < std::min( t_p, t ) ) ) break; // Zero-crossing seems to be >tE so don't refine further
-							t -= m * ( v / d );
-							fmu_set_time( t ); // Don't seem to need this
-							v = z_0( t );
-							if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
-							//t_p = t;
-							v_p = v;
-						}
-						if ( ( t >= tB ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
-						if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name << '(' << t << ')' << " tZ may not have converged" <<  '\n';
-						fmu_set_time( t_fmu ); // Don't seem to need this
-					}
+					if ( options::refine ) refine_root_ZC( tB ); // Refine root: Expensive!
 				} else { // Crossing type not relevant
 					tZ = infinity;
 				}
@@ -433,13 +383,6 @@ private: // Methods
 		return options::one_over_dtNum * ( ( x_0_p_ = x_0_p ) - x_0_ ); //ND Forward Euler
 	}
 
-	// Coefficient 1 from FMU at Time t with Value v
-	Real
-	z_1( Time const t, Real const v ) const
-	{
-		return Z_1( t, v );
-	}
-
 	// Coefficient 2 from FMU
 	Real
 	z_2() const
@@ -477,7 +420,7 @@ private: // Data
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Continuous rep coefficients
 	mutable Real x_0_m_{ 0.0 }, x_0_p_{ 0.0 }; // Values at minus and plus delta-t for numeric differentiation
 
-};
+}; // Variable_ZC3
 
 } // fmu
 } // QSS

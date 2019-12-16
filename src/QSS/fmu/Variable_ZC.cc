@@ -1,4 +1,4 @@
-// FMU-Based Variable Abstract Base Class
+// FMU-Based QSS Zero-Crossing Variable Abstract Base Class
 //
 // Project: QSS Solver
 //
@@ -34,69 +34,65 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // QSS Headers
-#include <QSS/fmu/Variable_Con.hh>
+#include <QSS/fmu/Variable_ZC.hh>
 
 namespace QSS {
 namespace fmu {
 
-	// Advance Connections
+	// Refine Zero-Crossing Time
 	void
-	Variable::
-	advance_connections()
+	Variable_ZC::
+	refine_root_ZC( Time const tBeg )
 	{
-		for ( Variable_Con * connection : connections_ ) {
-			connection->advance_connection( tQ );
+		assert( options::refine );
+		Time t( tZ );
+		Time const t_fmu( fmu_get_time() );
+		fmu_set_time( tZ );
+		Real const vZ( z_0( tZ ) );
+		Real v( vZ ), v_p( vZ );
+		Real m( 1.0 ); // Multiplier
+		std::size_t i( 0 );
+		std::size_t const n( 10u ); // Max iterations
+		while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
+			Real const d( Z_1( t, v ) );
+			if ( d == 0.0 ) break;
+			t -= m * ( v / d );
+			fmu_set_time( t );
+			v = z_0( t );
+			if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
+			v_p = v;
 		}
+		if ( ( t >= tBeg ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
+		if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name() << '(' << t << ')' << " tZ may not have converged" <<  '\n';
+		fmu_set_time( t_fmu );
 	}
 
-	// Advance Connections for Observer Update
+	// Refine Zero-Crossing Time
 	void
-	Variable::
-	advance_connections_observer()
+	Variable_ZC::
+	refine_root_ZCe( Time const tBeg )
 	{
-		for ( Variable_Con * connection : connections_ ) {
-			connection->advance_connection_observer();
+		assert( options::refine );
+		Time t( tZ );
+		Time const t_fmu( fmu_get_time() );
+		fmu_set_time( tZ );
+		Real const vZ( z_0( tZ ) );
+		Real v( vZ ), v_p( vZ );
+		Real m( 1.0 ); // Multiplier
+		std::size_t i( 0 );
+		std::size_t const n( 10u ); // Max iterations
+		while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
+			Real const d( p_1() );
+			if ( d == 0.0 ) break;
+			t -= m * ( v / d );
+			fmu_set_time( t );
+			v = z_0( t );
+			if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
+			v_p = v;
 		}
-	}
-
-	// Connections Output at Time t
-	void
-	Variable::
-	connections_out( Time const t )
-	{
-		for ( Variable_Con * connection : connections_ ) {
-			connection->out( t );
-		}
-	}
-
-	// Connections Output at Time t
-	void
-	Variable::
-	connections_out_q( Time const t )
-	{
-		for ( Variable_Con * connection : connections_ ) {
-			connection->out_q( t );
-		}
-	}
-
-	// Connections Pre-Event Observer Output at Time t
-	void
-	Variable::
-	connections_observer_out_pre( Time const t )
-	{
-		for ( Variable_Con * connection : connections_ ) {
-			connection->observer_out_pre( t );
-		}
-	}
-
-	// Connections Post-Event Observer Output at Time t
-	void
-	Variable::
-	connections_observer_out_post( Time const t )
-	{
-		for ( Variable_Con * connection : connections_ ) {
-			connection->observer_out_post( t );
-		}
+		if ( ( t >= tBeg ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
+		if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name() << '(' << t << ')' << " tZ may not have converged" <<  '\n';
+		fmu_set_time( t_fmu );
 	}
 
 } // fmu

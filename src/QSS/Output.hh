@@ -182,7 +182,7 @@ private: // Data
 	std::string file_; // File name
 	Times t_; // Time buffer
 	Values v_; // Value buffer
-	size_type const capacity_{ 2048 }; // Buffer capacities
+	size_type const capacity_{ 2048 }; // Buffer size
 
 };
 

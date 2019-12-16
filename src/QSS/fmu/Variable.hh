@@ -101,6 +101,12 @@ public: // Types
 
 protected: // Creation
 
+	// Copy Constructor
+	Variable( Variable const & ) = default;
+
+	// Move Constructor
+	Variable( Variable && ) noexcept = default;
+
 	// Name + Tolerance + Value Constructor
 	Variable(
 	 int const order,
@@ -119,12 +125,12 @@ protected: // Creation
 	 xIni( xIni ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
-	 dt_inf( options::dtInf ),
-	 dt_inf_rlx( options::dtInf == infinity ? infinity : 0.5 * options::dtInf ),
-	 fmu_me( fmu_me ),
-	 var( var ),
-	 der( der ),
+	 dt_inf_( options::dtInf ),
+	 dt_inf_rlx_( options::dtInf == infinity ? infinity : 0.5 * options::dtInf ),
 	 observers_( fmu_me ),
+	 fmu_me_( fmu_me ),
+	 var_( var ),
+	 der_( der ),
 	 eventq_( fmu_me->eventq )
 	{}
 
@@ -145,12 +151,12 @@ protected: // Creation
 	 xIni( 0.0 ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
-	 dt_inf( options::dtInf ),
-	 dt_inf_rlx( options::dtInf == infinity ? infinity : 0.5 * options::dtInf ),
-	 fmu_me( fmu_me ),
-	 var( var ),
-	 der( der ),
+	 dt_inf_( options::dtInf ),
+	 dt_inf_rlx_( options::dtInf == infinity ? infinity : 0.5 * options::dtInf ),
 	 observers_( fmu_me ),
+	 fmu_me_( fmu_me ),
+	 var_( var ),
+	 der_( der ),
 	 eventq_( fmu_me->eventq )
 	{}
 
@@ -168,12 +174,12 @@ protected: // Creation
 	 xIni( xIni ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
-	 dt_inf( options::dtInf ),
-	 dt_inf_rlx( options::dtInf == infinity ? infinity : 0.5 * options::dtInf ),
-	 fmu_me( fmu_me ),
-	 var( var ),
-	 der( der ),
+	 dt_inf_( options::dtInf ),
+	 dt_inf_rlx_( options::dtInf == infinity ? infinity : 0.5 * options::dtInf ),
 	 observers_( fmu_me ),
+	 fmu_me_( fmu_me ),
+	 var_( var ),
+	 der_( der ),
 	 eventq_( fmu_me->eventq )
 	{}
 
@@ -190,20 +196,14 @@ protected: // Creation
 	 xIni( 0.0 ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
-	 dt_inf( options::dtInf ),
-	 dt_inf_rlx( options::dtInf == infinity ? infinity : 0.5 * options::dtInf ),
-	 fmu_me( fmu_me ),
-	 var( var ),
-	 der( der ),
+	 dt_inf_( options::dtInf ),
+	 dt_inf_rlx_( options::dtInf == infinity ? infinity : 0.5 * options::dtInf ),
 	 observers_( fmu_me ),
+	 fmu_me_( fmu_me ),
+	 var_( var ),
+	 der_( der ),
 	 eventq_( fmu_me->eventq )
 	{}
-
-	// Copy Constructor
-	Variable( Variable const & ) = default;
-
-	// Move Constructor
-	Variable( Variable && ) noexcept = default;
 
 public: // Creation
 
@@ -264,6 +264,13 @@ public: // Predicate
 		return ! is_connection();
 	}
 
+	// Connected?
+	bool
+	connected() const
+	{
+		return connected_;
+	}
+
 	// QSS Variable?
 	virtual
 	bool
@@ -303,11 +310,25 @@ public: // Predicate
 		return conditional != nullptr;
 	}
 
+	// Self-Observer?
+	bool
+	self_observer() const
+	{
+		return self_observer_;
+	}
+
 	// Observed?
 	bool
 	observed() const
 	{
 		return observed_;
+	}
+
+	// Observes?
+	bool
+	observes() const
+	{
+		return observes_;
 	}
 
 public: // Property
@@ -488,11 +509,53 @@ public: // Property
 		return observees_;
 	}
 
+	// FMU Variable Specs
+	FMU_Variable const &
+	var() const
+	{
+		return var_;
+	}
+
+	// FMU Variable Specs
+	FMU_Variable &
+	var()
+	{
+		return var_;
+	}
+
+	// FMU Derivative Specs
+	FMU_Variable const &
+	der() const
+	{
+		return der_;
+	}
+
+	// FMU Derivative Specs
+	FMU_Variable &
+	der()
+	{
+		return der_;
+	}
+
 	// Observees
 	Variables &
 	observees()
 	{
 		return observees_;
+	}
+
+	// Connections
+	Variable_Cons const &
+	connections() const
+	{
+		return connections_;
+	}
+
+	// Connections
+	Variable_Cons &
+	connections()
+	{
+		return connections_;
 	}
 
 	// Event Queue
@@ -527,12 +590,19 @@ public: // Methods
 		dt_max = dt;
 	}
 
+	// Self-Observe
+	void
+	self_observe()
+	{
+		self_observer_ = true;
+	}
+
 	// Add Observee and its Observer
 	void
 	observe( Variable * v )
 	{
 		if ( v == this ) { // Flag as self-observer
-			self_observer = true;
+			self_observer_ = true;
 		} else {
 			observees_.push_back( v );
 			v->observers_.push_back( this );
@@ -555,7 +625,7 @@ public: // Methods
 		assert( is_ZC() );
 		if ( ! observees_.empty() ) {
 			for ( Variable * vo : observees_ ) {
-				for ( Variable * voo : vo->observees() ) {
+				for ( Variable * voo : vo->observees_ ) {
 					observe_ZC( voo ); // Only need back-observer to force observer updates when observees update since ZC variable value doesn't depend on these 2nd level observees
 				}
 			}
@@ -575,12 +645,21 @@ public: // Methods
 	void
 	init_observees()
 	{
-		if ( ! observees_.empty() ) { // Remove duplicates and discrete variables
+		observes_ = ( ! observees_.empty() );
+		if ( observes_ ) { // Remove duplicates and discrete variables
 			observees_.erase( std::remove_if( observees_.begin(), observees_.end(), []( Variable * v ){ return v->is_Discrete(); } ), observees_.end() ); // Remove discrete variables: Don't need them after ZC drill-thru observees set up
 			std::sort( observees_.begin(), observees_.end() );
 			observees_.erase( std::unique( observees_.begin(), observees_.end() ), observees_.end() ); // Remove duplicates
 			observees_.shrink_to_fit();
+			observes_ = ( ! observees_.empty() ); // In case all were discrete
 		}
+	}
+
+	// Connect
+	void
+	connect()
+	{
+		connected_ = true;
 	}
 
 	// Time Initialization
@@ -855,6 +934,14 @@ public: // Methods
 		assert( false ); // Not a QSS or discrete variable
 	}
 
+	// Advance Connections
+	void
+	advance_connections();
+
+	// Advance Connections for Observer Update
+	void
+	advance_connections_observer();
+
 	// Advance Observers
 	void
 	advance_observers()
@@ -932,8 +1019,8 @@ public: // Methods: Output
 	void
 	init_out( std::string const & dir )
 	{
-		if ( options::output::x ) out_x_.init( dir, name, 'x' );
-		if ( options::output::q ) out_q_.init( dir, name, 'q' );
+		if ( options::output::x ) out_x_.init( dir, name(), 'x' );
+		if ( options::output::q ) out_q_.init( dir, name(), 'q' );
 	}
 
 	// Output at Time t
@@ -942,7 +1029,7 @@ public: // Methods: Output
 	{
 		if ( options::output::x ) out_x_.append( t, x( t ) );
 		if ( options::output::q ) out_q_.append( t, q( t ) );
-		if ( have_connections ) connections_out( t );
+		if ( connected_ ) connections_out( t );
 	}
 
 	// Output Quantized at Time t
@@ -950,7 +1037,7 @@ public: // Methods: Output
 	out_q( Time const t )
 	{
 		if ( options::output::q ) out_q_.append( t, q( t ) );
-		if ( have_connections ) connections_out_q( t );
+		if ( connected_ ) connections_out_q( t );
 	}
 
 	// Pre-Event Observer Output at Time t
@@ -959,7 +1046,7 @@ public: // Methods: Output
 	{
 		if ( options::output::x ) out_x_.append( t, x( t ) );
 		if ( options::output::q && is_ZC() ) out_q_.append( t, q( t ) );
-		if ( have_connections ) connections_observer_out_pre( t );
+		if ( connected_ ) connections_observer_out_pre( t );
 	}
 
 	// Post-Event Observer Output at Time t
@@ -969,7 +1056,7 @@ public: // Methods: Output
 		if ( is_ZC() ) {
 			if ( options::output::x ) out_x_.append( t, x( t ) );
 			if ( options::output::q ) out_q_.append( t, q( t ) );
-			if ( have_connections ) connections_observer_out_post( t );
+			if ( connected_ ) connections_observer_out_post( t );
 		}
 	}
 
@@ -1017,64 +1104,64 @@ public: // Methods: FMU
 	Time
 	fmu_get_time() const
 	{
-		assert( fmu_me != nullptr );
-		return fmu_me->get_time();
+		assert( fmu_me_ != nullptr );
+		return fmu_me_->get_time();
 	}
 
 	// Set FMU Time
 	void
 	fmu_set_time( Time const t ) const
 	{
-		assert( fmu_me != nullptr );
-		fmu_me->set_time( t );
+		assert( fmu_me_ != nullptr );
+		fmu_me_->set_time( t );
 	}
 
 	// Get FMU Real Variable Value
 	Real
 	fmu_get_real() const
 	{
-		assert( fmu_me != nullptr );
-		return fmu_me->get_real( var.ref );
+		assert( fmu_me_ != nullptr );
+		return fmu_me_->get_real( var_.ref );
 	}
 
 	// Set FMU Real Variable to a Value
 	void
 	fmu_set_real( Real const v ) const
 	{
-		assert( fmu_me != nullptr );
-		fmu_me->set_real( var.ref, v );
+		assert( fmu_me_ != nullptr );
+		fmu_me_->set_real( var_.ref, v );
 	}
 
 	// Get FMU Integer Variable Value
 	Integer
 	fmu_get_integer() const
 	{
-		assert( fmu_me != nullptr );
-		return fmu_me->get_integer( var.ref );
+		assert( fmu_me_ != nullptr );
+		return fmu_me_->get_integer( var_.ref );
 	}
 
 	// Set FMU Integer Variable to a Value
 	void
 	fmu_set_integer( Integer const v ) const
 	{
-		assert( fmu_me != nullptr );
-		fmu_me->set_integer( var.ref, v );
+		assert( fmu_me_ != nullptr );
+		fmu_me_->set_integer( var_.ref, v );
 	}
 
 	// Get FMU Boolean Variable Value
 	bool
 	fmu_get_boolean() const
 	{
-		assert( fmu_me != nullptr );
-		return fmu_me->get_boolean( var.ref );
+		assert( fmu_me_ != nullptr );
+		return fmu_me_->get_boolean( var_.ref );
 	}
 
 	// Set FMU Boolean Variable to a Value
 	void
 	fmu_set_boolean( bool const v ) const
 	{
-		assert( fmu_me != nullptr );
-		fmu_me->set_boolean( var.ref, v );
+		assert( fmu_me_ != nullptr );
+		fmu_me_->set_boolean( var_.ref, v );
 	}
 
 	// Set FMU Variable to Continuous Value at Time t
@@ -1082,8 +1169,8 @@ public: // Methods: FMU
 	void
 	fmu_set_x( Time const t ) const
 	{
-		assert( fmu_me != nullptr );
-		fmu_me->set_real( var.ref, x( t ) );
+		assert( fmu_me_ != nullptr );
+		fmu_me_->set_real( var_.ref, x( t ) );
 	}
 
 	// Set FMU Variable to Quantized Value at Time t
@@ -1091,8 +1178,8 @@ public: // Methods: FMU
 	void
 	fmu_set_q( Time const t ) const
 	{
-		assert( fmu_me != nullptr );
-		fmu_me->set_real( var.ref, q( t ) );
+		assert( fmu_me_ != nullptr );
+		fmu_me_->set_real( var_.ref, q( t ) );
 	}
 
 protected: // Methods: FMU
@@ -1119,8 +1206,8 @@ protected: // Methods: FMU
 	Real
 	p_0() const
 	{
-		assert( fmu_me != nullptr );
-		return fmu_me->get_real( var.ref );
+		assert( fmu_me_ != nullptr );
+		return fmu_me_->get_real( var_.ref );
 	}
 
 	// Coefficient 0 from FMU at Time tQ: Zero-Crossing
@@ -1143,8 +1230,8 @@ protected: // Methods: FMU
 	Real
 	p_1() const
 	{
-		assert( fmu_me != nullptr );
-		return fmu_me->get_real( der.ref );
+		assert( fmu_me_ != nullptr );
+		return fmu_me_->get_real( der_.ref );
 	}
 
 	// Coefficient 1 from FMU at Time t: QSS
@@ -1152,7 +1239,7 @@ protected: // Methods: FMU
 	c_1( Time const t ) const
 	{
 		fmu_set_observees_q( t );
-		if ( self_observer ) fmu_set_q( t );
+		if ( self_observer_ ) fmu_set_q( t );
 		return p_1();
 	}
 
@@ -1162,7 +1249,7 @@ protected: // Methods: FMU
 	{
 		assert( t == tQ );
 		fmu_set_observees_q( t );
-		if ( self_observer ) fmu_set_real( q_0 );
+		if ( self_observer_ ) fmu_set_real( q_0 );
 		return p_1();
 	}
 
@@ -1261,14 +1348,14 @@ protected: // Methods
 	void
 	tE_infinity_tQ()
 	{
-		if ( dt_inf != infinity ) { // Deactivation control is enabled
+		if ( dt_inf_ != infinity ) { // Deactivation control is enabled
 			if ( tE == infinity ) { // Deactivation has occurred
-				if ( dt_inf_rlx < half_infinity ) { // Relax and use deactivation time step
-					dt_inf_rlx *= 2.0;
-					tE = tQ + dt_inf_rlx;
+				if ( dt_inf_rlx_ < half_infinity ) { // Relax and use deactivation time step
+					dt_inf_rlx_ *= 2.0;
+					tE = tQ + dt_inf_rlx_;
 				}
 			} else { // Reset deactivation time step
-				dt_inf_rlx = dt_inf;
+				dt_inf_rlx_ = dt_inf_;
 			}
 		}
 	}
@@ -1277,19 +1364,19 @@ protected: // Methods
 	void
 	tE_infinity_tX()
 	{
-		if ( dt_inf != infinity ) { // Deactivation control is enabled
+		if ( dt_inf_ != infinity ) { // Deactivation control is enabled
 			if ( tE == infinity ) { // Deactivation has occurred
-				if ( dt_inf_rlx < half_infinity ) { // Relax and use deactivation time step
-					dt_inf_rlx *= 2.0;
-					tE = tX + dt_inf_rlx;
+				if ( dt_inf_rlx_ < half_infinity ) { // Relax and use deactivation time step
+					dt_inf_rlx_ *= 2.0;
+					tE = tX + dt_inf_rlx_;
 				}
 			} else { // Reset deactivation time step
-				dt_inf_rlx = dt_inf;
+				dt_inf_rlx_ = dt_inf_;
 			}
 		}
 	}
 
-protected: // Data
+private: // Data
 
 	int order_{ 0 }; // Method order
 
@@ -1305,31 +1392,31 @@ public: // Data
 	Time tD{ infinity }; // Discrete event time: tQ <= tD and tX <= tD
 	Time dt_min{ 0.0 }; // Time step min
 	Time dt_max{ infinity }; // Time step max
-	Time dt_inf{ infinity }; // Time step inf
-	Time dt_inf_rlx{ infinity }; // Relaxed time step inf
-	bool self_observer{ false }; // Appears in its function/derivative?
 	Conditional< Variable > * conditional{ nullptr }; // Conditional (non-owning)
-	FMU_ME * fmu_me{ nullptr }; // FMU-ME (non-owning) pointer
-	FMU_Variable var; // FMU variables specs
-	FMU_Variable der; // FMU derivative specs
 
-	// Connections
-	Variable_Cons connections; // Input connection variables this one outputs to
-	bool have_connections{ false }; // Have connections?
+private: // Data
 
-protected: // Data
+	Time dt_inf_{ infinity }; // Time step inf
+	Time dt_inf_rlx_{ infinity }; // Relaxed time step inf
 
 	// Observers
 	Observers< Variable > observers_; // Variables dependent on this one
 	bool observed_{ false }; // Has observers?
+	bool self_observer_{ false }; // Appears in its function/derivative?
 
 	// Observees
 	Variables observees_; // Variables this one depends on
+	bool observes_{ false }; // Has observees?
 
-	// Event queue
-	EventQ * eventq_{ nullptr };
+	// Connections
+	Variable_Cons connections_; // Input connection variables this one outputs to
+	bool connected_{ false }; // Have connection(s)?
 
-private: // Data
+	// FMU
+	FMU_ME * fmu_me_{ nullptr }; // FMU-ME
+	FMU_Variable var_; // FMU variables specs
+	FMU_Variable der_; // FMU derivative specs
+	EventQ * eventq_{ nullptr }; // FMU event queue
 
 	// Outputs
 	Output out_x_; // Continuous rep output

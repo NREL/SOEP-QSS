@@ -224,15 +224,15 @@ public: // Methods
 		nz_3_der_refs_.reserve( nz_.n3_ );
 		nz_3_der_vals_.reserve( nz_.n3_ );
 		for ( size_type i = nz_.b_, e = nz_.e_; i < e; ++i ) {
-			nz_der_refs_.push_back( observers_[ i ]->der.ref );
+			nz_der_refs_.push_back( observers_[ i ]->der().ref );
 			nz_der_vals_.push_back( 0.0 );
 		}
 		for ( size_type i = nz_.b2_, e = nz_.e_; i < e; ++i ) {
-			nz_2_der_refs_.push_back( observers_[ i ]->der.ref );
+			nz_2_der_refs_.push_back( observers_[ i ]->der().ref );
 			nz_2_der_vals_.push_back( 0.0 );
 		}
 		for ( size_type i = nz_.b3_, e = nz_.e_; i < e; ++i ) {
-			nz_3_der_refs_.push_back( observers_[ i ]->der.ref );
+			nz_3_der_refs_.push_back( observers_[ i ]->der().ref );
 			nz_3_der_vals_.push_back( 0.0 );
 		}
 
@@ -262,21 +262,21 @@ public: // Methods
 		zc_3_refs_.reserve( zc_.n3_ );
 		zc_3_vals_.reserve( zc_.n3_ );
 		for ( size_type i = zc_.b_, e = zc_.e_; i < e; ++i ) {
-			zc_der_refs_.push_back( observers_[ i ]->der.ref );
+			zc_der_refs_.push_back( observers_[ i ]->der().ref );
 			zc_der_vals_.push_back( 0.0 );
-			zc_refs_.push_back( observers_[ i ]->var.ref );
+			zc_refs_.push_back( observers_[ i ]->var().ref );
 			zc_vals_.push_back( 0.0 );
 		}
 		for ( size_type i = zc_.b2_, e = zc_.e_; i < e; ++i ) {
-			zc_2_der_refs_.push_back( observers_[ i ]->der.ref );
+			zc_2_der_refs_.push_back( observers_[ i ]->der().ref );
 			zc_2_der_vals_.push_back( 0.0 );
-			zc_2_refs_.push_back( observers_[ i ]->var.ref );
+			zc_2_refs_.push_back( observers_[ i ]->var().ref );
 			zc_2_vals_.push_back( 0.0 );
 		}
 		for ( size_type i = zc_.b3_, e = zc_.e_; i < e; ++i ) {
-			zc_3_der_refs_.push_back( observers_[ i ]->der.ref );
+			zc_3_der_refs_.push_back( observers_[ i ]->der().ref );
 			zc_3_der_vals_.push_back( 0.0 );
-			zc_3_refs_.push_back( observers_[ i ]->var.ref );
+			zc_3_refs_.push_back( observers_[ i ]->var().ref );
 			zc_3_vals_.push_back( 0.0 );
 		}
 
@@ -285,7 +285,7 @@ public: // Methods
 		for ( size_type i = nz_.b3_, e = nz_.e_; i < e; ++i ) {
 			auto observer( observers_[ i ] );
 			assert( observer->order() >= 3 );
-			if ( observer->self_observer ) nz_oo3s.insert( observer );
+			if ( observer->self_observer() ) nz_oo3s.insert( observer );
 			for ( auto observee : observer->observees() ) {
 				if ( ! observee->is_Discrete() ) nz_oo3s.insert( observee );
 			}
@@ -294,7 +294,7 @@ public: // Methods
 		for ( size_type i = nz_.b2_, e = nz_.b3_; i < e; ++i ) {
 			auto observer( observers_[ i ] );
 			assert( observer->order() >= 2 );
-			if ( ( observer->self_observer ) && ( nz_oo3s.find( observer ) == nz_oo3s.end() ) ) nz_oo2s.insert( observer );
+			if ( ( observer->self_observer() ) && ( nz_oo3s.find( observer ) == nz_oo3s.end() ) ) nz_oo2s.insert( observer );
 			for ( auto observee : observer->observees() ) {
 				if ( ( ! observee->is_Discrete() ) && ( nz_oo3s.find( observee ) == nz_oo3s.end() ) ) nz_oo2s.insert( observee );
 			}
@@ -303,7 +303,7 @@ public: // Methods
 		for ( size_type i = nz_.b_, e = nz_.b2_; i < e; ++i ) {
 			auto observer( observers_[ i ] );
 			assert( observer->order() <= 1 );
-			if ( ( observer->self_observer ) && ( nz_oo2s.find( observer ) == nz_oo2s.end() ) && ( nz_oo3s.find( observer ) == nz_oo3s.end() ) ) nz_oo1s.insert( observer );
+			if ( ( observer->self_observer() ) && ( nz_oo2s.find( observer ) == nz_oo2s.end() ) && ( nz_oo3s.find( observer ) == nz_oo3s.end() ) ) nz_oo1s.insert( observer );
 			for ( auto observee : observer->observees() ) {
 				if ( ( ! observee->is_Discrete() ) && ( nz_oo2s.find( observee ) == nz_oo2s.end() ) && ( nz_oo3s.find( observee ) == nz_oo3s.end() ) ) nz_oo1s.insert( observee );
 			}
@@ -327,7 +327,7 @@ public: // Methods
 		for ( size_type i = zc_.b3_, e = zc_.e_; i < e; ++i ) {
 			auto observer( observers_[ i ] );
 			assert( observer->order() >= 3 );
-			if ( observer->self_observer ) zc_oo3s.insert( observer );
+			if ( observer->self_observer() ) zc_oo3s.insert( observer );
 			for ( auto observee : observer->observees() ) {
 				if ( ! observee->is_Discrete() ) zc_oo3s.insert( observee );
 			}
@@ -336,7 +336,7 @@ public: // Methods
 		for ( size_type i = zc_.b2_, e = zc_.b3_; i < e; ++i ) {
 			auto observer( observers_[ i ] );
 			assert( observer->order() >= 2 );
-			if ( ( observer->self_observer ) && ( zc_oo3s.find( observer ) == zc_oo3s.end() ) ) zc_oo2s.insert( observer );
+			if ( ( observer->self_observer() ) && ( zc_oo3s.find( observer ) == zc_oo3s.end() ) ) zc_oo2s.insert( observer );
 			for ( auto observee : observer->observees() ) {
 				if ( ( ! observee->is_Discrete() ) && ( zc_oo3s.find( observee ) == zc_oo3s.end() ) ) zc_oo2s.insert( observee );
 			}
@@ -345,7 +345,7 @@ public: // Methods
 		for ( size_type i = zc_.b_, e = zc_.b2_; i < e; ++i ) {
 			auto observer( observers_[ i ] );
 			assert( observer->order() <= 1 );
-			if ( ( observer->self_observer ) && ( zc_oo2s.find( observer ) == zc_oo2s.end() ) && ( zc_oo3s.find( observer ) == zc_oo3s.end() ) ) zc_oo1s.insert( observer );
+			if ( ( observer->self_observer() ) && ( zc_oo2s.find( observer ) == zc_oo2s.end() ) && ( zc_oo3s.find( observer ) == zc_oo3s.end() ) ) zc_oo1s.insert( observer );
 			for ( auto observee : observer->observees() ) {
 				if ( ( ! observee->is_Discrete() ) && ( zc_oo2s.find( observee ) == zc_oo2s.end() ) && ( zc_oo3s.find( observee ) == zc_oo3s.end() ) ) zc_oo1s.insert( observee );
 			}
@@ -554,29 +554,29 @@ private: // Data
 	Variables observers_; // Observers of a variable
 
 	bool have_{ false }; // Observers present?
-	size_type b_{ 0 }; // Begin index
-	size_type e_{ 0 }; // End index
-	size_type n_{ 0 }; // Count
+	size_type b_{ 0u }; // Begin index
+	size_type e_{ 0u }; // End index
+	size_type n_{ 0u }; // Count
 
 	struct {
 
 		bool have_{ false }; // Observers of this type present?
 		bool have2_{ false }; // Order 2+ observers of this type present?
 		bool have3_{ false }; // Order 3+ observers of this type present?
-		size_type b_{ 0 }; // Begin index
-		size_type b2_{ 0 }; // Order 2+ begin index
-		size_type b3_{ 0 }; // Order 3+ begin index
-		size_type e_{ 0 }; // End index
-		size_type n_{ 0 }; // Count
-		size_type n2_{ 0 }; // Order 2+ count
-		size_type n3_{ 0 }; // Order 3+ count
+		size_type b_{ 0u }; // Begin index
+		size_type b2_{ 0u }; // Order 2+ begin index
+		size_type b3_{ 0u }; // Order 3+ begin index
+		size_type e_{ 0u }; // End index
+		size_type n_{ 0u }; // Count
+		size_type n2_{ 0u }; // Order 2+ count
+		size_type n3_{ 0u }; // Order 3+ count
 
 		void
 		clear()
 		{
 			have_ = have2_ = have3_ = false;
-			b_ = b2_ = b3_ = e_ = 0;
-			n_ = n2_ = n3_ = 0;
+			b_ = b2_ = b3_ = e_ = 0u;
+			n_ = n2_ = n3_ = 0u;
 		}
 
 	} nz_, zc_;
@@ -605,17 +605,17 @@ private: // Data
 
 	// Non-zero-crossing observer observees
 	Variables nz_observees_; // Non-zero-crossing observer observees (including self-observing observers)
-	size_type b2_nz_observees_{ 0 }; // Begin index of observees of order 2+ non-zero-crossing observers
-	size_type b3_nz_observees_{ 0 }; // Begin index of observees of order 3+ non-zero-crossing observers
+	size_type b2_nz_observees_{ 0u }; // Begin index of observees of order 2+ non-zero-crossing observers
+	size_type b3_nz_observees_{ 0u }; // Begin index of observees of order 3+ non-zero-crossing observers
 
 	// Zero-crossing observer observees
 	Variables zc_observees_; // Zero-crossing observer observees (including self-observing observers)
-	size_type b2_zc_observees_{ 0 }; // Begin index of observees of order 2+ zero-crossing observers
-	size_type b3_zc_observees_{ 0 }; // Begin index of observees of order 3+ zero-crossing observers
+	size_type b2_zc_observees_{ 0u }; // Begin index of observees of order 2+ zero-crossing observers
+	size_type b3_zc_observees_{ 0u }; // Begin index of observees of order 3+ zero-crossing observers
 
 	bool connected_output_observer_{ false }; // Output connection observer to another FMU?
 
-};
+}; // Observers
 
 } // fmu
 } // QSS

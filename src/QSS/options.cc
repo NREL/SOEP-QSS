@@ -72,6 +72,7 @@ bool refine( false ); // Refine FMU zero-crossing roots?
 bool prune( false ); // Prune variables with no observers?
 bool perfect( false ); // Perfect FMU-ME connection sync?
 bool statistics( false ); // Report detailed statistics
+LogLevel log( LogLevel::warning ); // Logging level
 InpFxn fxn; // Map from input variables to function specs
 InpOut con; // Map from input variables to output variables
 std::string out; // Outputs
@@ -129,6 +130,14 @@ help_display()
 	std::cout << " --prune        Prune variables with no observers?  [F]" << '\n';
 	std::cout << " --perfect      Perfect FMU-ME connection sync?  [F]" << '\n';
 	std::cout << " --statistics   Report detailed statistics?  [F]" << '\n';
+	std::cout << " --log=LEVEL    Logging level  [warning]" << '\n';
+	std::cout << "       fatal" << '\n';
+	std::cout << "       error" << '\n';
+	std::cout << "       warning" << '\n';
+	std::cout << "       info" << '\n';
+	std::cout << "       verbose" << '\n';
+	std::cout << "       debug" << '\n';
+	std::cout << "       all" << '\n';
 	std::cout << " --fxn=INP:FXN  FMU input variable function  [step[0|start,1,1]]" << '\n';
 	std::cout << "       INP can be <model>.<var> with 2+ models" << '\n';
 	std::cout << "           FXN is function spec:" << '\n';
@@ -236,6 +245,26 @@ process_args( int argc, char * argv[] )
 			perfect = true;
 		} else if ( has_option( arg, "statistics" ) ) {
 			statistics = true;
+		} else if ( has_value_option( arg, "log" ) ) {
+			std::string const log_str( lowercased( arg_value( arg ) ) );
+			if ( ( log_str == "fatal" ) || ( log_str == "f" ) ) {
+				log = LogLevel::fatal;
+			} else if ( ( log_str == "error" ) || ( log_str == "e" ) ) {
+				log = LogLevel::error;
+			} else if ( ( log_str == "warning" ) || ( log_str == "w" ) ) {
+				log = LogLevel::warning;
+			} else if ( ( log_str == "info" ) || ( log_str == "i" ) ) {
+				log = LogLevel::info;
+			} else if ( ( log_str == "verbose" ) || ( log_str == "v" ) ) {
+				log = LogLevel::verbose;
+			} else if ( ( log_str == "debug" ) || ( log_str == "d" ) ) {
+				log = LogLevel::debug;
+			} else if ( ( log_str == "all" ) || ( log_str == "a" ) ) {
+				log = LogLevel::all;
+			} else {
+				std::cerr << "\nError: Unrecognized log level: " << log_str << std::endl;
+				fatal = true;
+			}
 		} else if ( has_value_option( arg, "rTol" ) ) {
 			specified::rTol = true;
 			std::string const rTol_str( arg_value( arg ) );
@@ -518,7 +547,7 @@ have_multiple_models()
 
 // Input-output connections?
 bool
-have_connections()
+connected()
 {
 	return ( ! con.empty() );
 }
