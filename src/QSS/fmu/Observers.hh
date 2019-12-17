@@ -251,8 +251,12 @@ public: // Methods
 		zc_3_der_vals_.reserve( zc_.n3_ );
 		zc_refs_.clear();
 		zc_vals_.clear();
+		zc_vals_m_.clear();
+		zc_vals_p_.clear();
 		zc_refs_.reserve( zc_.n_ );
 		zc_vals_.reserve( zc_.n_ );
+		zc_vals_m_.reserve( zc_.n_ );
+		zc_vals_p_.reserve( zc_.n_ );
 		zc_2_refs_.clear();
 		zc_2_vals_.clear();
 		zc_2_refs_.reserve( zc_.n2_ );
@@ -266,6 +270,8 @@ public: // Methods
 			zc_der_vals_.push_back( 0.0 );
 			zc_refs_.push_back( observers_[ i ]->var().ref );
 			zc_vals_.push_back( 0.0 );
+			zc_vals_m_.push_back( 0.0 );
+			zc_vals_p_.push_back( 0.0 );
 		}
 		for ( size_type i = zc_.b2_, e = zc_.e_; i < e; ++i ) {
 			zc_2_der_refs_.push_back( observers_[ i ]->der().ref );
@@ -425,24 +431,24 @@ public: // Methods
 		}
 		fmu_me_->get_reals( zc_refs_.size(), &zc_refs_[ 0 ], &zc_vals_[ 0 ] );
 		if ( fmu_me_->has_event_indicators ) { // Event indicators
-			Time tN( t + options::dtNum );
+			Time tN( t - options::dtNum );
 			fmu_me_->set_time( tN );
 			for ( auto observee : zc_observees_ ) {
 				observee->fmu_set_x( tN );
 			}
-			fmu_me_->get_reals( zc_refs_.size(), &zc_refs_[ 0 ], &zc_der_vals_[ 0 ] ); // Store values in der array
+			fmu_me_->get_reals( zc_refs_.size(), &zc_refs_[ 0 ], &zc_vals_m_[ 0 ] );
+			tN = t + options::dtNum;
+			fmu_me_->set_time( tN );
+			for ( auto observee : zc_observees_ ) {
+				observee->fmu_set_x( tN );
+			}
+			fmu_me_->get_reals( zc_refs_.size(), &zc_refs_[ 0 ], &zc_vals_p_[ 0 ] );
 			for ( size_type i = zc_.b_, j = 0, e = zc_.e_; i < e; ++i, ++j ) {
-				observers_[ i ]->advance_observer_1( t, zc_vals_[ j ], zc_der_vals_[ j ] );
+				observers_[ i ]->advance_observer_1( t, zc_vals_[ j ], zc_vals_m_[ j ], zc_vals_p_[ j ] );
 			}
 			if ( zc_.have2_ ) {
-				tN = t - options::dtNum;
-				fmu_me_->set_time( tN );
-				for ( size_type i = b2_zc_observees_, n = zc_observees_.size(); i < n; ++i ) {
-					zc_observees_[ i ]->fmu_set_x( tN );
-				}
-				fmu_me_->get_reals( zc_2_refs_.size(), &zc_2_refs_[ 0 ], &zc_2_vals_[ 0 ] );
 				for ( size_type i = zc_.b2_, j = 0, e = zc_.e_; i < e; ++i, ++j ) { // Order 2+ observers
-					observers_[ i ]->advance_observer_2( zc_2_vals_[ j ] );
+					observers_[ i ]->advance_observer_2();
 				}
 				if ( zc_.have3_ ) {
 					tN = t + ( two * options::dtNum );
@@ -600,6 +606,8 @@ private: // Data
 	VariableRefs zc_2_refs_; // Zero-crossing observer FMU variable refs
 	VariableRefs zc_3_refs_; // Zero-crossing observer FMU variable refs
 	Reals zc_vals_; //  Zero-crossing observer FMU variable values
+	Reals zc_vals_m_; //  Zero-crossing observer FMU variable values
+	Reals zc_vals_p_; //  Zero-crossing observer FMU variable values
 	Reals zc_2_vals_; //  Zero-crossing observer FMU variable values
 	Reals zc_3_vals_; //  Zero-crossing observer FMU variable values
 

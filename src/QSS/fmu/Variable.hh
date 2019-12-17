@@ -989,6 +989,22 @@ public: // Methods
 		assert( false );
 	}
 
+	// Observer Advance: Stage 1
+	virtual
+	void
+	advance_observer_1( Time const, Real const, Real const, Real const )
+	{
+		assert( false );
+	}
+
+	// Observer Advance: Stage 2
+	virtual
+	void
+	advance_observer_2()
+	{
+		assert( false );
+	}
+
 	// Observer Advance: Stage 2
 	virtual
 	void

@@ -224,7 +224,7 @@ public: // Methods
 
 	// Observer Advance: Stage 1
 	void
-	advance_observer_1( Time const t, Real const x_0, Real const x_0_p )
+	advance_observer_1( Time const t, Real const x_0, Real const x_0_m, Real const x_0_p )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		tX = tQ = t;
@@ -233,14 +233,14 @@ public: // Methods
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
 		x_0_ = x_0;
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
-		x_1_ = z_1( x_0_p );
+		x_1_ = z_1( x_0_m, x_0_p );
 	}
 
 	// Observer Advance: Stage 2
 	void
-	advance_observer_2( Real const x_0_m )
+	advance_observer_2()
 	{
-		x_2_ = z_2( x_0_m );
+		x_2_ = z_2();
 	}
 
 	// Observer Advance: Stage 3
@@ -376,11 +376,11 @@ private: // Methods
 		return options::one_over_two_dtNum * ( x_0_p_ - x_0_m_ ); //ND Centered difference
 	}
 
-	// Coefficient 1 from FMU at Time tQ
+	// Coefficient 1 from FMU
 	Real
-	z_1( Real const x_0_p ) const
+	z_1( Real const x_0_m, Real const x_0_p ) const
 	{
-		return options::one_over_dtNum * ( ( x_0_p_ = x_0_p ) - x_0_ ); //ND Forward Euler
+		return options::one_over_two_dtNum * ( ( x_0_p_ = x_0_p ) - ( x_0_m_ = x_0_m ) ); //ND Centered difference
 	}
 
 	// Coefficient 2 from FMU
@@ -388,13 +388,6 @@ private: // Methods
 	z_2() const
 	{
 		return options::one_over_two_dtNum_squared * ( x_0_p_ - ( two * x_0_ ) + x_0_m_ ); //ND Centered difference
-	}
-
-	// Coefficient 2 from FMU
-	Real
-	z_2( Real const x_0_m ) const
-	{
-		return options::one_over_two_dtNum_squared * ( x_0_p_ - ( two * x_0_ ) + ( x_0_m_ = x_0_m ) ); //ND Centered difference
 	}
 
 	// Coefficient 3 from FMU at Time tQ
