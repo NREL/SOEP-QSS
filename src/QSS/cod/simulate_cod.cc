@@ -51,6 +51,7 @@
 #include <QSS/cod/mdl/gen.hh>
 #include <QSS/cod/mdl/nonlinear.hh>
 #include <QSS/cod/mdl/nonlinear_ND.hh>
+#include <QSS/cod/mdl/observers.hh>
 #include <QSS/cod/mdl/StateEvent6.hh>
 #include <QSS/cod/mdl/stiff.hh>
 #include <QSS/cod/mdl/xy.hh>
@@ -157,6 +158,8 @@ simulate( std::string const & model )
 		mdl::nonlinear( vars );
 	} else if ( model == "nonlinear_ND" ) {
 		mdl::nonlinear_ND( vars );
+	} else if ( model == "observers" ) {
+		mdl::observers( vars );
 	} else if ( model == "stiff" ) {
 		mdl::stiff( vars );
 	} else if ( ( model == "StateEvent6" ) || ( model == "stateevent6" ) ) {
