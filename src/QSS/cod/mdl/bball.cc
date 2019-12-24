@@ -76,7 +76,7 @@ public: // Property
 				v_->shift_handler( t, 0.0 );
 				h_->shift_handler( t, 0.0 );
 			} else {
-				if ( v < 0.0 ) v_->shift_handler( t, -0.7 * v ); // Coefficient of restitution = 0.7
+				if ( v < 0.0 ) v_->shift_handler( t, -0.8 * v ); // Coefficient of restitution = 0.8
 				h_->shift_handler( t, 0.0 );
 				b_->shift_handler( t, b_->r() + 1 ); // Add to bounce count
 			}

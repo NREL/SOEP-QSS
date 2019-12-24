@@ -173,6 +173,7 @@ help_display()
 	std::cout << "  exponential_decay_step : Adds step input function" << '\n';
 	std::cout << "  nonlinear : Nonlinear derivative demo" << '\n';
 	std::cout << "  nonlinear_ND : Numeric differentiation" << '\n';
+	std::cout << "  observers : Observers" << '\n';
 	std::cout << "  StateEvent6 : Zero-crossing model (use --dtInf)" << '\n';
 	std::cout << "  stiff : Stiff system from literature" << '\n';
 	std::cout << "  xy : Simple 2 variable model" << '\n';
