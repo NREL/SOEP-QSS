@@ -47,6 +47,8 @@ using namespace QSS::cod::mdl;
 
 TEST( cod_Variable_ZC1Test, Basic )
 {
+	options::zFac = 1.0;
+
 	Variable_QSS2< Function_LTI > x( "x" );
 	x.add( -1.0 );
 	x.init( 1.0 );
@@ -66,7 +68,8 @@ TEST( cod_Variable_ZC1Test, Basic )
 	z.init();
 	EXPECT_EQ( 2.0, z.rTol );
 	EXPECT_EQ( 2.0, z.aTol );
-	EXPECT_DOUBLE_EQ( 0.0 + std::max( z.rTol * 1.0, z.aTol ) / 1.0, z.tE );
+	EXPECT_EQ( 0.0 + std::max( z.rTol * 1.0, z.aTol ), z.qTol );
+	EXPECT_DOUBLE_EQ( z.qTol / 1.0, z.tE );
 	EXPECT_DOUBLE_EQ( 1.0, z.tZ );
 	EXPECT_EQ( Variable::Crossing::DnPN, z.crossing );
 
