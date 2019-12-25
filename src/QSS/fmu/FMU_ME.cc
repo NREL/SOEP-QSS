@@ -961,6 +961,7 @@ namespace fmu {
 					std::exit( EXIT_FAILURE );
 				}
 				FMU_Variable & fmu_var( fmu_vars[ var_real ] );
+				std::cout << "\nEvent Indicator: " << var_name << std::endl;
 				Variable_ZC * qss_var( nullptr );
 				if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) || ( options::qss == options::QSS::xQSS1 ) ) {
 					qss_var = new Variable_ZC1( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var );
