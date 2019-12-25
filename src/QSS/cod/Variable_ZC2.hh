@@ -260,7 +260,7 @@ private: // Methods
 	void
 	set_qTol()
 	{
-		qTol = std::max( rTol * std::abs( x_0_ ), aTol );
+		qTol = std::max( rTol * std::abs( x_0_ ), aTol ) * options::zFac;
 		assert( qTol > 0.0 );
 	}
 
