@@ -1264,7 +1264,7 @@ protected: // Methods: FMU
 	p_2() const
 	{
 		assert( fmu_me_ != nullptr );
-		return fmu_me_->get_der2( der.ref );
+		return fmu_me_->get_der2( der_.ref );
 	}
 
 	// Coefficient 2 from FMU at Time t
@@ -1323,7 +1323,7 @@ protected: // Methods: FMU
 	p_3() const
 	{
 		assert( fmu_me_ != nullptr );
-		return fmu_me_->get_der3( der.ref );
+		return fmu_me_->get_der3( der_.ref );
 	}
 
 	// Coefficient 3 from FMU at Time t
