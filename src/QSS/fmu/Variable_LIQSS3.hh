@@ -53,8 +53,6 @@ public: // Types
 private: // Types
 
 	using Super::c_1;
-	using Super::c_2;
-	using Super::c_3;
 
 public: // Creation
 
@@ -192,7 +190,7 @@ public: // Methods
 	void
 	init_2()
 	{
-		x_2_ = q_2_ = c_2();
+		x_2_ = q_2_ = p_2();
 	}
 
 	// Initialization: Stage 3
@@ -203,7 +201,7 @@ public: // Methods
 		if ( self_observer() ) {
 			advance_LIQSS_i();
 		} else {
-			x_3_ = c_3();
+			x_3_ = p_3();
 		}
 	}
 
@@ -235,8 +233,8 @@ public: // Methods
 			advance_LIQSS();
 		} else {
 			x_1_ = q_1_ = h_1();
-			x_2_ = q_2_ = h_2();
-			x_3_ = h_3();
+			x_2_ = q_2_ = p_2();
+			x_3_ = p_3();
 			q_0_ += signum( x_3_ ) * qTol;
 		}
 		set_tE_aligned();
@@ -266,7 +264,7 @@ public: // Methods
 	void
 	advance_QSS_2()
 	{
-		x_2_ = q_2_ = c_2();
+		x_2_ = q_2_ = p_2();
 	}
 
 	// QSS Advance: Stage 3
@@ -277,7 +275,7 @@ public: // Methods
 		if ( self_observer() ) {
 			advance_LIQSS_s();
 		} else {
-			x_3_ = c_3();
+			x_3_ = p_3();
 		}
 	}
 
@@ -306,8 +304,8 @@ public: // Methods
 		tX = tQ = t;
 		x_0_ = q_c_ = q_0_ = p_0(); // Assume FMU ran zero-crossing handler
 		x_1_ = q_1_ = h_1();
-		x_2_ = q_2_ = c_2();
-		x_3_ = c_3();
+		x_2_ = q_2_ = p_2();
+		x_3_ = p_3();
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -336,14 +334,14 @@ public: // Methods
 	void
 	advance_handler_2()
 	{
-		x_2_ = q_2_ = c_2();
+		x_2_ = q_2_ = p_2();
 	}
 
 	// Handler Advance: Stage 3
 	void
 	advance_handler_3()
 	{
-		x_3_ = c_3();
+		x_3_ = p_3();
 	}
 
 	// Handler Advance: Stage Final
@@ -373,8 +371,8 @@ public: // Methods
 		tX = t;
 		x_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
 		x_1_ = c_1( t );
-		x_2_ = c_2( t );
-		x_3_ = c_3();
+		x_2_ = p_2();
+		x_3_ = p_3();
 		set_tE_unaligned();
 		shift_QSS( tE );
 		if ( connected() ) advance_connections_observer();
@@ -488,20 +486,6 @@ private: // Methods
 	c_1() const
 	{
 		return c_1( tQ, q_0_ );
-	}
-
-	// Coefficient 2 from FMU at Time tQ
-	Real
-	c_2() const
-	{
-		return c_2( tQ, q_0_ );
-	}
-
-	// Coefficient 3 from FMU at Time tQ
-	Real
-	c_3() const
-	{
-		return c_3( tQ, x_1_ );
 	}
 
 private: // Data

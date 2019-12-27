@@ -156,8 +156,8 @@ public: // Methods
 		x_0_ = p_0();
 		x_mag_ = std::abs( x_0_ );
 		x_1_ = p_1();
-		x_2_ = z_2();
-		x_3_ = z_3();
+		x_2_ = p_2();
+		x_3_ = p_3();
 		set_qTol();
 		set_tE();
 		set_tZ();
@@ -178,8 +178,8 @@ public: // Methods
 		x_0_ = z_0();
 		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 		x_1_ = p_1();
-		x_2_ = z_2();
-		x_3_ = z_3();
+		x_2_ = p_2();
+		x_3_ = p_3();
 		set_qTol();
 		set_tE();
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
@@ -216,8 +216,8 @@ public: // Methods
 		x_0_ = z_0( t );
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		x_1_ = p_1();
-		x_2_ = z_2();
-		x_3_ = z_3();
+		x_2_ = p_2();
+		x_3_ = p_3();
 		set_qTol();
 		set_tE();
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );

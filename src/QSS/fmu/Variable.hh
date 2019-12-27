@@ -1267,114 +1267,12 @@ protected: // Methods: FMU
 		return fmu_me_->get_der2( der_.ref );
 	}
 
-	// Coefficient 2 from FMU at Time t
-	Real
-	c_2( Time const t ) const
-	{
-		fmu_set_observees_q( t );
-		if ( self_observer ) fmu_set_q( t );
-		return p_2();
-	}
-
-	// Coefficient 2 from FMU at Time tQ
-	Real
-	c_2( Time const t, Real const q_0 ) const
-	{
-		assert( t == tQ );
-		fmu_set_observees_q( t );
-		if ( self_observer ) fmu_set_real( q_0 );
-		return p_2();
-	}
-
-	// Coefficient 2 from FMU at Time tQ: No Self-Observer Check/Set
-	Real
-	h_2() const
-	{
-		fmu_set_observees_q( tQ );
-		return p_2();
-	}
-
-	// Coefficient 2 from FMU at Time t: No Self-Observer Check/Set
-	Real
-	h_2( Time const t ) const
-	{
-		fmu_set_observees_q( t );
-		return p_2();
-	}
-
-	// Coefficient 2 from FMU at Time tQ: Zero-Crossing
-	Real
-	z_2() const
-	{
-		fmu_set_observees_x( tQ );
-		return p_2();
-	}
-
-	// Coefficient 2 from FMU at Time t: Zero-Crossing
-	Real
-	z_2( Time const t ) const
-	{
-		fmu_set_observees_x( t );
-		return p_2();
-	}
-
 	// Coefficient 3 from FMU: Given Derivative
 	Real
 	p_3() const
 	{
 		assert( fmu_me_ != nullptr );
 		return fmu_me_->get_der3( der_.ref );
-	}
-
-	// Coefficient 3 from FMU at Time t
-	Real
-	c_3( Time const t ) const
-	{
-		fmu_set_observees_q( t );
-		if ( self_observer ) fmu_set_q( t );
-		return p_3();
-	}
-
-	// Coefficient 3 from FMU at Time tQ
-	Real
-	c_3( Time const t, Real const q_0 ) const
-	{
-		assert( t == tQ );
-		fmu_set_observees_q( t );
-		if ( self_observer ) fmu_set_real( q_0 );
-		return p_3();
-	}
-
-	// Coefficient 3 from FMU at Time tQ: No Self-Observer Check/Set
-	Real
-	h_3() const
-	{
-		fmu_set_observees_q( tQ );
-		return p_3();
-	}
-
-	// Coefficient 3 from FMU at Time t: No Self-Observer Check/Set
-	Real
-	h_3( Time const t ) const
-	{
-		fmu_set_observees_q( t );
-		return p_3();
-	}
-
-	// Coefficient 3 from FMU at Time tQ: Zero-Crossing
-	Real
-	z_3() const
-	{
-		fmu_set_observees_x( tQ );
-		return p_3();
-	}
-
-	// Coefficient 3 from FMU at Time t: Zero-Crossing
-	Real
-	z_3( Time const t ) const
-	{
-		fmu_set_observees_x( t );
-		return p_3();
 	}
 
 protected: // Methods
