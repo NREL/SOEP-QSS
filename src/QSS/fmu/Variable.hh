@@ -1259,20 +1259,20 @@ protected: // Methods: FMU
 		return p_1();
 	}
 
-	// Coefficient 2 from FMU: Given Derivative
+	// Coefficient 2 from FMU
 	Real
 	p_2() const
 	{
 		assert( fmu_me_ != nullptr );
-		return fmu_me_->get_der2( der_.ref );
+		return fmu_me_->get_der2( der_.ref ); //NG Placeholder
 	}
 
-	// Coefficient 3 from FMU: Given Derivative
+	// Coefficient 3 from FMU
 	Real
 	p_3() const
 	{
 		assert( fmu_me_ != nullptr );
-		return fmu_me_->get_der3( der_.ref );
+		return fmu_me_->get_der3( der_.ref ); //NG Placeholder
 	}
 
 protected: // Methods
