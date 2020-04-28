@@ -1,4 +1,4 @@
-// FMU-Based All-Variable Convenience Header
+// QSS Output Filter Class
 //
 // Project: QSS Solver
 //
@@ -33,46 +33,89 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_Variable_all_hh_INCLUDED
-#define QSS_fmu_Variable_all_hh_INCLUDED
+#ifndef QSS_OutputFilter_hh_INCLUDED
+#define QSS_OutputFilter_hh_INCLUDED
 
-// QSS Discrete Variable Headers
-#include <QSS/fmu/Variable_B.hh>
-#include <QSS/fmu/Variable_D.hh>
-#include <QSS/fmu/Variable_I.hh>
-#include <QSS/fmu/Variable_R.hh>
+// C++ Headers
+#include <fstream>
+#include <regex>
+#include <string>
+#include <vector>
 
-// QSS Input Variable Headers
-#include <QSS/fmu/Variable_Inp1.hh>
-#include <QSS/fmu/Variable_Inp2.hh>
-#include <QSS/fmu/Variable_Inp3.hh>
-#include <QSS/fmu/Variable_InpB.hh>
-#include <QSS/fmu/Variable_InpD.hh>
-#include <QSS/fmu/Variable_InpI.hh>
-#include <QSS/fmu/Variable_xInp1.hh>
-#include <QSS/fmu/Variable_xInp2.hh>
-#include <QSS/fmu/Variable_xInp3.hh>
+namespace QSS {
 
-// QSS Connection Variable Headers
-#include <QSS/fmu/Variable_Con.hh>
+// QSS Output Filter Class
+class OutputFilter
+{
 
-// QSS State Variable Headers
-#include <QSS/fmu/Variable_LIQSS1.hh>
-#include <QSS/fmu/Variable_LIQSS2.hh>
-#include <QSS/fmu/Variable_LIQSS3.hh>
-#include <QSS/fmu/Variable_QSS1.hh>
-#include <QSS/fmu/Variable_QSS2.hh>
-#include <QSS/fmu/Variable_QSS3.hh>
-#include <QSS/fmu/Variable_xQSS1.hh>
-#include <QSS/fmu/Variable_xQSS2.hh>
-#include <QSS/fmu/Variable_xQSS3.hh>
+public: // Types
 
-// QSS Zero-Crossing Variable Headers
-#include <QSS/fmu/Variable_ZC1.hh>
-#include <QSS/fmu/Variable_ZC2.hh>
-#include <QSS/fmu/Variable_ZC3.hh>
-#include <QSS/fmu/Variable_ZCe1.hh>
-#include <QSS/fmu/Variable_ZCe2.hh>
-#include <QSS/fmu/Variable_ZCe3.hh>
+	using Filter = std::regex;
+	using Filters = std::vector< Filter >;
+	using size_type = Filters::size_type;
+
+public: // Creation
+
+	// File Name Constructor
+	OutputFilter( std::string const & var_file )
+	{
+		std::ifstream var_stream( var_file, std::ios_base::binary | std::ios_base::in );
+		if ( var_stream.is_open() ) {
+			std::string line;
+			while ( std::getline( var_stream, line ) ) {
+
+				// Convert line from glob to regex
+				std::string reg_line;
+				for ( char const c : line ) {
+					if ( c == '?' ) {
+						reg_line.push_back( '.' );
+					} else if ( c == '*' ) {
+						reg_line.append( ".*" );
+					} else {
+						reg_line.push_back( c );
+					}
+				}
+
+				// Add to filter
+				filters_.push_back( std::regex( reg_line ) );
+			}
+			var_stream.close();
+		}
+	}
+
+public: // Predicate
+
+	// Variable Name OK?
+	bool
+	operator ()( std::string const & var_name ) const
+	{
+		if ( filters_.empty() ) return true;
+
+		// Variable name with regex special characters protected
+		std::string reg_name;
+		for ( char const c : var_name ) {
+			if ( ( c == '[' ) || ( c == ']' ) ) { // Protect special characters
+				reg_name.push_back( '[' );
+				reg_name.push_back( c );
+				reg_name.push_back( ']' );
+			} else {
+				reg_name.push_back( c );
+			}
+		}
+
+		// Check if name matches a filter
+		for ( auto const & filter : filters_ ) {
+			if ( std::regex_match( reg_name, filter ) ) return true;
+		}
+		return false;
+	}
+
+private: // Data
+
+	Filters filters_; // Variable name filters
+
+}; // OutputFilter
+
+} // QSS
 
 #endif

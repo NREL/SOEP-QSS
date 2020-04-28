@@ -1,4 +1,4 @@
-// QSS Boolean Variable
+// FMU-Based QSS Real Variable
 //
 // Project: QSS Solver
 //
@@ -33,17 +33,17 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_cod_Variable_B_hh_INCLUDED
-#define QSS_cod_Variable_B_hh_INCLUDED
+#ifndef QSS_fmu_Variable_R_hh_INCLUDED
+#define QSS_fmu_Variable_R_hh_INCLUDED
 
 // QSS Headers
-#include <QSS/cod/Variable.hh>
+#include <QSS/fmu/Variable.hh>
 
 namespace QSS {
-namespace cod {
+namespace fmu {
 
-// QSS Boolean Variable
-class Variable_B final : public Variable
+// FMU-Based QSS Real Variable
+class Variable_R final : public Variable
 {
 
 public: // Types
@@ -52,21 +52,32 @@ public: // Types
 
 public: // Creation
 
-	// Constructor
-	explicit
-	Variable_B(
+	// Name + Value Constructor
+	Variable_R(
 	 std::string const & name,
-	 Boolean const xIni = false
+	 Real const xIni,
+	 FMU_ME * fmu_me,
+	 FMU_Variable const var = FMU_Variable()
 	) :
-	 Super( 0, name, xIni ),
+	 Super( 0, name, xIni, fmu_me, var ),
+	 x_( xIni )
+	{}
+
+	// Name Constructor
+	Variable_R(
+	 std::string const & name,
+	 FMU_ME * fmu_me,
+	 FMU_Variable const var = FMU_Variable()
+	) :
+	 Super( 0, name, fmu_me, var ),
 	 x_( xIni )
 	{}
 
 public: // Predicate
 
-	// Discrete Variable?
+	// B|I|D|R Variable?
 	bool
-	is_Discrete() const
+	is_BIDR() const
 	{
 		return true;
 	}
@@ -77,14 +88,14 @@ public: // Property
 	Boolean
 	b() const
 	{
-		return x_;
+		return Boolean( x_ );
 	}
 
 	// Boolean Value at Time t
 	Boolean
 	b( Time const ) const
 	{
-		return x_;
+		return Boolean( x_ );
 	}
 
 	// Integer Value
@@ -105,28 +116,28 @@ public: // Property
 	Real
 	r() const
 	{
-		return Real( x_ );
+		return x_;
 	}
 
 	// Real Value at Time t
 	Real
 	r( Time const ) const
 	{
-		return Real( x_ );
+		return x_;
 	}
 
 	// Continuous Value at Time t
 	Real
 	x( Time const ) const
 	{
-		return Real( x_ );
+		return x_;
 	}
 
 	// Quantized Value at Time t
 	Real
 	q( Time const ) const
 	{
-		return Real( x_ );
+		return x_;
 	}
 
 public: // Methods
@@ -151,9 +162,9 @@ public: // Methods
 	{
 		assert( ! observes() );
 		init_observers();
-		x_ = ( xIni != 0 );
+		x_ = xIni;
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Initialization to a Value: Stage 0
@@ -162,44 +173,79 @@ public: // Methods
 	{
 		assert( ! observes() );
 		init_observers();
-		x_ = ( x != 0 );
+		x_ = x;
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Handler Advance
 	void
-	advance_handler( Time const t, Real const x )
+	advance_handler( Time const t )
 	{
 		assert( tX <= t );
 		tX = tQ = t;
+		x_ = fmu_get_real(); // Assume FMU ran event handler
 		shift_handler();
-		Boolean const x_new( x != 0.0 );
-		bool const chg( x_ != x_new );
-		x_ = x_new;
-		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
-		if ( chg && observed() ) advance_observers();
+		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( observed() ) advance_observers();
 	}
 
 	// Handler Advance: Stage 0
 	void
-	advance_handler_0( Time const t, Real const x )
+	advance_handler_0( Time const t )
 	{
 		assert( tX <= t );
 		tX = tQ = t;
+		x_ = fmu_get_real(); // Assume FMU ran event handler
+	}
+
+	// Handler Advance: Stage Final
+	void
+	advance_handler_F()
+	{
 		shift_handler();
-		Boolean const x_new( x != 0.0 );
-		x_ = x_new;
-		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+	}
+
+	// Handler No-Advance
+	void
+	no_advance_handler()
+	{
+		shift_handler();
+	}
+
+	// Observer Advance
+	void
+	advance_observer( Time const t )
+	{
+		assert( tX <= t );
+		tX = t;
+		x_ = z_0( t );
+	}
+
+	// Observer Advance: Stage 1
+	void
+	advance_observer_1( Time const t, Real const x )
+	{
+		assert( tX <= t );
+		tX = t;
+		x_ = x;
+	}
+
+	// Observer Advance: Stage d
+	void
+	advance_observer_d() const
+	{
+		std::cout << "  " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 private: // Data
 
-	Boolean x_{ false }; // Value
+	Real x_{ 0.0 }; // Value
 
-}; // Variable_B
+}; // Variable_R
 
-} // cod
+} // fmu
 } // QSS
 
 #endif

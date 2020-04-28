@@ -82,6 +82,13 @@ public: // Predicate
 		return true;
 	}
 
+	// B|I|D|R Variable?
+	bool
+	is_BIDR() const
+	{
+		return true;
+	}
+
 public: // Property
 
 	// Boolean Value
@@ -164,7 +171,7 @@ public: // Methods
 		init_observers();
 		x_ = ( xIni != 0 );
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
 	}
 
 	// Initialization to a Value: Stage 0
@@ -175,7 +182,7 @@ public: // Methods
 		init_observers();
 		x_ = ( x != 0 );
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
 	}
 
 	// Handler Advance
@@ -187,7 +194,7 @@ public: // Methods
 		Boolean const x_old( x_ );
 		x_ = fmu_get_boolean(); // Assume FMU ran event handler
 		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
 		if ( observed() && ( x_ != x_old ) ) advance_observers();
 	}
 
@@ -205,7 +212,7 @@ public: // Methods
 	advance_handler_F()
 	{
 		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
 	}
 
 	// Handler No-Advance
@@ -214,6 +221,24 @@ public: // Methods
 	{
 		shift_handler();
 	}
+
+	// Observer Advance
+	void
+	advance_observer( Time const t )
+	{
+		assert( tX <= t );
+		tX = t;
+		x_ = bz_0( t );
+	}
+
+	// Observer Advance: Stage d
+	void
+	advance_observer_d() const
+	{
+		std::cout << "  " << name() << '(' << tX << ')' << " = " << x_ << '\n';
+	}
+
+public: // Methods: FMU
 
 	// Set FMU Variable to Continuous Value at Time t
 	void

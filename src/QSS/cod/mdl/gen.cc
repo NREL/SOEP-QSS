@@ -161,7 +161,7 @@ private: // Data
 	Variable_ZC_LTI * z_{ nullptr }; // Associated zero-crossing variable
 	Variables observers_;
 
-};
+}; // Handler_gen
 
 // Generated Example Setup
 void

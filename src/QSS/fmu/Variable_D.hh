@@ -82,6 +82,13 @@ public: // Predicate
 		return true;
 	}
 
+	// B|I|D|R Variable?
+	bool
+	is_BIDR() const
+	{
+		return true;
+	}
+
 public: // Property
 
 	// Boolean Value
@@ -213,6 +220,31 @@ public: // Methods
 	no_advance_handler()
 	{
 		shift_handler();
+	}
+
+	// Observer Advance
+	void
+	advance_observer( Time const t )
+	{
+		assert( tX <= t );
+		tX = t;
+		x_ = z_0( t );
+	}
+
+	// Observer Advance: Stage 1
+	void
+	advance_observer_1( Time const t, Real const x )
+	{
+		assert( tX <= t );
+		tX = t;
+		x_ = x;
+	}
+
+	// Observer Advance: Stage d
+	void
+	advance_observer_d() const
+	{
+		std::cout << "  " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 private: // Data

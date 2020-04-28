@@ -50,6 +50,7 @@
 #include <cassert>
 #include <cstdint>
 #include <cstdlib>
+#include <iomanip>
 #include <iostream>
 
 // Types
@@ -78,6 +79,11 @@ int
 main( int argc, char * argv[] )
 {
 	using namespace QSS;
+
+	// I/o setup
+	std::cout << std::setprecision( 15 ) << std::boolalpha;
+	std::cerr << std::setprecision( 15 ) << std::boolalpha;
+	std::clog << std::setprecision( 15 ) << std::boolalpha;
 
 	// Process command line arguments
 	options::process_args( argc, argv );

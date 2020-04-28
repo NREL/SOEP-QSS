@@ -187,7 +187,7 @@ simulate_fmu_me_con_perfect( std::vector< std::string > const & paths )
 		fmu_mes[ i ]->init_F();
 	}
 	for ( size_type i = 0; i < n_models; ++i ) {
-		fmu_mes[ i ]->init_ZC();
+		fmu_mes[ i ]->init_NQ();
 	}
 	for ( size_type i = 0; i < n_models; ++i ) {
 		fmu_mes[ i ]->init_pre_simulate();

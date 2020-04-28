@@ -41,6 +41,7 @@
 #include <QSS/Target.hh>
 #include <QSS/cod/Conditional.hh>
 #include <QSS/cod/events.hh>
+#include <QSS/globals.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
 #include <QSS/Output.hh>
@@ -201,6 +202,27 @@ public: // Predicate
 		return false;
 	}
 
+	// Non-QSS Variable?
+	bool
+	not_QSS() const
+	{
+		return ! is_QSS();
+	}
+
+	// State Variable?
+	bool
+	is_state() const
+	{
+		return is_QSS();
+	}
+
+	// Non-State Variable?
+	bool
+	not_state() const
+	{
+		return ! is_QSS();
+	}
+
 	// LIQSS Variable?
 	virtual
 	bool
@@ -247,11 +269,18 @@ public: // Predicate
 
 public: // Property
 
-	// Order of Method
+	// Order
 	int
 	order() const
 	{
 		return order_;
+	}
+
+	// State + Order Sorting Index
+	int
+	state_order() const
+	{
+		return order_ + ( is_state() ? 0 : max_rep_order );
 	}
 
 	// Boolean Value
@@ -460,24 +489,15 @@ public: // Methods
 		}
 	}
 
-	// Add Zero-Crossing Variable as an Observer
-	void
-	observe_ZC( Variable * v )
-	{
-		assert( is_ZC() );
-		assert( v != this );
-		v->observers_.push_back( this );
-	}
-
-	// Add Drill-Through Observees to Zero-Crossing Variables
+	// Add Drill-Through Observees to Non-State Variables
 	void
 	add_drill_through_observees()
 	{
-		assert( is_ZC() );
+		assert( not_state() );
 		if ( ! observees_.empty() ) {
 			for ( Variable * vo : observees_ ) {
 				for ( Variable * voo : vo->observees_ ) {
-					observe_ZC( voo ); // Only need back-observer to force observer updates when observees update since ZC variable value doesn't depend on these 2nd level observees
+					voo->observers_.push_back( this ); // Only need back-observer to force updates when observee has observer update
 				}
 			}
 		}
@@ -1068,7 +1088,7 @@ private: // Data
 	Output out_x_; // Continuous rep output
 	Output out_q_; // Quantized rep output
 
-};
+}; // Variable
 
 } // cod
 } // QSS

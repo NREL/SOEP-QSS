@@ -93,7 +93,7 @@ TEST( fmu_Variable_xQSS1Test, Achilles )
 	options::rTol = 100.0;
 	options::specified::rTol = true;
 	options::aTol = 1.0;
-	options::specified::aTol = true;
+	options::specified::aTol = options::specified::aTolAll = true;
 	options::output::x = false;
 
 	std::streambuf * coutBuf( std::cout.rdbuf() ); std::ostringstream strCout; std::cout.rdbuf( strCout.rdbuf() ); // Redirect cout

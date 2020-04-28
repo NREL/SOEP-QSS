@@ -47,6 +47,7 @@
 #include <QSS/container.hh>
 #include <QSS/get_cpu_time.hh>
 #include <QSS/options.hh>
+#include <QSS/OutputFilter.hh>
 #include <QSS/path.hh>
 #include <QSS/string.hh>
 
@@ -99,6 +100,7 @@ namespace fmu {
 		cleanup();
 		std::free( states );
 		std::free( derivatives );
+		std::free( x_nominal );
 		std::free( event_indicators );
 		std::free( event_indicators_last );
 		std::free( var_list );
@@ -253,13 +255,16 @@ namespace fmu {
 //			}
 		}
 
+		// Get sizes
 		n_states = fmi2_import_get_number_of_continuous_states( fmu );
 		std::cout << n_states << " continuous state variables" << std::endl;
 		n_event_indicators = fmi2_import_get_number_of_event_indicators( fmu );
 		std::cout << n_event_indicators << " event indicators" << std::endl;
 
+		// Allocate arrays
 		states = (fmi2_real_t*)std::calloc( n_states, sizeof( double ) );
 		derivatives = (fmi2_real_t*)std::calloc( n_states, sizeof( double ) );
+		x_nominal = (fmi2_real_t*)std::calloc( n_states, sizeof( double ) );
 		event_indicators = (fmi2_real_t*)std::calloc( n_event_indicators, sizeof( double ) );
 		event_indicators_last = (fmi2_real_t*)std::calloc( n_event_indicators, sizeof( double ) );
 	}
@@ -336,6 +341,7 @@ namespace fmu {
 		// I/o setup
 		std::cout << std::setprecision( 15 );
 		std::cerr << std::setprecision( 15 );
+		OutputFilter const output_filter( options::var_file );
 
 		// Report QSS method
 		if ( options::qss == options::QSS::QSS1 ) {
@@ -367,7 +373,7 @@ namespace fmu {
 		iOut = 1u; // Output step index
 		if ( ! options::specified::rTol ) options::rTol = rTol; // Quantization relative tolerance (FMU doesn't have an absolute tolerance)
 		std::cout << "Relative Tolerance: " << options::rTol << std::endl;
-		std::cout << "Absolute Tolerance: " << options::aTol << std::endl;
+		std::cout << "Absolute Tolerance: " << options::aTol << " for " << ( options::specified::aTolAll ? "all" : "no-nominal" ) << " variables" << std::endl;
 
 		eventInfo.newDiscreteStatesNeeded = fmi2_false;
 		eventInfo.terminateSimulation = fmi2_false;
@@ -381,6 +387,7 @@ namespace fmu {
 		do_event_iteration();
 		fmi2_import_enter_continuous_time_mode( fmu );
 		fmi2_import_get_continuous_states( fmu, states, n_states ); // Should get initial values
+		fmi2_import_get_nominals_of_continuous_states( fmu, x_nominal, n_states );
 		fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 
 		// FMU Query: Model
@@ -402,7 +409,7 @@ namespace fmu {
 			fmi2_import_variable_t * var( fmi2_import_get_variable( var_list, i ) );
 			std::string const var_name( fmi2_import_get_variable_name( var ) );
 			if ( var_names.find( var_name ) != var_names.end() ) {
-				std::cerr << "\n Error: Variable name repeats: " << var_name << std::endl;
+				std::cerr << " Error: Variable name repeats: " << var_name << std::endl;
 				std::exit( EXIT_FAILURE );
 			}
 			var_names.insert( var_name );
@@ -424,20 +431,24 @@ namespace fmu {
 				fmi2_real_t const var_start( var_has_start ? fmi2_import_get_real_variable_start( var_real ) : 0.0 );
 				if ( var_has_start ) std::cout << " Start: " << var_start << std::endl;
 				if ( ( var_causality == fmi2_causality_enu_local ) || ( var_causality == fmi2_causality_enu_output ) ) {
-					if ( var_causality == fmi2_causality_enu_local ) std::cout << " Type: Real: Local" << std::endl;
-					if ( var_causality == fmi2_causality_enu_output ) std::cout << " Type: Real: Output" << std::endl;
+					if ( var_causality == fmi2_causality_enu_local ) std::cout << " Causality: Local" << std::endl;
+					if ( var_causality == fmi2_causality_enu_output ) std::cout << " Causality: Output" << std::endl;
 					if ( ( var_variability == fmi2_variability_enu_continuous ) || ( var_variability == fmi2_variability_enu_discrete ) ) {
 						if ( has_prefix( var_name, "der(" ) && has_suffix( var_name, ")" ) ) {
 							// Skip derivatives
 						} else if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) {
 							// Skip temporaries
-						} else { // Add to FMU outputs
-							fmu_outs[ var_real ] = FMU_Variable( var, var_real, var_ref, i+1 );
+						} else if ( options::output::F || ( options::output::f && ( var_causality == fmi2_causality_enu_output ) ) ) { // Add to FMU outputs
+							if ( output_filter( var_name ) ) fmu_outs[ var_real ] = FMU_Variable( var, var_real, var_ref, i+1 );
 						}
 					}
 				}
 				if ( var_variability == fmi2_variability_enu_continuous ) {
 					std::cout << " Type: Real: Continuous" << std::endl;
+					if ( ! SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) { // May not be necessary: LBL preference
+						std::cerr << " Error: Non-SI unit used for real variable: Not currently supported: " << var_name << std::endl;
+						//std::exit( EXIT_FAILURE );
+					}
 					FMU_Variable const fmu_var( var, var_real, var_ref, i+1 );
 					fmu_vars[ var_real ] = fmu_var;
 					fmu_var_of_ref[ var_ref ] = fmu_var;
@@ -449,19 +460,19 @@ namespace fmu {
 						auto i_con_var( options::con.find( var_name ) );
 						if ( i_con_var == options::con.end() ) i_con_var = options::con.find( name + '.' + var_name ); // Try as mdl.var
 						if ( ( i_fxn_var != options::fxn.end() ) && ( i_con_var != options::con.end() ) ) {
-							std::cerr << "\n Error: Both function and connections specified for input variable: " << var_name << std::endl;
+							std::cerr << " Error: Both function and connections specified for input variable: " << var_name << std::endl;
 							std::exit( EXIT_FAILURE );
 						}
 						if ( i_fxn_var != options::fxn.end() ) { // Input function specified
 							std::string const & fxn_spec( i_fxn_var->second );
 							std::string::size_type const ilb( fxn_spec.find( '[' ) );
 							if ( ilb == std::string::npos ) {
-								std::cerr << "\n Error: Input function spec missing [args]: " << fxn_spec << std::endl;
+								std::cerr << " Error: Input function spec missing [args]: " << fxn_spec << std::endl;
 								std::exit( EXIT_FAILURE );
 							}
 							std::string::size_type const irb( fxn_spec.find( ']', ilb ) );
 							if ( irb == std::string::npos ) {
-								std::cerr << "\n Error: Input function spec [args] missing closing ]: " << fxn_spec << std::endl;
+								std::cerr << " Error: Input function spec [args] missing closing ]: " << fxn_spec << std::endl;
 								std::exit( EXIT_FAILURE );
 							}
 							std::string const fxn_name( fxn_spec.substr( 0, ilb ) );
@@ -470,89 +481,89 @@ namespace fmu {
 								if ( is_double( fxn_args ) ) {
 									inp_fxn = Function_Inp_constant( double_of( fxn_args ) ); // Constant start value
 								} else {
-									std::cerr << "\n Error: Input function spec constant[c] argument c is not a valid double: " << fxn_spec << std::endl;
+									std::cerr << " Error: Input function spec constant[c] argument c is not a valid double: " << fxn_spec << std::endl;
 									std::exit( EXIT_FAILURE );
 								}
 							} else if ( fxn_name == "sin" ) {
 								std::vector< std::string > args( split( fxn_args, ',' ) );
 								if ( args.size() != 3u ) {
-									std::cerr << "\n Error: Input function spec sin[a,b,c] doesn't have 3 arguments: " << fxn_spec << std::endl;
+									std::cerr << " Error: Input function spec sin[a,b,c] doesn't have 3 arguments: " << fxn_spec << std::endl;
 									std::exit( EXIT_FAILURE );
 								}
 								Real a, b, c;
 								if ( is_double( args[ 0 ] ) ) {
 									a = double_of( args[ 0 ] ); // Constant start value
 								} else {
-									std::cerr << "\n Error: Input function spec sin[a,b,c] argument a is not a valid double: " << fxn_spec << std::endl;
+									std::cerr << " Error: Input function spec sin[a,b,c] argument a is not a valid double: " << fxn_spec << std::endl;
 									std::exit( EXIT_FAILURE );
 								}
 								if ( is_double( args[ 1 ] ) ) {
 									b = double_of( args[ 1 ] ); // Constant start value
 								} else {
-									std::cerr << "\n Error: Input function spec sin[a,b,c] argument b is not a valid double: " << fxn_spec << std::endl;
+									std::cerr << " Error: Input function spec sin[a,b,c] argument b is not a valid double: " << fxn_spec << std::endl;
 									std::exit( EXIT_FAILURE );
 								}
 								if ( is_double( args[ 2 ] ) ) {
 									c = double_of( args[ 2 ] ); // Constant start value
 								} else {
-									std::cerr << "\n Error: Input function spec sin[a,b,c] argument c is not a valid double: " << fxn_spec << std::endl;
+									std::cerr << " Error: Input function spec sin[a,b,c] argument c is not a valid double: " << fxn_spec << std::endl;
 									std::exit( EXIT_FAILURE );
 								}
 								inp_fxn = Function_Inp_sin( a, b, c ); // a * sin( b * t ) + c
 							} else if ( fxn_name == "step" ) {
 								std::vector< std::string > args( split( fxn_args, ',' ) );
 								if ( args.size() != 3u ) {
-									std::cerr << "\n Error: Input function spec step[h0,h,d] doesn't have 3 arguments: " << fxn_spec << std::endl;
+									std::cerr << " Error: Input function spec step[h0,h,d] doesn't have 3 arguments: " << fxn_spec << std::endl;
 									std::exit( EXIT_FAILURE );
 								}
 								Real h0, h, d;
 								if ( is_double( args[ 0 ] ) ) {
 									h0 = double_of( args[ 0 ] ); // Constant start value
 								} else {
-									std::cerr << "\n Error: Input function spec step[h0,h,d] argument h0 is not a valid double: " << fxn_spec << std::endl;
+									std::cerr << " Error: Input function spec step[h0,h,d] argument h0 is not a valid double: " << fxn_spec << std::endl;
 									std::exit( EXIT_FAILURE );
 								}
 								if ( is_double( args[ 1 ] ) ) {
 									h = double_of( args[ 1 ] ); // Constant start value
 								} else {
-									std::cerr << "\n Error: Input function spec step[h0,h,d] argument h is not a valid double: " << fxn_spec << std::endl;
+									std::cerr << " Error: Input function spec step[h0,h,d] argument h is not a valid double: " << fxn_spec << std::endl;
 									std::exit( EXIT_FAILURE );
 								}
 								if ( is_double( args[ 2 ] ) ) {
 									d = double_of( args[ 2 ] ); // Constant start value
 								} else {
-									std::cerr << "\n Error: Input function spec step[h0,h,d] argument d is not a valid double: " << fxn_spec << std::endl;
+									std::cerr << " Error: Input function spec step[h0,h,d] argument d is not a valid double: " << fxn_spec << std::endl;
 									std::exit( EXIT_FAILURE );
 								}
 								inp_fxn = Function_Inp_step( h0, h, d ); // h0 + h * floor( t / d )
 							} else if ( fxn_name == "toggle" ) {
 								std::vector< std::string > args( split( fxn_args, ',' ) );
 								if ( args.size() != 3u ) {
-									std::cerr << "\n Error: Input function spec toggle[h0,h,d] doesn't have 3 arguments: " << fxn_spec << std::endl;
+									std::cerr << " Error: Input function spec toggle[h0,h,d] doesn't have 3 arguments: " << fxn_spec << std::endl;
 									std::exit( EXIT_FAILURE );
 								}
 								Real h0, h, d;
 								if ( is_double( args[ 0 ] ) ) {
 									h0 = double_of( args[ 0 ] ); // Constant start value
 								} else {
-									std::cerr << "\n Error: Input function spec toggle[h0,h,d] argument h0 is not a valid double: " << fxn_spec << std::endl;
+									std::cerr << " Error: Input function spec toggle[h0,h,d] argument h0 is not a valid double: " << fxn_spec << std::endl;
 									std::exit( EXIT_FAILURE );
 								}
 								if ( is_double( args[ 1 ] ) ) {
 									h = double_of( args[ 1 ] ); // Constant start value
 								} else {
-									std::cerr << "\n Error: Input function spec toggle[h0,h,d] argument h is not a valid double: " << fxn_spec << std::endl;
+									std::cerr << " Error: Input function spec toggle[h0,h,d] argument h is not a valid double: " << fxn_spec << std::endl;
 									std::exit( EXIT_FAILURE );
 								}
 								if ( is_double( args[ 2 ] ) ) {
 									d = double_of( args[ 2 ] ); // Constant start value
 								} else {
-									std::cerr << "\n Error: Input function spec toggle[h0,h,d] argument d is not a valid double: " << fxn_spec << std::endl;
+									std::cerr << " Error: Input function spec toggle[h0,h,d] argument d is not a valid double: " << fxn_spec << std::endl;
 									std::exit( EXIT_FAILURE );
 								}
 								inp_fxn = Function_Inp_toggle( h0, h, d ); // h0 + h * ( floor( t / d ) % 2 )
 							} else {
-								std::cerr << "\n Error: Input function spec function name unrecognized: " << fxn_spec << std::endl;
+								std::cerr << " Error: Input function spec function name unrecognized: " << fxn_spec << std::endl;
 								std::exit( EXIT_FAILURE );
 							}
 							std::cout << " Type: Real: Continuous: Input: Function" << std::endl;
@@ -568,13 +579,13 @@ namespace fmu {
 						}
 						if ( inp_fxn ) {
 							if ( var_has_start && var_start != inp_fxn( 0.0 ).x0 ) {
-								std::cerr << "\n Error: Specified start value does not match function value at t=0 for " << var_name << std::endl;
+								std::cerr << " Error: Specified start value does not match function value at t=0 for " << var_name << std::endl;
 								std::exit( EXIT_FAILURE );
 							}
 						}
 						if ( ! SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) { // May not be necessary: LBL preference
-							std::cerr << "\n Error: Non-SI unit used for input variable: Not currently supported: " << var_name << std::endl;
-							std::exit( EXIT_FAILURE );
+							std::cerr << " Error: Non-SI unit used for input variable: Not currently supported: " << var_name << std::endl;
+							//std::exit( EXIT_FAILURE );
 						}
 						Variable * qss_var( nullptr );
 						if ( inp_fxn || !options::perfect ) { // Use input variables for connections
@@ -591,7 +602,7 @@ namespace fmu {
 							} else if ( options::qss == options::QSS::xQSS3 ) {
 								qss_var = new Variable_xInp3( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
 							} else {
-								std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
+								std::cerr << " Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 								std::exit( EXIT_FAILURE );
 							}
 						} else { // Use connection variables for connections
@@ -602,7 +613,7 @@ namespace fmu {
 							} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) || ( options::qss == options::QSS::xQSS3 ) ) {
 								qss_var = new Variable_Con( 3, var_name, this, fmu_var );
 							} else {
-								std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
+								std::cerr << " Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 								std::exit( EXIT_FAILURE );
 							}
 						}
@@ -615,8 +626,8 @@ namespace fmu {
 				} else if ( var_variability == fmi2_variability_enu_discrete ) {
 					std::cout << " Type: Real: Discrete" << std::endl;
 					if ( ! SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) { // May not be necessary: LBL preference
-						std::cerr << "\n Error: Non-SI unit used for discrete variable: Not currently supported: " << var_name << std::endl;
-						std::exit( EXIT_FAILURE );
+						std::cerr << " Error: Non-SI unit used for discrete variable: Not currently supported: " << var_name << std::endl;
+						//std::exit( EXIT_FAILURE );
 					}
 					FMU_Variable const fmu_var( var, var_real, var_ref, i+1 );
 					fmu_vars[ var_real ] = fmu_var;
@@ -683,6 +694,17 @@ namespace fmu {
 				fmi2_import_integer_variable_t * var_int( fmi2_import_get_variable_as_integer( var ) );
 				int const var_start( var_has_start ? fmi2_import_get_integer_variable_start( var_int ) : 0 );
 				if ( var_has_start ) std::cout << " Start: " << var_start << std::endl;
+				if ( ( var_causality == fmi2_causality_enu_local ) || ( var_causality == fmi2_causality_enu_output ) ) {
+					if ( var_causality == fmi2_causality_enu_local ) std::cout << " Causality: Local" << std::endl;
+					if ( var_causality == fmi2_causality_enu_output ) std::cout << " Causality: Output" << std::endl;
+					if ( var_variability == fmi2_variability_enu_discrete ) {
+						if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) {
+							// Skip temporaries
+						} else if ( options::output::F || ( options::output::f && ( var_causality == fmi2_causality_enu_output ) ) ) { // Add to FMU outputs
+							if ( output_filter( var_name ) ) fmu_outs[ var_int ] = FMU_Variable( var, var_int, var_ref, i+1 );
+						}
+					}
+				}
 				if ( var_variability == fmi2_variability_enu_discrete ) {
 					FMU_Variable const fmu_var( var, var_int, var_ref, i+1 );
 					fmu_vars[ var_int ] = fmu_var;
@@ -748,6 +770,17 @@ namespace fmu {
 				fmi2_import_bool_variable_t * var_bool( fmi2_import_get_variable_as_boolean( var ) );
 				bool const var_start( var_has_start ? fmi2_import_get_boolean_variable_start( var_bool ) != 0 : 0 );
 				if ( var_has_start ) std::cout << " Start: " << var_start << std::endl;
+				if ( ( var_causality == fmi2_causality_enu_local ) || ( var_causality == fmi2_causality_enu_output ) ) {
+					if ( var_causality == fmi2_causality_enu_local ) std::cout << " Causality: Local" << std::endl;
+					if ( var_causality == fmi2_causality_enu_output ) std::cout << " Causality: Output" << std::endl;
+					if ( var_variability == fmi2_variability_enu_discrete ) {
+						if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) {
+							// Skip temporaries
+						} else if ( options::output::F || ( options::output::f && ( var_causality == fmi2_causality_enu_output ) ) ) { // Add to FMU outputs
+							if ( output_filter( var_name ) ) fmu_outs[ var_bool ] = FMU_Variable( var, var_bool, var_ref, i+1 );
+						}
+					}
+				}
 				if ( var_variability == fmi2_variability_enu_discrete ) {
 					FMU_Variable const fmu_var( var, var_bool, var_ref, i+1 );
 					fmu_vars[ var_bool ] = fmu_var;
@@ -834,7 +867,7 @@ namespace fmu {
 		n_derivatives = fmi2_import_get_variable_list_size( der_list );
 		std::cout << "\nFMU Derivative Processing: Num FMU-ME Derivatives: " << n_derivatives << " =====" << std::endl;
 		fmi2_value_reference_t const * drs( fmi2_import_get_value_referece_list( der_list ) ); // reference is spelled wrong in FMIL API
-		for ( size_type i = 0, ics = 0; i < n_derivatives; ++i ) {
+		for ( size_type i = 0, ics = 0; i < n_derivatives; ++i ) { // i is also index into states and x_nominal arrays
 			std::cout << "\nDerivative  Ref: " << drs[ i ] << std::endl;
 			fmi2_import_variable_t * der( fmi2_import_get_variable( der_list, i ) );
 			std::string const der_name( fmi2_import_get_variable_name( der ) );
@@ -842,14 +875,14 @@ namespace fmu {
 			std::cout << " Desc: " << ( fmi2_import_get_variable_description( der ) ? fmi2_import_get_variable_description( der ) : "" ) << std::endl;
 			std::cout << " Ref: " << fmi2_import_get_variable_vr( der ) << std::endl;
 			fmi2_base_type_enu_t der_base_type( fmi2_import_get_variable_base_type( der ) );
-			bool const der_start( fmi2_import_get_variable_has_start( der ) == 1 );
-			std::cout << " Start? " << der_start << std::endl;
+			bool const der_has_start( fmi2_import_get_variable_has_start( der ) == 1 );
+			std::cout << " Start? " << der_has_start << std::endl;
 			switch ( der_base_type ) {
 			case fmi2_base_type_real:
 				{
 				std::cout << " Type: Real" << std::endl;
 				fmi2_import_real_variable_t * der_real( fmi2_import_get_variable_as_real( der ) );
-				if ( der_start ) std::cout << " Start: " << fmi2_import_get_real_variable_start( der_real ) << std::endl;
+				if ( der_has_start ) std::cout << " Start: " << fmi2_import_get_real_variable_start( der_real ) << std::endl;
 				fmi2_import_real_variable_t * var_real( fmi2_import_get_real_variable_derivative_of( der_real ) );
 				if ( var_real != nullptr ) { // Add to Variable to Derivative Map
 					FMU_Variable & fmu_der( fmu_vars[ der_real ] );
@@ -861,43 +894,44 @@ namespace fmu {
 					der_to_var_idx[ fmu_der.idx ] = fmu_var.idx;
 					std::string const var_name( fmi2_import_get_variable_name( fmu_var.var ) );
 					if ( ! SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) {
-						std::cerr << "\n Error: Non-SI unit used for state variable: Not currently supported: " << var_name << std::endl;
-						std::exit( EXIT_FAILURE );
+						std::cerr << " Error: Non-SI unit used for state variable: Not currently supported: " << var_name << std::endl;
+						//std::exit( EXIT_FAILURE );
 					}
 					if ( ! SI_unit_check( fmi2_import_get_real_variable_unit( der_real ) ) ) {
-						std::cerr << "\n Error: Non-SI unit used for state derivative: Not currently supported: " << der_name << std::endl;
-						std::exit( EXIT_FAILURE );
+						std::cerr << " Error: Non-SI unit used for state derivative: Not currently supported: " << der_name << std::endl;
+						//std::exit( EXIT_FAILURE );
 					}
 					std::cout << " Initial value of " << var_name << " = " << states_initial << std::endl;
 					bool const start( fmi2_import_get_variable_has_start( fmu_var.var ) == 1 );
 					if ( start ) {
 						Real const var_initial( fmi2_import_get_real_variable_start( var_real ) );
 						if ( var_initial != states_initial ) {
-							std::cerr << "\n Warning: Initial value from xml specs: " << var_initial << " is not equal to initial value from fmi2GetContinuousStates(): " << states_initial << '\n';
+							std::cerr << " Warning: Initial value from xml specs: " << var_initial << " is not equal to initial value from fmi2GetContinuousStates(): " << states_initial << '\n';
 							std::cerr << "          Using initial value from fmi2GetContinuousStates()" << std::endl;
 						}
 					}
+					Real const var_aTol( ( ! options::specified::aTolAll ) && ( options::rTol * x_nominal[ i ] > 0.0 ) ? options::rTol * x_nominal[ i ] : options::aTol );
 					Variable_QSS * qss_var( nullptr );
 					if ( options::qss == options::QSS::QSS1 ) {
-						qss_var = new Variable_QSS1( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_QSS1( var_name, options::rTol, var_aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::QSS2 ) {
-						qss_var = new Variable_QSS2( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_QSS2( var_name, options::rTol, var_aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::QSS3 ) {
-						qss_var = new Variable_QSS3( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_QSS3( var_name, options::rTol, var_aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS1 ) {
-						qss_var = new Variable_LIQSS1( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_LIQSS1( var_name, options::rTol, var_aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS2 ) {
-						qss_var = new Variable_LIQSS2( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_LIQSS2( var_name, options::rTol, var_aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS3 ) {
-						qss_var = new Variable_LIQSS3( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_LIQSS3( var_name, options::rTol, var_aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::xQSS1 ) {
-						qss_var = new Variable_xQSS1( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_xQSS1( var_name, options::rTol, var_aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::xQSS2 ) {
-						qss_var = new Variable_xQSS2( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_xQSS2( var_name, options::rTol, var_aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::xQSS3 ) {
-						qss_var = new Variable_xQSS3( var_name, options::rTol, options::aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_xQSS3( var_name, options::rTol, var_aTol, states_initial, this, fmu_var, fmu_der );
 					} else {
-						std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
+						std::cerr << " Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 						std::exit( EXIT_FAILURE );
 					}
 					vars.push_back( qss_var ); // Add to QSS variables
@@ -912,26 +946,26 @@ namespace fmu {
 					fmu_idxs[ fmu_var.idx ] = qss_var; // Add to map from FMU variable index to QSS variable
 					std::cout << " FMU-ME idx: " << fmu_var.idx << " maps to QSS var: " << qss_var->name() << std::endl;
 				} else {
-					std::cerr << "\n Error: Derivative missing associated variable: " << der_name << std::endl;
+					std::cerr << " Error: Derivative missing associated variable: " << der_name << std::endl;
 					std::exit( EXIT_FAILURE );
 				}
 				}
 				break;
 			case fmi2_base_type_int:
 				std::cout << " Type: Integer" << std::endl;
-				if ( der_start ) std::cout << " Start: " << fmi2_import_get_integer_variable_start( fmi2_import_get_variable_as_integer( der ) ) << std::endl;
+				if ( der_has_start ) std::cout << " Start: " << fmi2_import_get_integer_variable_start( fmi2_import_get_variable_as_integer( der ) ) << std::endl;
 				break;
 			case fmi2_base_type_bool:
 				std::cout << " Type: Boolean" << std::endl;
-				if ( der_start ) std::cout << " Start: " << fmi2_import_get_boolean_variable_start( fmi2_import_get_variable_as_boolean( der ) ) << std::endl;
+				if ( der_has_start ) std::cout << " Start: " << fmi2_import_get_boolean_variable_start( fmi2_import_get_variable_as_boolean( der ) ) << std::endl;
 				break;
 			case fmi2_base_type_str:
 				std::cout << " Type: String" << std::endl;
-				if ( der_start ) std::cout << " Start: " << fmi2_import_get_string_variable_start( fmi2_import_get_variable_as_string( der ) ) << std::endl;
+				if ( der_has_start ) std::cout << " Start: " << fmi2_import_get_string_variable_start( fmi2_import_get_variable_as_string( der ) ) << std::endl;
 				break;
 			case fmi2_base_type_enum:
 				std::cout << " Type: Enum" << std::endl;
-				if ( der_start ) std::cout << " Start: " << fmi2_import_get_enum_variable_start( fmi2_import_get_variable_as_enum( der ) ) << std::endl;
+				if ( der_has_start ) std::cout << " Start: " << fmi2_import_get_enum_variable_start( fmi2_import_get_variable_as_enum( der ) ) << std::endl;
 				break;
 			default:
 				std::cout << " Type: Unknown" << std::endl;
@@ -958,7 +992,7 @@ namespace fmu {
 				fmi2_import_real_variable_t * var_real( fmi2_import_get_variable_as_real( var ) );
 				if ( ! SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) { // May not be necessary: LBL preference
 					std::cerr << "\n Error: Non-SI unit used for event indicator variable: Not currently supported: " << var_name << std::endl;
-					std::exit( EXIT_FAILURE );
+					//std::exit( EXIT_FAILURE );
 				}
 				FMU_Variable & fmu_var( fmu_vars[ var_real ] );
 				std::cout << "\nEvent Indicator: " << var_name << std::endl;
@@ -970,7 +1004,7 @@ namespace fmu {
 				} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) || ( options::qss == options::QSS::xQSS3 ) ) {
 					qss_var = new Variable_ZC3( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var );
 				} else {
-					std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
+					std::cerr << " Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 					std::exit( EXIT_FAILURE );
 				}
 				vars.push_back( qss_var ); // Add to QSS variables
@@ -1035,11 +1069,11 @@ namespace fmu {
 								fmi2_import_real_variable_t * der_real( fmi2_import_get_variable_as_real( der ) );
 								if ( ! SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) { // May not be necessary: LBL preference
 									std::cerr << "\n Error: Non-SI unit used for zero-crossing variable: Not currently supported: " << var_name << std::endl;
-									std::exit( EXIT_FAILURE );
+									//std::exit( EXIT_FAILURE );
 								}
 								if ( ! SI_unit_check( fmi2_import_get_real_variable_unit( der_real ) ) ) { // May not be necessary: LBL preference
 									std::cerr << "\n Error: Non-SI unit used for zero-crossing derivative: Not currently supported: " << der_name << std::endl;
-									std::exit( EXIT_FAILURE );
+									//std::exit( EXIT_FAILURE );
 								}
 								FMU_Variable & fmu_var( fmu_vars[ var_real ] );
 								FMU_Variable & fmu_der( fmu_vars[ der_real ] );
@@ -1055,7 +1089,7 @@ namespace fmu {
 									} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) || ( options::qss == options::QSS::xQSS3 ) ) {
 										qss_var = new Variable_ZCe3( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var, fmu_der );
 									} else {
-										std::cerr << "\n Error: Specified QSS method is not yet supported for FMUs" << std::endl;
+										std::cerr << " Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 										std::exit( EXIT_FAILURE );
 									}
 									vars.push_back( qss_var ); // Add to QSS variables
@@ -1116,7 +1150,7 @@ namespace fmu {
 							size_type const dep_idx( dependency[ j ] );
 							std::cout << "  Dep Index: " << dep_idx << std::endl;
 							if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
-								std::cerr << "\n   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
+								std::cerr << "   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
 								std::exit( EXIT_FAILURE );
 							} else { // Process based on kind of dependent
 								fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
@@ -1148,11 +1182,11 @@ namespace fmu {
 									var->observe( dep );
 								}
 							} else {
-								//std::cout << "\n   Note: FMU-ME derivative " << der_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
+								//std::cout << "   Note: FMU-ME derivative " << der_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
 							}
 						}
 					} else {
-						std::cerr << "\n   Error: QSS variable with index " << idx << " referenced in derivative not found" << std::endl;
+						std::cerr << "   Error: QSS variable with index " << idx << " referenced in derivative not found" << std::endl;
 						std::exit( EXIT_FAILURE );
 					}
 				}
@@ -1192,7 +1226,7 @@ namespace fmu {
 							size_type const dep_idx( dependency[ j ] );
 							std::cout << "  Dep Index: " << dep_idx << std::endl;
 							if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
-								std::cerr << "\n   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
+								std::cerr << "   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
 //								std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes
 							} else { // Process based on kind of dependent
 								fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
@@ -1218,17 +1252,17 @@ namespace fmu {
 									var->self_observe();
 								} else if ( dep->is_ZC() ) {
 									std::cout << "  Zero Crossing Var: " << dep->name() << " handler modifies " << var->name() << std::endl;
-									dep->conditional->add_observer( var );
+									if ( dep->in_conditional() ) dep->conditional->add_observer( var );
 								} else {
 									std::cout << "  Var: " << dep->name() << " has observer " << var->name() << std::endl;
 									var->observe( dep );
 								}
 							} else {
-								//std::cout << "\n   Note: FMU-ME InitialUnknown " << inu_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
+								//std::cout << "   Note: FMU-ME InitialUnknown " << inu_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
 							}
 						}
 					} else {
-						//std::cout << "\n   Note: QSS variable with index " << idx << " for InitialUnknown not found" << std::endl;
+						//std::cout << "   Note: QSS variable with index " << idx << " for InitialUnknown not found" << std::endl;
 					}
 				}
 			} else { // Assume no observers in model (this may not be true: FMI spec says no dependencies => dependent on all)
@@ -1299,7 +1333,7 @@ namespace fmu {
 							size_type const dep_idx( dependency[ j ] );
 							std::cout << "  Dep Index: " << dep_idx << std::endl;
 							if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
-								std::cerr << "\n   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
+								std::cerr << "   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
 								std::exit( EXIT_FAILURE );
 							} else { // Process based on kind of dependent
 								fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
@@ -1321,21 +1355,21 @@ namespace fmu {
 							if ( idep != fmu_idxs.end() ) {
 								Variable * dep( idep->second );
 								if ( dep == dis_var ) {
-									std::cerr << "\n   Error: Discrete variable " << dis_name << " has self-dependency" << std::endl;
+									std::cerr << "   Error: Discrete variable " << dis_name << " has self-dependency" << std::endl;
 									std::exit( EXIT_FAILURE );
 								} else if ( dep->is_ZC() ) {
 									std::cout << "  Zero Crossing Var: " << dep->name() << " handler modifies discrete variable " << dis_name << std::endl;
-									dep->conditional->add_observer( dis_var );
+									if ( dep->in_conditional() ) dep->conditional->add_observer( dis_var );
 								} else {
-									std::cerr << "\n   Error: Discrete variable " << dis_name << " has dependency on non-zero-crossing variable " << dep->name() << std::endl;
+									std::cerr << "   Error: Discrete variable " << dis_name << " has dependency on non-zero-crossing variable " << dep->name() << std::endl;
 									std::exit( EXIT_FAILURE );
 								}
 							} else {
-								//std::cout << "\n   Note: FMU-ME discrete variable " << dis_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
+								//std::cout << "   Note: FMU-ME discrete variable " << dis_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
 							}
 						}
 					} else {
-						std::cerr << "\n   Error: QSS variable with index " << idx << " for Discrete variable not found" << std::endl;
+						std::cerr << "   Error: QSS variable with index " << idx << " for Discrete variable not found" << std::endl;
 						std::exit( EXIT_FAILURE );
 					}
 				}
@@ -1358,17 +1392,19 @@ namespace fmu {
 				for ( size_type i = 0; i < n_out_vars; ++i ) {
 					std::cout << "\nOutput Variable  Ref: " << out_vrs[ i ] << std::endl;
 					fmi2_import_variable_t * out( fmi2_import_get_variable( out_list, i ) );
-					assert( fmi2_import_get_causality( out ) == fmi2_causality_enu_output );
+					assert( fmi2_import_get_causality( out ) == fmi2_causality_enu_output ); //Do Chg to if check: Could be FMU bug
 					std::string const out_name( fmi2_import_get_variable_name( out ) );
 					std::cout << " Name: " << out_name << std::endl;
-					FMU_Variable * fmu_out( nullptr ); // Output FMU variable
-					FMU_Variable * fmu_var( nullptr ); // FMU variable that output variable is derivative of
+					fmi2_value_reference_t const out_ref( fmi2_import_get_variable_vr( out ) );
+					FMU_Variable * fmu_out( nullptr ); // FMU output variable
+					FMU_Variable * fmu_var( nullptr ); // FMU variable that output variable is derivative of, if any
+					fmi2_import_real_variable_t * out_real( nullptr );
 					fmi2_base_type_enu_t out_base_type( fmi2_import_get_variable_base_type( out ) );
 					switch ( out_base_type ) {
 					case fmi2_base_type_real:
 						std::cout << " Type: Real" << std::endl;
 						{
-						fmi2_import_real_variable_t * out_real( fmi2_import_get_variable_as_real( out ) );
+						out_real = fmi2_import_get_variable_as_real( out );
 						fmu_out = &fmu_vars[ out_real ];
 						auto const ider( fmu_dvrs.find( out_real ) );
 						if ( ider != fmu_dvrs.end() ) fmu_var = &(ider->second);
@@ -1376,9 +1412,15 @@ namespace fmu {
 						break;
 					case fmi2_base_type_int:
 						std::cout << " Type: Integer" << std::endl;
+						{
+						fmu_out = &fmu_vars[ fmi2_import_get_variable_as_integer( out ) ];
+						}
 						break;
 					case fmi2_base_type_bool:
 						std::cout << " Type: Boolean" << std::endl;
+						{
+						fmu_out = &fmu_vars[ fmi2_import_get_variable_as_boolean( out ) ];
+						}
 						break;
 					case fmi2_base_type_str:
 						std::cout << " Type: String" << std::endl;
@@ -1390,18 +1432,19 @@ namespace fmu {
 						std::cout << " Type: Unknown" << std::endl;
 						break;
 					}
+					if ( fmu_out == nullptr ) continue; // Not a type we care about
 					size_type const idx( fmu_out->idx );
 					auto iout( fmu_idxs.find( idx ) ); //Do Add support for input variable dependents
 					if ( ( iout == fmu_idxs.end() ) && ( fmu_var != nullptr ) ) iout = fmu_idxs.find( fmu_var->idx ); // Use variable that output variable is derivative of
-					if ( iout != fmu_idxs.end() ) {
+					if ( iout != fmu_idxs.end() ) { // Output variable corresponds to a QSS variable
 						Variable * out_var( iout->second );
-						std::cout << " FMU-ME idx: " << fmu_out->idx << " -> QSS var: " << out_var->name() << std::endl;
-						if ( out_var->not_ZC() ) continue; // Don't worry about dependencies of non-ZC output variables on the QSS side
+						std::cout << " FMU-ME idx: " << fmu_out->idx << " maps to QSS var: " << out_var->name() << std::endl;
+//						if ( out_var->not_ZC() ) continue; // Don't worry about dependencies of non-ZC output variables on the QSS side //?
 						for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
 							size_type const dep_idx( dependency[ j ] );
 							std::cout << "  Dep Index: " << dep_idx << std::endl;
 							if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
-								std::cerr << "\n   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
+								std::cerr << "   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
 //								std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes
 							} else { // Process based on kind of dependent
 								fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
@@ -1420,25 +1463,72 @@ namespace fmu {
 								}
 							}
 							auto const idep( fmu_idxs.find( dep_idx ) ); //Do Add support for input variable dependents
-							if ( idep != fmu_idxs.end() ) {
+							if ( idep != fmu_idxs.end() ) { // Dependency is a QSS variable
 								Variable * dep( idep->second );
 								if ( dep == out_var ) {
-									std::cerr << "\n   Error: Output variable " << out_name << " has self-dependency" << std::endl;
+									std::cerr << "   Error: Output variable " << out_name << " has self-dependency" << std::endl;
 									std::exit( EXIT_FAILURE );
 								} else if ( dep->is_ZC() ) {
 									std::cout << "  Zero Crossing Var: " << dep->name() << " handler modifies output variable " << out_name << std::endl;
-									dep->conditional->add_observer( out_var );
+									if ( dep->in_conditional() ) dep->conditional->add_observer( out_var );
 								} else {
 									std::cout << "  Var: " << dep->name() << " has observer " << out_name << std::endl;
 									out_var->observe( dep );
 								}
-							} else {
-								//std::cout << "\n   Note: FMU-ME output variable " << out_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
+							} else { // Dependency is a non-QSS variable
+								std::cout << "   Note: Output variable " << out_name << " has dependency on non-QSS variable with index " << dep_idx << std::endl;
+							}
+						}
+					} else if ( options::output::f && options::output::r && ( options::output::x || options::output::q ) ) { // Output variable is not yet a QSS variable
+						bool const var_has_start( fmi2_import_get_variable_has_start( out ) == 1 );
+						fmi2_real_t const var_start( var_has_start ? fmi2_import_get_real_variable_start( out_real ) : 0.0 );
+						Variable_R * qss_var( new Variable_R( out_name, var_start, this, *fmu_out ) );
+						vars.push_back( qss_var ); // Add to QSS variables
+						qss_var_of_ref[ out_ref ] = qss_var;
+						var_name_var[ out_name ] = qss_var;
+						//! Leave in fmu_outs (instead of putting into outs) since it needs to get its current value from the FMU
+						//outs.push_back( qss_var );
+						//fmu_outs.erase( out_real ); // Remove it from non-QSS FMU outputs
+						fmu_idxs[ fmu_out->idx ] = qss_var; // Add to map from FMU variable index to QSS variable
+						std::cout << " FMU-ME idx: " << fmu_out->idx << " maps to QSS var: " << qss_var->name() << std::endl;
+						for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
+							size_type const dep_idx( dependency[ j ] );
+							std::cout << "  Dep Index: " << dep_idx << std::endl;
+							if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
+								std::cerr << "   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
+//								std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes
+							} else { // Process based on kind of dependent
+								fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
+								if ( kind == fmi2_dependency_factor_kind_dependent ) {
+									std::cout << "   Kind: Dependent (" << kind << ')' << std::endl;
+								} else if ( kind == fmi2_dependency_factor_kind_constant ) {
+									std::cout << "   Kind: Constant (" << kind << ')' << std::endl;
+								} else if ( kind == fmi2_dependency_factor_kind_fixed ) {
+									std::cout << "   Kind: Fixed (" << kind << ')' << std::endl;
+								} else if ( kind == fmi2_dependency_factor_kind_tunable ) {
+									std::cout << "   Kind: Tunable (" << kind << ')' << std::endl;
+								} else if ( kind == fmi2_dependency_factor_kind_discrete ) {
+									std::cout << "   Kind: Discrete (" << kind << ')' << std::endl;
+								} else if ( kind == fmi2_dependency_factor_kind_num ) {
+									std::cout << "   Kind: Num (" << kind << ')' << std::endl;
+								}
+							}
+							auto const idep_qss( fmu_idxs.find( dep_idx ) ); //Do Add support for input variable dependents
+							if ( idep_qss != fmu_idxs.end() ) { // Dependency is a QSS variable
+								Variable * dep( idep_qss->second );
+								if ( dep->is_ZC() ) {
+									std::cout << "  Zero Crossing Var: " << dep->name() << " handler modifies output variable " << out_name << std::endl;
+									if ( dep->in_conditional() ) dep->conditional->add_observer( qss_var );
+								} else {
+									std::cout << "  Var: " << dep->name() << " has observer " << out_name << std::endl;
+									qss_var->observe( dep );
+								}
+							} else { // Dependency is a non-QSS variable: These don't have relevant transitive dependencies on QSS variables
+								std::cout << "   Note: Output variable " << out_name << " has dependency on non-QSS variable with index " << dep_idx << std::endl;
 							}
 						}
 					} else {
-						std::cerr << "\n   Error: QSS variable corresponding to Output variable not found" << std::endl;
-//						std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes
+						std::cout << "   Output variable is not a QSS variable" << std::endl;
 					}
 				}
 			} else { // Assume no output variables dependent on ZC variables in model
@@ -1487,30 +1577,42 @@ namespace fmu {
 		}
 
 		// Variable subtype containers and specs
-		order_max_NZ = order_max_ZC = order_max_NC = order_max_CI = 0;
+		vars_QS.clear();
+		vars_NQ.clear();
+		vars_ZC.clear();
+		vars_NZ.clear();
+		vars_CI.clear();
+		vars_NC.clear();
+		order_max_QS = order_max_NQ = order_max_NZ = order_max_ZC = order_max_NC = order_max_CI = 0;
 		for ( auto var : vars ) {
-			if ( var->not_ZC() ) { // Non-zero-crossing variable
-				vars_NZ.push_back( var );
-				order_max_NZ = std::max( order_max_NZ, var->order() );
-				if ( var->not_connection() ) { // Non-connection variable
-					vars_NC.push_back( var );
-					order_max_NC = std::max( order_max_NC, var->order() );
-					if ( var->is_QSS() ) {
-						vars_QSS.push_back( var );
-					}
-				} else { // Connection variable
-					vars_CI.push_back( var );
-					order_max_CI = std::max( order_max_CI, var->order() );
-				}
-			} else { // Zero-crossing variable
+			if ( var->is_QSS() ) { // QSS state variable
+				vars_QS.push_back( var );
+				order_max_QS = std::max( order_max_QS, var->order() );
+			} else { // Non-QSS state variable
+				vars_NQ.push_back( var );
+				order_max_NQ = std::max( order_max_NQ, var->order() );
+			}
+			if ( var->is_ZC() ) { // ZC variable
 				vars_ZC.push_back( var );
 				order_max_ZC = std::max( order_max_ZC, var->order() );
+			} else { // Non-ZC variable
+				vars_NZ.push_back( var );
+				order_max_NZ = std::max( order_max_NZ, var->order() );
+				if ( var->is_connection() ) { // Connection variable
+					vars_CI.push_back( var );
+					order_max_CI = std::max( order_max_CI, var->order() );
+				} else { // Non-Connection/ZC variable
+					vars_NC.push_back( var );
+					order_max_NC = std::max( order_max_NC, var->order() );
+				}
 			}
 		}
-		assert( order_max_NZ <= 3 );
-		assert( order_max_ZC <= 3 );
-		assert( order_max_NC <= 3 );
-		assert( order_max_CI <= 3 );
+		assert( order_max_QS <= max_rep_order );
+		assert( order_max_NQ <= max_rep_order );
+		assert( order_max_ZC <= max_rep_order );
+		assert( order_max_NZ <= max_rep_order );
+		assert( order_max_CI <= max_rep_order );
+		assert( order_max_NC <= max_rep_order );
 	}
 
 	// Initialization
@@ -1526,7 +1628,7 @@ namespace fmu {
 		init_2_2();
 		init_3_1();
 		init_F();
-		init_ZC();
+		init_NQ();
 		init_pre_simulate();
 	}
 
@@ -1543,7 +1645,7 @@ namespace fmu {
 				var->init_time( t0 );
 			}
 		}
-		for ( auto var : vars_ZC ) {
+		for ( auto var : vars_NQ ) {
 			var->add_drill_through_observees();
 		}
 		for ( auto var : vars_NC ) {
@@ -1638,16 +1740,16 @@ namespace fmu {
 		}
 	}
 
-	// Initialization: Stage ZC
+	// Initialization: Stage NQ
 	void
 	FMU_ME::
-	init_ZC()
+	init_NQ()
 	{
 		std::cout << '\n' + name + " Initialization: Stage ZC =====" << std::endl;
 		for ( auto var : vars_NC ) {
 			var->fmu_set_x( t0 );
 		}
-		for ( auto var : vars_ZC ) {
+		for ( auto var : vars_NQ ) {
 			var->init();
 		}
 	}
@@ -1769,6 +1871,7 @@ namespace fmu {
 				while ( tOut < tStop ) {
 					if ( options::output::s ) { // QSS outputs
 						for ( auto var : vars ) {
+							if ( var->is_BIDR() ) var->advance_observer( tOut );
 							var->out( tOut );
 						}
 					}
@@ -1884,41 +1987,35 @@ namespace fmu {
 
 						trigger->st = s; // Set trigger superdense time
 
-						if ( doTOut ) { // Time event output: before discrete changes
+						if ( doTOut ) { // Time event output: pre
+							trigger->out( t );
+							trigger->observers_out_pre( t );
+						}
+
+						trigger->advance_discrete();
+
+						if ( doTOut ) { // Time event output: post
 							if ( options::output::a ) { // All variables output
 								for ( auto var : vars ) {
 									var->out( t );
 								}
 							} else { // Time event and observer output
 								trigger->out( t );
-								trigger->observers_out_pre( t );
+								trigger->observers_out_post( t );
 							}
-						}
-
-						trigger->advance_discrete();
-
-						if ( doTOut ) { // Time event output: after discrete changes
-							trigger->out( t );
-							trigger->observers_out_post( t );
 						}
 					} else { // Simultaneous triggers
 						Variables triggers( eventq->top_subs< Variable >() );
 						observers_s.init( triggers );
 						sort_by_order( triggers );
 
-						if ( doTOut ) { // Time event output: before discrete changes
-							if ( options::output::a ) { // All variables output
-								for ( auto var : vars ) {
-									var->out( t );
-								}
-							} else { // Time event and observer output
-								for ( Variable * trigger : triggers ) {
-									trigger->out( t );
-								}
-								if ( options::output::o ) {
-									for ( Variable * observer : observers_s ) { // Observer output
-										observer->observer_out_pre( t );
-									}
+						if ( doTOut ) { // Time event output: pre
+							for ( Variable * trigger : triggers ) {
+								trigger->out( t );
+							}
+							if ( options::output::o ) {
+								for ( Variable * observer : observers_s ) { // Observer output
+									observer->observer_out_pre( t );
 								}
 							}
 						}
@@ -1930,12 +2027,18 @@ namespace fmu {
 						}
 						if ( observers_s.have() ) observers_s.advance( t ); // Advance observers
 
-						if ( doTOut ) { // Time event output: after discrete changes
-							for ( Variable * trigger : triggers ) {
-								trigger->out( t );
-							}
-							for ( Variable * observer : observers_s ) { // Observer output
-								observer->observer_out_post( t );
+						if ( doTOut ) { // Time event output: post
+							if ( options::output::a ) { // All variables output
+								for ( auto var : vars ) {
+									var->out( t );
+								}
+							} else { // Time event and observer output
+								for ( Variable * trigger : triggers ) {
+									trigger->out( t );
+								}
+								for ( Variable * observer : observers_s ) { // Observer output
+									observer->observer_out_post( t );
+								}
 							}
 						}
 					}
@@ -2005,41 +2108,35 @@ namespace fmu {
 						if ( eventq->single() ) { // Single handler
 							Variable * handler( event.sub< Variable >() );
 
-							if ( doROut ) { // Requantization output: before handler changes
+							if ( doROut ) { // Requantization output: pre
+								handler->out( t );
+								handler->observers_out_pre( t );
+							}
+
+							handler->advance_handler( t );
+
+							if ( doROut ) { // Requantization output: post
 								if ( options::output::a ) { // All variables output
 									for ( auto var : vars ) {
 										var->out( t );
 									}
 								} else { // Requantization and observer output
 									handler->out( t );
-									handler->observers_out_pre( t );
+									handler->observers_out_post( t );
 								}
-							}
-
-							handler->advance_handler( t );
-
-							if ( doROut ) { // Requantization output: after handler changes
-								handler->out( t );
-								handler->observers_out_post( t );
 							}
 						} else { // Simultaneous handlers
 							Variables handlers( eventq->top_subs< Variable >() );
 							observers_s.init( handlers );
 							sort_by_order( handlers );
 
-							if ( doROut ) { // Requantization output: before handler changes
-								if ( options::output::a ) { // All variables output
-									for ( auto var : vars ) {
-										var->out( t );
-									}
-								} else { // Requantization and observer output
-									for ( Variable * handler : handlers ) {
-										handler->out( t );
-									}
-									if ( options::output::o ) {
-										for ( Variable * observer : observers_s ) { // Observer output
-											observer->observer_out_pre( t );
-										}
+							if ( doROut ) { // Requantization output: pre
+								for ( Variable * handler : handlers ) {
+									handler->out( t );
+								}
+								if ( options::output::o ) {
+									for ( Variable * observer : observers_s ) { // Observer output
+										observer->observer_out_pre( t );
 									}
 								}
 							}
@@ -2071,12 +2168,18 @@ namespace fmu {
 							}
 							if ( observers_s.have() ) observers_s.advance( t ); // Advance observers
 
-							if ( doROut ) { // Requantization output: after handler changes
-								for ( Variable * handler : handlers ) {
-									handler->out( t );
-								}
-								for ( Variable * observer : observers_s ) { // Observer output
-									observer->observer_out_post( t );
+							if ( doROut ) { // Requantization output: post
+								if ( options::output::a ) { // All variables output
+									for ( auto var : vars ) {
+										var->out( t );
+									}
+								} else { // Requantization and observer output
+									for ( Variable * handler : handlers ) {
+										handler->out( t );
+									}
+									for ( Variable * observer : observers_s ) { // Observer output
+										observer->observer_out_post( t );
+									}
 								}
 							}
 						}
@@ -2143,21 +2246,22 @@ namespace fmu {
 						trigger->st = s; // Set trigger superdense time
 						++c_QSS_events[ trigger ];
 
-						if ( doROut ) { // Requantization output: before requantization
+						if ( doROut ) { // Requantization output: pre
+							trigger->out( t );
+							trigger->observers_out_pre( t );
+						}
+
+						trigger->advance_QSS();
+
+						if ( doROut ) { // Requantization output: post
 							if ( options::output::a ) { // All variables output
 								for ( auto var : vars ) {
 									var->out( t );
 								}
 							} else { // Requantization and observer output
-								trigger->out( t );
-								trigger->observers_out_pre( t );
+								trigger->out_q( t );
+								trigger->observers_out_post( t );
 							}
-						}
-
-						trigger->advance_QSS();
-
-						if ( doROut ) { // Requantization output: after requantization
-							trigger->out_q( t );
 						}
 					} else { // Simultaneous triggers
 						++n_QSS_simultaneous_events;
@@ -2165,19 +2269,13 @@ namespace fmu {
 						observers_s.init( triggers );
 						sort_by_order( triggers );
 
-						if ( doROut ) { // Requantization output: before requantization
-							if ( options::output::a ) { // All variables output
-								for ( auto var : vars ) {
-									var->out( t );
-								}
-							} else { // Requantization and observer output
-								for ( Variable * trigger : triggers ) {
-									trigger->out( t );
-								}
-								if ( options::output::o ) {
-									for ( Variable * observer : observers_s ) { // Observer output
-										observer->observer_out_pre( t );
-									}
+						if ( doROut ) { // Requantization output: pre
+							for ( Variable * trigger : triggers ) {
+								trigger->out( t );
+							}
+							if ( options::output::o ) {
+								for ( Variable * observer : observers_s ) { // Observer output
+									observer->observer_out_pre( t );
 								}
 							}
 						}
@@ -2211,9 +2309,20 @@ namespace fmu {
 						}
 						if ( observers_s.have() ) observers_s.advance( t ); // Advance observers
 
-						if ( doROut ) { // Requantization output: after requantization
-							for ( Variable * trigger : triggers ) {
-								trigger->out_q( t );
+						if ( doROut ) { // Requantization output: post
+							if ( options::output::a ) { // All variables output
+								for ( auto var : vars ) {
+									var->out( t );
+								}
+							} else { // Requantization and observer output
+								for ( Variable * trigger : triggers ) {
+									trigger->out_q( t );
+								}
+							}
+							if ( options::output::o ) {
+								for ( Variable * observer : observers_s ) { // Observer output
+									observer->observer_out_post( t );
+								}
 							}
 						}
 					}
@@ -2225,7 +2334,13 @@ namespace fmu {
 					trigger->st = s; // Set trigger superdense time
 					++c_QSS_events[ trigger ];
 
-					if ( doROut ) { // Requantization output: before requantization
+					if ( doROut ) { // Requantization output: pre
+						trigger->out( t );
+					}
+
+					trigger->advance_QSS();
+
+					if ( doROut ) { // Requantization output: post
 						if ( options::output::a ) { // All variables output
 							for ( auto var : vars ) {
 								var->out( t );
@@ -2234,15 +2349,22 @@ namespace fmu {
 							trigger->out( t );
 						}
 					}
-
-					trigger->advance_QSS();
-
-					if ( doROut ) { // Requantization output: after requantization
-						trigger->out( t );
-					}
 				} else { // Unsupported event
 					assert( false );
 				}
+
+				// Local variable event outputs
+				if ( ( options::output::F ) && ( n_fmu_outs > 0u ) && ( options::specified::tLoc ) && ( options::tLoc.first <= t ) && ( t <= options::tLoc.second ) ) {
+					for ( auto var : vars_NC ) {
+						var->fmu_set_x( t );
+					}
+					size_type i( n_outs );
+					for ( auto const & e : fmu_outs ) {
+						FMU_Variable const & var( e.second );
+						if ( var.causality_local() ) f_outs[ i++ ].append( t, get_real( var.ref ) );
+					}
+				}
+
 				tProc = t;
 			}
 

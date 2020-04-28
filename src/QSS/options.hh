@@ -40,6 +40,7 @@
 #include <cstddef>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace QSS {
@@ -107,16 +108,20 @@ extern LogLevel log; // Logging level
 extern InpFxn fxn; // Map from input variables to function specs
 extern InpOut con; // Map from input variables to output variables
 extern std::string out; // Outputs: r, a, s, x, q, f
+extern std::pair< double, double > tLoc; // Local output time range (s)
+extern std::string var_file; // Variable output filter file
 extern Models models; // Name of model(s) or FMU(s)
 
 namespace specified {
 
 extern bool qss; // QSS method specified?
 extern bool rTol; // Relative tolerance specified?
-extern bool aTol; // Absolute tolerance specified?
+extern bool aTol; // Absolute tolerance specified for no-nominal variables?
+extern bool aTolAll; // Absolute tolerance specified for all variables?
 extern bool zTol; // Zero-crossing tolerance specified?
 extern bool dtZC; // FMU zero-crossing time step specified?
 extern bool tEnd; // End time specified?
+extern bool tLoc; // Local output time range specified?
 
 } // specified
 
@@ -126,12 +131,13 @@ extern bool t; // Time events?
 extern bool r; // Requantizations?
 extern bool a; // All variables?
 extern bool s; // Sampled output?
-extern bool f; // FMU outputs?
+extern bool f; // FMU output variables?
+extern bool F; // FMU output and local variables?
 extern bool k; // FMU smooth tokens?
 extern bool x; // Continuous trajectories?
 extern bool q; // Quantized trajectories?
 extern bool o; // Observer updates?
-extern bool d; // Diagnostic output?
+extern bool d; // Diagnostics?
 
 } // output
 

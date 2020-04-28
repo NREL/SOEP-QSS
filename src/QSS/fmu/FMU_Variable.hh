@@ -68,6 +68,7 @@ public: // Creation
 	) :
 	 var( var ),
 	 rvr( rvr ),
+	 cau( var != nullptr ? fmi2_import_get_causality( var ) : fmi2_causality_enu_unknown ),
 	 ref( ref ),
 	 idx( idx ),
 	 ics( ics )
@@ -83,6 +84,7 @@ public: // Creation
 	) :
 	 var( var ),
 	 ivr( ivr ),
+	 cau( var != nullptr ? fmi2_import_get_causality( var ) : fmi2_causality_enu_unknown ),
 	 ref( ref ),
 	 idx( idx ),
 	 ics( ics )
@@ -98,19 +100,72 @@ public: // Creation
 	) :
 	 var( var ),
 	 bvr( bvr ),
+	 cau( var != nullptr ? fmi2_import_get_causality( var ) : fmi2_causality_enu_unknown ),
 	 ref( ref ),
 	 idx( idx ),
 	 ics( ics )
 	{}
 
+public: // Predicate: Causality
+
+	// Independent?
+	bool
+	causality_independent() const
+	{
+		return ( cau == fmi2_causality_enu_independent );
+	}
+
+	// Input?
+	bool
+	causality_input() const
+	{
+		return ( cau == fmi2_causality_enu_input );
+	}
+
+	// Local?
+	bool
+	causality_local() const
+	{
+		return ( cau == fmi2_causality_enu_local );
+	}
+
+	// Output?
+	bool
+	causality_output() const
+	{
+		return ( cau == fmi2_causality_enu_output );
+	}
+
+	// Parameter?
+	bool
+	causality_parameter() const
+	{
+		return ( cau == fmi2_causality_enu_parameter );
+	}
+
+	// Calclated Parameter?
+	bool
+	causality_calculated_parameter() const
+	{
+		return ( cau == fmi2_causality_enu_calculated_parameter );
+	}
+
+	// Unknown?
+	bool
+	causality_unknown() const
+	{
+		return ( cau == fmi2_causality_enu_unknown );
+	}
+
 public: // Data
 
 	fmi2_import_variable_t * var{ nullptr }; // FMU variable pointer
-	union { // Support FMU real and integer variables
+	union { // Support FMU real, integer, and boolean variables
 		fmi2_import_real_variable_t * rvr{ nullptr }; // FMU real variable pointer
 		fmi2_import_integer_variable_t * ivr; // FMU integer variable pointer
 		fmi2_import_bool_variable_t * bvr; // FMU boolean variable pointer
 	};
+	fmi2_causality_enu_t cau{ fmi2_causality_enu_unknown };
 	fmi2_value_reference_t ref{ 0 }; // FMU variable value reference
 	size_type idx{ 0u }; // FMU variable index
 	size_type ics{ 0u }; // FMU continuous state index

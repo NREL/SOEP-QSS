@@ -36,9 +36,6 @@
 #ifndef QSS_container_hh_INCLUDED
 #define QSS_container_hh_INCLUDED
 
-// QSS Headers
-#include <QSS/globals.hh>
-
 // C++ Headers
 #include <algorithm>
 #include <cassert>
@@ -50,7 +47,7 @@
 
 namespace QSS {
 
-// Sort Variables by Order
+// Variables Sorted by Order?
 template< typename Variables >
 inline
 bool
@@ -58,16 +55,6 @@ is_sorted_by_order( Variables & variables )
 {
 	using V = typename std::remove_pointer< typename Variables::value_type >::type;
 	return std::is_sorted( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->order() < v2->order(); } );
-}
-
-// Sort Variables by Type (Zero-Crossing at the End) and Order
-template< typename Variables >
-inline
-bool
-is_sorted_by_ZC_and_order( Variables & variables )
-{
-	using V = typename std::remove_pointer< typename Variables::value_type >::type;
-	return std::is_sorted( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->order() + ( v1->is_ZC() ? max_rep_order : 0 ) < v2->order() + ( v2->is_ZC() ? max_rep_order : 0 ); } );
 }
 
 // Variables Begin Index of Given Order or Greater
@@ -92,15 +79,26 @@ sort_by_order( Variables & variables )
 	std::stable_sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->order() < v2->order(); } );
 }
 
-// Sort Variables by Type (Zero-Crossing at the End) and Order
+// Sort Variables by Type (State First) and Order
 template< typename Variables >
 inline
 void
-sort_by_ZC_and_order( Variables & variables )
+sort_by_type_and_order( Variables & variables )
 {
 	using V = typename std::remove_pointer< typename Variables::value_type >::type;
 	// Stable sort to be deterministic given prior address sort without adding extra address condition to std::sort
-	std::stable_sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->order() + ( v1->is_ZC() ? max_rep_order : 0 ) < v2->order() + ( v2->is_ZC() ? max_rep_order : 0 ); } );
+	std::stable_sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->state_order() < v2->state_order(); } );
+}
+
+// Sort Variables by QSS State First
+template< typename Variables >
+inline
+void
+sort_by_QSS( Variables & variables )
+{
+	using V = typename std::remove_pointer< typename Variables::value_type >::type;
+	// Stable sort to be deterministic given prior address sort without adding extra address condition to std::sort
+	std::stable_sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->state_sort_index() < v2->state_sort_index(); } );
 }
 
 // Set up Non-Trigger Observers of Triggers and Sort Both by Order
@@ -148,7 +146,7 @@ variables_observers( Variables & triggers, Variables & observers )
 		std::sort( observers.begin(), observers.end() );
 		observers.resize( no );
 		// Don't shrink observers: Meant for short-lived collections created for simultaneous variable event processing during simulation
-		if ( ! observers.empty() ) sort_by_ZC_and_order( observers );
+		if ( ! observers.empty() ) sort_by_type_and_order( observers );
 	}
 
 	// Sort triggers by order

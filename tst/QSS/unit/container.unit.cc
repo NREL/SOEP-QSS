@@ -81,7 +81,7 @@ TEST( ContainerTest, SortByZC )
 		variables.push_back( new QSS1( "QSS1" ) );
 	}
 	EXPECT_FALSE( std::is_sorted( variables.begin(), variables.end(), []( Variable const * v1, Variable const * v2 ){ return v1->not_ZC() && v2->is_ZC(); } ) );
-	sort_by_ZC_and_order( variables );
+	sort_by_type_and_order( variables );
 	EXPECT_TRUE( std::is_sorted( variables.begin(), variables.end(), []( Variable const * v1, Variable const * v2 ){ return v1->not_ZC() && v2->is_ZC(); } ) );
 }
 

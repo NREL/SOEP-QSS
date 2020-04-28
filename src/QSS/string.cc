@@ -37,6 +37,7 @@
 #include <QSS/string.hh>
 
 // C++ Headers
+#include <cassert>
 #include <cctype>
 #include <sstream>
 
@@ -51,9 +52,19 @@ is_tail( char * end )
 	return ( *end == '\0' );
 }
 
-// Has a Character Case-Insensitively?
+// Has a Character?
 bool
 has( std::string const & s, char const c )
+{
+	for ( char const a : s ) {
+		if ( a == c ) return true;
+	}
+	return false;
+}
+
+// Has a Character Case-Insensitively?
+bool
+HAS( std::string const & s, char const c )
 {
 	char const b( static_cast< char >( std::tolower( c ) ) );
 	for ( char const a : s ) {
@@ -64,15 +75,16 @@ has( std::string const & s, char const c )
 
 // Has any Character not in a String Case-Insensitively?
 bool
-has_any_not_of( std::string const & s, std::string const & t ) // Pass lowercase t
+HAS_ANY_NOT_OF( std::string const & s, std::string const & t ) // Pass lowercase t
 {
+	assert( t == lowercased( t ) );
 	for ( char const a : s ) {
 		if ( t.find( static_cast< char >( std::tolower( a ) ) ) == std::string::npos ) return true;
 	}
 	return false;
 }
 
-// Has a Prefix Case-Optionally?
+// Has a Prefix?
 bool
 has_prefix( std::string const & s, std::string const & pre )
 {
@@ -109,7 +121,7 @@ has_prefix( std::string const & s, char const * const pre )
 	}
 }
 
-// Has a Suffix Case-Optionally?
+// Has a Suffix?
 bool
 has_suffix( std::string const & s, std::string const & suf )
 {

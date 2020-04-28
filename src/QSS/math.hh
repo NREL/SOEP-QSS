@@ -124,6 +124,15 @@ max( T const x, T const y, T const z )
 	return ( x < y ? ( y < z ? z : y ) : ( x < z ? z : x ) );
 }
 
+// max( a, b, c, d, ... )
+template< typename T, typename... Ts, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
+inline
+T const &
+max( T const & a, T const & b, T const & c, T const & d, Ts const &... o )
+{
+	return max( a < b ? b : a, c < d ? d : c, o... );
+}
+
 // Min of 3 Values
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
@@ -131,6 +140,15 @@ T
 min( T const x, T const y, T const z )
 {
 	return ( x < y ? ( x < z ? x : z ) : ( y < z ? y : z ) );
+}
+
+// min( a, b, c, d, ... )
+template< typename T, typename... Ts, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
+inline
+T const &
+min( T const & a, T const & b, T const & c, T const & d, Ts const &... o )
+{
+	return min( a < b ? a : b, c < d ? c : d, o... );
 }
 
 // Min Positive of Two Values or Infinity

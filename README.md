@@ -1,6 +1,6 @@
 # QSS Solver Prototype/Experimental Code with FMU Support
 
-This is a QSS solver being developed for integration into JModelica as part of the "Spawn of EnergyPlus" project.
+This is a QSS solver being developed for integration into Modelon's Optimica Compiler Toolkit as part of the "Spawn of EnergyPlus" project.
 
 ## Status
 

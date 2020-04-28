@@ -133,60 +133,13 @@ public: // Methods
 	void
 	advance( Time const t )
 	{
-		if ( nz_.have_ ) advance_NZ( t );
-		if ( zc_.have_ ) advance_ZC( t );
+		if ( qs_.have_ ) advance_QS( t ); // QSS state variables (q-based)
+		if ( nq_.have_ ) advance_NQ( t ); // Non-QSS state variables (x-based)
 		if ( options::output::d ) {
 			for ( Variable const * observer : observers_ ) {
 				observer->advance_observer_d();
 			}
 		}
-	}
-
-	// Advance Non-Zero-Crossing Observers
-	void
-	advance_NZ( Time const t )
-	{
-		for ( size_type i = nz_.b_, e = nz_.e_; i < e; ++i ) {
-			observers_[ i ]->advance_observer( t );
-		}
-	}
-
-	// Advance Zero-Crossing Observers
-	void
-	advance_ZC( Time const t )
-	{
-		for ( size_type i = zc_.b_, e = zc_.e_; i < e; ++i ) {
-			observers_[ i ]->advance_observer( t );
-		}
-	}
-
-	// Clear/Reset
-	void
-	clear()
-	{
-		observers_.clear();
-		have_ = false;
-		b_ = e_ = n_ = 0;
-		nz_.clear();
-		zc_.clear();
-	}
-
-public: // Indexing
-
-	// Index-Based Lookup
-	Variable const *
-	operator []( size_type const i ) const
-	{
-		assert( i < observers_.size() );
-		return observers_[ i ];
-	}
-
-	// Index-Based Lookup
-	Variable *
-	operator []( size_type const i )
-	{
-		assert( i < observers_.size() );
-		return observers_[ i ];
 	}
 
 public: // Iterator
@@ -220,6 +173,24 @@ public: // Iterator
 	}
 
 private: // Methods
+
+	// Advance QSS State Observers
+	void
+	advance_QS( Time const t )
+	{
+		for ( size_type i = qs_.b_, e = qs_.e_; i < e; ++i ) {
+			observers_[ i ]->advance_observer( t );
+		}
+	}
+
+	// Advance Non-QSS State Observers
+	void
+	advance_NQ( Time const t )
+	{
+		for ( size_type i = nq_.b_, e = nq_.e_; i < e; ++i ) {
+			observers_[ i ]->advance_observer( t );
+		}
+	}
 
 	// Initialize When Empty
 	void
@@ -264,46 +235,33 @@ private: // Methods
 		}
 
 		if ( ! observers_.empty() ) {
-
-			// Sort observers by NZ|ZC and then order
-			sort_by_ZC_and_order( observers_ );
-
-			// Observer specs ///
+			sort_by_QSS( observers_ ); // Sort observers by QS|NQ type
 
 			have_ = true;
-			e_ = n_ = observers_.size();
+			e_ = observers_.size();
 
-			if ( observers_[ 0 ]->not_ZC() ) { // Non-zero-crossing observers present
-				nz_.e_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return v->is_ZC(); } ) ) );
-				nz_.n_ = ( nz_.b_ < nz_.e_ ? nz_.e_ - nz_.b_ : 0u );
-				assert( nz_.n_ > 0u );
-				nz_.have_ = true;
-
-				nz_.b2_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return v->not_ZC() && ( v->order() >= 2 ); } ) ) );
-				nz_.n2_ = ( nz_.b2_ < nz_.e_ ? nz_.e_ - nz_.b2_ : 0u );
-				nz_.have2_ = ( nz_.n2_ > 0u );
-
-				nz_.b3_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return v->not_ZC() && ( v->order() >= 3 ); } ) ) );
-				nz_.n3_ = ( nz_.b3_ < nz_.e_ ? nz_.e_ - nz_.b3_ : 0u );
-				nz_.have3_ = ( nz_.n3_ > 0u );
+			if ( observers_[ 0 ]->is_QSS() ) { // QSS state observers present
+				qs_.e_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return v->not_QSS(); } ) ) );
+				qs_.have_ = true;
 			}
 
-			if ( observers_.back()->is_ZC() ) { // Zero-crossing observers present
-				zc_.b_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return v->is_ZC(); } ) ) );
-				zc_.e_ = e_;
-				zc_.n_ = ( zc_.b_ < zc_.e_ ? zc_.e_ - zc_.b_ : 0u );
-				assert( zc_.n_ > 0u );
-				zc_.have_ = true;
-
-				zc_.b2_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return v->is_ZC() && ( v->order() >= 2 ); } ) ) );
-				zc_.n2_ = ( zc_.b2_ < zc_.e_ ? zc_.e_ - zc_.b2_ : 0u );
-				zc_.have2_ = ( zc_.n2_ > 0u );
-
-				zc_.b3_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return v->is_ZC() && ( v->order() >= 3 ); } ) ) );
-				zc_.n3_ = ( zc_.b3_ < zc_.e_ ? zc_.e_ - zc_.b3_ : 0u );
-				zc_.have3_ = ( zc_.n3_ > 0u );
+			if ( observers_.back()->not_QSS() ) { // Non-QSS state observers present
+				nq_.b_ = qs_.e_;
+				nq_.e_ = e_;
+				nq_.have_ = true;
 			}
 		}
+	}
+
+	// Clear/Reset
+	void
+	clear()
+	{
+		observers_.clear();
+		have_ = false;
+		b_ = e_ = 0;
+		qs_.clear();
+		nq_.clear();
 	}
 
 private: // Data
@@ -313,30 +271,21 @@ private: // Data
 	bool have_{ false }; // Observers present?
 	size_type b_{ 0u }; // Begin index
 	size_type e_{ 0u }; // End index
-	size_type n_{ 0u }; // Count
 
 	struct {
 
 		bool have_{ false }; // Observers of this type present?
-		bool have2_{ false }; // Order 2+ observers of this type present?
-		bool have3_{ false }; // Order 3+ observers of this type present?
 		size_type b_{ 0u }; // Begin index
-		size_type b2_{ 0u }; // Order 2+ begin index
-		size_type b3_{ 0u }; // Order 3+ begin index
 		size_type e_{ 0u }; // End index
-		size_type n_{ 0u }; // Count
-		size_type n2_{ 0u }; // Order 2+ count
-		size_type n3_{ 0u }; // Order 3+ count
 
 		void
 		clear()
 		{
-			have_ = have2_ = have3_ = false;
-			b_ = b2_ = b3_ = e_ = 0u;
-			n_ = n2_ = n3_ = 0u;
+			have_ = false;
+			b_ = e_ = 0u;
 		}
 
-	} nz_, zc_;
+	} qs_, nq_;
 
 }; // Observers_Simultaneous
 

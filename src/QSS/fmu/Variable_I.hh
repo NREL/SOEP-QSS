@@ -82,6 +82,13 @@ public: // Predicate
 		return true;
 	}
 
+	// B|I|D|R Variable?
+	bool
+	is_BIDR() const
+	{
+		return true;
+	}
+
 public: // Property
 
 	// Boolean Value
@@ -214,6 +221,24 @@ public: // Methods
 	{
 		shift_handler();
 	}
+
+	// Observer Advance
+	void
+	advance_observer( Time const t )
+	{
+		assert( tX <= t );
+		tX = t;
+		x_ = iz_0( t );
+	}
+
+	// Observer Advance: Stage d
+	void
+	advance_observer_d() const
+	{
+		std::cout << "  " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+	}
+
+public: // Methods: FMU
 
 	// Set FMU Variable to Continuous Value at Time t
 	void

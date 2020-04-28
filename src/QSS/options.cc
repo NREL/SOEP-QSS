@@ -36,6 +36,7 @@
 // QSS Headers
 #include <QSS/options.hh>
 #include <QSS/math.hh>
+#include <QSS/path.hh>
 #include <QSS/string.hh>
 
 // C++ Headers
@@ -76,16 +77,20 @@ LogLevel log( LogLevel::warning ); // Logging level
 InpFxn fxn; // Map from input variables to function specs
 InpOut con; // Map from input variables to output variables
 std::string out; // Outputs
+std::pair< double, double > tLoc( 0.0, 0.0 ); // Local output time range (s)
+std::string var_file; // Variable output filter file
 Models models; // Name of model(s) or FMU(s)
 
 namespace specified {
 
 bool qss( false ); // QSS method specified?
 bool rTol( false ); // Relative tolerance specified?
-bool aTol( false ); // Absolute tolerance specified?
+bool aTol( false ); // Absolute tolerance for no-nominal variables specified?
+bool aTolAll( false ); // Absolute tolerance for all variables specified?
 bool zTol( false ); // Zero-crossing tolerance specified?
 bool dtZC( false ); // FMU zero-crossing time step specified?
 bool tEnd( false ); // End time specified?
+bool tLoc( false ); // Local output time range specified?
 
 } // specified
 
@@ -95,12 +100,13 @@ bool t( true ); // Time events?
 bool r( true ); // Requantizations?
 bool a( false ); // All variables?
 bool s( false ); // Sampled output?
-bool f( true ); // FMU outputs?
+bool f( true ); // FMU output variables?
+bool F( false ); // FMU output and local variables?
 bool k( true ); // FMU-QSS smooth tokens?
 bool x( true ); // Continuous trajectories?
 bool q( false ); // Quantized trajectories?
 bool o( true ); // Observer updates?
-bool d( false ); // Diagnostic output?
+bool d( false ); // Diagnostics?
 
 } // output
 
@@ -112,7 +118,8 @@ help_display()
 	std::cout << "Options:" << "\n\n";
 	std::cout << " --qss=QSS      QSS method: (x)(LI)QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
 	std::cout << " --rTol=TOL     Relative tolerance  [1e-4|FMU]" << '\n';
-	std::cout << " --aTol=TOL     Absolute tolerance  [1e-6]" << '\n';
+	std::cout << " --aTol=TOL     Absolute tolerance for no-nominal variables  [1e-6]" << '\n';
+	std::cout << " --aTolAll=TOL  Absolute tolerance for all variables  [1e-6]" << '\n';
 	std::cout << " --zTol=TOL     Zero-crossing tolerance  [0]" << '\n';
 	std::cout << " --zFac=FAC     Zero-crossing tolerance factor  [1.01]" << '\n';
 	std::cout << " --dtMin=STEP   Min time step (s)  [0]" << '\n';
@@ -150,14 +157,17 @@ help_display()
 	std::cout << " --out=OUTPUTS  Outputs  [trfkxo]" << '\n';
 	std::cout << "       t  Time events" << '\n';
 	std::cout << "       r  Requantizations" << '\n';
-	std::cout << "       a  All variables" << '\n';
-	std::cout << "       s  Sampled time steps" << '\n';
-	std::cout << "       f  FMU outputs" << '\n';
+	std::cout << "       a  All QSS variables at every event" << '\n';
+	std::cout << "       s  Sampled QSS variables every dtOut" << '\n';
+	std::cout << "       f  FMU output variables" << '\n';
+	std::cout << "       F  FMU output and local variables" << '\n';
 	std::cout << "       k  FMU smooth tokens" << '\n';
 	std::cout << "       x  Continuous trajectories" << '\n';
 	std::cout << "       q  Quantized trajectories" << '\n';
 	std::cout << "       o  Observer updates" << '\n';
-	std::cout << "       d  Diagnostic output" << '\n';
+	std::cout << "       d  Diagnostics" << '\n';
+	std::cout << " --tLoc=TIME1:TIME2  FMU local variable full output time range (s)" << '\n';
+	std::cout << " --var=FILE  Variable output spec file" << '\n';
 	std::cout << '\n';
 	std::cout << "Models:" << "\n\n";
 	std::cout << "  <model>.fmu : FMU-ME (FMU for Model Exchange)" << '\n';
@@ -281,6 +291,24 @@ process_args( int argc, char * argv[] )
 			}
 		} else if ( has_value_option( arg, "aTol" ) ) {
 			specified::aTol = true;
+			specified::aTolAll = false;
+			std::string const aTol_str( arg_value( arg ) );
+			if ( is_double( aTol_str ) ) {
+				aTol = double_of( aTol_str );
+				if ( aTol == 0.0 ) {
+					aTol = std::numeric_limits< double >::min();
+					std::cerr << "\nWarning: aTol set to: " << aTol << std::endl;
+				} else if ( aTol < 0.0 ) {
+					std::cerr << "\nError: Negative aTol: " << aTol_str << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::cerr << "\nError: Nonnumeric aTol: " << aTol_str << std::endl;
+				fatal = true;
+			}
+		} else if ( has_value_option( arg, "aTolAll" ) ) {
+			specified::aTol = true;
+			specified::aTolAll = true;
 			std::string const aTol_str( arg_value( arg ) );
 			if ( is_double( aTol_str ) ) {
 				aTol = double_of( aTol_str );
@@ -510,20 +538,68 @@ process_args( int argc, char * argv[] )
 		} else if ( has_value_option( arg, "out" ) ) {
 			static std::string const out_flags( "trasfkxqod" );
 			out = arg_value( arg );
-			if ( has_any_not_of( out, out_flags ) ) {
+			if ( HAS_ANY_NOT_OF( out, out_flags ) ) {
 				std::cerr << "\nError: Output flag not in " << out_flags << ": " << out << std::endl;
 				fatal = true;
 			}
-			output::t = has( out, 't' );
-			output::r = has( out, 'r' );
-			output::a = has( out, 'a' );
-			output::s = has( out, 's' );
-			output::f = has( out, 'f' );
-			output::k = has( out, 'k' );
-			output::x = has( out, 'x' );
-			output::q = has( out, 'q' );
-			output::o = has( out, 'o' );
-			output::d = has( out, 'd' );
+			output::t = HAS( out, 't' );
+			output::r = HAS( out, 'r' );
+			output::a = HAS( out, 'a' );
+			output::s = HAS( out, 's' );
+			output::f = HAS( out, 'f' );
+			output::F = has( out, 'F' );
+			output::k = HAS( out, 'k' );
+			output::x = HAS( out, 'x' );
+			output::q = HAS( out, 'q' );
+			output::o = HAS( out, 'o' );
+			output::d = HAS( out, 'd' );
+		} else if ( has_value_option( arg, "tLoc" ) ) {
+			specified::tLoc = true;
+			std::string const tLoc_str( arg_value( arg ) );
+			std::vector< std::string > const tLoc_tokens( split( tLoc_str, ':' ) );
+			if ( tLoc_tokens.size() == 2 ) { // Process/check time range
+
+				// Begin time
+				std::string tLoc_beg_str( tLoc_tokens[ 0 ] );
+				if ( is_double( tLoc_beg_str ) ) {
+					tLoc.first = double_of( tLoc_beg_str );
+					if ( tLoc.first < 0.0 ) {
+						std::cerr << "\nError: Negative tLoc start time: " << tLoc_beg_str << std::endl;
+						fatal = true;
+					}
+				} else {
+					std::cerr << "\nError: Nonnumeric tLoc start time: " << tLoc_beg_str << std::endl;
+					fatal = true;
+				}
+
+				// End time
+				std::string tLoc_end_str( tLoc_tokens[ 1 ] );
+				if ( is_double( tLoc_end_str ) ) {
+					tLoc.second = double_of( tLoc_end_str );
+					if ( tLoc.second < 0.0 ) {
+						std::cerr << "\nError: Negative tLoc end time: " << tLoc_end_str << std::endl;
+						fatal = true;
+					}
+				} else {
+					std::cerr << "\nError: Nonnumeric tLoc end time: " << tLoc_end_str << std::endl;
+					fatal = true;
+				}
+
+				// Check valid range
+				if ( tLoc.first > tLoc.second ) {
+					std::cerr << "\nError: Invalid tLoc time range: " << tLoc.first << " to " << tLoc.second << std::endl;
+					fatal = true;
+				}
+
+			} else {
+				std::cerr << "\nError: tLoc not in TIME1:TIME2 format: " << tLoc_str << std::endl;
+				fatal = true;
+			}
+		} else if ( has_value_option( arg, "var" ) ) {
+			var_file = arg_value( arg );
+			if ( ! path::is_file( var_file ) ) {
+				std::cerr << "\nError: File specified in --var option not found: " << var_file << ": Output filtering disabled" << std::endl;
+			}
 		} else if ( arg[ 0 ] == '-' ) {
 			std::cerr << "\nError: Unsupported option: " << arg << std::endl;
 			fatal = true;

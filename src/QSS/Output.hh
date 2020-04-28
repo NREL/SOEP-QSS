@@ -187,7 +187,7 @@ private: // Data
 	Times t_; // Time buffer
 	Values v_; // Value buffer
 
-};
+}; // Output
 
 	// Static Data Member Template Definitions
 	template< typename Value > typename Output_T< Value >::size_type const Output_T< Value >::capacity_;

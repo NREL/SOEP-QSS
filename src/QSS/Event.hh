@@ -226,7 +226,7 @@ private: // Data
 	Target * tar_{ nullptr }; // Event target
 	Real val_{ 0.0 }; // Event target value
 
-};
+}; // Event
 
 } // QSS
 

@@ -1,4 +1,4 @@
-// QSS Boolean Variable
+// QSS Real Variable
 //
 // Project: QSS Solver
 //
@@ -33,8 +33,8 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_cod_Variable_B_hh_INCLUDED
-#define QSS_cod_Variable_B_hh_INCLUDED
+#ifndef QSS_cod_Variable_R_hh_INCLUDED
+#define QSS_cod_Variable_R_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/cod/Variable.hh>
@@ -42,8 +42,8 @@
 namespace QSS {
 namespace cod {
 
-// QSS Boolean Variable
-class Variable_B final : public Variable
+// QSS Real Variable
+class Variable_R final : public Variable
 {
 
 public: // Types
@@ -54,22 +54,13 @@ public: // Creation
 
 	// Constructor
 	explicit
-	Variable_B(
+	Variable_R(
 	 std::string const & name,
-	 Boolean const xIni = false
+	 Real const xIni = 0.0
 	) :
 	 Super( 0, name, xIni ),
 	 x_( xIni )
 	{}
-
-public: // Predicate
-
-	// Discrete Variable?
-	bool
-	is_Discrete() const
-	{
-		return true;
-	}
 
 public: // Property
 
@@ -77,14 +68,14 @@ public: // Property
 	Boolean
 	b() const
 	{
-		return x_;
+		return Boolean( x_ );
 	}
 
 	// Boolean Value at Time t
 	Boolean
 	b( Time const ) const
 	{
-		return x_;
+		return Boolean( x_ );
 	}
 
 	// Integer Value
@@ -105,28 +96,28 @@ public: // Property
 	Real
 	r() const
 	{
-		return Real( x_ );
+		return x_;
 	}
 
 	// Real Value at Time t
 	Real
 	r( Time const ) const
 	{
-		return Real( x_ );
+		return x_;
 	}
 
 	// Continuous Value at Time t
 	Real
 	x( Time const ) const
 	{
-		return Real( x_ );
+		return x_;
 	}
 
 	// Quantized Value at Time t
 	Real
 	q( Time const ) const
 	{
-		return Real( x_ );
+		return x_;
 	}
 
 public: // Methods
@@ -151,9 +142,9 @@ public: // Methods
 	{
 		assert( ! observes() );
 		init_observers();
-		x_ = ( xIni != 0 );
+		x_ = xIni;
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Initialization to a Value: Stage 0
@@ -162,9 +153,9 @@ public: // Methods
 	{
 		assert( ! observes() );
 		init_observers();
-		x_ = ( x != 0 );
+		x_ = x;
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Handler Advance
@@ -174,11 +165,9 @@ public: // Methods
 		assert( tX <= t );
 		tX = tQ = t;
 		shift_handler();
-		Boolean const x_new( x != 0.0 );
-		bool const chg( x_ != x_new );
-		x_ = x_new;
-		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
-		if ( chg && observed() ) advance_observers();
+		x_ = x;
+		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( observed() ) advance_observers();
 	}
 
 	// Handler Advance: Stage 0
@@ -188,16 +177,15 @@ public: // Methods
 		assert( tX <= t );
 		tX = tQ = t;
 		shift_handler();
-		Boolean const x_new( x != 0.0 );
-		x_ = x_new;
-		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
+		x_ = x;
+		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 private: // Data
 
-	Boolean x_{ false }; // Value
+	Real x_{ 0.0 }; // Value
 
-}; // Variable_B
+}; // Variable_R
 
 } // cod
 } // QSS

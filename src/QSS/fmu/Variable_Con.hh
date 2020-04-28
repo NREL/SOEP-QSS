@@ -1,4 +1,4 @@
-// FMU-Based QSS Connection Iput Variable
+// FMU-Based QSS Connection Variable
 //
 // Project: QSS Solver
 //

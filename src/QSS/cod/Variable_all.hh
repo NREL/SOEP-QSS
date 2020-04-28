@@ -40,6 +40,7 @@
 #include <QSS/cod/Variable_B.hh>
 #include <QSS/cod/Variable_D.hh>
 #include <QSS/cod/Variable_I.hh>
+#include <QSS/cod/Variable_R.hh>
 
 // QSS Input Variable Headers
 #include <QSS/cod/Variable_Inp1.hh>

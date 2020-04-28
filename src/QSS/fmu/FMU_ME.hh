@@ -114,7 +114,6 @@ public: // Types
 	using Boolean = bool;
 	using EventQ = EventQueue< Target >;
 	using Variables = std::vector< Variable * >;
-	using FMU_Variables = std::vector< FMU_Variable >;
 	using Var_Idx = std::unordered_map< Variable const *, size_type >; // Map from Variables to their indexes
 	using Var_Name_Var = std::unordered_map< std::string, Variable * >; // Map from variable names to variables
 	using Var_Name_Ref = std::unordered_map< std::string, fmi2_value_reference_t >; // Map from variable names to FMU variable value references
@@ -225,9 +224,9 @@ public: // Simulation Methods
 	void
 	init_F();
 
-	// Initialization: Stage ZC
+	// Initialization: Stage NQ
 	void
-	init_ZC();
+	init_NQ();
 
 	// Initialization: Stage Pre-Simulate
 	void
@@ -421,6 +420,7 @@ public: // Data
 	fmi2_import_t * fmu{ nullptr }; // FMU pointer
 	fmi2_real_t * states{ nullptr };
 	fmi2_real_t * derivatives{ nullptr };
+	fmi2_real_t * x_nominal{ nullptr };
 	fmi2_real_t * event_indicators{ nullptr };
 	fmi2_real_t * event_indicators_last{ nullptr };
 	fmi_import_context_t * context{ nullptr };
@@ -460,11 +460,12 @@ public: // Data
 
 	// Variables
 	Variables vars; // QSS variables
-	Variables vars_NZ; // Non-zero-crossing variables
+	Variables vars_QS; // QSS state variables
+	Variables vars_NQ; // Non-QSS state variables
 	Variables vars_ZC; // Zero-crossing variables
-	Variables vars_NC; // Non-zero-crossing non-connection variables
+	Variables vars_NZ; // Non-zero-crossing variables
 	Variables vars_CI; // Connection input variables
-	Variables vars_QSS; // QSS variables
+	Variables vars_NC; // Non-zero-crossing non-connection variables
 	Variables state_vars; // FMU state QSS variables
 	Variables outs; // FMU output QSS variables
 	Variables fmu_qss_qss_outs; // FMU-QSS output QSS variables
@@ -481,10 +482,12 @@ public: // Data
 	Var_Refs out_var_refs;
 	std::vector< Output > f_outs; // FMU outputs
 	std::vector< SmoothTokenOutput > k_qss_outs; // FMU-QSS QSS variable smooth token outputs
-	int order_max_NZ{ 0 }; // Non-zero-crossing QSS variable max order
+	int order_max_QS{ 0 }; // QSS state variable max order
+	int order_max_NQ{ 0 }; // Non-QSS state variable max order
 	int order_max_ZC{ 0 }; // Zero-crossing QSS variable max order
-	int order_max_NC{ 0 }; // Non-zero-crossing non-connection QSS variable max order
+	int order_max_NZ{ 0 }; // Non-zero-crossing QSS variable max order
 	int order_max_CI{ 0 }; // Connection input QSS variable max order
+	int order_max_NC{ 0 }; // Non-zero-crossing non-connection QSS variable max order
 	bool has_event_indicators{ false };
 	bool has_explicit_ZCs{ false };
 

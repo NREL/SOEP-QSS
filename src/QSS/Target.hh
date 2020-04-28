@@ -113,7 +113,7 @@ protected: // Data
 
 	EventMap::iterator event_; // Iterator into event queue
 
-};
+}; // Target
 
 } // QSS
 

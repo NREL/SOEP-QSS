@@ -82,13 +82,17 @@ is_double( std::string const & s )
 	return ( ( end != str ) && is_tail( end ) );
 }
 
-// Has a Character Case-Insensitively?
+// Has a Character?
 bool
 has( std::string const & s, char const c );
 
+// Has a Character Case-Insensitively?
+bool
+HAS( std::string const & s, char const c );
+
 // Has any Character not in a String Case-Insensitively?
 bool
-has_any_not_of( std::string const & s, std::string const & t ); // Pass lowercase t
+HAS_ANY_NOT_OF( std::string const & s, std::string const & t ); // Pass lowercase t
 
 // Has a Prefix Case-Optionally?
 bool

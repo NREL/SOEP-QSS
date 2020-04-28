@@ -623,7 +623,7 @@ private: // Data
 	SuperdenseTime s_; // Active event superdense time
 	Time t_{ 0.0 }; // Active event time
 
-};
+}; // EventQueue
 
 	// Static Data Member Template Definitions
 	template< typename T > SuperdenseTime const EventQueue< T >::sZero_ = SuperdenseTime();

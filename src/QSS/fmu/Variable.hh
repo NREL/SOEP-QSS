@@ -43,6 +43,7 @@
 #include <QSS/fmu/FMU_ME.hh>
 #include <QSS/fmu/FMU_Variable.hh>
 #include <QSS/fmu/Observers.hh>
+#include <QSS/globals.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
 #include <QSS/Output.hh>
@@ -279,6 +280,27 @@ public: // Predicate
 		return false;
 	}
 
+	// Non-QSS Variable?
+	bool
+	not_QSS() const
+	{
+		return ! is_QSS();
+	}
+
+	// State Variable?
+	bool
+	is_state() const
+	{
+		return is_QSS();
+	}
+
+	// Non-State Variable?
+	bool
+	not_state() const
+	{
+		return ! is_QSS();
+	}
+
 	// LIQSS Variable?
 	virtual
 	bool
@@ -310,6 +332,14 @@ public: // Predicate
 		return conditional != nullptr;
 	}
 
+	// B|I|D|R Variable?
+	virtual
+	bool
+	is_BIDR() const
+	{
+		return false;
+	}
+
 	// Self-Observer?
 	bool
 	self_observer() const
@@ -333,11 +363,25 @@ public: // Predicate
 
 public: // Property
 
-	// Order of Method
+	// Order
 	int
 	order() const
 	{
 		return order_;
+	}
+
+	// State-ZC-Other + Order Sorting Index
+	int
+	state_order() const
+	{
+		return order_ + ( is_state() ? 0 : max_rep_order + ( is_ZC() ? 0 : max_rep_order + 1 ) );
+	}
+
+	// State Sorting Index
+	int
+	state_sort_index() const
+	{
+		return ( is_state() ? 0 : 1 );
 	}
 
 	// Boolean Value
@@ -605,28 +649,19 @@ public: // Methods
 			self_observer_ = true;
 		} else {
 			observees_.push_back( v );
-			v->observers_.push_back( this );
+			v->observers_.add( this );
 		}
 	}
 
-	// Add Zero-Crossing Variable as an Observer
-	void
-	observe_ZC( Variable * v )
-	{
-		assert( is_ZC() );
-		assert( v != this );
-		v->observers_.push_back( this );
-	}
-
-	// Add Drill-Through Observees to Zero-Crossing Variables
+	// Add Drill-Through Observees to Non-State Variables
 	void
 	add_drill_through_observees()
 	{
-		assert( is_ZC() );
+		assert( not_state() );
 		if ( ! observees_.empty() ) {
 			for ( Variable * vo : observees_ ) {
 				for ( Variable * voo : vo->observees_ ) {
-					observe_ZC( voo ); // Only need back-observer to force observer updates when observees update since ZC variable value doesn't depend on these 2nd level observees
+					voo->observers_.add( this ); // Only need back-observer to force updates when observee has observer update
 				}
 			}
 		}
@@ -1060,7 +1095,7 @@ public: // Methods: Output
 	void
 	observer_out_pre( Time const t )
 	{
-		if ( options::output::x ) out_x_.append( t, x( t ) );
+		if ( options::output::x && ( ! is_BIDR() ) ) out_x_.append( t, x( t ) );
 		if ( options::output::q && is_ZC() ) out_q_.append( t, q( t ) );
 		if ( connected_ ) connections_observer_out_pre( t );
 	}
@@ -1069,7 +1104,7 @@ public: // Methods: Output
 	void
 	observer_out_post( Time const t )
 	{
-		if ( is_ZC() ) {
+		if ( is_ZC() || is_BIDR() ) {
 			if ( options::output::x ) out_x_.append( t, x( t ) );
 			if ( options::output::q ) out_q_.append( t, q( t ) );
 			if ( connected_ ) connections_observer_out_post( t );
@@ -1219,6 +1254,38 @@ protected: // Methods: FMU
 	}
 
 	// Coefficient 0 from FMU: Observees Set
+	Boolean
+	bp_0() const
+	{
+		assert( fmu_me_ != nullptr );
+		return fmu_me_->get_boolean( var_.ref );
+	}
+
+	// Coefficient 0 from FMU at Time t: X-Based
+	Boolean
+	bz_0( Time const t ) const
+	{
+		fmu_set_observees_x( t );
+		return bp_0();
+	}
+
+	// Coefficient 0 from FMU: Observees Set
+	Integer
+	ip_0() const
+	{
+		assert( fmu_me_ != nullptr );
+		return fmu_me_->get_integer( var_.ref );
+	}
+
+	// Coefficient 0 from FMU at Time t: X-Based
+	Integer
+	iz_0( Time const t ) const
+	{
+		fmu_set_observees_x( t );
+		return ip_0();
+	}
+
+	// Coefficient 0 from FMU: Observees Set
 	Real
 	p_0() const
 	{
@@ -1226,7 +1293,7 @@ protected: // Methods: FMU
 		return fmu_me_->get_real( var_.ref );
 	}
 
-	// Coefficient 0 from FMU at Time tQ: Zero-Crossing
+	// Coefficient 0 from FMU at Time tQ: X-Based
 	Real
 	z_0() const
 	{
@@ -1234,7 +1301,7 @@ protected: // Methods: FMU
 		return p_0();
 	}
 
-	// Coefficient 0 from FMU at Time t: Zero-Crossing
+	// Coefficient 0 from FMU at Time t: X-Based
 	Real
 	z_0( Time const t ) const
 	{
@@ -1285,7 +1352,7 @@ protected: // Methods: FMU
 		return p_1();
 	}
 
-	// Coefficient 1 from FMU at Time t: Zero-Crossing
+	// Coefficient 1 from FMU at Time t: X-Based
 	Real
 	z_1( Time const t ) const
 	{
@@ -1293,7 +1360,7 @@ protected: // Methods: FMU
 		return p_1();
 	}
 
-	// Coefficient 1 from FMU at Time t: Zero-Crossing with ND First Derivative
+	// Coefficient 1 from FMU at Time t: X-Based with ND First Derivative
 	Real
 	Z_1( Time const t, Real const x_0 ) const
 	{
@@ -1333,7 +1400,7 @@ protected: // Methods: FMU
 		return x_2;
 	}
 
-	// Coefficient 2 from FMU at Time t: Zero-Crossing
+	// Coefficient 2 from FMU at Time t: X-Based
 	Real
 	z_2( Time const t, Real const x_1 ) const
 	{
@@ -1438,7 +1505,7 @@ private: // Data
 	Output out_x_; // Continuous rep output
 	Output out_q_; // Quantized rep output
 
-};
+}; // Variable
 
 } // fmu
 } // QSS

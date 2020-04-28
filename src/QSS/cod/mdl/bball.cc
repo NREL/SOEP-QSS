@@ -128,7 +128,7 @@ private: // Data
 	Variable_ZC_LTI * z_{ nullptr };
 	Variables observers_;
 
-};
+}; // Handler_bball
 
 // Bouncing Ball Example Setup
 void
