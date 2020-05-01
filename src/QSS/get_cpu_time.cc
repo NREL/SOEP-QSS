@@ -40,6 +40,8 @@
 #include <ctime>
 #endif
 
+namespace QSS {
+
 double
 get_cpu_time()
 {
@@ -54,3 +56,5 @@ get_cpu_time()
 	return double( std::clock() ) / CLOCKS_PER_SEC;
 #endif
 }
+
+} // QSS

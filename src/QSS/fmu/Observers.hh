@@ -209,12 +209,12 @@ public: // Methods
 				zc_.have3_ = ( zc_.n3_ > 0u );
 			}
 
-			if ( observers_.back()->not_QSS() && observers_.back()->not_ZC() ) { // Other observers present
-				ot_.b_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return ( v->not_QSS() && v->not_ZC() ); } ) ) );
-				ot_.e_ = e_;
-				assert( ot_.b_ < ot_.e_ );
-				ot_.n_ = ot_.e_ - ot_.b_;
-				ot_.have_ = true;
+			if ( observers_.back()->not_QSS() && observers_.back()->not_ZC() ) { // Non-ZC x-based observers present
+				ox_.b_ = static_cast< size_type >( std::distance( observers_.begin(), std::find_if( observers_.begin(), observers_.end(), []( Variable * v ){ return ( v->not_QSS() && v->not_ZC() ); } ) ) );
+				ox_.e_ = e_;
+				assert( ox_.b_ < ox_.e_ );
+				ox_.n_ = ox_.e_ - ox_.b_;
+				ox_.have_ = true;
 			}
 		}
 
@@ -387,7 +387,7 @@ public: // Methods
 		assert( fmu_me_->get_time() == t );
 		if ( qs_.have_ ) advance_QS( t ); // QSS state variables
 		if ( zc_.have_ ) advance_ZC( t ); // Zero-crossing variables
-		if ( ot_.have_ ) advance_OT( t ); // Other variables
+		if ( ox_.have_ ) advance_OT( t ); // Other variables
 		if ( options::output::d ) advance_d();
 	}
 
@@ -552,7 +552,7 @@ private: // Methods
 	{
 		assert( fmu_me_ != nullptr );
 		assert( fmu_me_->get_time() == t );
-		for ( size_type i = ot_.b_, e = ot_.e_; i < e; ++i ) {
+		for ( size_type i = ox_.b_, e = ox_.e_; i < e; ++i ) {
 			observers_[ i ]->advance_observer( t );
 		}
 	}
@@ -588,7 +588,7 @@ private: // Data
 			n_ = n2_ = n3_ = 0u;
 		}
 
-	} qs_, zc_, ot_;
+	} qs_, zc_, ox_;
 
 	// FMU QSS state observer data
 	VariableRefs qs_der_refs_; // FMU derivative refs

@@ -338,7 +338,7 @@ fmi2EnterInitializationMode( fmi2Component c )
 		fmu_me.init_F();
 		return fmi2OK;
 	case 8:
-		fmu_me.init_NQ();
+		fmu_me.init_XB();
 		return fmi2OK;
 	case 9:
 		fmu_me.init_pre_simulate();

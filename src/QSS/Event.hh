@@ -1,4 +1,4 @@
-// QSS Event Class
+// QSS Event
 //
 // Project: QSS Solver
 //

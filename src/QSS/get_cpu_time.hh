@@ -36,7 +36,11 @@
 #ifndef QSS_get_cpu_time_hh_INCLUDED
 #define QSS_get_cpu_time_hh_INCLUDED
 
+namespace QSS {
+
 double
 get_cpu_time();
+
+} // QSS
 
 #endif

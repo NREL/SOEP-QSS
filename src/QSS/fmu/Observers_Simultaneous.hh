@@ -133,8 +133,8 @@ public: // Methods
 	void
 	advance( Time const t )
 	{
-		if ( qs_.have_ ) advance_QS( t ); // QSS state variables (q-based)
-		if ( nq_.have_ ) advance_NQ( t ); // Non-QSS state variables (x-based)
+		if ( qs_.have_ ) advance_QS( t ); // QSS state variables
+		if ( xb_.have_ ) advance_XB( t ); // X-bassed variables
 		if ( options::output::d ) {
 			for ( Variable const * observer : observers_ ) {
 				observer->advance_observer_d();
@@ -185,9 +185,9 @@ private: // Methods
 
 	// Advance Non-QSS State Observers
 	void
-	advance_NQ( Time const t )
+	advance_XB( Time const t )
 	{
-		for ( size_type i = nq_.b_, e = nq_.e_; i < e; ++i ) {
+		for ( size_type i = xb_.b_, e = xb_.e_; i < e; ++i ) {
 			observers_[ i ]->advance_observer( t );
 		}
 	}
@@ -235,7 +235,7 @@ private: // Methods
 		}
 
 		if ( ! observers_.empty() ) {
-			sort_by_QSS( observers_ ); // Sort observers by QS|NQ type
+			sort_by_QSS( observers_ ); // Sort observers by QS|XB type
 
 			have_ = true;
 			e_ = observers_.size();
@@ -245,10 +245,10 @@ private: // Methods
 				qs_.have_ = true;
 			}
 
-			if ( observers_.back()->not_QSS() ) { // Non-QSS state observers present
-				nq_.b_ = qs_.e_;
-				nq_.e_ = e_;
-				nq_.have_ = true;
+			if ( observers_.back()->not_QSS() ) { // X-based observers present
+				xb_.b_ = qs_.e_;
+				xb_.e_ = e_;
+				xb_.have_ = true;
 			}
 		}
 	}
@@ -261,7 +261,7 @@ private: // Methods
 		have_ = false;
 		b_ = e_ = 0;
 		qs_.clear();
-		nq_.clear();
+		xb_.clear();
 	}
 
 private: // Data
@@ -285,7 +285,7 @@ private: // Data
 			b_ = e_ = 0u;
 		}
 
-	} qs_, nq_;
+	} qs_, xb_;
 
 }; // Observers_Simultaneous
 

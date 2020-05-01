@@ -573,7 +573,7 @@ namespace fmu {
 						} else { // Use hard-coded default function
 	//						inp_fxn = Function_Inp_constant( var_has_start ? var_start : 1.0 ); // Constant start value
 	//						inp_fxn = Function_Inp_sin( 2.0, 10.0, var_has_start ? var_start : 1.0 ); // 2 * sin( 10 * t ) + 1
-							inp_fxn = Function_Inp_step( var_has_start ? var_start : 0.0, 1.0, 1.0 ); // Step up by 1 every 0.1 s via discrete events
+							inp_fxn = Function_Inp_step( var_has_start ? var_start : 0.0, 1.0, 1.0 ); // Step up by 1 every 1 s via discrete events
 	//						inp_fxn = Function_Inp_toggle( var_has_start ? var_start : 0.0, 1.0, 0.1 ); // Step up/down by 1 every 0.1 s via discrete events
 							std::cout << " Type: Real: Continuous: Input: Function" << std::endl;
 						}
@@ -1577,27 +1577,18 @@ namespace fmu {
 		}
 
 		// Variable subtype containers and specs
-		vars_QS.clear();
-		vars_NQ.clear();
 		vars_ZC.clear();
 		vars_NZ.clear();
 		vars_CI.clear();
 		vars_NC.clear();
-		order_max_QS = order_max_NQ = order_max_NZ = order_max_ZC = order_max_NC = order_max_CI = 0;
+		vars_XB.clear();
+		order_max_NC = order_max_CI = 0;
 		for ( auto var : vars ) {
-			if ( var->is_QSS() ) { // QSS state variable
-				vars_QS.push_back( var );
-				order_max_QS = std::max( order_max_QS, var->order() );
-			} else { // Non-QSS state variable
-				vars_NQ.push_back( var );
-				order_max_NQ = std::max( order_max_NQ, var->order() );
-			}
 			if ( var->is_ZC() ) { // ZC variable
 				vars_ZC.push_back( var );
-				order_max_ZC = std::max( order_max_ZC, var->order() );
+				vars_XB.push_back( var );
 			} else { // Non-ZC variable
 				vars_NZ.push_back( var );
-				order_max_NZ = std::max( order_max_NZ, var->order() );
 				if ( var->is_connection() ) { // Connection variable
 					vars_CI.push_back( var );
 					order_max_CI = std::max( order_max_CI, var->order() );
@@ -1605,12 +1596,11 @@ namespace fmu {
 					vars_NC.push_back( var );
 					order_max_NC = std::max( order_max_NC, var->order() );
 				}
+				if ( var->is_BIDR() ) {
+					vars_XB.push_back( var );
+				}
 			}
 		}
-		assert( order_max_QS <= max_rep_order );
-		assert( order_max_NQ <= max_rep_order );
-		assert( order_max_ZC <= max_rep_order );
-		assert( order_max_NZ <= max_rep_order );
 		assert( order_max_CI <= max_rep_order );
 		assert( order_max_NC <= max_rep_order );
 	}
@@ -1628,7 +1618,7 @@ namespace fmu {
 		init_2_2();
 		init_3_1();
 		init_F();
-		init_NQ();
+		init_XB();
 		init_pre_simulate();
 	}
 
@@ -1645,7 +1635,7 @@ namespace fmu {
 				var->init_time( t0 );
 			}
 		}
-		for ( auto var : vars_NQ ) {
+		for ( auto var : vars_XB ) {
 			var->add_drill_through_observees();
 		}
 		for ( auto var : vars_NC ) {
@@ -1740,16 +1730,16 @@ namespace fmu {
 		}
 	}
 
-	// Initialization: Stage NQ
+	// Initialization: Stage XB
 	void
 	FMU_ME::
-	init_NQ()
+	init_XB()
 	{
-		std::cout << '\n' + name + " Initialization: Stage ZC =====" << std::endl;
+		std::cout << '\n' + name + " Initialization: Stage XB =====" << std::endl;
 		for ( auto var : vars_NC ) {
 			var->fmu_set_x( t0 );
 		}
-		for ( auto var : vars_NQ ) {
+		for ( auto var : vars_XB ) {
 			var->init();
 		}
 	}

@@ -280,7 +280,7 @@ public: // Predicate
 		return false;
 	}
 
-	// Non-QSS Variable?
+	// Not QSS Variable?
 	bool
 	not_QSS() const
 	{
@@ -294,7 +294,7 @@ public: // Predicate
 		return is_QSS();
 	}
 
-	// Non-State Variable?
+	// Not State Variable?
 	bool
 	not_state() const
 	{
@@ -1479,6 +1479,7 @@ public: // Data
 
 private: // Data
 
+	// Time steps
 	Time dt_inf_{ infinity }; // Time step inf
 	Time dt_inf_rlx_{ infinity }; // Relaxed time step inf
 

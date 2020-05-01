@@ -309,8 +309,7 @@ public: // I/O
 	std::ostream &
 	operator <<( std::ostream & stream, SuperdenseTime const & s )
 	{
-		stream << std::setprecision( 15 ) << '(' << s.t << ',' << s.i << ',' << s.o << ')';
-		return stream;
+		return stream << std::setprecision( 15 ) << '(' << s.t << ',' << s.i << ',' << s.o << ')';
 	}
 
 public: // Data

@@ -224,9 +224,9 @@ public: // Simulation Methods
 	void
 	init_F();
 
-	// Initialization: Stage NQ
+	// Initialization: Stage XB
 	void
-	init_NQ();
+	init_XB();
 
 	// Initialization: Stage Pre-Simulate
 	void
@@ -460,12 +460,11 @@ public: // Data
 
 	// Variables
 	Variables vars; // QSS variables
-	Variables vars_QS; // QSS state variables
-	Variables vars_NQ; // Non-QSS state variables
 	Variables vars_ZC; // Zero-crossing variables
 	Variables vars_NZ; // Non-zero-crossing variables
 	Variables vars_CI; // Connection input variables
 	Variables vars_NC; // Non-zero-crossing non-connection variables
+	Variables vars_XB; // X-Based (ZC+BIDR) state variables
 	Variables state_vars; // FMU state QSS variables
 	Variables outs; // FMU output QSS variables
 	Variables fmu_qss_qss_outs; // FMU-QSS output QSS variables
@@ -482,10 +481,6 @@ public: // Data
 	Var_Refs out_var_refs;
 	std::vector< Output > f_outs; // FMU outputs
 	std::vector< SmoothTokenOutput > k_qss_outs; // FMU-QSS QSS variable smooth token outputs
-	int order_max_QS{ 0 }; // QSS state variable max order
-	int order_max_NQ{ 0 }; // Non-QSS state variable max order
-	int order_max_ZC{ 0 }; // Zero-crossing QSS variable max order
-	int order_max_NZ{ 0 }; // Non-zero-crossing QSS variable max order
 	int order_max_CI{ 0 }; // Connection input QSS variable max order
 	int order_max_NC{ 0 }; // Non-zero-crossing non-connection QSS variable max order
 	bool has_event_indicators{ false };
