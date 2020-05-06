@@ -1066,20 +1066,31 @@ public: // Methods
 
 public: // Methods: Output
 
+	// Output Off
+	void
+	out_off()
+	{
+		out_on_ = false;
+	}
+
 	// Initialize Outputs
 	void
 	init_out( std::string const & dir )
 	{
-		if ( options::output::x ) out_x_.init( dir, name(), 'x' );
-		if ( options::output::q ) out_q_.init( dir, name(), 'q' );
+		if ( out_on_ ) {
+			if ( options::output::x ) out_x_.init( dir, name(), 'x' );
+			if ( options::output::q ) out_q_.init( dir, name(), 'q' );
+		}
 	}
 
 	// Output at Time t
 	void
 	out( Time const t )
 	{
-		if ( options::output::x ) out_x_.append( t, x( t ) );
-		if ( options::output::q ) out_q_.append( t, q( t ) );
+		if ( out_on_ ) {
+			if ( options::output::x ) out_x_.append( t, x( t ) );
+			if ( options::output::q ) out_q_.append( t, q( t ) );
+		}
 		if ( connected_ ) connections_out( t );
 	}
 
@@ -1087,7 +1098,9 @@ public: // Methods: Output
 	void
 	out_q( Time const t )
 	{
-		if ( options::output::q ) out_q_.append( t, q( t ) );
+		if ( out_on_ ) {
+			if ( options::output::q ) out_q_.append( t, q( t ) );
+		}
 		if ( connected_ ) connections_out_q( t );
 	}
 
@@ -1095,8 +1108,10 @@ public: // Methods: Output
 	void
 	observer_out_pre( Time const t )
 	{
-		if ( options::output::x && ( ! is_BIDR() ) ) out_x_.append( t, x( t ) );
-		if ( options::output::q && is_ZC() ) out_q_.append( t, q( t ) );
+		if ( out_on_ ) {
+			if ( options::output::x && ( ! is_BIDR() ) ) out_x_.append( t, x( t ) );
+			if ( options::output::q && is_ZC() ) out_q_.append( t, q( t ) );
+		}
 		if ( connected_ ) connections_observer_out_pre( t );
 	}
 
@@ -1105,8 +1120,10 @@ public: // Methods: Output
 	observer_out_post( Time const t )
 	{
 		if ( is_ZC() || is_BIDR() ) {
-			if ( options::output::x ) out_x_.append( t, x( t ) );
-			if ( options::output::q ) out_q_.append( t, q( t ) );
+			if ( out_on_ ) {
+				if ( options::output::x ) out_x_.append( t, x( t ) );
+				if ( options::output::q ) out_q_.append( t, q( t ) );
+			}
 			if ( connected_ ) connections_observer_out_post( t );
 		}
 	}
@@ -1503,6 +1520,7 @@ private: // Data
 	EventQ * eventq_{ nullptr }; // FMU event queue
 
 	// Outputs
+	bool out_on_{ true }; // Output on?
 	Output out_x_; // Continuous rep output
 	Output out_q_; // Quantized rep output
 

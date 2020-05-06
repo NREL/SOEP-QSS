@@ -1,4 +1,4 @@
-// Options Support
+// QSS Options Support
 //
 // Project: QSS Solver
 //
@@ -78,7 +78,7 @@ InpFxn fxn; // Map from input variables to function specs
 InpOut con; // Map from input variables to output variables
 std::string out; // Outputs
 std::pair< double, double > tLoc( 0.0, 0.0 ); // Local output time range (s)
-std::string var_file; // Variable output filter file
+std::string var; // Variable output filter file
 Models models; // Name of model(s) or FMU(s)
 
 namespace specified {
@@ -596,9 +596,9 @@ process_args( int argc, char * argv[] )
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "var" ) ) {
-			var_file = arg_value( arg );
-			if ( ! path::is_file( var_file ) ) {
-				std::cerr << "\nError: File specified in --var option not found: " << var_file << ": Output filtering disabled" << std::endl;
+			var = arg_value( arg );
+			if ( ! path::is_file( var ) ) {
+				std::cerr << "\nError: File specified in --var option not found: " << var << ": Output filtering disabled" << std::endl;
 			}
 		} else if ( arg[ 0 ] == '-' ) {
 			std::cerr << "\nError: Unsupported option: " << arg << std::endl;

@@ -341,7 +341,7 @@ namespace fmu {
 		// I/o setup
 		std::cout << std::setprecision( 15 );
 		std::cerr << std::setprecision( 15 );
-		OutputFilter const output_filter( options::var_file );
+		OutputFilter const output_filter( options::var );
 
 		// Report QSS method
 		if ( options::qss == options::QSS::QSS1 ) {
@@ -649,7 +649,7 @@ namespace fmu {
 						qss_var_of_ref[ var_ref ] = qss_var;
 						var_name_var[ var_name ] = qss_var;
 						if ( var_causality == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
-							outs.push_back( qss_var );
+							if ( output_filter( var_name ) ) outs.push_back( qss_var );
 							fmu_outs.erase( var_real ); // Remove it from non-QSS FMU outputs
 						}
 						fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
@@ -727,7 +727,7 @@ namespace fmu {
 						qss_var_of_ref[ var_ref ] = qss_var;
 						var_name_var[ var_name ] = qss_var;
 						if ( var_causality == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
-							outs.push_back( qss_var );
+							if ( output_filter( var_name ) ) outs.push_back( qss_var );
 							fmu_outs.erase( var_int ); // Remove it from non-QSS FMU outputs
 						}
 						fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
@@ -801,7 +801,7 @@ namespace fmu {
 						qss_var_of_ref[ var_ref ] = qss_var;
 						var_name_var[ var_name ] = qss_var;
 						if ( var_causality == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
-							outs.push_back( qss_var );
+							if ( output_filter( var_name ) ) outs.push_back( qss_var );
 							fmu_outs.erase( var_bool ); // Remove it from non-QSS FMU outputs
 						}
 						fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
@@ -940,7 +940,9 @@ namespace fmu {
 					state_vars.push_back( qss_var ); // Add to state variables
 					fmi2_causality_enu_t const var_causality( fmi2_import_get_causality( fmu_var.var ) );
 					if ( ( var_causality == fmi2_causality_enu_local ) || ( var_causality == fmi2_causality_enu_output ) ) { // Add to FMU QSS variable outputs
-						if ( var_causality == fmi2_causality_enu_output ) outs.push_back( qss_var ); // Skip FMU output of local QSS variables for now
+						if ( var_causality == fmi2_causality_enu_output ) { // Skip FMU output of local QSS variables for now
+							if ( output_filter( var_name ) ) outs.push_back( qss_var );
+						}
 						fmu_outs.erase( fmu_var.rvr ); // Remove it from non-QSS FMU outputs
 					}
 					fmu_idxs[ fmu_var.idx ] = qss_var; // Add to map from FMU variable index to QSS variable
@@ -1011,7 +1013,7 @@ namespace fmu {
 				qss_var_of_ref[ fmi2_import_get_variable_vr( fmu_var.var ) ] = qss_var;
 				var_name_var[ var_name ] = qss_var;
 				if ( fmi2_import_get_causality( fmu_var.var ) == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
-					outs.push_back( qss_var );
+					if ( output_filter( var_name ) ) outs.push_back( qss_var );
 					fmu_outs.erase( fmu_var.rvr ); // Remove it from non-QSS FMU outputs
 				}
 				fmu_idxs[ fmu_var.idx ] = qss_var; // Add to map from FMU variable index to QSS variable
@@ -1096,7 +1098,7 @@ namespace fmu {
 									qss_var_of_ref[ fmi2_import_get_variable_vr( fmu_var.var ) ] = qss_var;
 									var_name_var[ var_name ] = qss_var;
 									if ( fmi2_import_get_causality( fmu_var.var ) == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
-										outs.push_back( qss_var );
+										if ( output_filter( var_name ) ) outs.push_back( qss_var );
 										fmu_outs.erase( fmu_var.rvr ); // Remove it from non-QSS FMU outputs
 									}
 									fmu_idxs[ fmu_var.idx ] = qss_var; // Add to map from FMU variable index to QSS variable
@@ -1487,7 +1489,7 @@ namespace fmu {
 						qss_var_of_ref[ out_ref ] = qss_var;
 						var_name_var[ out_name ] = qss_var;
 						//! Leave in fmu_outs (instead of putting into outs) since it needs to get its current value from the FMU
-						//outs.push_back( qss_var );
+						//if ( output_filter( var_name ) ) outs.push_back( qss_var );
 						//fmu_outs.erase( out_real ); // Remove it from non-QSS FMU outputs
 						fmu_idxs[ fmu_out->idx ] = qss_var; // Add to map from FMU variable index to QSS variable
 						std::cout << " FMU-ME idx: " << fmu_out->idx << " maps to QSS var: " << qss_var->name() << std::endl;
@@ -1574,6 +1576,11 @@ namespace fmu {
 		// Variable-index map setup
 		for ( size_type i = 0; i < n_vars; ++i ) {
 			var_idx[ vars[ i ] ] = i;
+		}
+
+		// Variable output filtering
+		for ( auto var : vars ) {
+			if ( ! output_filter( var->name() ) ) var->out_off();
 		}
 
 		// Variable subtype containers and specs

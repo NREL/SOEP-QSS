@@ -71,13 +71,24 @@ public: // Creation
 						reg_line.push_back( '.' );
 					} else if ( c == '*' ) {
 						reg_line.append( ".*" );
+					} else if ( c == '.' ) {
+						reg_line.append( "\\." );
+					} else if ( c == '[' ) {
+						reg_line.append( "\\[" );
+					} else if ( c == ']' ) {
+						reg_line.append( "\\]" );
 					} else {
 						reg_line.push_back( c );
 					}
 				}
 
 				// Add to filter
-				filters_.push_back( std::regex( reg_line ) );
+				try {
+					filters_.push_back( std::regex( reg_line ) );
+				} catch (...) {
+					std::cerr << "\nError: Skipping --var filter line that yields invalid regex string: " << reg_line << std::endl;
+				}
+
 			}
 			var_stream.close();
 		}
@@ -90,22 +101,8 @@ public: // Predicate
 	operator ()( std::string const & var_name ) const
 	{
 		if ( filters_.empty() ) return true;
-
-		// Variable name with regex special characters protected
-		std::string reg_name;
-		for ( char const c : var_name ) {
-			if ( ( c == '[' ) || ( c == ']' ) ) { // Protect special characters
-				reg_name.push_back( '[' );
-				reg_name.push_back( c );
-				reg_name.push_back( ']' );
-			} else {
-				reg_name.push_back( c );
-			}
-		}
-
-		// Check if name matches a filter
-		for ( auto const & filter : filters_ ) {
-			if ( std::regex_match( reg_name, filter ) ) return true;
+		for ( auto const & filter : filters_ ) { // Check if name matches filter
+			if ( std::regex_match( var_name, filter ) ) return true;
 		}
 		return false;
 	}
