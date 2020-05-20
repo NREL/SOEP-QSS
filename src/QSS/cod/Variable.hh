@@ -54,6 +54,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <iterator>
+#include <limits>
 #include <vector>
 
 namespace QSS {
@@ -206,7 +207,7 @@ public: // Predicate
 	bool
 	not_QSS() const
 	{
-		return ! is_QSS();
+		return ( ! is_QSS() );
 	}
 
 	// State Variable?
@@ -220,7 +221,7 @@ public: // Predicate
 	bool
 	not_state() const
 	{
-		return ! is_QSS();
+		return ( ! is_QSS() );
 	}
 
 	// LIQSS Variable?
@@ -243,7 +244,7 @@ public: // Predicate
 	bool
 	not_ZC() const
 	{
-		return ! is_ZC();
+		return ( ! is_ZC() );
 	}
 
 	// Self-Observer?

@@ -12,12 +12,19 @@
 
 #pragma once
 
+#ifdef __has_include
+#if __has_include(<version>)
+#include <version>	// feature macros
+#endif
+#endif
+
 // If you activate safe map brackets, in the case of absence in `map` the key `key`
 // the expression `map[key]` can be used only on the left side of an assignment operator.
 // Do not forget that the references to the items may become invalid after each insertion,
 // so expressions such as `map[key1] + map[key2]` are potentially dangerous.
 //#define MOMO_USE_SAFE_MAP_BRACKETS
 
+// Using hint iterators in classes `stdish::unordered_set/map`.
 // As a hint pass an iterator, returned after an unsuccessful search.
 //#define MOMO_USE_UNORDERED_HINT_ITERATORS
 
@@ -27,7 +34,6 @@
 
 // Using `memcpy` for relocate
 #define MOMO_IS_TRIVIALLY_RELOCATABLE(Object) (std::is_trivially_copyable<Object>::value)
-
 #if defined(__GNUC__) && __GNUC__ < 5
 #undef MOMO_IS_TRIVIALLY_RELOCATABLE
 #define MOMO_IS_TRIVIALLY_RELOCATABLE(Object) (std::is_trivial<Object>::value)
@@ -64,7 +70,11 @@
 // Settings of node in B-tree
 #define MOMO_DEFAULT_TREE_NODE TreeNode<32, 4>
 
-//#define MOMO_HASH_CODER(key) hash_value(key)
+//#define MOMO_HASH_CODER(key) key.GetHashCode() //hash_value(key)
+
+#ifdef __cpp_lib_string_view
+#define MOMO_USE_HASH_TRAITS_STRING_SPECIALIZATION
+#endif
 
 // If hash function is slow, hash bucket can store part of hash code
 // to avoid its recalculation during table grow
@@ -86,9 +96,7 @@
 
 // Using of SSE2
 #if defined(_MSC_VER) && !defined(__clang__)
-#if defined(_M_AMD64) || defined(_M_X64)
-#define MOMO_USE_SSE2
-#elif _M_IX86_FP == 2
+#if defined(_M_AMD64) || defined(_M_X64) || _M_IX86_FP == 2
 #define MOMO_USE_SSE2
 #endif
 #else
@@ -102,11 +110,10 @@
 #endif
 
 // `nullptr`, converted to the type `uintptr_t`
-#define MOMO_NULL_UINTPTR ((uintptr_t)(void*)nullptr)
-
+#define MOMO_NULL_UINTPTR reinterpret_cast<uintptr_t>(static_cast<void*>(nullptr))
 #if defined(__clang__)
 #undef MOMO_NULL_UINTPTR
-#define MOMO_NULL_UINTPTR ((uintptr_t)0)
+#define MOMO_NULL_UINTPTR uintptr_t{0}
 #endif
 
 // One more pointer which doesn't point to anything but is not equal to `nullptr`
@@ -133,11 +140,3 @@
 #ifndef MOMO_NODISCARD
 #define MOMO_NODISCARD
 #endif
-
-//#if defined(_MSC_VER) && !defined(__clang__)
-//#pragma warning (disable: 4127)	// conditional expression is constant
-//#pragma warning (disable: 4503)	// decorated name length exceeded, name was truncated
-//#pragma warning (disable: 4510)	// default constructor could not be generated
-//#pragma warning (disable: 4512)	// assignment operator could not be generated
-//#define _SCL_SECURE_NO_WARNINGS
-//#endif

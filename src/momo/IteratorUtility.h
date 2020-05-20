@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "momo/Utility.h"
+#include "Utility.h"
 
 #define MOMO_MORE_ARRAY_ITERATOR_OPERATORS(Iterator) \
 	Iterator& operator++() \
@@ -300,29 +300,22 @@ namespace internal
 	};
 
 	template<typename TIterator>
-	class ArrayBounds
+	class ArrayBoundsBase
 	{
 	public:
 		typedef TIterator Iterator;
 
-		typedef ArrayBounds<typename ConstIteratorSelector<Iterator>::ConstIterator> ConstBounds;
-
 	public:
-		explicit ArrayBounds() noexcept
+		explicit ArrayBoundsBase() noexcept
 			: mBegin(),
 			mCount(0)
 		{
 		}
 
-		explicit ArrayBounds(Iterator begin, size_t count) noexcept
+		explicit ArrayBoundsBase(Iterator begin, size_t count) noexcept
 			: mBegin(begin),
 			mCount(count)
 		{
-		}
-
-		operator ConstBounds() const noexcept
-		{
-			return ConstBounds(mBegin, mCount);
 		}
 
 		Iterator GetBegin() const noexcept
@@ -332,10 +325,10 @@ namespace internal
 
 		Iterator GetEnd() const noexcept
 		{
-			return mBegin + mCount;
+			return UIntMath<>::Next(mBegin, mCount);
 		}
 
-		MOMO_FRIENDS_BEGIN_END(const ArrayBounds&, Iterator)
+		MOMO_FRIENDS_BEGIN_END(const ArrayBoundsBase&, Iterator)
 
 		size_t GetCount() const noexcept
 		{
@@ -345,12 +338,32 @@ namespace internal
 		typename std::iterator_traits<Iterator>::reference operator[](size_t index) const noexcept
 		{
 			MOMO_ASSERT(index < mCount);
-			return mBegin[index];
+			return *UIntMath<>::Next(mBegin, index);
 		}
 
 	private:
 		Iterator mBegin;
 		size_t mCount;
+	};
+
+	template<typename TIterator>
+	class ArrayBounds : public ArrayBoundsBase<TIterator>
+	{
+	private:
+		typedef ArrayBoundsBase<TIterator> BoundsBase;
+
+	public:
+		using typename BoundsBase::Iterator;
+
+		typedef ArrayBounds<typename ConstIteratorSelector<Iterator>::ConstIterator> ConstBounds;
+
+	public:
+		using BoundsBase::BoundsBase;
+
+		operator ConstBounds() const noexcept
+		{
+			return ConstBounds(BoundsBase::GetBegin(), BoundsBase::GetCount());
+		}
 	};
 
 	template<typename TBaseIterator, typename TReference>

@@ -24,8 +24,8 @@
 
 #pragma once
 
-#include "momo/ArrayUtility.h"
-#include "momo/MemManager.h"
+#include "ArrayUtility.h"
+#include "MemManager.h"
 
 namespace momo
 {
@@ -289,8 +289,8 @@ private:
 			pvCreate();
 		}
 
-		template<typename RelocateFunc>
-		void Reset(size_t capacity, size_t count, RelocateFunc relocateFunc)
+		template<typename ItemsRelocator>
+		void Reset(size_t capacity, size_t count, ItemsRelocator itemsRelocator)
 		{
 			MOMO_ASSERT(count <= capacity);
 			pvCheckCapacity(capacity);
@@ -300,7 +300,7 @@ private:
 					capacity * sizeof(Item));
 				try
 				{
-					relocateFunc(items);
+					itemsRelocator(items);
 				}
 				catch (...)
 				{
@@ -314,7 +314,7 @@ private:
 			}
 			else
 			{
-				pvReset(count, relocateFunc);
+				pvReset(count, itemsRelocator);
 			}
 		}
 
@@ -411,23 +411,23 @@ private:
 			return false;
 		}
 
-		template<typename RelocateFunc,
+		template<typename ItemsRelocator,
 			bool hasInternalCapacity = (internalCapacity > 0)>
-		internal::EnableIf<hasInternalCapacity> pvReset(size_t count, RelocateFunc relocateFunc)
+		internal::EnableIf<hasInternalCapacity> pvReset(size_t count, ItemsRelocator itemsRelocator)
 		{
 			MOMO_STATIC_ASSERT(ItemTraits::isNothrowRelocatable);
 			internal::ArrayBuffer<ItemTraits, internalCapacity> internalData;
-			relocateFunc(&internalData);
+			itemsRelocator(&internalData);
 			pvDeallocate();
 			mItems = &mInternalItems;
 			ItemTraits::Relocate(GetMemManager(), &internalData, mItems, count);
 			mCount = count;
 		}
 
-		template<typename RelocateFunc,
+		template<typename ItemsRelocator,
 			bool hasInternalCapacity = (internalCapacity > 0)>
 		internal::EnableIf<!hasInternalCapacity> pvReset(size_t count,
-			RelocateFunc /*relocateFunc*/) noexcept
+			ItemsRelocator /*itemsRelocator*/) noexcept
 		{
 			(void)count;
 			MOMO_ASSERT(count == 0);
@@ -448,6 +448,8 @@ private:
 	typedef internal::ArrayItemHandler<ItemTraits> ItemHandler;
 	typedef internal::ArrayShifter<Array> ArrayShifter;
 	typedef typename internal::ArrayIteratorSelector<Array> IteratorSelector;
+
+	typedef internal::UIntMath<> SMath;
 
 public:
 	typedef typename IteratorSelector::ConstIterator ConstIterator;
@@ -481,13 +483,18 @@ public:
 	template<typename ArgIterator,
 		typename = typename std::iterator_traits<ArgIterator>::iterator_category>
 	explicit Array(ArgIterator begin, ArgIterator end, MemManager&& memManager = MemManager())
-		: mData(internal::IsForwardIterator<ArgIterator>::value ? std::distance(begin, end) : 0,
+		: mData(internal::IsForwardIterator<ArgIterator>::value ? SMath::Dist(begin, end) : 0,
 			std::move(memManager))
 	{
 		pvFill(begin, end);
 	}
 
-	Array(std::initializer_list<Item> items, MemManager&& memManager = MemManager())
+	Array(std::initializer_list<Item> items)
+		: Array(items.begin(), items.end())
+	{
+	}
+
+	explicit Array(std::initializer_list<Item> items, MemManager&& memManager)
 		: Array(items.begin(), items.end(), std::move(memManager))
 	{
 	}
@@ -497,13 +504,18 @@ public:
 	{
 	}
 
-	Array(const Array& array, bool shrink = true)
+	Array(const Array& array)
+		: Array(array, true)
+	{
+	}
+
+	explicit Array(const Array& array, bool shrink)
 		: mData(shrink ? array.GetCount() : array.GetCapacity(), MemManager(array.GetMemManager()))
 	{
 		pvFill(array.GetBegin(), array.GetEnd());
 	}
 
-	Array(const Array& array, MemManager&& memManager)
+	explicit Array(const Array& array, MemManager&& memManager)
 		: Array(array.GetBegin(), array.GetEnd(), std::move(memManager))
 	{
 	}
@@ -523,9 +535,7 @@ public:
 		return array;
 	}
 
-	~Array() noexcept
-	{
-	}
+	~Array() = default;
 
 	Array& operator=(Array&& array) noexcept
 	{
@@ -630,7 +640,7 @@ public:
 		{
 			size_t newCapacity = pvGrowCapacity(initCapacity, newCount,
 				ArrayGrowCause::reserve, false);
-			auto relocateFunc = [this, initCount, newCount, &multiItemCreator] (Item* newItems)
+			auto itemsRelocator = [this, initCount, newCount, &multiItemCreator] (Item* newItems)
 			{
 				size_t index = initCount;
 				try
@@ -645,7 +655,7 @@ public:
 					throw;
 				}
 			};
-			mData.Reset(newCapacity, newCount, relocateFunc);
+			mData.Reset(newCapacity, newCount, itemsRelocator);
 		}
 	}
 
@@ -700,9 +710,9 @@ public:
 			size_t newCapacity = count;
 			if (!mData.SetCapacity(newCapacity))
 			{
-				auto relocateFunc = [this, count] (Item* newItems)
+				auto itemsRelocator = [this, count] (Item* newItems)
 					{ ItemTraits::Relocate(GetMemManager(), GetItems(), newItems, count); };
-				mData.Reset(newCapacity, count, relocateFunc);
+				mData.Reset(newCapacity, count, itemsRelocator);
 			}
 		}
 	}
@@ -827,7 +837,7 @@ public:
 
 	void Insert(size_t index, const Item& item)
 	{
-		return Insert(index, (size_t)1, item);	//?
+		return Insert(index, size_t{1}, item);	//?
 	}
 
 	void Insert(size_t index, size_t count, const Item& item)
@@ -858,7 +868,7 @@ public:
 		MOMO_ASSERT(begin == end || !pvIsInside(*begin));	//?
 		if (internal::IsForwardIterator<ArgIterator>::value)
 		{
-			size_t count = std::distance(begin, end);
+			size_t count = SMath::Dist(begin, end);
 			size_t newCount = GetCount() + count;
 			if (newCount > GetCapacity())
 				pvGrow(newCount, ArrayGrowCause::add);
@@ -882,15 +892,15 @@ public:
 		ArrayShifter::Remove(*this, index, count);
 	}
 
-	template<typename ItemArg,
-		typename Predicate = internal::Equaler<ItemArg, Item>>
-	bool Contains(const ItemArg& itemArg, const Predicate& pred = Predicate()) const
-	{
-		const Item* begin = GetItems();
-		const Item* end = begin + GetCount();
-		return std::find_if(begin, end,
-			[&itemArg, &pred] (const Item& item) { return pred(itemArg, item); }) != end;
-	}
+	//template<typename ItemArg,
+	//	typename Predicate = std::equal_to<>>
+	//bool Contains(const ItemArg& itemArg, const Predicate& pred = Predicate()) const
+	//{
+	//	const Item* begin = GetItems();
+	//	const Item* end = begin + GetCount();
+	//	return std::find_if(begin, end,
+	//		[&itemArg, &pred] (const Item& item) { return pred(itemArg, item); }) != end;
+	//}
 
 private:
 	explicit Array(Data&& data) noexcept
@@ -941,10 +951,10 @@ private:
 		if (!mData.SetCapacity(pvGrowCapacity(initCapacity, minNewCapacity, growCause, true)))
 		{
 			size_t count = GetCount();
-			auto relocateFunc = [this, count] (Item* newItems)
+			auto itemsRelocator = [this, count] (Item* newItems)
 				{ ItemTraits::Relocate(GetMemManager(), GetItems(), newItems, count); };
 			mData.Reset(pvGrowCapacity(initCapacity, minNewCapacity, growCause, false),
-				count, relocateFunc);
+				count, itemsRelocator);
 		}
 	}
 
@@ -969,12 +979,12 @@ private:
 		size_t initCount = GetCount();
 		size_t newCount = initCount + 1;
 		size_t newCapacity = pvGrowCapacity(GetCapacity(), newCount, ArrayGrowCause::add, false);
-		auto relocateFunc = [this, initCount, &itemCreator] (Item* newItems)
+		auto itemsRelocator = [this, initCount, &itemCreator] (Item* newItems)
 		{
 			ItemTraits::RelocateCreate(GetMemManager(), GetItems(), newItems, initCount,
 				std::forward<ItemCreator>(itemCreator), newItems + initCount);
 		};
-		mData.Reset(newCapacity, newCount, relocateFunc);
+		mData.Reset(newCapacity, newCount, itemsRelocator);
 	}
 
 	void pvAddBackGrow(Item&& item)
@@ -1044,7 +1054,8 @@ private:
 		const Item* pitem = std::addressof(item);
 		const Item* items = GetItems();
 		std::less<const Item*> less;
-		return (!less(pitem, items) && less(pitem, items + GetCount())) ? pitem - items : SIZE_MAX;
+		return (!less(pitem, items) && less(pitem, items + GetCount()))
+			? SMath::Dist(items, pitem) : size_t{SIZE_MAX};
 	}
 
 	template<typename ItemArg>

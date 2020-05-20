@@ -19,7 +19,7 @@ fi
 
 if [[ $CxxSource ]]; then
   shift
-  g++ -pipe -std=c++11 -pedantic -Wall -Wextra -Wno-unknown-pragmas -Wno-unused-parameter -Wno-unused-function -fsyntax-only -x c++ -c $@ $CxxSource
+  g++ -pipe -std=c++17 -pedantic -Wall -Wextra -Wno-unknown-pragmas -Wno-unused-parameter -Wno-unused-function -fsyntax-only -x c++ -c $@ $CxxSource
 elif [[ $CSource ]]; then
   shift
   gcc -pipe -std=c11 -pedantic -Wall -Wextra -Wno-unknown-pragmas -Wno-unused-parameter -Wno-unused-function -fsyntax-only -x c -c $@ $CSource

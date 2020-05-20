@@ -126,6 +126,20 @@ public: // Property
 		return observers_.size();
 	}
 
+	// Observers Collection
+	Variables const &
+	observers() const
+	{
+		return observers_;
+	}
+
+	// Observers Collection
+	Variables &
+	observers()
+	{
+		return observers_;
+	}
+
 public: // Methods
 
 	// Add Observer
@@ -429,6 +443,22 @@ public: // Iterator
 	end()
 	{
 		return observers_.end();
+	}
+
+public: // Subscript
+
+	// Observers[ i ]
+	Variable const *
+	operator []( size_type const i ) const
+	{
+		return observers_[ i ];
+	}
+
+	// Observers[ i ]
+	Variable *
+	operator []( size_type const i )
+	{
+		return observers_[ i ];
 	}
 
 private: // Methods

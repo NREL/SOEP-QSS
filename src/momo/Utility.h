@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "momo/UserSettings.h"
+#include "UserSettings.h"
 
 #include <cstdint>
 #include <cstddef>
@@ -196,17 +196,21 @@ namespace internal
 	template<typename... Types>
 	using Void = typename VoidMaker<Types...>::Void;
 
+	template<typename Func, typename Arg1, typename Arg2,
+		typename = void>
+	struct IsInvocable2 : public std::false_type
+	{
+	};
+
+	template<typename Func, typename Arg1, typename Arg2>
+	struct IsInvocable2<Func, Arg1, Arg2,
+		Void<decltype(std::declval<Func>()(std::declval<Arg1>(), std::declval<Arg2>()))>>
+		: public std::true_type
+	{
+	};
+
 	template<bool value, typename Type = void>
 	using EnableIf = typename std::enable_if<value, Type>::type;
-
-	template<typename Object1, typename Object2>
-	struct Equaler
-	{
-		bool operator()(const Object1& object1, const Object2& object2) const
-		{
-			return object1 == object2;
-		}
-	};
 
 	class BitCaster
 	{
@@ -229,12 +233,13 @@ namespace internal
 		//	return reinterpret_cast<ResObject*>(ptr);
 		//}
 
-		template<typename ResObject, typename Object>
-		static ResObject* PtrToPtr(Object* ptr, ptrdiff_t byteOffset) noexcept
+		template<typename ResObject, typename Object, typename Offset>
+		static ResObject* PtrToPtr(Object* ptr, Offset byteOffset) noexcept
 		{
 			typedef typename std::conditional<std::is_const<Object>::value,
-				const char, char>::type Char;
-			return reinterpret_cast<ResObject*>(reinterpret_cast<Char*>(ptr) + byteOffset);
+				const char, char>::type Byte;
+			return reinterpret_cast<ResObject*>(reinterpret_cast<Byte*>(ptr)
+				+ static_cast<ptrdiff_t>(byteOffset));
 		}
 	};
 
@@ -254,6 +259,18 @@ namespace internal
 		static constexpr UInt Ceil(UInt value, UInt mod) noexcept
 		{
 			return ((value + mod - 1) / mod) * mod;
+		}
+
+		template<typename Iterator>
+		static UInt Dist(Iterator begin, Iterator end)
+		{
+			return static_cast<UInt>(std::distance(begin, end));
+		}
+
+		template<typename Iterator>
+		static Iterator Next(Iterator iter, UInt dist)
+		{
+			return std::next(iter, static_cast<ptrdiff_t>(dist));
 		}
 
 		static UInt GCD(UInt value1, UInt value2) noexcept
@@ -316,7 +333,7 @@ namespace internal
 			value |= value >> 4;
 			value |= value >> 8;
 			value |= value >> 16;
-			return tab32[(value * (UInt)0x07C4ACDD) >> 27];
+			return tab32[(value * UInt{0x07C4ACDD}) >> 27];
 		}
 
 		template<size_t size = sizeof(UInt)>
@@ -340,7 +357,7 @@ namespace internal
 			value |= value >> 16;
 			value |= value >> 32;
 			value -= value >> 1;
-			return tab64[(value * (UInt)0x07EDD5E59A4E28C2) >> 58];
+			return tab64[(value * UInt{0x07EDD5E59A4E28C2}) >> 58];
 		}
 	};
 }

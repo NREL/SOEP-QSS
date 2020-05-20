@@ -47,7 +47,7 @@
 #include <QSS/SuperdenseTime.hh>
 
 // momo Headers
-#include <momo/pool_allocator.h>
+//#include <momo/stdish/pool_allocator.h> // Intel C++ 19.1 with Visual C++ 2019 16.5.5 has an internal error compiling momo
 //#include <Allocator/Allocator.h>
 
 // C++ Headers
@@ -76,8 +76,8 @@ public: // Types
 	using Targets = std::vector< T * >;
 	using Events = std::vector< EventT >;
 
-//	using EventMap = std::multimap< SuperdenseTime, EventT >; // C++ allocator
-	using EventMap = std::multimap< SuperdenseTime, EventT, std::less< SuperdenseTime >, momo::unsynchronized_pool_allocator< std::pair< SuperdenseTime const, EventT > > >; // momo allocator
+	using EventMap = std::multimap< SuperdenseTime, EventT >; // C++ allocator
+//	using EventMap = std::multimap< SuperdenseTime, EventT, std::less< SuperdenseTime >, momo::unsynchronized_pool_allocator< std::pair< SuperdenseTime const, EventT > > >; // momo allocator
 //	using EventMap = std::multimap< SuperdenseTime, EventT, std::less< SuperdenseTime >, Moya::Allocator< std::pair< SuperdenseTime const, EventT > > >; // Moya allocator // Default 1024 grow size was best // Fastest but gives access violation in unit tests
 	using value_type = typename EventMap::value_type;
 	using size_type = typename EventMap::size_type;
@@ -374,6 +374,22 @@ public: // Methods
 		return tops;
 	}
 
+	// Simultaneous Events at Front of Queue
+	void
+	top_events( Events & tops )
+	{
+		tops.clear();
+		if ( ! m_.empty() ) {
+			iterator i( m_.begin() );
+			iterator const e( m_.end() );
+			SuperdenseTime const & s( i->first );
+			while ( ( i != e ) && ( i->first == s ) ) {
+				tops.push_back( i->second );
+				++i;
+			}
+		}
+	}
+
 	// Simultaneous Trigger Targets at Front of Queue
 	Targets
 	top_targets()
@@ -389,6 +405,22 @@ public: // Methods
 			}
 		}
 		return targets;
+	}
+
+	// Simultaneous Trigger Targets at Front of Queue
+	void
+	top_targets( Targets & targets )
+	{
+		targets.clear();
+		if ( ! m_.empty() ) {
+			iterator i( m_.begin() );
+			iterator const e( m_.end() );
+			SuperdenseTime const & s( i->first );
+			while ( ( i != e ) && ( i->first == s ) ) {
+				targets.push_back( i->second.tar() );
+				++i;
+			}
+		}
 	}
 
 	// Simultaneous Trigger Target Subtypes at Front of Queue
@@ -407,6 +439,23 @@ public: // Methods
 			}
 		}
 		return subs;
+	}
+
+	// Simultaneous Trigger Target Subtypes at Front of Queue
+	template< typename S >
+	void
+	top_subs( std::vector< S * > & subs )
+	{
+		subs.clear();
+		if ( ! m_.empty() ) {
+			iterator i( m_.begin() );
+			iterator const e( m_.end() );
+			SuperdenseTime const & s( i->first );
+			while ( ( i != e ) && ( i->first == s ) ) {
+				subs.push_back( i->second.template sub< S >() );
+				++i;
+			}
+		}
 	}
 
 	// Set Active Time

@@ -59,6 +59,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <iterator>
+#include <limits>
 #include <vector>
 
 namespace QSS {
@@ -112,18 +113,18 @@ protected: // Creation
 	Variable(
 	 int const order,
 	 std::string const & name,
-	 Real const rTol,
-	 Real const aTol,
-	 Real const xIni,
+	 Real const rTol_,
+	 Real const aTol_,
+	 Real const xIni_,
 	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
 	 Target( name ),
 	 order_( order ),
-	 rTol( std::max( rTol, 0.0 ) ),
-	 aTol( std::max( aTol, std::numeric_limits< Real >::min() ) ),
-	 xIni( xIni ),
+	 rTol( std::max( rTol_, 0.0 ) ),
+	 aTol( std::max( aTol_, std::numeric_limits< Real >::min() ) ),
+	 xIni( xIni_ ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
 	 dt_inf_( options::dtInf ),
@@ -139,16 +140,16 @@ protected: // Creation
 	Variable(
 	 int const order,
 	 std::string const & name,
-	 Real const rTol,
-	 Real const aTol,
+	 Real const rTol_,
+	 Real const aTol_,
 	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
 	 Target( name ),
 	 order_( order ),
-	 rTol( std::max( rTol, 0.0 ) ),
-	 aTol( std::max( aTol, std::numeric_limits< Real >::min() ) ),
+	 rTol( std::max( rTol_, 0.0 ) ),
+	 aTol( std::max( aTol_, std::numeric_limits< Real >::min() ) ),
 	 xIni( 0.0 ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
@@ -165,14 +166,14 @@ protected: // Creation
 	Variable(
 	 int const order,
 	 std::string const & name,
-	 Real const xIni,
+	 Real const xIni_,
 	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
 	 Target( name ),
 	 order_( order ),
-	 xIni( xIni ),
+	 xIni( xIni_ ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
 	 dt_inf_( options::dtInf ),
@@ -262,7 +263,7 @@ public: // Predicate
 	bool
 	not_connection() const
 	{
-		return ! is_connection();
+		return ( ! is_connection() );
 	}
 
 	// Connected?
@@ -284,7 +285,7 @@ public: // Predicate
 	bool
 	not_QSS() const
 	{
-		return ! is_QSS();
+		return ( ! is_QSS() );
 	}
 
 	// State Variable?
@@ -298,7 +299,7 @@ public: // Predicate
 	bool
 	not_state() const
 	{
-		return ! is_QSS();
+		return ( ! is_QSS() );
 	}
 
 	// LIQSS Variable?
@@ -321,7 +322,7 @@ public: // Predicate
 	bool
 	not_ZC() const
 	{
-		return ! is_ZC();
+		return ( ! is_ZC() );
 	}
 
 	// In Conditional?
@@ -370,7 +371,7 @@ public: // Property
 		return order_;
 	}
 
-	// State-ZC-Other + Order Sorting Index
+	// State|ZC|Other + Order Sorting Index
 	int
 	state_order() const
 	{
@@ -995,7 +996,7 @@ public: // Methods
 	// Observer Advance
 	virtual
 	void
-	advance_observer( Time const t )
+	advance_observer( Time const )
 	{
 		assert( false );
 	}

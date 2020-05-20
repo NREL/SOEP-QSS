@@ -43,6 +43,7 @@
 // C++ Headers
 #include <algorithm>
 #include <cassert>
+#include <limits>
 
 namespace QSS {
 namespace fmu {

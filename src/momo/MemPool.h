@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include "momo/MemManager.h"
-#include "momo/Array.h"
+#include "MemManager.h"
+#include "Array.h"
 
 namespace momo
 {
@@ -170,7 +170,12 @@ private:
 	MOMO_STATIC_ASSERT((maxAlignment & (maxAlignment - 1)) == 0);
 
 public:
-	explicit MemPool(MemManager&& memManager = MemManager())
+	explicit MemPool()	// vs clang
+		: MemPool(MemManager())
+	{
+	}
+
+	explicit MemPool(MemManager&& memManager)
 		: MemPool(Params(), std::move(memManager))
 	{
 	}
@@ -252,7 +257,7 @@ public:
 	}
 
 	template<typename ResObject = void>
-	ResObject* Allocate()
+	MOMO_NODISCARD ResObject* Allocate()
 	{
 		void* pblock;
 		if (Params::cachedFreeBlockCount > 0 && mCachedFreeBlocks.GetCount() > 0)
@@ -363,14 +368,14 @@ private:
 
 	size_t pvGetBufferSize0() const noexcept
 	{
-		return std::minmax((size_t)Params::blockSize, (size_t)Params::blockAlignment).second;	// gcc & llvm
+		return std::minmax(size_t{Params::blockSize}, size_t{Params::blockAlignment}).second;
 	}
 
 	uintptr_t pvNewBlock1()
 	{
-		uintptr_t begin = internal::BitCaster::ToUInt(MemManagerProxy::Allocate(GetMemManager(),
-			pvGetBufferSize1()));
-		uintptr_t block = PMath::Ceil(begin, (uintptr_t)Params::blockAlignment);
+		uintptr_t begin = internal::BitCaster::ToUInt(
+			MemManagerProxy::Allocate(GetMemManager(), pvGetBufferSize1()));
+		uintptr_t block = PMath::Ceil(begin, uintptr_t{Params::blockAlignment});
 		pvGetBufferBegin1(block) = begin;
 		return block;
 	}
@@ -391,8 +396,8 @@ private:
 
 	uintptr_t& pvGetBufferBegin1(uintptr_t block) noexcept
 	{
-		return *internal::BitCaster::ToPtr<uintptr_t>(PMath::Ceil(block + Params::blockSize,
-			(uintptr_t)sizeof(void*)));
+		return *internal::BitCaster::ToPtr<uintptr_t>(
+			PMath::Ceil(block + uintptr_t{Params::blockSize}, uintptr_t{sizeof(void*)}));
 	}
 
 	uintptr_t pvNewBlock()
@@ -429,7 +434,7 @@ private:
 		block = pvGetNextFreeBlockIndex(buffer, bytes.firstFreeBlockIndex);
 		bytes.firstFreeBlockIndex = pvGetNextFreeBlockIndex(block);
 		--bytes.freeBlockCount;
-		return (size_t)bytes.freeBlockCount;
+		return static_cast<size_t>(bytes.freeBlockCount);
 	}
 
 	size_t pvDeleteBlock(uintptr_t block, uintptr_t& buffer) noexcept
@@ -439,7 +444,7 @@ private:
 		pvGetNextFreeBlockIndex(block) = bytes.firstFreeBlockIndex;
 		bytes.firstFreeBlockIndex = blockIndex;
 		++bytes.freeBlockCount;
-		return (size_t)bytes.freeBlockCount;
+		return static_cast<size_t>(bytes.freeBlockCount);
 	}
 
 	int8_t& pvGetNextFreeBlockIndex(uintptr_t block) noexcept
@@ -449,42 +454,45 @@ private:
 
 	uintptr_t pvGetNextFreeBlockIndex(uintptr_t buffer, int8_t index) const noexcept
 	{
-		return buffer + (intptr_t)index * (intptr_t)Params::blockSize
-			+ ((intptr_t)Params::blockAlignment & -(intptr_t)(index >= 0));
+		return static_cast<uintptr_t>(static_cast<intptr_t>(buffer)
+			+ intptr_t{index} * static_cast<intptr_t>(Params::blockSize)
+			+ (static_cast<intptr_t>(Params::blockAlignment) & -intptr_t{index >= 0}));
 	}
 
 	int8_t pvGetBlockIndex(uintptr_t block, uintptr_t& buffer) const noexcept
 	{
-		MOMO_ASSERT(block % Params::blockAlignment == 0);
-		size_t index = (block / Params::blockSize) % Params::blockCount;
-		if (((block % Params::blockSize) / Params::blockAlignment) % 2 == 1)
+		const uintptr_t uipBlockAlignment = uintptr_t{Params::blockAlignment};
+		MOMO_ASSERT(block % uipBlockAlignment == 0);
+		uintptr_t index = (block / uintptr_t{Params::blockSize}) % uintptr_t{Params::blockCount};
+		if (((block % uintptr_t{Params::blockSize}) / uipBlockAlignment) % 2 == 1)
 		{
-			buffer = block - index * Params::blockSize - Params::blockAlignment;
-			return (int8_t)index;
+			buffer = block - index * uintptr_t{Params::blockSize} - uipBlockAlignment;
+			return static_cast<int8_t>(index);
 		}
 		else
 		{
-			buffer = block + (Params::blockCount - index) * Params::blockSize;
-			return (int8_t)index - (int8_t)Params::blockCount;
+			buffer = block + (uintptr_t{Params::blockCount} - index) * uintptr_t{Params::blockSize};
+			return static_cast<int8_t>(index) - static_cast<int8_t>(Params::blockCount);
 		}
 	}
 
 	uintptr_t pvNewBuffer()
 	{
-		uintptr_t begin = internal::BitCaster::ToUInt(MemManagerProxy::Allocate(GetMemManager(),
-			pvGetBufferSize()));
-		uintptr_t block = PMath::Ceil(begin, (uintptr_t)Params::blockAlignment);
-		block += (block % Params::blockSize) % (2 * Params::blockAlignment);
-		if ((block + Params::blockAlignment) % Params::blockSize == 0)
-			block += Params::blockAlignment;
-		if (((block / Params::blockSize) % Params::blockCount) == 0)
-			block += Params::blockAlignment;
+		const uintptr_t uipBlockAlignment = uintptr_t{Params::blockAlignment};
+		uintptr_t begin = internal::BitCaster::ToUInt(
+			MemManagerProxy::Allocate(GetMemManager(), pvGetBufferSize()));
+		uintptr_t block = PMath::Ceil(begin, uipBlockAlignment);
+		block += (block % uintptr_t{Params::blockSize}) % (2 * uipBlockAlignment);
+		if ((block + uipBlockAlignment) % uintptr_t{Params::blockSize} == 0)
+			block += uipBlockAlignment;
+		if ((block / uintptr_t{Params::blockSize}) % uintptr_t{Params::blockCount} == 0)
+			block += uipBlockAlignment;
 		uintptr_t buffer;
 		int8_t blockIndex = pvGetBlockIndex(block, buffer);
 		pvGetFirstBlockIndex(buffer) = blockIndex;
 		BufferBytes& bytes = pvGetBufferBytes(buffer);
 		bytes.firstFreeBlockIndex = blockIndex;
-		bytes.freeBlockCount = (int8_t)Params::blockCount;
+		bytes.freeBlockCount = static_cast<int8_t>(Params::blockCount);
 		BufferPointers& pointers = pvGetBufferPointers(buffer);
 		pointers.prevBuffer = nullPtr;
 		pointers.nextBuffer = nullPtr;
@@ -495,7 +503,7 @@ private:
 			pvGetNextFreeBlockIndex(block) = blockIndex;
 			block = pvGetNextFreeBlockIndex(buffer, blockIndex);
 		}
-		pvGetNextFreeBlockIndex(block) = (int8_t)(-128);
+		pvGetNextFreeBlockIndex(block) = int8_t{-128};
 		return buffer;
 	}
 
@@ -520,7 +528,7 @@ private:
 		size_t bufferUsefulSize = Params::blockCount * Params::blockSize
 			+ (3 + (Params::blockSize / Params::blockAlignment) % 2) * Params::blockAlignment;
 		if ((Params::blockAlignment & (Params::blockAlignment - 1)) == 0)
-			bufferUsefulSize -= std::minmax((size_t)maxAlignment, (size_t)Params::blockAlignment).first;	// gcc & llvm
+			bufferUsefulSize -= std::minmax(size_t{maxAlignment}, size_t{Params::blockAlignment}).first;
 		else
 			bufferUsefulSize -= SMath::GCD(maxAlignment, Params::blockAlignment);
 		return SMath::Ceil(bufferUsefulSize, sizeof(void*)) + 3 * sizeof(void*)
@@ -547,9 +555,11 @@ private:
 
 	BufferPointers& pvGetBufferPointers(uintptr_t buffer) noexcept
 	{
-		size_t offset = Params::blockCount - (size_t)(-pvGetFirstBlockIndex(buffer));
-		return *internal::BitCaster::ToPtr<BufferPointers>(PMath::Ceil(buffer +
-			Params::blockAlignment + Params::blockSize * offset, (uintptr_t)sizeof(void*)));
+		size_t offset = Params::blockCount;
+		offset -= static_cast<size_t>(-pvGetFirstBlockIndex(buffer));	// gcc warning
+		return *internal::BitCaster::ToPtr<BufferPointers>(
+			PMath::Ceil(buffer + uintptr_t{Params::blockAlignment + Params::blockSize * offset},
+			uintptr_t{sizeof(void*)}));
 	}
 
 private:
@@ -592,7 +602,7 @@ namespace internal
 			mBlockSize(internal::UIntMath<>::Ceil(blockSize, sizeof(uint32_t))),
 			mAllocCount(0)
 		{
-			MOMO_ASSERT(maxTotalBlockCount < (size_t)UINT32_MAX);
+			MOMO_ASSERT(maxTotalBlockCount < size_t{UINT32_MAX});
 			if (mBlockSize > SIZE_MAX / blockCount)
 				throw std::length_error("momo::internal::MemPoolUInt32 length error");
 		}
@@ -622,7 +632,7 @@ namespace internal
 		{
 			MOMO_ASSERT(ptr != nullPtr);
 			char* buffer = mBuffers[ptr / blockCount];
-			void* realPtr = buffer + (size_t)(ptr % blockCount) * mBlockSize;
+			void* realPtr = buffer + (size_t{ptr} % blockCount) * mBlockSize;
 			return static_cast<ResObject*>(realPtr);
 		}
 
@@ -665,9 +675,9 @@ namespace internal
 			{
 				void* realPtr = buffer + mBlockSize * i;
 				pvGetNextBlock(realPtr) = (i + 1 < blockCount)
-					? (uint32_t)(bufferCount * blockCount + i + 1) : nullPtr;
+					? static_cast<uint32_t>(bufferCount * blockCount + i + 1) : nullPtr;
 			}
-			mBlockHead = (uint32_t)(bufferCount * blockCount);
+			mBlockHead = static_cast<uint32_t>(bufferCount * blockCount);
 			mBuffers.AddBackNogrow(buffer);
 		}
 

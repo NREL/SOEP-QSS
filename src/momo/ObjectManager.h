@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "momo/MemManager.h"
+#include "MemManager.h"
 
 namespace momo
 {
@@ -85,7 +85,7 @@ private:
 	static void pvRelocate(MemManager* /*memManager*/, Object& srcObject, Object* dstObject,
 		std::true_type /*isTriviallyRelocatable*/) noexcept
 	{
-		memcpy(dstObject, std::addressof(srcObject), sizeof(Object));
+		std::memcpy(dstObject, std::addressof(srcObject), sizeof(Object));
 	}
 
 	static void pvRelocate(MemManager* memManager, Object& srcObject, Object* dstObject,
@@ -198,9 +198,7 @@ namespace internal
 
 			Creator(const Creator&) = delete;
 
-			~Creator() noexcept
-			{
-			}
+			~Creator() = default;
 
 			Creator& operator=(const Creator&) = delete;
 

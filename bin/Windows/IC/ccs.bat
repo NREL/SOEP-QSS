@@ -10,6 +10,6 @@ if exist %1.ii  set CxxSource=%1.ii
 if not (%CxxSource%)==() shift
 
 :Compile
-icl /nologo /Qstd=c++11 /Qcxx-features /Wall /Zs /c %1 %2 %3 %4 %5 %6 %7 %8 %9 %CxxSource%
+icl /nologo /Qstd=c++17 /Qcxx-features /Wall /DNOMINMAX /Zs /c %1 %2 %3 %4 %5 %6 %7 %8 %9 %CxxSource%
 
 set CxxSource=

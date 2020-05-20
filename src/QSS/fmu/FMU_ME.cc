@@ -438,6 +438,8 @@ namespace fmu {
 							// Skip derivatives
 						} else if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) {
 							// Skip temporaries
+						} else if ( var_name == "time" ) {
+							// Skip time
 						} else if ( options::output::F || ( options::output::f && ( var_causality == fmi2_causality_enu_output ) ) ) { // Add to FMU outputs
 							if ( output_filter( var_name ) ) fmu_outs[ var_real ] = FMU_Variable( var, var_real, var_ref, i+1 );
 						}
@@ -1580,7 +1582,11 @@ namespace fmu {
 
 		// Variable output filtering
 		for ( auto var : vars ) {
-			if ( ! output_filter( var->name() ) ) var->out_off();
+			if ( ! output_filter( var->name() ) ) {
+				var->out_off();
+			} else if ( var->name() == "time" ) { // Suppress time state variable output
+				var->out_off();
+			}
 		}
 
 		// Variable subtype containers and specs
@@ -1858,6 +1864,8 @@ namespace fmu {
 #endif
 
 		// Simulation loop
+		Variables triggers; // Reusable triggers container
+		Variables handlers; // Reusable handlers container
 		Variable_ZCs var_ZCs; // Last zero-crossing trigger variables
 		Observers_S observers_s; // Simultaneous observers
 		bool connected_output_event( false );
@@ -2002,7 +2010,7 @@ namespace fmu {
 							}
 						}
 					} else { // Simultaneous triggers
-						Variables triggers( eventq->top_subs< Variable >() );
+						eventq->top_subs< Variable >( triggers );
 						observers_s.init( triggers );
 						sort_by_order( triggers );
 
@@ -2123,7 +2131,7 @@ namespace fmu {
 								}
 							}
 						} else { // Simultaneous handlers
-							Variables handlers( eventq->top_subs< Variable >() );
+							eventq->top_subs< Variable >( handlers );
 							observers_s.init( handlers );
 							sort_by_order( handlers );
 
@@ -2225,7 +2233,8 @@ namespace fmu {
 							Variable * handler( event.sub< Variable >() );
 							handler->no_advance_handler();
 						} else { // Simultaneous handlers
-							for ( Variable * handler : eventq->top_subs< Variable >() ) {
+							eventq->top_subs< Variable >( handlers );
+							for ( Variable * handler : handlers ) {
 								handler->no_advance_handler();
 							}
 						}
@@ -2262,7 +2271,7 @@ namespace fmu {
 						}
 					} else { // Simultaneous triggers
 						++n_QSS_simultaneous_events;
-						Variables triggers( eventq->top_subs< Variable >() );
+						eventq->top_subs< Variable >( triggers );
 						observers_s.init( triggers );
 						sort_by_order( triggers );
 

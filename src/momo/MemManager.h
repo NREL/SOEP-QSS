@@ -45,7 +45,7 @@
 
 #pragma once
 
-#include "momo/Utility.h"
+#include "Utility.h"
 
 namespace momo
 {
@@ -57,21 +57,15 @@ public:
 	{
 	}
 
-	MemManagerCpp(MemManagerCpp&& /*memManager*/) noexcept
-	{
-	}
+	MemManagerCpp(MemManagerCpp&&) = default;
 
-	MemManagerCpp(const MemManagerCpp& /*memManager*/) noexcept
-	{
-	}
+	MemManagerCpp(const MemManagerCpp&) = default;
 
-	~MemManagerCpp() noexcept
-	{
-	}
+	~MemManagerCpp() = default;
 
 	MemManagerCpp& operator=(const MemManagerCpp&) = delete;
 
-	void* Allocate(size_t size)
+	MOMO_NODISCARD void* Allocate(size_t size)
 	{
 		return operator new(size);
 	}
@@ -90,21 +84,15 @@ public:
 	{
 	}
 
-	MemManagerC(MemManagerC&& /*memManager*/) noexcept
-	{
-	}
+	MemManagerC(MemManagerC&&) = default;
 
-	MemManagerC(const MemManagerC& /*memManager*/) noexcept
-	{
-	}
+	MemManagerC(const MemManagerC&) = default;
 
-	~MemManagerC() noexcept
-	{
-	}
+	~MemManagerC() = default;
 
 	MemManagerC& operator=(const MemManagerC&) = delete;
 
-	void* Allocate(size_t size)
+	MOMO_NODISCARD void* Allocate(size_t size)
 	{
 		void* ptr = malloc(size);
 		if (ptr == nullptr)
@@ -117,7 +105,7 @@ public:
 		free(ptr);
 	}
 
-	void* Reallocate(void* ptr, size_t /*size*/, size_t newSize)
+	MOMO_NODISCARD void* Reallocate(void* ptr, size_t /*size*/, size_t newSize)
 	{
 		void* newPtr = realloc(ptr, newSize);
 		if (newPtr == nullptr)
@@ -134,21 +122,15 @@ public:
 	{
 	}
 
-	MemManagerWin(MemManagerWin&& /*memManager*/) noexcept
-	{
-	}
+	MemManagerWin(MemManagerWin&&) = default;
 
-	MemManagerWin(const MemManagerWin& /*memManager*/) noexcept
-	{
-	}
+	MemManagerWin(const MemManagerWin&) = default;
 
-	~MemManagerWin() noexcept
-	{
-	}
+	~MemManagerWin() = default;
 
 	MemManagerWin& operator=(const MemManagerWin&) = delete;
 
-	void* Allocate(size_t size)
+	MOMO_NODISCARD void* Allocate(size_t size)
 	{
 		void* ptr = HeapAlloc(GetProcessHeap(), 0, size);
 		if (ptr == nullptr)
@@ -161,7 +143,7 @@ public:
 		HeapFree(GetProcessHeap(), 0, ptr);
 	}
 
-	//void* Reallocate(void* ptr, size_t /*size*/, size_t newSize)
+	//MOMO_NODISCARD void* Reallocate(void* ptr, size_t /*size*/, size_t newSize)
 	//{
 	//	void* newPtr = HeapReAlloc(GetProcessHeap(), 0, ptr, newSize);
 	//	if (newPtr == nullptr)
@@ -209,13 +191,11 @@ public:
 	{
 	}
 
-	~MemManagerStd() noexcept
-	{
-	}
+	~MemManagerStd() = default;
 
 	MemManagerStd& operator=(const MemManagerStd&) = delete;
 
-	void* Allocate(size_t size)
+	MOMO_NODISCARD void* Allocate(size_t size)
 	{
 		return std::allocator_traits<ByteAllocator>::allocate(GetByteAllocator(), size);
 	}
@@ -270,9 +250,7 @@ public:
 	{
 	}
 
-	~MemManagerStd() noexcept
-	{
-	}
+	~MemManagerStd() = default;
 
 	MemManagerStd& operator=(const MemManagerStd&) = delete;
 
@@ -405,7 +383,8 @@ namespace internal
 		template<size_t shift = ptrUsefulBitCount>
 		static EnableIf<(shift < sizeof(void*) * 8)> pvCheckBits(void* ptr) noexcept
 		{
-			MOMO_ASSERT(BitCaster::ToUInt(ptr) >> shift == (uintptr_t)0);
+			(void)ptr;
+			MOMO_ASSERT(BitCaster::ToUInt(ptr) >> shift == uintptr_t{0});
 		}
 
 		template<size_t shift = ptrUsefulBitCount>
@@ -433,17 +412,11 @@ namespace internal
 		{
 		}
 
-		MemManagerDummy(MemManagerDummy&& /*memManager*/) noexcept
-		{
-		}
+		MemManagerDummy(MemManagerDummy&&) = default;
 
-		MemManagerDummy(const MemManagerDummy& /*memManager*/) noexcept
-		{
-		}
+		MemManagerDummy(const MemManagerDummy&) = default;
 
-		~MemManagerDummy() noexcept
-		{
-		}
+		~MemManagerDummy() = default;
 
 		MemManagerDummy& operator=(const MemManagerDummy&) = delete;
 
@@ -495,9 +468,7 @@ namespace internal
 		{
 		}
 
-		~MemManagerPtr() noexcept
-		{
-		}
+		~MemManagerPtr() = default;
 
 		MemManagerPtr& operator=(const MemManagerPtr&) = delete;
 
@@ -562,9 +533,7 @@ namespace internal
 		{
 		}
 
-		~MemManagerPtr() noexcept
-		{
-		}
+		~MemManagerPtr() = default;
 
 		MemManagerPtr& operator=(const MemManagerPtr&) = delete;
 
