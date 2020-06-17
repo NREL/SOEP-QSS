@@ -57,7 +57,7 @@
 #include <QSS/cod/mdl/xy.hh>
 #include <QSS/cod/mdl/xyz.hh>
 #include <QSS/container.hh>
-#include <QSS/get_cpu_time.hh>
+#include <QSS/cpu_time.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
 #include <QSS/Output.hh>
@@ -300,7 +300,7 @@ simulate( std::string const & model )
 	double sim_dtMin( options::dtMin );
 	bool pass_warned( false );
 	Variables observers;
-	double const cpu_time_beg( get_cpu_time() ); // CPU time
+	double const cpu_time_beg( cpu_time() ); // CPU time
 #ifdef _OPENMP
 	double const wall_time_beg( omp_get_wtime() ); // Wall time
 #endif
@@ -509,7 +509,7 @@ simulate( std::string const & model )
 				if ( events.single() ) { // Single trigger
 					Variable * trigger( event.sub< Variable >() );
 					assert( trigger->tE == t );
-					assert( trigger->not_ZC() ); // ZC variable requantizations are QSS_ZC events
+					assert( trigger->is_QSS() ); // QSS triggers
 					trigger->st = s; // Set trigger superdense time
 
 					if ( doROut ) { // Requantization output: before requantization
@@ -604,6 +604,29 @@ simulate( std::string const & model )
 				if ( doROut ) { // Requantization output: after requantization
 					trigger->out( t );
 				}
+			} else if ( event.is_QSS_Inp() ) { // QSS Input requantization event(s)
+				++n_QSS_events;
+				Variable * trigger( event.sub< Variable >() );
+				assert( trigger->tE == t );
+				assert( trigger->is_Input() );
+				trigger->st = s; // Set trigger superdense time
+
+				if ( doROut ) { // Requantization output: before requantization
+					if ( options::output::a ) { // All variables output
+						for ( auto var : vars ) {
+							var->out( t );
+						}
+					} else { // Requantization output
+						trigger->out( t );
+						trigger->observers_out_pre( t );
+					}
+				}
+
+				trigger->advance_QSS();
+
+				if ( doROut ) { // Requantization output: after requantization
+					trigger->out( t );
+				}
 			} else { // Unsupported event
 				assert( false );
 			}
@@ -616,7 +639,7 @@ simulate( std::string const & model )
 			}
 		}
 	}
-	double const cpu_time_end( get_cpu_time() ); // CPU time
+	double const cpu_time_end( cpu_time() ); // CPU time
 #ifdef _OPENMP
 	double const wall_time_end( omp_get_wtime() ); // Wall time
 #endif

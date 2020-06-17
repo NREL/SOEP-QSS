@@ -78,10 +78,10 @@ namespace fmu {
 		}
 	}
 
-	// Advance Self-Observing Trigger: Initialization
+	// Advance Self-Observing Trigger: Simultaneous
 	void
 	Variable_LIQSS1::
-	advance_LIQSS_i()
+	advance_LIQSS_s()
 	{
 		assert( qTol > 0.0 );
 		assert( self_observer() );
@@ -100,45 +100,6 @@ namespace fmu {
 		Real const x_1_u( p_1() );
 		int const x_1_u_s( signum( x_1_u ) );
 		fmu_set_real( q_c_ );
-
-		// Set coefficients based on derivative signs
-		if ( ( x_1_l_s == -1 ) && ( x_1_u_s == -1 ) ) { // Downward trajectory
-			l_0_ = q_l;
-			x_1_ = x_1_l;
-		} else if ( ( x_1_l_s == +1 ) && ( x_1_u_s == +1 ) ) { // Upward trajectory
-			l_0_ = q_u;
-			x_1_ = x_1_u;
-		} else if ( ( x_1_l_s == 0 ) && ( x_1_u_s == 0 ) ) { // Flat trajectory
-			l_0_ = q_c_;
-			x_1_ = 0.0;
-		} else { // Flat trajectory
-			l_0_ = std::min( std::max( ( ( q_l * x_1_u ) - ( q_u * x_1_l ) ) / ( x_1_u - x_1_l ), q_l ), q_u ); // Value where deriv is ~ 0 // Clipped in case of roundoff
-			x_1_ = 0.0;
-		}
-	}
-
-	// Advance Self-Observing Trigger: Simultaneous
-	void
-	Variable_LIQSS1::
-	advance_LIQSS_s()
-	{
-		assert( qTol > 0.0 );
-		assert( self_observer() );
-		assert( q_c_ == q_0_ );
-		assert( x_0_ == q_0_ );
-
-		// Value at +/- qTol
-		Real const q_l( q_c_ - qTol );
-		Real const q_u( q_c_ + qTol );
-
-		// Derivative at +/- qTol
-		fmu_set_observees_q( tQ );
-		fmu_set_real( q_l );
-		Real const x_1_l( p_1() );
-		int const x_1_l_s( signum( x_1_l ) );
-		fmu_set_real( q_u );
-		Real const x_1_u( p_1() );
-		int const x_1_u_s( signum( x_1_u ) );
 
 		// Set coefficients based on derivative signs
 		if ( ( x_1_l_s == -1 ) && ( x_1_u_s == -1 ) ) { // Downward trajectory

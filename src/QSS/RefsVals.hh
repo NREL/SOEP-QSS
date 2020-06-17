@@ -1,4 +1,4 @@
-// CPU Time Function
+// FMU References + Values Arrays
 //
 // Project: QSS Solver
 //
@@ -33,34 +33,72 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#ifndef QSS_RefsVals_hh_INCLUDED
+#define QSS_RefsVals_hh_INCLUDED
+
 // C++ Headers
-#ifdef _WIN32
-#include <windows.h>
-#else // Posix
-#include <ctime>
-#endif
+#include <cassert>
 
 namespace QSS {
 
-double
-get_cpu_time()
+// FMU References + Values Arrays
+template< typename V >
+struct RefsVals final
 {
-#ifdef _WIN32 // std::clock on Windows VC is non-compliant because it returns wall time not CPU time
-	FILETIME a, b, c, d;
-	if ( GetProcessTimes( GetCurrentProcess(), &a, &b, &c, &d ) != 0 ) { // OK
-		return (double)( d.dwLowDateTime | ( (unsigned long long)d.dwHighDateTime << 32 ) ) * 0.0000001;
-	} else { // Error
-		return 0.0;
+
+public: // Types
+
+	using Variable = V;
+	using Variables = typename Variable::Variables;
+	using Ref = typename Variable::VariableRef;
+	using Refs = typename Variable::VariableRefs;
+	using Val = typename Variable::Real;
+	using Vals = typename Variable::Reals;
+	using size_type = typename Variables::size_type;
+
+public: // Property
+
+	// Size
+	size_type
+	size() const
+	{
+		assert( refs.size() == vals.size() );
+		return refs.size();
 	}
-#else // Posix
-	return double( std::clock() ) / CLOCKS_PER_SEC; // This may wrap on some implementations
 
-// Maybe more accurate
-//	struct std::timespec ts;
-//	std::clock_gettime( CLOCK_PROCESS_CPUTIME_ID, &ts );
-//	return ts.tv_sec + ( 1e-9 * ts.tv_nsec );
+public: // Methods
 
-#endif
-}
+	// Clear
+	void
+	clear()
+	{
+		refs.clear();
+		vals.clear();
+	}
+
+	// Reserve
+	void
+	reserve( size_type const n )
+	{
+		refs.reserve( n );
+		vals.reserve( n );
+	}
+
+	// Push Back
+	void
+	push_back( Ref const & ref, Val const & val = 0.0 )
+	{
+		refs.push_back( ref );
+		vals.push_back( val );
+	}
+
+public: // Data
+
+	Refs refs; // FMU value reference array
+	Vals vals; // FMU value array
+
+}; // RefsVals
 
 } // QSS
+
+#endif

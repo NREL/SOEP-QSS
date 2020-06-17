@@ -38,6 +38,7 @@
 
 // C++ Headers
 #include <cstdlib>
+#include <cstddef>
 #include <cstring>
 #include <limits>
 #include <string>
@@ -81,6 +82,10 @@ is_double( std::string const & s )
 	static_cast< void >( std::strtod( str, &end ) );
 	return ( ( end != str ) && is_tail( end ) );
 }
+
+// char is in a cstring?
+bool
+is_any_of( char const c, char const * const s );
 
 // Has a Character?
 bool

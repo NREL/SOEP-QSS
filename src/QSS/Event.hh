@@ -59,7 +59,8 @@ public: // Types
 	 Conditional,
 	 Handler,
 	 QSS,
-	 QSS_ZC
+	 QSS_ZC,
+	 QSS_Inp
 	};
 
 public: // Creation
@@ -117,6 +118,13 @@ public: // Predicate
 	is_QSS_ZC() const
 	{
 		return ( typ_ == Type::QSS_ZC );
+	}
+
+	// QSS Input Event?
+	bool
+	is_QSS_Inp() const
+	{
+		return ( typ_ == Type::QSS_Inp );
 	}
 
 public: // Property

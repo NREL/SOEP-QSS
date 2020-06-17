@@ -3,7 +3,7 @@ rem QSS Windows MinGW 64-Bit Release Setup
 
 set QSS_bin=%~dp0
 set QSS_bin=%QSS_bin:~0,-1%
-if (%QSS%) == () set QSS=%QSS_bin:~0,-21%
+if (%QSS%) == () set QSS=%QSS_bin:~0,-23%
 
 set PlatformFull=Windows\MinGW\64\r
 

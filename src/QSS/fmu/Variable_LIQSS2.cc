@@ -94,63 +94,6 @@ namespace fmu {
 		}
 	}
 
-	// Advance Self-Observing Trigger: Initialization
-	void
-	Variable_LIQSS2::
-	advance_LIQSS_i()
-	{
-		assert( qTol > 0.0 );
-		assert( self_observer() );
-		assert( q_c_ == q_0_ );
-		assert( x_0_ == q_0_ );
-
-		// Value at +/- qTol
-		Real const q_l( q_c_ - qTol );
-		Real const q_u( q_c_ + qTol );
-
-		// Derivative at +/- qTol
-		fmu_set_real( q_l );
-		Real const x_1_l( p_1() );
-		fmu_set_real( q_u );
-		Real const x_1_u( p_1() );
-
-		// Second derivative at +/- qTol
-		Time const tN( tQ + options::dtNum );
-		fmu_set_time( tN );
-		fmu_set_observees_q( tN );
-		fmu_set_real( q_l + ( x_1_l * options::dtNum ) );
-		Real const x_2_l( options::one_over_two_dtNum * ( p_1() - x_1_l ) ); //ND Forward Euler
-		int const x_2_l_s( signum( x_2_l ) );
-		fmu_set_real( q_u + ( x_1_u * options::dtNum ) );
-		Real const x_2_u( options::one_over_two_dtNum * ( p_1() - x_1_u ) ); //ND Forward Euler
-		int const x_2_u_s( signum( x_2_u ) );
-
-		// Reset FMU time
-		fmu_set_time( tQ );
-
-		// Reset FMU value
-		fmu_set_real( q_c_ );
-
-		// Set coefficients based on second derivative signs
-		if ( ( x_2_l_s == -1 ) && ( x_2_u_s == -1 ) ) { // Downward curving trajectory
-			l_0_ = q_l;
-			x_1_ = x_1_l;
-			x_2_ = x_2_l;
-		} else if ( ( x_2_l_s == +1 ) && ( x_2_u_s == +1 ) ) { // Upward curving trajectory
-			l_0_ = q_u;
-			x_1_ = x_1_u;
-			x_2_ = x_2_u;
-		} else if ( ( x_2_l_s == 0 ) && ( x_2_u_s == 0 ) ) { // Non-curving trajectory
-			l_0_ = q_c_;
-			x_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st deriv at l_0_ == q_c_
-			x_2_ = 0.0;
-		} else { // Straight trajectory
-			l_0_ = std::min( std::max( ( ( q_l * x_2_u ) - ( q_u * x_2_l ) ) / ( x_2_u - x_2_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
-			x_1_ = ( ( ( q_u - l_0_ ) * x_1_l ) + ( ( l_0_ - q_l ) * x_1_u ) ) / ( two * qTol ); // Interpolated 1st deriv at l_0_
-			x_2_ = 0.0;
-		}
-	}
-
 	// Advance Self-Observing Trigger: Simultaneous
 	void
 	Variable_LIQSS2::
@@ -166,7 +109,6 @@ namespace fmu {
 		Real const q_u( q_c_ + qTol );
 
 		// Derivative at +/- qTol
-		fmu_set_observees_q( tQ );
 		fmu_set_real( q_l );
 		Real const x_1_l( p_1() );
 		fmu_set_real( q_u );
@@ -185,6 +127,10 @@ namespace fmu {
 
 		// Reset FMU time
 		fmu_set_time( tQ );
+
+		// Reset FMU values
+		fmu_set_observees_q( tQ );
+		fmu_set_real( q_c_ );
 
 		// Set coefficients based on second derivative signs
 		if ( ( x_2_l_s == -1 ) && ( x_2_u_s == -1 ) ) { // Downward curving trajectory

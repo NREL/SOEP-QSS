@@ -177,7 +177,7 @@ public: // Methods
 	{
 		set_qTol();
 		if ( self_observer() ) {
-			advance_LIQSS_i();
+			advance_LIQSS_s();
 		} else {
 			x_2_ = h_2();
 		}
@@ -231,20 +231,20 @@ public: // Methods
 
 	// QSS Advance: Stage 1
 	void
-	advance_QSS_1()
+	advance_QSS_1( Real const d )
 	{
-		set_qTol();
-		x_1_ = q_1_ = c_1();
+		x_1_ = q_1_ = d;
 	}
 
 	// QSS Advance: Stage 2
 	void
-	advance_QSS_2()
+	advance_QSS_2( Real const d )
 	{
+		set_qTol();
 		if ( self_observer() ) {
 			advance_LIQSS_s();
 		} else {
-			x_2_ = h_2();
+			x_2_ = p_2( d );
 		}
 	}
 
@@ -420,10 +420,6 @@ private: // Methods
 	// Advance Self-Observing Trigger
 	void
 	advance_LIQSS();
-
-	// Advance Self-Observing Trigger: Initialization
-	void
-	advance_LIQSS_i();
 
 	// Advance Self-Observing Trigger: Simultaneous
 	void

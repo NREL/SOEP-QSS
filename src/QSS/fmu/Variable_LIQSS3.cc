@@ -112,81 +112,6 @@ namespace fmu {
 		}
 	}
 
-	// Advance Self-Observing Trigger: Initialization
-	void
-	Variable_LIQSS3::
-	advance_LIQSS_i()
-	{
-		assert( qTol > 0.0 );
-		assert( self_observer() );
-		assert( q_c_ == q_0_ );
-		assert( x_0_ == q_0_ );
-
-		// Value at +/- qTol
-		Real const q_l( q_c_ - qTol );
-		Real const q_u( q_c_ + qTol );
-
-		// Derivative at +/- qTol
-		fmu_set_real( q_l );
-		Real const x_1_l( p_1() );
-		fmu_set_real( q_u );
-		Real const x_1_u( p_1() );
-
-		// Second derivative at +/- qTol
-		Time const dN( options::dtNum );
-		Time tN( tQ + dN );
-		fmu_set_time( tN );
-		fmu_set_observees_q( tN );
-		fmu_set_real( q_l + ( ( x_1_l + ( x_2_ * dN ) ) * dN ) );
-		Real const x_1p_l( p_1() );
-		Real const x_2_l( options::one_over_two_dtNum * ( x_1p_l - x_1_l ) ); //ND Forward Euler
-		fmu_set_real( q_u + ( ( x_1_u + ( x_2_ * dN ) ) * dN ) );
-		Real const x_1p_u( p_1() );
-		Real const x_2_u( options::one_over_two_dtNum * ( x_1p_u - x_1_u ) ); //ND Forward Euler
-
-		// Third derivative at +/- qTol
-		tN = tQ - dN;
-		fmu_set_time( tN );
-		fmu_set_observees_q( tN );
-		fmu_set_real( q_l - ( ( x_1_l - ( x_2_l * dN ) ) * dN ) );
-		Real const x_1m_l( p_1() );
-		Real const x_3_l( options::one_over_six_dtNum_squared * ( x_1p_l - ( two * x_1_l ) + x_1m_l ) ); //ND Centered difference
-		int const x_3_l_s( signum( x_3_l ) );
-		fmu_set_real( q_u - ( ( x_1_u - ( x_2_u * dN ) ) * dN ) );
-		Real const x_1m_u( p_1() );
-		Real const x_3_u( options::one_over_six_dtNum_squared * (  x_1p_u - ( two * x_1_u ) + x_1m_u ) ); //ND Centered difference
-		int const x_3_u_s( signum( x_3_u ) );
-
-		// Reset FMU time
-		fmu_set_time( tQ );
-
-		// Reset FMU value
-		fmu_set_real( q_c_ );
-
-		// Set coefficients based on second derivative signs
-		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward curve-changing trajectory
-			l_0_ = q_l;
-			x_1_ = x_1_l;
-			x_2_ = x_2_l;
-			x_3_ = x_3_l;
-		} else if ( ( x_3_l_s == +1 ) && ( x_3_u_s == +1 ) ) { // Upward curve-changing trajectory
-			l_0_ = q_u;
-			x_1_ = x_1_u;
-			x_2_ = x_2_u;
-			x_3_ = x_3_u;
-		} else if ( ( x_3_l_s == 0 ) && ( x_3_u_s == 0 ) ) { // Non-curve-changing trajectory
-			l_0_ = q_c_;
-			x_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st order coefficient at q_0_ == q_c_
-			x_2_ = one_half * ( x_2_l + x_2_u ); // Interpolated 2nd order coefficient at q_0_ == q_c_
-			x_3_ = 0.0;
-		} else { // Quadratic trajectory
-			l_0_ = std::min( std::max( ( ( q_l * x_3_u ) - ( q_u * x_3_l ) ) / ( x_3_u - x_3_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
-			x_1_ = ( ( ( q_u - l_0_ ) * x_1_l ) + ( ( l_0_ - q_l ) * x_1_u ) ) / ( two * qTol ); // Interpolated 1st order coefficient at q_0_
-			x_2_ = ( ( ( q_u - l_0_ ) * x_2_l ) + ( ( l_0_ - q_l ) * x_2_u ) ) / ( two * qTol ); // Interpolated 2nd order coefficient at q_0_
-			x_3_ = 0.0;
-		}
-	}
-
 	// Advance Self-Observing Trigger: Simultaneous
 	void
 	Variable_LIQSS3::
@@ -202,7 +127,6 @@ namespace fmu {
 		Real const q_u( q_c_ + qTol );
 
 		// Derivative at +/- qTol
-		fmu_set_observees_q( tQ );
 		fmu_set_real( q_l );
 		Real const x_1_l( p_1() );
 		fmu_set_real( q_u );
@@ -235,6 +159,10 @@ namespace fmu {
 
 		// Reset FMU time
 		fmu_set_time( tQ );
+
+		// Reset FMU values
+		fmu_set_observees_q( tQ );
+		fmu_set_real( q_c_ );
 
 		// Set coefficients based on second derivative signs
 		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward curve-changing trajectory

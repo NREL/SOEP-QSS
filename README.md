@@ -21,6 +21,7 @@ Currently the code has:
 * FMU for Model Exchange simulation support.
 * FMU-QSS generation and simulation support.
 * Connected FMU-ME and FMU-QSS simulation support.
+* Binned-QSS support.
 
 ### Notes
 * Modelica input file processing is not provided: test cases are code-defined or loaded from Modelica-generated FMUs.
@@ -190,6 +191,22 @@ The loosely coupled approach allows the input variable updates to lag changes to
 
 The perfect sync approach builds a direct connection from the output variable to its inputs in other FMUs. When the output variable has a requantization, discrete, or handler event, changing its quantized state, its connection variables update their state and do observer advances on their own observers. The connection variable is a proxy rather than holding its own trajectory and getting smooth token packet updates. The master simulation loop runs the FMU with the soonest next event time and each FMU simulation runs until it completes an event pass that changes an output variable. This approach assures that all the models are using the same representation for the connected variables so no accuracy loss should occur. It also allows inputs to generate entries to their output files at output variable event times. Perfect sync is enabled by using the `--perfect` option with connected FMU-ME models.
 
+### Binned-QSS
+
+Hybrid/DAE Modelica models do not obtain the performance benefit of a pure QSS solver applied to an ODE since event processing for each requantizing variable can trigger an expensive algebraic solution. We developed a Binned-QSS variant to address this situation.
+Binned-QSS requantizes a "bin" of variables with events near the top of the queue together, amortizing the overhead of the algebraic solution over more solution progress at the cost of requantizing some variables sooner than necessary.
+Efficient observer/observee container setup and pooled FMU calls are used to optimize the Binned-QSS performance.
+The Binned-QSS approach is consistent with recent research findings that show advancing the fast-changing variables separately (using otherwise traditional ODE solvers) can bring large performance gains to building models.
+The Binned-QSS goes beyond this research by exploiting QSS to dynamically identify the currently fast-changing variables, and has the potential for automatic, adaptive binning size/logic.
+
+#### Notes
+
+* Early performance experiments with Binned-QSS are promising, showing higher performance than pure QSS even for many ODE models.
+* LIQSS is not fully optimized in this first Binned-QSS implementation: this will be more practical when automatic differentiation becomes available.
+* The `--bin=`_SIZE_`:`_FRAC_`:`_AUTO_ option can be used to specify the bin size and min time step fraction for binning and whether to use automatic bin size optimization.
+* A simple automatic bin size optimizer was developed for use until more large-scale models can be run to refine the design.
+* The bin size optimizer considers CPU timing both to determine how often to compute a new recommended bin size and to compute the bin size. Since CPU timing varies with system load, the bin size optimizer causes some solution variation between runs. A fixed simulation time step specified by the user could be added to allow bin optimization without solution non-determinism but a good time step for this would need to be long enough for a CPU elapsed time that is long enough relative to the CPU clock resolution for robust solution "velocity" computation, which will depend on the system.
+
 ## FMU Support
 
 Models defined by FMUs following the FMI 2.0 API can be run by this QSS solver using QSS1 or QSS2 solvers. Discrete variables and zero crossing functions are supported. This is currently an initial/demonstration capability that cannot yet handle unit conversions (pure SI models are OK), or algebraic relationships. Some simple test model FMUs and a 50-variable room air thermal model have been simulated successfully.
@@ -207,9 +224,12 @@ Models defined by FMUs following the FMI 2.0 API can be run by this QSS solver u
 
 ### Next-Gen FMU Support
 
-In preparation for anticipated FMI API extensions to JModelica's FMI Library a NextGen branch of this repository has been developed. NextGen assumes that the FMU can provide higher derivatives directly for a variable when its observee variables are set to their values at the evaluation time. This significantly simplifies the QSS code and makes it more practical to implement 3rd order QSS methods. It will also eliminate the cyclic dependency flaw with QSS3+ and xQSS2+ methods.
+In preparation for anticipated FMI API extensions to JModelica's FMI Library a NextGen branch of this repository has been developed.
+NextGen assumes that the FMU can provide higher derivatives directly for a variable when its observee variables are set to their values at the evaluation time.
+This significantly simplifies the QSS code and makes it more practical to implement 3rd order QSS methods.
+It will also eliminate the cyclic dependency flaw with QSS3+ and xQSS2+ methods.
 The purpose of the NextGen branch is to show approximately how the code will look when this advanced support becomes available and to simplify migration at that time.
-Using placeholder calls to current the FMI API enables this NextGen branch code to compile but it will not run correctly.
+Using placeholder calls to current the FMI API enables this NextGen branch code to compile and run.
 
 ## FMU-QSS
 
@@ -253,7 +273,9 @@ Bulletproofing present in the implementation:
 * When zero crossing events cluster up closer and closer (such as a bouncing ball) eventually time may not progress and an infinite loop can occur. The bball model shows how a handler should be designed to detect and address this. For Modelica-based models such a set of rules may not be possible in which case the chattering prevention will be needed.
 
 FMU zero crossing support has some additional complications and limitations:
-* Zero-crossing functions are implicitly defined by if and when blocks in the Modelica file and are not directly exposed via the FMI API. The OCT addresses this by generating event indicator variables that are documented as XML file annotations with the "reverse" (handler) dependencies. (Before this OCT capability was added we created a convention of defining output variables and their derivatives for each zero-crossing function with names of the form \_\_zc\__name_ and \_\_zc\_der\__name_ and added the reverse dependencies to the XML file `DiscreteStates` block for discrete variables and `InitialUnknowns` for continuous state variables.)
+* Zero-crossing functions are implicitly defined by if and when blocks in the Modelica file and are not directly exposed via the FMI API.
+The OCT addresses this by generating event indicator variables that are documented as XML file annotations with the "reverse" (handler) dependencies.
+(Before this OCT capability was added we created a convention of defining output variables and their derivatives for each zero-crossing function with names of the form \_\_zc\__name_ and \_\_zc\_der\__name_ and added the reverse dependencies to the XML file `DiscreteStates` block for discrete variables and `InitialUnknowns` for continuous state variables.)
 * The FMI API doesn't expose crossing directions of interest so we enable all of them. If this will never be available we should eliminate crossing check logic to avoid wasted effort.
 * There is no FMI API to directly trigger the zero-crossing handlers to run when the QSS solver reaches zero-crossing events. Instead we set the relevant FMU variables to a time slightly beyond the zero-crossing time with the hope that the zero crossing will be detected by the FMU. The `--zTol` and `--dtZC` options allows control over this time "bump". JModelica and OCT FMUs may have a parameter called `_events_default_tol` that will be used as the default `zTol` value to match the QSS time bump to the FMU behavior. The `dtZC` value is only a fallback when no `zTol` is present or when the trajectory doesn't allow a time bump step to be computed. Using the uniform `dtZC` bump step is not robust as it doesn't adjust for solution behavior. This is also not highly robust because the output variables used to track the zero crossing derivatives are (at least for Dymola-generated FMUs) numerically, not analytically, based so the QSS zero-crossing function does not track the actual FMU zero-crossing function to high precision.
 * Zero-crossing root refinement is expensive due to the overhead of FMU operations so it is disabled by default (the `--refine` option enables it). Once atomic FMU variable get/set operations are provided the overhead will be lower.

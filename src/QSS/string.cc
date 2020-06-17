@@ -52,6 +52,16 @@ is_tail( char * end )
 	return ( *end == '\0' );
 }
 
+// char is in a cstring?
+bool
+is_any_of( char const c, char const * const s )
+{
+	for ( std::size_t i = 0, e = std::strlen( s ); i < e; ++i ) {
+		if ( c == s[ i ] ) return true;
+	}
+	return false;
+}
+
 // Has a Character?
 bool
 has( std::string const & s, char const c )

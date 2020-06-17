@@ -42,14 +42,16 @@
 #include <QSS/fmu/Function_Inp_sin.hh>
 #include <QSS/fmu/Function_Inp_step.hh>
 #include <QSS/fmu/Function_Inp_toggle.hh>
-#include <QSS/fmu/Observers_Simultaneous.hh>
+#include <QSS/fmu/Triggers.hh>
 #include <QSS/fmu/Variable_all.hh>
+#include <QSS/BinOptimizer.hh>
 #include <QSS/container.hh>
-#include <QSS/get_cpu_time.hh>
+#include <QSS/cpu_time.hh>
 #include <QSS/options.hh>
 #include <QSS/OutputFilter.hh>
 #include <QSS/path.hh>
 #include <QSS/string.hh>
+#include <QSS/Timers.hh>
 
 // OpenMP Headers
 #ifdef _OPENMP
@@ -66,6 +68,7 @@
 #include <iterator>
 #include <limits>
 #include <unordered_set>
+#include <utility>
 
 namespace QSS {
 namespace fmu {
@@ -375,6 +378,7 @@ namespace fmu {
 		std::cout << "Relative Tolerance: " << options::rTol << std::endl;
 		std::cout << "Absolute Tolerance: " << options::aTol << " for " << ( options::specified::aTolAll ? "all" : "no-nominal" ) << " variables" << std::endl;
 
+		// FMU event info initialization
 		eventInfo.newDiscreteStatesNeeded = fmi2_false;
 		eventInfo.terminateSimulation = fmi2_false;
 		eventInfo.nominalsOfContinuousStatesChanged = fmi2_false;
@@ -382,6 +386,7 @@ namespace fmu {
 		eventInfo.nextEventTimeDefined = fmi2_false;
 		eventInfo.nextEventTime = -0.0;
 
+		// FMU pre-simulation calls
 		fmi2_import_enter_continuous_time_mode( fmu );
 		fmi2_import_enter_event_mode( fmu );
 		do_event_iteration();
@@ -487,7 +492,7 @@ namespace fmu {
 									std::exit( EXIT_FAILURE );
 								}
 							} else if ( fxn_name == "sin" ) {
-								std::vector< std::string > args( split( fxn_args, ',' ) );
+								std::vector< std::string > const args( split( fxn_args, ',' ) );
 								if ( args.size() != 3u ) {
 									std::cerr << " Error: Input function spec sin[a,b,c] doesn't have 3 arguments: " << fxn_spec << std::endl;
 									std::exit( EXIT_FAILURE );
@@ -513,7 +518,7 @@ namespace fmu {
 								}
 								inp_fxn = Function_Inp_sin( a, b, c ); // a * sin( b * t ) + c
 							} else if ( fxn_name == "step" ) {
-								std::vector< std::string > args( split( fxn_args, ',' ) );
+								std::vector< std::string > const args( split( fxn_args, ',' ) );
 								if ( args.size() != 3u ) {
 									std::cerr << " Error: Input function spec step[h0,h,d] doesn't have 3 arguments: " << fxn_spec << std::endl;
 									std::exit( EXIT_FAILURE );
@@ -539,7 +544,7 @@ namespace fmu {
 								}
 								inp_fxn = Function_Inp_step( h0, h, d ); // h0 + h * floor( t / d )
 							} else if ( fxn_name == "toggle" ) {
-								std::vector< std::string > args( split( fxn_args, ',' ) );
+								std::vector< std::string > const args( split( fxn_args, ',' ) );
 								if ( args.size() != 3u ) {
 									std::cerr << " Error: Input function spec toggle[h0,h,d] doesn't have 3 arguments: " << fxn_spec << std::endl;
 									std::exit( EXIT_FAILURE );
@@ -1845,7 +1850,6 @@ namespace fmu {
 		using Variable_ZCs = std::vector< Variable_ZC * >;
 		using size_type = Variables::size_type;
 		using Time = Variable::Time;
-		using Observers_S = Observers_Simultaneous< Variable >;
 
 		// I/o setup
 		std::cout << std::setprecision( 15 );
@@ -1858,16 +1862,26 @@ namespace fmu {
 		Time const tPass( eventq->top_time() ); // Pass start time
 		Time tNext( eventInfoMaster->nextEventTimeDefined ? std::min( eventInfoMaster->nextEventTime, tE ) : tE );
 		int tPer( 0 ); // Percent of simulation time completed
-		double const cpu_time_beg( get_cpu_time() ); // CPU time
+		double const cpu_time_beg( cpu_time() ); // CPU time
 #ifdef _OPENMP
 		double const wall_time_beg( omp_get_wtime() ); // Wall time
 #endif
+
+		// Binning setup
+		size_type bin_size( options::bin_size ); // Initial bin size: Bin optimizer will adjust it during the run in auto mode
+		Real const bin_frac( options::bin_frac ); // Min time step fraction for a binned variable
+		Time bin_performance_dt( 0.0 ); // Min solution time span for checking performance: adjusted on the fly
+		timers::Performance bin_performance( tPass ); // Solution performance "stopwatch"
+		BinOptimizer bin_optimizer( state_vars.size() ); // Bin size optimizer
+		bool const bin_auto( options::specified::bin && options::bin_auto );
+		if ( bin_auto ) bin_performance.start( t ); // Initialize solution performance metric
 
 		// Simulation loop
 		Variables triggers; // Reusable triggers container
 		Variables handlers; // Reusable handlers container
 		Variable_ZCs var_ZCs; // Last zero-crossing trigger variables
-		Observers_S observers_s; // Simultaneous observers
+		Triggers< Variable > triggers_s( this ); // Binned/simultaneous triggers
+		Observers< Variable > observers_s( this ); // Binned/simultaneous observers
 		bool connected_output_event( false );
 		while ( t <= tNext ) {
 			t = eventq->top_time();
@@ -1928,8 +1942,7 @@ namespace fmu {
 			}
 			if ( t <= tNext ) { // Perform event(s)
 
-				// Check if next event(s) will modify a connected output
-				if ( connected ) {
+				if ( connected ) { // Check if next event(s) will modify a connected output
 					if ( options::perfect ) { // Flag whether next event(s) will modify a connected output
 						connected_output_event = false;
 						auto const tops( eventq->tops() );
@@ -1950,7 +1963,7 @@ namespace fmu {
 								break;
 							}
 						}
-						if ( connected_output_next ) break;
+						if ( connected_output_next ) break; // Exit t loop
 					}
 				}
 
@@ -2011,7 +2024,7 @@ namespace fmu {
 						}
 					} else { // Simultaneous triggers
 						eventq->top_subs< Variable >( triggers );
-						observers_s.init( triggers );
+						observers_s.assign( triggers );
 						sort_by_order( triggers );
 
 						if ( doTOut ) { // Time event output: pre
@@ -2132,7 +2145,7 @@ namespace fmu {
 							}
 						} else { // Simultaneous handlers
 							eventq->top_subs< Variable >( handlers );
-							observers_s.init( handlers );
+							observers_s.assign( handlers );
 							sort_by_order( handlers );
 
 							if ( doROut ) { // Requantization output: pre
@@ -2155,10 +2168,11 @@ namespace fmu {
 									handlers[ i ]->advance_handler_1();
 								}
 								if ( handlers_order_max >= 2 ) { // 2nd order pass
-									for ( size_type i = begin_order_index( handlers, 2 ), n = handlers.size(); i < n; ++i ) {
+									size_type const b2( begin_order_index( handlers, 2 ) );
+									for ( size_type i = b2, n = handlers.size(); i < n; ++i ) {
 										handlers[ i ]->advance_handler_2();
 									}
-									for ( size_type i = begin_order_index( handlers, 2 ), n = handlers.size(); i < n; ++i ) {
+									for ( size_type i = b2, n = handlers.size(); i < n; ++i ) {
 										handlers[ i ]->advance_handler_2_1();
 									}
 									if ( handlers_order_max >= 3 ) { // 3rd order pass
@@ -2245,10 +2259,53 @@ namespace fmu {
 
 				} else if ( event.is_QSS() ) { // QSS requantization event(s)
 					++n_QSS_events;
-					if ( eventq->single() ) { // Single trigger
-						Variable * trigger( event.sub< Variable >() );
+
+					// Trigger(s) setup: Single, simultaneous, or binned
+					Variable * trigger1( nullptr );
+					bool binned( false );
+					if ( bin_size > 1u ) {
+						eventq->bin_QSS< Variable >( bin_size, bin_frac, triggers );
+						if ( options::output::d ) {
+							std::cout << "\nBin @ " << t << " trigger(s):" << std::endl;
+							for ( Variable * trigger : triggers ) std::cout << "  " << trigger->name() << "  tQ-tE: " << trigger->tQ << '-' << trigger->tE << std::endl;
+						}
+						if ( triggers.size() == 1u ) {
+							trigger1 = triggers[ 0 ]; // Use single trigger processing
+						} else {
+							binned = true;
+							if ( connected ) { // Check if next event(s) will modify a connected output
+								if ( options::perfect ) { // Flag whether next event(s) will modify a connected output
+									if ( ! connected_output_event ) {
+										for ( Variable const * trigger : triggers ) {
+											if ( trigger->connected_output || trigger->connected_output_observer ) {
+												connected_output_event = true;
+												break;
+											}
+										}
+									}
+								} else if ( t > tPass ) { // Stop if beyond pass start time and next event(s) will modify a connected output
+									bool connected_output_next( false );
+									for ( Variable const * trigger : triggers ) {
+										if ( trigger->connected_output || trigger->connected_output_observer ) {
+											connected_output_next = true;
+											break;
+										}
+									}
+									if ( connected_output_next ) break; // Exit t loop
+								}
+							}
+						}
+					} else if ( eventq->single() ) { // Single trigger
+						trigger1 = event.sub< Variable >();
+					} else { // Simultaneous triggers
+						eventq->top_subs< Variable >( triggers );
+					}
+
+					// Requantize
+					if ( trigger1 != nullptr ) { // Single trigger
+						Variable * trigger( trigger1 );
 						assert( trigger->tE == t );
-						assert( trigger->not_ZC() ); // ZC variable requantizations are QSS_ZC events
+						assert( trigger->is_QSS() ); // QSS trigger
 						trigger->st = s; // Set trigger superdense time
 						++c_QSS_events[ trigger ];
 
@@ -2269,11 +2326,14 @@ namespace fmu {
 								trigger->observers_out_post( t );
 							}
 						}
-					} else { // Simultaneous triggers
+					} else { // Simultaneous/binned triggers
+						if ( options::statistics ) { // Statistics
+							for ( Variable * trigger : triggers ) {
+								++c_QSS_events[ trigger ];
+							}
+						}
 						++n_QSS_simultaneous_events;
-						eventq->top_subs< Variable >( triggers );
-						observers_s.init( triggers );
-						sort_by_order( triggers );
+						observers_s.assign( triggers );
 
 						if ( doROut ) { // Requantization output: pre
 							for ( Variable * trigger : triggers ) {
@@ -2286,33 +2346,8 @@ namespace fmu {
 							}
 						}
 
-						for ( Variable * trigger : triggers ) {
-							assert( trigger->tE == t );
-							assert( trigger->not_ZC() ); // ZC variable requantizations are QSS_ZC events
-							trigger->st = s; // Set trigger superdense time
-							trigger->advance_QSS_0();
-							++c_QSS_events[ trigger ];
-						}
-						for ( Variable * trigger : triggers ) {
-							trigger->advance_QSS_1();
-						}
-						int const triggers_order_max( triggers.back()->order() );
-						if ( triggers_order_max >= 2 ) { // 2nd order pass
-							for ( size_type i = begin_order_index( triggers, 2 ), n = triggers.size(); i < n; ++i ) {
-								triggers[ i ]->advance_QSS_2();
-							}
-							for ( size_type i = begin_order_index( triggers, 2 ), n = triggers.size(); i < n; ++i ) {
-								triggers[ i ]->advance_QSS_2_1();
-							}
-							if ( triggers_order_max >= 3 ) { // 3rd order pass
-								for ( size_type i = begin_order_index( triggers, 3 ), n = triggers.size(); i < n; ++i ) {
-									triggers[ i ]->advance_QSS_3();
-								}
-							}
-						}
-						for ( Variable * trigger : triggers ) {
-							trigger->advance_QSS_F();
-						}
+						triggers_s.assign( triggers );
+						triggers_s.advance_QSS( t, s );
 						if ( observers_s.have() ) observers_s.advance( t ); // Advance observers
 
 						if ( doROut ) { // Requantization output: post
@@ -2355,6 +2390,31 @@ namespace fmu {
 							trigger->out( t );
 						}
 					}
+				} else if ( event.is_QSS_Inp() ) { // QSS Input requantization event(s)
+					++n_QSS_events;
+					Variable * trigger( event.sub< Variable >() );
+					assert( trigger->tE == t );
+					assert( trigger->is_Input() );
+					trigger->st = s; // Set trigger superdense time
+					++c_QSS_events[ trigger ];
+
+					if ( doROut ) { // Requantization output: pre
+						trigger->out( t );
+						trigger->observers_out_pre( t );
+					}
+
+					trigger->advance_QSS();
+
+					if ( doROut ) { // Requantization output: post
+						if ( options::output::a ) { // All variables output
+							for ( auto var : vars ) {
+								var->out( t );
+							}
+						} else { // Requantization output
+							trigger->out( t );
+							trigger->observers_out_post( t );
+						}
+					}
 				} else { // Unsupported event
 					assert( false );
 				}
@@ -2372,6 +2432,30 @@ namespace fmu {
 				}
 
 				tProc = t;
+
+				// Bin optimization
+				if ( bin_auto ) { // Bin optimization active
+					if ( t >= bin_performance.tb() + bin_performance_dt ) { // Enough simulation time to check elapased CPU time
+						Time const cpu_time_elapsed( bin_performance.elapsed() );
+						if ( cpu_time_elapsed >= 1.0 ) { // Enough elapsed CPU time to give useful metrics without much overhead
+							timers::Performance::Velocity const bin_velocity( bin_performance( t, cpu_time_elapsed ) );
+							bin_performance_dt = std::max( bin_performance_dt, t - bin_performance.tb() ); // Tune simulation time until next check
+							//std::cerr << "\nBining Performance: " << t << ' ' << cpu_time_elapsed << ' ' << bin_velocity << ' ' << bin_performance_dt << ' ' << bin_size << std::endl; //Diag
+							size_type const bin_size_old( bin_size );
+							bin_optimizer.add( bin_size, bin_velocity );
+							bin_size = bin_optimizer.rec_bin_size();
+							if ( options::output::d ) {
+								if ( bin_size != bin_size_old ) {
+									std::cout << "\nBin size adjusted to: " << bin_size << std::endl;
+//								} else {
+//									std::cout << "\nBin size kept at: " << bin_size << std::endl;
+								}
+							}
+							bin_performance.start( t );
+						}
+					}
+				}
+
 			}
 
 			// Report % complete
@@ -2406,7 +2490,7 @@ namespace fmu {
 		eventInfoMaster->nextEventTimeDefined = fmi2_true;
 		eventInfoMaster->nextEventTime = t; // For master loop event queue
 
-		sim_cpu_time += get_cpu_time() - cpu_time_beg; // CPU time
+		sim_cpu_time += cpu_time() - cpu_time_beg; // CPU time
 #ifdef _OPENMP
 		sim_wall_time += omp_get_wtime() - wall_time_beg; // Wall time
 #endif
@@ -2417,7 +2501,7 @@ namespace fmu {
 			std::cout << '\n' + name + " Simulation Complete =====" << std::endl;
 			if ( n_discrete_events > 0 ) std::cout << n_discrete_events << " discrete event passes" << std::endl;
 			if ( n_QSS_events > 0 ) std::cout << n_QSS_events << " requantization event passes" << std::endl;
-			if ( n_QSS_simultaneous_events > 0 ) std::cout << n_QSS_simultaneous_events << " simultaneous requantization event passes" << std::endl;
+			if ( n_QSS_simultaneous_events > 0 ) std::cout << n_QSS_simultaneous_events << " simultaneous/binned requantization event passes" << std::endl;
 			if ( n_ZC_events > 0 ) std::cout << n_ZC_events << " zero-crossing event passes" << std::endl;
 			std::cout << "Simulation CPU time:  " << sim_cpu_time << " (s)" << std::endl; // CPU time
 #ifdef _OPENMP

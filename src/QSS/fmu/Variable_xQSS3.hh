@@ -250,16 +250,16 @@ public: // Methods
 
 	// QSS Advance: Stage 1
 	void
-	advance_QSS_1()
+	advance_QSS_1( Real const d )
 	{
-		x_1_ = q_1_ = c_1();
+		x_1_ = q_1_ = d;
 	}
 
 	// QSS Advance: Stage 2
 	void
-	advance_QSS_2()
+	advance_QSS_2( Real const d )
 	{
-		x_2_ = s_2();
+		x_2_ = p_2( d );
 	}
 
 	// QSS Advance: Stage 2.1
@@ -271,9 +271,9 @@ public: // Methods
 
 	// QSS Advance: Stage 3
 	void
-	advance_QSS_3()
+	advance_QSS_3( Real const d )
 	{
-		x_3_ = s_3();
+		x_3_ = p_3( d );
 	}
 
 	// QSS Advance: Stage Final

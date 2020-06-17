@@ -57,6 +57,28 @@ is_sorted_by_order( Variables & variables )
 	return std::is_sorted( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->order() < v2->order(); } );
 }
 
+// Variables Collection Unique?
+template< typename Variables >
+inline
+bool
+is_unique( Variables const & variables )
+{
+	if ( ( variables.empty() ) || ( variables.size() == 1u ) ) return true;
+	if ( std::is_sorted( variables.begin(), variables.end() ) ) { // Sorted
+		for ( Variables::size_type i = 0, e = variables.size() - 1u; i < e; ++i ) {
+			if ( variables[ i ] == variables[ i + 1 ] ) return false; // Duplicates
+		}
+		return true; // No duplicates
+	} else { // Not sorted: Slow to avoid sorting side effect!
+		Variables vars_sorted( variables );
+		std::sort( vars_sorted.begin(), vars_sorted.end() ); // Sort by address
+		for ( Variables::size_type i = 0, e = vars_sorted.size() - 1u; i < e; ++i ) {
+			if ( vars_sorted[ i ] == vars_sorted[ i + 1 ] ) return false; // Duplicates
+		}
+		return true; // No duplicates
+	}
+}
+
 // Variables Begin Index of Given Order or Greater
 template< typename Variables >
 inline
@@ -68,6 +90,19 @@ begin_order_index( Variables const & variables, int const order )
 	return static_cast< typename Variables::size_type >( std::distance( variables.begin(), std::lower_bound( variables.begin(), variables.end(), order, []( V const * v, int const o ){ return v->order() < o; } ) ) );
 }
 
+// Make Variables Collection Unique and Optionally Shrink-to-Fit
+template< typename Variables >
+inline
+void
+uniquify( Variables & variables, bool const shrink = false )
+{
+	if ( ! variables.empty() ) {
+		std::sort( variables.begin(), variables.end() ); // Sort by address
+		variables.erase( std::unique( variables.begin(), variables.end() ), variables.end() ); // Remove duplicates
+		if ( shrink ) variables.shrink_to_fit();
+	}
+}
+
 // Sort Variables by Order
 template< typename Variables >
 inline
@@ -75,8 +110,7 @@ void
 sort_by_order( Variables & variables )
 {
 	using V = typename std::remove_pointer< typename Variables::value_type >::type;
-	// Stable sort to be deterministic given prior address sort without adding extra address condition to std::sort
-	std::stable_sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->order() < v2->order(); } );
+	std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->order() < v2->order(); } );
 }
 
 // Sort Variables by Type (State First) and Order
@@ -86,19 +120,7 @@ void
 sort_by_type_and_order( Variables & variables )
 {
 	using V = typename std::remove_pointer< typename Variables::value_type >::type;
-	// Stable sort to be deterministic given prior address sort without adding extra address condition to std::sort
-	std::stable_sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->state_order() < v2->state_order(); } );
-}
-
-// Sort Variables by QSS State First
-template< typename Variables >
-inline
-void
-sort_by_QSS( Variables & variables )
-{
-	using V = typename std::remove_pointer< typename Variables::value_type >::type;
-	// Stable sort to be deterministic given prior address sort without adding extra address condition to std::sort
-	std::stable_sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->state_sort_index() < v2->state_sort_index(); } );
+	std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->state_order() < v2->state_order(); } );
 }
 
 // Set up Non-Trigger Observers of Triggers and Sort Both by Order
@@ -108,44 +130,29 @@ void
 variables_observers( Variables & triggers, Variables & observers )
 {
 	using V = typename std::remove_pointer< typename Variables::value_type >::type;
-	using size_type = typename Variables::size_type;
-	using iterator = typename Variables::iterator;
 
+	// Combine all non-trigger observers
 	observers.clear();
-
-	// Collect all observers
-	for ( V * trigger : triggers ) {
-		for ( V * observer : trigger->observers() ) {
-			observers.push_back( observer );
+	if ( triggers.size() < 16 ) { // Linear search
+		for ( V * trigger : triggers ) {
+			for ( V * observer : trigger->observers() ) {
+				if ( std::find( triggers.begin(), triggers.end(), observer ) == triggers.end() ) observers.push_back( observer );
+			}
+		}
+	} else { // Binary search
+		std::sort( triggers.begin(), triggers.end() ); // Side effect!
+		for ( V * trigger : triggers ) {
+			for ( V * observer : trigger->observers() ) {
+				if ( ! std::binary_search( triggers.begin(), triggers.end(), observer ) ) observers.push_back( observer );
+			}
 		}
 	}
 
-	// Remove duplicates and triggers from observers
+	// Remove duplicates and sort by type and order
 	if ( ! observers.empty() ) {
-
-		// Remove duplicates
-		std::sort( observers.begin(), observers.end() );
-		observers.erase( std::unique( observers.begin(), observers.end() ), observers.end() );
-
-		// Remove triggers
-		std::sort( triggers.begin(), triggers.end() );
-		iterator it( triggers.begin() );
-		iterator const et( triggers.end() );
-		size_type no( observers.size() ); // Number of observers
-		for ( V * & observer : observers ) {
-			while ( ( it != et ) && ( *it < observer ) ) ++it;
-			if ( it != et ) {
-				if ( *it == observer ) {
-					observer = ( V * )( std::numeric_limits< std::uintptr_t >::max() );
-					--no;
-				}
-			} else {
-				break;
-			}
-		}
-		std::sort( observers.begin(), observers.end() );
-		observers.resize( no );
-		// Don't shrink observers: Meant for short-lived collections created for simultaneous variable event processing during simulation
+		std::sort( observers.begin(), observers.end() ); // Sort by address
+		observers.erase( std::unique( observers.begin(), observers.end() ), observers.end() ); // Remove duplicates
+		//if ( shrink ) observers.shrink_to_fit(); // Since we always reuse these containers we don't need a shrink option
 		if ( ! observers.empty() ) sort_by_type_and_order( observers );
 	}
 

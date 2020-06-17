@@ -140,7 +140,7 @@ public: // Methods
 		tD = s_.tD;
 		set_qTol();
 		set_tE();
-		( tE < tD ) ? add_QSS( tE ) : add_discrete( tD );
+		( tE < tD ) ? add_QSS_Inp( tE ) : add_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
@@ -155,7 +155,7 @@ public: // Methods
 		tD = s_.tD;
 		set_qTol();
 		set_tE();
-		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
+		( tE < tD ) ? shift_QSS_Inp( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 		if ( observed() ) advance_observers();
 	}
@@ -171,7 +171,7 @@ public: // Methods
 		tD = s_.tD;
 		set_qTol();
 		set_tE();
-		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
+		( tE < tD ) ? shift_QSS_Inp( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
@@ -186,42 +186,9 @@ public: // Methods
 		tD = s_.tD;
 		set_qTol();
 		set_tE();
-		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
+		( tE < tD ) ? shift_QSS_Inp( tE ) : shift_discrete( tD );
 		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 		if ( observed() ) advance_observers();
-	}
-
-	// QSS Advance: Stage 0
-	void
-	advance_QSS_0()
-	{
-		s_ = f_( tX = tQ = tE );
-		x_0_ = s_.x0;
-	}
-
-	// QSS Advance: Stage 1
-	void
-	advance_QSS_1()
-	{
-		x_1_ = s_.x1;
-	}
-
-	// QSS Advance: Stage 2
-	void
-	advance_QSS_2()
-	{
-		x_2_ = one_half * s_.x2;
-		tD = s_.tD;
-	}
-
-	// QSS Advance: Stage Final
-	void
-	advance_QSS_F()
-	{
-		set_qTol();
-		set_tE();
-		( tE < tD ) ? shift_QSS( tE ) : shift_discrete( tD );
-		if ( options::output::d ) std::cout << "= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << " [q]" << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
 private: // Methods

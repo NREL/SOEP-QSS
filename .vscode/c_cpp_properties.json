@@ -67,6 +67,7 @@
             "browse": {
                 "path": [
                     "${workspaceFolder}",
+                    "${workspaceFolder}/src",
                     "C:/FMIL.VC.r/include",
                     "C:/gtest/include"
                 ],

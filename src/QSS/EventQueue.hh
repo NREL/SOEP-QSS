@@ -53,6 +53,7 @@
 // C++ Headers
 #include <cassert>
 #include <cstddef>
+//#include <functional>
 #include <iostream>
 #include <map>
 #include <vector>
@@ -96,6 +97,7 @@ public: // Types
 		static SuperdenseTime::Offset const Handler{ 3 };
 		static SuperdenseTime::Offset const QSS{ 4 };
 		static SuperdenseTime::Offset const QSS_ZC{ 5 };
+		static SuperdenseTime::Offset const QSS_Inp{ 6 };
 	};
 
 public: // Predicate
@@ -359,12 +361,12 @@ public: // Methods
 
 	// Simultaneous Events at Front of Queue
 	Events
-	top_events()
+	top_events() const
 	{
 		Events tops;
 		if ( ! m_.empty() ) {
-			iterator i( m_.begin() );
-			iterator const e( m_.end() );
+			const_iterator i( m_.begin() );
+			const_iterator const e( m_.end() );
 			SuperdenseTime const & s( i->first );
 			while ( ( i != e ) && ( i->first == s ) ) {
 				tops.push_back( i->second );
@@ -376,12 +378,12 @@ public: // Methods
 
 	// Simultaneous Events at Front of Queue
 	void
-	top_events( Events & tops )
+	top_events( Events & tops ) const
 	{
 		tops.clear();
 		if ( ! m_.empty() ) {
-			iterator i( m_.begin() );
-			iterator const e( m_.end() );
+			const_iterator i( m_.begin() );
+			const_iterator const e( m_.end() );
 			SuperdenseTime const & s( i->first );
 			while ( ( i != e ) && ( i->first == s ) ) {
 				tops.push_back( i->second );
@@ -392,12 +394,12 @@ public: // Methods
 
 	// Simultaneous Trigger Targets at Front of Queue
 	Targets
-	top_targets()
+	top_targets() const
 	{
 		Targets targets;
 		if ( ! m_.empty() ) {
-			iterator i( m_.begin() );
-			iterator const e( m_.end() );
+			const_iterator i( m_.begin() );
+			const_iterator const e( m_.end() );
 			SuperdenseTime const & s( i->first );
 			while ( ( i != e ) && ( i->first == s ) ) {
 				targets.push_back( i->second.tar() );
@@ -409,12 +411,12 @@ public: // Methods
 
 	// Simultaneous Trigger Targets at Front of Queue
 	void
-	top_targets( Targets & targets )
+	top_targets( Targets & targets ) const
 	{
 		targets.clear();
 		if ( ! m_.empty() ) {
-			iterator i( m_.begin() );
-			iterator const e( m_.end() );
+			const_iterator i( m_.begin() );
+			const_iterator const e( m_.end() );
 			SuperdenseTime const & s( i->first );
 			while ( ( i != e ) && ( i->first == s ) ) {
 				targets.push_back( i->second.tar() );
@@ -453,6 +455,65 @@ public: // Methods
 			SuperdenseTime const & s( i->first );
 			while ( ( i != e ) && ( i->first == s ) ) {
 				subs.push_back( i->second.template sub< S >() );
+				++i;
+			}
+		}
+	}
+
+	// QSS Requantization Bin Subtypes at Front of Queue
+	template< typename S >
+	std::vector< S * >
+	bin_QSS( size_type const bin_size, double const bin_frac )
+	{
+		std::vector< S * > subs;
+		if ( ! m_.empty() ) {
+			iterator i( m_.begin() );
+			iterator const e( m_.end() );
+			SuperdenseTime const & s( i->first );
+			while ( ( i != e ) && ( i->first == s ) ) { // First get the simultaneous events
+				subs.push_back( i->second.template sub< S >() );
+				++i;
+			}
+			Time const t_top( s.t );
+			size_type j( 0u ); // Loop counter (non-simultaneous events)
+			while ( ( i != e ) && ( ++j < 5 * bin_size ) && ( subs.size() < bin_size ) ) { // Bin events
+				if ( i->second.is_QSS() ) { // QSS requantization event
+					S * sub( i->second.template sub< S >() );
+					double const sub_frac( ( t_top - sub->tQ ) / ( sub->tE - sub->tQ ) );
+					if ( sub_frac >= bin_frac ) { // Time step fraction is acceptable
+						subs.push_back( sub );
+					}
+				}
+				++i;
+			}
+		}
+		return subs;
+	}
+
+	// QSS Requantization Bin Subtypes at Front of Queue
+	template< typename S >
+	void
+	bin_QSS( size_type const bin_size, double const bin_frac, std::vector< S * > & subs )
+	{
+		subs.clear();
+		if ( ! m_.empty() ) {
+			iterator i( m_.begin() );
+			iterator const e( m_.end() );
+			SuperdenseTime const & s( i->first );
+			while ( ( i != e ) && ( i->first == s ) ) { // First get the simultaneous events
+				subs.push_back( i->second.template sub< S >() );
+				++i;
+			}
+			Time const t_top( s.t );
+			size_type j( 0u ); // Loop counter (non-simultaneous events)
+			while ( ( i != e ) && ( ++j < 5 * bin_size ) && ( subs.size() < bin_size ) ) { // Bin events
+				if ( i->second.is_QSS() ) { // QSS requantization event
+					S * sub( i->second.template sub< S >() );
+					double const sub_frac( ( t_top - sub->tQ ) / ( sub->tE - sub->tQ ) );
+					if ( sub_frac >= bin_frac ) { // Time step fraction is acceptable
+						subs.push_back( sub );
+					}
+				}
 				++i;
 			}
 		}
@@ -660,6 +721,33 @@ public: // QSS ZC Event Methods
 		Target * tar( i->second.tar() );
 		m_.erase( i );
 		return m_.emplace( SuperdenseTime( t, idx, Off::QSS_ZC ), EventT( Type::QSS_ZC, tar ) );
+	}
+
+public: // QSS Input Event Methods
+
+	// Add QSS Input Event
+	iterator
+	add_QSS_Inp(
+	 Time const t,
+	 Target * tar
+	)
+	{
+		return m_.emplace( SuperdenseTime( t, 0, Off::QSS_Inp ), EventT( Type::QSS_Inp, tar ) );
+	}
+
+	// Shift QSS Input Event
+	iterator
+	shift_QSS_Inp(
+	 Time const t,
+	 iterator const i
+	)
+	{
+		assert( t_ == s_.t );
+		assert( t >= t_ );
+		Index const idx( t == t_ ? ( s_.o < Off::QSS_Inp ? s_.i : s_.i + 1u ) : Index( 0 ) );
+		Target * tar( i->second.tar() );
+		m_.erase( i );
+		return m_.emplace( SuperdenseTime( t, idx, Off::QSS_Inp ), EventT( Type::QSS_Inp, tar ) );
 	}
 
 private: // Static Data

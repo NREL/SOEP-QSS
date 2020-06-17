@@ -41,6 +41,7 @@
 #include <QSS/Target.hh>
 #include <QSS/cod/Conditional.hh>
 #include <QSS/cod/events.hh>
+#include <QSS/container.hh>
 #include <QSS/globals.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
@@ -511,9 +512,7 @@ public: // Methods
 		observed_ = ( ! observers_.empty() );
 		if ( observed_ ) {
 			// Remove duplicates
-			std::sort( observers_.begin(), observers_.end() );
-			observers_.erase( std::unique( observers_.begin(), observers_.end() ), observers_.end() );
-			observers_.shrink_to_fit();
+			uniquify( observers_, true ); // Sort by address and remove duplicates and recover unused memory
 
 			// Put ZC variables at end for correct observer updates since they use observee x reps
 			std::sort( observers_.begin(), observers_.end(), []( Variable const * v1, Variable const * v2 ){ return v1->not_ZC() && v2->is_ZC(); } );
@@ -539,9 +538,7 @@ public: // Methods
 		observes_ = ( ! observees_.empty() );
 		if ( observes_ ) { // Remove duplicates and discrete variables
 			observees_.erase( std::remove_if( observees_.begin(), observees_.end(), []( Variable * v ){ return v->is_Discrete(); } ), observees_.end() ); // Remove discrete variables: Don't need them after ZC drill-through observees set up
-			std::sort( observees_.begin(), observees_.end() );
-			observees_.erase( std::unique( observees_.begin(), observees_.end() ), observees_.end() ); // Remove duplicates
-			observees_.shrink_to_fit();
+			uniquify( observees_, true ); // Sort by address and remove duplicates and recover unused memory
 
 			// Put ZC variables at end
 			std::sort( observees_.begin(), observees_.end(), []( Variable const * v1, Variable const * v2 ){ return v1->not_ZC() && v2->is_ZC(); } );
@@ -654,6 +651,20 @@ public: // Methods
 	shift_QSS_ZC( Time const t )
 	{
 		event_ = events.shift_QSS_ZC( t, event_ );
+	}
+
+	// QSS Input Add Event
+	void
+	add_QSS_Inp( Time const t )
+	{
+		event_ = events.add_QSS_Inp( t, this );
+	}
+
+	// QSS Input Shift Event to Time t
+	void
+	shift_QSS_Inp( Time const t )
+	{
+		event_ = events.shift_QSS_Inp( t, event_ );
 	}
 
 	// QSS Advance

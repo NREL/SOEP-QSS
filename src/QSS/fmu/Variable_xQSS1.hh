@@ -185,9 +185,9 @@ public: // Methods
 
 	// QSS Advance: Stage 1
 	void
-	advance_QSS_1()
+	advance_QSS_1( Real const d )
 	{
-		x_1_ = q_1_ = c_1();
+		x_1_ = q_1_ = d;
 	}
 
 	// QSS Advance: Stage Final

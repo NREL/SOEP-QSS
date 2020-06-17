@@ -33,14 +33,37 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_get_cpu_time_hh_INCLUDED
-#define QSS_get_cpu_time_hh_INCLUDED
+// QSS Headers
+#include <QSS/cpu_time.hh>
+
+// C++ Headers
+#ifdef _WIN32
+#include <windows.h>
+#else // Posix
+#include <ctime>
+#endif
 
 namespace QSS {
 
 double
-get_cpu_time();
+cpu_time()
+{
+#ifdef _WIN32 // std::clock on Windows VC is non-compliant because it returns wall time not CPU time
+	FILETIME a, b, c, d;
+	if ( GetProcessTimes( GetCurrentProcess(), &a, &b, &c, &d ) != 0 ) { // OK
+		return (double)( d.dwLowDateTime | ( (unsigned long long)d.dwHighDateTime << 32 ) ) * 0.0000001;
+	} else { // Error
+		return 0.0;
+	}
+#else // Posix
+	return double( std::clock() ) / CLOCKS_PER_SEC; // This may wrap on some implementations
 
-} // QSS
+// Maybe more accurate
+//	struct std::timespec ts;
+//	std::clock_gettime( CLOCK_PROCESS_CPUTIME_ID, &ts );
+//	return ts.tv_sec + ( 1e-9 * ts.tv_nsec );
 
 #endif
+}
+
+} // QSS

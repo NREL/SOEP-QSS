@@ -43,6 +43,7 @@
 #include <QSS/fmu/FMU_ME.hh>
 #include <QSS/fmu/FMU_Variable.hh>
 #include <QSS/fmu/Observers.hh>
+#include <QSS/container.hh>
 #include <QSS/globals.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
@@ -84,7 +85,8 @@ public: // Types
 	using EventQ = FMU_ME::EventQ;
 	using Variables = std::vector< Variable * >;
 	using Variable_Cons = std::vector< Variable_Con * >;
-	using VariableRefs = std::vector< fmi2_value_reference_t >;
+	using VariableRef = fmi2_value_reference_t;
+	using VariableRefs = std::vector< VariableRef >;
 	using size_type = Variables::size_type;
 	using Indexes = std::vector< size_type >;
 
@@ -684,9 +686,7 @@ public: // Methods
 		observes_ = ( ! observees_.empty() );
 		if ( observes_ ) { // Remove duplicates and discrete variables
 			observees_.erase( std::remove_if( observees_.begin(), observees_.end(), []( Variable * v ){ return v->is_Discrete(); } ), observees_.end() ); // Remove discrete variables: Don't need them after ZC drill-thru observees set up
-			std::sort( observees_.begin(), observees_.end() );
-			observees_.erase( std::unique( observees_.begin(), observees_.end() ), observees_.end() ); // Remove duplicates
-			observees_.shrink_to_fit();
+			uniquify( observees_, true ); // Sort by address and remove duplicates and recover unused memory
 			observes_ = ( ! observees_.empty() ); // In case all were discrete
 		}
 	}
@@ -817,6 +817,20 @@ public: // Methods
 		event_ = eventq_->shift_QSS_ZC( t, event_ );
 	}
 
+	// QSS Input Add Event
+	void
+	add_QSS_Inp( Time const t )
+	{
+		event_ = eventq_->add_QSS_Inp( t, this );
+	}
+
+	// QSS Input Shift Event to Time t
+	void
+	shift_QSS_Inp( Time const t )
+	{
+		event_ = eventq_->shift_QSS_Inp( t, event_ );
+	}
+
 	// QSS Advance
 	virtual
 	void
@@ -836,7 +850,7 @@ public: // Methods
 	// QSS Advance: Stage 1
 	virtual
 	void
-	advance_QSS_1()
+	advance_QSS_1( Real const )
 	{
 		assert( false );
 	}
@@ -844,8 +858,10 @@ public: // Methods
 	// QSS Advance: Stage 2
 	virtual
 	void
-	advance_QSS_2()
-	{}
+	advance_QSS_2( Real const )
+	{
+		assert( false );
+	}
 
 	// QSS Advance: Stage 2.1
 	virtual
@@ -856,14 +872,18 @@ public: // Methods
 	// QSS Advance: Stage 3
 	virtual
 	void
-	advance_QSS_3()
-	{}
+	advance_QSS_3( Real const )
+	{
+		assert( false );
+	}
 
 	// QSS Advance: Stage Final
 	virtual
 	void
 	advance_QSS_F()
-	{}
+	{
+		assert( false );
+	}
 
 	// Zero-Crossing Add Event
 	void
@@ -983,14 +1003,6 @@ public: // Methods
 	advance_observers()
 	{
 		observers_.advance( tQ );
-	}
-
-	// Advance Observers: Stage d
-	void
-	advance_observers_d() const
-	{
-		assert( options::output::d );
-		observers_.advance_d();
 	}
 
 	// Observer Advance

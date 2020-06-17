@@ -97,6 +97,9 @@ extern double one_over_six_dtNum; // 1 / ( 6 * dtNum )
 extern double one_over_six_dtNum_squared; // 1 / ( 6 * dtNum^2 )
 extern double one_over_six_dtNum_cubed; // 1 / ( 6 * dtNum^3 )
 extern double tEnd; // End time (s)
+extern std::size_t bin_size; // Bin size
+extern double bin_frac; // Min bin step fraction
+extern bool bin_auto; // Automaically optimize bin size?
 extern std::size_t pass; // Pass count limit
 extern bool cycles; // Report dependency cycles?
 extern bool inflection; // Requantize at inflections?
@@ -122,6 +125,7 @@ extern bool zTol; // Zero-crossing tolerance specified?
 extern bool dtZC; // FMU zero-crossing time step specified?
 extern bool tEnd; // End time specified?
 extern bool tLoc; // Local output time range specified?
+extern bool bin; // Bin controls specified?
 
 } // specified
 

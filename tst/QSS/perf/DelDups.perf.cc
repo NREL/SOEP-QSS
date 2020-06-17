@@ -81,8 +81,8 @@ main()
 		// Sort + unique method: Faster for N up to 2e8
 		double const time_beg = (double)clock()/CLOCKS_PER_SEC;
 		for ( std::size_t r = 1; r <= R; ++r ) {
-			std::sort( v.begin(), v.end() );
-			v.erase( std::unique( v.begin(), v.end() ), v.end() );
+			std::sort( v.begin(), v.end() ); // Sort by value
+			v.erase( std::unique( v.begin(), v.end() ), v.end() ); // Remove duplicates
 			v.shrink_to_fit();
 		}
 		double const time_end = (double)clock()/CLOCKS_PER_SEC;

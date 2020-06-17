@@ -66,6 +66,9 @@ double one_over_six_dtNum_squared( 1.0e12 / 6.0 ); // 1 / ( 6 * dtNum^2 )
 double one_over_six_dtNum_cubed( 1.0e18 / 6.0 ); // 1 / ( 6 * dtNum^3 )
 double dtOut( 1.0e-3 ); // Sampled & FMU output time step (s)
 double tEnd( 1.0 ); // End time (s)  [1|FMU]
+std::size_t bin_size( 1u ); // Bin size
+double bin_frac( 0.5 ); // Min bin step fraction
+bool bin_auto( true ); // Automaically optimize bin size?
 std::size_t pass( 20 ); // Pass count limit
 bool cycles( false ); // Report dependency cycles?
 bool inflection( false ); // Requantize at inflections?
@@ -91,6 +94,7 @@ bool zTol( false ); // Zero-crossing tolerance specified?
 bool dtZC( false ); // FMU zero-crossing time step specified?
 bool tEnd( false ); // End time specified?
 bool tLoc( false ); // Local output time range specified?
+bool bin( false ); // Bin controls specified?
 
 } // specified
 
@@ -116,28 +120,28 @@ help_display()
 {
 	std::cout << '\n' << "QSS [options] [model [model ...]]" << "\n\n";
 	std::cout << "Options:" << "\n\n";
-	std::cout << " --qss=QSS      QSS method: (x)(LI)QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
-	std::cout << " --rTol=TOL     Relative tolerance  [1e-4|FMU]" << '\n';
-	std::cout << " --aTol=TOL     Absolute tolerance for no-nominal variables  [1e-6]" << '\n';
-	std::cout << " --aTolAll=TOL  Absolute tolerance for all variables  [1e-6]" << '\n';
-	std::cout << " --zTol=TOL     Zero-crossing tolerance  [0]" << '\n';
-	std::cout << " --zFac=FAC     Zero-crossing tolerance factor  [1.01]" << '\n';
-	std::cout << " --dtMin=STEP   Min time step (s)  [0]" << '\n';
-	std::cout << " --dtMax=STEP   Max time step (s)  [infinity]" << '\n';
-	std::cout << " --dtInf=STEP   Inf alt time step (s)  [infinity]" << '\n';
-	std::cout << " --dtZC=STEP    FMU zero-crossing time step (s)  [1e-9]" << '\n';
-	std::cout << " --dtNum=STEP   Numeric differentiation time step (s)  [1e-6]" << '\n';
-	std::cout << " --dtCon=STEP   FMU connection sync time step (s)  [0]" << '\n';
-	std::cout << " --dtOut=STEP   Sampled & FMU output time step (s)  [1e-3]" << '\n';
-	std::cout << " --tEnd=TIME    End time (s)  [1|FMU]" << '\n';
-	std::cout << " --pass=COUNT   Pass count limit  [20]" << '\n';
-	std::cout << " --cycles       Report dependency cycles?  [F]" << '\n';
-	std::cout << " --inflection   Requantize at inflections?  [F]" << '\n';
-	std::cout << " --refine       Refine FMU zero-crossing roots?  [F]" << '\n';
-	std::cout << " --prune        Prune variables with no observers?  [F]" << '\n';
-	std::cout << " --perfect      Perfect FMU-ME connection sync?  [F]" << '\n';
-	std::cout << " --statistics   Report detailed statistics?  [F]" << '\n';
-	std::cout << " --log=LEVEL    Logging level  [warning]" << '\n';
+	std::cout << " --qss=QSS        QSS method: (x)(LI)QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
+	std::cout << " --rTol=TOL       Relative tolerance  [1e-4|FMU]" << '\n';
+	std::cout << " --aTol=TOL       Absolute tolerance for no-nominal variables  [1e-6]" << '\n';
+	std::cout << " --aTolAll=TOL    Absolute tolerance for all variables  [1e-6]" << '\n';
+	std::cout << " --zTol=TOL       Zero-crossing tolerance  [0]" << '\n';
+	std::cout << " --zFac=FAC       Zero-crossing tolerance factor  [1.01]" << '\n';
+	std::cout << " --dtMin=STEP     Min time step (s)  [0]" << '\n';
+	std::cout << " --dtMax=STEP     Max time step (s)  [infinity]" << '\n';
+	std::cout << " --dtInf=STEP     Inf alt time step (s)  [infinity]" << '\n';
+	std::cout << " --dtZC=STEP      FMU zero-crossing time step (s)  [1e-9]" << '\n';
+	std::cout << " --dtNum=STEP     Numeric differentiation time step (s)  [1e-6]" << '\n';
+	std::cout << " --dtCon=STEP     FMU connection sync time step (s)  [0]" << '\n';
+	std::cout << " --dtOut=STEP     Sampled & FMU output time step (s)  [1e-3]" << '\n';
+	std::cout << " --tEnd=TIME      End time (s)  [1|FMU]" << '\n';
+	std::cout << " --pass=COUNT     Pass count limit  [20]" << '\n';
+	std::cout << " --cycles         Report dependency cycles?  [F]" << '\n';
+	std::cout << " --inflection     Requantize at inflections?  [F]" << '\n';
+	std::cout << " --refine         Refine FMU zero-crossing roots?  [F]" << '\n';
+	std::cout << " --prune          Prune variables with no observers?  [F]" << '\n';
+	std::cout << " --perfect        Perfect FMU-ME connection sync?  [F]" << '\n';
+	std::cout << " --statistics     Report detailed statistics?  [F]" << '\n';
+	std::cout << " --log=LEVEL      Logging level  [warning]" << '\n';
 	std::cout << "       fatal" << '\n';
 	std::cout << "       error" << '\n';
 	std::cout << "       warning" << '\n';
@@ -154,6 +158,10 @@ help_display()
 	std::cout << "           toggle[h0,h,d] => h0 + h * ( floor( t / d ) % 2 )" << '\n';
 	std::cout << " --con=INP:OUT  Connect FMU input and output variables" << '\n';
 	std::cout << "       INP and OUT syntax is <model>.<var>" << '\n';
+	std::cout << " --bin=SIZE:FRAC:AUTO  FMU requantization binning controls  [1:0.5:Y]" << '\n';
+	std::cout << "       SIZE  Bin size  [1]" << '\n';
+	std::cout << "            FRAC  Min time step fraction  (0-1]  [0.5]" << '\n';
+	std::cout << "                 AUTO  Automatic bin size optimization?  (Y|N)  [Y]" << '\n';
 	std::cout << " --out=OUTPUTS  Outputs  [trfkxo]" << '\n';
 	std::cout << "       t  Time events" << '\n';
 	std::cout << "       r  Requantizations" << '\n';
@@ -451,6 +459,64 @@ process_args( int argc, char * argv[] )
 				}
 			} else {
 				std::cerr << "\nError: Nonnumeric tEnd: " << tEnd_str << std::endl;
+				fatal = true;
+			}
+		} else if ( has_value_option( arg, "bin" ) ) {
+			specified::bin = true;
+			std::string const bin_str( arg_value( arg ) );
+			std::vector< std::string > const bin_args( split( bin_str, ':' ) );
+			if ( bin_args.size() > 1u ) { // : separated entries present
+
+				// Bin size
+				std::string const bin_size_str( bin_args[ 0 ] );
+				if ( bin_size_str.empty() ) {
+					// Use default
+				} else if ( is_size( bin_size_str ) ) {
+					bin_size = size_of( bin_size_str );
+				} else {
+					std::cerr << "\nError: bin size is not valid: " << bin_size_str << std::endl;
+					fatal = true;
+				}
+
+				// Bin fraction
+				std::string const bin_frac_str( bin_args[ 1 ] );
+				if ( bin_frac_str.empty() ) {
+					// Use default
+				} else if ( is_double( bin_frac_str ) ) {
+					bin_frac = double_of( bin_frac_str );
+					if ( ( bin_frac < 0.0 ) || ( bin_frac > 1.0 ) ) {
+						std::cerr << "\nError: bin frac is outside of [0,1] range: " << bin_frac << std::endl;
+						fatal = true;
+					}
+				} else {
+					std::cerr << "\nError: Nonumeric bin frac: " << bin_frac_str << std::endl;
+					fatal = true;
+				}
+
+				// Bin auto
+				if ( bin_args.size() > 2u ) {
+					std::string const bin_auto_str( bin_args[ 2 ] );
+					if ( bin_auto_str.empty() ) {
+						// Use default
+					} else if ( is_any_of( bin_auto_str[ 0 ], "YyTt1" ) ) {
+						bin_auto = true;
+					} else if ( is_any_of( bin_auto_str[ 0 ], "NnFf0" ) ) {
+						bin_auto = false;
+					} else {
+						std::cerr << "\nError: Invalid bin auto: " << bin_auto_str << std::endl;
+						fatal = true;
+					}
+				}
+
+			} else if ( ! bin_str.empty() ) { // Treat single parameter as bin_size
+				if ( is_size( bin_str ) ) {
+					bin_size = size_of( bin_str );
+				} else {
+					std::cerr << "\nError: bin size is not valid: " << bin_str << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::cerr << "\nError: bin option missing SIZE:FRAC:AUTO values" << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "pass" ) ) {
