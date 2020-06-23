@@ -121,7 +121,7 @@ public: // Property
 				double const r2( m_.velocity / -static_cast< Velocity >( ( x2 - x1 ) * ( x3 - x2 ) ) );
 				double const r3( u_.velocity / static_cast< Velocity >( ( x3 - x2 ) * ( x3 - x1 ) ) );
 				double const r_sum( r1 + r2 + r3 );
-				double const opt_bin_size( ( ( r1 * ( x2 + x3 ) ) + ( r2 * ( x1 + x3 ) ) + ( r3 * ( x1 + x2 ) ) ) / ( 2.0 * ( r1 + r2 + r3 ) ) ); // Bin size at velocity parabola max
+				double const opt_bin_size( r_sum != 0.0 ? ( ( r1 * ( x2 + x3 ) ) + ( r2 * ( x1 + x3 ) ) + ( r3 * ( x1 + x2 ) ) ) / ( 2.0 * r_sum ) : static_cast< double >( m_.bin_size ) ); // Bin size at velocity parabola max
 				bin_size = std::min( std::max( std::min( static_cast< size_type >( opt_bin_size + 0.5 ), max_bin_size_ ), one ), max_bin_size_ );
 			} else { // Recommend bin size in direction likely to give better velocity
 				if ( ( l_.velocity <= m_.velocity ) && ( m_.velocity <= u_.velocity ) ) { // Velocity increasing with bin size

@@ -2262,7 +2262,6 @@ namespace fmu {
 
 					// Trigger(s) setup: Single, simultaneous, or binned
 					Variable * trigger1( nullptr );
-					bool binned( false );
 					if ( bin_size > 1u ) {
 						eventq->bin_QSS< Variable >( bin_size, bin_frac, triggers );
 						if ( options::output::d ) {
@@ -2272,7 +2271,6 @@ namespace fmu {
 						if ( triggers.size() == 1u ) {
 							trigger1 = triggers[ 0 ]; // Use single trigger processing
 						} else {
-							binned = true;
 							if ( connected ) { // Check if next event(s) will modify a connected output
 								if ( options::perfect ) { // Flag whether next event(s) will modify a connected output
 									if ( ! connected_output_event ) {

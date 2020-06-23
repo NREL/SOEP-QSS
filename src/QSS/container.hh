@@ -65,14 +65,14 @@ is_unique( Variables const & variables )
 {
 	if ( ( variables.empty() ) || ( variables.size() == 1u ) ) return true;
 	if ( std::is_sorted( variables.begin(), variables.end() ) ) { // Sorted
-		for ( Variables::size_type i = 0, e = variables.size() - 1u; i < e; ++i ) {
+		for ( typename Variables::size_type i = 0, e = variables.size() - 1u; i < e; ++i ) {
 			if ( variables[ i ] == variables[ i + 1 ] ) return false; // Duplicates
 		}
 		return true; // No duplicates
 	} else { // Not sorted: Slow to avoid sorting side effect!
 		Variables vars_sorted( variables );
 		std::sort( vars_sorted.begin(), vars_sorted.end() ); // Sort by address
-		for ( Variables::size_type i = 0, e = vars_sorted.size() - 1u; i < e; ++i ) {
+		for ( typename Variables::size_type i = 0, e = vars_sorted.size() - 1u; i < e; ++i ) {
 			if ( vars_sorted[ i ] == vars_sorted[ i + 1 ] ) return false; // Duplicates
 		}
 		return true; // No duplicates
