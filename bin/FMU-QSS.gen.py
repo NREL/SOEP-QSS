@@ -49,7 +49,7 @@
 #  Add more QSS options->annotations as needed
 
 # Imports
-import argparse, os, platform, shutil, subprocess, sys
+import argparse, errno, os, platform, shutil, subprocess, sys
 from zipfile import ZipFile
 from collections import OrderedDict
 from lxml import etree
@@ -215,7 +215,7 @@ def fmu_qss_gen():
     n_real = n_integer = n_boolean = n_string = 0
     n_input_real = n_output_real = 0
     try:
-        n_input_real_max_order = n_output_real_max_order = args.qss[ -1 ]
+        n_input_real_max_order = n_output_real_max_order = int( args.qss[ -1 ] )
     except Exception as err:
         print( '\nFMU-QSS XML generation failed: QSS method order not identified from last character of qss argument: ' + str( args.qss ) )
         sys.exit( 1 )
@@ -326,7 +326,7 @@ def fmu_qss_gen():
     try:
         subprocess.call( [ 'fmu-uuid', qss_xml_name, guid_placeholder, qss_xml_name, 'FMU_QSS_GUID.hh', 'FMU_QSS_GUID' ] )
     except OSError as e:
-        if e.errno == os.errno.ENOENT:
+        if e.errno == errno.ENOENT:
             print( '\nFMU-QSS XML GUID computation failed: fmu-uuid program not in PATH' )
         else:
             print( '\nFMU-QSS XML GUID computation failed: ' + str( e ) )

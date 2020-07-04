@@ -85,10 +85,10 @@ TEST( fmu_Variable_Inp1Test, InputFunction )
 	options::fxn[ "u" ] = "constant[1]";
 
 	std::streambuf * coutBuf( std::cout.rdbuf() ); std::ostringstream strCout; std::cout.rdbuf( strCout.rdbuf() ); // Redirect cout
+	allEventIndicators.clear();
 	FMU_ME fmu( model );
 	fmu.instantiate();
 	fmu.pre_simulate();
-	allEventIndicators.clear();
 	fmu.init();
 	std::cout.rdbuf( coutBuf ); // Re-redirect cout
 
@@ -99,7 +99,11 @@ TEST( fmu_Variable_Inp1Test, InputFunction )
 		return;
 	}
 
-	EXPECT_EQ( 2u, fmu.eventq->size() );
+	if ( dynamic_cast< Variable_QSS1 * >( fmu.var_named( "time" ) ) == nullptr ) {
+		EXPECT_EQ( 2u, fmu.eventq->size() );
+	} else {
+		EXPECT_EQ( 3u, fmu.eventq->size() );
+	}
 
 	EXPECT_EQ( 100.0, x->rTol );
 	EXPECT_EQ( 1.0, x->aTol );

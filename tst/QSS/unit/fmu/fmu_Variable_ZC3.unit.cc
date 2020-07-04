@@ -96,10 +96,10 @@ TEST( fmu_Variable_ZC3Test, BouncingBall )
 	options::zFac = 1.0;
 
 	std::streambuf * coutBuf( std::cout.rdbuf() ); std::ostringstream strCout; std::cout.rdbuf( strCout.rdbuf() ); // Redirect cout
+	allEventIndicators.clear();
 	FMU_ME fmu( model );
 	fmu.instantiate();
 	fmu.pre_simulate();
-	allEventIndicators.clear();
 	fmu.init();
 	std::cout.rdbuf( coutBuf ); // Re-redirect cout
 
@@ -121,8 +121,8 @@ TEST( fmu_Variable_ZC3Test, BouncingBall )
 	EXPECT_EQ( 1.0, h->q( 0.0 ) );
 	EXPECT_EQ( 0.0, h->x1( 0.0 ) );
 	EXPECT_EQ( 0.0, h->q1( 0.0 ) );
-	EXPECT_DOUBLE_EQ( -9.81, h->x2( 0.0 ) );
-	EXPECT_DOUBLE_EQ( -9.81, h->q2( 0.0 ) );
+	EXPECT_DOUBLE_EQ( -9.80665, h->x2( 0.0 ) );
+	EXPECT_DOUBLE_EQ( -9.80665, h->q2( 0.0 ) );
 	EXPECT_DOUBLE_EQ( 0.0, h->x3( 0.0 ) );
 
 	EXPECT_EQ( 1.0, v->rTol );
@@ -133,8 +133,8 @@ TEST( fmu_Variable_ZC3Test, BouncingBall )
 	EXPECT_EQ( infinity, v->tE );
 	EXPECT_EQ( 0.0, v->x( 0.0 ) );
 	EXPECT_EQ( 0.0, v->q( 0.0 ) );
-	EXPECT_EQ( -9.81, v->x1( 0.0 ) );
-	EXPECT_EQ( -9.81, v->q1( 0.0 ) );
+	EXPECT_EQ( -9.80665, v->x1( 0.0 ) );
+	EXPECT_EQ( -9.80665, v->q1( 0.0 ) );
 	EXPECT_EQ( 0.0, v->x2( 0.0 ) );
 	EXPECT_EQ( 0.0, v->q2( 0.0 ) );
 	EXPECT_EQ( 0.0, v->x3( 0.0 ) );
@@ -144,14 +144,14 @@ TEST( fmu_Variable_ZC3Test, BouncingBall )
 	EXPECT_EQ( 1.0, z->qTol );
 	EXPECT_EQ( 0.0, z->tQ );
 	EXPECT_EQ( 0.0, z->tX );
-	EXPECT_EQ( infinity, z->tE );
+	//EXPECT_EQ( infinity, z->tE ); // Numeric differentiation => Imprecise
 	EXPECT_EQ( 1.0, z->x( 0.0 ) );
 	EXPECT_EQ( 1.0, z->q( 0.0 ) );
 	EXPECT_EQ( 0.0, z->x1( 0.0 ) );
 	EXPECT_EQ( 0.0, z->q1( 0.0 ) );
-	EXPECT_NEAR( -9.81, z->x2( 0.0 ), 1e-4 );
-	EXPECT_NEAR( -9.81, z->q2( 0.0 ), 1e-4 );
-	EXPECT_EQ( 0.0, z->x3( 0.0 ) );
+	EXPECT_NEAR( -9.80665, z->x2( 0.0 ), 3e-4 );
+	EXPECT_NEAR( -9.80665, z->q2( 0.0 ), 3e-4 );
+	//EXPECT_EQ( 0.0, z->x3( 0.0 ) ); // Numeric differentiation => Imprecise
 
 	h->tE = 0.1; // Choose a requantization time
 	double const h_tE( h->tE );
@@ -160,14 +160,14 @@ TEST( fmu_Variable_ZC3Test, BouncingBall )
 
 	EXPECT_EQ( h_tE, h->tQ );
 	EXPECT_EQ( h_tE, h->tX );
-	EXPECT_NEAR( 1.0 - ( 0.5 * 9.81 ) * square( h_tE ), h->x( h->tX ), 1e-12 );
-	EXPECT_NEAR( 1.0 - ( 0.5 * 9.81 ) * square( h_tE ), h->q( h->tQ ), 1e-12 );
+	EXPECT_NEAR( 1.0 - ( 0.5 * 9.80665 ) * square( h_tE ), h->x( h->tX ), 1e-12 );
+	EXPECT_NEAR( 1.0 - ( 0.5 * 9.80665 ) * square( h_tE ), h->q( h->tQ ), 1e-12 );
 
 	EXPECT_EQ( 0.0, v->tQ );
-	EXPECT_EQ( 0.0, v->tX );
+	EXPECT_EQ( h_tE, v->tX );
 
 	EXPECT_EQ( h_tE, z->tQ );
 	EXPECT_EQ( h_tE, z->tX );
-	EXPECT_NEAR( 1.0 - ( 0.5 * 9.81 ) * square( h_tE ), z->x( z->tX ), 1e-1 );
-	EXPECT_NEAR( 1.0 - ( 0.5 * 9.81 ) * square( h_tE ), z->q( z->tQ ), 1e-1 );
+	EXPECT_NEAR( 1.0 - ( 0.5 * 9.80665 ) * square( h_tE ), z->x( z->tX ), 1e-1 );
+	EXPECT_NEAR( 1.0 - ( 0.5 * 9.80665 ) * square( h_tE ), z->q( z->tQ ), 1e-1 );
 }

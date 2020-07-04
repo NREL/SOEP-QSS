@@ -88,10 +88,10 @@ TEST( fmu_Variable_ZC1Test, BouncingBall )
 	options::zFac = 1.0;
 
 	std::streambuf * coutBuf( std::cout.rdbuf() ); std::ostringstream strCout; std::cout.rdbuf( strCout.rdbuf() ); // Redirect cout
+	allEventIndicators.clear();
 	FMU_ME fmu( model );
 	fmu.instantiate();
 	fmu.pre_simulate();
-	allEventIndicators.clear();
 	fmu.init();
 	std::cout.rdbuf( coutBuf ); // Re-redirect cout
 
@@ -118,10 +118,10 @@ TEST( fmu_Variable_ZC1Test, BouncingBall )
 	EXPECT_EQ( 1.0, v->qTol );
 	EXPECT_EQ( 0.0, v->tQ );
 	EXPECT_EQ( 0.0, v->tX );
-	EXPECT_EQ( 1.0 / 9.81, v->tE );
+	EXPECT_EQ( 1.0 / 9.80665, v->tE );
 	EXPECT_EQ( 0.0, v->x( 0.0 ) );
 	EXPECT_EQ( 0.0, v->q( 0.0 ) );
-	EXPECT_EQ( -9.81, v->x1( 0.0 ) );
+	EXPECT_EQ( -9.80665, v->x1( 0.0 ) );
 
 	EXPECT_EQ( 1.0, z->rTol );
 	EXPECT_EQ( 1.0, z->aTol );

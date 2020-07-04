@@ -199,11 +199,12 @@ public: // Methods
 		shift_conditional( t );
 	}
 
-	// Shift Observers Events to Handlers
+	// Set Observer FMU Value and Shift Handler Event
 	void
 	handler( Time const t )
 	{
 		for ( Variable * observer : observers_ ) {
+			observer->fmu_set_x( t ); // Set FMU value for handler derivative dependencies
 			observer->shift_handler( t );
 		}
 	}

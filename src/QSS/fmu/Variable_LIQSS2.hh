@@ -270,7 +270,7 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
-		x_0_ = q_c_ = q_0_ = p_0(); // Assume FMU ran zero-crossing handler
+		x_0_ = q_c_ = q_0_ = p_0();
 		x_1_ = q_1_ = h_1();
 		x_2_ = c_2();
 		set_qTol();
@@ -287,7 +287,7 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
-		x_0_ = q_c_ = q_0_ = p_0(); // Assume FMU ran zero-crossing handler
+		x_0_ = q_c_ = q_0_ = p_0();
 	}
 
 	// Handler Advance: Stage 1

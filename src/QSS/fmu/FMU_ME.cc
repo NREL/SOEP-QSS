@@ -439,14 +439,8 @@ namespace fmu {
 					if ( var_causality == fmi2_causality_enu_local ) std::cout << " Causality: Local" << std::endl;
 					if ( var_causality == fmi2_causality_enu_output ) std::cout << " Causality: Output" << std::endl;
 					if ( ( var_variability == fmi2_variability_enu_continuous ) || ( var_variability == fmi2_variability_enu_discrete ) ) {
-						if ( has_prefix( var_name, "der(" ) && has_suffix( var_name, ")" ) ) {
-							// Skip derivatives
-						} else if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) {
-							// Skip temporaries
-						} else if ( var_name == "time" ) {
-							// Skip time
-						} else if ( options::output::F || ( options::output::f && ( var_causality == fmi2_causality_enu_output ) ) ) { // Add to FMU outputs
-							if ( output_filter( var_name ) ) fmu_outs[ var_real ] = FMU_Variable( var, var_real, var_ref, i+1 );
+						if ( options::output::F || ( options::output::f && ( var_causality == fmi2_causality_enu_output ) ) ) { // Add to FMU outputs
+							if ( output_filter.fmu( var_name ) ) fmu_outs[ var_real ] = FMU_Variable( var, var_real, var_ref, i+1 );
 						}
 					}
 				}
@@ -705,10 +699,8 @@ namespace fmu {
 					if ( var_causality == fmi2_causality_enu_local ) std::cout << " Causality: Local" << std::endl;
 					if ( var_causality == fmi2_causality_enu_output ) std::cout << " Causality: Output" << std::endl;
 					if ( var_variability == fmi2_variability_enu_discrete ) {
-						if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) {
-							// Skip temporaries
-						} else if ( options::output::F || ( options::output::f && ( var_causality == fmi2_causality_enu_output ) ) ) { // Add to FMU outputs
-							if ( output_filter( var_name ) ) fmu_outs[ var_int ] = FMU_Variable( var, var_int, var_ref, i+1 );
+						if ( options::output::F || ( options::output::f && ( var_causality == fmi2_causality_enu_output ) ) ) { // Add to FMU outputs
+							if ( output_filter.fmu( var_name ) ) fmu_outs[ var_int ] = FMU_Variable( var, var_int, var_ref, i+1 );
 						}
 					}
 				}
@@ -781,10 +773,8 @@ namespace fmu {
 					if ( var_causality == fmi2_causality_enu_local ) std::cout << " Causality: Local" << std::endl;
 					if ( var_causality == fmi2_causality_enu_output ) std::cout << " Causality: Output" << std::endl;
 					if ( var_variability == fmi2_variability_enu_discrete ) {
-						if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) {
-							// Skip temporaries
-						} else if ( options::output::F || ( options::output::f && ( var_causality == fmi2_causality_enu_output ) ) ) { // Add to FMU outputs
-							if ( output_filter( var_name ) ) fmu_outs[ var_bool ] = FMU_Variable( var, var_bool, var_ref, i+1 );
+						if ( options::output::F || ( options::output::f && ( var_causality == fmi2_causality_enu_output ) ) ) { // Add to FMU outputs
+							if ( output_filter.fmu( var_name ) ) fmu_outs[ var_bool ] = FMU_Variable( var, var_bool, var_ref, i+1 );
 						}
 					}
 				}
@@ -1046,7 +1036,7 @@ namespace fmu {
 								std::exit( EXIT_FAILURE );
 							}
 						} else {
-							std::cerr << "\nError: FMU event indicator variable reverse dependency " << revDep << " derivative's variable not found" << std::endl;
+							std::cerr << "\nError: FMU event indicator variable reverse dependency " << revDep << " is not a QSS variable or derivative" << std::endl;
 							std::exit( EXIT_FAILURE );
 						}
 					}
@@ -1587,11 +1577,7 @@ namespace fmu {
 
 		// Variable output filtering
 		for ( auto var : vars ) {
-			if ( ! output_filter( var->name() ) ) {
-				var->out_off();
-			} else if ( var->name() == "time" ) { // Suppress time state variable output
-				var->out_off();
-			}
+			if ( ! output_filter( var->name() ) ) var->out_off();
 		}
 
 		// Variable subtype containers and specs

@@ -36,6 +36,9 @@
 #ifndef QSS_OutputFilter_hh_INCLUDED
 #define QSS_OutputFilter_hh_INCLUDED
 
+// QSS Headers
+#include <QSS/string.hh>
+
 // C++ Headers
 #include <fstream>
 #include <regex>
@@ -96,10 +99,39 @@ public: // Creation
 
 public: // Predicate
 
-	// Variable Name OK?
+	// Generate QSS Outputs for a Variable with Given Name?
 	bool
 	operator ()( std::string const & var_name ) const
 	{
+		if ( var_name == "time" ) return false; // Omit time variable
+		if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
+		if ( filters_.empty() ) return true;
+		for ( auto const & filter : filters_ ) { // Check if name matches filter
+			if ( std::regex_match( var_name, filter ) ) return true;
+		}
+		return false;
+	}
+
+	// Generate QSS Outputs for a Variable with Given Name?
+	bool
+	qss( std::string const & var_name ) const
+	{
+		if ( var_name == "time" ) return false; // Omit time variable
+		if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
+		if ( filters_.empty() ) return true;
+		for ( auto const & filter : filters_ ) { // Check if name matches filter
+			if ( std::regex_match( var_name, filter ) ) return true;
+		}
+		return false;
+	}
+
+	// Generate FMU Outputs for a Variable with Given Name?
+	bool
+	fmu( std::string const & var_name ) const
+	{
+		if ( var_name == "time" ) return false; // Omit time variable
+		if ( has_prefix( var_name, "der(" ) && has_suffix( var_name, ")" ) ) return false; // Omit derivatives
+		if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
 		if ( filters_.empty() ) return true;
 		for ( auto const & filter : filters_ ) { // Check if name matches filter
 			if ( std::regex_match( var_name, filter ) ) return true;

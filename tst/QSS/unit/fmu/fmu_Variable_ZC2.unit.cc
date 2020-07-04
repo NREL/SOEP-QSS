@@ -92,10 +92,10 @@ TEST( fmu_Variable_ZC2Test, BouncingBall )
 	options::zFac = 1.0;
 
 	std::streambuf * coutBuf( std::cout.rdbuf() ); std::ostringstream strCout; std::cout.rdbuf( strCout.rdbuf() ); // Redirect cout
+	allEventIndicators.clear();
 	FMU_ME fmu( model );
 	fmu.instantiate();
 	fmu.pre_simulate();
-	allEventIndicators.clear();
 	fmu.init();
 	std::cout.rdbuf( coutBuf ); // Re-redirect cout
 
@@ -112,12 +112,12 @@ TEST( fmu_Variable_ZC2Test, BouncingBall )
 	EXPECT_EQ( 1.0, h->qTol );
 	EXPECT_EQ( 0.0, h->tQ );
 	EXPECT_EQ( 0.0, h->tX );
-	EXPECT_DOUBLE_EQ( std::sqrt( 1.0 / ( 0.5 * 9.81 ) ), h->tE );
+	EXPECT_DOUBLE_EQ( std::sqrt( 1.0 / ( 0.5 * 9.80665 ) ), h->tE );
 	EXPECT_EQ( 1.0, h->x( 0.0 ) );
 	EXPECT_EQ( 1.0, h->q( 0.0 ) );
 	EXPECT_EQ( 0.0, h->x1( 0.0 ) );
 	EXPECT_EQ( 0.0, h->q1( 0.0 ) );
-	EXPECT_DOUBLE_EQ( -9.81, h->x2( 0.0 ) );
+	EXPECT_DOUBLE_EQ( -9.80665, h->x2( 0.0 ) );
 
 	EXPECT_EQ( 1.0, v->rTol );
 	EXPECT_EQ( 1.0, v->aTol );
@@ -127,8 +127,8 @@ TEST( fmu_Variable_ZC2Test, BouncingBall )
 	EXPECT_EQ( infinity, v->tE );
 	EXPECT_EQ( 0.0, v->x( 0.0 ) );
 	EXPECT_EQ( 0.0, v->q( 0.0 ) );
-	EXPECT_EQ( -9.81, v->x1( 0.0 ) );
-	EXPECT_EQ( -9.81, v->q1( 0.0 ) );
+	EXPECT_EQ( -9.80665, v->x1( 0.0 ) );
+	EXPECT_EQ( -9.80665, v->q1( 0.0 ) );
 	EXPECT_EQ( 0.0, v->x2( 0.0 ) );
 
 	EXPECT_EQ( 1.0, z->rTol );
@@ -136,12 +136,12 @@ TEST( fmu_Variable_ZC2Test, BouncingBall )
 	EXPECT_EQ( 1.0, z->qTol );
 	EXPECT_EQ( 0.0, z->tQ );
 	EXPECT_EQ( 0.0, z->tX );
-	EXPECT_NEAR( std::sqrt( 1.0 / ( 0.5 * 9.81 ) ), z->tE, 1e-5 );
+	EXPECT_NEAR( std::sqrt( 1.0 / ( 0.5 * 9.80665 ) ), z->tE, 1e-5 );
 	EXPECT_EQ( 1.0, z->x( 0.0 ) );
 	EXPECT_EQ( 1.0, z->q( 0.0 ) );
 	EXPECT_EQ( 0.0, z->x1( 0.0 ) );
 	EXPECT_EQ( 0.0, z->q1( 0.0 ) );
-	EXPECT_NEAR( -9.81, z->x2( 0.0 ), 1e-4 );
+	EXPECT_NEAR( -9.80665, z->x2( 0.0 ), 3e-4 );
 
 	double const h_tE( h->tE );
 	fmu.set_time( h->tE );
@@ -149,14 +149,14 @@ TEST( fmu_Variable_ZC2Test, BouncingBall )
 
 	EXPECT_EQ( h_tE, h->tQ );
 	EXPECT_EQ( h_tE, h->tX );
-	EXPECT_NEAR( 1.0 - ( 0.5 * 9.81 ) * square( h_tE ), h->x( h->tX ), 1e-12 );
-	EXPECT_NEAR( 1.0 - ( 0.5 * 9.81 ) * square( h_tE ), h->q( h->tQ ), 1e-12 );
+	EXPECT_NEAR( 1.0 - ( 0.5 * 9.80665 ) * square( h_tE ), h->x( h->tX ), 1e-12 );
+	EXPECT_NEAR( 1.0 - ( 0.5 * 9.80665 ) * square( h_tE ), h->q( h->tQ ), 1e-12 );
 
 	EXPECT_EQ( 0.0, v->tQ );
-	EXPECT_EQ( 0.0, v->tX );
+	EXPECT_EQ( h_tE, v->tX );
 
 	EXPECT_EQ( h_tE, z->tQ );
 	EXPECT_EQ( h_tE, z->tX );
-	EXPECT_NEAR( 1.0 - ( 0.5 * 9.81 ) * square( h_tE ), z->x( z->tX ), 1e-12 );
-	EXPECT_NEAR( 1.0 - ( 0.5 * 9.81 ) * square( h_tE ), z->q( z->tQ ), 1e-12 );
+	EXPECT_NEAR( 1.0 - ( 0.5 * 9.80665 ) * square( h_tE ), z->x( z->tX ), 1e-12 );
+	EXPECT_NEAR( 1.0 - ( 0.5 * 9.80665 ) * square( h_tE ), z->q( z->tQ ), 1e-12 );
 }
