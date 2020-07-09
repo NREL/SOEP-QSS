@@ -28,7 +28,7 @@
             "includePath": [
                 "/usr/include",
                 "/usr/local/include",
-                "/usr/lib/gcc/x86_64-redhat-linux/9/include",
+                "/usr/lib/gcc/x86_64-redhat-linux/10/include",
                 "${workspaceFolder}",
                 "${workspaceFolder}/src",
                 "/opt/FMIL.GCC.r/include"
@@ -39,7 +39,7 @@
                 "path": [
                     "/usr/include",
                     "/usr/local/include",
-                    "/usr/lib/gcc/x86_64-redhat-linux/9/include",
+                    "/usr/lib/gcc/x86_64-redhat-linux/10/include",
                     "${workspaceFolder}",
                     "/opt/FMIL.GCC.r/include"
                 ],
