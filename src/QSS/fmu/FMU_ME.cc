@@ -1033,18 +1033,18 @@ namespace fmu {
 								con->add_observer( irevDepVar->second );
 							} else {
 								std::cerr << "\nError: FMU event indicator variable reverse dependency " << revDep << " derivative's variable with index " << revDepVar << " not found" << std::endl;
-								std::exit( EXIT_FAILURE );
+								std::cerr << "       Termination supppressed pending OCT update: Results may be invalid!" << std::endl; //OCT std::exit( EXIT_FAILURE );
 							}
 						} else {
 							std::cerr << "\nError: FMU event indicator variable reverse dependency " << revDep << " is not a QSS variable or derivative" << std::endl;
-							std::exit( EXIT_FAILURE );
+							std::cerr << "       Termination supppressed pending OCT update: Results may be invalid!" << std::endl; //OCT std::exit( EXIT_FAILURE );
 						}
 					}
 				}
 				has_event_indicators = true;
 			} else {
 				std::cerr << "\nError: FMU event indicator variable is not real-valued and continuous: " << var_name << std::endl;
-				std::exit( EXIT_FAILURE );
+				std::cerr << "       Termination supppressed pending OCT update: Results may be invalid!" << std::endl; //OCT std::exit( EXIT_FAILURE );
 			}
 		}
 
