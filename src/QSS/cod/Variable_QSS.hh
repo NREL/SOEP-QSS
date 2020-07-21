@@ -70,7 +70,7 @@ protected: // Creation
 	 int const order,
 	 std::string const & name,
 	 Real const rTol = 1.0e-4,
-	 Real const aTol = 1.0e-6,
+	 Real const aTol = 1.0e-4,
 	 Real const xIni = 0.0
 	) :
 	 Super( order, name, rTol, aTol, xIni )

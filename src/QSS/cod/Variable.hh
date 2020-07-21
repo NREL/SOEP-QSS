@@ -1071,7 +1071,7 @@ private: // Data
 public: // Data
 
 	Real rTol{ 1.0e-4 }; // Relative tolerance
-	Real aTol{ 1.0e-6 }; // Absolute tolerance
+	Real aTol{ 1.0e-4 }; // Absolute tolerance
 	Real qTol{ 1.0e-6 }; // Quantization tolerance
 	Real xIni{ 0.0 }; // Initial value
 	Time tQ{ 0.0 }; // Quantized time range begin

@@ -46,7 +46,7 @@ using namespace QSS::cod::mdl;
 
 TEST( cod_Variable_Inp3Test, Basic )
 {
-	Variable_Inp3< Function_Inp_sin > u( "u" );
+	Variable_Inp3< Function_Inp_sin > u( "u", 1.0e-4, 1.0e-6 );
 	u.set_dt_max( 1.0 );
 	u.f().c( 0.05 ).s( 0.5 );
 	u.init();

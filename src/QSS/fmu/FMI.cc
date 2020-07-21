@@ -171,7 +171,7 @@ fmi2GetTypesPlatform()
 fmi2Component
 fmu_qss_fmi_instantiate(
  fmi2String instanceName,
- fmi2Type /*fmuType*/, // Unused
+ fmi2Type /* fmuType */, // Unused
  fmi2String fmuGUID,
  fmi2String fmuLocation,
  fmi2CallbackFunctions const * functions,
@@ -544,7 +544,7 @@ fmi2SetString(
 fmi2Status
 fmi2CompletedIntegratorStep(
  fmi2Component c,
- fmi2Boolean /*noSetFMUStatePriorToCurrentPoint*/, // Unused
+ fmi2Boolean /* noSetFMUStatePriorToCurrentPoint */, // Unused
  fmi2Boolean * enterEventMode,
  fmi2Boolean * terminateSimulation
 )
@@ -558,7 +558,7 @@ fmi2CompletedIntegratorStep(
 fmi2Status
 fmi2GetContinuousStates(
  fmi2Component c,
- fmi2Real /*x*/[], // Unused
+ fmi2Real /* x */[], // Unused
  std::size_t nx
 )
 {
@@ -573,7 +573,7 @@ fmi2GetContinuousStates(
 fmi2Status
 fmi2SetContinuousStates(
  fmi2Component c,
- fmi2Real const /*x*/[], // Unused
+ fmi2Real const /* x */[], // Unused
  std::size_t nx
 )
 {
@@ -588,7 +588,7 @@ fmi2SetContinuousStates(
 fmi2Status
 fmi2GetDerivatives(
  fmi2Component c,
- fmi2Real /*derivatives*/[], // Unused
+ fmi2Real /* derivatives */[], // Unused
  std::size_t nx
 )
 {
@@ -619,7 +619,7 @@ fmi2GetDirectionalDerivative(
 fmi2Status
 fmi2GetEventIndicators(
  fmi2Component c,
- fmi2Real /*eventIndicators*/[], // Unused
+ fmi2Real /* eventIndicators */[], // Unused
  std::size_t ni
 )
 {
@@ -634,7 +634,7 @@ fmi2GetEventIndicators(
 fmi2Status
 fmi2GetNominalsOfContinuousStates(
  fmi2Component c,
- fmi2Real /*x_nominal*/[], // Unused
+ fmi2Real /* x_nominal */[], // Unused
  std::size_t nx
 )
 {
@@ -734,7 +734,7 @@ fmi2FreeInstance( fmi2Component c )
 fmi2Status
 fmi2FreeFMUstate(
  fmi2Component c,
- fmi2FMUstate * /*FMUstate*/ // Unused
+ fmi2FMUstate * /* FMUstate */ // Unused
 )
 {
 	FMU_QSS & fmu_qss( fmu_qss_of( c ) );

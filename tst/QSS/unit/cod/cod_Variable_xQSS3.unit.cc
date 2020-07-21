@@ -60,7 +60,7 @@ TEST( cod_Variable_xQSS3Test, Basic )
 	x2.init( 2.5 );
 
 	EXPECT_EQ( 1.0e-4, x1.rTol );
-	EXPECT_EQ( 1.0e-6, x1.aTol );
+	EXPECT_EQ( 1.0e-4, x1.aTol );
 	EXPECT_EQ( std::max( x1.rTol * 2.5, x1.aTol ), x1.qTol );
 	EXPECT_EQ( 0.0, x1.tQ );
 	EXPECT_DOUBLE_EQ( std::cbrt( x1.qTol / ( 68.0 / 6.0 ) ), x1.tE );

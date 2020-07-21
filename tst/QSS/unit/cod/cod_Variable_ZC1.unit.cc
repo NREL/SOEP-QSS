@@ -53,7 +53,7 @@ TEST( cod_Variable_ZC1Test, Basic )
 	x.add( -1.0 );
 	x.init( 1.0 );
 	EXPECT_EQ( 1.0e-4, x.rTol );
-	EXPECT_EQ( 1.0e-6, x.aTol );
+	EXPECT_EQ( 1.0e-4, x.aTol );
 	EXPECT_EQ( infinity, x.tE );
 
 	EXPECT_EQ( 1.0, x.x( 0.0 ) );

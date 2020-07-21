@@ -455,8 +455,7 @@ public: // Data
 	bool eventq_own{ true }; // Own the event queue?
 
 	// Tolerances
-	Real rTol; // Relative tolerance
-	Real aTol; // Absolute tolerance
+	Real rTol{ 1.0e-4 }; // Relative tolerance
 
 	// Variables
 	Variables vars; // QSS variables

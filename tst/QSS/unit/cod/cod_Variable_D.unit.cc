@@ -50,7 +50,7 @@ TEST( cod_Variable_DTest, Basic )
 	EXPECT_TRUE( d.is_Discrete() );
 	EXPECT_EQ( 0, d.order() );
 	EXPECT_EQ( 1.0e-4, d.rTol );
-	EXPECT_EQ( 1.0e-6, d.aTol );
+	EXPECT_EQ( 1.0e-4, d.aTol );
 	EXPECT_EQ( 0.0, d.tX );
 	EXPECT_EQ( 0.0, d.tQ );
 	EXPECT_EQ( 42.0, d.r() );

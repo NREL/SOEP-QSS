@@ -48,7 +48,8 @@ namespace options {
 
 QSS qss( QSS::QSS2 ); // QSS method: (x)(LI)QSS(1|2|3)
 double rTol( 1.0e-4 ); // Relative tolerance
-double aTol( 1.0e-6 ); // Absolute tolerance
+double aTol( 1.0e-4 ); // Absolute tolerance
+double aFac( 1.0 ); // Absolute tolerance factor
 double zTol( 0.0 ); // Zero-crossing tolerance
 double zFac( 1.01 ); // Zero-crossing tolerance factor
 double dtMin( 0.0 ); // Min time step (s)
@@ -88,8 +89,7 @@ namespace specified {
 
 bool qss( false ); // QSS method specified?
 bool rTol( false ); // Relative tolerance specified?
-bool aTol( false ); // Absolute tolerance for no-nominal variables specified?
-bool aTolAll( false ); // Absolute tolerance for all variables specified?
+bool aTol( false ); // Absolute tolerance specified?
 bool zTol( false ); // Zero-crossing tolerance specified?
 bool dtZC( false ); // FMU zero-crossing time step specified?
 bool tEnd( false ); // End time specified?
@@ -122,8 +122,8 @@ help_display()
 	std::cout << "Options:" << "\n\n";
 	std::cout << " --qss=QSS        QSS method: (x)(LI)QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
 	std::cout << " --rTol=TOL       Relative tolerance  [1e-4|FMU]" << '\n';
-	std::cout << " --aTol=TOL       Absolute tolerance for no-nominal variables  [1e-6]" << '\n';
-	std::cout << " --aTolAll=TOL    Absolute tolerance for all variables  [1e-6]" << '\n';
+	std::cout << " --aTol=TOL       Absolute tolerance  [rTol*aFac*nominal]" << '\n';
+	std::cout << " --aFac=FAC       Absolute tolerance factor  [1]" << '\n';
 	std::cout << " --zTol=TOL       Zero-crossing tolerance  [0]" << '\n';
 	std::cout << " --zFac=FAC       Zero-crossing tolerance factor  [1.01]" << '\n';
 	std::cout << " --dtMin=STEP     Min time step (s)  [0]" << '\n';
@@ -299,7 +299,6 @@ process_args( int argc, char * argv[] )
 			}
 		} else if ( has_value_option( arg, "aTol" ) ) {
 			specified::aTol = true;
-			specified::aTolAll = false;
 			std::string const aTol_str( arg_value( arg ) );
 			if ( is_double( aTol_str ) ) {
 				aTol = double_of( aTol_str );
@@ -314,21 +313,16 @@ process_args( int argc, char * argv[] )
 				std::cerr << "\nError: Nonnumeric aTol: " << aTol_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "aTolAll" ) ) {
-			specified::aTol = true;
-			specified::aTolAll = true;
-			std::string const aTol_str( arg_value( arg ) );
-			if ( is_double( aTol_str ) ) {
-				aTol = double_of( aTol_str );
-				if ( aTol == 0.0 ) {
-					aTol = std::numeric_limits< double >::min();
-					std::cerr << "\nWarning: aTol set to: " << aTol << std::endl;
-				} else if ( aTol < 0.0 ) {
-					std::cerr << "\nError: Negative aTol: " << aTol_str << std::endl;
+		} else if ( has_value_option( arg, "aFac" ) ) {
+			std::string const aFac_str( arg_value( arg ) );
+			if ( is_double( aFac_str ) ) {
+				aFac = double_of( aFac_str );
+				if ( aFac <= 0.0 ) {
+					std::cerr << "\nError: Nonpositive aFac: " << aFac_str << std::endl;
 					fatal = true;
 				}
 			} else {
-				std::cerr << "\nError: Nonnumeric aTol: " << aTol_str << std::endl;
+				std::cerr << "\nError: Nonnumeric aFac: " << aFac_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "zTol" ) ) {
@@ -672,6 +666,7 @@ process_args( int argc, char * argv[] )
 		} else { // Treat non-option argument as model
 			models.push_back( arg );
 		}
+		if ( ! specified::aTol ) aTol = rTol * aFac; // Make unspecified aTol consistent with rTol * aFac for use in cod
 		if ( ( dtMax != infinity ) && ( dtInf != infinity ) ) {
 			std::cerr << "\nWarning: dtInf has no effect when dtMax is specified" << std::endl;
 		}

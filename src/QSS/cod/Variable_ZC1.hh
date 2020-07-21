@@ -103,7 +103,7 @@ public: // Creation
 	Variable_ZC1(
 	 std::string const & name,
 	 Real const rTol = 1.0e-4,
-	 Real const aTol = 1.0e-6,
+	 Real const aTol = 1.0e-4,
 	 Real const zTol = 0.0
 	) :
 	 Super( 1, name, rTol, aTol, zTol )

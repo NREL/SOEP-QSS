@@ -61,6 +61,7 @@
 // C++ Headers
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstdlib>
 #include <functional>
 #include <iomanip>
@@ -376,7 +377,13 @@ namespace fmu {
 		iOut = 1u; // Output step index
 		if ( ! options::specified::rTol ) options::rTol = rTol; // Quantization relative tolerance (FMU doesn't have an absolute tolerance)
 		std::cout << "Relative Tolerance: " << options::rTol << std::endl;
-		std::cout << "Absolute Tolerance: " << options::aTol << " for " << ( options::specified::aTolAll ? "all" : "no-nominal" ) << " variables" << std::endl;
+		if ( options::specified::aTol ) {
+			std::cout << "Absolute Tolerance: " << options::aTol << std::endl;
+		} else if ( options::aFac == 1.0 ) {
+			std::cout << "Absolute Tolerances: " << options::rTol << " * nominal value" << std::endl;
+		} else {
+			std::cout << "Absolute Tolerances: " << options::rTol << " * " << options::aFac << " * nominal value" << std::endl;
+		}
 
 		// FMU event info initialization
 		eventInfo.newDiscreteStatesNeeded = fmi2_false;
@@ -392,7 +399,7 @@ namespace fmu {
 		do_event_iteration();
 		fmi2_import_enter_continuous_time_mode( fmu );
 		fmi2_import_get_continuous_states( fmu, states, n_states ); // Should get initial values
-		fmi2_import_get_nominals_of_continuous_states( fmu, x_nominal, n_states );
+		fmi2_import_get_nominals_of_continuous_states( fmu, x_nominal, n_states ); // Should return 1 for variables with no nominal value specified
 		fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 
 		// FMU Query: Model
@@ -590,18 +597,19 @@ namespace fmu {
 						}
 						Variable * qss_var( nullptr );
 						if ( inp_fxn || !options::perfect ) { // Use input variables for connections
+							Real const aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac, std::numeric_limits< double >::min() ) );
 							if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) ) {
-								qss_var = new Variable_Inp1( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
+								qss_var = new Variable_Inp1( var_name, options::rTol, aTol, this, fmu_var, inp_fxn );
 							} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) ) {
-								qss_var = new Variable_Inp2( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
+								qss_var = new Variable_Inp2( var_name, options::rTol, aTol, this, fmu_var, inp_fxn );
 							} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) ) {
-								qss_var = new Variable_Inp3( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
+								qss_var = new Variable_Inp3( var_name, options::rTol, aTol, this, fmu_var, inp_fxn );
 							} else if ( options::qss == options::QSS::xQSS1 ) {
-								qss_var = new Variable_xInp1( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
+								qss_var = new Variable_xInp1( var_name, options::rTol, aTol, this, fmu_var, inp_fxn );
 							} else if ( options::qss == options::QSS::xQSS2 ) {
-								qss_var = new Variable_xInp2( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
+								qss_var = new Variable_xInp2( var_name, options::rTol, aTol, this, fmu_var, inp_fxn );
 							} else if ( options::qss == options::QSS::xQSS3 ) {
-								qss_var = new Variable_xInp3( var_name, options::rTol, options::aTol, this, fmu_var, inp_fxn );
+								qss_var = new Variable_xInp3( var_name, options::rTol, aTol, this, fmu_var, inp_fxn );
 							} else {
 								std::cerr << " Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 								std::exit( EXIT_FAILURE );
@@ -907,26 +915,30 @@ namespace fmu {
 							std::cerr << "          Using initial value from fmi2GetContinuousStates()" << std::endl;
 						}
 					}
-					Real const var_aTol( ( ! options::specified::aTolAll ) && ( options::rTol * x_nominal[ i ] > 0.0 ) ? options::rTol * x_nominal[ i ] : options::aTol );
+					if ( x_nominal[ i ] <= 0.0 ) { // FMU generation should fail if nominal is zero and should convert negative nominals to their absolute value // FMU should return a nominal of 1 if not specified in the model
+						std::cerr << " Error: Nonpositive nominal value for " << var_name << ": " << x_nominal[ i ] << std::endl;
+						std::exit( EXIT_FAILURE );
+					}
 					Variable_QSS * qss_var( nullptr );
+					Real const aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac * x_nominal[ i ], std::numeric_limits< double >::min() ) ); // Use variable nominal value to set the absolute tolerance unless aTol specified
 					if ( options::qss == options::QSS::QSS1 ) {
-						qss_var = new Variable_QSS1( var_name, options::rTol, var_aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_QSS1( var_name, options::rTol, aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::QSS2 ) {
-						qss_var = new Variable_QSS2( var_name, options::rTol, var_aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_QSS2( var_name, options::rTol, aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::QSS3 ) {
-						qss_var = new Variable_QSS3( var_name, options::rTol, var_aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_QSS3( var_name, options::rTol, aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS1 ) {
-						qss_var = new Variable_LIQSS1( var_name, options::rTol, var_aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_LIQSS1( var_name, options::rTol, aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS2 ) {
-						qss_var = new Variable_LIQSS2( var_name, options::rTol, var_aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_LIQSS2( var_name, options::rTol, aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS3 ) {
-						qss_var = new Variable_LIQSS3( var_name, options::rTol, var_aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_LIQSS3( var_name, options::rTol, aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::xQSS1 ) {
-						qss_var = new Variable_xQSS1( var_name, options::rTol, var_aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_xQSS1( var_name, options::rTol, aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::xQSS2 ) {
-						qss_var = new Variable_xQSS2( var_name, options::rTol, var_aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_xQSS2( var_name, options::rTol, aTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::xQSS3 ) {
-						qss_var = new Variable_xQSS3( var_name, options::rTol, var_aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_xQSS3( var_name, options::rTol, aTol, states_initial, this, fmu_var, fmu_der );
 					} else {
 						std::cerr << " Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 						std::exit( EXIT_FAILURE );
@@ -996,12 +1008,13 @@ namespace fmu {
 				FMU_Variable & fmu_var( fmu_vars[ var_real ] );
 				std::cout << "\nEvent Indicator: " << var_name << std::endl;
 				Variable_ZC * qss_var( nullptr );
+				Real const aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac, std::numeric_limits< double >::min() ) );
 				if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) || ( options::qss == options::QSS::xQSS1 ) ) {
-					qss_var = new Variable_ZC1( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var );
+					qss_var = new Variable_ZC1( var_name, options::rTol, aTol, options::zTol, this, fmu_var );
 				} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) || ( options::qss == options::QSS::xQSS2 ) ) {
-					qss_var = new Variable_ZC2( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var );
+					qss_var = new Variable_ZC2( var_name, options::rTol, aTol, options::zTol, this, fmu_var );
 				} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) || ( options::qss == options::QSS::xQSS3 ) ) {
-					qss_var = new Variable_ZC3( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var );
+					qss_var = new Variable_ZC3( var_name, options::rTol, aTol, options::zTol, this, fmu_var );
 				} else {
 					std::cerr << " Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 					std::exit( EXIT_FAILURE );
@@ -1081,12 +1094,13 @@ namespace fmu {
 									fmu_ders[ var_real ] = fmu_der;
 									fmu_dvrs[ der_real ] = fmu_var;
 									Variable_ZC * qss_var( nullptr );
+									Real const aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac, std::numeric_limits< double >::min() ) );
 									if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) || ( options::qss == options::QSS::xQSS1 ) ) {
-										qss_var = new Variable_ZCe1( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var, fmu_der );
+										qss_var = new Variable_ZCe1( var_name, options::rTol, aTol, options::zTol, this, fmu_var, fmu_der );
 									} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) || ( options::qss == options::QSS::xQSS2 ) ) {
-										qss_var = new Variable_ZCe2( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var, fmu_der );
+										qss_var = new Variable_ZCe2( var_name, options::rTol, aTol, options::zTol, this, fmu_var, fmu_der );
 									} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) || ( options::qss == options::QSS::xQSS3 ) ) {
-										qss_var = new Variable_ZCe3( var_name, options::rTol, options::aTol, options::zTol, this, fmu_var, fmu_der );
+										qss_var = new Variable_ZCe3( var_name, options::rTol, aTol, options::zTol, this, fmu_var, fmu_der );
 									} else {
 										std::cerr << " Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 										std::exit( EXIT_FAILURE );

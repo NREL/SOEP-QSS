@@ -80,6 +80,7 @@ enum class LogLevel {
 extern QSS qss; // QSS method: (x)(LI)QSS(1|2|3)
 extern double rTol; // Relative tolerance
 extern double aTol; // Absolute tolerance
+extern double aFac; // Absolute tolerance factor
 extern double zTol; // Zero-crossing tolerance
 extern double zFac; // Zero-crossing tolerance factor
 extern double dtMin; // Min time step (s)
@@ -119,8 +120,7 @@ namespace specified {
 
 extern bool qss; // QSS method specified?
 extern bool rTol; // Relative tolerance specified?
-extern bool aTol; // Absolute tolerance specified for no-nominal variables?
-extern bool aTolAll; // Absolute tolerance specified for all variables?
+extern bool aTol; // Absolute tolerance specified?
 extern bool zTol; // Zero-crossing tolerance specified?
 extern bool dtZC; // FMU zero-crossing time step specified?
 extern bool tEnd; // End time specified?

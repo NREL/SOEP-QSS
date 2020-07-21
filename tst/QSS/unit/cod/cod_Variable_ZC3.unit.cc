@@ -53,7 +53,7 @@ TEST( cod_Variable_ZC3Test, Basic )
 	x.add( -1.0 );
 	x.init( 1.0 );
 	EXPECT_EQ( 1.0e-4, x.rTol );
-	EXPECT_EQ( 1.0e-6, x.aTol );
+	EXPECT_EQ( 1.0e-4, x.aTol );
 	EXPECT_EQ( infinity, x.tE );
 
 	EXPECT_EQ( 1.0, x.x( 0.0 ) );
@@ -67,7 +67,7 @@ TEST( cod_Variable_ZC3Test, Basic )
 	z.add( &x );
 	z.init();
 	EXPECT_EQ( 1.0e-4, z.rTol );
-	EXPECT_EQ( 1.0e-6, z.aTol );
+	EXPECT_EQ( 1.0e-4, z.aTol );
 	EXPECT_EQ( infinity, z.tE );
 	EXPECT_DOUBLE_EQ( 1.0, z.tZ );
 	EXPECT_EQ( Variable::Crossing::DnPN, z.crossing );

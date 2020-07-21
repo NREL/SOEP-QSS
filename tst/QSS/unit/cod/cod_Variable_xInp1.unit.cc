@@ -53,7 +53,7 @@ TEST( cod_Variable_xInp1Test, Basic )
 	u.f().c( 0.05 ).s( 0.5 );
 	u.init();
 	EXPECT_EQ( 1.0e-4, u.rTol );
-	EXPECT_EQ( 1.0e-6, u.aTol );
+	EXPECT_EQ( 1.0e-4, u.aTol );
 	EXPECT_EQ( 0.0, u.tQ );
 	EXPECT_DOUBLE_EQ( std::max( u.rTol * 0.0, u.aTol ) / 0.025, u.tE );
 	EXPECT_EQ( 0.0, u.f()( 0.0 ) );
