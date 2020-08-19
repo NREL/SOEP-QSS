@@ -53,6 +53,9 @@
 #include <QSS/string.hh>
 #include <QSS/Timers.hh>
 
+// FMI Library Headers
+#include <FMI2/fmi2_xml_variable.h>
+
 // OpenMP Headers
 #ifdef _OPENMP
 #include <omp.h>
@@ -597,7 +600,7 @@ namespace fmu {
 						}
 						Variable * qss_var( nullptr );
 						if ( inp_fxn || !options::perfect ) { // Use input variables for connections
-							Real const aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac, std::numeric_limits< double >::min() ) );
+							Real const aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac * fmi2_xml_get_real_variable_nominal( var_real ), std::numeric_limits< double >::min() ) );
 							if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) ) {
 								qss_var = new Variable_Inp1( var_name, options::rTol, aTol, this, fmu_var, inp_fxn );
 							} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) ) {
@@ -1008,7 +1011,7 @@ namespace fmu {
 				FMU_Variable & fmu_var( fmu_vars[ var_real ] );
 				std::cout << "\nEvent Indicator: " << var_name << std::endl;
 				Variable_ZC * qss_var( nullptr );
-				Real const aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac, std::numeric_limits< double >::min() ) );
+				Real const aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac * fmi2_xml_get_real_variable_nominal( var_real ), std::numeric_limits< double >::min() ) );
 				if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) || ( options::qss == options::QSS::xQSS1 ) ) {
 					qss_var = new Variable_ZC1( var_name, options::rTol, aTol, options::zTol, this, fmu_var );
 				} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) || ( options::qss == options::QSS::xQSS2 ) ) {
@@ -1094,7 +1097,7 @@ namespace fmu {
 									fmu_ders[ var_real ] = fmu_der;
 									fmu_dvrs[ der_real ] = fmu_var;
 									Variable_ZC * qss_var( nullptr );
-									Real const aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac, std::numeric_limits< double >::min() ) );
+									Real const aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac * fmi2_xml_get_real_variable_nominal( var_real ), std::numeric_limits< double >::min() ) );
 									if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) || ( options::qss == options::QSS::xQSS1 ) ) {
 										qss_var = new Variable_ZCe1( var_name, options::rTol, aTol, options::zTol, this, fmu_var, fmu_der );
 									} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) || ( options::qss == options::QSS::xQSS2 ) ) {
