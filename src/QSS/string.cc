@@ -231,13 +231,13 @@ uppercased( std::string const & s )
 std::vector< std::string >
 split( std::string const & str, char del )
 {
-	std::vector< std::string > toks;
+	std::vector< std::string > tokens;
 	std::istringstream str_stream( str );
-	std::string tok;
-	while ( std::getline( str_stream, tok, del ) ) {
-		toks.push_back( tok );
+	std::string token;
+	while ( std::getline( str_stream, token, del ) ) {
+		tokens.push_back( token );
 	}
-	return toks;
+	return tokens;
 }
 
 } // QSS

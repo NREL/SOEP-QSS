@@ -1,2 +1,2 @@
 @echo off
-del /s *.d *.obj *.o *.exe *.lib *.a *.ilk *.pdb
+del /s *.d *.obj *.o QSS*.exe *.lib *.a *.ilk *.pdb

@@ -201,11 +201,12 @@ The Binned-QSS goes beyond this research by exploiting QSS to dynamically identi
 
 #### Notes
 
-* Early performance experiments with Binned-QSS are promising, showing higher performance than pure QSS even for many ODE models.
+* Early performance experiments with Binned-QSS are promising, showing higher performance than normal QSS even for most non-DAE (pure ODE) models.
 * LIQSS is not fully optimized in this first Binned-QSS implementation: this will be more practical when automatic differentiation becomes available.
 * The `--bin=`_SIZE_`:`_FRAC_`:`_AUTO_ option can be used to specify the bin size and min time step fraction for binning and whether to use automatic bin size optimization.
 * A simple automatic bin size optimizer was developed for use until more large-scale models can be run to refine the design.
-* The bin size optimizer considers CPU timing both to determine how often to compute a new recommended bin size and to compute the bin size. Since CPU timing varies with system load, the bin size optimizer causes some solution variation between runs. A fixed simulation time step specified by the user could be added to allow bin optimization without solution non-determinism but a good time step for this would need to be long enough for a CPU elapsed time that is long enough relative to the CPU clock resolution for robust solution "velocity" computation, which will depend on the system.
+* The bin size optimizer is controlled by the optional _AUTO_ field and is off by default.
+* The bin size optimizer considers CPU timing both to determine how often to compute a new recommended bin size and to compute the bin size. Since CPU timing varies with system load, the bin size optimizer causes some solution variation between runs (non-deterministic). A fixed simulation time step specified by the user could be added to allow bin optimization without solution non-determinism but a good time step for this would need to be long enough for a CPU elapsed time that is long enough relative to the CPU clock resolution for robust solution "velocity" computation, which will depend on the system.
 
 ## FMU Support
 
@@ -433,7 +434,8 @@ At this time an Achilles.fmu FMU built from Achilles.mo in the SOEP-QSS-Test rep
 The QSS solver application can run both code-defined and FMU-based test cases. FMU for Model Exchange .fmu files can be run if properly adapted for QSS with respect to zero-crossing variables and dependencies. FMU-QSS .fmu files can also be run but they must have names of the form `<FMU=ME_name>_QSS.fmu` to be recognized as FMU-QSS FMUs.
 
 There are command line options to select the QSS method, set quantization tolerances, output and differentiation time steps, and output selection controls.
-* Relative tolerance is taken from the FMU if available by default but can be overridden with a command line option.
+* Relative tolerance is taken from the FMU if available by default but can be overridden with the `--rTol` command line option.
+* Absolute tolerances are computed by default from the FMU variable nominal values and the `--aFac` command line option but can be overridden with a constant value using the `--aTol` command line option.
 * QSS variable continuous and/or quantized trajectory values can be output at their requantization events.
 * QSS variable continuous and/or quantized trajectory output at a regular sampling time step interval can be enabled.
 * FMU outputs can be generated for FMU model runs.

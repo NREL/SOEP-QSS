@@ -49,7 +49,7 @@ namespace options {
 QSS qss( QSS::QSS2 ); // QSS method: (x)(LI)QSS(1|2|3)
 double rTol( 1.0e-4 ); // Relative tolerance
 double aTol( 1.0e-4 ); // Absolute tolerance
-double aFac( 1.0 ); // Absolute tolerance factor
+double aFac( 0.01 ); // Absolute tolerance factor
 double zTol( 0.0 ); // Zero-crossing tolerance
 double zFac( 1.01 ); // Zero-crossing tolerance factor
 double dtMin( 0.0 ); // Min time step (s)
@@ -67,9 +67,9 @@ double one_over_six_dtNum_squared( 1.0e12 / 6.0 ); // 1 / ( 6 * dtNum^2 )
 double one_over_six_dtNum_cubed( 1.0e18 / 6.0 ); // 1 / ( 6 * dtNum^3 )
 double dtOut( 1.0e-3 ); // Sampled & FMU output time step (s)
 double tEnd( 1.0 ); // End time (s)  [1|FMU]
-std::size_t bin_size( 1u ); // Bin size
-double bin_frac( 0.5 ); // Min bin step fraction
-bool bin_auto( true ); // Automaically optimize bin size?
+std::size_t bin_size( 1u ); // Bin size max
+double bin_frac( 0.25 ); // Bin step fraction min
+bool bin_auto( false ); // Bin size automaically optimized?
 std::size_t pass( 20 ); // Pass count limit
 bool cycles( false ); // Report dependency cycles?
 bool inflection( false ); // Requantize at inflections?
@@ -123,7 +123,7 @@ help_display()
 	std::cout << " --qss=QSS        QSS method: (x)(LI)QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
 	std::cout << " --rTol=TOL       Relative tolerance  [1e-4|FMU]" << '\n';
 	std::cout << " --aTol=TOL       Absolute tolerance  [rTol*aFac*nominal]" << '\n';
-	std::cout << " --aFac=FAC       Absolute tolerance factor  [1]" << '\n';
+	std::cout << " --aFac=FAC       Absolute tolerance factor  [0.01]" << '\n';
 	std::cout << " --zTol=TOL       Zero-crossing tolerance  [0]" << '\n';
 	std::cout << " --zFac=FAC       Zero-crossing tolerance factor  [1.01]" << '\n';
 	std::cout << " --dtMin=STEP     Min time step (s)  [0]" << '\n';
@@ -158,10 +158,10 @@ help_display()
 	std::cout << "           toggle[h0,h,d] => h0 + h * ( floor( t / d ) % 2 )" << '\n';
 	std::cout << " --con=INP:OUT  Connect FMU input and output variables" << '\n';
 	std::cout << "       INP and OUT syntax is <model>.<var>" << '\n';
-	std::cout << " --bin=SIZE:FRAC:AUTO  FMU requantization binning controls  [1:0.5:Y]" << '\n';
-	std::cout << "       SIZE  Bin size  [1]" << '\n';
-	std::cout << "            FRAC  Min time step fraction  (0-1]  [0.5]" << '\n';
-	std::cout << "                 AUTO  Automatic bin size optimization?  (Y|N)  [Y]" << '\n';
+	std::cout << " --bin=SIZE:FRAC:AUTO  FMU requantization binning controls  [1:0.5:N]" << '\n';
+	std::cout << "       SIZE  Bin size  (Size or U for Unlimited)  [U]" << '\n';
+	std::cout << "            FRAC  Min time step fraction  (0-1]  [0.25]" << '\n';
+	std::cout << "                 AUTO  Automatic bin size optimization?  (Y|N)  [N]" << '\n';
 	std::cout << " --out=OUTPUTS  Outputs  [trfkxo]" << '\n';
 	std::cout << "       t  Time events" << '\n';
 	std::cout << "       r  Requantizations" << '\n';
@@ -455,27 +455,29 @@ process_args( int argc, char * argv[] )
 				std::cerr << "\nError: Nonnumeric tEnd: " << tEnd_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "bin" ) ) {
+		} else if ( has_option( arg, "bin" ) || has_value_option( arg, "bin" ) ) {
 			specified::bin = true;
 			std::string const bin_str( arg_value( arg ) );
 			std::vector< std::string > const bin_args( split( bin_str, ':' ) );
 			if ( bin_args.size() > 1u ) { // : separated entries present
 
-				// Bin size
+				// Bin size max
 				std::string const bin_size_str( bin_args[ 0 ] );
 				if ( bin_size_str.empty() ) {
-					// Use default
-				} else if ( is_size( bin_size_str ) ) {
+					bin_size = std::numeric_limits< std::size_t >::max();
+				} else if ( bin_size_str == "U" ) { // Unlimited bin size max
+					bin_size = std::numeric_limits< std::size_t >::max();
+				} else if ( is_size( bin_size_str ) ) { // Specified bin size max
 					bin_size = size_of( bin_size_str );
 				} else {
 					std::cerr << "\nError: bin size is not valid: " << bin_size_str << std::endl;
 					fatal = true;
 				}
 
-				// Bin fraction
+				// Bin fraction min
 				std::string const bin_frac_str( bin_args[ 1 ] );
 				if ( bin_frac_str.empty() ) {
-					// Use default
+					bin_frac = 0.25;
 				} else if ( is_double( bin_frac_str ) ) {
 					bin_frac = double_of( bin_frac_str );
 					if ( ( bin_frac < 0.0 ) || ( bin_frac > 1.0 ) ) {
@@ -487,11 +489,11 @@ process_args( int argc, char * argv[] )
 					fatal = true;
 				}
 
-				// Bin auto
+				// Bin auto-optimize
 				if ( bin_args.size() > 2u ) {
 					std::string const bin_auto_str( bin_args[ 2 ] );
 					if ( bin_auto_str.empty() ) {
-						// Use default
+						bin_auto = false;
 					} else if ( is_any_of( bin_auto_str[ 0 ], "YyTt1" ) ) {
 						bin_auto = true;
 					} else if ( is_any_of( bin_auto_str[ 0 ], "NnFf0" ) ) {
@@ -505,13 +507,16 @@ process_args( int argc, char * argv[] )
 			} else if ( ! bin_str.empty() ) { // Treat single parameter as bin_size
 				if ( is_size( bin_str ) ) {
 					bin_size = size_of( bin_str );
+				} else if ( bin_str == "U" ) { // Unlimited max bin size
+					bin_size = std::numeric_limits< std::size_t >::max();
 				} else {
 					std::cerr << "\nError: bin size is not valid: " << bin_str << std::endl;
 					fatal = true;
 				}
-			} else {
-				std::cerr << "\nError: bin option missing SIZE:FRAC:AUTO values" << std::endl;
-				fatal = true;
+			} else { // Use bin defaults
+				bin_size = std::numeric_limits< std::size_t >::max();
+				bin_frac = 0.25;
+				bin_auto = false;
 			}
 		} else if ( has_value_option( arg, "pass" ) ) {
 			std::string const pass_str( arg_value( arg ) );

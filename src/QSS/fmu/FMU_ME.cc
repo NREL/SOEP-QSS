@@ -1871,8 +1871,9 @@ namespace fmu {
 #endif
 
 		// Binning setup
-		size_type bin_size( options::bin_size ); // Initial bin size: Bin optimizer will adjust it during the run in auto mode
+		size_type bin_size( std::min( options::bin_size, vars.size() ) ); // Initial bin size: Bin optimizer will adjust it during the run in auto mode
 		Real const bin_frac( options::bin_frac ); // Min time step fraction for a binned variable
+		std::pair< size_type, size_type > bin_size_auto( bin_size, 1u ); // Automatic bin size total and count for reporting average
 		Time bin_performance_dt( 0.0 ); // Min solution time span for checking performance: adjusted on the fly
 		timers::Performance bin_performance( tPass ); // Solution performance "stopwatch"
 		BinOptimizer bin_optimizer( state_vars.size() ); // Bin size optimizer
@@ -2445,6 +2446,8 @@ namespace fmu {
 							size_type const bin_size_old( bin_size );
 							bin_optimizer.add( bin_size, bin_velocity );
 							bin_size = bin_optimizer.rec_bin_size();
+							bin_size_auto.first += bin_size;
+							++bin_size_auto.second;
 							if ( options::output::d ) {
 								if ( bin_size != bin_size_old ) {
 									std::cout << "\nBin size adjusted to: " << bin_size << std::endl;
@@ -2508,6 +2511,9 @@ namespace fmu {
 #ifdef _OPENMP
 			std::cout << "Simulation wall time: " << sim_wall_time << " (s)" << std::endl; // Wall time
 #endif
+			if ( bin_auto && ( bin_size_auto.second > 0u ) ) {
+				std::cout << "\nAverage optimized bin size: " << static_cast< size_type >( std::round( double( bin_size_auto.first ) / bin_size_auto.second ) ) << std::endl;
+			}
 			if ( options::statistics ) { // Statistics
 				if ( n_QSS_events > 0 ) {
 					std::cout << "\nQSS Requantization Events:" << std::endl;
