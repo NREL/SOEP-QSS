@@ -114,7 +114,7 @@ public: // Methods
 		init_observees();
 
 		// Initialize specs
-		x_0_ = p_0();
+		x_0_ = z_0();
 		x_mag_ = std::abs( x_0_ );
 		x_1_ = z_1();
 		set_qTol();

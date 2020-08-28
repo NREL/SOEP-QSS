@@ -1761,9 +1761,6 @@ namespace fmu {
 	init_XB()
 	{
 		std::cout << '\n' + name + " Initialization: Stage XB =====" << std::endl;
-		for ( auto var : vars_NC ) {
-			var->fmu_set_x( t0 );
-		}
 		for ( auto var : vars_XB ) {
 			var->init();
 		}
