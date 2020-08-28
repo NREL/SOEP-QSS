@@ -301,6 +301,10 @@ namespace fmu {
 		fmi2_boolean_t const toleranceControlled( fmi2_false ); // FMIL says tolerance control not supported for ME
 		fmi2_boolean_t const stopTimeDefined( fmi2_true );
 		std::cout << "\nSimulation Time Range:  Start: " << tstart << "  Stop: " << tstop << std::endl;
+		if ( tstart > tstop ) {
+			std::cerr << "\nError: Start Time > Stop Time" << std::endl;
+			std::exit( EXIT_FAILURE );
+		}
 		std::cout << "\nRelative Tolerance in FMU-ME: " << relativeTolerance << std::endl;
 		if ( fmi2_import_setup_experiment( fmu, toleranceControlled, relativeTolerance, tstart, stopTimeDefined, tstop ) >= fmi2_status_error ) {
 			std::cerr << "\nError: fmi2_import_setup_experiment failed" << std::endl;
