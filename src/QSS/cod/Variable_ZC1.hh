@@ -195,7 +195,7 @@ public: // Methods
 		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		bool const check_crossing( ( t > tZ_last ) || ( x_mag_ != 0.0 ) );
 		int const sign_old( check_crossing ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = f_.x( tX = tQ = t );
+		x_0_ = ( tX = tQ = t == tZ_last ? 0.0 : f_.x( t ) ); // Force exact zero if at zero-crossing time
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		x_1_ = f_.x1( t );
 		set_qTol();
@@ -212,7 +212,7 @@ public: // Methods
 		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = f_.x( tX = tQ = t );
+		x_0_ = ( tX = tQ = t == tZ_last ? 0.0 : f_.x( t ) ); // Force exact zero if at zero-crossing time
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		x_1_ = f_.x1( t );
 		set_qTol();

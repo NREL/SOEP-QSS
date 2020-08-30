@@ -261,7 +261,7 @@ public: // Data
 
 	Real zTol{ 0.0 }; // Zero-crossing anti-chatter tolerance
 	Time tZ{ infinity }; // Zero-crossing time: tQ <= tZ and tX <= tZ
-	Time tZ_last{ 0.0 }; // Zero-crossing time of last crossing
+	Time tZ_last{ neg_infinity }; // Zero-crossing time of last crossing
 	Crossing crossing{ Crossing::Flat }; // Zero-crossing type
 	Crossing crossing_last{ Crossing::Flat }; // Zero-crossing type of last crossing
 

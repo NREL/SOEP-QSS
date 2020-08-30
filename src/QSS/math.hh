@@ -60,6 +60,7 @@ extern double const two_thirds;
 extern double const pi;
 extern double const infinity;
 extern double const half_infinity;
+extern double const neg_infinity;
 
 // Sign: Returns Passed Type
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
@@ -115,22 +116,13 @@ quad( T const x )
 	return square( x * x );
 }
 
-// Max of 3 Values
+// Value if Positive or Infinity
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
-max( T const x, T const y, T const z )
+positive_or_infinity( T const r )
 {
-	return ( x < y ? ( y < z ? z : y ) : ( x < z ? z : x ) );
-}
-
-// max( a, b, c, d, ... )
-template< typename T, typename... Ts, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
-T const &
-max( T const & a, T const & b, T const & c, T const & d, Ts const &... o )
-{
-	return max( a < b ? b : a, c < d ? d : c, o... );
+	return ( r > 0.0 ? r : infinity );
 }
 
 // Min of 3 Values
@@ -142,7 +134,7 @@ min( T const x, T const y, T const z )
 	return ( x < y ? ( x < z ? x : z ) : ( y < z ? y : z ) );
 }
 
-// min( a, b, c, d, ... )
+// Min of 4+ Values
 template< typename T, typename... Ts, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T const &
@@ -151,36 +143,54 @@ min( T const & a, T const & b, T const & c, T const & d, Ts const &... o )
 	return min( a < b ? a : b, c < d ? c : d, o... );
 }
 
-// Min Positive of Two Values or Infinity
+// Max of 3 Values
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
-min_positive( T const x, T const y )
+max( T const x, T const y, T const z )
+{
+	return ( x < y ? ( y < z ? z : y ) : ( x < z ? z : x ) );
+}
+
+// Max of 4+ Values
+template< typename T, typename... Ts, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
+inline
+T const &
+max( T const & a, T const & b, T const & c, T const & d, Ts const &... o )
+{
+	return max( a < b ? b : a, c < d ? d : c, o... );
+}
+
+// Min Nonnegative of 2 Values or Zero
+template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
+inline
+T
+min_nonnegative_or_zero( T const x, T const y )
+{
+	return ( x >= 0.0 ? ( y >= 0.0 ? std::min( x, y ) : x ) : ( y >= 0.0 ? y : 0.0 ) );
+}
+
+// Min Positive of 2 Values or Infinity
+template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
+inline
+T
+min_positive_or_infinity( T const x, T const y )
 {
 	return ( x > 0.0 ? ( y > 0.0 ? std::min( x, y ) : x ) : ( y > 0.0 ? y : infinity ) );
 }
 
-// Min Positive of Three Values or Infinity
+// Min Positive of 3 Values or Infinity
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
-min_positive( T const x, T const y, T const z )
+min_positive_or_infinity( T const x, T const y, T const z )
 {
 	return ( x > 0.0 ?
 	 ( y > 0.0 ? ( z > 0.0 ? min( x, y, z ) : std::min( x, y ) ) : ( z > 0.0 ? std::min( x, z ) : x ) ) : // x > 0
 	 ( y > 0.0 ? ( z > 0.0 ? std::min( y, z ) : y ) : ( z > 0.0 ? z : infinity ) ) ); // x < 0
 }
 
-// Value if Positive or Infinity
-template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
-T
-positive_or_infinity( T const r )
-{
-	return ( r > 0.0 ? r : infinity );
-}
-
-// Min Nonnegative Root of Quadratic Equation a x^2 + b x + c = 0
+// Min Nonnegative Root of Quadratic Equation a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
@@ -228,7 +238,7 @@ min_root_quadratic( T const a, T const b, T const c )
 	}
 }
 
-// Min Positive Root of Quadratic Equation a x^2 + b x + c = 0
+// Min Positive Root of Quadratic Equation a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
@@ -284,7 +294,7 @@ min_positive_root_quadratic( T const a, T const b, T const c )
 	}
 }
 
-// Min Nonnegative Root of Lower Boundary Quadratic Equation a x^2 + b x + c = 0
+// Min Nonnegative Root of Lower Boundary Quadratic Equation a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
@@ -316,7 +326,7 @@ min_root_quadratic_lower( T const a, T const b, T const c )
 	}
 }
 
-// Min Nonnegative Root of Upper Boundary Quadratic Equation a x^2 + b x + c = 0
+// Min Nonnegative Root of Upper Boundary Quadratic Equation a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
@@ -348,7 +358,7 @@ min_root_quadratic_upper( T const a, T const b, T const c )
 	}
 }
 
-// Min Nonnegative Root of Both Boundary Quadratic Equations a x^2 + b x + c = 0
+// Min Nonnegative Root of Both Boundary Quadratic Equations a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
@@ -407,12 +417,12 @@ min_root_quadratic_both( T const a, T const b, T const cl, T const cu )
 		if ( ( rootl == infinity ) && ( rootu == infinity ) ) { // Precision loss
 			return 0.0;
 		} else {
-			return std::max( std::min( rootl, rootu ), 0.0 );
+			return min_nonnegative_or_zero( rootl, rootu );
 		}
 	}
 }
 
-// Min Positive Root of Quadratic Equation a x^2 + b x + c = 0
+// Peak Magnitude of Quadratic Equation a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
@@ -434,15 +444,6 @@ cubic_cull( T const a, T const b, T const r )
 	return ( r > 0.0 ? ( ( 3.0 * r * r ) + ( 2.0 * a * r ) + b >= 0.0 ? r : 0.0 ) : 0.0 );
 }
 
-// Root of a Cubic if it Crosses Upward or Zero
-template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
-T
-cubic_cull_upper( T const a, T const b, T const r, T const s )
-{
-	return ( r > 0.0 ? ( ( ( 3.0 * r * r ) + ( 2.0 * a * r ) + b ) * s >= 0.0 ? r : 0.0 ) : 0.0 );
-}
-
 // Root of a Cubic if it Crosses Downward or Zero
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
@@ -452,7 +453,16 @@ cubic_cull_lower( T const a, T const b, T const r, T const s )
 	return ( r > 0.0 ? ( ( ( 3.0 * r * r ) + ( 2.0 * a * r ) + b ) * s <= 0.0 ? r : 0.0 ) : 0.0 );
 }
 
-// Min Positive Root of Cubic Equation a x^3 + b x^2 + c x + d = 0
+// Root of a Cubic if it Crosses Upward or Zero
+template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
+inline
+T
+cubic_cull_upper( T const a, T const b, T const r, T const s )
+{
+	return ( r > 0.0 ? ( ( ( 3.0 * r * r ) + ( 2.0 * a * r ) + b ) * s >= 0.0 ? r : 0.0 ) : 0.0 );
+}
+
+// Min Positive Root of Cubic Equation a x^3 + b x^2 + c x + d
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
@@ -490,7 +500,7 @@ min_positive_root_cubic( T a, T b, T c, T const d )
 				T const root1( ( scl * std::cos( theta_3 ) ) - a_3 );
 				T const root2( ( scl * std::cos( theta_3 + two_thirds_pi ) ) - a_3 );
 				T const root3( ( scl * std::cos( theta_3 - two_thirds_pi ) ) - a_3 );
-				return min_positive( root1, root2, root3 );
+				return min_positive_or_infinity( root1, root2, root3 );
 			} else { // Two real roots
 				assert( CR2 == CQ3 );
 				T const sqrt_Q( std::sqrt( Q ) );
@@ -514,7 +524,7 @@ min_positive_root_cubic( T a, T b, T c, T const d )
 	}
 }
 
-// Min Nonnegative Root of Upper Boundary Cubic Equation a x^3 + b x^2 + c x + d = 0
+// Min Nonnegative Root of Upper Boundary Cubic Equation a x^3 + b x^2 + c x + d
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
@@ -556,7 +566,7 @@ min_root_cubic_upper( T a, T b, T c, T const d )
 				T const root1( cubic_cull( a, b, ( scl * std::cos( theta_3 ) ) - a_3 ) );
 				T const root2( cubic_cull( a, b, ( scl * std::cos( theta_3 + two_thirds_pi ) ) - a_3 ) );
 				T const root3( cubic_cull( a, b, ( scl * std::cos( theta_3 - two_thirds_pi ) ) - a_3 ) );
-				return min_positive( root1, root2, root3 );
+				return min_positive_or_infinity( root1, root2, root3 );
 			} else { // Two real roots
 				assert( CR2 == CQ3 );
 				T const sqrt_Q( std::sqrt( Q ) );
@@ -580,7 +590,7 @@ min_root_cubic_upper( T a, T b, T c, T const d )
 	}
 }
 
-// Min Nonnegative Root of Lower Boundary Cubic Equation a x^3 + b x^2 + c x + d = 0
+// Min Nonnegative Root of Lower Boundary Cubic Equation a x^3 + b x^2 + c x + d
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
@@ -622,7 +632,7 @@ min_root_cubic_lower( T a, T b, T c, T const d )
 				T const root1( cubic_cull( a, b, ( scl * std::cos( theta_3 ) ) - a_3 ) );
 				T const root2( cubic_cull( a, b, ( scl * std::cos( theta_3 + two_thirds_pi ) ) - a_3 ) );
 				T const root3( cubic_cull( a, b, ( scl * std::cos( theta_3 - two_thirds_pi ) ) - a_3 ) );
-				return min_positive( root1, root2, root3 );
+				return min_positive_or_infinity( root1, root2, root3 );
 			} else { // Two real roots
 				assert( CR2 == CQ3 );
 				T const sqrt_Q( std::sqrt( Q ) );
@@ -646,7 +656,7 @@ min_root_cubic_lower( T a, T b, T c, T const d )
 	}
 }
 
-// Min Nonnegative Root of Both Boundary Cubic Equations a x^3 + b x^2 + c x + d = 0
+// Min Nonnegative Root of Both Boundary Cubic Equations a x^3 + b x^2 + c x + d
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
@@ -693,7 +703,7 @@ min_root_cubic_both( T a, T b, T const c, T const dl, T const du )
 				T const root1( cubic_cull_lower( a, b, ( scl * std::cos( theta_3 ) ) - a_3, s ) );
 				T const root2( cubic_cull_lower( a, b, ( scl * std::cos( theta_3 + two_thirds_pi ) ) - a_3, s ) );
 				T const root3( cubic_cull_lower( a, b, ( scl * std::cos( theta_3 - two_thirds_pi ) ) - a_3, s ) );
-				rootl = min_positive( root1, root2, root3 );
+				rootl = min_positive_or_infinity( root1, root2, root3 );
 			} else { // Two real roots
 				assert( CR2 == CQ3 );
 				T const sqrt_Q( std::sqrt( Q ) );
@@ -733,7 +743,7 @@ min_root_cubic_both( T a, T b, T const c, T const dl, T const du )
 				T const root1( cubic_cull_upper( a, b, ( scl * std::cos( theta_3 ) ) - a_3, s ) );
 				T const root2( cubic_cull_upper( a, b, ( scl * std::cos( theta_3 + two_thirds_pi ) ) - a_3, s ) );
 				T const root3( cubic_cull_upper( a, b, ( scl * std::cos( theta_3 - two_thirds_pi ) ) - a_3, s ) );
-				rootu = min_positive( root1, root2, root3 );
+				rootu = min_positive_or_infinity( root1, root2, root3 );
 			} else { // Two real roots
 				assert( CR2 == CQ3 );
 				T const sqrt_Q( std::sqrt( Q ) );
@@ -755,7 +765,7 @@ min_root_cubic_both( T a, T b, T const c, T const dl, T const du )
 			}
 		}
 
-		return min_positive( rootl, rootu );
+		return min_positive_or_infinity( rootl, rootu );
 	}
 }
 

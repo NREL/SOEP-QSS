@@ -124,7 +124,7 @@ help_display()
 	std::cout << " --rTol=TOL       Relative tolerance  [1e-4|FMU]" << '\n';
 	std::cout << " --aTol=TOL       Absolute tolerance  [rTol*aFac*nominal]" << '\n';
 	std::cout << " --aFac=FAC       Absolute tolerance factor  [0.01]" << '\n';
-	std::cout << " --zTol=TOL       Zero-crossing tolerance  [0]" << '\n';
+	std::cout << " --zTol=TOL       Zero-crossing tolerance  [0|FMU]" << '\n';
 	std::cout << " --zFac=FAC       Zero-crossing tolerance factor  [1.01]" << '\n';
 	std::cout << " --dtMin=STEP     Min time step (s)  [0]" << '\n';
 	std::cout << " --dtMax=STEP     Max time step (s)  [infinity]" << '\n';

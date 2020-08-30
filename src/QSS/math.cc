@@ -53,5 +53,6 @@ double const two_thirds( 2.0 / 3.0 );
 double const pi( 4.0 * std::atan( 1.0 ) );
 double const infinity( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() );
 double const half_infinity( 0.5 * infinity );
+double const neg_infinity( std::numeric_limits< double >::has_infinity && std::numeric_limits<double>::is_iec559 ? -std::numeric_limits< double >::infinity() : std::numeric_limits< double >::lowest() );
 
 } // QSS
