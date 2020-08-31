@@ -2430,7 +2430,8 @@ namespace fmu {
 					size_type i( n_outs );
 					for ( auto const & e : fmu_outs ) {
 						FMU_Variable const & var( e.second );
-						if ( var.causality_local() ) f_outs[ i++ ].append( t, get_real( var.ref ) );
+						if ( var.causality_local() ) f_outs[ i ].append( t, get_real( var.ref ) );
+						++i;
 					}
 				}
 
