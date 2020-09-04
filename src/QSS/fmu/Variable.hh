@@ -1032,6 +1032,14 @@ public: // Methods
 	// Observer Advance: Stage 1
 	virtual
 	void
+	advance_observer_1_parallel( Time const, Real const )
+	{
+		assert( false );
+	}
+
+	// Observer Advance: Stage 1
+	virtual
+	void
 	advance_observer_1( Time const, Real const, Real const )
 	{
 		assert( false );
@@ -1061,10 +1069,42 @@ public: // Methods
 		assert( false );
 	}
 
+	// Observer Advance: Stage 2 Parallel
+	virtual
+	void
+	advance_observer_2_parallel( Real const )
+	{
+		assert( false );
+	}
+
 	// Observer Advance: Stage 3
 	virtual
 	void
 	advance_observer_3( Real const )
+	{
+		assert( false );
+	}
+
+	// Observer Advance: Stage 3 Parallel
+	virtual
+	void
+	advance_observer_3_parallel( Real const )
+	{
+		assert( false );
+	}
+
+	// Observer Advance: Stage Final Parallel
+	virtual
+	void
+	advance_observer_F_parallel()
+	{
+		assert( false );
+	}
+
+	// Observer Advance: Stage Final Serial
+	virtual
+	void
+	advance_observer_F_serial()
 	{
 		assert( false );
 	}

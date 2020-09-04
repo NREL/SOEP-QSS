@@ -275,12 +275,12 @@ public: // Methods
 
 	// Observer Advance
 	void
-	advance_observer( Time const t )
+	advance_observer( Time const t ) override final
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		Time const tDel( t - tX );
 		tX = t;
-		x_0_ = x_0_ + ( x_1_ * tDel );
+		x_0_ += ( x_1_ * tDel );
 		x_1_ = c_1( t );
 		set_tE_unaligned();
 		shift_QSS( tE );
@@ -289,22 +289,49 @@ public: // Methods
 
 	// Observer Advance: Stage 1
 	void
-	advance_observer_1( Time const t, Real const d )
+	advance_observer_1( Time const t, Real const d ) override final
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		assert( d == p_1() );
 		Time const tDel( t - tX );
 		tX = t;
-		x_0_ = x_0_ + ( x_1_ * tDel );
+		x_0_ += ( x_1_ * tDel );
 		x_1_ = d;
 		set_tE_unaligned();
 		shift_QSS( tE );
 		if ( connected() ) advance_connections_observer();
 	}
 
+	// Observer Advance: Stage 1 Parallel
+	void
+	advance_observer_1_parallel( Time const t, Real const d ) override final
+	{
+		assert( ( tX <= t ) && ( t <= tE ) );
+		assert( d == p_1() );
+		Time const tDel( t - tX );
+		tX = t;
+		x_0_ += ( x_1_ * tDel );
+		x_1_ = d;
+	}
+
+	// Observer Advance: Stage Final Parallel
+	void
+	advance_observer_F_parallel() override final
+	{
+		set_tE_unaligned();
+	}
+
+	// Observer Advance: Stage Final Serial
+	void
+	advance_observer_F_serial() override final
+	{
+		shift_QSS( tE );
+		if ( connected() ) advance_connections_observer();
+	}
+
 	// Observer Advance: Stage d
 	void
-	advance_observer_d() const
+	advance_observer_d() const override final
 	{
 		std::cout << "  " << name() << '(' << tX << ')' << " = " << std::showpos << q_0_ << " [q]" << '(' << std::noshowpos << tQ << std::showpos << ')' << "   = " << x_0_ << x_1_ << "*t" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}

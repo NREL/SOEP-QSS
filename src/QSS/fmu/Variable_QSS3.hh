@@ -353,12 +353,12 @@ public: // Methods
 
 	// Observer Advance
 	void
-	advance_observer( Time const t )
+	advance_observer( Time const t ) override final
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		Time const tDel( t - tX );
 		tX = t;
-		x_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
+		x_0_ += ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
 		x_1_ = c_1( t );
 		x_2_ = c_2( t );
 		x_3_ = c_3();
@@ -369,26 +369,40 @@ public: // Methods
 
 	// Observer Advance: Stage 1
 	void
-	advance_observer_1( Time const t, Real const d )
+	advance_observer_1( Time const t, Real const d ) override final
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		assert( d == p_1() );
 		Time const tDel( t - tX );
 		tX = t;
-		x_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
+		x_0_ += ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
 		x_1_ = d;
+	}
+
+	// Observer Advance: Stage 1 Parallel
+	void
+	advance_observer_1_parallel( Time const t, Real const d ) override final
+	{
+		advance_observer_1( t, d );
 	}
 
 	// Observer Advance: Stage 2
 	void
-	advance_observer_2( Real const d )
+	advance_observer_2( Real const d ) override final
+	{
+		x_2_ = p_2( d );
+	}
+
+	// Observer Advance: Stage 2 Parallel
+	void
+	advance_observer_2_parallel( Real const d ) override final
 	{
 		x_2_ = p_2( d );
 	}
 
 	// Observer Advance: Stage 3
 	void
-	advance_observer_3( Real const d )
+	advance_observer_3( Real const d ) override final
 	{
 		x_3_ = p_3( d );
 		set_tE_unaligned();
@@ -396,9 +410,31 @@ public: // Methods
 		if ( connected() ) advance_connections_observer();
 	}
 
+	// Observer Advance: Stage 3 Parallel
+	void
+	advance_observer_3_parallel( Real const d ) override final
+	{
+		x_3_ = p_3( d );
+	}
+
+	// Observer Advance: Stage Final Parallel
+	void
+	advance_observer_F_parallel() override final
+	{
+		set_tE_unaligned();
+	}
+
+	// Observer Advance: Stage Final Serial
+	void
+	advance_observer_F_serial() override final
+	{
+		shift_QSS( tE );
+		if ( connected() ) advance_connections_observer();
+	}
+
 	// Observer Advance: Stage d
 	void
-	advance_observer_d() const
+	advance_observer_d() const override final
 	{
 		std::cout << "  " << name() << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << "*t" << q_2_ << "*t^2" << " [q]" << '(' << std::noshowpos << tQ << std::showpos << ')' << "   = " << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << x_3_ << "*t^3" << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}

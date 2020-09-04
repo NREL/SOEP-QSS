@@ -295,7 +295,7 @@ public: // Methods
 	advance_observer( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		x_0_ = x_0_ + ( x_1_ * ( t - tX ) );
+		x_0_ += ( x_1_ * ( t - tX ) );
 		x_1_ = d_.q( tX = t );
 		set_tE_unaligned();
 		shift_QSS( tE );
@@ -307,7 +307,7 @@ public: // Methods
 	advance_observer_parallel( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		x_0_ = x_0_ + ( x_1_ * ( t - tX ) );
+		x_0_ += ( x_1_ * ( t - tX ) );
 		x_1_ = d_.q( tX = t );
 		set_tE_unaligned();
 	}

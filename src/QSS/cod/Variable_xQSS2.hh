@@ -293,7 +293,7 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		Time const tDel( t - tX );
-		x_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		x_0_ += ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 		x_1_ = d_.qs( t );
 		x_2_ = one_half * d_.qf1( tX = t );
 		set_tE_unaligned();
@@ -307,7 +307,7 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		Time const tDel( t - tX );
-		x_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		x_0_ += ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 		x_1_ = d_.qs( t );
 		x_2_ = one_half * d_.qf1( tX = t );
 		set_tE_unaligned();

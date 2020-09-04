@@ -223,12 +223,12 @@ public: // Methods
 		}
 		fmu_me_->get_reals( qss_.n(), &qss_ders_.refs[ 0 ], &qss_ders_.vals[ 0 ] );
 #ifdef _OPENMP
-		int const max_threads( omp_get_max_threads() );
-		if ( qss_.n() >= std::max( 64u, max_threads * 8u ) ) { //Do Tune
+		size_type const max_threads( static_cast< size_type >( omp_get_max_threads() ) );
+		if ( ( max_threads > 1u ) && ( qss_.n() >= max_threads * 128u ) ) {
 			std::int64_t const qss_b( qss_.b() );
 			std::int64_t const qss_e( qss_.e() );
 			std::int64_t const qss_n( qss_.n() );
-			std::int64_t const qss_chunk_size( std::max( static_cast< std::int64_t >( ( qss_n - 1u ) / max_threads ), std::min( static_cast< std::int64_t >( 8 ), qss_n ) ) );
+			std::int64_t const qss_chunk_size( static_cast< std::int64_t >( ( qss_n + max_threads - 1u ) / max_threads ) );
 			#pragma omp parallel for schedule(static)
 			for ( std::int64_t i = qss_b; i < qss_e; i += qss_chunk_size ) {
 				for ( std::int64_t k = i, ke = std::min( i + qss_chunk_size, qss_e ); k < ke; ++k ) { // Chunk
@@ -236,13 +236,11 @@ public: // Methods
 				}
 			}
 		} else {
-			for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
-				triggers_[ i ]->advance_QSS_1( qss_ders_.vals[ i ] );
-			}
-		}
-#else
+#endif
 		for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
 			triggers_[ i ]->advance_QSS_1( qss_ders_.vals[ i ] );
+		}
+#ifdef _OPENMP
 		}
 #endif
 		if ( qss2_.have() ) {

@@ -528,28 +528,63 @@ private: // Methods
 		}
 		fmu_me_->get_reals( qss_.n(), &qss_ders_.refs[ 0 ], &qss_ders_.vals[ 0 ] );
 #ifdef _OPENMP
-		int const max_threads( omp_get_max_threads() );
-		if ( qss_.n() >= std::max( 64u, max_threads * 8u ) ) { //Do Tune
+		size_type const max_threads( static_cast< size_type >( omp_get_max_threads() ) );
+		if ( ( max_threads > 1u ) && ( qss_.n() >= max_threads * 32u ) ) { // Parallel
 			std::int64_t const qss_b( qss_.b() );
 			std::int64_t const qss_e( qss_.e() );
 			std::int64_t const qss_n( qss_.n() );
-			std::int64_t const qss_chunk_size( std::max( static_cast< std::int64_t >( ( qss_n - 1u ) / max_threads ), std::min( static_cast< std::int64_t >( 8 ), qss_n ) ) );
-			#pragma omp parallel for schedule(static)
+			std::int64_t const qss_chunk_size( static_cast< std::int64_t >( ( qss_n + max_threads - 1u ) / max_threads ) );
+			#pragma omp parallel
+			{
+			#pragma omp for schedule(static)
 			for ( std::int64_t i = qss_b; i < qss_e; i += qss_chunk_size ) {
 				for ( std::int64_t k = i, ke = std::min( i + qss_chunk_size, qss_e ); k < ke; ++k ) { // Chunk
-					observers_[ k ]->advance_observer_1( t, qss_ders_.vals[ k ] );
+					observers_[ k ]->advance_observer_1_parallel( t, qss_ders_.vals[ k ] );
 				}
 			}
-		} else {
-			for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
-				observers_[ i ]->advance_observer_1( t, qss_ders_.vals[ i ] );
+			#pragma omp single
+			{
+			if ( qss2_.have() ) {
+				Time tN( t + options::dtNum );
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : qss_same_order_ ? qss_observees_ : qss2_observees_ ) {
+					observee->fmu_set_q( tN );
+				}
+				size_type const qss2_b( qss2_.b() );
+				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.vals[ qss2_b ] );
+				for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ observers
+					observers_[ i ]->advance_observer_2_parallel( qss_ders_.vals[ i ] );
+				}
+				if ( qss3_.have() ) {
+					tN = t - options::dtNum;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : qss_same_order_ ? qss_observees_ : qss3_observees_ ) {
+						observee->fmu_set_q( tN );
+					}
+					size_type const qss3_b( qss3_.b() );
+					fmu_me_->get_reals( qss3_.n(), &qss_ders_.refs[ qss3_b ], &qss_ders_.vals[ qss3_b ] );
+					for ( size_type i = qss3_b, e = qss_.e(); i < e; ++i ) { // Order 3+ observers
+						observers_[ i ]->advance_observer_3_parallel( qss_ders_.vals[ i ] );
+					}
+				}
+				fmu_me_->set_time( t );
 			}
-		}
-#else
+			} // omp single
+			#pragma omp for schedule(static)
+			for ( std::int64_t i = qss_b; i < qss_e; i += qss_chunk_size ) {
+				for ( std::int64_t k = i, ke = std::min( i + qss_chunk_size, qss_e ); k < ke; ++k ) { // Chunk
+					observers_[ k ]->advance_observer_F_parallel();
+				}
+			}
+			} // omp parallel
+			for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
+				observers_[ i ]->advance_observer_F_serial();
+			}
+		} else { // Serial
+#endif
 		for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
 			observers_[ i ]->advance_observer_1( t, qss_ders_.vals[ i ] );
 		}
-#endif
 		if ( qss2_.have() ) {
 			Time tN( t + options::dtNum );
 			fmu_me_->set_time( tN );
@@ -575,6 +610,9 @@ private: // Methods
 			}
 			fmu_me_->set_time( t );
 		}
+#ifdef _OPENMP
+		}
+#endif
 	}
 
 	// Advance Zero-Crossing Observers

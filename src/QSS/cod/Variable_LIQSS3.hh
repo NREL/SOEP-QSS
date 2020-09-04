@@ -373,7 +373,7 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		Time const tDel( t - tX );
-		x_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
+		x_0_ += ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
 		x_1_ = d_.qs( t );
 		x_2_ = one_half * d_.qc1( t );
 		x_3_ = one_sixth * d_.qc2( tX = t );
@@ -388,7 +388,7 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		Time const tDel( t - tX );
-		x_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
+		x_0_ += ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
 		x_1_ = d_.qs( t );
 		x_2_ = one_half * d_.qc1( t );
 		x_3_ = one_sixth * d_.qc2( tX = t );
