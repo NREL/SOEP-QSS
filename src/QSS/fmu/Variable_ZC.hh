@@ -131,7 +131,7 @@ public: // Methods
 	void
 	bump_time( Time const t_bump ) const
 	{
-		fmu_set_x( t_bump ); // Does FMU need this?
+		fmu_set_x( t_bump ); // FMU seems to ignore this and always recompute the value
 		fmu_set_observees_x( t_bump );
 	}
 
