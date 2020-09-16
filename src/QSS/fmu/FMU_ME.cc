@@ -402,16 +402,17 @@ namespace fmu {
 
 		// FMU pre-simulation calls
 		fmi2_import_enter_continuous_time_mode( fmu );
-		fmi2_import_enter_event_mode( fmu );
-		do_event_iteration();
-		fmi2_import_enter_continuous_time_mode( fmu );
+// An event iteration doesn't seem to be necessary here and it bumps the event indicators a bit
+//		fmi2_import_enter_event_mode( fmu );
+//		do_event_iteration();
+//		fmi2_import_enter_continuous_time_mode( fmu );
 		fmi2_import_get_continuous_states( fmu, states, n_states ); // Should get initial values
 		fmi2_import_get_nominals_of_continuous_states( fmu, x_nominal, n_states ); // Should return 1 for variables with no nominal value specified
 		fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
-		if ( options::output::d ) {
-			std::cout << "Event Indicators @ pre-simulation:" << std::endl;
-			for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
-		}
+//		if ( options::output::d ) {
+//			std::cout << "FMU event indicators: Pre-simulation:" << std::endl;
+//			for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
+//		}
 
 		// FMU Query: Model
 		std::cout << "\nModel name: " << fmi2_import_get_model_name( fmu ) << std::endl;
@@ -2112,10 +2113,10 @@ namespace fmu {
 					// Get event indicators
 					std::swap( event_indicators, event_indicators_last );
 					fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
-					if ( options::output::d ) {
-						std::cout << "Event Indicators: Handler event processing start @ t=" << t << std::endl;
-						for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
-					}
+//					if ( options::output::d ) {
+//						std::cout << "FMU event indicators: Handler event processing start @ t=" << t << std::endl;
+//						for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
+//					}
 
 					// Check if an event indicator has triggered
 					bool zero_crossing_event( false );
@@ -2134,10 +2135,10 @@ namespace fmu {
 						fmi2_import_enter_continuous_time_mode( fmu );
 						fmi2_import_get_continuous_states( fmu, states, n_states );
 						fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
-						if ( options::output::d ) {
-							std::cout << "Event Indicators: Handler event processing after event iteration @ t=" << t << std::endl;
-							for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
-						}
+//						if ( options::output::d ) {
+//							std::cout << "FMU event indicators: Handler event processing after event iteration @ t=" << t << std::endl;
+//							for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
+//						}
 					} else {
 						if ( options::output::d ) std::cout << "Zero-crossing does not trigger FMU-ME event at t=" << t << std::endl;
 					}
@@ -2243,10 +2244,10 @@ namespace fmu {
 						// Get event indicators
 						std::swap( event_indicators, event_indicators_last );
 						fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
-						if ( options::output::d ) {
-							std::cout << "Event Indicators: Handler event processing after re-bump @ t=" << t << std::endl;
-							for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
-						}
+//						if ( options::output::d ) {
+//							std::cout << "FMU event indicators: Handler event processing after re-bump @ t=" << t << std::endl;
+//							for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
+//						}
 
 						// Check if an event indicator has triggered
 						zero_crossing_event = false;
@@ -2265,10 +2266,10 @@ namespace fmu {
 							fmi2_import_enter_continuous_time_mode( fmu );
 							fmi2_import_get_continuous_states( fmu, states, n_states );
 							fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
-							if ( options::output::d ) {
-								std::cout << "Event Indicators: Handler event processing after re-bump event iteration @ t=" << t << std::endl;
-								for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
-							}
+//							if ( options::output::d ) {
+//								std::cout << "FMU event indicators: Handler event processing after re-bump event iteration @ t=" << t << std::endl;
+//								for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
+//							}
 						} else {
 							if ( options::output::d ) std::cout << "Zero-crossing handler re-bump does not trigger FMU-ME event at t=" << t << std::endl;
 						}
