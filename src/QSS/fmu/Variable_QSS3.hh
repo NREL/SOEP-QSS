@@ -517,14 +517,14 @@ private: // Methods
 	Real
 	c_2( Time const t ) const
 	{
-		Time tN( t - options::dtNum );
+		Time tN( t - options::dtND );
 		fmu_set_time( tN );
 		x_1_m_ = c_1( tN );
-		tN = t + options::dtNum;
+		tN = t + options::dtND;
 		fmu_set_time( tN );
 		x_1_p_ = c_1( tN );
 		fmu_set_time( t );
-		return options::one_over_four_dtNum * ( x_1_p_ - x_1_m_ ); //ND Centered difference
+		return options::one_over_four_dtND * ( x_1_p_ - x_1_m_ ); //ND Centered difference
 	}
 
 	// Coefficient 2 from FMU at Time tQ
@@ -538,14 +538,14 @@ private: // Methods
 	Real
 	p_3( Real const d ) const
 	{
-		return options::one_over_six_dtNum_squared * ( x_1_p_ - ( two * x_1_ ) + d ); //ND Centered difference
+		return options::one_over_six_dtND_squared * ( x_1_p_ - ( two * x_1_ ) + d ); //ND Centered difference
 	}
 
 	// Coefficient 3 from FMU
 	Real
 	c_3() const
 	{
-		return options::one_over_six_dtNum_squared * ( x_1_p_ - ( two * x_1_ ) + x_1_m_ ); //ND Centered difference
+		return options::one_over_six_dtND_squared * ( x_1_p_ - ( two * x_1_ ) + x_1_m_ ); //ND Centered difference
 	}
 
 	// Coefficient 3 from FMU

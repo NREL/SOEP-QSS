@@ -382,28 +382,28 @@ private: // Methods
 	Real
 	z_2() const
 	{
-		Time tN( tQ - options::dtNum );
+		Time tN( tQ - options::dtND );
 		fmu_set_time( tN );
 		x_1_m_ = z_1( tN );
-		tN = tQ + options::dtNum;
+		tN = tQ + options::dtND;
 		fmu_set_time( tN );
 		x_1_p_ = z_1( tN );
 		fmu_set_time( tQ );
-		return options::one_over_four_dtNum * ( x_1_p_ - x_1_m_ ); //ND Centered difference
+		return options::one_over_four_dtND * ( x_1_p_ - x_1_m_ ); //ND Centered difference
 	}
 
 	// Coefficient 3 from FMU
 	Real
 	p_3( Real const d ) const
 	{
-		return options::one_over_six_dtNum_squared * ( x_1_p_ - ( two * x_1_ ) + d ); //ND Centered difference
+		return options::one_over_six_dtND_squared * ( x_1_p_ - ( two * x_1_ ) + d ); //ND Centered difference
 	}
 
 	// Coefficient 3 from FMU
 	Real
 	z_3() const
 	{
-		return options::one_over_two_dtNum_squared * ( x_1_p_ - ( two * x_1_ ) + x_1_m_ ); //ND Centered difference
+		return options::one_over_two_dtND_squared * ( x_1_p_ - ( two * x_1_ ) + x_1_m_ ); //ND Centered difference
 	}
 
 private: // Data

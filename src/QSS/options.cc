@@ -56,16 +56,16 @@ double dtMin( 0.0 ); // Min time step (s)
 double dtMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Max time step (s)
 double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Inf time step (s)
 double dtZC( 1.0e-9 ); // FMU zero-crossing time step (s)
-double dtNum( 1.0e-6 ); // Numeric differentiation time step (s)
+double dtND( 1.0e-6 ); // Numeric differentiation time step (s)
+double one_over_dtND( 1.0e6 ); // 1 / dtND
+double one_over_two_dtND( 5.0e5 ); // 1 / ( 2 * dtND )
+double one_over_two_dtND_squared( 5.0e11 ); // 1 / ( 2 * dtND^2 )
+double one_over_four_dtND( 2.5e5 ); // 1 / ( 4 * dtND )
+double one_over_six_dtND( 1.0e6 / 6.0 ); // 1 / ( 6 * dtND )
+double one_over_six_dtND_squared( 1.0e12 / 6.0 ); // 1 / ( 6 * dtND^2 )
+double one_over_six_dtND_cubed( 1.0e18 / 6.0 ); // 1 / ( 6 * dtND^3 )
 double dtCon( 0.0 ); // FMU connection sync time step (s)
-double one_over_dtNum( 1.0e6 ); // 1 / dtNum
-double one_over_two_dtNum( 5.0e5 ); // 1 / ( 2 * dtNum )
-double one_over_two_dtNum_squared( 5.0e11 ); // 1 / ( 2 * dtNum^2 )
-double one_over_four_dtNum( 2.5e5 ); // 1 / ( 4 * dtNum )
-double one_over_six_dtNum( 1.0e6 / 6.0 ); // 1 / ( 6 * dtNum )
-double one_over_six_dtNum_squared( 1.0e12 / 6.0 ); // 1 / ( 6 * dtNum^2 )
-double one_over_six_dtNum_cubed( 1.0e18 / 6.0 ); // 1 / ( 6 * dtNum^3 )
-double dtOut( 1.0e-3 ); // Sampled & FMU output time step (s)
+double dtOut( 1.0e-3 ); // Sampled output time step (s)
 double tEnd( 1.0 ); // End time (s)  [1|FMU]
 std::size_t bin_size( 1u ); // Bin size max
 double bin_frac( 0.25 ); // Bin step fraction min
@@ -77,6 +77,7 @@ bool refine( false ); // Refine FMU zero-crossing roots?
 bool prune( false ); // Prune variables with no observers?
 bool perfect( false ); // Perfect FMU-ME connection sync?
 bool statistics( false ); // Report detailed statistics
+bool steps( false ); // Generate requantization step count file
 LogLevel log( LogLevel::warning ); // Logging level
 InpFxn fxn; // Map from input variables to function specs
 InpOut con; // Map from input variables to output variables
@@ -92,6 +93,7 @@ bool rTol( false ); // Relative tolerance specified?
 bool aTol( false ); // Absolute tolerance specified?
 bool zTol( false ); // Zero-crossing tolerance specified?
 bool dtZC( false ); // FMU zero-crossing time step specified?
+bool dtOut( false ); // Sampled output time step specified?
 bool tEnd( false ); // End time specified?
 bool tLoc( false ); // Local output time range specified?
 bool bin( false ); // Bin controls specified?
@@ -130,9 +132,9 @@ help_display()
 	std::cout << " --dtMax=STEP     Max time step (s)  [infinity]" << '\n';
 	std::cout << " --dtInf=STEP     Inf alt time step (s)  [infinity]" << '\n';
 	std::cout << " --dtZC=STEP      FMU zero-crossing time step (s)  [1e-9]" << '\n';
-	std::cout << " --dtNum=STEP     Numeric differentiation time step (s)  [1e-6]" << '\n';
+	std::cout << " --dtND=STEP      Numeric differentiation time step (s)  [1e-6]" << '\n';
 	std::cout << " --dtCon=STEP     FMU connection sync time step (s)  [0]" << '\n';
-	std::cout << " --dtOut=STEP     Sampled & FMU output time step (s)  [1e-3]" << '\n';
+	std::cout << " --dtOut=STEP     Sampled output time step (s)  [computed]" << '\n';
 	std::cout << " --tEnd=TIME      End time (s)  [1|FMU]" << '\n';
 	std::cout << " --pass=COUNT     Pass count limit  [20]" << '\n';
 	std::cout << " --cycles         Report dependency cycles?  [F]" << '\n';
@@ -141,6 +143,7 @@ help_display()
 	std::cout << " --prune          Prune variables with no observers?  [F]" << '\n';
 	std::cout << " --perfect        Perfect FMU-ME connection sync?  [F]" << '\n';
 	std::cout << " --statistics     Report detailed statistics?  [F]" << '\n';
+	std::cout << " --steps          Generate step count file?  [F]" << '\n';
 	std::cout << " --log=LEVEL      Logging level  [warning]" << '\n';
 	std::cout << "       fatal" << '\n';
 	std::cout << "       error" << '\n';
@@ -221,7 +224,7 @@ process_args( int argc, char * argv[] )
 		if ( ( arg == "--help" ) || ( arg == "-h" ) ) { // Show help
 			help_display();
 			help = true;
-		} else if ( has_value_option( arg, "qss" ) || has_value_option( arg, "QSS" ) ) {
+		} else if ( has_value_option( arg, "qss" ) ) {
 			specified::qss = true;
 			std::string const qss_name( uppercased( arg_value( arg ) ) );
 			if ( qss_name == "QSS1" ) {
@@ -264,21 +267,23 @@ process_args( int argc, char * argv[] )
 			perfect = true;
 		} else if ( has_option( arg, "statistics" ) ) {
 			statistics = true;
-		} else if ( has_value_option( arg, "log" ) ) {
+		} else if ( has_option( arg, "steps" ) ) {
+			steps = true;
+		} else if ( has_value_option( arg, "log" ) ) { // Accept PyFMI numeric logging levels for scripting convenience
 			std::string const log_str( lowercased( arg_value( arg ) ) );
-			if ( ( log_str == "fatal" ) || ( log_str == "f" ) ) {
+			if ( ( log_str == "fatal" ) || ( log_str == "f" ) || ( log_str == "0" ) ) {
 				log = LogLevel::fatal;
-			} else if ( ( log_str == "error" ) || ( log_str == "e" ) ) {
+			} else if ( ( log_str == "error" ) || ( log_str == "e" ) || ( log_str == "1" ) ) {
 				log = LogLevel::error;
-			} else if ( ( log_str == "warning" ) || ( log_str == "w" ) ) {
+			} else if ( ( log_str == "warning" ) || ( log_str == "w" ) || ( log_str == "2" ) ) {
 				log = LogLevel::warning;
-			} else if ( ( log_str == "info" ) || ( log_str == "i" ) ) {
+			} else if ( ( log_str == "info" ) || ( log_str == "i" ) || ( log_str == "3" ) ) {
 				log = LogLevel::info;
-			} else if ( ( log_str == "verbose" ) || ( log_str == "v" ) ) {
+			} else if ( ( log_str == "verbose" ) || ( log_str == "v" ) || ( log_str == "4" ) ) {
 				log = LogLevel::verbose;
-			} else if ( ( log_str == "debug" ) || ( log_str == "d" ) ) {
+			} else if ( ( log_str == "debug" ) || ( log_str == "d" ) || ( log_str == "5" ) ) {
 				log = LogLevel::debug;
-			} else if ( ( log_str == "all" ) || ( log_str == "a" ) ) {
+			} else if ( ( log_str == "all" ) || ( log_str == "a" ) || ( log_str == "6" ) || ( log_str == "7" ) ) {
 				log = LogLevel::all;
 			} else {
 				std::cerr << "\nError: Unrecognized log level: " << log_str << std::endl;
@@ -399,23 +404,23 @@ process_args( int argc, char * argv[] )
 				std::cerr << "\nError: Nonnumeric dtZC: " << dtZC_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "dtNum" ) ) {
-			std::string const dtNum_str( arg_value( arg ) );
-			if ( is_double( dtNum_str ) ) {
-				dtNum = double_of( dtNum_str );
-				if ( dtNum <= 0.0 ) {
-					std::cerr << "\nError: Nonpositive dtNum: " << dtNum_str << std::endl;
+		} else if ( has_value_option( arg, "dtND" ) || has_value_option( arg, "dtNum" ) ) { // dtNum was prior name for dtND
+			std::string const dtND_str( arg_value( arg ) );
+			if ( is_double( dtND_str ) ) {
+				dtND = double_of( dtND_str );
+				if ( dtND <= 0.0 ) {
+					std::cerr << "\nError: Nonpositive dtND: " << dtND_str << std::endl;
 					fatal = true;
 				}
-				one_over_dtNum = 1.0 / dtNum;
-				one_over_two_dtNum = 1.0 / ( 2.0 * dtNum );
-				one_over_two_dtNum_squared = 1.0 / ( 2.0 * ( dtNum * dtNum ) );
-				one_over_four_dtNum = 1.0 / ( 4.0 * dtNum );
-				one_over_six_dtNum = 1.0 / ( 6.0 * dtNum );
-				one_over_six_dtNum_squared = 1.0 / ( 6.0 * ( dtNum * dtNum ) );
-				one_over_six_dtNum_cubed = 1.0 / ( 6.0 * ( dtNum * dtNum * dtNum ) );
+				one_over_dtND = 1.0 / dtND;
+				one_over_two_dtND = 1.0 / ( 2.0 * dtND );
+				one_over_two_dtND_squared = 1.0 / ( 2.0 * ( dtND * dtND ) );
+				one_over_four_dtND = 1.0 / ( 4.0 * dtND );
+				one_over_six_dtND = 1.0 / ( 6.0 * dtND );
+				one_over_six_dtND_squared = 1.0 / ( 6.0 * ( dtND * dtND ) );
+				one_over_six_dtND_cubed = 1.0 / ( 6.0 * ( dtND * dtND * dtND ) );
 			} else {
-				std::cerr << "\nError: Nonnumeric dtNum: " << dtNum_str << std::endl;
+				std::cerr << "\nError: Nonnumeric dtND: " << dtND_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtCon" ) ) {
@@ -431,6 +436,7 @@ process_args( int argc, char * argv[] )
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtOut" ) ) {
+			specified::dtOut = true;
 			std::string const dtOut_str( arg_value( arg ) );
 			if ( is_double( dtOut_str ) ) {
 				dtOut = double_of( dtOut_str );
@@ -693,6 +699,13 @@ bool
 connected()
 {
 	return ( ! con.empty() );
+}
+
+// Set dtOut to Default for a Given Time Span
+void
+dtOut_set( double const t )
+{
+	if ( ! specified::dtOut ) dtOut = std::pow( 10.0, std::round( std::log10( t * 0.0002 ) ) );
 }
 
 } // options

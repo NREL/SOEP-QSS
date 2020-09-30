@@ -59,6 +59,9 @@ public: // Types
 
 public: // Creation
 
+	// Default Constructor
+	OutputFilter() = default;
+
 	// File Name Constructor
 	OutputFilter( std::string const & var_file )
 	{

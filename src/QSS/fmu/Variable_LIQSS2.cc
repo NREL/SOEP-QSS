@@ -61,14 +61,14 @@ namespace fmu {
 		Real const x_1_u( p_1() );
 
 		// Second derivative at +/- qTol
-		Time const tN( tQ + options::dtNum );
+		Time const tN( tQ + options::dtND );
 		fmu_set_time( tN );
 		fmu_set_observees_q( tN );
-		fmu_set_real( q_l + ( x_1_l * options::dtNum ) );
-		Real const x_2_l( options::one_over_two_dtNum * ( p_1() - x_1_l ) ); //ND Forward Euler
+		fmu_set_real( q_l + ( x_1_l * options::dtND ) );
+		Real const x_2_l( options::one_over_two_dtND * ( p_1() - x_1_l ) ); //ND Forward Euler
 		int const x_2_l_s( signum( x_2_l ) );
-		fmu_set_real( q_u + ( x_1_u * options::dtNum ) );
-		Real const x_2_u( options::one_over_two_dtNum * ( p_1() - x_1_u ) ); //ND Forward Euler
+		fmu_set_real( q_u + ( x_1_u * options::dtND ) );
+		Real const x_2_u( options::one_over_two_dtND * ( p_1() - x_1_u ) ); //ND Forward Euler
 		int const x_2_u_s( signum( x_2_u ) );
 
 		// Reset FMU time
@@ -115,14 +115,14 @@ namespace fmu {
 		Real const x_1_u( p_1() );
 
 		// Second derivative at +/- qTol
-		Time const tN( tQ + options::dtNum );
+		Time const tN( tQ + options::dtND );
 		fmu_set_time( tN );
 		fmu_set_observees_q( tN );
-		fmu_set_real( q_l + ( x_1_l * options::dtNum ) );
-		Real const x_2_l( options::one_over_two_dtNum * ( p_1() - x_1_l ) ); //ND Forward Euler
+		fmu_set_real( q_l + ( x_1_l * options::dtND ) );
+		Real const x_2_l( options::one_over_two_dtND * ( p_1() - x_1_l ) ); //ND Forward Euler
 		int const x_2_l_s( signum( x_2_l ) );
-		fmu_set_real( q_u + ( x_1_u * options::dtNum ) );
-		Real const x_2_u( options::one_over_two_dtNum * ( p_1() - x_1_u ) ); //ND Forward Euler
+		fmu_set_real( q_u + ( x_1_u * options::dtND ) );
+		Real const x_2_u( options::one_over_two_dtND * ( p_1() - x_1_u ) ); //ND Forward Euler
 		int const x_2_u_s( signum( x_2_u ) );
 
 		// Reset FMU time

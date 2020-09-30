@@ -296,7 +296,7 @@ private: // Methods
 	Real
 	z_1( Real const x_0_m, Real const x_0_p ) const
 	{
-		return options::one_over_two_dtNum * ( x_0_p - x_0_m ); //ND Centered difference
+		return options::one_over_two_dtND * ( x_0_p - x_0_m ); //ND Centered difference
 	}
 
 private: // Data

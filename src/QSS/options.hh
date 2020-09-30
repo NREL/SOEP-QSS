@@ -87,16 +87,16 @@ extern double dtMin; // Min time step (s)
 extern double dtMax; // Max time step (s)
 extern double dtInf; // Inf time step (s)
 extern double dtZC; // FMU zero-crossing time step (s)
-extern double dtNum; // Numeric differentiation time step (s)
+extern double dtND; // Numeric differentiation time step (s)
+extern double one_over_dtND; // 1 / dtND
+extern double one_over_two_dtND; // 1 / ( 2 * dtND )
+extern double one_over_two_dtND_squared; // 1 / ( 2 * dtND^2 )
+extern double one_over_four_dtND; // 1 / ( 4 * dtND )
+extern double one_over_six_dtND; // 1 / ( 6 * dtND )
+extern double one_over_six_dtND_squared; // 1 / ( 6 * dtND^2 )
+extern double one_over_six_dtND_cubed; // 1 / ( 6 * dtND^3 )
 extern double dtCon; // FMU connection sync time step (s)
-extern double dtOut; // Sampled & FMU output time step (s)
-extern double one_over_dtNum; // 1 / dtNum
-extern double one_over_two_dtNum; // 1 / ( 2 * dtNum )
-extern double one_over_two_dtNum_squared; // 1 / ( 2 * dtNum^2 )
-extern double one_over_four_dtNum; // 1 / ( 4 * dtNum )
-extern double one_over_six_dtNum; // 1 / ( 6 * dtNum )
-extern double one_over_six_dtNum_squared; // 1 / ( 6 * dtNum^2 )
-extern double one_over_six_dtNum_cubed; // 1 / ( 6 * dtNum^3 )
+extern double dtOut; // Sampled output time step (s)
 extern double tEnd; // End time (s)
 extern std::size_t bin_size; // Bin size max
 extern double bin_frac; // Bin step fraction min
@@ -108,6 +108,7 @@ extern bool refine; // Refine FMU zero-crossing roots?
 extern bool prune; // Prune variables with no observers?
 extern bool perfect; // Perfect FMU-ME connection sync?
 extern bool statistics; // Report detailed statistics
+extern bool steps; // Generate requantization step count file
 extern LogLevel log; // Logging level
 extern InpFxn fxn; // Map from input variables to function specs
 extern InpOut con; // Map from input variables to output variables
@@ -123,6 +124,7 @@ extern bool rTol; // Relative tolerance specified?
 extern bool aTol; // Absolute tolerance specified?
 extern bool zTol; // Zero-crossing tolerance specified?
 extern bool dtZC; // FMU zero-crossing time step specified?
+extern bool dtOut; // Sampled output time step specified?
 extern bool tEnd; // End time specified?
 extern bool tLoc; // Local output time range specified?
 extern bool bin; // Bin controls specified?
@@ -156,6 +158,10 @@ have_multiple_models();
 // Input-output connections?
 bool
 connected();
+
+// Set dtOut to Default for a Given Time Span
+void
+dtOut_set( double const t );
 
 } // options
 } // QSS

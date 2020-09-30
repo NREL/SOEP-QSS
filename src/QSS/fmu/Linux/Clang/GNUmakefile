@@ -52,8 +52,8 @@ clean :
 	-rm -f *.d *.o $(DLB)
 
 $(DLB) : $(OBJ)
-	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
-	@-rm -f $(filter-out $(OBJ),$(wildcard *.o)) # Prune obs objs
+	@-rm -f $(filter-out $(DEP),$(wildcard *.d))
+	@-rm -f $(filter-out $(OBJ),$(wildcard *.o))
 	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) -shared -o $@ $^ -L$(FMIL_HOME)/lib -lfmilib -ldl
 
 # Dependencies

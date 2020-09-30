@@ -135,7 +135,9 @@ protected: // Creation
 	 fmu_me_( fmu_me ),
 	 var_( var ),
 	 der_( der ),
-	 eventq_( fmu_me->eventq )
+	 eventq_( fmu_me->eventq ),
+	 out_x_( name, 'x', false ),
+	 out_q_( name, 'q', false )
 	{}
 
 	// Name + Tolerance Constructor
@@ -161,7 +163,9 @@ protected: // Creation
 	 fmu_me_( fmu_me ),
 	 var_( var ),
 	 der_( der ),
-	 eventq_( fmu_me->eventq )
+	 eventq_( fmu_me->eventq ),
+	 out_x_( name, 'x', false ),
+	 out_q_( name, 'q', false )
 	{}
 
 	// Name + Value Constructor
@@ -184,7 +188,9 @@ protected: // Creation
 	 fmu_me_( fmu_me ),
 	 var_( var ),
 	 der_( der ),
-	 eventq_( fmu_me->eventq )
+	 eventq_( fmu_me->eventq ),
+	 out_x_( name, 'x', false ),
+	 out_q_( name, 'q', false )
 	{}
 
 	// Name Constructor
@@ -206,24 +212,10 @@ protected: // Creation
 	 fmu_me_( fmu_me ),
 	 var_( var ),
 	 der_( der ),
-	 eventq_( fmu_me->eventq )
+	 eventq_( fmu_me->eventq ),
+	 out_x_( name, 'x', false ),
+	 out_q_( name, 'q', false )
 	{}
-
-public: // Creation
-
-	// Destructor
-	~Variable()
-	{
-		if ( conditional != nullptr ) conditional->var() = nullptr;
-		for ( Variable * observer : observers_ ) {
-			Variables & oos( observer->observees_ );
-			Variables::iterator const i( std::find( oos.begin(), oos.end(), this ) );
-			if ( i != oos.end() ) oos.erase( i );
-		}
-		for ( Variable * observee : observees_ ) {
-			observee->observers_.del( this );
-		}
-	}
 
 protected: // Assignment
 
@@ -245,12 +237,26 @@ public: // Predicate
 		return false;
 	}
 
+	// Not Discrete Variable?
+	bool
+	not_Discrete() const
+	{
+		return ( ! is_Discrete() );
+	}
+
 	// Input Variable?
 	virtual
 	bool
 	is_Input() const
 	{
 		return false;
+	}
+
+	// Not Input Variable?
+	bool
+	not_Input() const
+	{
+		return ( ! is_Input() );
 	}
 
 	// Connection Input Variable?
@@ -310,6 +316,13 @@ public: // Predicate
 	is_LIQSS() const
 	{
 		return false;
+	}
+
+	// Non-LIQSS Variable?
+	bool
+	not_LIQSS() const
+	{
+		return ( ! is_LIQSS() );
 	}
 
 	// Zero-Crossing Variable?
@@ -644,6 +657,17 @@ public: // Methods
 		self_observer_ = true;
 	}
 
+	// Add Observee
+	void
+	observe_forward( Variable * v )
+	{
+		if ( v == this ) { // Flag as self-observer
+			self_observer_ = true;
+		} else {
+			observees_.push_back( v );
+		}
+	}
+
 	// Add Observee and its Observer
 	void
 	observe( Variable * v )
@@ -653,6 +677,17 @@ public: // Methods
 		} else {
 			observees_.push_back( v );
 			v->observers_.add( this );
+		}
+	}
+
+	// Add Back Observers
+	void
+	add_back_observers()
+	{
+		if ( ! observees_.empty() ) {
+			for ( Variable * observee : observees_ ) {
+				observee->observers_.add( this );
+			}
 		}
 	}
 
@@ -1434,9 +1469,9 @@ protected: // Methods: FMU
 	Real
 	Z_1( Time const t, Real const x_0 ) const
 	{
-		Time const tN( t + options::dtNum );
+		Time const tN( t + options::dtND );
 		fmu_set_time( tN );
-		Real const x_1( options::one_over_dtNum * ( z_0( tN ) - x_0 ) ); //ND Forward Euler
+		Real const x_1( options::one_over_dtND * ( z_0( tN ) - x_0 ) ); //ND Forward Euler
 		fmu_set_time( t );
 		return x_1;
 	}
@@ -1445,16 +1480,16 @@ protected: // Methods: FMU
 	Real
 	p_2( Real const d, Real const x_1 ) const
 	{
-		return options::one_over_two_dtNum * ( d - x_1 ); //ND Forward Euler
+		return options::one_over_two_dtND * ( d - x_1 ); //ND Forward Euler
 	}
 
 	// Coefficient 2 from FMU at Time t
 	Real
 	c_2( Time const t, Real const x_1 ) const
 	{
-		Time const tN( t + options::dtNum );
+		Time const tN( t + options::dtND );
 		fmu_set_time( tN );
-		Real const x_2( options::one_over_two_dtNum * ( c_1( tN ) - x_1 ) ); //ND Forward Euler
+		Real const x_2( options::one_over_two_dtND * ( c_1( tN ) - x_1 ) ); //ND Forward Euler
 		fmu_set_time( t );
 		return x_2;
 	}
@@ -1463,9 +1498,9 @@ protected: // Methods: FMU
 	Real
 	h_2( Time const t, Real const x_1 ) const
 	{
-		Time const tN( t + options::dtNum );
+		Time const tN( t + options::dtND );
 		fmu_set_time( tN );
-		Real const x_2( options::one_over_two_dtNum * ( h_1( tN ) - x_1 ) ); //ND Forward Euler
+		Real const x_2( options::one_over_two_dtND * ( h_1( tN ) - x_1 ) ); //ND Forward Euler
 		fmu_set_time( t );
 		return x_2;
 	}
@@ -1474,9 +1509,9 @@ protected: // Methods: FMU
 	Real
 	z_2( Time const t, Real const x_1 ) const
 	{
-		Time const tN( t + options::dtNum );
+		Time const tN( t + options::dtND );
 		fmu_set_time( tN );
-		Real const x_2( options::one_over_two_dtNum * ( z_1( tN ) - x_1 ) ); //ND Forward Euler
+		Real const x_2( options::one_over_two_dtND * ( z_1( tN ) - x_1 ) ); //ND Forward Euler
 		fmu_set_time( t );
 		return x_2;
 	}
@@ -1485,14 +1520,14 @@ protected: // Methods: FMU
 	Real
 	c_3( Time const t, Real const x_1 ) const
 	{
-		Time tN( t - options::dtNum );
+		Time tN( t - options::dtND );
 		fmu_set_time( tN );
 		Real const x_1_m( c_1( tN ) );
-		tN = t + options::dtNum;
+		tN = t + options::dtND;
 		fmu_set_time( tN );
 		Real const x_1_p( c_1( tN ) );
 		fmu_set_time( tQ );
-		return options::one_over_six_dtNum_squared * ( x_1_p - ( two * x_1 ) + x_1_m ); //ND Centered difference
+		return options::one_over_six_dtND_squared * ( x_1_p - ( two * x_1 ) + x_1_m ); //ND Centered difference
 	}
 
 protected: // Methods

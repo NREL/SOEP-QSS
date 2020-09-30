@@ -243,6 +243,7 @@ simulate( std::string const & model )
 	Time const t0( 0.0 ); // Simulation start time
 	Time tE( options::tEnd ); // Simulation end time
 	Time t( t0 ); // Simulation current time
+	options::dtOut_set( tE - t0 ); // Set dtOut to default if not specified
 	Time tOut( t0 + options::dtOut ); // Sampling time
 	size_type iOut( 1u ); // Output step index
 	Time const tSim( tE - t0 ); // Simulation time span expected

@@ -45,15 +45,15 @@ check :
 
 .PHONY : clear
 clear :
-	-rm -f *.d *.obj
+	-DEL *.d *.obj
 
 .PHONY : clean
 clean :
-	-rm -f *.d *.obj $(subst \,/,$(DLB))
+	-DEL *.d *.obj $(DLB)
 
 $(DLB) : $(OBJ)
-	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
-	@-rm -f $(filter-out $(OBJ),$(wildcard *.obj)) # Prune obs objs
+	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F
+	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.obj))) DO DEL %%F
 	$(CXX) $(CXXFLAGS) $(PGO) $^ $(LINKFLAGS) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib expat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib /out:$@ /dll
 
 # Dependencies

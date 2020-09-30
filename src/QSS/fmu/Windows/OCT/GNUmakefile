@@ -45,15 +45,15 @@ check :
 
 .PHONY : clear
 clear :
-	-rm -f *.d *.o
+	-DEL *.d *.o
 
 .PHONY : clean
 clean :
-	-rm -f *.d *.o $(subst \,/,$(DLB))
+	-DEL *.d *.o $(DLB)
 
 $(DLB) : $(OBJ)
-	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
-	@-rm -f $(filter-out $(OBJ),$(wildcard *.o)) # Prune obs objs
+	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F
+	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.o))) DO DEL %%F
 	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) -shared -o $@ $^ $(FMIL_HOME)\lib\libfmilib_shared.dll.a # libfmilib.a gives undefined references
 
 # Dependencies

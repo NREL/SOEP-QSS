@@ -64,11 +64,11 @@ check :
 
 .PHONY : clear
 clear :
-	-rm -f *.d *.o
+	-DEL *.d *.o
 
 .PHONY : clean
 clean :
-	-rm -f *.d *.o $(subst \,/,$(EXE))
+	-DEL *.d *.o $(EXE)
 
 .PHONY : run
 run : $(EXE)
@@ -77,14 +77,14 @@ run : $(EXE)
 
 # Executable from libraries
 #$(EXE) : $(OBJ) $(PATH_LIBS)
-#	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
-#	@-rm -f $(filter-out $(OBJ),$(wildcard *.o)) # Prune obs objs
+#	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F
+#	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.o))) DO DEL %%F
 #	$(CXX) $(LDFLAGS) -o $@ $(filter-out *.a,$^) -L$(QSS_bin) -l$(TAR) -L$(FMIL_HOME)\lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -lshlwapi -L$(GTEST_BIN) -lgtest
 
 # Executable from objects
 $(EXE) : $(OBJ) $(APP_OBJ)
-	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
-	@-rm -f $(filter-out $(OBJ),$(wildcard *.o)) # Prune obs objs
+	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F
+	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.o))) DO DEL %%F
 	$(CXX) $(LDFLAGS) -o $@ $^ -L$(FMIL_HOME)\lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -lshlwapi -L$(GTEST_BIN) -lgtest
 
 .PRECIOUS : $(EXE)

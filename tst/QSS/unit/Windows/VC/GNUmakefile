@@ -62,11 +62,11 @@ check :
 
 .PHONY : clear
 clear :
-	-rm -f *.d *.obj
+	-DEL *.d *.obj
 
 .PHONY : clean
 clean :
-	-rm -f *.d *.obj $(subst \,/,$(BIN_PATH)\$(TAR).unit.*)
+	-DEL *.d *.obj $(BIN_PATH)\$(TAR).unit.*
 
 .PHONY : run
 run : $(EXE)
@@ -75,17 +75,17 @@ run : $(EXE)
 
 # Executable from libraries
 #$(EXE) : $(OBJ) $(PATH_LIBS)
-#	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
-#	@-rm -f $(filter-out $(OBJ),$(wildcard *.obj)) # Prune obs objs
+#	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F
+#	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.obj))) DO DEL %%F
 #	$(CXX) $(LDFLAGS) /Fe$(subst \,/,$@) $^ $(LINKFLAGS) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib expat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib $(GTEST_BIN)\gtest.lib
-#	@-rm -f $(subst \,/,$(BIN_PATH))/$(TAR).unit.exp $(subst \,/,$(BIN_PATH))/$(TAR).unit.ilk $(subst \,/,$(BIN_PATH))/$(TAR).unit.lib $(subst \,/,$(BIN_PATH))/$(TAR).unit.pdb
+#	@-DEL $(BIN_PATH)\$(TAR).unit.exp $(BIN_PATH)\$(TAR).unit.ilk $(BIN_PATH)\$(TAR).unit.lib $(BIN_PATH)\$(TAR).unit.pdb
 
 # Executable from objects
 $(EXE) : $(OBJ) $(APP_OBJ)
-	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) # Prune obs deps
-	@-rm -f $(filter-out $(OBJ),$(wildcard *.obj)) # Prune obs objs
+	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F
+	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.obj))) DO DEL %%F
 	$(CXX) $(LDFLAGS) /Fe$(subst \,/,$@) $^ $(LINKFLAGS) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib expat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib $(GTEST_BIN)\gtest.lib
-	@-rm -f $(subst \,/,$(BIN_PATH))/$(TAR).unit.exp $(subst \,/,$(BIN_PATH))/$(TAR).unit.ilk $(subst \,/,$(BIN_PATH))/$(TAR).unit.lib $(subst \,/,$(BIN_PATH))/$(TAR).unit.pdb
+	@-DEL $(BIN_PATH)\$(TAR).unit.exp $(BIN_PATH)\$(TAR).unit.ilk $(BIN_PATH)\$(TAR).unit.lib $(BIN_PATH)\$(TAR).unit.pdb
 
 .PRECIOUS : $(EXE)
 

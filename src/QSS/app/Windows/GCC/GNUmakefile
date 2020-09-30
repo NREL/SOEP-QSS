@@ -55,15 +55,15 @@ check :
 
 .PHONY : clear
 clear :
-	-rm -f *.d *.o
+	-DEL *.d *.o
 
 .PHONY : clean
 clean :
-	-rm -f *.d *.o $(subst \,/,$(SLB)) $(subst \,/,$(EXE))
+	-DEL *.d *.o $(SLB) $(EXE)
 
 $(SLB) : $(OBJ)
-	@-rm -f $(filter-out $(DEP) $(TAR_DEP),$(wildcard *.d)) # Prune obs deps
-	@-rm -f $(filter-out $(OBJ) $(TAR_OBJ),$(wildcard *.o)) # Prune obs objs
+	@-FOR %%F in ($(filter-out $(DEP) $(TAR_DEP),$(wildcard *.d))) DO DEL %%F
+	@-FOR %%F in ($(filter-out $(OBJ) $(TAR_OBJ),$(wildcard *.o))) DO DEL %%F
 	$(AR) $(ARFLAGS) $@ $?
 
 $(TAR_OBJ) : $(TAR_SRC)

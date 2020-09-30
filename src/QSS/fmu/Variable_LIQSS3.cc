@@ -61,16 +61,16 @@ namespace fmu {
 		Real const x_1_u( p_1() );
 
 		// Second derivative at +/- qTol
-		Time const dN( options::dtNum );
+		Time const dN( options::dtND );
 		Time tN( tQ + dN );
 		fmu_set_time( tN );
 		fmu_set_observees_q( tN );
 		fmu_set_real( q_l + ( ( x_1_l + ( x_2_ * dN ) ) * dN ) );
 		Real const x_1p_l( p_1() );
-		Real const x_2_l( options::one_over_two_dtNum * ( x_1p_l - x_1_l ) ); //ND Forward Euler
+		Real const x_2_l( options::one_over_two_dtND * ( x_1p_l - x_1_l ) ); //ND Forward Euler
 		fmu_set_real( q_u + ( ( x_1_u + ( x_2_ * dN ) ) * dN ) );
 		Real const x_1p_u( p_1() );
-		Real const x_2_u( options::one_over_two_dtNum * ( x_1p_u - x_1_u ) ); //ND Forward Euler
+		Real const x_2_u( options::one_over_two_dtND * ( x_1p_u - x_1_u ) ); //ND Forward Euler
 
 		// Third derivative at +/- qTol
 		tN = tQ - dN;
@@ -78,11 +78,11 @@ namespace fmu {
 		fmu_set_observees_q( tN );
 		fmu_set_real( q_l - ( ( x_1_l - ( x_2_l * dN ) ) * dN ) );
 		Real const x_1m_l( p_1() );
-		Real const x_3_l( options::one_over_six_dtNum_squared * ( x_1p_l - ( two * x_1_l ) + x_1m_l ) ); //ND Centered difference
+		Real const x_3_l( options::one_over_six_dtND_squared * ( x_1p_l - ( two * x_1_l ) + x_1m_l ) ); //ND Centered difference
 		int const x_3_l_s( signum( x_3_l ) );
 		fmu_set_real( q_u - ( ( x_1_u - ( x_2_u * dN ) ) * dN ) );
 		Real const x_1m_u( p_1() );
-		Real const x_3_u( options::one_over_six_dtNum_squared * (  x_1p_u - ( two * x_1_u ) + x_1m_u ) ); //ND Centered difference
+		Real const x_3_u( options::one_over_six_dtND_squared * (  x_1p_u - ( two * x_1_u ) + x_1m_u ) ); //ND Centered difference
 		int const x_3_u_s( signum( x_3_u ) );
 
 		// Reset FMU time
@@ -133,16 +133,16 @@ namespace fmu {
 		Real const x_1_u( p_1() );
 
 		// Second derivative at +/- qTol
-		Time const dN( options::dtNum );
+		Time const dN( options::dtND );
 		Time tN( tQ + dN );
 		fmu_set_time( tN );
 		fmu_set_observees_q( tN );
 		fmu_set_real( q_l + ( ( x_1_l + ( x_2_ * dN ) ) * dN ) );
 		Real const x_1p_l( p_1() );
-		Real const x_2_l( options::one_over_two_dtNum * ( x_1p_l - x_1_l ) ); //ND Forward Euler
+		Real const x_2_l( options::one_over_two_dtND * ( x_1p_l - x_1_l ) ); //ND Forward Euler
 		fmu_set_real( q_u + ( ( x_1_u + ( x_2_ * dN ) ) * dN ) );
 		Real const x_1p_u( p_1() );
-		Real const x_2_u( options::one_over_two_dtNum * ( x_1p_u - x_1_u ) ); //ND Forward Euler
+		Real const x_2_u( options::one_over_two_dtND * ( x_1p_u - x_1_u ) ); //ND Forward Euler
 
 		// Third derivative at +/- qTol
 		tN = tQ - dN;
@@ -150,11 +150,11 @@ namespace fmu {
 		fmu_set_observees_q( tN );
 		fmu_set_real( q_l - ( ( x_1_l - ( x_2_l * dN ) ) * dN ) );
 		Real const x_1m_l( p_1() );
-		Real const x_3_l( options::one_over_six_dtNum_squared * ( x_1p_l - ( two * x_1_l ) + x_1m_l ) ); //ND Centered difference
+		Real const x_3_l( options::one_over_six_dtND_squared * ( x_1p_l - ( two * x_1_l ) + x_1m_l ) ); //ND Centered difference
 		int const x_3_l_s( signum( x_3_l ) );
 		fmu_set_real( q_u - ( ( x_1_u - ( x_2_u * dN ) ) * dN ) );
 		Real const x_1m_u( p_1() );
-		Real const x_3_u( options::one_over_six_dtNum_squared * (  x_1p_u - ( two * x_1_u ) + x_1m_u ) ); //ND Centered difference
+		Real const x_3_u( options::one_over_six_dtND_squared * (  x_1p_u - ( two * x_1_u ) + x_1m_u ) ); //ND Centered difference
 		int const x_3_u_s( signum( x_3_u ) );
 
 		// Reset FMU time

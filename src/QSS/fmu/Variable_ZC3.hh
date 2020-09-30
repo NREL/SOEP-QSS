@@ -366,46 +366,46 @@ private: // Methods
 	Real
 	z_1() const
 	{
-		Time tN( tQ - options::dtNum );
+		Time tN( tQ - options::dtND );
 		fmu_set_time( tN );
 		x_0_m_ = z_0( tN );
-		tN = tQ + options::dtNum;
+		tN = tQ + options::dtND;
 		fmu_set_time( tN );
 		x_0_p_ = z_0( tN );
 		fmu_set_time( tQ );
-		return options::one_over_two_dtNum * ( x_0_p_ - x_0_m_ ); //ND Centered difference
+		return options::one_over_two_dtND * ( x_0_p_ - x_0_m_ ); //ND Centered difference
 	}
 
 	// Coefficient 1 from FMU
 	Real
 	z_1( Real const x_0_m, Real const x_0_p ) const
 	{
-		return options::one_over_two_dtNum * ( ( x_0_p_ = x_0_p ) - ( x_0_m_ = x_0_m ) ); //ND Centered difference
+		return options::one_over_two_dtND * ( ( x_0_p_ = x_0_p ) - ( x_0_m_ = x_0_m ) ); //ND Centered difference
 	}
 
 	// Coefficient 2 from FMU
 	Real
 	z_2() const
 	{
-		return options::one_over_two_dtNum_squared * ( x_0_p_ - ( two * x_0_ ) + x_0_m_ ); //ND Centered difference
+		return options::one_over_two_dtND_squared * ( x_0_p_ - ( two * x_0_ ) + x_0_m_ ); //ND Centered difference
 	}
 
 	// Coefficient 3 from FMU at Time tQ
 	Real
 	z_3() const
 	{
-		Time const tN( tQ + ( two * options::dtNum ) );
+		Time const tN( tQ + ( two * options::dtND ) );
 		fmu_set_time( tN );
 		Real const x_0_2p( z_0( tN ) );
 		fmu_set_time( tQ );
-		return options::one_over_six_dtNum_cubed * ( x_0_2p - ( three * x_0_p_ ) + ( three * x_0_ ) - x_0_m_ ); //ND Four-point formula
+		return options::one_over_six_dtND_cubed * ( x_0_2p - ( three * x_0_p_ ) + ( three * x_0_ ) - x_0_m_ ); //ND Four-point formula
 	}
 
 	// Coefficient 3 from FMU
 	Real
 	z_3( Real const x_0_2p ) const
 	{
-		return options::one_over_six_dtNum_cubed * ( x_0_2p - ( three * x_0_p_ ) + ( three * x_0_ ) - x_0_m_ ); //ND Four-point formula
+		return options::one_over_six_dtND_cubed * ( x_0_2p - ( three * x_0_p_ ) + ( three * x_0_ ) - x_0_m_ ); //ND Four-point formula
 	}
 
 private: // Data

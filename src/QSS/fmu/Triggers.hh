@@ -244,7 +244,7 @@ public: // Methods
 		}
 #endif
 		if ( qss2_.have() ) {
-			Time tN( t + options::dtNum );
+			Time tN( t + options::dtND );
 			fmu_me_->set_time( tN );
 			for ( Variable * observee : qss_same_order_ ? qss_observees_ : qss2_observees_ ) {
 				observee->fmu_set_q( tN );
@@ -258,7 +258,7 @@ public: // Methods
 				triggers_[ i ]->advance_QSS_2_1();
 			}
 			if ( qss3_.have() ) {
-				tN = t - options::dtNum;
+				tN = t - options::dtND;
 				fmu_me_->set_time( tN );
 				for ( Variable * observee : qss_same_order_ ? qss_observees_ : qss3_observees_ ) {
 					observee->fmu_set_q( tN );

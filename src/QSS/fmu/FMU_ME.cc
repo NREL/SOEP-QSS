@@ -67,6 +67,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <functional>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
@@ -380,6 +381,7 @@ namespace fmu {
 
 		// QSS time and tolerance run controls
 		t = t0; // Simulation current time
+		options::dtOut_set( tE - t0 ); // Set dtOut to default if not specified
 		tOut = t0 + options::dtOut; // Sampling time
 		iOut = 1u; // Output step index
 		if ( ! options::specified::rTol ) options::rTol = rTol; // Quantization relative tolerance (FMU doesn't have an absolute tolerance)
@@ -392,6 +394,9 @@ namespace fmu {
 			std::cout << "Absolute Tolerances: " << options::rTol << " * " << options::aFac << " * nominal value" << std::endl;
 		}
 
+		// Report numeric differentiation time step
+		std::cout << "\nNumeric differentiation time step: " << options::dtND << " (s)" << std::endl;
+
 		// FMU event info initialization
 		eventInfo.newDiscreteStatesNeeded = fmi2_false;
 		eventInfo.terminateSimulation = fmi2_false;
@@ -401,11 +406,11 @@ namespace fmu {
 		eventInfo.nextEventTime = -0.0;
 
 		// FMU pre-simulation calls
-		fmi2_import_enter_continuous_time_mode( fmu );
 // An event iteration doesn't seem to be necessary here and it bumps the event indicators a bit
+//		fmi2_import_enter_continuous_time_mode( fmu );
 //		fmi2_import_enter_event_mode( fmu );
 //		do_event_iteration();
-//		fmi2_import_enter_continuous_time_mode( fmu );
+		fmi2_import_enter_continuous_time_mode( fmu );
 		fmi2_import_get_continuous_states( fmu, states, n_states ); // Should get initial values
 		fmi2_import_get_nominals_of_continuous_states( fmu, x_nominal, n_states ); // Should return 1 for variables with no nominal value specified
 		fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
@@ -1204,7 +1209,7 @@ namespace fmu {
 									if ( dep->in_conditional() ) dep->conditional->add_observer( var );
 								} else {
 									std::cout << "  Var: " << dep->name() << " has observer " << var->name() << std::endl;
-									var->observe( dep );
+									var->observe_forward( dep );
 								}
 							} else {
 								//std::cout << "   Note: FMU-ME derivative " << der_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
@@ -1280,7 +1285,7 @@ namespace fmu {
 									if ( dep->in_conditional() ) dep->conditional->add_observer( var );
 								} else {
 									std::cout << "  Var: " << dep->name() << " has observer " << var->name() << std::endl;
-									var->observe( dep );
+									var->observe_forward( dep );
 								}
 							} else {
 								//std::cout << "   Note: FMU-ME InitialUnknown " << inu_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
@@ -1498,7 +1503,7 @@ namespace fmu {
 									if ( dep->in_conditional() ) dep->conditional->add_observer( out_var );
 								} else {
 									std::cout << "  Var: " << dep->name() << " has observer " << out_name << std::endl;
-									out_var->observe( dep );
+									out_var->observe_forward( dep );
 								}
 							} else { // Dependency is a non-QSS variable
 								std::cout << "   Note: Output variable " << out_name << " has dependency on non-QSS variable with index " << dep_idx << std::endl;
@@ -1546,7 +1551,7 @@ namespace fmu {
 									if ( dep->in_conditional() ) dep->conditional->add_observer( qss_var );
 								} else {
 									std::cout << "  Var: " << dep->name() << " has observer " << out_name << std::endl;
-									qss_var->observe( dep );
+									qss_var->observe_forward( dep );
 								}
 							} else { // Dependency is a non-QSS variable: These don't have relevant transitive dependencies on QSS variables
 								std::cout << "   Note: Output variable " << out_name << " has dependency on non-QSS variable with index " << dep_idx << std::endl;
@@ -1588,6 +1593,11 @@ namespace fmu {
 				}
 			}
 			if ( vars_new.size() < vars.size() ) vars = std::move( vars_new );
+		}
+
+		// Add back observers after any pruning (so we don't need a complex ~Variable)
+		for ( Variable * var : vars ) {
+			var->add_back_observers();
 		}
 
 		// Sizes
@@ -1803,10 +1813,13 @@ namespace fmu {
 		doROut = options::output::r && ( options::output::x || options::output::q );
 		doKOut = options::output::k && ( out_var_refs.size() > 0u );
 		std::string const output_dir( options::have_multiple_models() ? name : std::string() );
+		OutputFilter const output_filter( options::var );
 		if ( ( options::output::t || options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) { // QSS t0 outputs
 			for ( auto var : vars ) {
-				var->init_out( output_dir );
-				var->out( t );
+				if ( output_filter.fmu( var->name() ) ) {
+					var->init_out( output_dir );
+					var->out( t );
+				}
 			}
 		}
 		if ( options::output::f && ( n_all_outs > 0u ) ) { // FMU t0 outputs
@@ -2357,7 +2370,7 @@ namespace fmu {
 							}
 						}
 					} else { // Simultaneous/binned triggers
-						if ( options::statistics ) { // Statistics
+						if ( options::statistics || options::steps ) { // Statistics
 							for ( Variable * trigger : triggers ) {
 								++c_QSS_events[ trigger ];
 							}
@@ -2556,6 +2569,17 @@ namespace fmu {
 						if ( c_ZC_events[ var ] > 0u ) std::cout << ' ' << var->name() << ' ' << c_ZC_events[ var ] << " (" <<  100u * c_ZC_events[ var ] / n_ZC_events << "%)" << std::endl;
 					}
 				}
+			}
+			if ( options::steps ) { // Statistics
+				std::ofstream step_stream( name + ".stp", std::ios_base::binary | std::ios_base::out );
+				if ( step_stream.is_open() ) {
+					OutputFilter const steps_filter;
+					step_stream << n_QSS_events << '\n';
+					for ( Variable const * var : vars ) {
+						if ( steps_filter( var->name() ) ) step_stream << var->name() << ' ' << c_QSS_events[ var ] << '\n';
+					}
+				}
+				step_stream.close();
 			}
 		}
 	}

@@ -69,13 +69,16 @@ public: // Creation
 	// Name + Type Constructor
 	Output_T(
 	 std::string const & var,
-	 char const type
+	 char const type,
+	 bool const do_init = true
 	) :
 	 file_( var + '.' + type + ".out" )
 	{
-		t_.reserve( capacity_ );
-		v_.reserve( capacity_ );
-		std::ofstream( file_, std::ios_base::binary | std::ios_base::out );
+		if ( do_init ) {
+			t_.reserve( capacity_ );
+			v_.reserve( capacity_ );
+			std::ofstream( file_, std::ios_base::binary | std::ios_base::out );
+		}
 	}
 
 	// Directory + Name + Type Constructor

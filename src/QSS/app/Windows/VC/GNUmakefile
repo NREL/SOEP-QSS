@@ -55,15 +55,15 @@ check :
 
 .PHONY : clear
 clear :
-	-rm -f *.d *.obj
+	-DEL *.d *.obj
 
 .PHONY : clean
 clean :
-	-rm -f *.d *.obj $(subst \,/,$(SLB)) $(subst \,/,$(EXE)) $(subst \,/,$(BIN_PATH))/$(TAR).ilk $(subst \,/,$(BIN_PATH))/$(TAR).pdb
+	-DEL *.d *.obj $(SLB) $(EXE) $(BIN_PATH)\$(TAR).ilk $(BIN_PATH)\$(TAR).pdb
 
 $(SLB) : $(OBJ)
-	@-rm -f $(filter-out $(DEP) $(TAR_DEP),$(wildcard *.d)) # Prune obs deps
-	@-rm -f $(filter-out $(OBJ) $(TAR_OBJ),$(wildcard *.obj)) # Prune obs objs
+	@-FOR %%F in ($(filter-out $(DEP) $(TAR_DEP),$(wildcard *.d))) DO DEL %%F
+	@-FOR %%F in ($(filter-out $(OBJ) $(TAR_OBJ),$(wildcard *.obj))) DO DEL %%F
 	$(AR) $(ARFLAGS) /out:$@ $^
 
 $(TAR_OBJ) : $(TAR_SRC)
@@ -72,7 +72,7 @@ $(TAR_OBJ) : $(TAR_SRC)
 
 $(EXE) : $(SLB) $(TAR_OBJ)
 	$(CXX) $(CXXLINKFLAGS) $(PGO) /Fe:$@ $(TAR_OBJ) $(LINKFLAGS) $(SLB) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib expat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
-	@-rm -f $(subst \,/,$(BIN_PATH))/$(TAR).exp $(subst \,/,$(BIN_PATH))/$(TAR).ilk $(subst \,/,$(BIN_PATH))/$(TAR).lib
+	@-DEL $(BIN_PATH)\$(TAR).exp $(BIN_PATH)\$(TAR).ilk $(BIN_PATH)\$(TAR).lib >nul 2>&1
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)

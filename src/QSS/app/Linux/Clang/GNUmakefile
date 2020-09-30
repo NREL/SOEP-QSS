@@ -62,8 +62,8 @@ clean :
 	-rm -f *.d *.o $(SLB) $(EXE)
 
 $(SLB) : $(OBJ)
-	@-rm -f $(filter-out $(DEP) $(TAR_DEP),$(wildcard *.d)) # Prune obs deps
-	@-rm -f $(filter-out $(OBJ) $(TAR_OBJ),$(wildcard *.o)) # Prune obs objs
+	@-rm -f $(filter-out $(DEP) $(TAR_DEP),$(wildcard *.d))
+	@-rm -f $(filter-out $(OBJ) $(TAR_OBJ),$(wildcard *.o))
 	$(AR) $(ARFLAGS) $@ $?
 
 $(TAR_OBJ) : $(TAR_SRC)

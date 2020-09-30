@@ -545,7 +545,7 @@ private: // Methods
 			#pragma omp single
 			{
 			if ( qss2_.have() ) {
-				Time tN( t + options::dtNum );
+				Time tN( t + options::dtND );
 				fmu_me_->set_time( tN );
 				for ( Variable * observee : qss_same_order_ ? qss_observees_ : qss2_observees_ ) {
 					observee->fmu_set_q( tN );
@@ -556,7 +556,7 @@ private: // Methods
 					observers_[ i ]->advance_observer_2_parallel( qss_ders_.vals[ i ] );
 				}
 				if ( qss3_.have() ) {
-					tN = t - options::dtNum;
+					tN = t - options::dtND;
 					fmu_me_->set_time( tN );
 					for ( Variable * observee : qss_same_order_ ? qss_observees_ : qss3_observees_ ) {
 						observee->fmu_set_q( tN );
@@ -586,7 +586,7 @@ private: // Methods
 			observers_[ i ]->advance_observer_1( t, qss_ders_.vals[ i ] );
 		}
 		if ( qss2_.have() ) {
-			Time tN( t + options::dtNum );
+			Time tN( t + options::dtND );
 			fmu_me_->set_time( tN );
 			for ( Variable * observee : qss_same_order_ ? qss_observees_ : qss2_observees_ ) {
 				observee->fmu_set_q( tN );
@@ -597,7 +597,7 @@ private: // Methods
 				observers_[ i ]->advance_observer_2( qss_ders_.vals[ i ] );
 			}
 			if ( qss3_.have() ) {
-				tN = t - options::dtNum;
+				tN = t - options::dtND;
 				fmu_me_->set_time( tN );
 				for ( Variable * observee : qss_same_order_ ? qss_observees_ : qss3_observees_ ) {
 					observee->fmu_set_q( tN );
@@ -627,13 +627,13 @@ private: // Methods
 		if ( fmu_me_->has_event_indicators ) { // Event indicators
 			assert( zc_.n() == ei_vars_.size() );
 			fmu_me_->get_reals( zc_.n(), &ei_vars_.refs[ 0 ], &ei_vars_.vals[ 0 ] );
-			Time tN( t - options::dtNum );
+			Time tN( t - options::dtND );
 			fmu_me_->set_time( tN );
 			for ( Variable * observee : zc_observees_ ) {
 				observee->fmu_set_x( tN );
 			}
 			fmu_me_->get_reals( zc_.n(), &ei_vars_.refs[ 0 ], &ei_vars_.vals_m[ 0 ] );
-			tN = t + options::dtNum;
+			tN = t + options::dtND;
 			fmu_me_->set_time( tN );
 			for ( Variable * observee : zc_observees_ ) {
 				observee->fmu_set_x( tN );
@@ -647,7 +647,7 @@ private: // Methods
 					observers_[ i ]->advance_observer_2();
 				}
 				if ( zc3_.have() ) {
-					tN = t + ( two * options::dtNum );
+					tN = t + ( two * options::dtND );
 					fmu_me_->set_time( tN );
 					for ( Variable * observee : zc_same_order_ ? zc_observees_ : zc3_observees_ ) {
 						observee->fmu_set_x( tN );
@@ -670,7 +670,7 @@ private: // Methods
 				observers_[ i ]->advance_observer_1( t, zc_ders_.vals[ j ], zc_vars_.vals[ j ] );
 			}
 			if ( zc2_.have() ) {
-				Time tN( t + options::dtNum );
+				Time tN( t + options::dtND );
 				fmu_me_->set_time( tN );
 				for ( Variable * observee : zc_same_order_ ? zc_observees_ : zc2_observees_ ) {
 					observee->fmu_set_x( tN );
@@ -681,7 +681,7 @@ private: // Methods
 					observers_[ i ]->advance_observer_2( zc_ders_.vals[ j ] );
 				}
 				if ( zc3_.have() ) {
-					tN = t - options::dtNum;
+					tN = t - options::dtND;
 					fmu_me_->set_time( tN );
 					for ( Variable * observee : zc_same_order_ ? zc_observees_ : zc3_observees_ ) {
 						observee->fmu_set_x( tN );
