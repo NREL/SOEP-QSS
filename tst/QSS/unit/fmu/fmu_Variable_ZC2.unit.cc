@@ -87,8 +87,9 @@ TEST( fmu_Variable_ZC2Test, BouncingBall )
 	options::specified::rTol = true;
 	options::aTol = 1.0;
 	options::specified::aTol = true;
-	options::output::x = false;
-	options::output::f = false;
+	options::output::X = false;
+	options::output::F = false;
+	options::output::L = false;
 	options::zFac = 1.0;
 
 	std::streambuf * coutBuf( std::cout.rdbuf() ); std::ostringstream strCout; std::cout.rdbuf( strCout.rdbuf() ); // Redirect cout

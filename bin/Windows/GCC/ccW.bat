@@ -1,3 +1,3 @@
 @echo off
-rem GCC C++ Compile Warnings
+:: GCC C++ Compile Warnings
 g++ -pipe -std=c++17 -pedantic -ansi -Wall -Wextra -Winline -Weffc++ -c %*

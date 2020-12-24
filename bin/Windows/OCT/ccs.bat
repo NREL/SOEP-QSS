@@ -1,5 +1,5 @@
 @echo off
-rem OCT MinGW C++ Compile Syntax
+:: OCT MinGW C++ Compile Syntax
 
 if exist %1 goto Compile
 if exist %1.cc  set CxxSource=%1.cc

@@ -52,7 +52,7 @@ using namespace QSS::cod::mdl;
 
 TEST( cod_Variable_ZC2Test, Basic )
 {
-	Variable_QSS2< Function_LTI > x( "x" );
+	Variable_QSS2< Function_LTI > x( "x", 1.0e-4, 1.0e-4 );
 	x.add( -1.0 );
 	x.init( 1.0 );
 	EXPECT_EQ( 1.0e-4, x.rTol );
@@ -65,7 +65,7 @@ TEST( cod_Variable_ZC2Test, Basic )
 	EXPECT_DOUBLE_EQ( 1.0 - 1.0e-7, x.x( 1.0e-7 ) );
 	EXPECT_DOUBLE_EQ( 1.0 - 1.0e-7, x.q( 1.0e-7 ) );
 
-	Variable_ZC2< Function_LTI > z( "z" );
+	Variable_ZC2< Function_LTI > z( "z", 1.0e-4, 1.0e-4 );
 	z.add_crossings_Dn();
 	z.add( &x );
 	z.init();

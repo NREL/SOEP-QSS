@@ -69,32 +69,34 @@ public: // Creation
 		if ( var_stream.is_open() ) {
 			std::string line;
 			while ( std::getline( var_stream, line ) ) {
+				if ( ( ! strip( line ).empty() ) && ( line[ 0 ] != '#' ) ) {
 
-				// Convert line from glob to regex
-				std::string reg_line;
-				for ( char const c : line ) {
-					if ( c == '?' ) {
-						reg_line.push_back( '.' );
-					} else if ( c == '*' ) {
-						reg_line.append( ".*" );
-					} else if ( c == '.' ) {
-						reg_line.append( "\\." );
-					} else if ( c == '[' ) {
-						reg_line.append( "\\[" );
-					} else if ( c == ']' ) {
-						reg_line.append( "\\]" );
-					} else {
-						reg_line.push_back( c );
+					// Convert line from glob to regex
+					std::string reg_line;
+					for ( char const c : line ) {
+						if ( c == '?' ) {
+							reg_line.push_back( '.' );
+						} else if ( c == '*' ) {
+							reg_line.append( ".*" );
+						} else if ( c == '.' ) {
+							reg_line.append( "\\." );
+						} else if ( c == '[' ) {
+							reg_line.append( "\\[" );
+						} else if ( c == ']' ) {
+							reg_line.append( "\\]" );
+						} else {
+							reg_line.push_back( c );
+						}
 					}
-				}
 
-				// Add to filter
-				try {
-					filters_.push_back( std::regex( reg_line ) );
-				} catch (...) {
-					std::cerr << "\nError: Skipping --var filter line that yields invalid regex string: " << reg_line << std::endl;
-				}
+					// Add to filter
+					try {
+						filters_.push_back( std::regex( reg_line ) );
+					} catch (...) {
+						std::cerr << "\nError: Skipping --var filter line that yields invalid regex string: " << reg_line << std::endl;
+					}
 
+				}
 			}
 			var_stream.close();
 		}

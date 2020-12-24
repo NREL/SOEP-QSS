@@ -1,5 +1,5 @@
 @echo off
-rem Python Setup
+:: Python Setup
 
 if exist C:\Python38\python.exe (
   set PYTHON_DIR=C:\Python38

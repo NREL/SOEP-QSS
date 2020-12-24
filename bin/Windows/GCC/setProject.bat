@@ -1,5 +1,5 @@
 @echo off
-rem QSS Windows GCC Setup
+:: QSS Windows GCC Setup
 
 if not (%QSS%) == () goto Step2
 set QSS=%~dp0

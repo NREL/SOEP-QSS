@@ -267,7 +267,7 @@ public: // Predicate
 		return false;
 	}
 
-	// Non-Connection Input Variable?
+	// Not Connection Input Variable?
 	bool
 	not_connection() const
 	{
@@ -318,7 +318,7 @@ public: // Predicate
 		return false;
 	}
 
-	// Non-LIQSS Variable?
+	// Not LIQSS Variable?
 	bool
 	not_LIQSS() const
 	{
@@ -333,11 +333,26 @@ public: // Predicate
 		return false;
 	}
 
-	// Non-Zero-Crossing Variable?
+	// Not Zero-Crossing Variable?
 	bool
 	not_ZC() const
 	{
 		return ( ! is_ZC() );
+	}
+
+	// Explicit Zero-Crossing Variable?
+	virtual
+	bool
+	is_ZCe() const
+	{
+		return false;
+	}
+
+	// Not Explicit Zero-Crossing Variable?
+	bool
+	not_ZCe() const
+	{
+		return ( ! is_ZCe() );
 	}
 
 	// In Conditional?
@@ -1166,8 +1181,8 @@ public: // Methods: Output
 	init_out( std::string const & dir )
 	{
 		if ( out_on_ ) {
-			if ( options::output::x ) out_x_.init( dir, name(), 'x' );
-			if ( options::output::q ) out_q_.init( dir, name(), 'q' );
+			if ( options::output::X ) out_x_.init( dir, name(), 'x' );
+			if ( options::output::Q ) out_q_.init( dir, name(), 'q' );
 		}
 	}
 
@@ -1176,8 +1191,8 @@ public: // Methods: Output
 	out( Time const t )
 	{
 		if ( out_on_ ) {
-			if ( options::output::x ) out_x_.append( t, x( t ) );
-			if ( options::output::q ) out_q_.append( t, q( t ) );
+			if ( options::output::X ) out_x_.append( t, x( t ) );
+			if ( options::output::Q ) out_q_.append( t, q( t ) );
 		}
 		if ( connected_ ) connections_out( t );
 	}
@@ -1187,7 +1202,7 @@ public: // Methods: Output
 	out_q( Time const t )
 	{
 		if ( out_on_ ) {
-			if ( options::output::q ) out_q_.append( t, q( t ) );
+			if ( options::output::Q ) out_q_.append( t, q( t ) );
 		}
 		if ( connected_ ) connections_out_q( t );
 	}
@@ -1197,8 +1212,8 @@ public: // Methods: Output
 	observer_out_pre( Time const t )
 	{
 		if ( out_on_ ) {
-			if ( options::output::x && ( ! is_BIDR() ) ) out_x_.append( t, x( t ) );
-			if ( options::output::q && is_ZC() ) out_q_.append( t, q( t ) );
+			if ( options::output::X && ( ! is_BIDR() ) ) out_x_.append( t, x( t ) );
+			if ( options::output::Q && is_ZC() ) out_q_.append( t, q( t ) );
 		}
 		if ( connected_ ) connections_observer_out_pre( t );
 	}
@@ -1209,8 +1224,8 @@ public: // Methods: Output
 	{
 		if ( is_ZC() || is_BIDR() ) {
 			if ( out_on_ ) {
-				if ( options::output::x ) out_x_.append( t, x( t ) );
-				if ( options::output::q ) out_q_.append( t, q( t ) );
+				if ( options::output::X ) out_x_.append( t, x( t ) );
+				if ( options::output::Q ) out_q_.append( t, q( t ) );
 			}
 			if ( connected_ ) connections_observer_out_post( t );
 		}
@@ -1220,7 +1235,7 @@ public: // Methods: Output
 	void
 	observers_out_pre( Time const t )
 	{
-		if ( options::output::o ) {
+		if ( options::output::O ) {
 			for ( Variable * observer : observers_ ) {
 				observer->observer_out_pre( t );
 			}
@@ -1231,7 +1246,7 @@ public: // Methods: Output
 	void
 	observers_out_post( Time const t )
 	{
-		if ( options::output::o ) {
+		if ( options::output::O ) {
 			for ( Variable * observer : observers_ ) {
 				observer->observer_out_post( t );
 			}
@@ -1414,6 +1429,14 @@ protected: // Methods: FMU
 		return p_0();
 	}
 
+	// Zero Coefficient 0: X-Based Setup
+	Real
+	z_x() const
+	{
+		fmu_set_observees_x( tQ );
+		return 0.0;
+	}
+
 	// Coefficient 1 from FMU: Observees Set
 	Real
 	p_1() const
@@ -1469,6 +1492,7 @@ protected: // Methods: FMU
 	Real
 	Z_1( Time const t, Real const x_0 ) const
 	{
+		assert( is_ZC() && not_ZCe() ); // For event-indicator based zero-crossing variables only
 		Time const tN( t + options::dtND );
 		fmu_set_time( tN );
 		Real const x_1( options::one_over_dtND * ( z_0( tN ) - x_0 ) ); //ND Forward Euler
@@ -1527,7 +1551,7 @@ protected: // Methods: FMU
 		fmu_set_time( tN );
 		Real const x_1_p( c_1( tN ) );
 		fmu_set_time( tQ );
-		return options::one_over_six_dtND_squared * ( x_1_p - ( two * x_1 ) + x_1_m ); //ND Centered difference
+		return options::one_over_six_dtND_squared * ( ( x_1_p - x_1 ) + ( x_1_m - x_1 ) ); //ND Centered difference
 	}
 
 protected: // Methods
@@ -1571,7 +1595,7 @@ private: // Data
 public: // Data
 
 	Real rTol{ 1.0e-4 }; // Relative tolerance
-	Real aTol{ 1.0e-4 }; // Absolute tolerance
+	Real aTol{ 1.0e-6 }; // Absolute tolerance
 	Real qTol{ 1.0e-6 }; // Quantization tolerance
 	Real xIni{ 0.0 }; // Initial value
 	Time tQ{ 0.0 }; // Quantized time range begin

@@ -78,11 +78,11 @@ namespace fmu {
 		fmu_set_observees_q( tN );
 		fmu_set_real( q_l - ( ( x_1_l - ( x_2_l * dN ) ) * dN ) );
 		Real const x_1m_l( p_1() );
-		Real const x_3_l( options::one_over_six_dtND_squared * ( x_1p_l - ( two * x_1_l ) + x_1m_l ) ); //ND Centered difference
+		Real const x_3_l( options::one_over_six_dtND_squared * ( ( x_1p_l - x_1_l ) + ( x_1m_l - x_1_l ) ) ); //ND Centered difference
 		int const x_3_l_s( signum( x_3_l ) );
 		fmu_set_real( q_u - ( ( x_1_u - ( x_2_u * dN ) ) * dN ) );
 		Real const x_1m_u( p_1() );
-		Real const x_3_u( options::one_over_six_dtND_squared * (  x_1p_u - ( two * x_1_u ) + x_1m_u ) ); //ND Centered difference
+		Real const x_3_u( options::one_over_six_dtND_squared * ( ( x_1p_u - x_1_u ) + ( x_1m_u - x_1_u ) ) ); //ND Centered difference
 		int const x_3_u_s( signum( x_3_u ) );
 
 		// Reset FMU time
@@ -150,11 +150,11 @@ namespace fmu {
 		fmu_set_observees_q( tN );
 		fmu_set_real( q_l - ( ( x_1_l - ( x_2_l * dN ) ) * dN ) );
 		Real const x_1m_l( p_1() );
-		Real const x_3_l( options::one_over_six_dtND_squared * ( x_1p_l - ( two * x_1_l ) + x_1m_l ) ); //ND Centered difference
+		Real const x_3_l( options::one_over_six_dtND_squared * ( ( x_1p_l - x_1_l ) + ( x_1m_l - x_1_l ) ) ); //ND Centered difference
 		int const x_3_l_s( signum( x_3_l ) );
 		fmu_set_real( q_u - ( ( x_1_u - ( x_2_u * dN ) ) * dN ) );
 		Real const x_1m_u( p_1() );
-		Real const x_3_u( options::one_over_six_dtND_squared * (  x_1p_u - ( two * x_1_u ) + x_1m_u ) ); //ND Centered difference
+		Real const x_3_u( options::one_over_six_dtND_squared * ( ( x_1p_u - x_1_u ) + ( x_1m_u - x_1_u ) ) ); //ND Centered difference
 		int const x_3_u_s( signum( x_3_u ) );
 
 		// Reset FMU time

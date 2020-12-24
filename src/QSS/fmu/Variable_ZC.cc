@@ -39,19 +39,20 @@
 namespace QSS {
 namespace fmu {
 
-	// Refine Zero-Crossing Time
+	// Refine Zero-Crossing Time: Event Indicator Zero-Crossing Variable
 	void
 	Variable_ZC::
 	refine_root_ZC( Time const tBeg )
 	{
 		assert( options::refine );
+		assert( not_ZCe() );
 		Time t( tZ );
 		Time const t_fmu( fmu_get_time() );
 		fmu_set_time( tZ );
 		Real const vZ( z_0( tZ ) );
 		Real v( vZ ), v_p( vZ );
 		Real m( 1.0 ); // Multiplier
-		std::size_t i( 0 );
+		std::size_t i( 0u );
 		std::size_t const n( 10u ); // Max iterations
 		while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
 			Real const d( Z_1( t, v ) );
@@ -67,19 +68,20 @@ namespace fmu {
 		fmu_set_time( t_fmu );
 	}
 
-	// Refine Zero-Crossing Time
+	// Refine Zero-Crossing Time: Explicit Zero-Crossing Variable
 	void
 	Variable_ZC::
 	refine_root_ZCe( Time const tBeg )
 	{
 		assert( options::refine );
+		assert( is_ZCe() );
 		Time t( tZ );
 		Time const t_fmu( fmu_get_time() );
 		fmu_set_time( tZ );
 		Real const vZ( z_0( tZ ) );
 		Real v( vZ ), v_p( vZ );
 		Real m( 1.0 ); // Multiplier
-		std::size_t i( 0 );
+		std::size_t i( 0u );
 		std::size_t const n( 10u ); // Max iterations
 		while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
 			Real const d( p_1() );

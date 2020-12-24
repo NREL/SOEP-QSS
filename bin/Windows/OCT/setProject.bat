@@ -1,5 +1,5 @@
 @echo off
-rem QSS Windows OCT MinGW Setup
+:: QSS Windows OCT MinGW Setup
 
 if not (%QSS%) == () goto Step2
 set QSS=%~dp0

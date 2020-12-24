@@ -1,24 +1,13 @@
 @echo off
-rem Intel Compiler 64-Bit Setup
+:: Intel Compiler 64-Bit Setup
 
-rem 2020
-if not "%ICPP_COMPILER20%" == "" (
-  @call "%ICPP_COMPILER20%\bin\ipsxe-comp-vars.bat" intel64 vs2019
-  goto Exit
-) else (
-if not "%IFORT_COMPILER20%" == "" (
-  @call"%IFORT_COMPILER20%\bin\ipsxe-comp-vars.bat" intel64 vs2019
-  goto Exit
-))
+:: OneAPI
+if not "%ONEAPI_ROOT%" == "" "%ONEAPI_ROOT%\setvars.bat" intel64 vs2019
 
-rem 2019
-if not "%ICPP_COMPILER19%" == "" (
-  @call "%ICPP_COMPILER19%\bin\ipsxe-comp-vars.bat" intel64 vs2017
-  goto Exit
-) else (
-if not "%IFORT_COMPILER19%" == "" (
-  @call"%IFORT_COMPILER19%\bin\ipsxe-comp-vars.bat" intel64 vs2017
-  goto Exit
-))
+:: 2020
+if not "%ICPP_COMPILER20%" == "" "%ICPP_COMPILER20%\bin\ipsxe-comp-vars.bat" intel64 vs2019
 
-:Exit
+:: 2019
+if not "%ICPP_COMPILER19%" == "" "%ICPP_COMPILER19%\bin\ipsxe-comp-vars.bat" intel64 vs2017
+
+echo Supported Intel compiler not found!

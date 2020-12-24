@@ -69,6 +69,15 @@ public: // Creation
 	 Super( 3, name, rTol, aTol, zTol, fmu_me, var, der )
 	{}
 
+public: // Predicate
+
+	// Explicit Zero-Crossing Variable?
+	bool
+	is_ZCe() const
+	{
+		return true;
+	}
+
 public: // Property
 
 	// Continuous Value at Time t
@@ -217,7 +226,7 @@ public: // Methods
 		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = ( t == tZ_last ? 0.0 : z_0( t ) ); // Force exact zero if at zero-crossing time
+		x_0_ = ( t == tZ_last ? z_x() : z_0() ); // Force exact zero if at zero-crossing time
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		x_1_ = p_1();
 		x_2_ = z_2();
@@ -396,19 +405,19 @@ private: // Methods
 	Real
 	p_3( Real const d ) const
 	{
-		return options::one_over_six_dtND_squared * ( x_1_p_ - ( two * x_1_ ) + d ); //ND Centered difference
+		return options::one_over_six_dtND_squared * ( ( x_1_p_ - x_1_ ) + ( d - x_1_ ) ); //ND Centered difference
 	}
 
 	// Coefficient 3 from FMU
 	Real
 	z_3() const
 	{
-		return options::one_over_two_dtND_squared * ( x_1_p_ - ( two * x_1_ ) + x_1_m_ ); //ND Centered difference
+		return options::one_over_two_dtND_squared * ( ( x_1_p_ - x_1_ ) + ( x_1_m_ - x_1_ ) ); //ND Centered difference
 	}
 
 private: // Data
 
-	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Continuous rep coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Coefficients
 	mutable Real x_1_m_{ 0.0 }, x_1_p_{ 0.0 }; // Coefficient 1 at minus and plus delta-t for numeric differentiation
 
 }; // Variable_ZCe3

@@ -51,7 +51,7 @@ TEST( cod_Variable_Inp2Test, Basic )
 	u.f().c( 0.05 ).s( 0.5 );
 	u.init();
 	EXPECT_EQ( 1.0e-4, u.rTol );
-	EXPECT_EQ( 1.0e-4, u.aTol );
+	EXPECT_EQ( 1.0e-6, u.aTol );
 	EXPECT_EQ( 0.0, u.tQ );
 	EXPECT_EQ( 1.0, u.tE );
 

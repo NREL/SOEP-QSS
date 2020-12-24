@@ -549,14 +549,14 @@ private: // Methods
 	Real
 	p_3( Real const d ) const
 	{
-		return options::one_over_six_dtND_squared * ( x_1_p_ - ( two * x_1_ ) + d ); //ND Centered difference
+		return options::one_over_six_dtND_squared * ( ( x_1_p_ - x_1_ ) + ( d - x_1_ ) ); //ND Centered difference
 	}
 
 	// Coefficient 3 from FMU
 	Real
 	c_3() const
 	{
-		return options::one_over_six_dtND_squared * ( x_1_p_ - ( two * x_1_ ) + x_1_m_ ); //ND Centered difference
+		return options::one_over_six_dtND_squared * ( ( x_1_p_ - x_1_ ) + ( x_1_m_ - x_1_ ) ); //ND Centered difference
 	}
 
 	// Coefficient 3 from FMU

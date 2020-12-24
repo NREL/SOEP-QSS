@@ -48,7 +48,7 @@ namespace options {
 
 QSS qss( QSS::QSS2 ); // QSS method: (x)(LI)QSS(1|2|3)
 double rTol( 1.0e-4 ); // Relative tolerance
-double aTol( 1.0e-4 ); // Absolute tolerance
+double aTol( 1.0e-6 ); // Absolute tolerance
 double aFac( 0.01 ); // Absolute tolerance factor
 double zTol( 0.0 ); // Zero-crossing tolerance
 double zFac( 1.01 ); // Zero-crossing tolerance factor
@@ -76,7 +76,6 @@ bool inflection( false ); // Requantize at inflections?
 bool refine( false ); // Refine FMU zero-crossing roots?
 bool prune( false ); // Prune variables with no observers?
 bool perfect( false ); // Perfect FMU-ME connection sync?
-bool statistics( false ); // Report detailed statistics
 bool steps( false ); // Generate requantization step count file
 LogLevel log( LogLevel::warning ); // Logging level
 InpFxn fxn; // Map from input variables to function specs
@@ -102,17 +101,19 @@ bool bin( false ); // Bin controls specified?
 
 namespace output { // Output selections
 
-bool t( true ); // Time events?
-bool r( true ); // Requantizations?
-bool a( false ); // All variables?
-bool s( false ); // Sampled output?
-bool f( true ); // FMU output variables?
-bool F( false ); // FMU output and local variables?
-bool k( true ); // FMU-QSS smooth tokens?
-bool x( true ); // Continuous trajectories?
-bool q( false ); // Quantized trajectories?
-bool o( true ); // Observer updates?
 bool d( false ); // Diagnostics?
+bool s( false ); // Statistics?
+bool R( true ); // Requantizations?
+bool O( true ); // Observer updates?
+bool Z( true ); // Zero-crossings?
+bool D( true ); // Discrete events?
+bool S( false ); // Sampled?
+bool X( true ); // Continuous trajectories?
+bool Q( false ); // Quantized trajectories?
+bool A( false ); // All variables?
+bool F( true ); // FMU output variables?
+bool L( false ); // FMU local variables?
+bool K( true ); // FMU-QSS smooth tokens?
 
 } // output
 
@@ -142,7 +143,6 @@ help_display()
 	std::cout << " --refine         Refine FMU zero-crossing roots?  [F]" << '\n';
 	std::cout << " --prune          Prune variables with no observers?  [F]" << '\n';
 	std::cout << " --perfect        Perfect FMU-ME connection sync?  [F]" << '\n';
-	std::cout << " --statistics     Report detailed statistics?  [F]" << '\n';
 	std::cout << " --steps          Generate step count file?  [F]" << '\n';
 	std::cout << " --log=LEVEL      Logging level  [warning]" << '\n';
 	std::cout << "       fatal" << '\n';
@@ -165,18 +165,22 @@ help_display()
 	std::cout << "       SIZE  Bin size  (Size or U for Unlimited)  [U]" << '\n';
 	std::cout << "            FRAC  Min time step fraction  (0-1]  [0.25]" << '\n';
 	std::cout << "                 AUTO  Automatic bin size optimization?  (Y|N)  [N]" << '\n';
-	std::cout << " --out=OUTPUTS  Outputs  [trfkxo]" << '\n';
-	std::cout << "       t  Time events" << '\n';
-	std::cout << "       r  Requantizations" << '\n';
-	std::cout << "       a  All QSS variables at every event" << '\n';
-	std::cout << "       s  Sampled QSS variables every dtOut" << '\n';
-	std::cout << "       f  FMU output variables" << '\n';
-	std::cout << "       F  FMU output and local variables" << '\n';
-	std::cout << "       k  FMU smooth tokens" << '\n';
-	std::cout << "       x  Continuous trajectories" << '\n';
-	std::cout << "       q  Quantized trajectories" << '\n';
-	std::cout << "       o  Observer updates" << '\n';
+	std::cout << " --out=OUTPUTS  Outputs  [ROZDXFK]" << '\n';
 	std::cout << "       d  Diagnostics" << '\n';
+	std::cout << "       s  Statistics" << '\n';
+	std::cout << "     QSS Variables:" << '\n';
+	std::cout << "       R  Requantizations" << '\n';
+	std::cout << "       O  Observer updates" << '\n';
+	std::cout << "       Z  Zero crossings" << '\n';
+	std::cout << "       D  Discrete events" << '\n';
+	std::cout << "       S  Sampled (@ dtOut)" << '\n';
+	std::cout << "       X  Continuous trajectories" << '\n';
+	std::cout << "       Q  Quantized trajectories" << '\n';
+	std::cout << "       A  All variables at every event" << '\n';
+	std::cout << "     FMU Variables (sampled @ dtOut):" << '\n';
+	std::cout << "       F  Ouput variables" << '\n';
+	std::cout << "       L  Local variables" << '\n';
+	std::cout << "       K  FMU-QSS smooth tokens" << '\n';
 	std::cout << " --tLoc=TIME1:TIME2  FMU local variable full output time range (s)" << '\n';
 	std::cout << " --var=FILE  Variable output spec file" << '\n';
 	std::cout << '\n';
@@ -265,8 +269,6 @@ process_args( int argc, char * argv[] )
 			prune = true;
 		} else if ( has_option( arg, "perfect" ) ) {
 			perfect = true;
-		} else if ( has_option( arg, "statistics" ) ) {
-			statistics = true;
 		} else if ( has_option( arg, "steps" ) ) {
 			steps = true;
 		} else if ( has_value_option( arg, "log" ) ) { // Accept PyFMI numeric logging levels for scripting convenience
@@ -347,8 +349,12 @@ process_args( int argc, char * argv[] )
 			std::string const zFac_str( arg_value( arg ) );
 			if ( is_double( zFac_str ) ) {
 				zFac = double_of( zFac_str );
-				if ( zFac < 1.0 ) {
-					std::cerr << "\nError: zFac < 1.0: " << zFac_str << std::endl;
+//				if ( zFac < 1.0 ) {
+//					std::cerr << "\nError: zFac < 1.0: " << zFac_str << std::endl;
+//					fatal = true;
+//				}
+				if ( zFac <= 0.0 ) {
+					std::cerr << "\nError: zFac <= 0.0: " << zFac_str << std::endl;
 					fatal = true;
 				}
 			} else {
@@ -607,23 +613,25 @@ process_args( int argc, char * argv[] )
 			}
 			con[ inp_name ] = out_name;
 		} else if ( has_value_option( arg, "out" ) ) {
-			static std::string const out_flags( "trasfkxqod" );
+			static std::string const out_flags( "dsROZDSXQAFLK" );
 			out = arg_value( arg );
-			if ( HAS_ANY_NOT_OF( out, out_flags ) ) {
+			if ( has_any_not_of( out, out_flags ) ) {
 				std::cerr << "\nError: Output flag not in " << out_flags << ": " << out << std::endl;
 				fatal = true;
 			}
-			output::t = HAS( out, 't' );
-			output::r = HAS( out, 'r' );
-			output::a = HAS( out, 'a' );
-			output::s = HAS( out, 's' );
-			output::f = HAS( out, 'f' );
+			output::d = has( out, 'd' );
+			output::S = has( out, 's' );
+			output::R = has( out, 'R' );
+			output::O = has( out, 'O' );
+			output::Z = has( out, 'Z' );
+			output::D = has( out, 'D' );
+			output::S = has( out, 'S' );
+			output::X = has( out, 'X' );
+			output::Q = has( out, 'Q' );
+			output::A = has( out, 'A' );
 			output::F = has( out, 'F' );
-			output::k = HAS( out, 'k' );
-			output::x = HAS( out, 'x' );
-			output::q = HAS( out, 'q' );
-			output::o = HAS( out, 'o' );
-			output::d = HAS( out, 'd' );
+			output::L = has( out, 'L' );
+			output::K = has( out, 'K' );
 		} else if ( has_value_option( arg, "tLoc" ) ) {
 			specified::tLoc = true;
 			std::string const tLoc_str( arg_value( arg ) );

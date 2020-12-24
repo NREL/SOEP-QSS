@@ -249,11 +249,11 @@ protected: // Methods
 		}
 	}
 
-	// Refine Zero-Crossing Time
+	// Refine Zero-Crossing Time: Event Indicator Zero-Crossing Variable
 	void
 	refine_root_ZC( Time const tBeg );
 
-	// Refine Zero-Crossing Time
+	// Refine Zero-Crossing Time: Explicit Zero-Crossing Variable
 	void
 	refine_root_ZCe( Time const tBeg );
 

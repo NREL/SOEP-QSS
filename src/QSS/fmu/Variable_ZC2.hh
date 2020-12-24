@@ -191,7 +191,7 @@ public: // Methods
 		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = ( t == tZ_last ? 0.0 : z_0( t ) ); // Force exact zero if at zero-crossing time
+		x_0_ = ( t == tZ_last ? 0.0 : z_0() ); // Force exact zero if at zero-crossing time
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		x_1_ = z_1();
 		x_2_ = z_2();
@@ -358,13 +358,13 @@ private: // Methods
 	Real
 	z_2() const
 	{
-		return options::one_over_two_dtND_squared * ( x_0_p_ - ( two * x_0_ ) + x_0_m_ ); //ND Centered difference
+		return options::one_over_two_dtND_squared * ( ( x_0_p_ - x_0_ ) + ( x_0_m_ - x_0_ ) ); //ND Centered difference
 	}
 
 private: // Data
 
-	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous rep coefficients
-	mutable Real x_0_m_{ 0.0 }, x_0_p_{ 0.0 }; // Values at minus and plus delta-t for numeric differentiation
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Coefficients
+	mutable Real x_0_m_{ 0.0 }, x_0_p_{ 0.0 }; // Coefficient 0 at minus and plus delta-t for numeric differentiation
 
 }; // Variable_ZC2
 

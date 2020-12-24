@@ -112,7 +112,7 @@ cycles( typename Variable::Variables const & vars )
 	// Create graph
 	Nodes nodes;
 	for ( Variable const * var : vars ) { // Add nodes
-		nodes.push_back( Node( var ) );
+		nodes.emplace_back( var );
 	}
 	for ( Node & node : nodes ) { // Add directed edges
 		for ( Variable const * obs : node.var->observers() ) {

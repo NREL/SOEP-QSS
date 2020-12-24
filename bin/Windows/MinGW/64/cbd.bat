@@ -1,5 +1,5 @@
 @echo off
-rem MinGW C++ Build Debug
+:: MinGW C++ Build Debug
 
 if not exist %1.cc goto Build
 set CxxMainSource=%1.cc

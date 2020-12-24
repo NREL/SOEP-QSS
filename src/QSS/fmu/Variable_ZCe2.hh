@@ -70,6 +70,15 @@ public: // Creation
 	 Super( 2, name, rTol, aTol, zTol, fmu_me, var, der )
 	{}
 
+public: // Predicate
+
+	// Explicit Zero-Crossing Variable?
+	bool
+	is_ZCe() const
+	{
+		return true;
+	}
+
 public: // Property
 
 	// Continuous Value at Time t
@@ -197,7 +206,7 @@ public: // Methods
 		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = ( t == tZ_last ? 0.0 : z_0( t ) ); // Force exact zero if at zero-crossing time
+		x_0_ = ( t == tZ_last ? z_x() : z_0() ); // Force exact zero if at zero-crossing time
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		x_1_ = p_1();
 		x_2_ = z_2();
@@ -206,7 +215,7 @@ public: // Methods
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
 	}
 
-	// Zero-Crossing Observer Advance: Stage 1
+	// Observer Advance: Stage 1
 	void
 	advance_observer_1( Time const t, Real const d, Real const v )
 	{
@@ -358,7 +367,7 @@ private: // Methods
 
 private: // Data
 
-	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous rep coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Coefficients
 
 }; // Variable_ZCe2
 

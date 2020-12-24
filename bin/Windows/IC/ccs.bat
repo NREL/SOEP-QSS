@@ -1,5 +1,5 @@
 @echo off
-rem Intel C++ Compile Syntax
+:: Intel C++ Compile Syntax
 
 if exist %1 goto Compile
 if exist %1.cc  set CxxSource=%1.cc

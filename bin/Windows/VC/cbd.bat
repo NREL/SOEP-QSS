@@ -1,5 +1,5 @@
 @echo off
-rem Visual C++ Build Debug
+:: Visual C++ Build Debug
 
 if exist %1 goto Build
 if exist %1.cc  set CxxSource=%1.cc

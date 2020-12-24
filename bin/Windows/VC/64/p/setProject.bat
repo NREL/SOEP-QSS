@@ -1,5 +1,5 @@
 @echo off
-rem QSS Windows Visual C++ 64-Bit Profile Setup
+:: QSS Windows Visual C++ 64-Bit Profile Setup
 
 set QSS_bin=%~dp0
 set QSS_bin=%QSS_bin:~0,-1%

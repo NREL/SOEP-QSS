@@ -1,5 +1,5 @@
 @echo off
-rem Intel C++ Build Debug
+:: Intel C++ Build Debug
 
 if exist %1 goto Build
 if exist %1.cc  set CxxSource=%1.cc

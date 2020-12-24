@@ -83,6 +83,16 @@ HAS( std::string const & s, char const c )
 	return false;
 }
 
+// Has any Character not in a String?
+bool
+has_any_not_of( std::string const & s, std::string const & t )
+{
+	for ( char const a : s ) {
+		if ( t.find( static_cast< char >( a ) ) == std::string::npos ) return true;
+	}
+	return false;
+}
+
 // Has any Character not in a String Case-Insensitively?
 bool
 HAS_ANY_NOT_OF( std::string const & s, std::string const & t ) // Pass lowercase t
@@ -238,6 +248,24 @@ split( std::string const & str, char del )
 		tokens.push_back( token );
 	}
 	return tokens;
+}
+
+// Strip Whitespace from a string's Tails
+std::string &
+strip( std::string & s )
+{
+	static std::string const WHITE( " \t\0", 3 );
+	if ( ! s.empty() ) {
+		std::string::size_type const ib( s.find_first_not_of( WHITE ) );
+		std::string::size_type const ie( s.find_last_not_of( WHITE ) );
+		if ( ( ib == std::string::npos ) || ( ie == std::string::npos ) ) { // All of string is whitespace
+			s.clear();
+		} else {
+			if ( ie < s.length() - 1 ) s.erase( ie + 1 );
+			if ( ib > 0 ) s.erase( 0, ib );
+		}
+	}
+	return s;
 }
 
 } // QSS

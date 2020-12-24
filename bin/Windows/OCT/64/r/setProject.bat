@@ -1,5 +1,5 @@
 @echo off
-rem QSS Windows OCT MinGW 64-Bit Release Setup
+:: QSS Windows OCT MinGW 64-Bit Release Setup
 
 set QSS_bin=%~dp0
 set QSS_bin=%QSS_bin:~0,-1%

@@ -46,8 +46,8 @@
 #include <QSS/math.hh>
 #include <QSS/SuperdenseTime.hh>
 
-// momo Headers
-//#include <momo/stdish/pool_allocator.h> // Intel C++ 19.1 with Visual C++ 2019 16.5.5 has an internal error compiling momo
+// Allocator Headers
+//#include <momo/stdish/pool_allocator.h>
 //#include <Allocator/Allocator.h>
 
 // C++ Headers
@@ -78,7 +78,7 @@ public: // Types
 	using Events = std::vector< EventT >;
 
 	using EventMap = std::multimap< SuperdenseTime, EventT >; // C++ allocator
-//	using EventMap = std::multimap< SuperdenseTime, EventT, std::less< SuperdenseTime >, momo::unsynchronized_pool_allocator< std::pair< SuperdenseTime const, EventT > > >; // momo allocator
+//	using EventMap = std::multimap< SuperdenseTime, EventT, std::less< SuperdenseTime >, momo::unsynchronized_pool_allocator< std::pair< SuperdenseTime const, EventT > > >; // momo allocator // Intel C++ 19.1 with Visual C++ 2019 16.5.5 has an internal error compiling momo
 //	using EventMap = std::multimap< SuperdenseTime, EventT, std::less< SuperdenseTime >, Moya::Allocator< std::pair< SuperdenseTime const, EventT > > >; // Moya allocator // Default 1024 grow size was best // Fastest but gives access violation in unit tests
 	using value_type = typename EventMap::value_type;
 	using size_type = typename EventMap::size_type;

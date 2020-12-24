@@ -107,7 +107,6 @@ extern bool inflection; // Requantize at inflections?
 extern bool refine; // Refine FMU zero-crossing roots?
 extern bool prune; // Prune variables with no observers?
 extern bool perfect; // Perfect FMU-ME connection sync?
-extern bool statistics; // Report detailed statistics
 extern bool steps; // Generate requantization step count file
 extern LogLevel log; // Logging level
 extern InpFxn fxn; // Map from input variables to function specs
@@ -133,17 +132,19 @@ extern bool bin; // Bin controls specified?
 
 namespace output { // Output selections
 
-extern bool t; // Time events?
-extern bool r; // Requantizations?
-extern bool a; // All variables?
-extern bool s; // Sampled output?
-extern bool f; // FMU output variables?
-extern bool F; // FMU output and local variables?
-extern bool k; // FMU smooth tokens?
-extern bool x; // Continuous trajectories?
-extern bool q; // Quantized trajectories?
-extern bool o; // Observer updates?
 extern bool d; // Diagnostics?
+extern bool s; // Statistics?
+extern bool R; // Requantizations?
+extern bool O; // Observer updates?
+extern bool Z; // Zero-crossings?
+extern bool D; // Discrete events?
+extern bool S; // Sampled?
+extern bool X; // Continuous trajectories?
+extern bool Q; // Quantized trajectories?
+extern bool A; // All variables?
+extern bool F; // FMU output variables?
+extern bool L; // FMU local variables?
+extern bool K; // FMU-QSS smooth tokens?
 
 } // output
 

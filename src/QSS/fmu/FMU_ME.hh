@@ -436,9 +436,8 @@ public: // Data
 	size_type n_states{ 0u };
 	size_type n_derivatives{ 0u };
 	size_type n_event_indicators{ 0u };
-	size_type n_outs{ 0u };
-	size_type n_fmu_outs{ 0u };
-	size_type n_all_outs{ 0u };
+	size_type n_f_outs{ 0u };
+	size_type n_l_outs{ 0u };
 	size_type n_fmu_qss_qss_outs{ 0u };
 
 	// Timing
@@ -465,7 +464,7 @@ public: // Data
 	Variables vars_NC; // Non-zero-crossing non-connection variables
 	Variables vars_XB; // X-Based (ZC+BIDR) state variables
 	Variables state_vars; // FMU state QSS variables
-	Variables outs; // FMU output QSS variables
+	Variables f_outs_vars; // FMU output QSS variables
 	Variables fmu_qss_qss_outs; // FMU-QSS output QSS variables
 	Var_Idx var_idx; // Map from Variables to their indexes
 	Var_Name_Ref var_name_ref; // Map from variable names to FMU variable value references
@@ -478,7 +477,8 @@ public: // Data
 	FMU_Idxs fmu_idxs; // Map from FMU variable index to QSS variable
 	Ref_Var qss_var_of_ref;
 	Var_Refs out_var_refs;
-	std::vector< Output > f_outs; // FMU outputs
+	std::vector< Output > f_outs; // FMU QSS variable outputs
+	std::vector< Output > l_outs; // FMU local variable outputs
 	std::vector< SmoothTokenOutput > k_qss_outs; // FMU-QSS QSS variable smooth token outputs
 	int order_max_CI{ 0 }; // Connection input QSS variable max order
 	int order_max_NC{ 0 }; // Non-zero-crossing non-connection QSS variable max order
@@ -486,10 +486,11 @@ public: // Data
 	bool has_explicit_ZCs{ false };
 
 	// Output controls
-	bool doSOut{ false };
-	bool doTOut{ false };
-	bool doROut{ false };
-	bool doKOut{ false };
+	bool doROut{ false }; // Requantizations
+	bool doZOut{ false }; // Zero crossings
+	bool doDOut{ false }; // Discrete events
+	bool doSOut{ false }; // Sampled
+	bool doKOut{ false }; // Smooth token
 
 	// Simulation
 	size_type const max_pass_count_multiplier{ 2 };

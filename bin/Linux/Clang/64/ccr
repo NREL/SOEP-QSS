@@ -1,3 +1,3 @@
 #!/bin/bash
 # Clang C++ Compile Release
-clang++ -pipe -std=c++17 -pedantic -Wall -Wextra -Winline -Wno-unknown-pragmas -m64 -march=native -DQSS_FMU -DNDEBUG -Ofast -fno-stack-protector -c $@
+clang++ -pipe -std=c++17 -pedantic -Wall -Wextra -Winline -Wno-unknown-pragmas -m64 -march=native -DQSS_FMU -DNDEBUG -O3 -fno-stack-protector -c $@

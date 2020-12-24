@@ -46,7 +46,7 @@ using namespace QSS::cod::mdl;
 
 TEST( cod_Variable_LIQSS3Test, Basic )
 {
-	Variable_LIQSS3< Function_LTI > x1( "x1" );
+	Variable_LIQSS3< Function_LTI > x1( "x1", 1.0e-4, 1.0e-4 );
 	Variable_LIQSS3< Function_LTI > x2( "x2", 1.0e-4, 1.0e-3 );
 
 	x1.add( 12.0 ).add( 2.0, &x1 );

@@ -50,7 +50,7 @@ TEST( cod_Variable_InpDTest, Basic )
 	u.f().h_0( 0.0 ).h( 2.0 ).d( 0.1 );
 	u.init();
 	EXPECT_EQ( 1.0e-4, u.rTol );
-	EXPECT_EQ( 1.0e-4, u.aTol );
+	EXPECT_EQ( 1.0e-6, u.aTol );
 	EXPECT_EQ( 0.0, u.tQ );
 	EXPECT_DOUBLE_EQ( 0.1, u.tD );
 

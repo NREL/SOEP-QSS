@@ -51,7 +51,7 @@ namespace QSS {
 
 // QSS Output Signal Class Template
 template< typename Value = double >
-class Output_T
+class Output_T final
 {
 
 public: // Types
@@ -109,6 +109,15 @@ public: // Creation
 		if ( t_.size() > 0u ) flush();
 	}
 
+public: // Property
+
+	// File
+	std::string const &
+	file() const
+	{
+		return file_;
+	}
+
 public: // Methods
 
 	// Initialize Without Output Directory
@@ -163,7 +172,20 @@ public: // Methods
 		if ( t_.size() == capacity_ ) flush();
 	}
 
-private: // Methods
+	// Append Time and Value Pair
+	template< typename V >
+	void
+	append(
+	 Time const t,
+	 V const v
+	)
+	{
+		assert( t_.size() == v_.size() );
+		assert( t_.size() < capacity_ );
+		t_.push_back( t );
+		v_.push_back( Value( v ) );
+		if ( t_.size() == capacity_ ) flush();
+	}
 
 	// Flush Buffers to File
 	void
@@ -171,6 +193,7 @@ private: // Methods
 	{
 		assert( t_.size() == v_.size() );
 		assert( t_.size() <= capacity_ );
+		if ( t_.size() == 0u ) return;
 		std::ofstream s( file_, std::ios_base::binary | std::ios_base::out | std::ios_base::app );
 		s << std::setprecision( 15 );
 		for ( size_type i = 0, e = t_.size(); i < e; ++i ) {

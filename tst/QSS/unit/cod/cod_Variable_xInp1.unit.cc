@@ -49,7 +49,7 @@ using namespace QSS::cod::mdl;
 
 TEST( cod_Variable_xInp1Test, Basic )
 {
-	Variable_xInp1< Function_Inp_sin > u( "u" );
+	Variable_xInp1< Function_Inp_sin > u( "u", 1.0e-4, 1.0e-4 );
 	u.f().c( 0.05 ).s( 0.5 );
 	u.init();
 	EXPECT_EQ( 1.0e-4, u.rTol );

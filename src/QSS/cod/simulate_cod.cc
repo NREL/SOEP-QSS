@@ -281,10 +281,11 @@ simulate( std::string const & model )
 	if ( options::cycles ) cycles< Variable >( vars );
 
 	// Output initialization
-	bool const doSOut( options::output::s && ( options::output::x || options::output::q ) );
-	bool const doTOut( options::output::t && ( options::output::x || options::output::q ) );
-	bool const doROut( options::output::r && ( options::output::x || options::output::q ) );
-	if ( ( options::output::t || options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) { // t0 outputs
+	bool const doROut( options::output::R );
+	bool const doZOut( options::output::Z );
+	bool const doDOut( options::output::D );
+	bool const doSOut( options::output::S && ( options::output::X || options::output::Q ) );
+	if ( ( options::output::Z || options::output::R || options::output::S ) && ( options::output::X || options::output::Q ) ) { // t0 outputs
 		for ( auto var : vars ) {
 			var->init_out();
 			var->out( t );
@@ -355,12 +356,12 @@ simulate( std::string const & model )
 
 					trigger->st = s; // Set trigger superdense time
 
-					if ( doTOut ) { // Time event output: before discrete changes
-						if ( options::output::a ) { // All variables output
+					if ( doDOut ) { // Discrete event output: pre
+						if ( options::output::A ) { // All variables output
 							for ( auto var : vars ) {
 								var->out( t );
 							}
-						} else { // Time event and observer output
+						} else { // Discrete event and observer output
 							trigger->out( t );
 							trigger->observers_out_pre( t );
 						}
@@ -368,7 +369,7 @@ simulate( std::string const & model )
 
 					trigger->advance_discrete();
 
-					if ( doTOut ) { // Time event output: after discrete changes
+					if ( doDOut ) { // Discrete event output: post
 						trigger->out( t );
 						trigger->observers_out_post( t );
 					}
@@ -376,16 +377,16 @@ simulate( std::string const & model )
 					Variables triggers( events.top_subs< Variable >() );
 					variables_observers( triggers, observers );
 
-					if ( doTOut ) { // Time event output: before discrete changes
-						if ( options::output::a ) { // All variables output
+					if ( doDOut ) { // Discrete event output: pre
+						if ( options::output::A ) { // All variables output
 							for ( auto var : vars ) {
 								var->out( t );
 							}
-						} else { // Time event and observer output
+						} else { // Discrete event and observer output
 							for ( Variable * trigger : triggers ) { // Triggers
 								trigger->out( t );
 							}
-							if ( options::output::o ) {
+							if ( options::output::O ) {
 								for ( Variable * observer : observers ) { // Observer output
 									observer->observer_out_pre( t );
 								}
@@ -400,7 +401,7 @@ simulate( std::string const & model )
 					}
 					Variable::advance_observers( observers, t );
 
-					if ( doTOut ) { // Time event output: after discrete changes
+					if ( doDOut ) { // Discrete event output: post
 						for ( Variable * trigger : triggers ) { // Triggers
 							trigger->out( t );
 						}
@@ -416,8 +417,8 @@ simulate( std::string const & model )
 					assert( trigger->tZC() == t );
 					trigger->st = s; // Set trigger superdense time
 					trigger->advance_ZC();
-					if ( doTOut ) { // Time event output
-						if ( options::output::a ) { // All variables output
+					if ( doZOut ) { // Zero crossing event output
+						if ( options::output::A ) { // All variables output
 							for ( auto var : vars ) {
 								var->out( t );
 							}
@@ -436,8 +437,8 @@ simulate( std::string const & model )
 				if ( events.single() ) { // Single handler
 					Variable * handler( event.sub< Variable >() );
 
-					if ( doROut ) { // Requantization output: before handler changes
-						if ( options::output::a ) { // All variables output
+					if ( doROut ) { // Requantization output: pre
+						if ( options::output::A ) { // All variables output
 							for ( auto var : vars ) {
 								var->out( t );
 							}
@@ -449,7 +450,7 @@ simulate( std::string const & model )
 
 					handler->advance_handler( t, event.val() );
 
-					if ( doROut ) { // Requantization output: after handler changes
+					if ( doROut ) { // Requantization output: post
 						handler->out( t );
 						handler->observers_out_post( t );
 					}
@@ -458,16 +459,16 @@ simulate( std::string const & model )
 					variables_observers( handlers, observers );
 					int const handlers_order_max( handlers.empty() ? 0 : handlers.back()->order() );
 
-					if ( doROut ) { // Requantization output: before handler changes
-						if ( options::output::a ) { // All variables output
+					if ( doROut ) { // Handler output: pre
+						if ( options::output::A ) { // All variables output
 							for ( auto var : vars ) {
 								var->out( t );
 							}
-						} else { // Requantization and observer output
+						} else { // Handler and observer output
 							for ( Variable * handler : handlers ) { // Handlers
 								handler->out( t );
 							}
-							if ( options::output::o ) {
+							if ( options::output::O ) {
 								for ( Variable * observer : observers ) { // Observer output
 									observer->observer_out_pre( t );
 								}
@@ -496,7 +497,7 @@ simulate( std::string const & model )
 
 					Variable::advance_observers( observers, t );
 
-					if ( doROut ) { // Requantization output: after handler changes
+					if ( doROut ) { // Handler output: post
 						for ( Variable * handler : handlers ) { // Handlers
 							handler->out( t );
 						}
@@ -513,8 +514,8 @@ simulate( std::string const & model )
 					assert( trigger->is_QSS() ); // QSS triggers
 					trigger->st = s; // Set trigger superdense time
 
-					if ( doROut ) { // Requantization output: before requantization
-						if ( options::output::a ) { // All variables output
+					if ( doROut ) { // Requantization output: pre
+						if ( options::output::A ) { // All variables output
 							for ( auto var : vars ) {
 								var->out( t );
 							}
@@ -526,7 +527,7 @@ simulate( std::string const & model )
 
 					trigger->advance_QSS();
 
-					if ( doROut ) { // Requantization output: after requantization
+					if ( doROut ) { // Requantization output: post
 						trigger->out_q( t );
 					}
 				} else { // Simultaneous triggers
@@ -534,8 +535,8 @@ simulate( std::string const & model )
 					Variables triggers( events.top_subs< Variable >() );
 					variables_observers( triggers, observers );
 
-					if ( doROut ) { // Requantization output: before requantization
-						if ( options::output::a ) { // All variables output
+					if ( doROut ) { // Requantization output: pre
+						if ( options::output::A ) { // All variables output
 							for ( auto var : vars ) {
 								var->out( t );
 							}
@@ -543,7 +544,7 @@ simulate( std::string const & model )
 							for ( Variable * trigger : triggers ) { // Triggers
 								trigger->out( t );
 							}
-							if ( options::output::o ) {
+							if ( options::output::O ) {
 								for ( Variable * observer : observers ) { // Observer output
 									observer->observer_out_pre( t );
 								}
@@ -577,7 +578,7 @@ simulate( std::string const & model )
 
 					Variable::advance_observers( observers, t );
 
-					if ( doROut ) { // Requantization output: after requantization
+					if ( doROut ) { // Requantization output: post
 						for ( Variable * trigger : triggers ) { // Triggers
 							trigger->out_q( t );
 						}
@@ -590,8 +591,8 @@ simulate( std::string const & model )
 				assert( trigger->is_ZC() );
 				trigger->st = s; // Set trigger superdense time
 
-				if ( doROut ) { // Requantization output: before requantization
-					if ( options::output::a ) { // All variables output
+				if ( doROut ) { // Requantization output: pre
+					if ( options::output::A ) { // All variables output
 						for ( auto var : vars ) {
 							var->out( t );
 						}
@@ -602,7 +603,7 @@ simulate( std::string const & model )
 
 				trigger->advance_QSS();
 
-				if ( doROut ) { // Requantization output: after requantization
+				if ( doROut ) { // Requantization output: post
 					trigger->out( t );
 				}
 			} else if ( event.is_QSS_Inp() ) { // QSS Input requantization event(s)
@@ -612,8 +613,8 @@ simulate( std::string const & model )
 				assert( trigger->is_Input() );
 				trigger->st = s; // Set trigger superdense time
 
-				if ( doROut ) { // Requantization output: before requantization
-					if ( options::output::a ) { // All variables output
+				if ( doROut ) { // Requantization output: pre
+					if ( options::output::A ) { // All variables output
 						for ( auto var : vars ) {
 							var->out( t );
 						}
@@ -625,7 +626,7 @@ simulate( std::string const & model )
 
 				trigger->advance_QSS();
 
-				if ( doROut ) { // Requantization output: after requantization
+				if ( doROut ) { // Requantization output: post
 					trigger->out( t );
 				}
 			} else { // Unsupported event
@@ -647,7 +648,7 @@ simulate( std::string const & model )
 	if ( ! options::output::d ) std::cout << "\r100% =====" << std::endl;
 
 	// End time outputs
-	if ( ( options::output::t || options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) {
+	if ( ( options::output::Z || options::output::R || options::output::S ) && ( options::output::X || options::output::Q ) ) {
 		for ( auto var : vars ) {
 			if ( var->tQ < tE ) var->out( tE );
 		}

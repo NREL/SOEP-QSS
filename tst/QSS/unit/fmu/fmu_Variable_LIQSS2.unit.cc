@@ -100,7 +100,7 @@ TEST( fmu_Variable_LIQSS2Test, Achilles )
 	options::specified::rTol = true;
 	options::aTol = 1.0;
 	options::specified::aTol = true;
-	options::output::x = false;
+	options::output::X = false;
 
 	std::streambuf * coutBuf( std::cout.rdbuf() ); std::ostringstream strCout; std::cout.rdbuf( strCout.rdbuf() ); // Redirect cout
 	allEventIndicators.clear();

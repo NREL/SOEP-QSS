@@ -89,7 +89,7 @@ TEST( fmu_Variable_xInp3Test, InputFunction )
 	options::specified::rTol = true;
 	options::aTol = 1.0;
 	options::specified::aTol = true;
-	options::output::x = false;
+	options::output::X = false;
 	options::fxn[ "u" ] = "sin[1,1,1]";
 
 	std::streambuf * coutBuf( std::cout.rdbuf() ); std::ostringstream strCout; std::cout.rdbuf( strCout.rdbuf() ); // Redirect cout

@@ -86,7 +86,7 @@ public: // Creation
 	Variable_Inp1(
 	 std::string const & name,
 	 Real const rTol = 1.0e-4,
-	 Real const aTol = 1.0e-4
+	 Real const aTol = 1.0e-6
 	) :
 	 Super( 1, name, rTol, aTol )
 	{}

@@ -73,7 +73,7 @@ protected: // Creation
 	 int const order,
 	 std::string const & name,
 	 Real const rTol = 1.0e-4,
-	 Real const aTol = 1.0e-4,
+	 Real const aTol = 1.0e-6,
 	 Real const zTol = 0.0
 	) :
 	 Super( order, name, rTol, aTol ),
@@ -307,7 +307,7 @@ protected: // Methods
 		Real const vZ( f_.x( tZ ) );
 		Real v( vZ ), v_p( vZ );
 		Real m( 1.0 ); // Multiplier
-		std::size_t i( 0 );
+		std::size_t i( 0u );
 		std::size_t const n( 10u ); // Max iterations
 		while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
 			Real const d( f_.x1( t ) );

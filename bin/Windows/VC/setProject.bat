@@ -1,5 +1,5 @@
 @echo off
-rem QSS Windows Visual C++ Setup
+:: QSS Windows Visual C++ Setup
 
 if not (%QSS%) == () goto Step2
 set QSS=%~dp0

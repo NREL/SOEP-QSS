@@ -117,6 +117,9 @@ namespace fmu {
 		if ( context ) fmi_import_free_context( context );
 		for ( Variable * var : vars ) delete var;
 		for ( Conditional< Variable > * con : cons ) delete con;
+		for ( auto & f_out : f_outs ) f_out.flush();
+		for ( auto & l_out : l_outs ) l_out.flush();
+		for ( auto & k_out : k_qss_outs ) k_out.flush();
 		if ( eventq_own ) delete eventq;
 	}
 
@@ -211,7 +214,7 @@ namespace fmu {
 		}
 
 		// Parse the XML
-		allEventIndicators.push_back( FMUEventIndicators( this ) );
+		allEventIndicators.emplace_back( this );
 		fmu = fmi2_import_parse_xml( context, unzip_dir.c_str(), &xml_callbacks );
 		if ( !fmu ) {
 			std::cerr << "\nError: FMU-ME XML parsing error" << std::endl;
@@ -463,7 +466,7 @@ namespace fmu {
 					if ( var_causality == fmi2_causality_enu_local ) std::cout << " Causality: Local" << std::endl;
 					if ( var_causality == fmi2_causality_enu_output ) std::cout << " Causality: Output" << std::endl;
 					if ( ( var_variability == fmi2_variability_enu_continuous ) || ( var_variability == fmi2_variability_enu_discrete ) ) {
-						if ( options::output::F || ( options::output::f && ( var_causality == fmi2_causality_enu_output ) ) ) { // Add to FMU outputs
+						if ( ( options::output::F && ( var_causality == fmi2_causality_enu_output ) ) || ( options::output::L && ( var_causality == fmi2_causality_enu_local ) ) ) { // Add to FMU outputs
 							if ( output_filter.fmu( var_name ) ) fmu_outs[ var_real ] = FMU_Variable( var, var_real, var_ref, i+1 );
 						}
 					}
@@ -669,13 +672,17 @@ namespace fmu {
 						var_name_var[ var_name ] = qss_var;
 						fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
 						std::cout << " FMU-ME idx: " << i+1 << " maps to QSS var: " << qss_var->name() << std::endl;
+					} else if ( var_causality == fmi2_causality_enu_local ) { // Local (non-state) variables have no dependencies so QSS doesn't track them
+						std::cout << " Type: Real: Discrete: Local" << std::endl;
+						std::cout << " FMU-ME idx: " << i+1 << " is not a QSS var" << std::endl;
 					} else {
+						std::cout << " Type: Real: Discrete" << std::endl;
 						Variable_D * qss_var( new Variable_D( var_name, var_start, this, fmu_var ) );
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
 						var_name_var[ var_name ] = qss_var;
 						if ( var_causality == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
-							if ( output_filter( var_name ) ) outs.push_back( qss_var );
+							if ( output_filter( var_name ) ) f_outs_vars.push_back( qss_var );
 							fmu_outs.erase( var_real ); // Remove it from non-QSS FMU outputs
 						}
 						fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
@@ -724,7 +731,7 @@ namespace fmu {
 					if ( var_causality == fmi2_causality_enu_local ) std::cout << " Causality: Local" << std::endl;
 					if ( var_causality == fmi2_causality_enu_output ) std::cout << " Causality: Output" << std::endl;
 					if ( var_variability == fmi2_variability_enu_discrete ) {
-						if ( options::output::F || ( options::output::f && ( var_causality == fmi2_causality_enu_output ) ) ) { // Add to FMU outputs
+						if ( ( options::output::F && ( var_causality == fmi2_causality_enu_output ) ) || ( options::output::L && ( var_causality == fmi2_causality_enu_local ) ) ) { // Add to FMU outputs
 							if ( output_filter.fmu( var_name ) ) fmu_outs[ var_int ] = FMU_Variable( var, var_int, var_ref, i+1 );
 						}
 					}
@@ -744,6 +751,9 @@ namespace fmu {
 						var_name_var[ var_name ] = qss_var;
 						fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
 						std::cout << " FMU-ME idx: " << i+1 << " maps to QSS var: " << qss_var->name() << std::endl;
+					} else if ( var_causality == fmi2_causality_enu_local ) { // Local (non-state) variables have no dependencies so QSS doesn't track them
+						std::cout << " Type: Integer: Discrete: Local" << std::endl;
+						std::cout << " FMU-ME idx: " << i+1 << " is not a QSS var" << std::endl;
 					} else {
 						std::cout << " Type: Integer: Discrete" << std::endl;
 						Variable_I * qss_var( new Variable_I( var_name, var_start, this, fmu_var ) );
@@ -751,7 +761,7 @@ namespace fmu {
 						qss_var_of_ref[ var_ref ] = qss_var;
 						var_name_var[ var_name ] = qss_var;
 						if ( var_causality == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
-							if ( output_filter( var_name ) ) outs.push_back( qss_var );
+							if ( output_filter( var_name ) ) f_outs_vars.push_back( qss_var );
 							fmu_outs.erase( var_int ); // Remove it from non-QSS FMU outputs
 						}
 						fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
@@ -798,7 +808,7 @@ namespace fmu {
 					if ( var_causality == fmi2_causality_enu_local ) std::cout << " Causality: Local" << std::endl;
 					if ( var_causality == fmi2_causality_enu_output ) std::cout << " Causality: Output" << std::endl;
 					if ( var_variability == fmi2_variability_enu_discrete ) {
-						if ( options::output::F || ( options::output::f && ( var_causality == fmi2_causality_enu_output ) ) ) { // Add to FMU outputs
+						if ( ( options::output::F && ( var_causality == fmi2_causality_enu_output ) ) || ( options::output::L && ( var_causality == fmi2_causality_enu_local ) ) ) { // Add to FMU outputs
 							if ( output_filter.fmu( var_name ) ) fmu_outs[ var_bool ] = FMU_Variable( var, var_bool, var_ref, i+1 );
 						}
 					}
@@ -816,6 +826,9 @@ namespace fmu {
 						var_name_var[ var_name ] = qss_var;
 						fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
 						std::cout << " FMU-ME idx: " << i+1 << " maps to QSS var: " << qss_var->name() << std::endl;
+					} else if ( var_causality == fmi2_causality_enu_local ) { // Local (non-state) variables have no dependencies so QSS doesn't track them
+						std::cout << " Type: Boolean: Discrete: Local" << std::endl;
+						std::cout << " FMU-ME idx: " << i+1 << " is not a QSS var" << std::endl;
 					} else {
 						std::cout << " Type: Boolean: Discrete" << std::endl;
 						Variable_B * qss_var( new Variable_B( var_name, var_start, this, fmu_var ) );
@@ -823,7 +836,7 @@ namespace fmu {
 						qss_var_of_ref[ var_ref ] = qss_var;
 						var_name_var[ var_name ] = qss_var;
 						if ( var_causality == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
-							if ( output_filter( var_name ) ) outs.push_back( qss_var );
+							if ( output_filter( var_name ) ) f_outs_vars.push_back( qss_var );
 							fmu_outs.erase( var_bool ); // Remove it from non-QSS FMU outputs
 						}
 						fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
@@ -967,7 +980,7 @@ namespace fmu {
 					fmi2_causality_enu_t const var_causality( fmi2_import_get_causality( fmu_var.var ) );
 					if ( ( var_causality == fmi2_causality_enu_local ) || ( var_causality == fmi2_causality_enu_output ) ) { // Add to FMU QSS variable outputs
 						if ( var_causality == fmi2_causality_enu_output ) { // Skip FMU output of local QSS variables for now
-							if ( output_filter( var_name ) ) outs.push_back( qss_var );
+							if ( output_filter( var_name ) ) f_outs_vars.push_back( qss_var );
 						}
 						fmu_outs.erase( fmu_var.rvr ); // Remove it from non-QSS FMU outputs
 					}
@@ -1040,7 +1053,7 @@ namespace fmu {
 				qss_var_of_ref[ fmi2_import_get_variable_vr( fmu_var.var ) ] = qss_var;
 				var_name_var[ var_name ] = qss_var;
 				if ( fmi2_import_get_causality( fmu_var.var ) == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
-					if ( output_filter( var_name ) ) outs.push_back( qss_var );
+					if ( output_filter( var_name ) ) f_outs_vars.push_back( qss_var );
 					fmu_outs.erase( fmu_var.rvr ); // Remove it from non-QSS FMU outputs
 				}
 				fmu_idxs[ fmu_var.idx ] = qss_var; // Add to map from FMU variable index to QSS variable
@@ -1126,7 +1139,7 @@ namespace fmu {
 									qss_var_of_ref[ fmi2_import_get_variable_vr( fmu_var.var ) ] = qss_var;
 									var_name_var[ var_name ] = qss_var;
 									if ( fmi2_import_get_causality( fmu_var.var ) == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
-										if ( output_filter( var_name ) ) outs.push_back( qss_var );
+										if ( output_filter( var_name ) ) f_outs_vars.push_back( qss_var );
 										fmu_outs.erase( fmu_var.rvr ); // Remove it from non-QSS FMU outputs
 									}
 									fmu_idxs[ fmu_var.idx ] = qss_var; // Add to map from FMU variable index to QSS variable
@@ -1422,8 +1435,11 @@ namespace fmu {
 				for ( size_type i = 0; i < n_out_vars; ++i ) {
 					std::cout << "\nOutput Variable  Ref: " << out_vrs[ i ] << std::endl;
 					fmi2_import_variable_t * out( fmi2_import_get_variable( out_list, i ) );
-					assert( fmi2_import_get_causality( out ) == fmi2_causality_enu_output ); //Do Chg to if check: Could be FMU bug
 					std::string const out_name( fmi2_import_get_variable_name( out ) );
+					if ( fmi2_import_get_causality( out ) != fmi2_causality_enu_output ) {
+						std::cerr << "\nError: Variable in Output section of modelDescription.xml is not causality=output: " << out_name << std::endl;
+						std::exit( EXIT_FAILURE );
+					}
 					std::cout << " Name: " << out_name << std::endl;
 					fmi2_value_reference_t const out_ref( fmi2_import_get_variable_vr( out ) );
 					FMU_Variable * fmu_out( nullptr ); // FMU output variable
@@ -1509,16 +1525,16 @@ namespace fmu {
 								std::cout << "   Note: Output variable " << out_name << " has dependency on non-QSS variable with index " << dep_idx << std::endl;
 							}
 						}
-					} else if ( options::output::f && options::output::r && ( options::output::x || options::output::q ) ) { // Output variable is not yet a QSS variable
+//					} else if ( options::output::F || options::output::R || options::output::D ) { // Output variable is not yet a QSS variable but we want to output it
+					} else { // Output variable is not yet a QSS variable
 						bool const var_has_start( fmi2_import_get_variable_has_start( out ) == 1 );
 						fmi2_real_t const var_start( var_has_start ? fmi2_import_get_real_variable_start( out_real ) : 0.0 );
 						Variable_R * qss_var( new Variable_R( out_name, var_start, this, *fmu_out ) );
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ out_ref ] = qss_var;
 						var_name_var[ out_name ] = qss_var;
-						//! Leave in fmu_outs (instead of putting into outs) since it needs to get its current value from the FMU
-						//if ( output_filter( var_name ) ) outs.push_back( qss_var );
-						//fmu_outs.erase( out_real ); // Remove it from non-QSS FMU outputs
+						if ( output_filter( out_name ) ) f_outs_vars.push_back( qss_var );
+						fmu_outs.erase( out_real ); // Remove it from non-QSS FMU outputs
 						fmu_idxs[ fmu_out->idx ] = qss_var; // Add to map from FMU variable index to QSS variable
 						std::cout << " FMU-ME idx: " << fmu_out->idx << " maps to QSS var: " << qss_var->name() << std::endl;
 						for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
@@ -1557,11 +1573,11 @@ namespace fmu {
 								std::cout << "   Note: Output variable " << out_name << " has dependency on non-QSS variable with index " << dep_idx << std::endl;
 							}
 						}
-					} else {
-						std::cout << "   Output variable is not a QSS variable" << std::endl;
+//					} else {
+//						std::cout << "   Output variable is not a QSS variable" << std::endl;
 					}
 				}
-			} else { // Assume no output variables dependent on ZC variables in model
+			} else { // No output variable dependencies
 				std::cout << "\nNo output variable dependency info in FMU-ME XML" << std::endl;
 			}
 		}
@@ -1584,7 +1600,7 @@ namespace fmu {
 						map_remove_value( qss_var_of_ref, var );
 						map_remove_value( var_name_var, var );
 						map_remove_value( fmu_idxs, var );
-						vector_remove_value( outs, var );
+						vector_remove_value( f_outs_vars, var );
 						vector_nullify_value( state_vars, var );
 						delete var;
 					}
@@ -1602,9 +1618,8 @@ namespace fmu {
 
 		// Sizes
 		n_vars = vars.size();
-		n_outs = outs.size();
-		n_fmu_outs = fmu_outs.size();
-		n_all_outs = n_outs + n_fmu_outs;
+		n_f_outs = f_outs_vars.size();
+		n_l_outs = fmu_outs.size();
 
 		// Variable-index map setup
 		for ( size_type i = 0; i < n_vars; ++i ) {
@@ -1793,7 +1808,7 @@ namespace fmu {
 		if ( options::cycles ) cycles< Variable >( vars );
 
 		// Output initialization
-		if ( options::output::k && ( out_var_refs.size() > 0u ) ) { // FMU t0 smooth token outputs
+		if ( options::output::K && ( out_var_refs.size() > 0u ) ) { // FMU t0 smooth token outputs
 			for ( auto const & var_ref : out_var_refs ) {
 				auto ivar( qss_var_of_ref.find( var_ref ) );
 				if ( ivar != qss_var_of_ref.end() ) {
@@ -1808,13 +1823,14 @@ namespace fmu {
 			}
 			n_fmu_qss_qss_outs = fmu_qss_qss_outs.size();
 		}
-		doSOut = ( options::output::s && ( options::output::x || options::output::q ) ) || ( options::output::f && ( n_all_outs > 0u ) ) || ( options::output::k && ( n_fmu_qss_qss_outs > 0u ) );
-		doTOut = options::output::t && ( options::output::x || options::output::q );
-		doROut = options::output::r && ( options::output::x || options::output::q );
-		doKOut = options::output::k && ( out_var_refs.size() > 0u );
+		doROut = options::output::R;
+		doZOut = options::output::Z;
+		doDOut = options::output::D;
+		doSOut = ( options::output::S && ( options::output::X || options::output::Q ) ) || ( options::output::F && ( n_f_outs > 0u ) ) || ( options::output::L && ( n_l_outs > 0u ) ) || ( options::output::K && ( n_fmu_qss_qss_outs > 0u ) );
+		doKOut = options::output::K && ( out_var_refs.size() > 0u );
 		std::string const output_dir( options::have_multiple_models() ? name : std::string() );
 		OutputFilter const output_filter( options::var );
-		if ( ( options::output::t || options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) { // QSS t0 outputs
+		if ( ( options::output::R || options::output::Z || options::output::D || options::output::S ) && ( options::output::X || options::output::Q ) ) { // QSS t0 outputs
 			for ( auto var : vars ) {
 				if ( output_filter.fmu( var->name() ) ) {
 					var->init_out( output_dir );
@@ -1822,25 +1838,28 @@ namespace fmu {
 				}
 			}
 		}
-		if ( options::output::f && ( n_all_outs > 0u ) ) { // FMU t0 outputs
-			f_outs.reserve( n_all_outs );
-			for ( auto const & var : outs ) { // FMU QSS variables
-				f_outs.push_back( Output( output_dir, var->name(), 'f' ) );
+		if ( options::output::F && ( n_f_outs > 0u ) ) { // FMU QSS variable t0 outputs
+			f_outs.reserve( n_f_outs );
+			for ( auto const & var : f_outs_vars ) { // FMU QSS variables
+				f_outs.emplace_back( output_dir, var->name(), 'f' );
 				f_outs.back().append( t, var->x( t ) );
 			}
-			for ( auto const & e : fmu_outs ) { // FMU (non-QSS) variables
+		}
+		if ( options::output::L && ( n_l_outs > 0u ) ) { // FMU local variable t0 outputs
+			l_outs.reserve( n_l_outs );
+			for ( auto const & e : fmu_outs ) {
 				FMU_Variable const & var( e.second );
-				f_outs.push_back( Output( output_dir, fmi2_import_get_variable_name( var.var ), 'f' ) );
-				f_outs.back().append( t, get_real( var.ref ) );
+				l_outs.emplace_back( output_dir, fmi2_import_get_variable_name( var.var ), 'f' );
+				l_outs.back().append( t, ( var.is_Real() ? get_real( var.ref ) : ( var.is_Integer() ? get_integer( var.ref ) : get_boolean( var.ref ) ) ) );
 			}
 		}
-		if ( doKOut ) { // FMU t0 smooth token outputs
+		if ( doKOut ) { // FMU-QSS t0 smooth token outputs
 			for ( Variable * var : fmu_qss_qss_outs ) {
-				k_qss_outs.push_back( SmoothTokenOutput( output_dir, var->name(), 'k' ) );
+				k_qss_outs.emplace_back( output_dir, var->name(), 'k' );
 				k_qss_outs.back().append( t, var->k( t ) );
 			}
 //			for ( FMU_Variable const & fmu_var : fmu_qss_fmu_outs ) {
-//				k_fmu_outs.push_back( Output( output_dir, fmi2_import_get_variable_name( fmu_var.var, 'k' ) ) );
+//				k_fmu_outs.emplace_back( output_dir, fmi2_import_get_variable_name( fmu_var.var, 'k' ) );
 //				k_fmu_outs.back().append( t, get_real( fmu_var.ref ) ); //Do SmoothToken once we can get derivatives
 //			}
 		}
@@ -1912,20 +1931,22 @@ namespace fmu {
 			if ( doSOut ) { // Sampled and/or FMU outputs
 				Time const tStop( std::min( t, tNext ) );
 				while ( tOut < tStop ) {
-					if ( options::output::s ) { // QSS outputs
+					if ( options::output::S ) { // QSS outputs
 						for ( auto var : vars ) {
 							if ( var->is_BIDR() ) var->advance_observer( tOut );
 							var->out( tOut );
 						}
 					}
-					if ( options::output::f ) { // FMU outputs
-						if ( n_outs > 0u ) { // FMU QSS variables
-							for ( size_type i = 0; i < n_outs; ++i ) {
-								Variable * var( outs[ i ] );
+					if ( options::output::F ) { // FMU QSS variable outputs
+						if ( n_f_outs > 0u ) { // FMU QSS variables
+							for ( size_type i = 0; i < n_f_outs; ++i ) {
+								Variable * var( f_outs_vars[ i ] );
 								f_outs[ i ].append( tOut, var->x( tOut ) );
 							}
 						}
-						if ( n_fmu_outs > 0u ) { // FMU (non-QSS) variables
+					}
+					if ( options::output::L ) { // FMU local variable outputs
+						if ( n_l_outs > 0u ) { // FMU local variables
 							set_time( tOut );
 //							for ( size_type i = 0; i < n_states; ++i ) {
 //								if ( state_vars[ i ] != nullptr ) states[ i ] = state_vars[ i ]->x( tOut );
@@ -1934,14 +1955,15 @@ namespace fmu {
 							for ( auto var : vars_NC ) {
 								var->fmu_set_x( tOut );
 							}
-							size_type i( n_outs );
+							size_type i( 0u );
 							for ( auto const & e : fmu_outs ) {
 								FMU_Variable const & var( e.second );
-								f_outs[ i++ ].append( tOut, get_real( var.ref ) );
+								l_outs[ i ].append( tOut, ( var.is_Real() ? get_real( var.ref ) : ( var.is_Integer() ? get_integer( var.ref ) : get_boolean( var.ref ) ) ) );
+								++i;
 							}
 						}
 					}
-					if ( options::output::k ) { // FMU-QSS smooth token outputs
+					if ( options::output::K ) { // FMU-QSS smooth token outputs
 						if ( n_fmu_qss_qss_outs > 0u ) {
 							for ( size_type i = 0; i < n_fmu_qss_qss_outs; ++i ) {
 								Variable * var( fmu_qss_qss_outs[ i ] );
@@ -2029,15 +2051,15 @@ namespace fmu {
 
 						trigger->st = s; // Set trigger superdense time
 
-						if ( doTOut ) { // Time event output: pre
+						if ( doDOut ) { // Discrete event output: pre
 							trigger->out( t );
 							trigger->observers_out_pre( t );
 						}
 
 						trigger->advance_discrete();
 
-						if ( doTOut ) { // Time event output: post
-							if ( options::output::a ) { // All variables output
+						if ( doDOut ) { // Discrete event output: post
+							if ( options::output::A ) { // All variables output
 								for ( auto var : vars ) {
 									var->out( t );
 								}
@@ -2051,11 +2073,11 @@ namespace fmu {
 						observers_s.assign( triggers );
 						sort_by_order( triggers );
 
-						if ( doTOut ) { // Time event output: pre
+						if ( doDOut ) { // Discrete event output: pre
 							for ( Variable * trigger : triggers ) {
 								trigger->out( t );
 							}
-							if ( options::output::o ) {
+							if ( options::output::O ) {
 								for ( Variable * observer : observers_s ) { // Observer output
 									observer->observer_out_pre( t );
 								}
@@ -2069,8 +2091,8 @@ namespace fmu {
 						}
 						if ( observers_s.have() ) observers_s.advance( t ); // Advance observers
 
-						if ( doTOut ) { // Time event output: post
-							if ( options::output::a ) { // All variables output
+						if ( doDOut ) { // Discrete event output: post
+							if ( options::output::A ) { // All variables output
 								for ( auto var : vars ) {
 									var->out( t );
 								}
@@ -2096,8 +2118,8 @@ namespace fmu {
 						trigger->advance_ZC();
 						++c_ZC_events[ trigger ];
 						t_bump = std::max( t_bump, trigger->tZC_bump( t ) );
-						if ( doTOut ) { // Time event output
-							if ( options::output::a ) { // All variables output
+						if ( doZOut ) { // Zero crossing event output
+							if ( options::output::A ) { // All variables output
 								for ( auto var : vars ) {
 									var->out( t );
 								}
@@ -2169,7 +2191,7 @@ namespace fmu {
 							handler->advance_handler( t );
 
 							if ( doROut ) { // Requantization output: post
-								if ( options::output::a ) { // All variables output
+								if ( options::output::A ) { // All variables output
 									for ( auto var : vars ) {
 										var->out( t );
 									}
@@ -2187,7 +2209,7 @@ namespace fmu {
 								for ( Variable * handler : handlers ) {
 									handler->out( t );
 								}
-								if ( options::output::o ) {
+								if ( options::output::O ) {
 									for ( Variable * observer : observers_s ) { // Observer output
 										observer->observer_out_pre( t );
 									}
@@ -2223,7 +2245,7 @@ namespace fmu {
 							if ( observers_s.have() ) observers_s.advance( t ); // Advance observers
 
 							if ( doROut ) { // Requantization output: post
-								if ( options::output::a ) { // All variables output
+								if ( options::output::A ) { // All variables output
 									for ( auto var : vars ) {
 										var->out( t );
 									}
@@ -2360,7 +2382,7 @@ namespace fmu {
 						trigger->advance_QSS();
 
 						if ( doROut ) { // Requantization output: post
-							if ( options::output::a ) { // All variables output
+							if ( options::output::A ) { // All variables output
 								for ( auto var : vars ) {
 									var->out( t );
 								}
@@ -2370,7 +2392,7 @@ namespace fmu {
 							}
 						}
 					} else { // Simultaneous/binned triggers
-						if ( options::statistics || options::steps ) { // Statistics
+						if ( options::output::S || options::steps ) { // Statistics
 							for ( Variable * trigger : triggers ) {
 								++c_QSS_events[ trigger ];
 							}
@@ -2382,7 +2404,7 @@ namespace fmu {
 							for ( Variable * trigger : triggers ) {
 								trigger->out( t );
 							}
-							if ( options::output::o ) {
+							if ( options::output::O ) {
 								for ( Variable * observer : observers_s ) { // Observer output
 									observer->observer_out_pre( t );
 								}
@@ -2394,7 +2416,7 @@ namespace fmu {
 						if ( observers_s.have() ) observers_s.advance( t ); // Advance observers
 
 						if ( doROut ) { // Requantization output: post
-							if ( options::output::a ) { // All variables output
+							if ( options::output::A ) { // All variables output
 								for ( auto var : vars ) {
 									var->out( t );
 								}
@@ -2403,7 +2425,7 @@ namespace fmu {
 									trigger->out_q( t );
 								}
 							}
-							if ( options::output::o ) {
+							if ( options::output::O ) {
 								for ( Variable * observer : observers_s ) { // Observer output
 									observer->observer_out_post( t );
 								}
@@ -2425,7 +2447,7 @@ namespace fmu {
 					trigger->advance_QSS();
 
 					if ( doROut ) { // Requantization output: post
-						if ( options::output::a ) { // All variables output
+						if ( options::output::A ) { // All variables output
 							for ( auto var : vars ) {
 								var->out( t );
 							}
@@ -2449,7 +2471,7 @@ namespace fmu {
 					trigger->advance_QSS();
 
 					if ( doROut ) { // Requantization output: post
-						if ( options::output::a ) { // All variables output
+						if ( options::output::A ) { // All variables output
 							for ( auto var : vars ) {
 								var->out( t );
 							}
@@ -2463,14 +2485,14 @@ namespace fmu {
 				}
 
 				// Local variable event outputs
-				if ( ( options::output::F ) && ( n_fmu_outs > 0u ) && ( options::specified::tLoc ) && ( options::tLoc.first <= t ) && ( t <= options::tLoc.second ) ) {
+				if ( options::output::L && ( n_l_outs > 0u ) && ( options::specified::tLoc ) && ( options::tLoc.first <= t ) && ( t <= options::tLoc.second ) ) {
 					for ( auto var : vars_NC ) {
 						var->fmu_set_x( t );
 					}
-					size_type i( n_outs );
+					size_type i( 0u );
 					for ( auto const & e : fmu_outs ) {
 						FMU_Variable const & var( e.second );
-						if ( var.causality_local() ) f_outs[ i ].append( t, get_real( var.ref ) );
+						if ( var.causality_local() ) l_outs[ i ].append( t, ( var.is_Real() ? get_real( var.ref ) : ( var.is_Integer() ? get_integer( var.ref ) : get_boolean( var.ref ) ) ) );
 						++i;
 					}
 				}
@@ -2556,7 +2578,7 @@ namespace fmu {
 			if ( bin_auto && ( bin_size_auto.second > 0u ) ) {
 				std::cout << "\nAverage optimized bin size: " << static_cast< size_type >( std::round( double( bin_size_auto.first ) / bin_size_auto.second ) ) << std::endl;
 			}
-			if ( options::statistics ) { // Statistics
+			if ( options::output::S ) { // Statistics
 				if ( n_QSS_events > 0 ) {
 					std::cout << "\nQSS Requantization Events:" << std::endl;
 					for ( Variable const * var : vars ) {
@@ -2604,19 +2626,22 @@ namespace fmu {
 	post_simulate()
 	{
 		// End time outputs
-		if ( ( options::output::t || options::output::r || options::output::s ) && ( options::output::x || options::output::q ) ) { // QSS tE outputs
+		if ( ( options::output::Z || options::output::R || options::output::S ) && ( options::output::X || options::output::Q ) ) { // QSS tE outputs
 			for ( auto var : vars ) {
 				if ( var->tQ < tE ) var->out( tE );
 			}
 		}
-		if ( options::output::f ) { // FMU tE outputs
-			if ( n_outs > 0u ) { // FMU QSS variables
-				for ( size_type i = 0; i < n_outs; ++i ) {
-					Variable * var( outs[ i ] );
+		if ( options::output::F ) { // FMU QSS variable tE outputs
+			if ( n_f_outs > 0u ) { // FMU QSS variables
+				for ( size_type i = 0; i < n_f_outs; ++i ) {
+					Variable * var( f_outs_vars[ i ] );
 					f_outs[ i ].append( tE, var->x( tE ) );
+					f_outs[ i ].flush();
 				}
 			}
-			if ( n_fmu_outs > 0u ) { // FMU (non-QSS) variables
+		}
+		if ( options::output::L ) { // FMU local variable tE outputs
+			if ( n_l_outs > 0u ) { // FMU local variables
 				set_time( tE );
 //				for ( size_type i = 0; i < n_states; ++i ) {
 //					if ( state_vars[ i ] != nullptr ) states[ i ] = state_vars[ i ]->x( tE );
@@ -2625,18 +2650,21 @@ namespace fmu {
 				for ( auto var : vars_NC ) {
 					var->fmu_set_x( tE );
 				}
-				size_type i( n_outs );
+				size_type i( 0u );
 				for ( auto const & e : fmu_outs ) {
 					FMU_Variable const & var( e.second );
-					f_outs[ i++ ].append( tE, get_real( var.ref ) );
+					l_outs[ i ].append( tE, ( var.is_Real() ? get_real( var.ref ) : ( var.is_Integer() ? get_integer( var.ref ) : get_boolean( var.ref ) ) ) );
+					l_outs[ i ].flush();
+					++i;
 				}
 			}
 		}
-		if ( options::output::k ) { // FMU-QSS smooth token outputs
+		if ( options::output::K ) { // FMU-QSS smooth token outputs
 			if ( n_fmu_qss_qss_outs > 0u ) {
 				for ( size_type i = 0; i < n_fmu_qss_qss_outs; ++i ) {
 					Variable * var( fmu_qss_qss_outs[ i ] );
 					k_qss_outs[ i ].append( tE, var->k( tE ) );
+					k_qss_outs[ i ].flush();
 				}
 			}
 //			if ( fmu_qss_fmu_outs.size() > 0u ) {

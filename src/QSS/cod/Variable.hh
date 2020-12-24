@@ -971,31 +971,31 @@ public: // Methods: Output
 	void
 	init_out()
 	{
-		if ( options::output::x ) out_x_.init( name(), 'x' );
-		if ( options::output::q ) out_q_.init( name(), 'q' );
+		if ( options::output::X ) out_x_.init( name(), 'x' );
+		if ( options::output::Q ) out_q_.init( name(), 'q' );
 	}
 
 	// Output at Time t
 	void
 	out( Time const t )
 	{
-		if ( options::output::x ) out_x_.append( t, x( t ) );
-		if ( options::output::q ) out_q_.append( t, q( t ) );
+		if ( options::output::X ) out_x_.append( t, x( t ) );
+		if ( options::output::Q ) out_q_.append( t, q( t ) );
 	}
 
 	// Output Quantized at Time t
 	void
 	out_q( Time const t )
 	{
-		if ( options::output::q ) out_q_.append( t, q( t ) );
+		if ( options::output::Q ) out_q_.append( t, q( t ) );
 	}
 
 	// Pre-Event Observer Output at Time t
 	void
 	observer_out_pre( Time const t )
 	{
-		if ( options::output::x ) out_x_.append( t, x( t ) );
-		if ( options::output::q && is_ZC() ) out_q_.append( t, q( t ) );
+		if ( options::output::X ) out_x_.append( t, x( t ) );
+		if ( options::output::Q && is_ZC() ) out_q_.append( t, q( t ) );
 	}
 
 	// Post-Event Observer Output at Time t
@@ -1003,8 +1003,8 @@ public: // Methods: Output
 	observer_out_post( Time const t )
 	{
 		if ( is_ZC() ) {
-			if ( options::output::x ) out_x_.append( t, x( t ) );
-			if ( options::output::q ) out_q_.append( t, q( t ) );
+			if ( options::output::X ) out_x_.append( t, x( t ) );
+			if ( options::output::Q ) out_q_.append( t, q( t ) );
 		}
 	}
 
@@ -1012,7 +1012,7 @@ public: // Methods: Output
 	void
 	observers_out_pre( Time const t )
 	{
-		if ( options::output::o ) {
+		if ( options::output::O ) {
 			for ( Variable * observer : observers_ ) {
 				observer->observer_out_pre( t );
 			}
@@ -1023,7 +1023,7 @@ public: // Methods: Output
 	void
 	observers_out_post( Time const t )
 	{
-		if ( options::output::o ) {
+		if ( options::output::O ) {
 			for ( Variable * observer : observers_ ) {
 				observer->observer_out_post( t );
 			}
@@ -1071,7 +1071,7 @@ private: // Data
 public: // Data
 
 	Real rTol{ 1.0e-4 }; // Relative tolerance
-	Real aTol{ 1.0e-4 }; // Absolute tolerance
+	Real aTol{ 1.0e-6 }; // Absolute tolerance
 	Real qTol{ 1.0e-6 }; // Quantization tolerance
 	Real xIni{ 0.0 }; // Initial value
 	Time tQ{ 0.0 }; // Quantized time range begin

@@ -1,6 +1,6 @@
 @echo off
-rem GCC Compiler Setup
-rem Put a custom version first in your PATH to adapt to your system
+:: GCC Compiler Setup
+:: Put a custom version first in your PATH to adapt to your system
 
 set Path=%Path%;C:\GCC\bin
 set EQ_LIBRARY_PATH=C:\GCC\x86_64-w64-mingw32\lib

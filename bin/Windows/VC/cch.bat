@@ -1,5 +1,5 @@
 @echo off
-rem Visual C++ Compile Header Syntax-Check
+:: Visual C++ Compile Header Syntax-Check
 
 if exist %1     set HeaderSource=%1
 if exist %1.h   set HeaderSource=%1.h

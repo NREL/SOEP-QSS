@@ -1,5 +1,5 @@
 @echo off
-rem GCC Build Release
+:: GCC Build Release
 
 if exist %1.cc (
   set CxxSource=%1.cc

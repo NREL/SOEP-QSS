@@ -87,7 +87,7 @@ public: // Creation
 	Variable_LIQSS3(
 	 std::string const & name,
 	 Real const rTol = 1.0e-4,
-	 Real const aTol = 1.0e-4,
+	 Real const aTol = 1.0e-6,
 	 Real const xIni = 0.0
 	) :
 	 Super( 3, name, rTol, aTol, xIni ),

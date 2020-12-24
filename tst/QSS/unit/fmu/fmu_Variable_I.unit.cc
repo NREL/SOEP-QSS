@@ -52,7 +52,7 @@ TEST( fmu_Variable_ITest, Basic )
 	EXPECT_TRUE( i.is_Discrete() );
 	EXPECT_EQ( 0, i.order() );
 	EXPECT_EQ( 1.0e-4, i.rTol );
-	EXPECT_EQ( 1.0e-4, i.aTol );
+	EXPECT_EQ( 1.0e-6, i.aTol );
 	EXPECT_EQ( 0.0, i.tX );
 	EXPECT_EQ( 0.0, i.tQ );
 	EXPECT_EQ( 42, i.i() );

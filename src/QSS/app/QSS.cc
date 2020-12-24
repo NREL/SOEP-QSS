@@ -110,7 +110,7 @@ main( int argc, char * argv[] )
 		// Check for repeat model names
 		options::Models sorted_models( options::models );
 		std::sort( sorted_models.begin(), sorted_models.end() );
-		if ( std::adjacent_find( sorted_models.begin(), sorted_models.end() ) != sorted_models.end() )  {
+		if ( std::adjacent_find( sorted_models.begin(), sorted_models.end() ) != sorted_models.end() ) {
 			std::cerr << "Error: Repeat model name" << std::endl;
 			std::exit( EXIT_FAILURE );
 		}

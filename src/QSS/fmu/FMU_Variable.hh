@@ -46,12 +46,16 @@ namespace QSS {
 namespace fmu {
 
 // FMU Variable Specifications
-struct FMU_Variable final
+class FMU_Variable final
 {
 
 public: // Types
 
 	using size_type = std::size_t;
+
+private: // Types
+
+	enum class Tag { None, Real, Integer, Boolean };
 
 public: // Creation
 
@@ -67,6 +71,7 @@ public: // Creation
 	 size_type const ics = 0u
 	) :
 	 var( var ),
+	 tag( Tag::Real ),
 	 rvr( rvr ),
 	 cau( var != nullptr ? fmi2_import_get_causality( var ) : fmi2_causality_enu_unknown ),
 	 ref( ref ),
@@ -83,6 +88,7 @@ public: // Creation
 	 size_type const ics = 0u
 	) :
 	 var( var ),
+	 tag( Tag::Integer ),
 	 ivr( ivr ),
 	 cau( var != nullptr ? fmi2_import_get_causality( var ) : fmi2_causality_enu_unknown ),
 	 ref( ref ),
@@ -99,12 +105,43 @@ public: // Creation
 	 size_type const ics = 0u
 	) :
 	 var( var ),
+	 tag( Tag::Boolean ),
 	 bvr( bvr ),
 	 cau( var != nullptr ? fmi2_import_get_causality( var ) : fmi2_causality_enu_unknown ),
 	 ref( ref ),
 	 idx( idx ),
 	 ics( ics )
 	{}
+
+public: // Predicate: Variable Type
+
+	// Real Variable?
+	bool
+	is_None() const
+	{
+		return ( tag == Tag::None );
+	}
+
+	// Real Variable?
+	bool
+	is_Real() const
+	{
+		return ( tag == Tag::Real );
+	}
+
+	// Integer Variable?
+	bool
+	is_Integer() const
+	{
+		return ( tag == Tag::Integer );
+	}
+
+	// Boolean Variable?
+	bool
+	is_Boolean() const
+	{
+		return ( tag == Tag::Boolean );
+	}
 
 public: // Predicate: Causality
 
@@ -160,7 +197,8 @@ public: // Predicate: Causality
 public: // Data
 
 	fmi2_import_variable_t * var{ nullptr }; // FMU variable pointer
-	union { // Support FMU real, integer, and boolean variables
+	Tag tag{ Tag::None }; // Variable type tag
+	union { // Support FMU real, integer, and boolean variables // C++17 std::variant could be used here instead
 		fmi2_import_real_variable_t * rvr{ nullptr }; // FMU real variable pointer
 		fmi2_import_integer_variable_t * ivr; // FMU integer variable pointer
 		fmi2_import_bool_variable_t * bvr; // FMU boolean variable pointer
