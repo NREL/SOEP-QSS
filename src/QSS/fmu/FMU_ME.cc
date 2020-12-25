@@ -2178,6 +2178,12 @@ namespace fmu {
 						if ( options::output::d ) std::cout << "Zero-crossing does not trigger FMU-ME event at t=" << t << std::endl;
 					}
 
+					// Reset FMU state to event time
+					set_time( t );
+					for ( Variable_ZC const * trigger : var_ZCs ) { // Un-bump
+						trigger->bump_time( t );
+					}
+
 					// Perform handler operations on QSS side
 					if ( enterEventMode || zero_crossing_event ) {
 						if ( eventq->single() ) { // Single handler
