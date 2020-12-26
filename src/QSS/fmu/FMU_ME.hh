@@ -378,6 +378,13 @@ public: // FMU Methods
 		(void)fmi_status; // Suppress unused warning
 	}
 
+	// Get a Real FMU Variable Value
+	Real
+	get_as_real( FMU_Variable const & var ) const
+	{
+		return ( var.is_Real() ? get_real( var.ref ) : ( var.is_Integer() ? Real( get_integer( var.ref ) ) : ( var.is_Boolean() ? Real( get_boolean( var.ref ) ) : 0.0 ) ) );
+	}
+
 	// Discrete Event Processing
 	void
 	do_event_iteration()

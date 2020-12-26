@@ -71,8 +71,6 @@ public: // Types
 	using Super::init_observees;
 	using Super::init_observers;
 	using Super::shift_QSS;
-	using Super::tE_infinity_tQ;
-	using Super::tE_infinity_tX;
 
 private: // Types
 
@@ -331,13 +329,12 @@ private: // Methods
 		assert( tX <= tQ );
 		assert( dt_min <= dt_max );
 		Time dt( x_2_ != 0.0 ? std::sqrt( qTol / std::abs( x_2_ ) ) : infinity );
-		dt = std::min( std::max( dt, dt_min ), dt_max );
+		dt = std::min( std::max( dt_infinity( dt ), dt_min ), dt_max );
 		tE = ( dt != infinity ? tQ + dt : infinity );
 		if ( ( options::inflection ) && ( x_2_ != 0.0 ) && ( signum( x_1_ ) != signum( x_2_ ) ) ) {
 			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
 			if ( tQ < tI ) tE = std::min( tE, tI );
 		}
-		tE_infinity_tQ();
 	}
 
 	// Set End Time: Quantized and Continuous Unaligned
@@ -356,13 +353,12 @@ private: // Methods
 		} else { // Both boundaries can have crossings
 			dt = min_root_quadratic_both( x_2_, d_1, d_0 + qTol, d_0 - qTol );
 		}
-		dt = std::min( std::max( dt, dt_min ), dt_max );
+		dt = std::min( std::max( dt_infinity( dt ), dt_min ), dt_max );
 		tE = ( dt != infinity ? tX + dt : infinity );
 		if ( ( options::inflection ) && ( x_2_ != 0.0 ) && ( signum( x_1_ ) != signum( x_2_ ) ) && ( signum( x_1_ ) == signum( q_1_ ) ) ) {
 			Time const tI( tX - ( x_1_ / ( two * x_2_ ) ) );
 			if ( tX < tI ) tE = std::min( tE, tI );
 		}
-		tE_infinity_tX();
 	}
 
 private: // Data

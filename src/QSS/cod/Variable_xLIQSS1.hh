@@ -73,8 +73,6 @@ public: // Types
 	using Super::init_observees;
 	using Super::init_observers;
 	using Super::shift_QSS;
-	using Super::tE_infinity_tQ;
-	using Super::tE_infinity_tX;
 
 private: // Types
 
@@ -338,9 +336,8 @@ private: // Methods
 		assert( tX <= tQ );
 		assert( dt_min <= dt_max );
 		Time dt( x_1_ != 0.0 ? qTol / std::abs( x_1_ ) : infinity );
-		dt = std::min( std::max( dt, dt_min ), dt_max );
+		dt = std::min( std::max( dt_infinity( dt ), dt_min ), dt_max );
 		tE = ( dt != infinity ? tQ + dt : infinity );
-		tE_infinity_tQ();
 	}
 
 	// Set End Time: Quantized and Continuous Unaligned
@@ -353,9 +350,8 @@ private: // Methods
 		 ( x_1_ > 0.0 ? ( q_c_ + qTol - x_0_ ) / x_1_ :
 		 ( x_1_ < 0.0 ? ( q_c_ - qTol - x_0_ ) / x_1_ :
 		 infinity ) ) );
-		dt = std::min( std::max( dt, dt_min ), dt_max );
+		dt = std::min( std::max( dt_infinity( dt ), dt_min ), dt_max );
 		tE = ( dt != infinity ? tX + dt : infinity );
-		tE_infinity_tX();
 	}
 
 	// Advance Self-Observing Trigger

@@ -131,8 +131,38 @@ public: // Methods
 	void
 	bump_time( Time const t_bump ) const
 	{
-		fmu_set_x( t_bump ); // FMU seems to ignore this and always recompute the value
+		fmu_set_x( t_bump );
 		fmu_set_observees_x( t_bump );
+		x_0_bump_ = fmu_get_real();
+		if ( conditional != nullptr ) {
+			for ( Variable * handler : conditional->observers() ) {
+				handler->x_0_bump = handler->fmu_get_as_real();
+			}
+		}
+	}
+
+	// Re-Bump Time for FMU Detection
+	void
+	re_bump_time( Time const t_bump ) const
+	{
+		fmu_set_x( t_bump );
+		fmu_set_observees_x( t_bump );
+	}
+
+	// Un-Bump Time for FMU Detection
+	void
+	un_bump_time( Time const t, Variable const * const handler ) const
+	{
+		handler_modified_ = ( fmu_get_real() != x_0_bump_ );
+		fmu_set_observees_x( t, handler );
+	}
+
+	// Un-Bump Time for FMU Detection
+	void
+	un_bump_time( Time const t, Variables const & handlers ) const
+	{
+		handler_modified_ = ( fmu_get_real() != x_0_bump_ );
+		fmu_set_observees_x( t, handlers );
 	}
 
 public: // Crossing Methods
@@ -271,6 +301,8 @@ protected: // Data
 	Real x_mag_{ 0.0 }; // Value max magnitude since last zero crossing
 	bool check_crossing_{ false }; // Check for zero crossing?
 	int sign_old_{ 0 }; // Sign of zero-crossing function before advance
+	mutable bool handler_modified_{ false }; // Did last handler modify this value?
+	mutable Real x_0_bump_{ 0.0 }; // Last bumped value
 
 private: // Data
 

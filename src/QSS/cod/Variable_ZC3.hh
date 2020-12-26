@@ -86,7 +86,6 @@ public: // Types
 	using Super::refine_root_ZC;
 	using Super::shift_QSS_ZC;
 	using Super::shift_ZC;
-	using Super::tE_infinity_tQ;
 
 protected: // Types
 
@@ -227,10 +226,11 @@ public: // Methods
 	advance_observer( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
+		tX = tQ = t;
 		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		bool const check_crossing( ( t > tZ_last ) || ( x_mag_ != 0.0 ) );
 		int const sign_old( check_crossing ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = ( tX = tQ = t == tZ_last ? 0.0 : f_.x( t ) ); // Force exact zero if at zero-crossing time
+		x_0_ = ( t == tZ_last ? 0.0 : f_.x( t ) ); // Force exact zero if at zero-crossing time
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		x_1_ = f_.x1( t );
 		x_2_ = one_half * f_.x2( t );
@@ -246,10 +246,11 @@ public: // Methods
 	advance_observer_parallel( Time const t )
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
+		tX = tQ = t;
 		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = ( tX = tQ = t == tZ_last ? 0.0 : f_.x( t ) ); // Force exact zero if at zero-crossing time
+		x_0_ = ( t == tZ_last ? 0.0 : f_.x( t ) ); // Force exact zero if at zero-crossing time
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		x_1_ = f_.x1( t );
 		x_2_ = one_half * f_.x2( t );
@@ -291,13 +292,12 @@ private: // Methods
 		assert( tX <= tQ );
 		assert( dt_min <= dt_max );
 		Time dt( x_3_ != 0.0 ? std::cbrt( qTol / std::abs( x_3_ ) ) : infinity );
-		dt = std::min( std::max( dt, dt_min ), dt_max );
+		dt = std::min( std::max( dt_infinity( dt ), dt_min ), dt_max );
 		tE = ( dt != infinity ? tQ + dt : infinity );
 		if ( ( options::inflection ) && ( x_3_ != 0.0 ) && ( signum( x_2_ ) != signum( x_3_ ) ) ) {
 			Time const tI( tX - ( x_2_ / ( three * x_3_ ) ) );
 			if ( tQ < tI ) tE = std::min( tE, tI );
 		}
-		tE_infinity_tQ();
 	}
 
 	// Set Zero-Crossing Time and Type on Active Segment

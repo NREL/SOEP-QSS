@@ -620,7 +620,7 @@ process_args( int argc, char * argv[] )
 				fatal = true;
 			}
 			output::d = has( out, 'd' );
-			output::S = has( out, 's' );
+			output::s = has( out, 's' );
 			output::R = has( out, 'R' );
 			output::O = has( out, 'O' );
 			output::Z = has( out, 'Z' );
@@ -686,9 +686,6 @@ process_args( int argc, char * argv[] )
 			models.push_back( arg );
 		}
 		if ( ! specified::aTol ) aTol = rTol * aFac; // Make unspecified aTol consistent with rTol * aFac for use in cod
-		if ( ( dtMax != infinity ) && ( dtInf != infinity ) ) {
-			std::cerr << "\nWarning: dtInf has no effect when dtMax is specified" << std::endl;
-		}
 	}
 
 	if ( help ) std::exit( EXIT_SUCCESS );

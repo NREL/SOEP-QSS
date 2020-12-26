@@ -73,7 +73,6 @@ public: // Types
 	using Super::init_observers;
 	using Super::shift_discrete;
 	using Super::shift_QSS_Inp;
-	using Super::tE_infinity_tQ;
 
 private: // Types
 
@@ -210,9 +209,8 @@ private: // Methods
 		assert( tX <= tQ );
 		assert( dt_min <= dt_max );
 		Time dt( x_1_ != 0.0 ? qTol / std::abs( x_1_ ) : infinity );
-		dt = std::min( std::max( dt, dt_min ), dt_max );
+		dt = std::min( std::max( dt_infinity( dt ), dt_min ), dt_max );
 		tE = ( dt != infinity ? tQ + dt : infinity );
-		tE_infinity_tQ();
 	}
 
 private: // Data

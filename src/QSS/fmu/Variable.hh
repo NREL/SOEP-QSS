@@ -124,13 +124,14 @@ protected: // Creation
 	) :
 	 Target( name ),
 	 order_( order ),
+	 is_time_( name == "time" ),
 	 rTol( std::max( rTol_, 0.0 ) ),
 	 aTol( std::max( aTol_, std::numeric_limits< Real >::min() ) ),
 	 xIni( xIni_ ),
-	 dt_min( options::dtMin ),
-	 dt_max( options::dtMax ),
-	 dt_inf_( options::dtInf ),
-	 dt_inf_rlx_( options::dtInf == infinity ? infinity : 0.5 * options::dtInf ),
+	 dt_min( is_time_ ? 0.0 : options::dtMin ),
+	 dt_max( is_time_ ? infinity : options::dtMax ),
+	 dt_inf_( is_time_ ? infinity : options::dtInf ),
+	 dt_inf_rlx_( dt_inf_ == infinity ? infinity : 0.5 * dt_inf_ ),
 	 observers_( fmu_me ),
 	 fmu_me_( fmu_me ),
 	 var_( var ),
@@ -152,13 +153,14 @@ protected: // Creation
 	) :
 	 Target( name ),
 	 order_( order ),
+	 is_time_( name == "time" ),
 	 rTol( std::max( rTol_, 0.0 ) ),
 	 aTol( std::max( aTol_, std::numeric_limits< Real >::min() ) ),
 	 xIni( 0.0 ),
-	 dt_min( options::dtMin ),
-	 dt_max( options::dtMax ),
-	 dt_inf_( options::dtInf ),
-	 dt_inf_rlx_( options::dtInf == infinity ? infinity : 0.5 * options::dtInf ),
+	 dt_min( is_time_ ? 0.0 : options::dtMin ),
+	 dt_max( is_time_ ? infinity : options::dtMax ),
+	 dt_inf_( is_time_ ? infinity : options::dtInf ),
+	 dt_inf_rlx_( dt_inf_ == infinity ? infinity : 0.5 * dt_inf_ ),
 	 observers_( fmu_me ),
 	 fmu_me_( fmu_me ),
 	 var_( var ),
@@ -179,11 +181,12 @@ protected: // Creation
 	) :
 	 Target( name ),
 	 order_( order ),
+	 is_time_( name == "time" ),
 	 xIni( xIni_ ),
-	 dt_min( options::dtMin ),
-	 dt_max( options::dtMax ),
-	 dt_inf_( options::dtInf ),
-	 dt_inf_rlx_( options::dtInf == infinity ? infinity : 0.5 * options::dtInf ),
+	 dt_min( is_time_ ? 0.0 : options::dtMin ),
+	 dt_max( is_time_ ? infinity : options::dtMax ),
+	 dt_inf_( is_time_ ? infinity : options::dtInf ),
+	 dt_inf_rlx_( dt_inf_ == infinity ? infinity : 0.5 * dt_inf_ ),
 	 observers_( fmu_me ),
 	 fmu_me_( fmu_me ),
 	 var_( var ),
@@ -203,11 +206,12 @@ protected: // Creation
 	) :
 	 Target( name ),
 	 order_( order ),
+	 is_time_( name == "time" ),
 	 xIni( 0.0 ),
-	 dt_min( options::dtMin ),
-	 dt_max( options::dtMax ),
-	 dt_inf_( options::dtInf ),
-	 dt_inf_rlx_( options::dtInf == infinity ? infinity : 0.5 * options::dtInf ),
+	 dt_min( is_time_ ? 0.0 : options::dtMin ),
+	 dt_max( is_time_ ? infinity : options::dtMax ),
+	 dt_inf_( is_time_ ? infinity : options::dtInf ),
+	 dt_inf_rlx_( dt_inf_ == infinity ? infinity : 0.5 * dt_inf_ ),
 	 observers_( fmu_me ),
 	 fmu_me_( fmu_me ),
 	 var_( var ),
@@ -1303,6 +1307,14 @@ public: // Methods: FMU
 		fmu_me_->set_real( var_.ref, v );
 	}
 
+	// Get FMU Real Variable Derivative
+	Real
+	fmu_get_derivative() const
+	{
+		assert( fmu_me_ != nullptr );
+		return fmu_me_->get_real( der_.ref );
+	}
+
 	// Get FMU Integer Variable Value
 	Integer
 	fmu_get_integer() const
@@ -1335,6 +1347,14 @@ public: // Methods: FMU
 		fmu_me_->set_boolean( var_.ref, v );
 	}
 
+	// Get FMU Variable Value as Real
+	Real
+	fmu_get_as_real() const
+	{
+		assert( fmu_me_ != nullptr );
+		return fmu_me_->get_as_real( var_ );
+	}
+
 	// Set FMU Variable to Continuous Value at Time t
 	virtual
 	void
@@ -1361,6 +1381,25 @@ protected: // Methods: FMU
 	{
 		for ( auto observee : observees_ ) {
 			observee->fmu_set_x( t );
+		}
+	}
+
+	// Set All Observee FMU Variables to Continuous Value at Time t Except for Specified Variable
+	void
+	fmu_set_observees_x( Time const t, Variable const * const var ) const
+	{
+		for ( auto observee : observees_ ) {
+			if ( ( observee != var ) || ( var->fmu_get_as_real() == var->x_0_bump ) ) observee->fmu_set_x( t );
+		}
+	}
+
+	// Set All Observee FMU Variables to Continuous Value at Time t Except for Specified Variables
+	void
+	fmu_set_observees_x( Time const t, Variables const & vars ) const
+	{
+		for ( auto observee : observees_ ) {
+			Variables::const_iterator const i( std::find( vars.begin(), vars.end(), observee ) );
+			if ( ( i == vars.end() ) || ( (*i)->fmu_get_as_real() == (*i)->x_0_bump ) ) observee->fmu_set_x( t );
 		}
 	}
 
@@ -1557,40 +1596,30 @@ protected: // Methods: FMU
 protected: // Methods
 
 	// Infinite Aligned Time Step Processing
-	void
-	tE_infinity_tQ()
+	Time
+	dt_infinity( Time const dt )
 	{
+		if ( is_time_ ) return dt;
 		if ( dt_inf_ != infinity ) { // Deactivation control is enabled
-			if ( tE == infinity ) { // Deactivation has occurred
+			if ( dt == infinity ) { // Deactivation has occurred
 				if ( dt_inf_rlx_ < half_infinity ) { // Relax and use deactivation time step
-					dt_inf_rlx_ *= 2.0;
-					tE = tQ + dt_inf_rlx_;
+					return ( dt_inf_rlx_ *= 2.0 );
+				} else {
+					return dt;
 				}
 			} else { // Reset deactivation time step
 				dt_inf_rlx_ = dt_inf_;
+				return dt;
 			}
-		}
-	}
-
-	// Infinite Unaligned Time Step Processing
-	void
-	tE_infinity_tX()
-	{
-		if ( dt_inf_ != infinity ) { // Deactivation control is enabled
-			if ( tE == infinity ) { // Deactivation has occurred
-				if ( dt_inf_rlx_ < half_infinity ) { // Relax and use deactivation time step
-					dt_inf_rlx_ *= 2.0;
-					tE = tX + dt_inf_rlx_;
-				}
-			} else { // Reset deactivation time step
-				dt_inf_rlx_ = dt_inf_;
-			}
+		} else {
+			return dt;
 		}
 	}
 
 private: // Data
 
 	int order_{ 0 }; // Method order
+	bool is_time_{ false }; // Time variable?
 
 public: // Data
 
@@ -1605,6 +1634,7 @@ public: // Data
 	Time dt_min{ 0.0 }; // Time step min
 	Time dt_max{ infinity }; // Time step max
 	Conditional< Variable > * conditional{ nullptr }; // Conditional (non-owning)
+	Real x_0_bump{ 0.0 }; // Bumped value
 
 private: // Data
 

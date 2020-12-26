@@ -144,13 +144,14 @@ protected: // Creation
 	) :
 	 Target( name ),
 	 order_( order ),
+	 is_time_( name == "time" ),
 	 rTol( std::max( rTol, 0.0 ) ),
 	 aTol( std::max( aTol, std::numeric_limits< Real >::min() ) ),
 	 xIni( xIni ),
-	 dt_min( options::dtMin ),
-	 dt_max( options::dtMax ),
-	 dt_inf_( options::dtInf ),
-	 dt_inf_rlx_( options::dtInf == infinity ? infinity : 0.5 * options::dtInf )
+	 dt_min( is_time_ ? 0.0 : options::dtMin ),
+	 dt_max( is_time_ ? infinity : options::dtMax ),
+	 dt_inf_( is_time_ ? infinity : options::dtInf ),
+	 dt_inf_rlx_( dt_inf_ == infinity ? infinity : 0.5 * dt_inf_ )
 	{}
 
 	// Name + Value Constructor
@@ -161,11 +162,12 @@ protected: // Creation
 	) :
 	 Target( name ),
 	 order_( order ),
+	 is_time_( name == "time" ),
 	 xIni( xIni ),
-	 dt_min( options::dtMin ),
-	 dt_max( options::dtMax ),
-	 dt_inf_( options::dtInf ),
-	 dt_inf_rlx_( options::dtInf == infinity ? infinity : 0.5 * options::dtInf )
+	 dt_min( is_time_ ? 0.0 : options::dtMin ),
+	 dt_max( is_time_ ? infinity : options::dtMax ),
+	 dt_inf_( is_time_ ? infinity : options::dtInf ),
+	 dt_inf_rlx_( dt_inf_ == infinity ? infinity : 0.5 * dt_inf_ )
 	{}
 
 protected: // Assignment
@@ -1033,40 +1035,30 @@ public: // Methods: Output
 protected: // Methods
 
 	// Infinite Aligned Time Step Processing
-	void
-	tE_infinity_tQ()
+	Time
+	dt_infinity( Time const dt )
 	{
+		if ( is_time_ ) return dt;
 		if ( dt_inf_ != infinity ) { // Deactivation control is enabled
-			if ( tE == infinity ) { // Deactivation has occurred
+			if ( dt == infinity ) { // Deactivation has occurred
 				if ( dt_inf_rlx_ < half_infinity ) { // Relax and use deactivation time step
-					dt_inf_rlx_ *= 2.0;
-					tE = tQ + dt_inf_rlx_;
+					return ( dt_inf_rlx_ *= 2.0 );
+				} else {
+					return dt;
 				}
 			} else { // Reset deactivation time step
 				dt_inf_rlx_ = dt_inf_;
+				return dt;
 			}
-		}
-	}
-
-	// Infinite Unaligned Time Step Processing
-	void
-	tE_infinity_tX()
-	{
-		if ( dt_inf_ != infinity ) { // Deactivation control is enabled
-			if ( tE == infinity ) { // Deactivation has occurred
-				if ( dt_inf_rlx_ < half_infinity ) { // Relax and use deactivation time step
-					dt_inf_rlx_ *= 2.0;
-					tE = tX + dt_inf_rlx_;
-				}
-			} else { // Reset deactivation time step
-				dt_inf_rlx_ = dt_inf_;
-			}
+		} else {
+			return dt;
 		}
 	}
 
 private: // Data
 
 	int order_{ 0 }; // Order of method
+	bool is_time_{ false }; // Time variable?
 
 public: // Data
 

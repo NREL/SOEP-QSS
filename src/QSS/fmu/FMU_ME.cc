@@ -676,7 +676,7 @@ namespace fmu {
 						std::cout << " Type: Real: Discrete: Local" << std::endl;
 						std::cout << " FMU-ME idx: " << i+1 << " is not a QSS var" << std::endl;
 					} else {
-						std::cout << " Type: Real: Discrete" << std::endl;
+						std::cout << " Type: Real: Discrete: QSS" << std::endl;
 						Variable_D * qss_var( new Variable_D( var_name, var_start, this, fmu_var ) );
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
@@ -689,7 +689,7 @@ namespace fmu {
 						std::cout << " FMU-ME idx: " << i+1 << " maps to QSS var: " << qss_var->name() << std::endl;
 					}
 				} else if ( var_variability == fmi2_variability_enu_fixed ) {
-					if ( var_name == "_events_default_tol" ) { // JModelica parameter for setting FMU zero crossing value tolerance
+					if ( var_name == "_events_default_tol" ) { // OCT/JModelica parameter for setting FMU zero crossing value tolerance
 						if ( var_causality == fmi2_causality_enu_parameter ) {
 							if ( var_has_start ) {
 								if ( ! options::specified::zTol ) {
@@ -704,7 +704,7 @@ namespace fmu {
 						}
 					}
 // This would only work if toleranceControlled was set to true but that isn't supported for FMU M-E
-//					if ( var_name == "_events_tol_factor" ) { // JModelica parameter for setting FMU zero crossing value tolerance
+//					if ( var_name == "_events_tol_factor" ) { // OCT/JModelica parameter for setting FMU zero crossing value tolerance
 //						if ( var_causality == fmi2_causality_enu_parameter ) {
 //							if ( var_has_start ) {
 //								if ( ! options::specified::zTol ) {
@@ -737,6 +737,7 @@ namespace fmu {
 					}
 				}
 				if ( var_variability == fmi2_variability_enu_discrete ) {
+					std::cout << " Type: Integer: Discrete" << std::endl;
 					FMU_Variable const fmu_var( var, var_int, var_ref, i+1 );
 					fmu_vars[ var_int ] = fmu_var;
 					fmu_var_of_ref[ var_ref ] = fmu_var;
@@ -755,7 +756,7 @@ namespace fmu {
 						std::cout << " Type: Integer: Discrete: Local" << std::endl;
 						std::cout << " FMU-ME idx: " << i+1 << " is not a QSS var" << std::endl;
 					} else {
-						std::cout << " Type: Integer: Discrete" << std::endl;
+						std::cout << " Type: Integer: Discrete: QSS" << std::endl;
 						Variable_I * qss_var( new Variable_I( var_name, var_start, this, fmu_var ) );
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
@@ -814,6 +815,7 @@ namespace fmu {
 					}
 				}
 				if ( var_variability == fmi2_variability_enu_discrete ) {
+					std::cout << " Type: Boolean: Discrete" << std::endl;
 					FMU_Variable const fmu_var( var, var_bool, var_ref, i+1 );
 					fmu_vars[ var_bool ] = fmu_var;
 					fmu_var_of_ref[ var_ref ] = fmu_var;
@@ -830,7 +832,7 @@ namespace fmu {
 						std::cout << " Type: Boolean: Discrete: Local" << std::endl;
 						std::cout << " FMU-ME idx: " << i+1 << " is not a QSS var" << std::endl;
 					} else {
-						std::cout << " Type: Boolean: Discrete" << std::endl;
+						std::cout << " Type: Boolean: Discrete: QSS" << std::endl;
 						Variable_B * qss_var( new Variable_B( var_name, var_start, this, fmu_var ) );
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
@@ -1850,7 +1852,7 @@ namespace fmu {
 			for ( auto const & e : fmu_outs ) {
 				FMU_Variable const & var( e.second );
 				l_outs.emplace_back( output_dir, fmi2_import_get_variable_name( var.var ), 'f' );
-				l_outs.back().append( t, ( var.is_Real() ? get_real( var.ref ) : ( var.is_Integer() ? get_integer( var.ref ) : get_boolean( var.ref ) ) ) );
+				l_outs.back().append( t, get_as_real( var ) );
 			}
 		}
 		if ( doKOut ) { // FMU-QSS t0 smooth token outputs
@@ -1928,7 +1930,7 @@ namespace fmu {
 		bool connected_output_event( false );
 		while ( t <= tNext ) {
 			t = eventq->top_time();
-			if ( doSOut ) { // Sampled and/or FMU outputs
+			if ( doSOut ) { // QSS and/or FMU sampled outputs
 				Time const tStop( std::min( t, tNext ) );
 				while ( tOut < tStop ) {
 					if ( options::output::S ) { // QSS outputs
@@ -1958,7 +1960,7 @@ namespace fmu {
 							size_type i( 0u );
 							for ( auto const & e : fmu_outs ) {
 								FMU_Variable const & var( e.second );
-								l_outs[ i ].append( tOut, ( var.is_Real() ? get_real( var.ref ) : ( var.is_Integer() ? get_integer( var.ref ) : get_boolean( var.ref ) ) ) );
+								l_outs[ i ].append( tOut, get_as_real( var ) );
 								++i;
 							}
 						}
@@ -2140,7 +2142,7 @@ namespace fmu {
 					set_time( t_bump ); // Reset FMU to bump time
 					for ( Variable_ZC const * trigger : var_ZCs ) { // Advance zero-crossing variables observees to bump time
 						trigger->bump_time( t_bump );
-						if ( options::output::d ) std::cout << ' ' << trigger->name() << " bump value = " << trigger->fmu_get_real() << std::endl;
+						if ( options::output::d ) std::cout << "  " << trigger->name() << " bump value = " << trigger->fmu_get_real() << std::endl;
 					}
 
 					// Perform FMU event mode handler processing /////
@@ -2178,16 +2180,15 @@ namespace fmu {
 						if ( options::output::d ) std::cout << "Zero-crossing does not trigger FMU-ME event at t=" << t << std::endl;
 					}
 
-					// Reset FMU state to event time
-					set_time( t );
-					for ( Variable_ZC const * trigger : var_ZCs ) { // Un-bump
-						trigger->bump_time( t );
-					}
-
 					// Perform handler operations on QSS side
 					if ( enterEventMode || zero_crossing_event ) {
+						set_time( t ); // Reset FMU to event time
 						if ( eventq->single() ) { // Single handler
 							Variable * handler( event.sub< Variable >() );
+
+							for ( Variable_ZC const * trigger : var_ZCs ) { // Un-bump time
+								trigger->un_bump_time( t, handler );
+							}
 
 							if ( doROut ) { // Requantization output: pre
 								handler->out( t );
@@ -2210,6 +2211,10 @@ namespace fmu {
 							eventq->top_subs< Variable >( handlers );
 							observers_s.assign( handlers );
 							sort_by_order( handlers );
+
+							for ( Variable_ZC const * trigger : var_ZCs ) { // Un-bump time
+								trigger->un_bump_time( t, handlers );
+							}
 
 							if ( doROut ) { // Requantization output: pre
 								for ( Variable * handler : handlers ) {
@@ -2276,8 +2281,8 @@ namespace fmu {
 						if ( options::output::d ) std::cout << "Zero-crossing handler event(s): Re-bump time = " << t_bump << std::endl;
 						set_time( t_bump ); // Advance FMU to bump time
 						for ( Variable_ZC const * trigger : var_ZCs ) {
-							trigger->bump_time( t_bump );
-							if ( options::output::d ) std::cout << ' ' << trigger->name() << " re-bump value = " << trigger->fmu_get_real() << std::endl;
+							trigger->re_bump_time( t_bump );
+							if ( options::output::d ) std::cout << "  " << trigger->name() << " re-bump value = " << trigger->fmu_get_real() << std::endl;
 						}
 
 						// Perform FMU event mode handler processing /////
@@ -2398,7 +2403,7 @@ namespace fmu {
 							}
 						}
 					} else { // Simultaneous/binned triggers
-						if ( options::output::S || options::steps ) { // Statistics
+						if ( options::output::s || options::steps ) { // Statistics or steps file
 							for ( Variable * trigger : triggers ) {
 								++c_QSS_events[ trigger ];
 							}
@@ -2498,7 +2503,7 @@ namespace fmu {
 					size_type i( 0u );
 					for ( auto const & e : fmu_outs ) {
 						FMU_Variable const & var( e.second );
-						if ( var.causality_local() ) l_outs[ i ].append( t, ( var.is_Real() ? get_real( var.ref ) : ( var.is_Integer() ? get_integer( var.ref ) : get_boolean( var.ref ) ) ) );
+						if ( var.causality_local() ) l_outs[ i ].append( t, get_as_real( var ) );
 						++i;
 					}
 				}
@@ -2584,7 +2589,7 @@ namespace fmu {
 			if ( bin_auto && ( bin_size_auto.second > 0u ) ) {
 				std::cout << "\nAverage optimized bin size: " << static_cast< size_type >( std::round( double( bin_size_auto.first ) / bin_size_auto.second ) ) << std::endl;
 			}
-			if ( options::output::S ) { // Statistics
+			if ( options::output::s ) { // Statistics
 				if ( n_QSS_events > 0 ) {
 					std::cout << "\nQSS Requantization Events:" << std::endl;
 					for ( Variable const * var : vars ) {
@@ -2598,7 +2603,7 @@ namespace fmu {
 					}
 				}
 			}
-			if ( options::steps ) { // Statistics
+			if ( options::steps ) { // Steps file
 				std::ofstream step_stream( name + ".stp", std::ios_base::binary | std::ios_base::out );
 				if ( step_stream.is_open() ) {
 					OutputFilter const steps_filter;
@@ -2659,7 +2664,7 @@ namespace fmu {
 				size_type i( 0u );
 				for ( auto const & e : fmu_outs ) {
 					FMU_Variable const & var( e.second );
-					l_outs[ i ].append( tE, ( var.is_Real() ? get_real( var.ref ) : ( var.is_Integer() ? get_integer( var.ref ) : get_boolean( var.ref ) ) ) );
+					l_outs[ i ].append( tE, get_as_real( var ) );
 					l_outs[ i ].flush();
 					++i;
 				}

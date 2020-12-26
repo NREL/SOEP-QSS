@@ -73,7 +73,6 @@ public: // Types
 	using Super::init_observers;
 	using Super::shift_discrete;
 	using Super::shift_QSS_Inp;
-	using Super::tE_infinity_tQ;
 
 private: // Types
 
@@ -264,13 +263,12 @@ private: // Methods
 		assert( tX <= tQ );
 		assert( dt_min <= dt_max );
 		Time dt( x_3_ != 0.0 ? std::cbrt( qTol / std::abs( x_3_ ) ) : infinity );
-		dt = std::min( std::max( dt, dt_min ), dt_max );
+		dt = std::min( std::max( dt_infinity( dt ), dt_min ), dt_max );
 		tE = ( dt != infinity ? tQ + dt : infinity );
 		if ( ( options::inflection ) && ( x_3_ != 0.0 ) && ( signum( x_2_ ) != signum( x_3_ ) ) ) {
 			Time const tI( tX - ( x_2_ / ( three * x_3_ ) ) );
 			if ( tQ < tI ) tE = std::min( tE, tI );
 		}
-		tE_infinity_tQ();
 	}
 
 private: // Data
