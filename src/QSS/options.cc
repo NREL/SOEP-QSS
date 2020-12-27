@@ -111,9 +111,9 @@ bool S( false ); // Sampled?
 bool X( true ); // Continuous trajectories?
 bool Q( false ); // Quantized trajectories?
 bool A( false ); // All variables?
-bool F( true ); // FMU output variables?
+bool F( false ); // FMU output variables?
 bool L( false ); // FMU local variables?
-bool K( true ); // FMU-QSS smooth tokens?
+bool K( false ); // FMU-QSS smooth tokens?
 
 } // output
 
@@ -165,7 +165,7 @@ help_display()
 	std::cout << "       SIZE  Bin size  (Size or U for Unlimited)  [U]" << '\n';
 	std::cout << "            FRAC  Min time step fraction  (0-1]  [0.25]" << '\n';
 	std::cout << "                 AUTO  Automatic bin size optimization?  (Y|N)  [N]" << '\n';
-	std::cout << " --out=OUTPUTS  Outputs  [ROZDXFK]" << '\n';
+	std::cout << " --out=OUTPUTS  Outputs  [ROZDX]" << '\n';
 	std::cout << "       d  Diagnostics" << '\n';
 	std::cout << "       s  Statistics" << '\n';
 	std::cout << "     QSS Variables:" << '\n';
