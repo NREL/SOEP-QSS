@@ -503,7 +503,7 @@ namespace fmu {
 								std::cerr << " Error: Input function spec [args] missing closing ]: " << fxn_spec << std::endl;
 								std::exit( EXIT_FAILURE );
 							}
-							std::string const fxn_name( fxn_spec.substr( 0, ilb ) );
+							std::string const fxn_name( fxn_spec.substr( 0u, ilb ) );
 							std::string const fxn_args( fxn_spec.substr( ilb + 1, irb - ( ilb + 1 ) ) );
 							if ( fxn_name == "constant" ) {
 								if ( is_double( fxn_args ) ) {
@@ -1584,6 +1584,55 @@ namespace fmu {
 			}
 		}
 
+		// Dependencies added with --dep on comand line
+		if ( options::dep.all() ) {
+			for ( Variable * var : vars ) {
+				for ( Variable * dep : vars ) { // Add the dependency
+					if ( dep->not_ZC() ) var->observe_forward( dep );
+				}
+			}
+		} else if ( options::dep.any() ) {
+			for ( Variable * var : vars ) {
+				for ( Depends::Dependency const & dependency : options::dep.dependencies() ) {
+					if ( std::regex_match( var->name(), dependency.spec ) ) {
+						for ( std::regex const & dep_regex : dependency.deps ) {
+							for ( Variable * dep : vars ) {
+								if ( ( dep->not_ZC() ) && ( std::regex_match( dep->name(), dep_regex ) ) ) { // Add the dependency
+									var->observe_forward( dep );
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// Reverse dependencies added with --rdep on comand line
+		if ( options::rdep.all() ) {
+			for ( Variable * var : vars ) {
+				for ( Variable * rdep : vars ) { // Add the dependency
+					if ( ( rdep->is_ZC() ) && ( rdep->conditional != nullptr ) ) {
+						rdep->conditional->add_observer( var );
+					}
+				}
+			}
+		} else if ( options::rdep.any() ) {
+			for ( Variable * var : vars ) {
+				for ( Depends::Dependency const & dependency : options::rdep.dependencies() ) {
+					if ( std::regex_match( var->name(), dependency.spec ) ) {
+						for ( std::regex const & rdep_regex : dependency.deps ) {
+							for ( Variable * rdep : vars_ZC ) {
+								if ( std::regex_match( rdep->name(), rdep_regex ) ) { // Add the revere dependency
+									if ( rdep->conditional != nullptr ) {
+										rdep->conditional->add_observer( var );
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
 		// Size checks
 		if ( n_state_vars != n_states ) {
 			std::cerr << "\nError: Number of state variables found (" << n_state_vars << ") is not equal to number in FMU-ME (" << n_states << ')' << std::endl;
@@ -1825,10 +1874,14 @@ namespace fmu {
 			}
 			n_fmu_qss_qss_outs = fmu_qss_qss_outs.size();
 		}
-		doROut = options::output::R;
-		doZOut = options::output::Z;
-		doDOut = options::output::D;
-		doSOut = ( options::output::S && ( options::output::X || options::output::Q ) ) || ( options::output::F && ( n_f_outs > 0u ) ) || ( options::output::L && ( n_l_outs > 0u ) ) || ( options::output::K && ( n_fmu_qss_qss_outs > 0u ) );
+		doROut = ( options::output::R && ( options::output::X || options::output::Q ) );
+		doZOut = ( options::output::Z && ( options::output::X || options::output::Q ) );
+		doDOut = ( options::output::D && ( options::output::X || options::output::Q ) );
+		doSOut = (
+		 ( options::output::S && ( options::output::X || options::output::Q ) ) ||
+		 ( options::output::F && ( n_f_outs > 0u ) ) ||
+		 ( options::output::L && ( n_l_outs > 0u ) ) ||
+		 ( options::output::K && ( n_fmu_qss_qss_outs > 0u ) ) );
 		doKOut = options::output::K && ( out_var_refs.size() > 0u );
 		std::string const output_dir( options::have_multiple_models() ? name : std::string() );
 		OutputFilter const output_filter( options::var );
@@ -2637,9 +2690,10 @@ namespace fmu {
 	post_simulate()
 	{
 		// End time outputs
-		if ( ( options::output::Z || options::output::R || options::output::S ) && ( options::output::X || options::output::Q ) ) { // QSS tE outputs
+		if ( ( options::output::R || options::output::Z || options::output::D || options::output::S ) && ( options::output::X || options::output::Q ) ) { // QSS tE outputs
 			for ( auto var : vars ) {
 				if ( var->tQ < tE ) var->out( tE );
+				var->flush_out();
 			}
 		}
 		if ( options::output::F ) { // FMU QSS variable tE outputs

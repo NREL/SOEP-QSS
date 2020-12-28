@@ -1273,6 +1273,16 @@ public: // Methods: Output
 	void
 	connections_observer_out_post( Time const t );
 
+	// Flush Outputs
+	void
+	flush_out()
+	{
+		if ( out_on_ ) {
+			if ( options::output::X ) out_x_.flush();
+			if ( options::output::Q ) out_q_.flush();
+		}
+	}
+
 public: // Methods: FMU
 
 	// Get FMU Time

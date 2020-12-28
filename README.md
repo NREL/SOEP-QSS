@@ -30,7 +30,7 @@ Currently the code has:
 ## Plan
 
 Planned development in anticipated sequence order are:
-* FMU support extensions: Modelica annotations, JModelica/FMIL API migration, higher derivatives, ...
+* FMU support extensions: Modelica annotations, OCT/FMIL API migration, higher derivatives, ...
 * Algebraic relationship/loop support.
 * Extended precision time handling for large time span simulation.
 * Performance refinements possibly including a higher performance event queue.
@@ -40,7 +40,7 @@ Planned development in anticipated sequence order are:
 
 * High-performance QSS solver.
 * Modular, object-oriented code.
-* API suitable for JModelica integration.
+* API suitable for OCT integration.
 * Define FMI extensions for efficient QSS support.
 * FMU simulation support.
 * FMU-QSS generation and simulation of FMU-ME.
@@ -218,14 +218,14 @@ Models defined by FMUs following the FMI 2.0 API can be run by this QSS solver u
 * The FMU support is performance-limited by the FMI 2.0 API, which requires expensive get-all-derivatives calls where QSS needs individual derivatives.
 * QSS2+ performance is limited by the use of numeric differentiation: the FMI ME 2.0 API doesn't provide higher derivatives but they may become available via FMI extensions.
 * Zero crossings are problematic because the FMI spec doesn't expose the dependency of variables that are modified when each zero crossing occurs. Our initial approach was to add the zero crossing variables to the Modelica models and to add their dependencies to the FMU's modelDescription.xml file. Additionally, we now support the OCT event indicator system that defines the zero crossing variables and their dependencies.
-  * The OCT event indicator system is not yet fully functional, omitting some zero crossing variables and/or their forward and/or reverse (handler) dependencies.
+  * The OCT event indicator system is under ongoing development to refine the treatment of dependencies and reverse (handler) dependencies, such as when to short-circuit non-state variables from the dependencies.
 * QSS3 and LIQSS3 solvers can be added when they become more practical with the planned FMI Library FMI 2.0 API extensions with higher derivative support.
-* Input function evaluations will be provided by JModelica when QSS is integrated. For stand-alone QSS testing purposes a few input functions are provided for use with FMUs.
+* Input function evaluations will be provided by OCT when QSS is integrated. For stand-alone QSS testing purposes a few input functions are provided for use with FMUs.
 * Only SI units are supported in FMUs at this time as per LBNL specifications. Support for other units could be added in the future.
 
 ### Next-Gen FMU Support
 
-In preparation for anticipated FMI API extensions to JModelica's FMI Library a NextGen branch of this repository has been developed.
+In preparation for anticipated FMI API extensions to OCT's FMI Library a NextGen branch of this repository has been developed.
 NextGen assumes that the FMU can provide higher derivatives directly for a variable when its observee variables are set to their values at the evaluation time.
 This significantly simplifies the QSS code and makes it more practical to implement 3rd order QSS methods.
 It will also eliminate the cyclic dependency flaw with QSS3+ and xQSS2+ methods.

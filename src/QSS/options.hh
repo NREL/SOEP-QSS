@@ -36,6 +36,9 @@
 #ifndef QSS_options_hh_INCLUDED
 #define QSS_options_hh_INCLUDED
 
+// QSS Headers
+#include <QSS/Depends.hh>
+
 // C++ Headers
 #include <cstddef>
 #include <string>
@@ -107,10 +110,12 @@ extern bool inflection; // Requantize at inflections?
 extern bool refine; // Refine FMU zero-crossing roots?
 extern bool prune; // Prune variables with no observers?
 extern bool perfect; // Perfect FMU-ME connection sync?
-extern bool steps; // Generate requantization step count file
+extern bool steps; // Generate requantization step count file?
 extern LogLevel log; // Logging level
 extern InpFxn fxn; // Map from input variables to function specs
 extern InpOut con; // Map from input variables to output variables
+extern Depends dep; // Dependencies
+extern Depends rdep; // Reverse dependencies
 extern std::string out; // Outputs: r, a, s, x, q, f
 extern std::pair< double, double > tLoc; // Local output time range (s)
 extern std::string var; // Variable output filter file

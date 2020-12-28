@@ -170,7 +170,7 @@ simulate( std::string const & model )
 		mdl::xyz( vars );
 	} else if ( model == "gen" ) {
 		mdl::gen( vars, cons );
-	} else if ( model.substr( 0, 4 ) == "gen:" ) {
+	} else if ( model.substr( 0u, 4u ) == "gen:" ) {
 		std::istringstream n_stream( model.substr( 4 ) );
 		std::string nQSS_string;
 		std::string nZC_string;
@@ -281,11 +281,11 @@ simulate( std::string const & model )
 	if ( options::cycles ) cycles< Variable >( vars );
 
 	// Output initialization
-	bool const doROut( options::output::R );
-	bool const doZOut( options::output::Z );
-	bool const doDOut( options::output::D );
+	bool const doROut( options::output::R && ( options::output::X || options::output::Q ) );
+	bool const doZOut( options::output::Z && ( options::output::X || options::output::Q ) );
+	bool const doDOut( options::output::D && ( options::output::X || options::output::Q ) );
 	bool const doSOut( options::output::S && ( options::output::X || options::output::Q ) );
-	if ( ( options::output::Z || options::output::R || options::output::S ) && ( options::output::X || options::output::Q ) ) { // t0 outputs
+	if ( options::output::R || options::output::Z || options::output::D || options::output::S ) { // t0 outputs
 		for ( auto var : vars ) {
 			var->init_out();
 			var->out( t );
@@ -648,7 +648,7 @@ simulate( std::string const & model )
 	if ( ! options::output::d ) std::cout << "\r100% =====" << std::endl;
 
 	// End time outputs
-	if ( ( options::output::Z || options::output::R || options::output::S ) && ( options::output::X || options::output::Q ) ) {
+	if ( ( options::output::R || options::output::Z || options::output::D || options::output::S ) && ( options::output::X || options::output::Q ) ) {
 		for ( auto var : vars ) {
 			if ( var->tQ < tE ) var->out( tE );
 		}

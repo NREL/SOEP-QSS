@@ -42,6 +42,7 @@
 // C++ Headers
 #include <iostream>
 #include <limits>
+#include <regex>
 
 namespace QSS {
 namespace options {
@@ -76,10 +77,12 @@ bool inflection( false ); // Requantize at inflections?
 bool refine( false ); // Refine FMU zero-crossing roots?
 bool prune( false ); // Prune variables with no observers?
 bool perfect( false ); // Perfect FMU-ME connection sync?
-bool steps( false ); // Generate requantization step count file
+bool steps( false ); // Generate requantization step count file?
 LogLevel log( LogLevel::warning ); // Logging level
 InpFxn fxn; // Map from input variables to function specs
 InpOut con; // Map from input variables to output variables
+Depends dep; // Dependencies
+Depends rdep; // Reverse dependencies
 std::string out; // Outputs
 std::pair< double, double > tLoc( 0.0, 0.0 ); // Local output time range (s)
 std::string var; // Variable output filter file
@@ -161,6 +164,16 @@ help_display()
 	std::cout << "           toggle[h0,h,d] => h0 + h * ( floor( t / d ) % 2 )" << '\n';
 	std::cout << " --con=INP:OUT  Connect FMU input and output variables" << '\n';
 	std::cout << "       INP and OUT syntax is <model>.<var>" << '\n';
+	std::cout << " --dep=VAR[:DEP[,DEP,...]]  FMU dependencies to add" << '\n';
+	std::cout << "       VAR  Variable (name or glob/regex)" << '\n';
+	std::cout << "            No VAR => All variables" << '\n';
+	std::cout << "            DEP  Dependency variable (name or glob/regex)" << '\n';
+	std::cout << "                 No DEP => All variables" << '\n';
+	std::cout << " --rdep=VAR[:DEP[,DEP,...]]  FMU reverse dependencies to add" << '\n';
+	std::cout << "        VAR  Variable (name or glob/regex)" << '\n';
+	std::cout << "             No VAR => All variables" << '\n';
+	std::cout << "             DEP  Dependency variable (name or glob/regex)" << '\n';
+	std::cout << "                  No DEP => All variables" << '\n';
 	std::cout << " --bin=SIZE:FRAC:AUTO  FMU requantization binning controls  [1:0.5:N]" << '\n';
 	std::cout << "       SIZE  Bin size  (Size or U for Unlimited)  [U]" << '\n';
 	std::cout << "            FRAC  Min time step fraction  (0-1]  [0.25]" << '\n';
@@ -549,10 +562,10 @@ process_args( int argc, char * argv[] )
 			if ( var_fxn[ 0 ] == '"' ) { // Quoted variable name
 				std::string::size_type const qe( var_fxn.find( '"', 1u ) );
 				if ( qe != std::string::npos ) {
-					var_name = var_fxn.substr( 1, qe );
+					var_name = var_fxn.substr( 1u, qe - 1u );
 					std::string::size_type const isep( var_fxn.find( ':', qe ) );
 					if ( isep != std::string::npos ) {
-						fxn_spec = var_fxn.substr( isep + 1 );
+						fxn_spec = var_fxn.substr( isep + 1u );
 						fxn[ var_name ] = fxn_spec;
 					} else {
 						std::cerr << "\nError: Input function spec not in variable:function format: " << var_fxn << std::endl;
@@ -565,8 +578,8 @@ process_args( int argc, char * argv[] )
 			} else {
 				std::string::size_type const isep( var_fxn.find( ':' ) );
 				if ( isep != std::string::npos ) {
-					var_name = var_fxn.substr( 0, isep );
-					fxn_spec = var_fxn.substr( isep + 1 );
+					var_name = var_fxn.substr( 0u, isep );
+					fxn_spec = var_fxn.substr( isep + 1u );
 					fxn[ var_name ] = fxn_spec;
 				} else {
 					std::cerr << "\nError: Input variable function spec not in variable:function format: " << var_fxn << std::endl;
@@ -580,10 +593,10 @@ process_args( int argc, char * argv[] )
 			if ( inp_out[ 0 ] == '"' ) { // Quoted input variable name
 				std::string::size_type const qe( inp_out.find( '"', 1u ) );
 				if ( qe != std::string::npos ) {
-					inp_name = inp_out.substr( 1, qe );
+					inp_name = inp_out.substr( 1u, qe - 1u );
 					std::string::size_type const isep( inp_out.find( ':', qe ) );
 					if ( isep != std::string::npos ) {
-						out_name = inp_out.substr( isep + 1 );
+						out_name = inp_out.substr( isep + 1u );
 					} else {
 						std::cerr << "\nError: Input-output connection spec not in input:output format: " << inp_out << std::endl;
 						fatal = true;
@@ -595,8 +608,8 @@ process_args( int argc, char * argv[] )
 			} else {
 				std::string::size_type const isep( inp_out.find( ':' ) );
 				if ( isep != std::string::npos ) {
-					inp_name = inp_out.substr( 0, isep );
-					out_name = inp_out.substr( isep + 1 );
+					inp_name = inp_out.substr( 0u, isep );
+					out_name = inp_out.substr( isep + 1u );
 				} else {
 					std::cerr << "\nError: Input-output connection spec not in input:output format: " << inp_out << std::endl;
 					fatal = true;
@@ -605,14 +618,182 @@ process_args( int argc, char * argv[] )
 			if ( out_name[ 0 ] == '"' ) { // Quoted output variable name
 				std::string::size_type const qe( inp_out.find( '"', 1u ) );
 				if ( qe != std::string::npos ) {
-					out_name = out_name.substr( 1, qe );
+					out_name = out_name.substr( 1u, qe - 1u );
 				} else {
 					std::cerr << "\nError: Input-output connection spec quoted output variable name missing end quote: " << inp_out << std::endl;
 					fatal = true;
 				}
 			}
 			con[ inp_name ] = out_name;
-		} else if ( has_value_option( arg, "out" ) ) {
+		} else if ( has_option( arg, "dep" ) || has_value_option( arg, "dep" ) ) {
+			std::string const var_deps( arg_value( arg ) );
+			std::string var_spec;
+			std::string deps_spec;
+			if ( var_deps.empty() ) { // Implied all
+				var_spec = deps_spec = '*';
+			} else if ( var_deps[ 0 ] == '"' ) { // Quoted input variable name
+				std::string::size_type const qe( var_deps.find( '"', 1u ) );
+				if ( qe != std::string::npos ) {
+					var_spec = var_deps.substr( 1u, qe - 1u );
+					std::string::size_type const isep( var_deps.find( ':', qe ) );
+					if ( isep != std::string::npos ) {
+						deps_spec = var_deps.substr( isep + 1u );
+					} else {
+						deps_spec = '*'; // Implied all
+					}
+				} else {
+					std::cerr << "\nError: Dependencies spec quoted input variable spec missing end quote: " << var_deps << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::string::size_type const isep( var_deps.find( ':' ) );
+				if ( isep != std::string::npos ) {
+					var_spec = var_deps.substr( 0u, isep );
+					deps_spec = var_deps.substr( isep + 1u );
+				} else {
+					var_spec = var_deps;
+					deps_spec = '*'; // Implied all
+				}
+			}
+			if ( var_spec.empty() ) var_spec = '*'; // Implied all
+			std::vector< std::string > dep_specs;
+			{ // Scope
+			std::string dep_spec;
+			bool in_quote( false );
+			for ( char const c : deps_spec ) {
+				if ( c == '"' ) {
+					if ( in_quote ) { // End quoted string
+						if ( ! strip( dep_spec ).empty() ) {
+							dep_specs.push_back( dep_spec );
+							dep_spec.clear();
+						}
+					}
+					in_quote = ! in_quote;
+				} else if ( ( ! in_quote ) && ( c == ',' ) ) {
+					if ( ! strip( dep_spec ).empty() ) {
+						dep_specs.push_back( dep_spec );
+						dep_spec.clear();
+					}
+				} else {
+					dep_spec.push_back( c );
+				}
+			}
+			if ( ! strip( dep_spec ).empty() ) dep_specs.push_back( dep_spec );
+			} // Scope
+			if ( var_spec == "*" ) { // Check for all-depends-on-all
+				if ( dep_specs.empty() ) {
+					dep.all() = true;
+				} else {
+					for ( std::string const & dep_spec : dep_specs ) {
+						if ( dep_spec == "*" ) {
+							dep.all() = true;
+							break;
+						}
+					}
+				}
+			}
+			std::regex var_regex;
+			try {
+				var_regex = Depends::regex( var_spec );
+			} catch (...) {
+				std::cerr << "\nError: Dependency variable spec cannot be converted into a regex " << var_spec << std::endl;
+				fatal = true;
+			}
+			std::vector< std::regex > deps_regex;
+			for ( std::string const & dep_spec : dep_specs ) {
+				try {
+					deps_regex.push_back( Depends::regex( dep_spec ) );
+				} catch (...) {
+					std::cerr << "\nError: Dependency spec cannot be converted into a regex " << dep_spec << std::endl;
+					fatal = true;
+				}
+			}
+			dep.add( var_regex, deps_regex );
+		} else if ( has_option( arg, "rdep" ) || has_value_option( arg, "rdep" ) ) {
+			std::string const var_rdeps( arg_value( arg ) );
+			std::string var_spec;
+			std::string rdeps_spec;
+			if ( var_rdeps.empty() ) { // Implied all
+				var_spec = rdeps_spec = '*';
+			} else if ( var_rdeps[ 0 ] == '"' ) { // Quoted input variable name
+				std::string::size_type const qe( var_rdeps.find( '"', 1u ) );
+				if ( qe != std::string::npos ) {
+					var_spec = var_rdeps.substr( 1u, qe - 1u );
+					std::string::size_type const isep( var_rdeps.find( ':', qe ) );
+					if ( isep != std::string::npos ) {
+						rdeps_spec = var_rdeps.substr( isep + 1u );
+					} else {
+						rdeps_spec = '*'; // Implied all
+					}
+				} else {
+					std::cerr << "\nError: Reverse dependencies spec quoted input variable spec missing end quote: " << var_rdeps << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::string::size_type const isep( var_rdeps.find( ':' ) );
+				if ( isep != std::string::npos ) {
+					var_spec = var_rdeps.substr( 0u, isep );
+					rdeps_spec = var_rdeps.substr( isep + 1u );
+				} else {
+					var_spec = var_rdeps;
+					rdeps_spec = '*'; // Implied all
+				}
+			}
+			if ( var_spec.empty() ) var_spec = '*'; // Implied all
+			std::vector< std::string > rdep_specs;
+			{ // Scope
+			std::string rdep_spec;
+			bool in_quote( false );
+			for ( char const c : rdeps_spec ) {
+				if ( c == '"' ) {
+					if ( in_quote ) { // End quoted string
+						if ( ! strip( rdep_spec ).empty() ) {
+							rdep_specs.push_back( rdep_spec );
+							rdep_spec.clear();
+						}
+					}
+					in_quote = ! in_quote;
+				} else if ( ( ! in_quote ) && ( c == ',' ) ) {
+					if ( ! strip( rdep_spec ).empty() ) {
+						rdep_specs.push_back( rdep_spec );
+						rdep_spec.clear();
+					}
+				} else {
+					rdep_spec.push_back( c );
+				}
+			}
+			if ( ! strip( rdep_spec ).empty() ) rdep_specs.push_back( rdep_spec );
+			} // Scope
+			if ( var_spec == "*" ) { // Check for all-rdepends-on-all
+				if ( rdep_specs.empty() ) {
+					rdep.all() = true;
+				} else {
+					for ( std::string const & rdep_spec : rdep_specs ) {
+						if ( rdep_spec == "*" ) {
+							rdep.all() = true;
+							break;
+						}
+					}
+				}
+			}
+			std::regex var_regex;
+			try {
+				var_regex = Depends::regex( var_spec );
+			} catch (...) {
+				std::cerr << "\nError: Reverse dependency variable spec cannot be converted into a regex " << var_spec << std::endl;
+				fatal = true;
+			}
+			std::vector< std::regex > rdeps_regex;
+			for ( std::string const & rdep_spec : rdep_specs ) {
+				try {
+					rdeps_regex.push_back( Depends::regex( rdep_spec ) );
+				} catch (...) {
+					std::cerr << "\nError: Reverse dependency spec cannot be converted into a regex " << rdep_spec << std::endl;
+					fatal = true;
+				}
+			}
+			rdep.add( var_regex, rdeps_regex );
+		} else if ( has_option( arg, "out" ) || has_value_option( arg, "out" ) ) {
 			static std::string const out_flags( "dsROZDSXQAFLK" );
 			out = arg_value( arg );
 			if ( has_any_not_of( out, out_flags ) ) {

@@ -48,7 +48,7 @@
 namespace QSS {
 
 // QSS Output Filter Class
-class OutputFilter
+class OutputFilter final
 {
 
 public: // Types

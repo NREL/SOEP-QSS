@@ -99,7 +99,7 @@ base( std::string const & path )
 	if ( idot == std::string::npos ) {
 		return name;
 	} else {
-		return name.substr( 0, idot );
+		return name.substr( 0u, idot );
 	}
 }
 
@@ -112,7 +112,7 @@ dir( std::string const & path )
 	while ( ( l > 0u ) && ( path[ l - 1 ] != sep ) ) --l; // Skip dir/file name
 	if ( ( l > 0u ) && ( path[ l - 1 ] == sep ) ) --l; // Skip trailing path separator
 	if ( l > 0u ) {
-		return path.substr( 0, l );
+		return path.substr( 0u, l );
 	} else {
 		return std::string( "." );
 	}
@@ -153,8 +153,8 @@ make_path( std::string const & path )
 	if ( ( i < path_len ) && ( i != std::string::npos ) ) {
 		while ( ( i = path.find_first_of( "\\/", i ) ) != std::string::npos ) {
 			if ( i + 1 == path.length() ) { // Last directory
-				return make_dir( path.substr( 0, i ) );
-			} else if ( ! make_dir( path.substr( 0, i ) ) ) { // Failed
+				return make_dir( path.substr( 0u, i ) );
+			} else if ( ! make_dir( path.substr( 0u, i ) ) ) { // Failed
 				return false;
 			}
 			++i;
@@ -173,8 +173,8 @@ make_path( std::string const & path )
 	if ( ( i < path_len ) && ( i != std::string::npos ) ) {
 		while ( ( i = path.find_first_of( "/", i ) ) != std::string::npos ) {
 			if ( i + 1 == path.length() ) { // Last directory
-				return make_dir( path.substr( 0, i ) );
-			} else if ( ! make_dir( path.substr( 0, i ) ) ) { // Failed
+				return make_dir( path.substr( 0u, i ) );
+			} else if ( ! make_dir( path.substr( 0u, i ) ) ) { // Failed
 				return false;
 			}
 			++i;
