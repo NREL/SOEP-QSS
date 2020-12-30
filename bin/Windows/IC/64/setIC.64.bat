@@ -2,7 +2,7 @@
 :: Intel Compiler 64-Bit Setup
 
 :: OneAPI
-if not "%ONEAPI_ROOT%" == "" "%ONEAPI_ROOT%\setvars.bat" intel64 vs2019
+if not "%ONEAPI_ROOT%" == "" "%ONEAPI_ROOT%\compiler\latest\env\vars.bat" intel64 vs2019
 
 :: 2020
 if not "%ICPP_COMPILER20%" == "" "%ICPP_COMPILER20%\bin\ipsxe-comp-vars.bat" intel64 vs2019

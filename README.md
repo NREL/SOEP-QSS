@@ -110,8 +110,12 @@ At startup and simultaneous requantization trigger events the LIQSS approach def
 
 ### xQSS Variant
 
-An experimental variant of the QSS method with methods named `xQSS1`, `xQSS2`, and `xQSS3` has been implemented. In this variant the broadcast (quantized) representation has the same order as the internal (continuous) representation. The concept is based on using all available knowledge of the variable trajectory in the broadcast representation. This has been found to provide significantly higher accuracy solutions at the same tolerance (or, equivalently, faster solutions at the same accuracy) for some models. More experience is needed to determine whether there are drawbacks to this approach.
-* LIQSS methods did not benefit from this approach since it tends to put the quantum-shifted quantized representation farther from the continuous representation.
+An experimental variant of the QSS method with methods named `xQSS1`, `xQSS2`, and `xQSS3` has been implemented. In this variant the broadcast (quantized) representation has the same order as the internal (continuous) representation. The concept is based on using all available knowledge of the variable trajectory in the broadcast representation. This has been found to provide significantly higher accuracy solutions at the same tolerance (or, equivalently, faster solutions at the same accuracy) for some models.
+
+More experiments are needed to develop best practices for when to try xQSS but experience to date has yielded these preliminary guidelines:
+* Smooth trajectory models with precise or analytical derivatives tend to benefit most from xQSS methods
+* Numerical differentiation that the current FMU-based simulation requires injects some noise into the extra top order term of the xQSS quantized representations, which tends to shorten the time steps and thus hurt performance.
+* LIQSS methods on stiff systems did not benefit from xLIQSS since it tends to put the quantum-shifted quantized representation farther from the continuous representation.
 
 ### Event Queue
 
