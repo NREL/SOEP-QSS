@@ -1,4 +1,4 @@
-// Index Range Class
+// QSS::Range Unit Tests
 //
 // Project: QSS Solver
 //
@@ -33,145 +33,66 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_Range_hh_INCLUDED
-#define QSS_Range_hh_INCLUDED
+// Google Test Headers
+#include <gtest/gtest.h>
 
-// C++ Headers
-#include <cstddef>
-#include <limits>
-#include <utility>
+// QSS Headers
+#include <QSS/Range.hh>
 
-namespace QSS {
+using namespace QSS;
 
-// Index Range
-class Range final
+TEST( RangeTest, Basic )
 {
+	Range range;
 
-public: // Types
+	EXPECT_TRUE( range.empty() );
+	EXPECT_FALSE( range.have() );
+	EXPECT_FALSE( range.began() );
+	EXPECT_EQ( 0u, range.size() );
+	EXPECT_EQ( 0u, range.n() );
 
-	using size_type = std::size_t;
+	range.assign( 3u, 8u );
 
-public: // Creation
+	EXPECT_FALSE( range.empty() );
+	EXPECT_TRUE( range.have() );
+	EXPECT_TRUE( range.began() );
+	EXPECT_EQ( 5u, range.size() );
+	EXPECT_EQ( 3u, range.b() );
+	EXPECT_EQ( 8u, range.e() );
+	EXPECT_EQ( 5u, range.n() );
 
-	// Default Constructor
-	Range() = default;
+	Range range2( 12, 22 );
 
-	// Indexes Constructor
-	Range( size_type const b, size_type const e ) :
-	 b_( b ),
-	 e_( e )
-	{}
+	EXPECT_FALSE( range2.empty() );
+	EXPECT_TRUE( range2.have() );
+	EXPECT_TRUE( range2.began() );
+	EXPECT_EQ( 10u, range2.size() );
+	EXPECT_EQ( 12u, range2.b() );
+	EXPECT_EQ( 22u, range2.e() );
+	EXPECT_EQ( 10u, range2.n() );
 
-public: // Predicate
+	swap( range, range2 );
 
-	// Empty?
-	bool
-	empty() const
-	{
-		return ( b_ >= e_ );
-	}
+	EXPECT_FALSE( range.empty() );
+	EXPECT_TRUE( range.have() );
+	EXPECT_TRUE( range.began() );
+	EXPECT_EQ( 10u, range.size() );
+	EXPECT_EQ( 12u, range.b() );
+	EXPECT_EQ( 22u, range.e() );
+	EXPECT_EQ( 10u, range.n() );
+	EXPECT_FALSE( range2.empty() );
+	EXPECT_TRUE( range2.have() );
+	EXPECT_TRUE( range2.began() );
+	EXPECT_EQ( 5u, range2.size() );
+	EXPECT_EQ( 3u, range2.b() );
+	EXPECT_EQ( 8u, range2.e() );
+	EXPECT_EQ( 5u, range2.n() );
 
-	// Have?
-	bool
-	have() const
-	{
-		return ( b_ < e_ );
-	}
+	range.reset();
 
-	// Began?
-	bool
-	began() const
-	{
-		return ( b_ < std::numeric_limits< size_type >::max() );
-	}
-
-public: // Property
-
-	// Size
-	size_type
-	size() const
-	{
-		return ( b_ < e_ ? e_ - b_ : 0u );
-	}
-
-	// Begin Index
-	size_type
-	b() const
-	{
-		return b_;
-	}
-
-	// Begin Index
-	size_type &
-	b()
-	{
-		return b_;
-	}
-
-	// End Index
-	size_type
-	e() const
-	{
-		return e_;
-	}
-
-	// End Index
-	size_type &
-	e()
-	{
-		return e_;
-	}
-
-	// Size
-	size_type
-	n() const
-	{
-		return ( b_ < e_ ? e_ - b_ : 0u );
-	}
-
-public: // Methods
-
-	// Assign
-	void
-	assign( size_type const b, size_type const e )
-	{
-		b_ = b;
-		e_ = e;
-	}
-
-	// Reset
-	void
-	reset()
-	{
-		b_ = std::numeric_limits< size_type >::max();
-		e_ = 0u;
-	}
-
-	// Swap
-	void
-	swap( Range & r )
-	{
-		std::swap( b_, r.b_ );
-		std::swap( e_, r.e_ );
-	}
-
-public: // Friend Functions
-
-	// Swap
-	friend
-	void
-	swap( Range & r1, Range & r2 )
-	{
-		r1.swap( r2 );
-	}
-
-private: // Data
-
-	size_type b_{ std::numeric_limits< size_type >::max() }; // Begin index
-	size_type e_{ 0u }; // End index (1 beyond last item)
-
-}; // Range
-
-} // QSS
-
-#endif
+	EXPECT_TRUE( range.empty() );
+	EXPECT_FALSE( range.have() );
+	EXPECT_FALSE( range.began() );
+	EXPECT_EQ( 0u, range.size() );
+	EXPECT_EQ( 0u, range.n() );
+}

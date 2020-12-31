@@ -1,4 +1,4 @@
-// Index Range Class
+// QSS::path Unit Tests
 //
 // Project: QSS Solver
 //
@@ -33,145 +33,24 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_Range_hh_INCLUDED
-#define QSS_Range_hh_INCLUDED
+// Google Test Headers
+#include <gtest/gtest.h>
 
-// C++ Headers
-#include <cstddef>
-#include <limits>
-#include <utility>
+// QSS Headers
+#include <QSS/path.hh>
 
-namespace QSS {
+using namespace QSS;
+using namespace QSS::path;
 
-// Index Range
-class Range final
+TEST( PathTest, Basic )
 {
+	EXPECT_FALSE( is_file( "" ) );
+	EXPECT_FALSE( is_file( "TellMeYouDontHaveAFileWithThisSillyName.YesYou" ) );
 
-public: // Types
+	EXPECT_EQ( "base", base( "base.ext" ) );
 
-	using size_type = std::size_t;
+	EXPECT_EQ( "dir", dir( std::string( "dir" ) + sep + std::string( "base.ext" ) ) );
 
-public: // Creation
-
-	// Default Constructor
-	Range() = default;
-
-	// Indexes Constructor
-	Range( size_type const b, size_type const e ) :
-	 b_( b ),
-	 e_( e )
-	{}
-
-public: // Predicate
-
-	// Empty?
-	bool
-	empty() const
-	{
-		return ( b_ >= e_ );
-	}
-
-	// Have?
-	bool
-	have() const
-	{
-		return ( b_ < e_ );
-	}
-
-	// Began?
-	bool
-	began() const
-	{
-		return ( b_ < std::numeric_limits< size_type >::max() );
-	}
-
-public: // Property
-
-	// Size
-	size_type
-	size() const
-	{
-		return ( b_ < e_ ? e_ - b_ : 0u );
-	}
-
-	// Begin Index
-	size_type
-	b() const
-	{
-		return b_;
-	}
-
-	// Begin Index
-	size_type &
-	b()
-	{
-		return b_;
-	}
-
-	// End Index
-	size_type
-	e() const
-	{
-		return e_;
-	}
-
-	// End Index
-	size_type &
-	e()
-	{
-		return e_;
-	}
-
-	// Size
-	size_type
-	n() const
-	{
-		return ( b_ < e_ ? e_ - b_ : 0u );
-	}
-
-public: // Methods
-
-	// Assign
-	void
-	assign( size_type const b, size_type const e )
-	{
-		b_ = b;
-		e_ = e;
-	}
-
-	// Reset
-	void
-	reset()
-	{
-		b_ = std::numeric_limits< size_type >::max();
-		e_ = 0u;
-	}
-
-	// Swap
-	void
-	swap( Range & r )
-	{
-		std::swap( b_, r.b_ );
-		std::swap( e_, r.e_ );
-	}
-
-public: // Friend Functions
-
-	// Swap
-	friend
-	void
-	swap( Range & r1, Range & r2 )
-	{
-		r1.swap( r2 );
-	}
-
-private: // Data
-
-	size_type b_{ std::numeric_limits< size_type >::max() }; // Begin index
-	size_type e_{ 0u }; // End index (1 beyond last item)
-
-}; // Range
-
-} // QSS
-
-#endif
+	EXPECT_EQ( "cat%20dog%21hat%2Bcap.ext", uri( "cat dog!hat+cap.ext" ) );
+	EXPECT_EQ( "cat dog!hat+cap.ext", un_uri( "cat%20dog%21hat%2Bcap.ext" ) );
+}

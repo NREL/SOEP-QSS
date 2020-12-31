@@ -93,17 +93,6 @@ has_any_not_of( std::string const & s, std::string const & t )
 	return false;
 }
 
-// Has any Character not in a String Case-Insensitively?
-bool
-HAS_ANY_NOT_OF( std::string const & s, std::string const & t ) // Pass lowercase t
-{
-	assert( t == lowercased( t ) );
-	for ( char const a : s ) {
-		if ( t.find( static_cast< char >( std::tolower( a ) ) ) == std::string::npos ) return true;
-	}
-	return false;
-}
-
 // Has a Prefix?
 bool
 has_prefix( std::string const & s, std::string const & pre )

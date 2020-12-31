@@ -116,14 +116,26 @@ quad( T const x )
 	return square( x * x );
 }
 
+// Infinity
+template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
+inline
+T
+infinityish()
+{
+	return std::numeric_limits< T >::has_infinity ? std::numeric_limits< T >::infinity() : std::numeric_limits< T >::max();
+}
+
 // Value if Positive or Infinity
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
 positive_or_infinity( T const r )
 {
-	return ( r > 0.0 ? r : infinity );
+	return ( r > 0.0 ? r : infinityish< T >() );
 }
+
+// Use std::min for 2 arguments
+using std::min;
 
 // Min of 3 Values
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
@@ -137,11 +149,14 @@ min( T const x, T const y, T const z )
 // Min of 4+ Values
 template< typename T, typename... Ts, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
-T const &
-min( T const & a, T const & b, T const & c, T const & d, Ts const &... o )
+T
+min( T const a, T const b, T const c, T const d, Ts const... o )
 {
 	return min( a < b ? a : b, c < d ? c : d, o... );
 }
+
+// Use std::max for 2 arguments
+using std::max;
 
 // Max of 3 Values
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
@@ -155,8 +170,8 @@ max( T const x, T const y, T const z )
 // Max of 4+ Values
 template< typename T, typename... Ts, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
-T const &
-max( T const & a, T const & b, T const & c, T const & d, Ts const &... o )
+T
+max( T const a, T const b, T const c, T const & d, Ts const... o )
 {
 	return max( a < b ? b : a, c < d ? d : c, o... );
 }
@@ -176,7 +191,7 @@ inline
 T
 min_positive_or_infinity( T const x, T const y )
 {
-	return ( x > 0.0 ? ( y > 0.0 ? std::min( x, y ) : x ) : ( y > 0.0 ? y : infinity ) );
+	return ( x > 0.0 ? ( y > 0.0 ? std::min( x, y ) : x ) : ( y > 0.0 ? y : infinityish< T >() ) );
 }
 
 // Min Positive of 3 Values or Infinity
@@ -187,7 +202,7 @@ min_positive_or_infinity( T const x, T const y, T const z )
 {
 	return ( x > 0.0 ?
 	 ( y > 0.0 ? ( z > 0.0 ? min( x, y, z ) : std::min( x, y ) ) : ( z > 0.0 ? std::min( x, z ) : x ) ) : // x > 0
-	 ( y > 0.0 ? ( z > 0.0 ? std::min( y, z ) : y ) : ( z > 0.0 ? z : infinity ) ) ); // x < 0
+	 ( y > 0.0 ? ( z > 0.0 ? std::min( y, z ) : y ) : ( z > 0.0 ? z : infinityish< T >() ) ) ); // x < 0
 }
 
 // Min Nonnegative Root of Quadratic Equation a x^2 + b x + c
@@ -198,24 +213,24 @@ min_root_quadratic( T const a, T const b, T const c )
 {
 	if ( a == 0.0 ) { // Linear
 		if ( b == 0.0 ) { // Constant
-			return ( c == 0.0 ? 0.0 : infinity );
+			return ( c == 0.0 ? 0.0 : infinityish< T >() );
 		} else if ( c == 0.0 ) {
 			return 0.0;
 		} else {
-			return ( sign( b ) != sign( c ) ? -( c / b ) : infinity );
+			return ( sign( b ) != sign( c ) ? -( c / b ) : infinityish< T >() );
 		}
 	} else { // Quadratic
 		if ( c == 0.0 ) {
 			return 0.0;
 		} else if ( b == 0.0 ) {
-			return ( sign( a ) != sign( c ) ? std::sqrt( -( c / a ) ) : infinity );
+			return ( sign( a ) != sign( c ) ? std::sqrt( -( c / a ) ) : infinityish< T >() );
 		} else {
 			T const disc( ( b * b ) - ( 4.0 * a * c ) );
 			if ( disc <= 0.0 ) { // Zero or one real root(s)
 				if ( disc == 0.0 ) {
-					return ( sign( a ) != sign( b ) ? -( b / ( 2.0 * a ) ) : infinity );
+					return ( sign( a ) != sign( b ) ? -( b / ( 2.0 * a ) ) : infinityish< T >() );
 				} else {
-					return infinity;
+					return infinityish< T >();
 				}
 			} else { // Two real roots: From http://mathworld.wolfram.com/QuadraticEquation.html for precision
 				T const q( -0.5 * ( b + ( sign( b ) * std::sqrt( disc ) ) ) );
@@ -246,30 +261,30 @@ min_positive_root_quadratic( T const a, T const b, T const c )
 {
 	if ( a == 0.0 ) { // Linear
 		if ( b == 0.0 ) { // Constant
-			return infinity; // Not a distinct root even if c == 0
+			return infinityish< T >(); // Not a distinct root even if c == 0
 		} else if ( c == 0.0 ) {
-			return infinity;
+			return infinityish< T >();
 		} else {
-			return ( sign( b ) != sign( c ) ? -( c / b ) : infinity );
+			return ( sign( b ) != sign( c ) ? -( c / b ) : infinityish< T >() );
 		}
 	} else { // Quadratic
 		if ( c == 0.0 ) { // Roots at 0 and -b/a
 			if ( a == 0.0 ) {
-				return infinity;
+				return infinityish< T >();
 			} else if ( b == 0.0 ) { // No positive root
-				return infinity;
+				return infinityish< T >();
 			} else {
-				return ( sign( a ) != sign( b ) ? -( b / a ) : infinity );
+				return ( sign( a ) != sign( b ) ? -( b / a ) : infinityish< T >() );
 			}
 		} else if ( b == 0.0 ) {
-			return ( sign( a ) != sign( c ) ? std::sqrt( -( c / a ) ) : infinity );
+			return ( sign( a ) != sign( c ) ? std::sqrt( -( c / a ) ) : infinityish< T >() );
 		} else {
 			T const disc( ( b * b ) - ( 4.0 * a * c ) );
 			if ( disc <= 0.0 ) { // Zero or one real root(s)
 				if ( disc == 0.0 ) {
-					return ( sign( a ) != sign( b ) ? -( b / ( 2.0 * a ) ) : infinity );
+					return ( sign( a ) != sign( b ) ? -( b / ( 2.0 * a ) ) : infinityish< T >() );
 				} else {
-					return infinity;
+					return infinityish< T >();
 				}
 			} else { // Two real roots: From http://mathworld.wolfram.com/QuadraticEquation.html for precision
 				T const q( -0.5 * ( b + ( sign( b ) * std::sqrt( disc ) ) ) );
@@ -288,7 +303,7 @@ min_positive_root_quadratic( T const a, T const b, T const c )
 						r = c / q;
 					}
 				}
-				return ( r > 0.0 ? r : infinity );
+				return ( r > 0.0 ? r : infinityish< T >() );
 			}
 		}
 	}
@@ -307,7 +322,7 @@ min_root_quadratic_lower( T const a, T const b, T const c )
 		return 0.0;
 	} else if ( a == 0.0 ) { // Linear
 		if ( b == 0.0 ) { // Constant
-			return infinity;
+			return infinityish< T >();
 		} else {
 			return -( c / b );
 		}
@@ -339,7 +354,7 @@ min_root_quadratic_upper( T const a, T const b, T const c )
 		return 0.0;
 	} else if ( a == 0.0 ) { // Linear
 		if ( b == 0.0 ) { // Constant
-			return infinity;
+			return infinityish< T >();
 		} else {
 			return -( c / b );
 		}
@@ -370,7 +385,7 @@ min_root_quadratic_both( T const a, T const b, T const cl, T const cu )
 		return 0.0;
 	} else if ( a == 0.0 ) { // Linear
 		if ( b == 0.0 ) { // Constant
-			return infinity;
+			return infinityish< T >();
 		} else if ( b <= 0.0 ) {
 			return -( cl / b );
 		} else {
@@ -384,10 +399,10 @@ min_root_quadratic_both( T const a, T const b, T const cl, T const cu )
 		T const discl( bb - ( a4 * cl ) );
 		T rootl;
 		if ( discl < 0.0 ) { // No real roots
-			rootl = infinity;
+			rootl = infinityish< T >();
 		} else if ( discl == 0.0 ) { // One real root
 			rootl = -b / ( 2.0 * a );
-			if ( rootl < 0.0 ) rootl = infinity;
+			if ( rootl < 0.0 ) rootl = infinityish< T >();
 		} else { // Two real roots: From http://mathworld.wolfram.com/QuadraticEquation.html for precision
 			T const q( -0.5 * ( b + ( sign( b ) * std::sqrt( discl ) ) ) );
 			if ( b + ( 2.0 * q ) <= 0.0 ) { // Crossing direction test
@@ -401,10 +416,10 @@ min_root_quadratic_both( T const a, T const b, T const cl, T const cu )
 		T const discu( bb - ( a4 * cu ) );
 		T rootu;
 		if ( discu < 0.0 ) { // No real roots
-			rootu = infinity;
+			rootu = infinityish< T >();
 		} else if ( discu == 0.0 ) { // One real root
 			rootu = -b / ( 2.0 * a );
-			if ( rootu < 0.0 ) rootu = infinity;
+			if ( rootu < 0.0 ) rootu = infinityish< T >();
 		} else { // Two real roots: From http://mathworld.wolfram.com/QuadraticEquation.html for precision
 			T const q( -0.5 * ( b + ( sign( b ) * std::sqrt( discu ) ) ) );
 			if ( b + ( 2.0 * q ) >= 0.0 ) { // Crossing direction test
@@ -414,7 +429,7 @@ min_root_quadratic_both( T const a, T const b, T const cl, T const cu )
 			}
 		}
 
-		if ( ( rootl == infinity ) && ( rootu == infinity ) ) { // Precision loss
+		if ( ( rootl == infinityish< T >() ) && ( rootu == infinityish< T >() ) ) { // Precision loss
 			return 0.0;
 		} else {
 			return min_nonnegative_or_zero( rootl, rootu );
@@ -429,9 +444,9 @@ T
 peak_mag_quadratic( T const a, T const b, T const c )
 {
 	if ( a == 0.0 ) { // Linear
-		return ( b == 0.0 ? c : infinity );
+		return ( b == 0.0 ? c : infinityish< T >() );
 	} else {
-		return std::abs( c - ( b * b ) / ( T( 4 ) * a ) );
+		return std::abs( c - ( ( b * b ) / ( T( 4 ) * a ) ) );
 	}
 }
 
@@ -450,7 +465,7 @@ inline
 T
 cubic_cull_lower( T const a, T const b, T const r, T const s )
 {
-	return ( r > 0.0 ? ( ( ( 3.0 * r * r ) + ( 2.0 * a * r ) + b ) * s <= 0.0 ? r : 0.0 ) : 0.0 );
+	return ( r > 0.0 ? ( ( ( 3.0 * r * r ) + ( ( 2.0 * a * r ) + b ) * s ) <= 0.0 ? r : 0.0 ) : 0.0 );
 }
 
 // Root of a Cubic if it Crosses Upward or Zero
@@ -459,7 +474,7 @@ inline
 T
 cubic_cull_upper( T const a, T const b, T const r, T const s )
 {
-	return ( r > 0.0 ? ( ( ( 3.0 * r * r ) + ( 2.0 * a * r ) + b ) * s >= 0.0 ? r : 0.0 ) : 0.0 );
+	return ( r > 0.0 ? ( ( ( 3.0 * r * r ) + ( ( 2.0 * a * r ) + b ) * s ) >= 0.0 ? r : 0.0 ) : 0.0 );
 }
 
 // Min Positive Root of Cubic Equation a x^3 + b x^2 + c x + d
@@ -483,7 +498,7 @@ min_positive_root_cubic( T a, T b, T c, T const d )
 		T const q( a2 - ( 3.0 * b ) );
 		T const r( ( ( ( 2.0 * a2 ) - ( 9.0 * b ) ) * a ) + ( 27.0 * c ) );
 		if ( ( q == 0.0 ) && ( r == 0.0 ) ) {
-			return ( a_3 < 0.0 ? -a_3 : infinity );
+			return ( a_3 < 0.0 ? -a_3 : infinityish< T >() );
 		} else {
 			T const q3( q * q * q );
 			T const CR2( 729.0 * r * r );
@@ -524,21 +539,21 @@ min_positive_root_cubic( T a, T b, T c, T const d )
 	}
 }
 
-// Min Nonnegative Root of Upper Boundary Cubic Equation a x^3 + b x^2 + c x + d
+// Min Nonnegative Root of Lower Boundary Cubic Equation a x^3 + b x^2 + c x + d
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
-min_root_cubic_upper( T a, T b, T c, T const d )
+min_root_cubic_lower( T a, T b, T c, T const d )
 {
-	assert( a >= 0.0 );
-	assert( b >= 0.0 );
-	assert( c >= 0.0 );
-	// d < 0 with exact precision
+	assert( a <= 0.0 );
+	assert( b <= 0.0 );
+	assert( c <= 0.0 );
+	// d > 0 with exact precision
 	static T const one_54( 1.0 / 54.0 );
 	static T const one_1458( 1.0 / 1458.0 );
 	static T const two_thirds_pi( ( 2.0 / 3.0 ) * pi );
 	if ( a == 0.0 ) { // Quadratic
-		return min_root_quadratic_upper( b, c, d );
+		return min_root_quadratic_lower( b, c, d );
 	} else { // Cubic
 		T const inv_a( 1.0 / a ); // Normalize to x^3 + a x^2 + b x + c
 		a = b * inv_a;
@@ -590,21 +605,21 @@ min_root_cubic_upper( T a, T b, T c, T const d )
 	}
 }
 
-// Min Nonnegative Root of Lower Boundary Cubic Equation a x^3 + b x^2 + c x + d
+// Min Nonnegative Root of Upper Boundary Cubic Equation a x^3 + b x^2 + c x + d
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
-min_root_cubic_lower( T a, T b, T c, T const d )
+min_root_cubic_upper( T a, T b, T c, T const d )
 {
-	assert( a <= 0.0 );
-	assert( b <= 0.0 );
-	assert( c <= 0.0 );
-	// d > 0 with exact precision
+	assert( a >= 0.0 );
+	assert( b >= 0.0 );
+	assert( c >= 0.0 );
+	// d < 0 with exact precision
 	static T const one_54( 1.0 / 54.0 );
 	static T const one_1458( 1.0 / 1458.0 );
 	static T const two_thirds_pi( ( 2.0 / 3.0 ) * pi );
 	if ( a == 0.0 ) { // Quadratic
-		return min_root_quadratic_lower( b, c, d );
+		return min_root_quadratic_upper( b, c, d );
 	} else { // Cubic
 		T const inv_a( 1.0 / a ); // Normalize to x^3 + a x^2 + b x + c
 		a = b * inv_a;

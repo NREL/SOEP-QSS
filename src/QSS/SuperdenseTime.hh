@@ -159,7 +159,7 @@ public: // Comparison: SuperdenseTime [?] SuperdenseTime
 	bool
 	operator <=( SuperdenseTime const & s1, SuperdenseTime const & s2 )
 	{
-		return ( s1.t < s2.t ) || ( ( s1.t == s2.t ) && ( ( s1.i <= s2.i ) || ( ( s1.i == s2.i ) && ( s1.o <= s2.o ) ) ) );
+		return ( s1.t < s2.t ) || ( ( s1.t == s2.t ) && ( ( s1.i < s2.i ) || ( ( s1.i == s2.i ) && ( s1.o <= s2.o ) ) ) );
 	}
 
 	// SuperdenseTime >= SuperdenseTime
@@ -167,7 +167,7 @@ public: // Comparison: SuperdenseTime [?] SuperdenseTime
 	bool
 	operator >=( SuperdenseTime const & s1, SuperdenseTime const & s2 )
 	{
-		return ( s1.t > s2.t ) || ( ( s1.t == s2.t ) && ( ( s1.i >= s2.i ) || ( ( s1.i == s2.i ) && ( s1.o >= s2.o ) ) ) );
+		return ( s1.t > s2.t ) || ( ( s1.t == s2.t ) && ( ( s1.i > s2.i ) || ( ( s1.i == s2.i ) && ( s1.o >= s2.o ) ) ) );
 	}
 
 	// SuperdenseTime > SuperdenseTime

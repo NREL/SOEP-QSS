@@ -55,6 +55,7 @@ public: // Types
 
 	using Spec = std::regex;
 	using Deps = std::vector< Spec >;
+	using size_type = Deps::size_type;
 
 	struct Dependency final
 	{
@@ -75,6 +76,27 @@ public: // Types
 		 spec( var_regex ),
 		 deps( dep_regexs )
 		{}
+
+		// Empty?
+		bool
+		empty() const
+		{
+			return deps.empty();
+		}
+
+		// Any?
+		bool
+		any() const
+		{
+			return ( ! deps.empty() );
+		}
+
+		// Size
+		size_type
+		size() const
+		{
+			return deps.size();
+		}
 
 		Spec spec; // Variable
 		Deps deps; // Dependencies
@@ -120,7 +142,7 @@ public: // Predicate
 	{
 		if ( all_ ) return true;
 		for ( Dependency const & dependency : dependencies_ ) {
-			if ( std::regex_match( var_name, dependency.spec ) ) return true;
+			if ( std::regex_match( regex_string( var_name ), dependency.spec ) ) return true;
 		}
 		return false;
 	}
@@ -131,9 +153,9 @@ public: // Predicate
 	{
 		if ( all_ ) return true;
 		for ( Dependency const & dependency : dependencies_ ) {
-			if ( std::regex_match( var_name, dependency.spec ) ) {
+			if ( std::regex_match( regex_string( var_name ), dependency.spec ) ) {
 				for ( Spec const & spec : dependency.deps ) {
-					if ( std::regex_match( dep_name, spec ) ) return true;
+					if ( std::regex_match( regex_string( dep_name ), spec ) ) return true;
 				}
 			}
 		}
@@ -141,6 +163,13 @@ public: // Predicate
 	}
 
 public: // Property
+
+	// Size
+	size_type
+	size() const
+	{
+		return dependencies_.size();
+	}
 
 	// Dependencies
 	Dependencies const &
@@ -158,10 +187,10 @@ public: // Property
 
 public: // Static Methods
 
-	// Regex of a Variable Spec
+	// Regex String of a Variable Spec
 	static
-	std::regex
-	regex( std::string spec )
+	std::string
+	regex_string( std::string spec )
 	{
 		// Convert glob usage to regex (imperfect)
 		std::string re_spec;
@@ -180,8 +209,15 @@ public: // Static Methods
 				re_spec.push_back( c );
 			}
 		}
+		return re_spec;
+	}
 
-		return std::regex( re_spec ); // Can throw exception if resulting string is not a valid regex
+	// Regex of a Variable Spec
+	static
+	std::regex
+	regex( std::string spec )
+	{
+		return std::regex( regex_string( spec ) ); // Can throw exception if resulting string is not a valid regex
 	}
 
 private: // Data

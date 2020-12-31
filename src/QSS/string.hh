@@ -99,10 +99,6 @@ HAS( std::string const & s, char const c );
 bool
 has_any_not_of( std::string const & s, std::string const & t );
 
-// Has any Character not in a String Case-Insensitively?
-bool
-HAS_ANY_NOT_OF( std::string const & s, std::string const & t ); // Pass lowercase t
-
 // Has a Prefix Case-Optionally?
 bool
 has_prefix( std::string const & s, std::string const & pre );
@@ -155,15 +151,6 @@ double_of( std::string const & s )
 std::string
 lowercased( std::string const & s );
 
-// Argument Value
-inline
-std::string
-arg_value( std::string const & arg )
-{
-	std::string::size_type const i( arg.find_first_of( "=:" ) );
-	return ( i != std::string::npos ? arg.substr( i + 1 ) : std::string() );
-}
-
 // Uppercased Copy
 std::string
 uppercased( std::string const & s );
@@ -175,6 +162,15 @@ split( std::string const & str, char del = ' ' );
 // Strip Whitespace from a string's Tails
 std::string &
 strip( std::string & s );
+
+// Argument Value
+inline
+std::string
+arg_value( std::string const & arg )
+{
+	std::string::size_type const i( arg.find_first_of( "=:" ) );
+	return ( i != std::string::npos ? arg.substr( i + 1 ) : std::string() );
+}
 
 } // QSS
 

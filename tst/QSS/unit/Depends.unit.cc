@@ -1,4 +1,4 @@
-// Index Range Class
+// QSS::Depends Unit Tests
 //
 // Project: QSS Solver
 //
@@ -33,145 +33,44 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_Range_hh_INCLUDED
-#define QSS_Range_hh_INCLUDED
+// Google Test Headers
+#include <gtest/gtest.h>
 
-// C++ Headers
-#include <cstddef>
-#include <limits>
-#include <utility>
+// QSS Headers
+#include <QSS/Depends.hh>
 
-namespace QSS {
+using namespace QSS;
 
-// Index Range
-class Range final
+TEST( DependsTest, Basic )
 {
+	Depends depends;
 
-public: // Types
+	EXPECT_TRUE( depends.empty() );
+	EXPECT_FALSE( depends.any() );
+	EXPECT_FALSE( depends.all() );
+	EXPECT_FALSE( depends.has( "var" ) );
+	EXPECT_FALSE( depends.has( "var", "dep" ) );
+	EXPECT_EQ( 0u, depends.size() );
 
-	using size_type = std::size_t;
+	depends.add( Depends::regex( "vol*.T" ), { Depends::regex( "wall*.T" ), Depends::regex( "floor.T" ), Depends::regex( "ceil.T" ) } );
 
-public: // Creation
+	EXPECT_FALSE( depends.empty() );
+	EXPECT_TRUE( depends.any() );
+	EXPECT_FALSE( depends.all() );
+	EXPECT_TRUE( depends.has( "vol[1].T" ) );
+	EXPECT_FALSE( depends.has( "Avol.T" ) );
+	EXPECT_TRUE( depends.has( "vol[1].T", "wallSouth.T" ) );
+	EXPECT_FALSE( depends.has( "vol[1].T", "WellSouth.T" ) );
+	EXPECT_EQ( 1u, depends.size() );
 
-	// Default Constructor
-	Range() = default;
+	depends.add( Depends::regex( "mass*.U" ), { Depends::regex( "window*.U" ), Depends::regex( "door*.U" ) } );
 
-	// Indexes Constructor
-	Range( size_type const b, size_type const e ) :
-	 b_( b ),
-	 e_( e )
-	{}
-
-public: // Predicate
-
-	// Empty?
-	bool
-	empty() const
-	{
-		return ( b_ >= e_ );
-	}
-
-	// Have?
-	bool
-	have() const
-	{
-		return ( b_ < e_ );
-	}
-
-	// Began?
-	bool
-	began() const
-	{
-		return ( b_ < std::numeric_limits< size_type >::max() );
-	}
-
-public: // Property
-
-	// Size
-	size_type
-	size() const
-	{
-		return ( b_ < e_ ? e_ - b_ : 0u );
-	}
-
-	// Begin Index
-	size_type
-	b() const
-	{
-		return b_;
-	}
-
-	// Begin Index
-	size_type &
-	b()
-	{
-		return b_;
-	}
-
-	// End Index
-	size_type
-	e() const
-	{
-		return e_;
-	}
-
-	// End Index
-	size_type &
-	e()
-	{
-		return e_;
-	}
-
-	// Size
-	size_type
-	n() const
-	{
-		return ( b_ < e_ ? e_ - b_ : 0u );
-	}
-
-public: // Methods
-
-	// Assign
-	void
-	assign( size_type const b, size_type const e )
-	{
-		b_ = b;
-		e_ = e;
-	}
-
-	// Reset
-	void
-	reset()
-	{
-		b_ = std::numeric_limits< size_type >::max();
-		e_ = 0u;
-	}
-
-	// Swap
-	void
-	swap( Range & r )
-	{
-		std::swap( b_, r.b_ );
-		std::swap( e_, r.e_ );
-	}
-
-public: // Friend Functions
-
-	// Swap
-	friend
-	void
-	swap( Range & r1, Range & r2 )
-	{
-		r1.swap( r2 );
-	}
-
-private: // Data
-
-	size_type b_{ std::numeric_limits< size_type >::max() }; // Begin index
-	size_type e_{ 0u }; // End index (1 beyond last item)
-
-}; // Range
-
-} // QSS
-
-#endif
+	EXPECT_FALSE( depends.empty() );
+	EXPECT_TRUE( depends.any() );
+	EXPECT_FALSE( depends.all() );
+	EXPECT_TRUE( depends.has( "mass[3].U" ) );
+	EXPECT_FALSE( depends.has( "moss.U" ) );
+	EXPECT_TRUE( depends.has( "mass[3].U", "door_4.U" ) );
+	EXPECT_FALSE( depends.has( "mass[3].U", "skylight[55].U" ) );
+	EXPECT_EQ( 2u, depends.size() );
+}

@@ -1,4 +1,4 @@
-// Index Range Class
+// QSS::OutputFilter Unit Tests
 //
 // Project: QSS Solver
 //
@@ -33,145 +33,31 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_Range_hh_INCLUDED
-#define QSS_Range_hh_INCLUDED
+// Google Test Headers
+#include <gtest/gtest.h>
 
-// C++ Headers
-#include <cstddef>
-#include <limits>
-#include <utility>
+// QSS Headers
+#include <QSS/OutputFilter.hh>
 
-namespace QSS {
+using namespace QSS;
 
-// Index Range
-class Range final
+TEST( OutputFilterTest, Default )
 {
+	OutputFilter filter;
 
-public: // Types
+	EXPECT_TRUE( filter( "var" ) );
+	EXPECT_FALSE( filter( "time" ) );
+	EXPECT_FALSE( filter( "temp_32" ) );
+}
 
-	using size_type = std::size_t;
+TEST( OutputFilterTest, Strings )
+{
+	OutputFilter filter( { "mass*", "temperature*", "vol*" } );
 
-public: // Creation
-
-	// Default Constructor
-	Range() = default;
-
-	// Indexes Constructor
-	Range( size_type const b, size_type const e ) :
-	 b_( b ),
-	 e_( e )
-	{}
-
-public: // Predicate
-
-	// Empty?
-	bool
-	empty() const
-	{
-		return ( b_ >= e_ );
-	}
-
-	// Have?
-	bool
-	have() const
-	{
-		return ( b_ < e_ );
-	}
-
-	// Began?
-	bool
-	began() const
-	{
-		return ( b_ < std::numeric_limits< size_type >::max() );
-	}
-
-public: // Property
-
-	// Size
-	size_type
-	size() const
-	{
-		return ( b_ < e_ ? e_ - b_ : 0u );
-	}
-
-	// Begin Index
-	size_type
-	b() const
-	{
-		return b_;
-	}
-
-	// Begin Index
-	size_type &
-	b()
-	{
-		return b_;
-	}
-
-	// End Index
-	size_type
-	e() const
-	{
-		return e_;
-	}
-
-	// End Index
-	size_type &
-	e()
-	{
-		return e_;
-	}
-
-	// Size
-	size_type
-	n() const
-	{
-		return ( b_ < e_ ? e_ - b_ : 0u );
-	}
-
-public: // Methods
-
-	// Assign
-	void
-	assign( size_type const b, size_type const e )
-	{
-		b_ = b;
-		e_ = e;
-	}
-
-	// Reset
-	void
-	reset()
-	{
-		b_ = std::numeric_limits< size_type >::max();
-		e_ = 0u;
-	}
-
-	// Swap
-	void
-	swap( Range & r )
-	{
-		std::swap( b_, r.b_ );
-		std::swap( e_, r.e_ );
-	}
-
-public: // Friend Functions
-
-	// Swap
-	friend
-	void
-	swap( Range & r1, Range & r2 )
-	{
-		r1.swap( r2 );
-	}
-
-private: // Data
-
-	size_type b_{ std::numeric_limits< size_type >::max() }; // Begin index
-	size_type e_{ 0u }; // End index (1 beyond last item)
-
-}; // Range
-
-} // QSS
-
-#endif
+	EXPECT_TRUE( filter( "mass_duct_3" ) );
+	EXPECT_TRUE( filter( "temperature_south_wall" ) );
+	EXPECT_TRUE( filter( "vol[53].U" ) );
+	EXPECT_FALSE( filter( "var" ) );
+	EXPECT_FALSE( filter( "time" ) );
+	EXPECT_FALSE( filter( "temp_32" ) );
+}

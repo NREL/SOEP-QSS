@@ -62,6 +62,21 @@ public: // Creation
 	// Default Constructor
 	OutputFilter() = default;
 
+	// Strings Constructor
+	OutputFilter( std::vector< std::string > const & var_specs )
+	{
+		for ( std::string var_spec : var_specs ) {
+			if ( ! strip( var_spec ).empty() ) { // Add to filter
+				try {
+					filters_.push_back( std::regex( regex_string( var_spec ) ) );
+				} catch (...) {
+					std::cerr << "\nError: Skipping output filter spec that yields invalid regex: " << var_spec << std::endl;
+				}
+
+			}
+		}
+	}
+
 	// File Name Constructor
 	OutputFilter( std::string const & var_file )
 	{
@@ -69,31 +84,11 @@ public: // Creation
 		if ( var_stream.is_open() ) {
 			std::string line;
 			while ( std::getline( var_stream, line ) ) {
-				if ( ( ! strip( line ).empty() ) && ( line[ 0 ] != '#' ) ) {
-
-					// Convert line from glob to regex
-					std::string reg_line;
-					for ( char const c : line ) {
-						if ( c == '?' ) {
-							reg_line.push_back( '.' );
-						} else if ( c == '*' ) {
-							reg_line.append( ".*" );
-						} else if ( c == '.' ) {
-							reg_line.append( "\\." );
-						} else if ( c == '[' ) {
-							reg_line.append( "\\[" );
-						} else if ( c == ']' ) {
-							reg_line.append( "\\]" );
-						} else {
-							reg_line.push_back( c );
-						}
-					}
-
-					// Add to filter
+				if ( ( ! strip( line ).empty() ) && ( line[ 0 ] != '#' ) ) { // Add to filter
 					try {
-						filters_.push_back( std::regex( reg_line ) );
+						filters_.push_back( std::regex( regex_string( line ) ) );
 					} catch (...) {
-						std::cerr << "\nError: Skipping --var filter line that yields invalid regex string: " << reg_line << std::endl;
+						std::cerr << "\nError: Skipping --var filter line that yields invalid regex: " << line << std::endl;
 					}
 
 				}
@@ -142,6 +137,41 @@ public: // Predicate
 			if ( std::regex_match( var_name, filter ) ) return true;
 		}
 		return false;
+	}
+
+public: // Static Methods
+
+	// Regex String of a Variable Spec
+	static
+	std::string
+	regex_string( std::string spec )
+	{
+		// Convert glob usage to regex (imperfect)
+		std::string re_spec;
+		for ( char const c : spec ) {
+			if ( c == '?' ) {
+				re_spec.push_back( '.' );
+			} else if ( c == '*' ) {
+				re_spec.append( ".*" );
+			} else if ( c == '.' ) {
+				re_spec.append( "\\." );
+			} else if ( c == '[' ) {
+				re_spec.append( "\\[" );
+			} else if ( c == ']' ) {
+				re_spec.append( "\\]" );
+			} else {
+				re_spec.push_back( c );
+			}
+		}
+		return re_spec;
+	}
+
+	// Regex of a Variable Spec
+	static
+	std::regex
+	regex( std::string spec )
+	{
+		return std::regex( regex_string( spec ) ); // Can throw exception if resulting string is not a valid regex
 	}
 
 private: // Data
