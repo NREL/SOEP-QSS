@@ -43,6 +43,7 @@
 #include <QSS/options.hh>
 #include <QSS/Range.hh>
 #include <QSS/RefsVals.hh>
+#include <QSS/RefsValsEI.hh>
 #include <QSS/SuperdenseTime.hh>
 
 // OpenMP Headers
@@ -166,23 +167,23 @@ public: // Methods
 		set_specs();
 
 		// FMU pooled data set up
-		qss_vars_.clear(); qss_vars_.reserve( qss_.n() );
-		for ( Variable * trigger : triggers_ ) {
-			assert( trigger->is_ZC() );
-			qss_vars_.push_back( trigger->var().ref );
-		}
 		if ( zc_type_ == ZC_Type::EventIndicator ) { // Event indicators
-			qss_ders_.clear(); qss_ders_.reserve( qss_.n() );
+			ei_vars_.clear(); ei_vars_.reserve( qss_.n() );
 			for ( Variable * trigger : triggers_ ) {
-				assert( ! trigger->is_ZCe() );
-				qss_ders_.push_back( trigger->var().ref ); // Will hold value at +tN ND offset
+				assert( trigger->is_ZC() && ( ! trigger->is_ZCe() ) );
+				ei_vars_.push_back( trigger->var().ref );
 			}
 		} else { // Explicit zero-crossing variables
 			assert( zc_type_ == ZC_Type::Explicit );
-			qss_ders_.clear(); qss_ders_.reserve( qss_.n() );
+			zc_vars_.clear(); zc_vars_.reserve( qss_.n() );
+			for ( Variable * trigger : triggers_ ) {
+				assert( trigger->is_ZC() );
+				zc_vars_.push_back( trigger->var().ref );
+			}
+			zc_ders_.clear(); zc_ders_.reserve( qss_.n() );
 			for ( Variable * trigger : triggers_ ) {
 				assert( trigger->is_ZCe() );
-				qss_ders_.push_back( trigger->der().ref );
+				zc_ders_.push_back( trigger->der().ref );
 			}
 		}
 
@@ -227,30 +228,30 @@ public: // Methods
 		for ( Variable * observee : qss_observees_ ) {
 			observee->fmu_set_x( t );
 		}
-		fmu_me_->get_reals( qss_.n(), &qss_vars_.refs[ 0 ], &qss_vars_.vals[ 0 ] );
-		for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
-			Variable * trigger( triggers_[ i ] );
-			assert( trigger->is_ZC() ); // QSS triggers
-			assert( trigger->tE >= t ); // Bin variables tE can be > t
-			trigger->tE = t; // Bin variables tE can be > t
-			trigger->st = s; // Set trigger superdense time
-			trigger->advance_QSS_0( qss_vars_.vals[ i ] );
-		}
 		if ( zc_type_ == ZC_Type::EventIndicator ) { // Event indicators
+			fmu_me_->get_reals( qss_.n(), &ei_vars_.refs[ 0 ], &ei_vars_.vals[ 0 ] );
+			for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
+				Variable * trigger( triggers_[ i ] );
+				assert( trigger->is_ZC() && ( ! trigger->is_ZCe() ) ); // Event indicator trigger
+				assert( trigger->tE >= t ); // Bin variables tE can be > t
+				trigger->tE = t; // Bin variables tE can be > t
+				trigger->st = s; // Set trigger superdense time
+				trigger->advance_QSS_0( ei_vars_.vals[ i ] );
+			}
 			Time tN( t - options::dtND );
 			fmu_me_->set_time( tN );
 			for ( Variable * observee : qss_observees_ ) {
 				observee->fmu_set_x( tN );
 			}
-			fmu_me_->get_reals( qss_.n(), &qss_vars_.refs[ 0 ], &qss_vars_.vals[ 0 ] ); // -tN values
+			fmu_me_->get_reals( qss_.n(), &ei_vars_.refs[ 0 ], &ei_vars_.vals_m[ 0 ] );
 			tN = t + options::dtND;
 			fmu_me_->set_time( tN );
 			for ( Variable * observee : qss_observees_ ) {
 				observee->fmu_set_x( tN );
 			}
-			fmu_me_->get_reals( qss_.n(), &qss_ders_.refs[ 0 ], &qss_ders_.vals[ 0 ] ); // +tN values
+			fmu_me_->get_reals( qss_.n(), &ei_vars_.refs[ 0 ], &ei_vars_.vals_p[ 0 ] );
 			for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
-				triggers_[ i ]->advance_QSS_1( qss_vars_.vals[ i ], qss_ders_.vals[ i ] );
+				triggers_[ i ]->advance_QSS_1( ei_vars_.vals_m[ i ], ei_vars_.vals_p[ i ] );
 			}
 			if ( qss2_.have() ) {
 				for ( size_type i = qss2_.b(), e = qss_.e(); i < e; ++i ) { // Order 2+ triggers
@@ -263,16 +264,25 @@ public: // Methods
 						observee->fmu_set_x( tN );
 					}
 					size_type const qss3_b( qss3_.b() );
-					fmu_me_->get_reals( qss3_.n(), &qss_vars_.refs[ qss3_b ], &qss_vars_.vals[ qss3_b ] );
+					fmu_me_->get_reals( qss3_.n(), &ei_vars_.refs[ qss3_b ], &ei_vars_.vals_p[ qss3_b ] );
 					for ( size_type i = qss3_b, e = qss_.e(); i < e; ++i ) { // Order 3+ triggers
-						triggers_[ i ]->advance_QSS_3( qss_vars_.vals[ i ] );
+						triggers_[ i ]->advance_QSS_3( ei_vars_.vals_p[ i ] );
 					}
 				}
 			}
 			fmu_me_->set_time( t );
 		} else { // Explicit zero-crossing variables
 			assert( zc_type_ == ZC_Type::Explicit );
-			fmu_me_->get_reals( qss_.n(), &qss_ders_.refs[ 0 ], &qss_ders_.vals[ 0 ] );
+			fmu_me_->get_reals( qss_.n(), &zc_vars_.refs[ 0 ], &zc_vars_.vals[ 0 ] );
+			for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
+				Variable * trigger( triggers_[ i ] );
+				assert( trigger->is_ZCe() ); // Explicit zero-crossing trigger
+				assert( trigger->tE >= t ); // Bin variables tE can be > t
+				trigger->tE = t; // Bin variables tE can be > t
+				trigger->st = s; // Set trigger superdense time
+				trigger->advance_QSS_0( zc_vars_.vals[ i ] );
+			}
+			fmu_me_->get_reals( qss_.n(), &zc_ders_.refs[ 0 ], &zc_ders_.vals[ 0 ] );
 #ifdef _OPENMP
 			size_type const max_threads( static_cast< size_type >( omp_get_max_threads() ) );
 			if ( ( max_threads > 1u ) && ( qss_.n() >= max_threads * 128u ) ) {
@@ -283,13 +293,13 @@ public: // Methods
 				#pragma omp parallel for schedule(static)
 				for ( std::int64_t i = qss_b; i < qss_e; i += qss_chunk_size ) {
 					for ( std::int64_t k = i, ke = std::min( i + qss_chunk_size, qss_e ); k < ke; ++k ) { // Chunk
-						triggers_[ k ]->advance_QSS_1( qss_ders_.vals[ k ] );
+						triggers_[ k ]->advance_QSS_1( zc_ders_.vals[ k ] );
 					}
 				}
 			} else {
 #endif
 			for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
-				triggers_[ i ]->advance_QSS_1( qss_ders_.vals[ i ] );
+				triggers_[ i ]->advance_QSS_1( zc_ders_.vals[ i ] );
 			}
 #ifdef _OPENMP
 			}
@@ -301,9 +311,9 @@ public: // Methods
 					observee->fmu_set_x( tN );
 				}
 				size_type const qss2_b( qss2_.b() );
-				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.vals[ qss2_b ] );
+				fmu_me_->get_reals( qss2_.n(), &zc_ders_.refs[ qss2_b ], &zc_ders_.vals[ qss2_b ] );
 				for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ triggers
-					triggers_[ i ]->advance_QSS_2( qss_ders_.vals[ i ] );
+					triggers_[ i ]->advance_QSS_2( zc_ders_.vals[ i ] );
 				}
 				if ( qss3_.have() ) {
 					tN = t - options::dtND;
@@ -312,9 +322,9 @@ public: // Methods
 						observee->fmu_set_x( tN );
 					}
 					size_type const qss3_b( qss3_.b() );
-					fmu_me_->get_reals( qss3_.n(), &qss_ders_.refs[ qss3_b ], &qss_ders_.vals[ qss3_b ] );
+					fmu_me_->get_reals( qss3_.n(), &zc_ders_.refs[ qss3_b ], &zc_ders_.vals[ qss3_b ] );
 					for ( size_type i = qss3_b, e = qss_.e(); i < e; ++i ) { // Order 3+ triggers
-						triggers_[ i ]->advance_QSS_3( qss_ders_.vals[ i ] );
+						triggers_[ i ]->advance_QSS_3( zc_ders_.vals[ i ] );
 					}
 				}
 				fmu_me_->set_time( t );
@@ -442,8 +452,9 @@ private: // Data
 
 	bool qss_same_order_{ false }; // QSS triggers all the same order?
 
-	RefsVals< Variable > qss_vars_; // Trigger value FMU pooled call data
-	RefsVals< Variable > qss_ders_; // Trigger derivative FMU pooled call data
+	RefsVals< Variable > zc_vars_; // Explict zero-crossing trigger value FMU pooled call data
+	RefsVals< Variable > zc_ders_; // Explict zero-crossing trigger derivative FMU pooled call data
+	RefsValsEI< Variable > ei_vars_; // Event indicator trigger FMU pooled call data
 
 	// Observees
 	Variables qss_observees_; // Triggers_ZC observees

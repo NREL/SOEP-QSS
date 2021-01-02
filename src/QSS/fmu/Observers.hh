@@ -749,7 +749,7 @@ private: // Data
 	Variables qss2_observees_; // Observers of order 2+ observees
 	Variables qss3_observees_; // Observers of order 3+ observees
 
-	// Zero-crossing observers observees (including self-observers)
+	// Zero-crossing observers observees
 	Variables zc_observees_; // Observers observees
 	Variables zc2_observees_; // Observers of order 2+ observees
 	Variables zc3_observees_; // Observers of order 3+ observees
