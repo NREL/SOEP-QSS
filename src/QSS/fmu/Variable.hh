@@ -901,10 +901,34 @@ public: // Methods
 		assert( false );
 	}
 
+	// QSS Advance: Stage 0
+	virtual
+	void
+	advance_QSS_0( Real const )
+	{
+		assert( false );
+	}
+
 	// QSS Advance: Stage 1
 	virtual
 	void
 	advance_QSS_1( Real const )
+	{
+		assert( false );
+	}
+
+	// QSS Advance: Stage 1
+	virtual
+	void
+	advance_QSS_1( Real const, Real const )
+	{
+		assert( false );
+	}
+
+	// QSS Advance: Stage 2
+	virtual
+	void
+	advance_QSS_2()
 	{
 		assert( false );
 	}

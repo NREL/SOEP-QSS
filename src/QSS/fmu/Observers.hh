@@ -647,7 +647,7 @@ private: // Methods
 					observers_[ i ]->advance_observer_2();
 				}
 				if ( zc3_.have() ) {
-					tN = t + ( two * options::dtND );
+					tN = t + options::two_dtND;
 					fmu_me_->set_time( tN );
 					for ( Variable * observee : zc_same_order_ ? zc_observees_ : zc3_observees_ ) {
 						observee->fmu_set_x( tN );

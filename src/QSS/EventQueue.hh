@@ -519,6 +519,35 @@ public: // Methods
 		}
 	}
 
+	// QSS ZC Requantization Bin Subtypes at Front of Queue
+	template< typename S >
+	void
+	bin_QSS_ZC( size_type const bin_size, double const bin_frac, std::vector< S * > & subs )
+	{
+		subs.clear();
+		if ( ! m_.empty() ) {
+			iterator i( m_.begin() );
+			iterator const e( m_.end() );
+			SuperdenseTime const & s( i->first );
+			while ( ( i != e ) && ( i->first == s ) ) { // First get the simultaneous events
+				subs.push_back( i->second.template sub< S >() );
+				++i;
+			}
+			Time const t_top( s.t );
+			size_type j( 0u ); // Loop counter (non-simultaneous events)
+			while ( ( i != e ) && ( ++j < 5 * bin_size ) && ( subs.size() < bin_size ) ) { // Bin events
+				if ( i->second.is_QSS_ZC() ) { // QSS ZC requantization event
+					S * sub( i->second.template sub< S >() );
+					double const sub_frac( ( t_top - sub->tQ ) / ( sub->tE - sub->tQ ) );
+					if ( sub_frac >= bin_frac ) { // Time step fraction is acceptable
+						subs.push_back( sub );
+					}
+				}
+				++i;
+			}
+		}
+	}
+
 	// Set Active Time
 	void
 	set_active_time()

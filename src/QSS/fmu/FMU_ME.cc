@@ -43,6 +43,7 @@
 #include <QSS/fmu/Function_Inp_step.hh>
 #include <QSS/fmu/Function_Inp_toggle.hh>
 #include <QSS/fmu/Triggers.hh>
+#include <QSS/fmu/Triggers_ZC.hh>
 #include <QSS/fmu/Variable_all.hh>
 #include <QSS/BinOptimizer.hh>
 #include <QSS/container.hh>
@@ -1979,6 +1980,7 @@ namespace fmu {
 		Variables handlers; // Reusable handlers container
 		Variable_ZCs var_ZCs; // Last zero-crossing trigger variables
 		Triggers< Variable > triggers_s( this ); // Binned/simultaneous triggers
+		Triggers_ZC< Variable > triggers_zc_s( this ); // Binned/simultaneous triggers
 		Observers< Variable > observers_s( this ); // Binned/simultaneous observers
 		bool connected_output_event( false );
 		while ( t <= tNext ) {
@@ -2498,25 +2500,96 @@ namespace fmu {
 					}
 				} else if ( event.is_QSS_ZC() ) { // QSS ZC requantization event(s)
 					++n_QSS_events;
-					Variable * trigger( event.sub< Variable >() );
-					assert( trigger->tE == t );
-					assert( trigger->is_ZC() );
-					trigger->st = s; // Set trigger superdense time
-					++c_QSS_events[ trigger ];
 
-					if ( doROut ) { // Requantization output: pre
-						trigger->out( t );
+					// Trigger(s) setup: Single, simultaneous, or binned
+					Variable * trigger1( nullptr );
+					if ( bin_size > 1u ) {
+						eventq->bin_QSS_ZC< Variable >( bin_size, bin_frac, triggers );
+						if ( options::output::d ) {
+							std::cout << "\nBin @ " << t << " trigger(s):" << std::endl;
+							for ( Variable * trigger : triggers ) std::cout << "  " << trigger->name() << "  tQ-tE: " << trigger->tQ << '-' << trigger->tE << std::endl;
+						}
+						if ( triggers.size() == 1u ) {
+							trigger1 = triggers[ 0 ]; // Use single trigger processing
+						} else {
+							if ( connected ) { // Check if next event(s) will modify a connected output
+								if ( options::perfect ) { // Flag whether next event(s) will modify a connected output
+									if ( ! connected_output_event ) {
+										for ( Variable const * trigger : triggers ) {
+											if ( trigger->connected_output || trigger->connected_output_observer ) {
+												connected_output_event = true;
+												break;
+											}
+										}
+									}
+								} else if ( t > tPass ) { // Stop if beyond pass start time and next event(s) will modify a connected output
+									bool connected_output_next( false );
+									for ( Variable const * trigger : triggers ) {
+										if ( trigger->connected_output || trigger->connected_output_observer ) {
+											connected_output_next = true;
+											break;
+										}
+									}
+									if ( connected_output_next ) break; // Exit t loop
+								}
+							}
+						}
+					} else if ( eventq->single() ) { // Single trigger
+						trigger1 = event.sub< Variable >();
+					} else { // Simultaneous triggers
+						eventq->top_subs< Variable >( triggers );
 					}
 
-					trigger->advance_QSS();
+					// Requantize
+					if ( trigger1 != nullptr ) { // Single trigger
+						Variable * trigger( trigger1 );
+						assert( trigger->tE == t );
+						assert( trigger->is_ZC() ); // ZC trigger
+						trigger->st = s; // Set trigger superdense time
+						++c_QSS_events[ trigger ];
 
-					if ( doROut ) { // Requantization output: post
-						if ( options::output::A ) { // All variables output
-							for ( auto var : vars ) {
-								var->out( t );
-							}
-						} else { // Requantization output
+						if ( doROut ) { // Requantization output: pre
 							trigger->out( t );
+						}
+
+						trigger->advance_QSS();
+
+						if ( doROut ) { // Requantization output: post
+							if ( options::output::A ) { // All variables output
+								for ( auto var : vars ) {
+									var->out( t );
+								}
+							} else { // Requantization output
+								trigger->out( t );
+							}
+						}
+					} else { // Simultaneous/binned triggers
+						if ( options::output::s || options::steps ) { // Statistics or steps file
+							for ( Variable * trigger : triggers ) {
+								++c_QSS_events[ trigger ];
+							}
+						}
+						++n_QSS_simultaneous_events;
+
+						if ( doROut ) { // Requantization output: pre
+							for ( Variable * trigger : triggers ) {
+								trigger->out( t );
+							}
+						}
+
+						triggers_zc_s.assign( triggers );
+						triggers_zc_s.advance_QSS( t, s );
+
+						if ( doROut ) { // Requantization output: post
+							if ( options::output::A ) { // All variables output
+								for ( auto var : vars ) {
+									var->out( t );
+								}
+							} else { // Requantization and observer output
+								for ( Variable * trigger : triggers ) {
+									trigger->out( t );
+								}
+							}
 						}
 					}
 				} else if ( event.is_QSS_Inp() ) { // QSS Input requantization event(s)

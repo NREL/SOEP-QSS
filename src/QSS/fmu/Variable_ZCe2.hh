@@ -184,6 +184,49 @@ public: // Methods
 		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
+	// QSS Advance: Stage 0
+	void
+	advance_QSS_0( Real const v )
+	{
+		tX = tQ = tE;
+		Real const x_tE( zChatter_ ? x( tE ) : Real( 0.0 ) );
+#ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
+		check_crossing_ = ( tE > tZ_last ) || ( x_mag_ != 0.0 );
+		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_tE : x( tE ) ) : 0 );
+#endif
+		x_0_ = v;
+		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
+	}
+
+	// QSS Advance: Stage 1
+	void
+	advance_QSS_1( Real const d )
+	{
+		x_1_ = d;
+	}
+
+	// QSS Advance: Stage 2
+	void
+	advance_QSS_2( Real const d )
+	{
+		x_2_ = p_2( d );
+	}
+
+	// QSS Advance: Stage Final
+	void
+	advance_QSS_F()
+	{
+		set_qTol();
+		set_tE();
+#ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
+		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
+#else
+		set_tZ();
+		( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
+#endif
+		if ( options::output::d ) std::cout << "= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << x_2_ << "*t^2" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
+	}
+
 	// Zero-Crossing Advance
 	void
 	advance_ZC()
