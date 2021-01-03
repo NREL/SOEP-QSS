@@ -1490,6 +1490,7 @@ protected: // Methods: FMU
 	Real
 	z_0() const
 	{
+		assert( is_ZC() ); // Zero-crossing variable
 		fmu_set_observees_x( tQ );
 		return p_0();
 	}
@@ -1506,6 +1507,7 @@ protected: // Methods: FMU
 	Real
 	z_x() const
 	{
+		assert( is_ZCe() ); // Explicit zero-crossing variable
 		fmu_set_observees_x( tQ );
 		return 0.0;
 	}
@@ -1557,6 +1559,7 @@ protected: // Methods: FMU
 	Real
 	z_1( Time const t ) const
 	{
+		assert( is_ZCe() ); // Explicit zero-crossing variable
 		fmu_set_observees_x( t );
 		return p_1();
 	}
@@ -1602,14 +1605,15 @@ protected: // Methods: FMU
 		return x_2;
 	}
 
-	// Coefficient 2 from FMU at Time t: X-Based
+	// Coefficient 2 from FMU at Time tQ: X-Based
 	Real
-	z_2( Time const t, Real const x_1 ) const
+	z_2( Real const x_1 ) const
 	{
-		Time const tN( t + options::dtND );
+		assert( is_ZCe() ); // Explicit zero-crossing variable
+		Time const tN( tQ + options::dtND );
 		fmu_set_time( tN );
 		Real const x_2( options::one_over_two_dtND * ( z_1( tN ) - x_1 ) ); //ND Forward Euler
-		fmu_set_time( t );
+		fmu_set_time( tQ );
 		return x_2;
 	}
 

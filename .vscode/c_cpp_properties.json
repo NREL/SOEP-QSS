@@ -7,7 +7,9 @@
                 "/usr/local/include",
                 "${workspaceFolder}"
             ],
-            "defines": [ "_OPENMP" ],
+            "defines": [
+                "_OPENMP"
+            ],
             "intelliSenseMode": "clang-x64",
             "browse": {
                 "path": [
@@ -33,7 +35,9 @@
                 "${workspaceFolder}/src",
                 "/opt/FMIL.GCC.r/include"
             ],
-            "defines": [ "_OPENMP" ],
+            "defines": [
+                "_OPENMP"
+            ],
             "intelliSenseMode": "clang-x64",
             "browse": {
                 "path": [
@@ -75,7 +79,9 @@
                 "databaseFilename": ""
             },
             "cStandard": "c11",
-            "cppStandard": "c++17"
+            "cppStandard": "c++17",
+            "compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.27.29110/bin/Hostx64/x64/cl.exe",
+            "compilerArgs": []
         }
     ],
     "version": 4

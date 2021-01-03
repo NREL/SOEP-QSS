@@ -170,7 +170,7 @@ public: // Methods
 		if ( zc_type_ == ZC_Type::EventIndicator ) { // Event indicators
 			ei_vars_.clear(); ei_vars_.reserve( qss_.n() );
 			for ( Variable * trigger : triggers_ ) {
-				assert( trigger->is_ZC() && ( ! trigger->is_ZCe() ) );
+				assert( trigger->is_ZC() && trigger->not_ZCe() );
 				ei_vars_.push_back( trigger->var().ref );
 			}
 		} else { // Explicit zero-crossing variables
@@ -232,7 +232,7 @@ public: // Methods
 			fmu_me_->get_reals( qss_.n(), &ei_vars_.refs[ 0 ], &ei_vars_.vals[ 0 ] );
 			for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
 				Variable * trigger( triggers_[ i ] );
-				assert( trigger->is_ZC() && ( ! trigger->is_ZCe() ) ); // Event indicator trigger
+				assert( trigger->is_ZC() && trigger->not_ZCe() ); // Event indicator trigger
 				assert( trigger->tE >= t ); // Bin variables tE can be > t
 				trigger->tE = t; // Bin variables tE can be > t
 				trigger->st = s; // Set trigger superdense time
@@ -406,9 +406,10 @@ private: // Methods
 	set_specs()
 	{
 		assert( fmu_me_ != nullptr );
-		reset_specs();
 
+		reset_specs();
 		if ( triggers_.empty() ) return;
+
 		zc_type_ = ( fmu_me_->has_event_indicators ? ZC_Type::EventIndicator : ZC_Type::Explicit );
 
 		qss_.b() = 0u;
@@ -452,9 +453,9 @@ private: // Data
 
 	bool qss_same_order_{ false }; // QSS triggers all the same order?
 
+	RefsValsEI< Variable > ei_vars_; // Event indicator trigger FMU pooled call data
 	RefsVals< Variable > zc_vars_; // Explict zero-crossing trigger value FMU pooled call data
 	RefsVals< Variable > zc_ders_; // Explict zero-crossing trigger derivative FMU pooled call data
-	RefsValsEI< Variable > ei_vars_; // Event indicator trigger FMU pooled call data
 
 	// Observees
 	Variables qss_observees_; // Triggers_ZC observees

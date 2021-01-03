@@ -404,7 +404,7 @@ private: // Methods
 	Real
 	z_2() const
 	{
-		return z_2( tQ, x_1_ );
+		return z_2( x_1_ );
 	}
 
 private: // Data
