@@ -344,6 +344,21 @@ public: // Predicate
 		return ( ! is_ZC() );
 	}
 
+	// Directional Derivative Zero-Crossing Variable?
+	virtual
+	bool
+	is_ZCd() const
+	{
+		return false;
+	}
+
+	// Not Directional Derivative Zero-Crossing Variable?
+	bool
+	not_ZCd() const
+	{
+		return ( ! is_ZCd() );
+	}
+
 	// Explicit Zero-Crossing Variable?
 	virtual
 	bool
@@ -743,6 +758,19 @@ public: // Methods
 			uniquify( observees_, true ); // Sort by address and remove duplicates and recover unused memory
 			observes_ = ( ! observees_.empty() ); // In case all were discrete
 		}
+
+		// FMU directional derivative call argument initialization
+		if ( is_ZCd() ) { // Using directional derivatives for event indicator ZC variables
+			for ( Variable * observee : observees_ ) {
+				observees_v_ref_.push_back( observee->var_.ref );
+				observees_dv_.push_back( 0.0 );
+			}
+			if ( self_observer() ) {
+				observees_v_ref_.push_back( var_.ref );
+				observees_dv_.push_back( 0.0 );
+			}
+			observees_nv_ = observees_v_ref_.size();
+		}
 	}
 
 	// Connect
@@ -941,11 +969,27 @@ public: // Methods
 		assert( false );
 	}
 
+	// QSS Advance: Stage 2
+	virtual
+	void
+	advance_QSS_2( Real const, Real const )
+	{
+		assert( false );
+	}
+
 	// QSS Advance: Stage 2.1
 	virtual
 	void
 	advance_QSS_2_1()
 	{}
+
+	// QSS Advance: Stage 3
+	virtual
+	void
+	advance_QSS_3()
+	{
+		assert( false );
+	}
 
 	// QSS Advance: Stage 3
 	virtual
@@ -1155,10 +1199,26 @@ public: // Methods
 		assert( false );
 	}
 
+	// Observer Advance: Stage 2
+	virtual
+	void
+	advance_observer_2( Real const, Real const )
+	{
+		assert( false );
+	}
+
+	// Observer Advance: Stage 2 Parallel
+	virtual
+	void
+	advance_observer_2_parallel( Real const, Real const )
+	{
+		assert( false );
+	}
+
 	// Observer Advance: Stage 3
 	virtual
 	void
-	advance_observer_3( Real const )
+	advance_observer_3()
 	{
 		assert( false );
 	}
@@ -1166,7 +1226,15 @@ public: // Methods
 	// Observer Advance: Stage 3 Parallel
 	virtual
 	void
-	advance_observer_3_parallel( Real const )
+	advance_observer_3_parallel()
+	{
+		assert( false );
+	}
+
+	// Observer Advance: Stage 3
+	void
+	virtual
+	advance_observer_3( Real const )
 	{
 		assert( false );
 	}
@@ -1564,11 +1632,40 @@ protected: // Methods: FMU
 		return p_1();
 	}
 
+	// Coefficient 1 from FMU at Time tQ: X-Based with Directional First Derivative
+	Real
+	Z_1() const
+	{
+		assert( is_ZCd() ); // Event-indicator directional derivative zero-crossing variable
+		assert( fmu_me_ != nullptr );
+		assert( observees_v_ref_.size() == observees_dv_.size() );
+		assert( observees_v_ref_.size() == observees_nv_ );
+		for ( Variables::size_type i = 0, e = observees_.size(); i < e; ++i ) { // Get observee derivatives
+			observees_dv_[ i ] = observees_[ i ]->x1( tQ ); // Use trajectory instead of FMU for speed
+		}
+		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var_.ref, observees_dv_.data() );
+	}
+
+	// Coefficient 1 from FMU at Time t: X-Based with Directional First Derivative
+	Real
+	Z_1( Time const t ) const
+	{
+		assert( is_ZCd() ); // Event-indicator directional derivative zero-crossing variable
+		assert( fmu_me_ != nullptr );
+		assert( observees_v_ref_.size() == observees_dv_.size() );
+		assert( observees_v_ref_.size() == observees_nv_ );
+		for ( Variables::size_type i = 0, e = observees_.size(); i < e; ++i ) { // Get observee derivatives
+			observees_dv_[ i ] = observees_[ i ]->x1( t ); // Use trajectory instead of FMU for speed
+		}
+		fmu_set_observees_x( t ); // Modelon indicates that observee state matters for Jacobian computation
+		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var_.ref, observees_dv_.data() );
+	}
+
 	// Coefficient 1 from FMU at Time t: X-Based with ND First Derivative
 	Real
 	Z_1( Time const t, Real const x_0 ) const
 	{
-		assert( is_ZC() && not_ZCe() ); // For event-indicator based zero-crossing variables only
+		assert( is_ZC() && not_ZCd() && not_ZCe() ); // For event-indicator based zero-crossing variables only
 		Time const tN( t + options::dtND );
 		fmu_set_time( tN );
 		Real const x_1( options::one_over_dtND * ( z_0( tN ) - x_0 ) ); //ND Forward Euler
@@ -1578,9 +1675,9 @@ protected: // Methods: FMU
 
 	// Coefficient 2 from FMU: Given Derivative
 	Real
-	p_2( Real const d, Real const x_1 ) const
+	p_2( Real const x_1, Real const x_1_p ) const
 	{
-		return options::one_over_two_dtND * ( d - x_1 ); //ND Forward Euler
+		return options::one_over_two_dtND * ( x_1_p - x_1 ); //ND Forward Euler
 	}
 
 	// Coefficient 2 from FMU at Time t
@@ -1617,6 +1714,18 @@ protected: // Methods: FMU
 		return x_2;
 	}
 
+	// Coefficient 2 from FMU at Time tQ: X-Based with Directional First Derivative
+	Real
+	Z_2( Real const x_1 ) const
+	{
+		assert( is_ZCd() ); // Event-indicator directional derivative zero-crossing variable
+		Time const tN( tQ + options::dtND );
+		fmu_set_time( tN );
+		Real const x_2( options::one_over_two_dtND * ( Z_1( tN ) - x_1 ) ); //ND Forward Euler
+		fmu_set_time( tQ );
+		return x_2;
+	}
+
 	// Coefficient 3 from FMU at Time t
 	Real
 	c_3( Time const t, Real const x_1 ) const
@@ -1635,21 +1744,13 @@ protected: // Methods
 
 	// Infinite Aligned Time Step Processing
 	Time
-	dt_infinity( Time const dt )
+	dt_infinity( Time const dt ) const
 	{
-		if ( is_time_ ) return dt;
-		if ( dt_inf_ != infinity ) { // Deactivation control is enabled
-			if ( dt == infinity ) { // Deactivation has occurred
-				if ( dt_inf_rlx_ < half_infinity ) { // Relax and use deactivation time step
-					return ( dt_inf_rlx_ *= 2.0 );
-				} else {
-					return dt;
-				}
-			} else { // Reset deactivation time step
-				dt_inf_rlx_ = dt_inf_;
-				return dt;
-			}
-		} else {
+		if ( ( dt_inf_ == infinity ) || is_time_ ) return dt; // Deactivation control is not enabled
+		if ( dt >= dt_inf_ ) { // Apply deactivation control
+			return ( dt_inf_rlx_ < half_infinity ? std::min( dt_inf_rlx_ *= 2.0, dt ) : dt ); // Use min of relaxed deactivation time step and dt
+		} else { // Reset relaxed deactivation time step
+			dt_inf_rlx_ = dt_inf_;
 			return dt;
 		}
 	}
@@ -1678,7 +1779,7 @@ private: // Data
 
 	// Time steps
 	Time dt_inf_{ infinity }; // Time step inf
-	Time dt_inf_rlx_{ infinity }; // Relaxed time step inf
+	mutable Time dt_inf_rlx_{ infinity }; // Relaxed time step inf
 
 	// Observers
 	Observers< Variable > observers_; // Variables dependent on this one
@@ -1688,6 +1789,11 @@ private: // Data
 	// Observees
 	Variables observees_; // Variables this one depends on
 	bool observes_{ false }; // Has observees?
+
+	// Observees: Directional Derivatives
+	VariableRefs observees_v_ref_; // Observee value references for FMU directional derivative
+	mutable Reals observees_dv_; // Observee derivatives for FMU directional derivative lookup
+	std::size_t observees_nv_{ 0u }; // Observee count for FMU directional derivative lookup
 
 	// Connections
 	Variable_Cons connections_; // Input connection variables this one outputs to

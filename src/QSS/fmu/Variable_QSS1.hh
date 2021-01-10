@@ -153,7 +153,7 @@ public: // Methods
 
 	// QSS Advance
 	void
-	advance_QSS()
+	advance_QSS() override final
 	{
 		Time const tDel( tE - tX );
 		tX = tQ = tE;
@@ -169,7 +169,7 @@ public: // Methods
 
 	// QSS Advance: Stage 0
 	void
-	advance_QSS_0()
+	advance_QSS_0() override final
 	{
 		Time const tDel( tE - tX );
 		tX = tQ = tE;
@@ -178,14 +178,14 @@ public: // Methods
 
 	// QSS Advance: Stage 1
 	void
-	advance_QSS_1( Real const d )
+	advance_QSS_1( Real const x_1 ) override final
 	{
-		x_1_ = d;
+		x_1_ = x_1;
 	}
 
 	// QSS Advance: Stage Final
 	void
-	advance_QSS_F()
+	advance_QSS_F() override final
 	{
 		set_qTol();
 		set_tE_aligned();
@@ -196,7 +196,7 @@ public: // Methods
 
 	// Handler Advance
 	void
-	advance_handler( Time const t )
+	advance_handler( Time const t ) override final
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
@@ -212,7 +212,7 @@ public: // Methods
 
 	// Handler Advance: Stage 0
 	void
-	advance_handler_0( Time const t )
+	advance_handler_0( Time const t ) override final
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
@@ -221,14 +221,14 @@ public: // Methods
 
 	// Handler Advance: Stage 1
 	void
-	advance_handler_1()
+	advance_handler_1() override final
 	{
 		x_1_ = h_1();
 	}
 
 	// Handler Advance: Stage Final
 	void
-	advance_handler_F()
+	advance_handler_F() override final
 	{
 		set_qTol();
 		set_tE_aligned();
@@ -239,7 +239,7 @@ public: // Methods
 
 	// Handler No-Advance
 	void
-	no_advance_handler()
+	no_advance_handler() override final
 	{
 		shift_QSS( tE );
 	}
@@ -260,14 +260,14 @@ public: // Methods
 
 	// Observer Advance: Stage 1
 	void
-	advance_observer_1( Time const t, Real const d ) override final
+	advance_observer_1( Time const t, Real const x_1 ) override final
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		assert( d == p_1() );
+		assert( x_1 == p_1() );
 		Time const tDel( t - tX );
 		tX = t;
 		x_0_ += ( x_1_ * tDel );
-		x_1_ = d;
+		x_1_ = x_1;
 		set_tE_unaligned();
 		shift_QSS( tE );
 		if ( connected() ) advance_connections_observer();
@@ -275,14 +275,14 @@ public: // Methods
 
 	// Observer Advance: Stage 1 Parallel
 	void
-	advance_observer_1_parallel( Time const t, Real const d ) override final
+	advance_observer_1_parallel( Time const t, Real const x_1 ) override final
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		assert( d == p_1() );
+		assert( x_1 == p_1() );
 		Time const tDel( t - tX );
 		tX = t;
 		x_0_ += ( x_1_ * tDel );
-		x_1_ = d;
+		x_1_ = x_1;
 	}
 
 	// Observer Advance: Stage Final Parallel

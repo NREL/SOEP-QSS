@@ -283,6 +283,10 @@ protected: // Methods
 	void
 	refine_root_ZC( Time const tBeg );
 
+	// Refine Zero-Crossing Time: Event Indicator Directional Derivative Zero-Crossing Variable
+	void
+	refine_root_ZCd( Time const tBeg );
+
 	// Refine Zero-Crossing Time: Explicit Zero-Crossing Variable
 	void
 	refine_root_ZCe( Time const tBeg );

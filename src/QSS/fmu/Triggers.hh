@@ -38,11 +38,11 @@
 
 // QSS Headers
 #include <QSS/fmu/FMU_ME.hh>
+#include <QSS/fmu/RefsDers.hh>
 #include <QSS/container.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
 #include <QSS/Range.hh>
-#include <QSS/RefsVals.hh>
 #include <QSS/SuperdenseTime.hh>
 
 // OpenMP Headers
@@ -129,14 +129,14 @@ public: // Property
 		return triggers_.size();
 	}
 
-	// Triggers Collection
+	// Triggers
 	Variables const &
 	triggers() const
 	{
 		return triggers_;
 	}
 
-	// Triggers Collection
+	// Triggers
 	Variables &
 	triggers()
 	{
@@ -179,7 +179,7 @@ public: // Methods
 			}
 		}
 		uniquify( qss_observees_ );
-		if ( ! qss_same_order_ ) {
+		if ( ! uni_order_ ) {
 			assert( qss2_.have() );
 			qss2_observees_.clear();
 			for ( size_type i = qss2_.b(), e = qss_.e(); i < e; ++i ) { // Order 2+ triggers
@@ -221,53 +221,63 @@ public: // Methods
 		for ( Variable * observee : qss_observees_ ) {
 			observee->fmu_set_q( t );
 		}
-		fmu_me_->get_reals( qss_.n(), &qss_ders_.refs[ 0 ], &qss_ders_.vals[ 0 ] );
+		size_type const qss_n( qss_.n() );
+		assert( qss_n == qss_ders_.size() );
+		fmu_me_->get_reals( qss_n, &qss_ders_.refs[ 0 ], &qss_ders_.ders[ 0 ] );
 #ifdef _OPENMP
 		size_type const max_threads( static_cast< size_type >( omp_get_max_threads() ) );
-		if ( ( max_threads > 1u ) && ( qss_.n() >= max_threads * 128u ) ) {
+		if ( ( max_threads > 1u ) && ( qss_n >= max_threads * 128u ) ) {
 			std::int64_t const qss_b( qss_.b() );
 			std::int64_t const qss_e( qss_.e() );
-			std::int64_t const qss_n( qss_.n() );
 			std::int64_t const qss_chunk_size( static_cast< std::int64_t >( ( qss_n + max_threads - 1u ) / max_threads ) );
 			#pragma omp parallel for schedule(static)
 			for ( std::int64_t i = qss_b; i < qss_e; i += qss_chunk_size ) {
 				for ( std::int64_t k = i, ke = std::min( i + qss_chunk_size, qss_e ); k < ke; ++k ) { // Chunk
-					triggers_[ k ]->advance_QSS_1( qss_ders_.vals[ k ] );
+					triggers_[ k ]->advance_QSS_1( qss_ders_.ders[ k ] );
 				}
 			}
 		} else {
 #endif
 		for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
-			triggers_[ i ]->advance_QSS_1( qss_ders_.vals[ i ] );
+			triggers_[ i ]->advance_QSS_1( qss_ders_.ders[ i ] );
 		}
 #ifdef _OPENMP
 		}
 #endif
-		if ( qss2_.have() ) {
-			Time tN( t + options::dtND );
+		if ( qss3_.have() ) {
+			Time tN( t - options::dtND );
 			fmu_me_->set_time( tN );
-			for ( Variable * observee : qss_same_order_ ? qss_observees_ : qss2_observees_ ) {
+			for ( Variable * observee : uni_order_ ? qss_observees_ : qss2_observees_ ) {
 				observee->fmu_set_q( tN );
 			}
 			size_type const qss2_b( qss2_.b() );
-			fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.vals[ qss2_b ] );
+			fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_m[ qss2_b ] );
+			tN = t + options::dtND;
+			fmu_me_->set_time( tN );
+			for ( Variable * observee : uni_order_ ? qss_observees_ : qss2_observees_ ) {
+				observee->fmu_set_q( tN );
+			}
+			fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
 			for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ triggers
-				triggers_[ i ]->advance_QSS_2( qss_ders_.vals[ i ] );
+				triggers_[ i ]->advance_QSS_2( qss_ders_.ders_m[ i ], qss_ders_.ders_p[ i ] );
+			}
+			for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ triggers
+				triggers_[ i ]->advance_QSS_3();
+			}
+			fmu_me_->set_time( t );
+		} else if ( qss2_.have() ) {
+			Time tN( t + options::dtND );
+			fmu_me_->set_time( tN );
+			for ( Variable * observee : uni_order_ ? qss_observees_ : qss2_observees_ ) {
+				observee->fmu_set_q( tN );
+			}
+			size_type const qss2_b( qss2_.b() );
+			fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
+			for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ triggers
+				triggers_[ i ]->advance_QSS_2( qss_ders_.ders_p[ i ] );
 			}
 			for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ triggers
 				triggers_[ i ]->advance_QSS_2_1();
-			}
-			if ( qss3_.have() ) {
-				tN = t - options::dtND;
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : qss_same_order_ ? qss_observees_ : qss3_observees_ ) {
-					observee->fmu_set_q( tN );
-				}
-				size_type const qss3_b( qss3_.b() );
-				fmu_me_->get_reals( qss3_.n(), &qss_ders_.refs[ qss3_b ], &qss_ders_.vals[ qss3_b ] );
-				for ( size_type i = qss3_b, e = qss_.e(); i < e; ++i ) { // Order 3+ triggers
-					triggers_[ i ]->advance_QSS_3( qss_ders_.vals[ i ] );
-				}
 			}
 			fmu_me_->set_time( t );
 		}
@@ -346,31 +356,22 @@ private: // Methods
 	set_specs()
 	{
 		reset_specs();
-
 		if ( triggers_.empty() ) return;
 
 		qss_.b() = 0u;
-		qss_.e() = triggers_.size();
-		size_type i( 0u );
-		while ( i < qss_.e() ) {
-			Variable const * trigger( triggers_[ i ] );
-			int const order( trigger->order() );
+		qss_.e() = qss2_.b() = qss2_.e() = qss3_.b() = qss3_.e() = triggers_.size();
+		for ( size_type i = 0, e = qss_.e(); i < e; ++i ) {
+			int const order( triggers_[ i ]->order() );
 			if ( order >= 2 ) {
 				qss2_.b() = std::min( qss2_.b(), i );
 				if ( order >= 3 ) {
 					qss3_.b() = std::min( qss3_.b(), i );
+					break;
 				}
-			}
-			++i;
-		}
-		if ( qss2_.began() ) {
-			qss2_.e() = i;
-			if ( qss3_.began() ) {
-				qss3_.e() = i;
 			}
 		}
 		size_type const qss_n( qss_.n() );
-		qss_same_order_ = (
+		uni_order_ = (
 		 ( qss2_.empty() || qss2_.n() == qss_n ) &&
 		 ( qss3_.empty() || qss3_.n() == qss_n )
 		);
@@ -386,9 +387,9 @@ private: // Data
 	Range qss2_; // Triggers of order 2+
 	Range qss3_; // Triggers of order 3+
 
-	bool qss_same_order_{ false }; // QSS triggers all the same order?
+	bool uni_order_{ false }; // Triggers all the same order?
 
-	RefsVals< Variable > qss_ders_; // Trigger derivative FMU pooled call data
+	RefsDers< Variable > qss_ders_; // Trigger derivative FMU pooled call data
 
 	// Observees (including self-observers)
 	Variables qss_observees_; // Triggers observees

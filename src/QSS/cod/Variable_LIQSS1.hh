@@ -192,7 +192,7 @@ public: // Methods
 
 	// QSS Advance
 	void
-	advance_QSS()
+	advance_QSS() override final
 	{
 		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
 		tX = tQ = tE;
@@ -211,7 +211,7 @@ public: // Methods
 
 	// QSS Advance: Stage 0
 	void
-	advance_QSS_0()
+	advance_QSS_0() override final
 	{
 		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
 		tX = tQ = tE;
@@ -219,7 +219,7 @@ public: // Methods
 
 	// QSS Advance: Stage 1
 	void
-	advance_QSS_1()
+	advance_QSS_1() override final
 	{
 		set_qTol();
 		if ( self_observer() ) {
@@ -231,7 +231,7 @@ public: // Methods
 
 	// QSS Advance: Stage Final
 	void
-	advance_QSS_F()
+	advance_QSS_F() override final
 	{
 		if ( self_observer() ) {
 			q_0_ = l_0_;
@@ -245,7 +245,7 @@ public: // Methods
 
 	// Handler Advance
 	void
-	advance_handler( Time const t, Real const x )
+	advance_handler( Time const t, Real const x ) override final
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		x_0_ = q_c_ = q_0_ = x;
@@ -259,7 +259,7 @@ public: // Methods
 
 	// Handler Advance: Stage 0
 	void
-	advance_handler_0( Time const t, Real const x )
+	advance_handler_0( Time const t, Real const x ) override final
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
@@ -268,7 +268,7 @@ public: // Methods
 
 	// Handler Advance: Stage 1
 	void
-	advance_handler_1()
+	advance_handler_1() override final
 	{
 		x_1_ = d_.q( tQ );
 		set_qTol();
@@ -279,7 +279,7 @@ public: // Methods
 
 	// Observer Advance
 	void
-	advance_observer( Time const t )
+	advance_observer( Time const t ) override final
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		x_0_ += ( x_1_ * ( t - tX ) );
@@ -291,7 +291,7 @@ public: // Methods
 
 	// Observer Advance: Parallel
 	void
-	advance_observer_parallel( Time const t )
+	advance_observer_parallel( Time const t ) override final
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		x_0_ += ( x_1_ * ( t - tX ) );
@@ -301,7 +301,7 @@ public: // Methods
 
 	// Observer Advance: Serial + Diagnostics
 	void
-	advance_observer_serial_d()
+	advance_observer_serial_d() override final
 	{
 		assert( options::output::d );
 		shift_QSS( tE );

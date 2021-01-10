@@ -1,4 +1,4 @@
-// FMU-Based All-Variable Convenience Header
+// FMU References + Values
 //
 // Project: QSS Solver
 //
@@ -33,49 +33,74 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_Variable_all_hh_INCLUDED
-#define QSS_fmu_Variable_all_hh_INCLUDED
+#ifndef QSS_fmu_RefsVals_hh_INCLUDED
+#define QSS_fmu_RefsVals_hh_INCLUDED
 
-// QSS Discrete Variable Headers
-#include <QSS/fmu/Variable_B.hh>
-#include <QSS/fmu/Variable_D.hh>
-#include <QSS/fmu/Variable_I.hh>
-#include <QSS/fmu/Variable_R.hh>
+// C++ Headers
+#include <cassert>
 
-// QSS Input Variable Headers
-#include <QSS/fmu/Variable_Inp1.hh>
-#include <QSS/fmu/Variable_Inp2.hh>
-#include <QSS/fmu/Variable_Inp3.hh>
-#include <QSS/fmu/Variable_InpB.hh>
-#include <QSS/fmu/Variable_InpD.hh>
-#include <QSS/fmu/Variable_InpI.hh>
-#include <QSS/fmu/Variable_xInp1.hh>
-#include <QSS/fmu/Variable_xInp2.hh>
-#include <QSS/fmu/Variable_xInp3.hh>
+namespace QSS {
+namespace fmu {
 
-// QSS Connection Variable Headers
-#include <QSS/fmu/Variable_Con.hh>
+// FMU References + Values
+template< typename V >
+struct RefsVals final
+{
 
-// QSS State Variable Headers
-#include <QSS/fmu/Variable_LIQSS1.hh>
-#include <QSS/fmu/Variable_LIQSS2.hh>
-#include <QSS/fmu/Variable_LIQSS3.hh>
-#include <QSS/fmu/Variable_QSS1.hh>
-#include <QSS/fmu/Variable_QSS2.hh>
-#include <QSS/fmu/Variable_QSS3.hh>
-#include <QSS/fmu/Variable_xQSS1.hh>
-#include <QSS/fmu/Variable_xQSS2.hh>
-#include <QSS/fmu/Variable_xQSS3.hh>
+public: // Types
 
-// QSS Zero-Crossing Variable Headers
-#include <QSS/fmu/Variable_ZC1.hh>
-#include <QSS/fmu/Variable_ZC2.hh>
-#include <QSS/fmu/Variable_ZC3.hh>
-#include <QSS/fmu/Variable_ZCd1.hh>
-#include <QSS/fmu/Variable_ZCd2.hh>
-#include <QSS/fmu/Variable_ZCd3.hh>
-#include <QSS/fmu/Variable_ZCe1.hh>
-#include <QSS/fmu/Variable_ZCe2.hh>
-#include <QSS/fmu/Variable_ZCe3.hh>
+	using Variable = V;
+	using Variables = typename Variable::Variables;
+	using Ref = typename Variable::VariableRef;
+	using Refs = typename Variable::VariableRefs;
+	using Val = typename Variable::Real;
+	using Vals = typename Variable::Reals;
+	using size_type = typename Variables::size_type;
+
+public: // Property
+
+	// Size
+	size_type
+	size() const
+	{
+		assert( refs.size() == vals.size() );
+		return refs.size();
+	}
+
+public: // Methods
+
+	// Clear
+	void
+	clear()
+	{
+		refs.clear();
+		vals.clear();
+	}
+
+	// Reserve
+	void
+	reserve( size_type const n )
+	{
+		refs.reserve( n );
+		vals.reserve( n );
+	}
+
+	// Push Back
+	void
+	push_back( Ref const & ref )
+	{
+		refs.push_back( ref );
+		vals.push_back( 0.0 );
+	}
+
+public: // Data
+
+	Refs refs; // FMU value reference array
+	Vals vals; // FMU value array
+
+}; // RefsVals
+
+} // fmu
+} // QSS
 
 #endif

@@ -1,4 +1,4 @@
-// FMU References + Values Arrays
+// FMU References + Values for Event Indicators Using Directional Derivatives
 //
 // Project: QSS Solver
 //
@@ -33,17 +33,18 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_RefsVals_hh_INCLUDED
-#define QSS_RefsVals_hh_INCLUDED
+#ifndef QSS_fmu_RefsValsEIDD_hh_INCLUDED
+#define QSS_fmu_RefsValsEIDD_hh_INCLUDED
 
 // C++ Headers
 #include <cassert>
 
 namespace QSS {
+namespace fmu {
 
-// FMU References + Values Arrays
+// FMU References + Values for Event Indicators Using Directional Derivatives
 template< typename V >
-struct RefsVals final
+struct RefsValsEIDD final
 {
 
 public: // Types
@@ -54,6 +55,8 @@ public: // Types
 	using Refs = typename Variable::VariableRefs;
 	using Val = typename Variable::Real;
 	using Vals = typename Variable::Reals;
+	using Der = typename Variable::Real;
+	using Ders = typename Variable::Reals;
 	using size_type = typename Variables::size_type;
 
 public: // Property
@@ -63,6 +66,9 @@ public: // Property
 	size() const
 	{
 		assert( refs.size() == vals.size() );
+		assert( ders.empty() || ( refs.size() == ders.size() ) );
+		assert( ders_m.empty() || ( refs.size() == ders_m.size() ) );
+		assert( ders_p.empty() || ( refs.size() == ders_p.size() ) );
 		return refs.size();
 	}
 
@@ -74,6 +80,9 @@ public: // Methods
 	{
 		refs.clear();
 		vals.clear();
+		ders.clear();
+		ders_m.clear();
+		ders_p.clear();
 	}
 
 	// Reserve
@@ -82,23 +91,33 @@ public: // Methods
 	{
 		refs.reserve( n );
 		vals.reserve( n );
+		ders.reserve( n );
+		ders_m.reserve( n );
+		ders_p.reserve( n );
 	}
 
 	// Push Back
 	void
-	push_back( Ref const & ref, Val const & val = 0.0 )
+	push_back( Ref const & ref )
 	{
 		refs.push_back( ref );
-		vals.push_back( val );
+		vals.push_back( 0.0 );
+		ders.push_back( 0.0 );
+		ders_m.push_back( 0.0 );
+		ders_p.push_back( 0.0 );
 	}
 
 public: // Data
 
 	Refs refs; // FMU value reference array
 	Vals vals; // FMU value array
+	Ders ders; // FMU derivative array
+	Ders ders_m; // FMU derivative at -dtND array
+	Ders ders_p; // FMU derivative at +dtND array
 
-}; // RefsVals
+}; // RefsValsEIDD
 
+} // fmu
 } // QSS
 
 #endif

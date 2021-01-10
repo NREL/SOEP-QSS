@@ -1,4 +1,4 @@
-// FMU References + Values Arrays for Event Indicators
+// FMU References + Values for Event Indicators
 //
 // Project: QSS Solver
 //
@@ -33,15 +33,16 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_RefsValsEI_hh_INCLUDED
-#define QSS_RefsValsEI_hh_INCLUDED
+#ifndef QSS_fmu_RefsValsEI_hh_INCLUDED
+#define QSS_fmu_RefsValsEI_hh_INCLUDED
 
 // C++ Headers
 #include <cassert>
 
 namespace QSS {
+namespace fmu {
 
-// FMU References + Values Arrays for Event Indicators
+// FMU References + Values for Event Indicators
 template< typename V >
 struct RefsValsEI final
 {
@@ -92,12 +93,12 @@ public: // Methods
 
 	// Push Back
 	void
-	push_back( Ref const & ref, Val const & val = 0.0, Val const & val_m = 0.0, Val const & val_p = 0.0 )
+	push_back( Ref const & ref )
 	{
 		refs.push_back( ref );
-		vals.push_back( val );
-		vals_m.push_back( val_m );
-		vals_p.push_back( val_p );
+		vals.push_back( 0.0 );
+		vals_m.push_back( 0.0 );
+		vals_p.push_back( 0.0 );
 	}
 
 public: // Data
@@ -109,6 +110,7 @@ public: // Data
 
 }; // RefsValsEI
 
+} // fmu
 } // QSS
 
 #endif

@@ -185,7 +185,7 @@ public: // Methods
 
 	// QSS Advance
 	void
-	advance_QSS()
+	advance_QSS() override final
 	{
 		Real const x_tE( zChatter_ ? x( tE ) : Real( 0.0 ) );
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
@@ -210,7 +210,7 @@ public: // Methods
 
 	// Zero-Crossing Advance
 	void
-	advance_ZC()
+	advance_ZC() override final
 	{
 		for ( typename If::Clause * clause : if_clauses ) clause->activity( tZ );
 		for ( typename When::Clause * clause : when_clauses ) clause->activity( tZ );
@@ -223,7 +223,7 @@ public: // Methods
 
 	// Observer Advance
 	void
-	advance_observer( Time const t )
+	advance_observer( Time const t ) override final
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		tX = tQ = t;
@@ -243,7 +243,7 @@ public: // Methods
 
 	// Observer Advance: Parallel
 	void
-	advance_observer_parallel( Time const t )
+	advance_observer_parallel( Time const t ) override final
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		tX = tQ = t;
@@ -261,14 +261,14 @@ public: // Methods
 
 	// Observer Advance: Serial
 	void
-	advance_observer_serial()
+	advance_observer_serial() override final
 	{
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
 	}
 
 	// Observer Advance: Serial + Diagnostics
 	void
-	advance_observer_serial_d()
+	advance_observer_serial_d() override final
 	{
 		assert( options::output::d );
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );

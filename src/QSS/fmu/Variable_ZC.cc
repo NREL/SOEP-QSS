@@ -45,7 +45,7 @@ namespace fmu {
 	refine_root_ZC( Time const tBeg )
 	{
 		assert( options::refine );
-		assert( not_ZCe() );
+		assert( not_ZCd() && not_ZCe() );
 		Time t( tZ );
 		Time const t_fmu( fmu_get_time() );
 		fmu_set_time( tZ );
@@ -55,7 +55,36 @@ namespace fmu {
 		std::size_t i( 0u );
 		std::size_t const n( 10u ); // Max iterations
 		while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-			Real const d( Z_1( t, v ) );
+			Real const d( Z_1( t, v ) ); //ND
+			if ( d == 0.0 ) break;
+			t -= m * ( v / d );
+			fmu_set_time( t );
+			v = z_0( t );
+			if ( std::abs( v ) >= std::abs( v_p ) ) m *= 0.5; // Non-converging step: Reduce step size
+			v_p = v;
+		}
+		if ( ( t >= tBeg ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
+		if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name() << '(' << t << ')' << " tZ may not have converged" <<  '\n';
+		fmu_set_time( t_fmu );
+	}
+
+	// Refine Zero-Crossing Time: Event Indicator Directional Derivative Zero-Crossing Variable
+	void
+	Variable_ZC::
+	refine_root_ZCd( Time const tBeg )
+	{
+		assert( options::refine );
+		assert( is_ZCd() );
+		Time t( tZ );
+		Time const t_fmu( fmu_get_time() );
+		fmu_set_time( tZ );
+		Real const vZ( z_0( tZ ) );
+		Real v( vZ ), v_p( vZ );
+		Real m( 1.0 ); // Multiplier
+		std::size_t i( 0u );
+		std::size_t const n( 10u ); // Max iterations
+		while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
+			Real const d( Z_1( t ) ); //DD
 			if ( d == 0.0 ) break;
 			t -= m * ( v / d );
 			fmu_set_time( t );

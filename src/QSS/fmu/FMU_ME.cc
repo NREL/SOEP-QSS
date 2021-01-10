@@ -247,6 +247,12 @@ namespace fmu {
 		 fmu_generation_tool.find( "Dymola" ) == 0u ? FMU_Generator::Dymola : FMU_Generator::Other ) )
 		);
 
+		// Check FMU capabilities includes directional derivatives
+		if ( options::eidd && ( ! bool( fmi2_import_get_capability( fmu, fmi2_me_providesDirectionalDerivatives ) ) ) ) {
+			std::cerr << "\nError: " + name + " FMU-ME does not have directional derivative support" << std::endl;
+			std::exit( EXIT_FAILURE );
+		}
+
 		// Check SI units
 		fmi2_import_unit_definitions_t * unit_defs( fmi2_import_get_unit_definitions( fmu ) );
 		if ( unit_defs != nullptr ) {
@@ -1043,11 +1049,23 @@ namespace fmu {
 				Variable_ZC * qss_var( nullptr );
 				Real const aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac * fmi2_xml_get_real_variable_nominal( var_real ), std::numeric_limits< double >::min() ) );
 				if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) || ( options::qss == options::QSS::xQSS1 ) ) {
-					qss_var = new Variable_ZC1( var_name, options::rTol, aTol, options::zTol, this, fmu_var );
+					if ( options::eidd ) {
+						qss_var = new Variable_ZCd1( var_name, options::rTol, aTol, options::zTol, this, fmu_var );
+					} else {
+						qss_var = new Variable_ZC1( var_name, options::rTol, aTol, options::zTol, this, fmu_var );
+					}
 				} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) || ( options::qss == options::QSS::xQSS2 ) ) {
-					qss_var = new Variable_ZC2( var_name, options::rTol, aTol, options::zTol, this, fmu_var );
+					if ( options::eidd ) {
+						qss_var = new Variable_ZCd2( var_name, options::rTol, aTol, options::zTol, this, fmu_var );
+					} else {
+						qss_var = new Variable_ZC2( var_name, options::rTol, aTol, options::zTol, this, fmu_var );
+					}
 				} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) || ( options::qss == options::QSS::xQSS3 ) ) {
-					qss_var = new Variable_ZC3( var_name, options::rTol, aTol, options::zTol, this, fmu_var );
+					if ( options::eidd ) {
+						qss_var = new Variable_ZCd3( var_name, options::rTol, aTol, options::zTol, this, fmu_var );
+					} else {
+						qss_var = new Variable_ZC3( var_name, options::rTol, aTol, options::zTol, this, fmu_var );
+					}
 				} else {
 					std::cerr << " Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 					std::exit( EXIT_FAILURE );
@@ -1091,6 +1109,14 @@ namespace fmu {
 			} else {
 				std::cerr << "\nError: FMU event indicator variable is not real-valued and continuous: " << var_name << std::endl;
 				std::cerr << "       Termination supppressed pending OCT update: Results may be invalid!" << std::endl; //OCT std::exit( EXIT_FAILURE );
+			}
+		}
+		if ( has_event_indicators ) {
+			std::cout << "\n" << n_ZC_vars << " event indicator" << ( n_ZC_vars > 1u ? "s" : "" )  << " present" << std::endl;
+			if ( options::eidd ) {
+				std::cout << " Directional derivatives used for event indicator first derivative" << std::endl;
+			} else {
+				std::cout << " Numeric differentiation used for all event indicator derivatives" << std::endl;
 			}
 		}
 
@@ -1159,6 +1185,9 @@ namespace fmu {
 					}
 				}
 			}
+		}
+		if ( has_explicit_ZCs ) {
+			std::cout << "\n" << n_ZC_vars << " explicit zero-crossing variable" << ( n_ZC_vars > 1u ? "s" : "" )  << " present" << std::endl;
 		}
 
 		if ( n_ZC_vars > 0u ) {

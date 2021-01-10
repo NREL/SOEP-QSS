@@ -81,6 +81,7 @@ enum class LogLevel {
 };
 
 extern QSS qss; // QSS method: (x)(LI)QSS(1|2|3)
+extern bool eidd; // Use event indicator directional derivatives?
 extern double rTol; // Relative tolerance
 extern double aTol; // Absolute tolerance
 extern double aFac; // Absolute tolerance factor

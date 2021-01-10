@@ -187,7 +187,7 @@ public: // Methods
 
 	// Handler Advance
 	void
-	advance_handler( Time const t )
+	advance_handler( Time const t ) override final
 	{
 		assert( tX <= t );
 		tX = tQ = t;
@@ -200,7 +200,7 @@ public: // Methods
 
 	// Handler Advance: Stage 0
 	void
-	advance_handler_0( Time const t )
+	advance_handler_0( Time const t ) override final
 	{
 		assert( tX <= t );
 		tX = tQ = t;
@@ -209,7 +209,7 @@ public: // Methods
 
 	// Handler Advance: Stage Final
 	void
-	advance_handler_F()
+	advance_handler_F() override final
 	{
 		shift_handler();
 		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
@@ -217,14 +217,14 @@ public: // Methods
 
 	// Handler No-Advance
 	void
-	no_advance_handler()
+	no_advance_handler() override final
 	{
 		shift_handler();
 	}
 
 	// Observer Advance
 	void
-	advance_observer( Time const t )
+	advance_observer( Time const t ) override final
 	{
 		assert( tX <= t );
 		tX = t;
@@ -233,7 +233,7 @@ public: // Methods
 
 	// Observer Advance: Stage d
 	void
-	advance_observer_d() const
+	advance_observer_d() const override final
 	{
 		std::cout << "  " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}

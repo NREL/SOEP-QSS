@@ -48,6 +48,7 @@ namespace QSS {
 namespace options {
 
 QSS qss( QSS::QSS2 ); // QSS method: (x)(LI)QSS(1|2|3)
+bool eidd( false ); // Use event indicator directional derivatives?
 double rTol( 1.0e-4 ); // Relative tolerance
 double aTol( 1.0e-6 ); // Absolute tolerance
 double aFac( 0.01 ); // Absolute tolerance factor
@@ -128,6 +129,7 @@ help_display()
 	std::cout << '\n' << "QSS [options] [model [model ...]]" << "\n\n";
 	std::cout << "Options:" << "\n\n";
 	std::cout << " --qss=QSS        QSS method: (x)(LI)QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
+	std::cout << " --eidd           Use event indicator directional derivatives" << '\n';
 	std::cout << " --rTol=TOL       Relative tolerance  [1e-4|FMU]" << '\n';
 	std::cout << " --aTol=TOL       Absolute tolerance  [rTol*aFac*nominal]" << '\n';
 	std::cout << " --aFac=FAC       Absolute tolerance factor  [0.01]" << '\n';
@@ -135,7 +137,7 @@ help_display()
 	std::cout << " --zFac=FAC       Zero-crossing tolerance factor  [1.01]" << '\n';
 	std::cout << " --dtMin=STEP     Min time step (s)  [0]" << '\n';
 	std::cout << " --dtMax=STEP     Max time step (s)  [infinity]" << '\n';
-	std::cout << " --dtInf=STEP     Inf alt time step (s)  [infinity]" << '\n';
+	std::cout << " --dtInf=STEP     Deactivation control time step (s)  [infinity]" << '\n';
 	std::cout << " --dtZC=STEP      FMU zero-crossing time step (s)  [1e-9]" << '\n';
 	std::cout << " --dtND=STEP      Numeric differentiation time step (s)  [1e-6]" << '\n';
 	std::cout << " --dtCon=STEP     FMU connection sync time step (s)  [0]" << '\n';
@@ -273,6 +275,8 @@ process_args( int argc, char * argv[] )
 				std::cerr << "\nError: Unsupported QSS method: " << qss_name << std::endl;
 				fatal = true;
 			}
+		} else if ( has_option( arg, "eidd" ) ) {
+			eidd = true;
 		} else if ( has_option( arg, "cycles" ) ) {
 			cycles = true;
 		} else if ( has_option( arg, "inflection" ) ) {

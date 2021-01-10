@@ -136,7 +136,7 @@ public: // Methods
 
 	// QSS Advance
 	void
-	advance_QSS()
+	advance_QSS() override final
 	{
 		tX = tQ = tE;
 		Real const x_tE( zChatter_ ? x( tE ) : Real( 0.0 ) );
@@ -160,7 +160,7 @@ public: // Methods
 
 	// QSS Advance: Stage 0
 	void
-	advance_QSS_0( Real const v )
+	advance_QSS_0( Real const x_0 ) override final
 	{
 		tX = tQ = tE;
 		Real const x_tE( zChatter_ ? x( tE ) : Real( 0.0 ) );
@@ -168,20 +168,20 @@ public: // Methods
 		check_crossing_ = ( tE > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_tE : x( tE ) ) : 0 );
 #endif
-		x_0_ = v;
+		x_0_ = x_0;
 		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 	}
 
 	// QSS Advance: Stage 1
 	void
-	advance_QSS_1( Real const d )
+	advance_QSS_1( Real const x_1 ) override final
 	{
-		x_1_ = d;
+		x_1_ = x_1;
 	}
 
 	// QSS Advance: Stage Final
 	void
-	advance_QSS_F()
+	advance_QSS_F() override final
 	{
 		set_qTol();
 		set_tE();
@@ -196,7 +196,7 @@ public: // Methods
 
 	// Zero-Crossing Advance
 	void
-	advance_ZC()
+	advance_ZC() override final
 	{
 		assert( in_conditional() );
 		conditional->activity( tZ );
@@ -209,7 +209,7 @@ public: // Methods
 
 	// Observer Advance
 	void
-	advance_observer( Time const t )
+	advance_observer( Time const t ) override final
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		tX = tQ = t;
@@ -226,18 +226,18 @@ public: // Methods
 
 	// Observer Advance: Stage 1
 	void
-	advance_observer_1( Time const t, Real const d, Real const v )
+	advance_observer_1( Time const t, Real const x_0, Real const x_1 ) override final
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		assert( d == p_1() );
-		assert( v == p_0() );
 		tX = tQ = t;
+		assert( x_0 == z_0() );
+		assert( x_1 == p_1() );
 		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = ( !handler_modified_ && ( t == tZ_last ) ? 0.0 : v ); // Force exact zero if at zero-crossing time
+		x_0_ = ( !handler_modified_ && ( t == tZ_last ) ? 0.0 : x_0 ); // Force exact zero if at zero-crossing time
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
-		x_1_ = d;
+		x_1_ = x_1;
 		set_qTol();
 		set_tE();
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
@@ -245,7 +245,7 @@ public: // Methods
 
 	// Observer Advance: Stage d
 	void
-	advance_observer_d() const
+	advance_observer_d() const override final
 	{
 		std::cout << "  " << name() << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ <<  '\n';
 	}

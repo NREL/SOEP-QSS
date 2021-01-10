@@ -1,4 +1,4 @@
-// FMU-Based QSS2 Explicit Zero-Crossing Variable
+// FMU-Based QSS2 Directional Derivative Zero-Crossing Variable
 //
 // Project: QSS Solver
 //
@@ -33,8 +33,8 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_fmu_Variable_ZCe2_hh_INCLUDED
-#define QSS_fmu_Variable_ZCe2_hh_INCLUDED
+#ifndef QSS_fmu_Variable_ZCd2_hh_INCLUDED
+#define QSS_fmu_Variable_ZCd2_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/fmu/Variable_ZC.hh>
@@ -42,38 +42,33 @@
 namespace QSS {
 namespace fmu {
 
-// FMU-Based QSS2 Zero-Crossing Variable
-class Variable_ZCe2 final : public Variable_ZC
+// FMU-Based QSS2 Directional Derivative Zero-Crossing Variable
+class Variable_ZCd2 final : public Variable_ZC
 {
 
 public: // Types
 
 	using Super = Variable_ZC;
 
-private: // Types
-
-	using Super::z_2;
-
 public: // Creation
 
 	// Constructor
-	Variable_ZCe2(
+	Variable_ZCd2(
 	 std::string const & name,
 	 Real const rTol,
 	 Real const aTol,
 	 Real const zTol,
 	 FMU_ME * fmu_me,
-	 FMU_Variable const var = FMU_Variable(),
-	 FMU_Variable const der = FMU_Variable()
+	 FMU_Variable const var = FMU_Variable()
 	) :
-	 Super( 2, name, rTol, aTol, zTol, fmu_me, var, der )
+	 Super( 2, name, rTol, aTol, zTol, fmu_me, var )
 	{}
 
 public: // Predicate
 
-	// Explicit Zero-Crossing Variable?
+	// Directional Derivative Zero-Crossing Variable?
 	bool
-	is_ZCe() const
+	is_ZCd() const
 	{
 		return true;
 	}
@@ -149,7 +144,7 @@ public: // Methods
 		// Initialize specs
 		x_0_ = z_0();
 		x_mag_ = std::abs( x_0_ );
-		x_1_ = p_1();
+		x_1_ = n_1();
 		x_2_ = n_2();
 		set_qTol();
 		set_tE();
@@ -170,7 +165,7 @@ public: // Methods
 #endif
 		x_0_ = z_0();
 		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
-		x_1_ = p_1();
+		x_1_ = n_1();
 		x_2_ = n_2();
 		set_qTol();
 		set_tE();
@@ -255,9 +250,9 @@ public: // Methods
 		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
-		x_0_ = ( !handler_modified_ && ( t == tZ_last ) ? z_x() : z_0() ); // Force exact zero if at zero-crossing time
+		x_0_ = ( !handler_modified_ && ( t == tZ_last ) ? 0.0 : z_0() ); // Force exact zero if at zero-crossing time
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
-		x_1_ = p_1();
+		x_1_ = n_1();
 		x_2_ = n_2();
 		set_qTol();
 		set_tE();
@@ -271,7 +266,7 @@ public: // Methods
 		assert( ( tX <= t ) && ( t <= tE ) );
 		tX = tQ = t;
 		assert( x_0 == z_0() );
-		assert( x_1 == p_1() );
+		assert( x_1 == n_1() );
 		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
 		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
@@ -347,7 +342,7 @@ private: // Methods
 				 crossing_type( x_0_ > 0.0 ? std::min( x1( tZ ), Real( 0.0 ) ) : std::max( x1( tZ ), Real( 0.0 ) ) ) );
 				if ( has( crossing_check ) ) { // Crossing type is relevant
 					crossing = crossing_check;
-					if ( options::refine ) refine_root_ZCe( tX ); // Refine root: Expensive!
+					if ( options::refine ) refine_root_ZCd( tX ); // Refine root: Expensive!
 				} else { // Crossing type not relevant
 					tZ = infinity;
 				}
@@ -376,7 +371,7 @@ private: // Methods
 				 crossing_type( x_0 > 0.0 ? std::min( x1( tZ ), Real( 0.0 ) ) : std::max( x1( tZ ), Real( 0.0 ) ) ) );
 				if ( has( crossing_check ) ) { // Crossing type is relevant
 					crossing = crossing_check;
-					if ( options::refine ) refine_root_ZCe( tB ); // Refine root: Expensive!
+					if ( options::refine ) refine_root_ZCd( tB ); // Refine root: Expensive!
 				} else { // Crossing type not relevant
 					tZ = infinity;
 				}
@@ -408,11 +403,18 @@ private: // Methods
 		}
 	}
 
+	// Coefficient 1 from FMU at Time tQ
+	Real
+	n_1() const
+	{
+		return Z_1();
+	}
+
 	// Coefficient 2 from FMU at Time tQ
 	Real
 	n_2() const
 	{
-		return z_2( x_1_ );
+		return Z_2( x_1_ );
 	}
 
 	// Coefficient 2 from FMU
@@ -433,7 +435,7 @@ private: // Data
 
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Coefficients
 
-}; // Variable_ZCe2
+}; // Variable_ZCd2
 
 } // fmu
 } // QSS

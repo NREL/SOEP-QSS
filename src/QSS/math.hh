@@ -68,7 +68,7 @@ inline
 T
 sign( T const x )
 {
-	return ( std::signbit( x ) ? T( -1 ) : T( +1 ) );
+	return ( x < T( 0 ) ? T( -1 ) : T( +1 ) );
 }
 
 // Signum: Returns Passed Type
@@ -232,7 +232,7 @@ min_root_quadratic( T const a, T const b, T const c )
 				} else {
 					return infinityish< T >();
 				}
-			} else { // Two real roots: From http://mathworld.wolfram.com/QuadraticEquation.html for precision
+			} else { // Two real roots: From https://mathworld.wolfram.com/QuadraticEquation.html for precision
 				T const q( -0.5 * ( b + ( sign( b ) * std::sqrt( disc ) ) ) );
 				if ( c > 0.0 ) {
 					if ( b + ( 2.0 * q ) <= 0.0 ) { // Crossing direction test
@@ -286,7 +286,7 @@ min_positive_root_quadratic( T const a, T const b, T const c )
 				} else {
 					return infinityish< T >();
 				}
-			} else { // Two real roots: From http://mathworld.wolfram.com/QuadraticEquation.html for precision
+			} else { // Two real roots: From https://mathworld.wolfram.com/QuadraticEquation.html for precision
 				T const q( -0.5 * ( b + ( sign( b ) * std::sqrt( disc ) ) ) );
 				T r; // Tentative root
 				if ( c > 0.0 ) {
@@ -330,7 +330,7 @@ min_root_quadratic_lower( T const a, T const b, T const c )
 		T const disc( ( b * b ) - ( 4.0 * a * c ) );
 		if ( disc <= 0.0 ) { // Zero or one real root(s) => Precision loss
 			return 0.0;
-		} else { // Two real roots: From http://mathworld.wolfram.com/QuadraticEquation.html for precision
+		} else { // Two real roots: From https://mathworld.wolfram.com/QuadraticEquation.html for precision
 			T const q( -0.5 * ( b + ( sign( b ) * std::sqrt( disc ) ) ) );
 			if ( b + ( 2.0 * q ) <= 0.0 ) { // Crossing direction test
 				return std::max( q / a, 0.0 );
@@ -362,7 +362,7 @@ min_root_quadratic_upper( T const a, T const b, T const c )
 		T const disc( ( b * b ) - ( 4.0 * a * c ) );
 		if ( disc <= 0.0 ) { // Zero or one real root(s) => Precision loss
 			return 0.0;
-		} else { // Two real roots: From http://mathworld.wolfram.com/QuadraticEquation.html for precision
+		} else { // Two real roots: From https://mathworld.wolfram.com/QuadraticEquation.html for precision
 			T const q( -0.5 * ( b + ( sign( b ) * std::sqrt( disc ) ) ) );
 			if ( b + ( 2.0 * q ) >= 0.0 ) { // Crossing direction test
 				return std::max( q / a, 0.0 );
@@ -403,7 +403,7 @@ min_root_quadratic_both( T const a, T const b, T const cl, T const cu )
 		} else if ( discl == 0.0 ) { // One real root
 			rootl = -b / ( 2.0 * a );
 			if ( rootl < 0.0 ) rootl = infinityish< T >();
-		} else { // Two real roots: From http://mathworld.wolfram.com/QuadraticEquation.html for precision
+		} else { // Two real roots: From https://mathworld.wolfram.com/QuadraticEquation.html for precision
 			T const q( -0.5 * ( b + ( sign( b ) * std::sqrt( discl ) ) ) );
 			if ( b + ( 2.0 * q ) <= 0.0 ) { // Crossing direction test
 				rootl = q / a;
@@ -420,7 +420,7 @@ min_root_quadratic_both( T const a, T const b, T const cl, T const cu )
 		} else if ( discu == 0.0 ) { // One real root
 			rootu = -b / ( 2.0 * a );
 			if ( rootu < 0.0 ) rootu = infinityish< T >();
-		} else { // Two real roots: From http://mathworld.wolfram.com/QuadraticEquation.html for precision
+		} else { // Two real roots: From https://mathworld.wolfram.com/QuadraticEquation.html for precision
 			T const q( -0.5 * ( b + ( sign( b ) * std::sqrt( discu ) ) ) );
 			if ( b + ( 2.0 * q ) >= 0.0 ) { // Crossing direction test
 				rootu = q / a;
@@ -477,6 +477,44 @@ cubic_cull_upper( T const a, T const b, T const r, T const s )
 	return ( r > 0.0 ? ( ( ( 3.0 * r * r ) + ( ( 2.0 * a * r ) + b ) * s ) >= 0.0 ? r : 0.0 ) : 0.0 );
 }
 
+// Newton Iterative Positive Root Near x=0 of Cubic Equation a x^3 + b x^2 + c x + d
+template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
+inline
+T
+newton_small_positive_root_cubic( T const a, T const b, T const c, T const d )
+{
+	if ( sign( c ) == sign( d ) ) return infinityish< T >(); // Don't bother looking near x=0
+	double const m( 1.0 - ( T( 8 ) * std::numeric_limits< T >::epsilon() ) ); // Multiplier
+	double v_p( d ); // Value at x=0
+	double x( -d / c ); // Initial (positive) guess
+// Less efficient: 5 multiplications per iteration
+//	double const A( 3.0 * a );
+//	double const B( 2.0 * b );
+//	double v( ( ( ( a * x ) + b ) * x ) + c ) * x + d ); // Value at initial guess
+//	double s( ( ( ( A * x ) + B ) * x ) + c ); // Slope at initial guess
+	double p( a * x );
+	double q( p + b );
+	double r( ( q * x ) + c );
+	double v( ( r * x ) + d ); // Value
+	double s; // Slope
+	std::size_t i( 0u );
+	std::size_t const n( 8u ); // Max iterations
+	while ( ( ++i <= n ) && ( std::abs( v ) < std::abs( v_p ) ) ) {
+		s = ( ( p + q ) * x ) + r; // Slope at current guess
+		if ( s == 0.0 ) break; // Give up
+		double const dx( v / s );
+		if ( dx == 0.0 ) break; // Done
+		x -= m * ( v / s ); // New guess
+		if ( x <= 0.0 ) return infinityish< T >(); // Give up
+		v_p = v;
+		p = a * x;
+		q = p + b;
+		r = ( q * x ) + c;
+		v = ( r * x ) + d; // Value at new guess
+	}
+	return x;
+}
+
 // Min Positive Root of Cubic Equation a x^3 + b x^2 + c x + d
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
@@ -494,19 +532,17 @@ min_positive_root_cubic( T a, T b, T c, T const d )
 		b = c * inv_a;
 		c = d * inv_a;
 		T const a_3( one_third * a );
-		T const a2( a * a );
-		T const q( a2 - ( 3.0 * b ) );
-		T const r( ( ( ( 2.0 * a2 ) - ( 9.0 * b ) ) * a ) + ( 27.0 * c ) );
+		T const aa( a * a );
+		T const q( aa - ( 3.0 * b ) );
+		T const r( ( ( ( 2.0 * aa ) - ( 9.0 * b ) ) * a ) + ( 27.0 * c ) );
 		if ( ( q == 0.0 ) && ( r == 0.0 ) ) {
 			return ( a_3 < 0.0 ? -a_3 : infinityish< T >() );
 		} else {
-			T const q3( q * q * q );
-			T const CR2( 729.0 * r * r );
-			T const CQ3( 2916.0 * q3 );
-			T const Q( one_ninth * q );
+			T const CR2( 729.0 * ( r * r ) );
+			T const CQ3( 2916.0 * ( q * q * q ) );
 			if ( CR2 > CQ3 ) { // One real root
 				T const A( -sign( r ) * std::cbrt( ( one_54 * std::abs( r ) ) + ( one_1458 * std::sqrt( CR2 - CQ3 ) ) ) );
-				T const B( Q / A );
+				T const B( q / ( 9.0 * A ) );
 				return positive_or_infinity( A + B - a_3 );
 			} else if ( CR2 < CQ3 ) { // Three real roots
 				T const sqrt_q( std::sqrt( q ) );
@@ -518,7 +554,7 @@ min_positive_root_cubic( T a, T b, T c, T const d )
 				return min_positive_or_infinity( root1, root2, root3 );
 			} else { // Two real roots
 				assert( CR2 == CQ3 );
-				T const sqrt_Q( std::sqrt( Q ) );
+				T const sqrt_Q( std::sqrt( one_ninth * q ) );
 				if ( r > 0.0 ) {
 					T const root1( -( 2.0 * sqrt_Q ) - a_3 );
 					if ( root1 > 0.0 ) { // Must be smallest positive root
@@ -527,7 +563,7 @@ min_positive_root_cubic( T a, T b, T c, T const d )
 						return positive_or_infinity( sqrt_Q - a_3 );
 					}
 				} else {
-					T const root1( positive_or_infinity( -sqrt_Q - a_3 ) );
+					T const root1( -sqrt_Q - a_3 );
 					if ( root1 > 0.0 ) { // Must be smallest positive root
 						return root1;
 					} else {
@@ -560,19 +596,17 @@ min_root_cubic_lower( T a, T b, T c, T const d )
 		b = c * inv_a;
 		c = d * inv_a;
 		T const a_3( one_third * a );
-		T const a2( a * a );
-		T const q( a2 - ( 3.0 * b ) );
-		T const r( ( ( ( 2.0 * a2 ) - ( 9.0 * b ) ) * a ) + ( 27.0 * c ) );
+		T const aa( a * a );
+		T const q( aa - ( 3.0 * b ) );
+		T const r( ( ( ( 2.0 * aa ) - ( 9.0 * b ) ) * a ) + ( 27.0 * c ) );
 		if ( ( q == 0.0 ) && ( r == 0.0 ) ) {
 			return std::max( -a_3, 0.0 );
 		} else {
-			T const q3( q * q * q );
-			T const CR2( 729.0 * r * r );
-			T const CQ3( 2916.0 * q3 );
-			T const Q( one_ninth * q );
+			T const CR2( 729.0 * ( r * r ) );
+			T const CQ3( 2916.0 * ( q * q * q ) );
 			if ( CR2 > CQ3 ) { // One real root
 				T const A( -sign( r ) * std::cbrt( ( one_54 * std::abs( r ) ) + ( one_1458 * std::sqrt( CR2 - CQ3 ) ) ) );
-				T const B( Q / A );
+				T const B( q / ( 9.0 * A ) );
 				return cubic_cull( a, b, A + B - a_3 );
 			} else if ( CR2 < CQ3 ) { // Three real roots
 				T const sqrt_q( std::sqrt( q ) );
@@ -584,7 +618,7 @@ min_root_cubic_lower( T a, T b, T c, T const d )
 				return min_positive_or_infinity( root1, root2, root3 );
 			} else { // Two real roots
 				assert( CR2 == CQ3 );
-				T const sqrt_Q( std::sqrt( Q ) );
+				T const sqrt_Q( std::sqrt( one_ninth * q ) );
 				if ( r > 0.0 ) {
 					T const root1( cubic_cull( a, b, -( 2.0 * sqrt_Q ) - a_3 ) );
 					if ( root1 > 0.0 ) { // Must be smallest positive root
@@ -626,19 +660,17 @@ min_root_cubic_upper( T a, T b, T c, T const d )
 		b = c * inv_a;
 		c = d * inv_a;
 		T const a_3( one_third * a );
-		T const a2( a * a );
-		T const q( a2 - ( 3.0 * b ) );
-		T const r( ( ( ( 2.0 * a2 ) - ( 9.0 * b ) ) * a ) + ( 27.0 * c ) );
+		T const aa( a * a );
+		T const q( aa - ( 3.0 * b ) );
+		T const r( ( ( ( 2.0 * aa ) - ( 9.0 * b ) ) * a ) + ( 27.0 * c ) );
 		if ( ( q == 0.0 ) && ( r == 0.0 ) ) {
 			return std::max( -a_3, 0.0 );
 		} else {
-			T const q3( q * q * q );
-			T const CR2( 729.0 * r * r );
-			T const CQ3( 2916.0 * q3 );
-			T const Q( one_ninth * q );
+			T const CR2( 729.0 * ( r * r ) );
+			T const CQ3( 2916.0 * ( q * q * q ) );
 			if ( CR2 > CQ3 ) { // One real root
 				T const A( -sign( r ) * std::cbrt( ( one_54 * std::abs( r ) ) + ( one_1458 * std::sqrt( CR2 - CQ3 ) ) ) );
-				T const B( Q / A );
+				T const B( q / ( 9.0 * A ) );
 				return cubic_cull( a, b, A + B - a_3 );
 			} else if ( CR2 < CQ3 ) { // Three real roots
 				T const sqrt_q( std::sqrt( q ) );
@@ -650,7 +682,7 @@ min_root_cubic_upper( T a, T b, T c, T const d )
 				return min_positive_or_infinity( root1, root2, root3 );
 			} else { // Two real roots
 				assert( CR2 == CQ3 );
-				T const sqrt_Q( std::sqrt( Q ) );
+				T const sqrt_Q( std::sqrt( one_ninth * q ) );
 				if ( r > 0.0 ) {
 					T const root1( cubic_cull( a, b, -( 2.0 * sqrt_Q ) - a_3 ) );
 					if ( root1 > 0.0 ) { // Must be smallest positive root
@@ -692,12 +724,9 @@ min_root_cubic_both( T a, T b, T const c, T const dl, T const du )
 		T const cl( dl * inv_a );
 		T const cu( du * inv_a );
 		T const a_3( one_third * a );
-		T const a2( a * a );
-		T const q( a2 - ( 3.0 * b ) );
-		T const q3( q * q * q );
-		T const CQ3( 2916.0 * q3 );
-		T const Q( one_ninth * q );
-		T const rm( ( ( 2.0 * a2 ) - ( 9.0 * b ) ) * a );
+		T const aa( a * a );
+		T const q( aa - ( 3.0 * b ) );
+		T const rm( ( ( 2.0 * aa ) - ( 9.0 * b ) ) * a );
 		T r;
 
 		// Lower boundary
@@ -706,10 +735,11 @@ min_root_cubic_both( T a, T b, T const c, T const dl, T const du )
 		if ( ( q == 0.0 ) && ( r == 0.0 ) ) {
 			rootl = std::max( -a_3, 0.0 );
 		} else {
-			T const CR2( 729.0 * r * r );
+			T const CR2( 729.0 * ( r * r ) );
+			T const CQ3( 2916.0 * ( q * q * q ) );
 			if ( CR2 > CQ3 ) { // One real root
 				T const A( -sign( r ) * std::cbrt( ( one_54 * std::abs( r ) ) + ( one_1458 * std::sqrt( CR2 - CQ3 ) ) ) );
-				T const B( Q / A );
+				T const B( q / ( 9.0 * A ) );
 				rootl = cubic_cull_lower( a, b, A + B - a_3, s );
 			} else if ( CR2 < CQ3 ) { // Three real roots
 				T const sqrt_q( std::sqrt( q ) );
@@ -721,7 +751,7 @@ min_root_cubic_both( T a, T b, T const c, T const dl, T const du )
 				rootl = min_positive_or_infinity( root1, root2, root3 );
 			} else { // Two real roots
 				assert( CR2 == CQ3 );
-				T const sqrt_Q( std::sqrt( Q ) );
+				T const sqrt_Q( std::sqrt( one_ninth * q ) );
 				if ( r > 0.0 ) {
 					T const root1( cubic_cull_lower( a, b, -( 2.0 * sqrt_Q ) - a_3, s ) );
 					if ( root1 > 0.0 ) { // Must be smallest positive root
@@ -746,10 +776,11 @@ min_root_cubic_both( T a, T b, T const c, T const dl, T const du )
 		if ( ( q == 0.0 ) && ( r == 0.0 ) ) {
 			rootu = std::max( -a_3, 0.0 );
 		} else {
-			T const CR2( 729.0 * r * r );
+			T const CR2( 729.0 * ( r * r ) );
+			T const CQ3( 2916.0 * ( q * q * q ) );
 			if ( CR2 > CQ3 ) { // One real root
 				T const A( -sign( r ) * std::cbrt( ( one_54 * std::abs( r ) ) + ( one_1458 * std::sqrt( CR2 - CQ3 ) ) ) );
-				T const B( Q / A );
+				T const B( q / ( 9.0 * A ) );
 				rootu = cubic_cull_upper( a, b, A + B - a_3, s );
 			} else if ( CR2 < CQ3 ) { // Three real roots
 				T const sqrt_q( std::sqrt( q ) );
@@ -761,7 +792,7 @@ min_root_cubic_both( T a, T b, T const c, T const dl, T const du )
 				rootu = min_positive_or_infinity( root1, root2, root3 );
 			} else { // Two real roots
 				assert( CR2 == CQ3 );
-				T const sqrt_Q( std::sqrt( Q ) );
+				T const sqrt_Q( std::sqrt( one_ninth * q ) );
 				if ( r > 0.0 ) {
 					T const root1( cubic_cull_upper( a, b, -( 2.0 * sqrt_Q ) - a_3, s ) );
 					if ( root1 > 0.0 ) { // Must be smallest positive root

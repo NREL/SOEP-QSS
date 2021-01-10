@@ -46,7 +46,7 @@ TEST( MathTest, Sign )
 	EXPECT_EQ( 1.0, sign( 3.0 ) );
 	EXPECT_EQ( -1.0, sign( -5.0 ) );
 	EXPECT_EQ( 1.0, sign( 0.0 ) );
-	EXPECT_EQ( -1.0, sign( -0.0 ) );
+	EXPECT_EQ( 1.0, sign( -0.0 ) );
 }
 
 TEST( MathTest, Sgn )

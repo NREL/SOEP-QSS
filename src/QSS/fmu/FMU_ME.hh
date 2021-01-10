@@ -333,6 +333,40 @@ public: // FMU Methods
 		(void)fmi_status; // Suppress unused warning
 	}
 
+	// Get a Directional Derivative
+	Real
+	get_directional_derivative(
+	 fmi2_value_reference_t const v_ref[], // Seed value references
+	 std::size_t const nv, // Seed size
+	 fmi2_value_reference_t const z_ref, // Derivative value reference
+	 fmi2_real_t const dv[] // Seed values
+	) const
+	{
+		assert( fmu != nullptr );
+		fmi2_real_t dz;
+		fmi2_status_t const fmi_status = fmi2_import_get_directional_derivative( fmu, v_ref, nv, &z_ref, std::size_t( 1u ), dv, &dz );
+		assert( status_check( fmi_status, "get_directional_derivative" ) );
+		(void)fmi_status; // Suppress unused warning
+		return dz;
+	}
+
+	// Get Directional Derivatives
+	void
+	get_directional_derivatives(
+	 fmi2_value_reference_t const v_ref[], // Seed value references
+	 std::size_t const nv, // Seed size
+	 fmi2_value_reference_t const z_ref[], // Derivative value references
+	 std::size_t const nz, // Derivative size
+	 fmi2_real_t const dv[], // Seed values
+	 fmi2_real_t dz[] // Derivatives
+	) const
+	{
+		assert( fmu != nullptr );
+		fmi2_status_t const fmi_status = fmi2_import_get_directional_derivative( fmu, v_ref, nv, z_ref, nz, dv, dz );
+		assert( status_check( fmi_status, "get_directional_derivatives" ) );
+		(void)fmi_status; // Suppress unused warning
+	}
+
 	// Get an Integer FMU Variable Value
 	Integer
 	get_integer( fmi2_value_reference_t const ref ) const

@@ -77,25 +77,27 @@ The design concepts are still emerging. The basic constituents of a fast QSS sol
 
 ### Time Steps
 
+#### Deactivation
+
+The QSS time stepping logic depends on the magnitude of the highest order continuous representation derivative to set the next trigger time based on when the quantized and continuous representations will diverge by the selected quantum threshold. This does not always give a good indication of the divergence of the quantized representation from the actual/analytical value of QSS (ODE) state variables or input variables. For a QSS variable that is "isolated" (does not appear in many or any other variable's derivatives) or any input variable an artificially large time step causes the variable to "deactivate", becoming stuck in a fixed quantized and continuous representation.
+
+Some model variables may have intrinsic deactivation where derivatives above some order are zero. For example, the velocity of a falling object in a (drag-free) gravitational field is linear so its derivatives of order 2 and up are zero, and the displacement is quadratic so its order 3 and up derivatives are zero. Such variables are represented accurately without any requantization so any approach to addressing deactivation should avoid wasting significant effort requantizing them.
+
+Other variables might have zero derivatives at certain points, such as a variables with a derivative of `cos(t)` that has a zero second derivative at `t=0`. The situation of a zero derivative at model startup is probably not uncommon. Normally such variables will be observers of other variables that get requantized soon enough to avoid a significant solution glitch but this may not always be the case.
+
+Deactivation is more of an issue for LIQSS methods because they set the highest derivative to zero when an interior point quantized representation start value occurs.
+
+Deactivation appears to be a fairly serious flaw in the QSS approach. To address this a time step to use as a threshold for detecting deactivation was added as an option (`dtInf`) and its use, especially for LIQSS methods, is highly recommended. (Due to numeric differentiation deactivation may cause a very smll, but not zero, highest derivative so we use a time step threshold.) To minimize effort expended on intrinsically deactivated variables a "relaxation" approach is used where the `dtInf` time step is doubled on each successive requantization while deactivation is detected. The concept of falling back to a lower-order QSS method for computing the next requantization time when deactivation occurs was found to be much less efficient and effective.
+
+#### Time Step Limits
+
+QSS time stepping can be ridigly limited with the `dtMin` and `dtMax` options. While these should not be needed with typical QSS simulations they can be useful for investigating unexpected simulation results. Unlike `dtInf` the `dtMin` and `dtMax` options do not "relax" but remain as fixed limits.
+
 #### Inflection Points
 
 QSS methods can have trouble converging tightly on asymptotic values such as tails of exponential decay functions. This can be caused by the continuous representation reversing course and moving away from the quantized representation before the next quantum-based requantization event. An option to add inflection point requantization time steps has been built in to this package for QSS methods of order 2 and above to address this limitation. This will move up the next requantization time to the time when the continuous representation's next to highest derivative will pass through zero if the sign of that derivative in the quantized and continuous representations is the same at the start of the continuous representation time segment. (If the signs differ at the segment start then an inflection point would only improve the fit of the continuous and quantized representations, so we leave this case alone and let the normal quantization limits control the next time step.) So for (LI)QSS2 this finds the time where the slope is zero, and for QSS3 this finds the time when the second derivative is zero. If this time is positive and less than the computed quantum-based next requantization time then it is used as the next requantization time. In testing so far this has proven very effective in improving convergence at a modest cost of a few extra time steps but this should be evaluated in real-world cases.
 
 Note that this differs from the literature. In some papers by the original QSS authors there is an additional time step recommended at the point when the QSS order derivative is zero. As noted by David Lorenzetti this is confusing because the Nth derivative of the continuous representation in a QSS order N method is a constant. Nevertheless, there may be some room for alternative approaches to improving QSS convergence.
-
-#### Deactivation
-
-The QSS time stepping logic looks at the magnitude of the highest order continuous representation derivative to set the next trigger time based on when the quantized and continuous representations will diverge by the selected quantum threshold. This does not always give a good indication of the divergence of the quantized representation from the actual/analytical value of QSS (ODE) state variables or input variables. For a QSS variable that is "isolated" (does not appear in many or any other variable's derivatives) or any input variable an artificially large time step causes the variable to "deactivate", becoming stuck in a fixed quantized and continuous representation.
-
-Some model variables may have intrinsic deactivation where derivatives above some order are zero. For example, the velocity of a falling object in a (drag-free) gravitational field is linear so its derivatives of order 2 and up are zero. Such variables are represented accurately without any requantization so any approach to addressing deactivation should avoid wasting significant effort requantizing them.
-
-Other variables might have zero derivatives at certain points, such as a variables with a derivative of `cos(t)` that has a zero second derivative at `t=0`. The situation of a zero derivative at model startup is probably not uncommon. Normally such variables will be observers of other variables that get requantized soon enough to avoid a solution glitch but this may not always be the case.
-
-Deactivation is more of an issue for LIQSS methods because they set the highest derivative to zero when an interior point quantized representation start value occurs.
-
-Deactivation appears to be a fairly serious flaw in the QSS approach. To address this a time step to use when deactivation occurs was added as an option (`dtInf`) and its use, especially for LIQSS methods, is highly recommended. To minimize effort expended on intrinsically deactivated variables a "relaxation" approach is used where the `dtInf` time step is doubled on each successive call for the next requantization time that would otherwise give infinity. The concept of falling back to a lower-order QSS method for computing the next requantization time when deactivation occurs was found to be much less efficient and less effective.
-
-A related issue arises when the highest order derivative has a very small magnitude, causing a very large time step to the next requantization to be computed. The `dtMax` value can be used to limit such large time steps but comes at some performance cost when the small derivative magnitude is intrinsic and sustained over large time spans. A different time step option that is like `dtMax` but only active when the highest derivative is non-zero and also relaxes upon successive use would probably be an effective approach.
 
 ### LIQSS
 
@@ -114,7 +116,7 @@ An experimental variant of the QSS method with methods named `xQSS1`, `xQSS2`, a
 
 More experiments are needed to develop best practices for when to try xQSS but experience to date has yielded these preliminary guidelines:
 * Smooth trajectory models with precise or analytical derivatives tend to benefit most from xQSS methods
-* Numerical differentiation that the current FMU-based simulation requires injects some noise into the extra top order term of the xQSS quantized representations, which tends to shorten the time steps and thus hurt performance.
+* Numeric differentiation that the current FMU-based simulation requires injects some noise into the extra top order term of the xQSS quantized representations, which tends to shorten the time steps and thus hurt performance.
 * LIQSS methods on stiff systems did not benefit from xLIQSS since it tends to put the quantum-shifted quantized representation farther from the continuous representation.
 
 ### Event Queue

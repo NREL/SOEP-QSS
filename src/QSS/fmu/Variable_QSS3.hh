@@ -54,8 +54,6 @@ private: // Types
 
 	using Super::c_1;
 	using Super::c_2;
-	using Super::p_2;
-	using Super::c_3;
 
 public: // Creation
 
@@ -214,14 +212,14 @@ public: // Methods
 
 	// QSS Advance
 	void
-	advance_QSS()
+	advance_QSS() override final
 	{
 		Time const tDel( tE - tX );
 		tX = tQ = tE;
 		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
 		x_1_ = q_1_ = c_1();
 		x_2_ = q_2_ = c_2();
-		x_3_ = c_3();
+		x_3_ = n_3();
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -232,7 +230,7 @@ public: // Methods
 
 	// QSS Advance: Stage 0
 	void
-	advance_QSS_0()
+	advance_QSS_0() override final
 	{
 		Time const tDel( tE - tX );
 		tX = tQ = tE;
@@ -241,35 +239,35 @@ public: // Methods
 
 	// QSS Advance: Stage 1
 	void
-	advance_QSS_1( Real const d )
+	advance_QSS_1( Real const x_1 ) override final
 	{
-		x_1_ = q_1_ = d;
+		x_1_ = q_1_ = x_1;
 	}
 
 	// QSS Advance: Stage 2
 	void
-	advance_QSS_2( Real const d )
+	advance_QSS_2( Real const x_1_m, Real const x_1_p ) override final
 	{
-		x_2_ = p_2( d );
+		x_2_ = n_2( x_1_m, x_1_p );
 	}
 
 	// QSS Advance: Stage 2.1
 	void
-	advance_QSS_2_1()
+	advance_QSS_2_1() override final
 	{
 		q_2_ = x_2_; //ND Deferred
 	}
 
 	// QSS Advance: Stage 3
 	void
-	advance_QSS_3( Real const d )
+	advance_QSS_3() override final
 	{
-		x_3_ = p_3( d );
+		x_3_ = n_3();
 	}
 
 	// QSS Advance: Stage Final
 	void
-	advance_QSS_F()
+	advance_QSS_F() override final
 	{
 		set_qTol();
 		set_tE_aligned();
@@ -280,14 +278,14 @@ public: // Methods
 
 	// Handler Advance
 	void
-	advance_handler( Time const t )
+	advance_handler( Time const t ) override final
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
 		x_0_ = q_0_ = p_0();
 		x_1_ = q_1_ = h_1();
 		x_2_ = q_2_ = c_2();
-		x_3_ = c_3();
+		x_3_ = n_3();
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -298,7 +296,7 @@ public: // Methods
 
 	// Handler Advance: Stage 0
 	void
-	advance_handler_0( Time const t )
+	advance_handler_0( Time const t ) override final
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
@@ -307,35 +305,35 @@ public: // Methods
 
 	// Handler Advance: Stage 1
 	void
-	advance_handler_1()
+	advance_handler_1() override final
 	{
 		x_1_ = q_1_ = h_1();
 	}
 
 	// Handler Advance: Stage 2
 	void
-	advance_handler_2()
+	advance_handler_2() override final
 	{
 		x_2_ = s_2();
 	}
 
 	// Handler Advance: Stage 2.1
 	void
-	advance_handler_2_1()
+	advance_handler_2_1() override final
 	{
 		q_2_ = x_2_; //ND Deferred
 	}
 
 	// Handler Advance: Stage 3
 	void
-	advance_handler_3()
+	advance_handler_3() override final
 	{
 		x_3_ = s_3();
 	}
 
 	// Handler Advance: Stage Final
 	void
-	advance_handler_F()
+	advance_handler_F() override final
 	{
 		set_qTol();
 		set_tE_aligned();
@@ -346,7 +344,7 @@ public: // Methods
 
 	// Handler No-Advance
 	void
-	no_advance_handler()
+	no_advance_handler() override final
 	{
 		shift_QSS( tE );
 	}
@@ -361,7 +359,7 @@ public: // Methods
 		x_0_ += ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
 		x_1_ = c_1( t );
 		x_2_ = c_2( t );
-		x_3_ = c_3();
+		x_3_ = n_3();
 		set_tE_unaligned();
 		shift_QSS( tE );
 		if ( connected() ) advance_connections_observer();
@@ -369,42 +367,42 @@ public: // Methods
 
 	// Observer Advance: Stage 1
 	void
-	advance_observer_1( Time const t, Real const d ) override final
+	advance_observer_1( Time const t, Real const x_1 ) override final
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		assert( d == p_1() );
+		assert( x_1 == p_1() );
 		Time const tDel( t - tX );
 		tX = t;
 		x_0_ += ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
-		x_1_ = d;
+		x_1_ = x_1;
 	}
 
 	// Observer Advance: Stage 1 Parallel
 	void
-	advance_observer_1_parallel( Time const t, Real const d ) override final
+	advance_observer_1_parallel( Time const t, Real const x_1 ) override final
 	{
-		advance_observer_1( t, d );
+		advance_observer_1( t, x_1 );
 	}
 
 	// Observer Advance: Stage 2
 	void
-	advance_observer_2( Real const d ) override final
+	advance_observer_2( Real const x_1_m, Real const x_1_p ) override final
 	{
-		x_2_ = p_2( d );
+		x_2_ = n_2( x_1_m, x_1_p );
 	}
 
 	// Observer Advance: Stage 2 Parallel
 	void
-	advance_observer_2_parallel( Real const d ) override final
+	advance_observer_2_parallel( Real const x_1_m, Real const x_1_p ) override final
 	{
-		x_2_ = p_2( d );
+		x_2_ = n_2( x_1_m, x_1_p );
 	}
 
 	// Observer Advance: Stage 3
 	void
-	advance_observer_3( Real const d ) override final
+	advance_observer_3() override final
 	{
-		x_3_ = p_3( d );
+		x_3_ = n_3();
 		set_tE_unaligned();
 		shift_QSS( tE );
 		if ( connected() ) advance_connections_observer();
@@ -412,9 +410,9 @@ public: // Methods
 
 	// Observer Advance: Stage 3 Parallel
 	void
-	advance_observer_3_parallel( Real const d ) override final
+	advance_observer_3_parallel() override final
 	{
-		x_3_ = p_3( d );
+		x_3_ = n_3();
 	}
 
 	// Observer Advance: Stage Final Parallel
@@ -499,9 +497,9 @@ private: // Methods
 
 	// Coefficient 2 from FMU
 	Real
-	p_2( Real const d ) const
+	n_2( Real const x_1_m, Real const x_1_p ) const
 	{
-		return p_2( x_1_p_ = d, x_1_ );
+		return options::one_over_four_dtND * ( ( x_1_p_ = x_1_p ) - ( x_1_m_ = x_1_m ) ); //ND Centered difference
 	}
 
 	// Coefficient 2 from FMU at Time tQ
@@ -534,14 +532,7 @@ private: // Methods
 
 	// Coefficient 3 from FMU
 	Real
-	p_3( Real const d ) const
-	{
-		return options::one_over_six_dtND_squared * ( ( x_1_p_ - x_1_ ) + ( d - x_1_ ) ); //ND Centered difference
-	}
-
-	// Coefficient 3 from FMU
-	Real
-	c_3() const
+	n_3() const
 	{
 		return options::one_over_six_dtND_squared * ( ( x_1_p_ - x_1_ ) + ( x_1_m_ - x_1_ ) ); //ND Centered difference
 	}

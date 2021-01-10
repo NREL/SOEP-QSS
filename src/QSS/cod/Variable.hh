@@ -1036,21 +1036,13 @@ protected: // Methods
 
 	// Infinite Aligned Time Step Processing
 	Time
-	dt_infinity( Time const dt )
+	dt_infinity( Time const dt ) const
 	{
-		if ( is_time_ ) return dt;
-		if ( dt_inf_ != infinity ) { // Deactivation control is enabled
-			if ( dt == infinity ) { // Deactivation has occurred
-				if ( dt_inf_rlx_ < half_infinity ) { // Relax and use deactivation time step
-					return ( dt_inf_rlx_ *= 2.0 );
-				} else {
-					return dt;
-				}
-			} else { // Reset deactivation time step
-				dt_inf_rlx_ = dt_inf_;
-				return dt;
-			}
-		} else {
+		if ( ( dt_inf_ == infinity ) || is_time_ ) return dt; // Deactivation control is not enabled
+		if ( dt >= dt_inf_ ) { // Apply deactivation control
+			return ( dt_inf_rlx_ < half_infinity ? std::min( dt_inf_rlx_ *= 2.0, dt ) : dt ); // Use min of relaxed deactivation time step and dt
+		} else { // Reset relaxed deactivation time step
+			dt_inf_rlx_ = dt_inf_;
 			return dt;
 		}
 	}
@@ -1078,7 +1070,7 @@ public: // Data
 private: // Data
 
 	Time dt_inf_{ infinity }; // Time step inf
-	Time dt_inf_rlx_{ infinity }; // Relaxed time step inf
+	mutable Time dt_inf_rlx_{ infinity }; // Relaxed time step inf
 
 	Variables observers_; // Variables dependent on this one
 	bool observed_{ false }; // Have any observers?

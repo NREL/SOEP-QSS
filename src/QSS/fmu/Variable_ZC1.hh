@@ -116,7 +116,7 @@ public: // Methods
 		// Initialize specs
 		x_0_ = z_0();
 		x_mag_ = std::abs( x_0_ );
-		x_1_ = z_1();
+		x_1_ = n_1();
 		set_qTol();
 		set_tE();
 		set_tZ();
@@ -126,7 +126,7 @@ public: // Methods
 
 	// QSS Advance
 	void
-	advance_QSS()
+	advance_QSS() override final
 	{
 		tX = tQ = tE;
 		Real const x_tE( zChatter_ ? x( tE ) : Real( 0.0 ) );
@@ -136,7 +136,7 @@ public: // Methods
 #endif
 		x_0_ = z_0();
 		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
-		x_1_ = z_1();
+		x_1_ = n_1();
 		set_qTol();
 		set_tE();
 #ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
@@ -150,7 +150,7 @@ public: // Methods
 
 	// QSS Advance: Stage 0
 	void
-	advance_QSS_0( Real const v )
+	advance_QSS_0( Real const x_0 ) override final
 	{
 		tX = tQ = tE;
 		Real const x_tE( zChatter_ ? x( tE ) : Real( 0.0 ) );
@@ -158,20 +158,27 @@ public: // Methods
 		check_crossing_ = ( tE > tZ_last ) || ( x_mag_ != 0.0 );
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_tE : x( tE ) ) : 0 );
 #endif
-		x_0_ = v;
+		x_0_ = x_0;
 		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 	}
 
 	// QSS Advance: Stage 1
 	void
-	advance_QSS_1( Real const x_0_m, Real const x_0_p )
+	advance_QSS_1( Real const x_0_p ) override final
 	{
-		x_1_ = z_1( x_0_m, x_0_p );
+		x_1_ = n_1( x_0_p );
+	}
+
+	// QSS Advance: Stage 1
+	void
+	advance_QSS_1( Real const x_0_m, Real const x_0_p ) override final
+	{
+		x_1_ = n_1( x_0_m, x_0_p );
 	}
 
 	// QSS Advance: Stage Final
 	void
-	advance_QSS_F()
+	advance_QSS_F() override final
 	{
 		set_qTol();
 		set_tE();
@@ -186,7 +193,7 @@ public: // Methods
 
 	// Zero-Crossing Advance
 	void
-	advance_ZC()
+	advance_ZC() override final
 	{
 		assert( in_conditional() );
 		conditional->activity( tZ );
@@ -199,7 +206,7 @@ public: // Methods
 
 	// Observer Advance
 	void
-	advance_observer( Time const t )
+	advance_observer( Time const t ) override final
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		tX = tQ = t;
@@ -208,7 +215,7 @@ public: // Methods
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
 		x_0_ = ( !handler_modified_ && ( t == tZ_last ) ? 0.0 : z_0() ); // Force exact zero if at zero-crossing time
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
-		x_1_ = z_1();
+		x_1_ = n_1();
 		set_qTol();
 		set_tE();
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
@@ -216,7 +223,7 @@ public: // Methods
 
 	// Observer Advance: Stage 1
 	void
-	advance_observer_1( Time const t, Real const x_0, Real const x_0_m, Real const x_0_p )
+	advance_observer_1( Time const t, Real const x_0, Real const x_0_p ) override final
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		tX = tQ = t;
@@ -225,7 +232,24 @@ public: // Methods
 		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
 		x_0_ = ( !handler_modified_ && ( t == tZ_last ) ? 0.0 : x_0 ); // Force exact zero if at zero-crossing time
 		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
-		x_1_ = z_1( x_0_m, x_0_p );
+		x_1_ = n_1( x_0_p );
+		set_qTol();
+		set_tE();
+		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
+	}
+
+	// Observer Advance: Stage 1
+	void
+	advance_observer_1( Time const t, Real const x_0, Real const x_0_m, Real const x_0_p ) override final
+	{
+		assert( ( tX <= t ) && ( t <= tE ) );
+		tX = tQ = t;
+		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
+		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
+		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
+		x_0_ = ( !handler_modified_ && ( t == tZ_last ) ? 0.0 : x_0 ); // Force exact zero if at zero-crossing time
+		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
+		x_1_ = n_1( x_0_m, x_0_p );
 		set_qTol();
 		set_tE();
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
@@ -233,7 +257,7 @@ public: // Methods
 
 	// Observer Advance: Stage d
 	void
-	advance_observer_d() const
+	advance_observer_d() const override final
 	{
 		std::cout << "  " << name() << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << "*t" << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ <<  '\n';
 	}
@@ -322,14 +346,21 @@ private: // Methods
 
 	// Coefficient 1 from FMU at Time tQ
 	Real
-	z_1() const
+	n_1() const
 	{
 		return Z_1( tQ, x_0_ );
 	}
 
 	// Coefficient 1 from FMU
 	Real
-	z_1( Real const x_0_m, Real const x_0_p ) const
+	n_1( Real const x_0_p ) const
+	{
+		return options::one_over_dtND * ( x_0_p - x_0_ ); //ND Forward Euler
+	}
+
+	// Coefficient 1 from FMU
+	Real
+	n_1( Real const x_0_m, Real const x_0_p ) const
 	{
 		return options::one_over_two_dtND * ( x_0_p - x_0_m ); //ND Centered difference
 	}

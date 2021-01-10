@@ -220,7 +220,7 @@ public: // Methods
 
 	// QSS Advance
 	void
-	advance_QSS()
+	advance_QSS() override final
 	{
 		Time const tDel( tE - tX );
 		tX = tQ = tE;
@@ -237,7 +237,7 @@ public: // Methods
 
 	// QSS Advance: Stage 0
 	void
-	advance_QSS_0()
+	advance_QSS_0() override final
 	{
 		Time const tDel( tE - tX );
 		tX = tQ = tE;
@@ -246,28 +246,28 @@ public: // Methods
 
 	// QSS Advance: Stage 1
 	void
-	advance_QSS_1()
+	advance_QSS_1() override final
 	{
 		x_1_ = q_1_ = d_.qs( tQ );
 	}
 
 	// QSS Advance: Stage 2
 	void
-	advance_QSS_2()
+	advance_QSS_2() override final
 	{
 		x_2_ = q_2_ = one_half * d_.qc1( tQ );
 	}
 
 	// QSS Advance: Stage 3
 	void
-	advance_QSS_3()
+	advance_QSS_3() override final
 	{
 		x_3_ = q_3_ = one_sixth * d_.qc2( tQ );
 	}
 
 	// QSS Advance: Stage Final
 	void
-	advance_QSS_F()
+	advance_QSS_F() override final
 	{
 		set_qTol();
 		set_tE_aligned();
@@ -277,7 +277,7 @@ public: // Methods
 
 	// Handler Advance
 	void
-	advance_handler( Time const t, Real const x )
+	advance_handler( Time const t, Real const x ) override final
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
@@ -294,7 +294,7 @@ public: // Methods
 
 	// Handler Advance: Stage 0
 	void
-	advance_handler_0( Time const t, Real const x )
+	advance_handler_0( Time const t, Real const x ) override final
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
@@ -303,21 +303,21 @@ public: // Methods
 
 	// Handler Advance: Stage 1
 	void
-	advance_handler_1()
+	advance_handler_1() override final
 	{
 		x_1_ = q_1_ = d_.qs( tQ );
 	}
 
 	// Handler Advance: Stage 2
 	void
-	advance_handler_2()
+	advance_handler_2() override final
 	{
 		x_2_ = q_2_ = one_half * d_.qc1( tQ );
 	}
 
 	// Handler Advance: Stage 3
 	void
-	advance_handler_3()
+	advance_handler_3() override final
 	{
 		x_3_ = q_3_ = one_sixth * d_.qc2( tQ );
 		set_qTol();
@@ -328,7 +328,7 @@ public: // Methods
 
 	// Observer Advance
 	void
-	advance_observer( Time const t )
+	advance_observer( Time const t ) override final
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		Time const tDel( t - tX );
@@ -343,7 +343,7 @@ public: // Methods
 
 	// Observer Advance: Parallel
 	void
-	advance_observer_parallel( Time const t )
+	advance_observer_parallel( Time const t ) override final
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		Time const tDel( t - tX );
@@ -356,7 +356,7 @@ public: // Methods
 
 	// Observer Advance: Serial + Diagnostics
 	void
-	advance_observer_serial_d()
+	advance_observer_serial_d() override final
 	{
 		assert( options::output::d );
 		shift_QSS( tE );

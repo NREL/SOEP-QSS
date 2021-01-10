@@ -38,12 +38,14 @@
 
 // QSS Headers
 #include <QSS/fmu/FMU_ME.hh>
+#include <QSS/fmu/RefsDers.hh>
+#include <QSS/fmu/RefsVals.hh>
+#include <QSS/fmu/RefsValsEI.hh>
+#include <QSS/fmu/RefsValsEIDD.hh>
 #include <QSS/container.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
 #include <QSS/Range.hh>
-#include <QSS/RefsVals.hh>
-#include <QSS/RefsValsEI.hh>
 
 // OpenMP Headers
 #ifdef _OPENMP
@@ -81,6 +83,8 @@ public: // Types
 	using pointer = typename Variables::pointer;
 	using const_reference = typename Variables::const_reference;
 	using reference = typename Variables::reference;
+
+	enum class ZC_Type { None, EventIndicator, EventIndicatorDD, Explicit };
 
 public: // Creation
 
@@ -171,35 +175,48 @@ public: // Methods
 	void
 	init()
 	{
+		set_up( true );
+	}
+
+	// Set up for Current Observers
+	void
+	set_up( bool const recover = false )
+	{
 		if ( observers_.empty() ) {
 			reset_specs();
 			return;
 		}
 
 		// Remove duplicates then sort by type and order
-		uniquify( observers_, true ); // Sort by address and remove duplicates and recover unused memory
+		uniquify( observers_, recover ); // Sort by address and remove duplicates and optionally recover unused memory
 		sort_by_type_and_order( observers_ );
 
 		// Set specs
 		set_specs();
 
-		// Observer FMU pooled data set up
-		if ( qss_.have() ) {
+		// FMU pooled data set up
+		if ( qss_.have() ) { // State variables
 			qss_ders_.clear(); qss_ders_.reserve( qss_.n() );
 			for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
 				qss_ders_.push_back( observers_[ i ]->der().ref );
 			}
 		}
-		if ( zc_.have() ) {
-			assert( fmu_me_ != nullptr );
-			if ( fmu_me_->has_event_indicators ) { // Event indicators
-				ei_vars_.clear(); ei_vars_.reserve( zc_.n() );
+		if ( zc_.have() ) { // Zero-crossing variables
+			size_type const zc_n( zc_.n() );
+			if ( zc_type_ == ZC_Type::EventIndicator ) { // Event indicator variables
+				ei_vars_.clear(); ei_vars_.reserve( zc_n );
 				for ( size_type i = zc_.b(), e = zc_.e(); i < e; ++i ) {
 					ei_vars_.push_back( observers_[ i ]->var().ref );
 				}
+			} else if ( zc_type_ == ZC_Type::EventIndicatorDD ) { // Event indicator directional derivative variables
+				dd_vars_.clear(); dd_vars_.reserve( zc_n );
+				for ( size_type i = zc_.b(), e = zc_.e(); i < e; ++i ) {
+					dd_vars_.push_back( observers_[ i ]->var().ref );
+				}
 			} else { // Explicit zero-crossing variables
-				zc_vars_.clear(); zc_vars_.reserve( zc_.n() );
-				zc_ders_.clear(); zc_ders_.reserve( zc_.n() );
+				assert( zc_type_ == ZC_Type::Explicit );
+				zc_vars_.clear(); zc_vars_.reserve( zc_n );
+				zc_ders_.clear(); zc_ders_.reserve( zc_n );
 				for ( size_type i = zc_.b(), e = zc_.e(); i < e; ++i ) {
 					zc_vars_.push_back( observers_[ i ]->var().ref );
 					zc_ders_.push_back( observers_[ i ]->der().ref );
@@ -224,7 +241,7 @@ public: // Methods
 				}
 			}
 		} else { // Binary search
-			std::sort( triggers.begin(), triggers.end() ); // Side effect!
+			std::sort( triggers.begin(), triggers.end() ); //! Side effect!
 			for ( Variable * trigger : triggers ) {
 				for ( Variable * observer : trigger->observers() ) {
 					if ( ! std::binary_search( triggers.begin(), triggers.end(), observer ) ) observers_.push_back( observer );
@@ -232,44 +249,7 @@ public: // Methods
 			}
 		}
 
-		if ( observers_.empty() ) {
-			reset_specs();
-			return;
-		}
-
-		// Remove duplicates then sort by type and order
-		uniquify( observers_ ); // Sort by address and remove duplicates
-		sort_by_type_and_order( observers_ );
-
-		// Set specs
-		set_specs();
-
-		// Observer FMU pooled data set up
-		if ( qss_.have() ) {
-			qss_ders_.clear(); qss_ders_.reserve( qss_.n() );
-			for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
-				qss_ders_.push_back( observers_[ i ]->der().ref );
-			}
-		}
-		if ( zc_.have() ) {
-			assert( fmu_me_ != nullptr );
-			if ( fmu_me_->has_event_indicators ) { // Event indicators
-				ei_vars_.clear(); ei_vars_.reserve( zc_.n() );
-				for ( size_type i = zc_.b(), e = zc_.e(); i < e; ++i ) {
-					ei_vars_.push_back( observers_[ i ]->var().ref );
-				}
-			} else { // Explicit zero-crossing variables
-				zc_vars_.clear(); zc_vars_.reserve( zc_.n() );
-				zc_ders_.clear(); zc_ders_.reserve( zc_.n() );
-				for ( size_type i = zc_.b(), e = zc_.e(); i < e; ++i ) {
-					zc_vars_.push_back( observers_[ i ]->var().ref );
-					zc_ders_.push_back( observers_[ i ]->der().ref );
-				}
-			}
-		}
-
-		// Observees setup
-		set_observees();
+		set_up();
 	}
 
 	// Advance
@@ -344,6 +324,7 @@ private: // Methods
 	void
 	reset_specs()
 	{
+		zc_type_ = ZC_Type::None;
 		connected_output_observer_ = false;
 		all_.reset();
 		qss_.reset();
@@ -360,8 +341,10 @@ private: // Methods
 	set_specs()
 	{
 		reset_specs();
-
 		if ( observers_.empty() ) return;
+
+		assert( fmu_me_ != nullptr );
+		zc_type_ = ( fmu_me_->has_event_indicators ? ( options::eidd ? ZC_Type::EventIndicatorDD : ZC_Type::EventIndicator ) : ZC_Type::Explicit );
 
 		connected_output_observer_ = false;
 		all_.b() = 0u;
@@ -392,7 +375,7 @@ private: // Methods
 			}
 		}
 		size_type const qss_n( qss_.n() );
-		qss_same_order_ = (
+		qss_uni_order_ = (
 		 ( qss2_.empty() || qss2_.n() == qss_n ) &&
 		 ( qss3_.empty() || qss3_.n() == qss_n )
 		);
@@ -421,7 +404,7 @@ private: // Methods
 			}
 		}
 		size_type const zc_n( zc_.n() );
-		zc_same_order_ = (
+		zc_uni_order_ = (
 		 ( zc2_.empty() || zc2_.n() == zc_n ) &&
 		 ( zc3_.empty() || zc3_.n() == zc_n )
 		);
@@ -452,7 +435,7 @@ private: // Methods
 				}
 			}
 			uniquify( qss_observees_ );
-			if ( ! qss_same_order_ ) {
+			if ( ! qss_uni_order_ ) {
 				assert( qss2_.have() );
 				qss2_observees_.clear();
 				for ( size_type i = qss2_.b(), e = qss_.e(); i < e; ++i ) { // Order 2+ observers
@@ -488,7 +471,7 @@ private: // Methods
 				}
 			}
 			uniquify( zc_observees_ );
-			if ( ! zc_same_order_ ) {
+			if ( ! zc_uni_order_ ) {
 				assert( zc2_.have() );
 				assert( fmu_me_ != nullptr );
 				if ( ! fmu_me_->has_event_indicators ) { // Event indicators don't currently need the order 2+ observees
@@ -514,6 +497,16 @@ private: // Methods
 					uniquify( zc3_observees_ );
 				}
 			}
+
+			// Observee directional derivative seed array set up
+			if ( zc_type_ == ZC_Type::EventIndicatorDD ) { // Event indicator directional derivative variables
+				zc_observees_v_ref_.clear();
+				zc_observees_dv_.clear();
+				for ( auto observee : zc_observees_ ) {
+					zc_observees_v_ref_.push_back( observee->var().ref );
+					zc_observees_dv_.push_back( 0.0 );
+				}
+			}
 		}
 	}
 
@@ -521,51 +514,64 @@ private: // Methods
 	void
 	advance_observers_QSS( Time const t )
 	{
+		assert( qss_.have() );
 		assert( fmu_me_ != nullptr );
 		assert( fmu_me_->get_time() == t );
+
 		for ( Variable * observee : qss_observees_ ) {
 			observee->fmu_set_q( t );
 		}
-		fmu_me_->get_reals( qss_.n(), &qss_ders_.refs[ 0 ], &qss_ders_.vals[ 0 ] );
+		size_type const qss_n( qss_.n() );
+		assert( qss_n == qss_ders_.size() );
+		fmu_me_->get_reals( qss_n, &qss_ders_.refs[ 0 ], &qss_ders_.ders[ 0 ] );
 #ifdef _OPENMP
 		size_type const max_threads( static_cast< size_type >( omp_get_max_threads() ) );
-		if ( ( max_threads > 1u ) && ( qss_.n() >= max_threads * 32u ) ) { // Parallel
+		if ( ( max_threads > 1u ) && ( qss_n >= max_threads * 32u ) ) { // Parallel
 			std::int64_t const qss_b( qss_.b() );
 			std::int64_t const qss_e( qss_.e() );
-			std::int64_t const qss_n( qss_.n() );
 			std::int64_t const qss_chunk_size( static_cast< std::int64_t >( ( qss_n + max_threads - 1u ) / max_threads ) );
 			#pragma omp parallel
 			{
 			#pragma omp for schedule(static)
 			for ( std::int64_t i = qss_b; i < qss_e; i += qss_chunk_size ) {
 				for ( std::int64_t k = i, ke = std::min( i + qss_chunk_size, qss_e ); k < ke; ++k ) { // Chunk
-					observers_[ k ]->advance_observer_1_parallel( t, qss_ders_.vals[ k ] );
+					observers_[ k ]->advance_observer_1_parallel( t, qss_ders_.ders[ k ] );
 				}
 			}
 			#pragma omp single
 			{
-			if ( qss2_.have() ) {
-				Time tN( t + options::dtND );
+
+			if ( qss3_.have() ) {
+				Time tN( t - options::dtND );
 				fmu_me_->set_time( tN );
-				for ( Variable * observee : qss_same_order_ ? qss_observees_ : qss2_observees_ ) {
+				for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss3_observees_ ) {
 					observee->fmu_set_q( tN );
 				}
 				size_type const qss2_b( qss2_.b() );
-				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.vals[ qss2_b ] );
-				for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ observers
-					observers_[ i ]->advance_observer_2_parallel( qss_ders_.vals[ i ] );
+				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_m[ qss2_b ] );
+				tN = t + options::dtND;
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss3_observees_ ) {
+					observee->fmu_set_q( tN );
 				}
-				if ( qss3_.have() ) {
-					tN = t - options::dtND;
-					fmu_me_->set_time( tN );
-					for ( Variable * observee : qss_same_order_ ? qss_observees_ : qss3_observees_ ) {
-						observee->fmu_set_q( tN );
-					}
-					size_type const qss3_b( qss3_.b() );
-					fmu_me_->get_reals( qss3_.n(), &qss_ders_.refs[ qss3_b ], &qss_ders_.vals[ qss3_b ] );
-					for ( size_type i = qss3_b, e = qss_.e(); i < e; ++i ) { // Order 3+ observers
-						observers_[ i ]->advance_observer_3_parallel( qss_ders_.vals[ i ] );
-					}
+				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
+				for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ observers
+					observers_[ i ]->advance_observer_2_parallel( qss_ders_.ders_m[ i ], qss_ders_.ders_p[ i ] );
+				}
+				for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ observers
+					observers_[ i ]->advance_observer_3_parallel();
+				}
+				fmu_me_->set_time( t );
+			} else if ( qss2_.have() ) {
+				Time tN( t + options::dtND );
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss2_observees_ ) {
+					observee->fmu_set_q( tN );
+				}
+				size_type const qss2_b( qss2_.b() );
+				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders[ qss2_b ] );
+				for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ observers
+					observers_[ i ]->advance_observer_2_parallel( qss_ders_.ders[ i ] );
 				}
 				fmu_me_->set_time( t );
 			}
@@ -583,30 +589,39 @@ private: // Methods
 		} else { // Serial
 #endif
 		for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
-			observers_[ i ]->advance_observer_1( t, qss_ders_.vals[ i ] );
+			observers_[ i ]->advance_observer_1( t, qss_ders_.ders[ i ] );
 		}
-		if ( qss2_.have() ) {
-			Time tN( t + options::dtND );
+		if ( qss3_.have() ) {
+			Time tN( t - options::dtND );
 			fmu_me_->set_time( tN );
-			for ( Variable * observee : qss_same_order_ ? qss_observees_ : qss2_observees_ ) {
+			for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss3_observees_ ) {
 				observee->fmu_set_q( tN );
 			}
 			size_type const qss2_b( qss2_.b() );
-			fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.vals[ qss2_b ] );
-			for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ observers
-				observers_[ i ]->advance_observer_2( qss_ders_.vals[ i ] );
+			fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_m[ qss2_b ] );
+			tN = t + options::dtND;
+			fmu_me_->set_time( tN );
+			for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss3_observees_ ) {
+				observee->fmu_set_q( tN );
 			}
-			if ( qss3_.have() ) {
-				tN = t - options::dtND;
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : qss_same_order_ ? qss_observees_ : qss3_observees_ ) {
-					observee->fmu_set_q( tN );
-				}
-				size_type const qss3_b( qss3_.b() );
-				fmu_me_->get_reals( qss3_.n(), &qss_ders_.refs[ qss3_b ], &qss_ders_.vals[ qss3_b ] );
-				for ( size_type i = qss3_b, e = qss_.e(); i < e; ++i ) { // Order 3+ observers
-					observers_[ i ]->advance_observer_3( qss_ders_.vals[ i ] );
-				}
+			fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
+			for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ observers
+				observers_[ i ]->advance_observer_2( qss_ders_.ders_m[ i ], qss_ders_.ders_p[ i ] );
+			}
+			for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ observers
+				observers_[ i ]->advance_observer_3();
+			}
+			fmu_me_->set_time( t );
+		} else if ( qss2_.have() ) {
+			Time tN( t + options::dtND );
+			fmu_me_->set_time( tN );
+			for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss2_observees_ ) {
+				observee->fmu_set_q( tN );
+			}
+			size_type const qss2_b( qss2_.b() );
+			fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders[ qss2_b ] );
+			for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ observers
+				observers_[ i ]->advance_observer_2( qss_ders_.ders[ i ] );
 			}
 			fmu_me_->set_time( t );
 		}
@@ -619,78 +634,185 @@ private: // Methods
 	void
 	advance_observers_ZC( Time const t )
 	{
+		assert( zc_.have() );
 		assert( fmu_me_ != nullptr );
 		assert( fmu_me_->get_time() == t );
+
 		for ( Variable * observee : zc_observees_ ) {
 			observee->fmu_set_x( t );
 		}
-		if ( fmu_me_->has_event_indicators ) { // Event indicators
-			assert( zc_.n() == ei_vars_.size() );
-			fmu_me_->get_reals( zc_.n(), &ei_vars_.refs[ 0 ], &ei_vars_.vals[ 0 ] );
-			Time tN( t - options::dtND );
-			fmu_me_->set_time( tN );
-			for ( Variable * observee : zc_observees_ ) {
-				observee->fmu_set_x( tN );
-			}
-			fmu_me_->get_reals( zc_.n(), &ei_vars_.refs[ 0 ], &ei_vars_.vals_m[ 0 ] );
-			tN = t + options::dtND;
-			fmu_me_->set_time( tN );
-			for ( Variable * observee : zc_observees_ ) {
-				observee->fmu_set_x( tN );
-			}
-			fmu_me_->get_reals( zc_.n(), &ei_vars_.refs[ 0 ], &ei_vars_.vals_p[ 0 ] );
-			for ( size_type i = zc_.b(), j = 0, e = zc_.e(); i < e; ++i, ++j ) {
-				observers_[ i ]->advance_observer_1( t, ei_vars_.vals[ j ], ei_vars_.vals_m[ j ], ei_vars_.vals_p[ j ] );
-			}
+		size_type const zc_n( zc_.n() );
+		if ( zc_type_ == ZC_Type::EventIndicator ) { // Event indicator variables
+			assert( fmu_me_->has_event_indicators );
+			assert( zc_n == ei_vars_.size() );
+			fmu_me_->get_reals( zc_n, &ei_vars_.refs[ 0 ], &ei_vars_.vals[ 0 ] );
 			if ( zc2_.have() ) {
+				Time tN( t - options::dtND );
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : zc_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				fmu_me_->get_reals( zc_n, &ei_vars_.refs[ 0 ], &ei_vars_.vals_m[ 0 ] );
+				tN = t + options::dtND;
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : zc_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				fmu_me_->get_reals( zc_n, &ei_vars_.refs[ 0 ], &ei_vars_.vals_p[ 0 ] );
+				for ( size_type i = zc_.b(), j = 0, e = zc_.e(); i < e; ++i, ++j ) {
+					observers_[ i ]->advance_observer_1( t, ei_vars_.vals[ j ], ei_vars_.vals_m[ j ], ei_vars_.vals_p[ j ] );
+				}
 				for ( size_type i = zc2_.b(), e = zc_.e(); i < e; ++i ) { // Order 2+ observers
 					observers_[ i ]->advance_observer_2();
 				}
 				if ( zc3_.have() ) {
 					tN = t + options::two_dtND;
 					fmu_me_->set_time( tN );
-					for ( Variable * observee : zc_same_order_ ? zc_observees_ : zc3_observees_ ) {
+					for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc3_observees_ ) {
 						observee->fmu_set_x( tN );
 					}
-					size_type const zc3_b( zc3_.b() - zc_.b() );
-					fmu_me_->get_reals( zc3_.n(), &ei_vars_.refs[ zc3_b ], &ei_vars_.vals[ zc3_b ] );
-					for ( size_type i = zc3_.b(), j = zc3_b, e = zc_.e(); i < e; ++i, ++j ) { // Order 3+ observers
-						observers_[ i ]->advance_observer_3( ei_vars_.vals[ j ] );
+					size_type const zc3_bo( zc3_.b() - zc_.b() );
+					fmu_me_->get_reals( zc3_.n(), &ei_vars_.refs[ zc3_bo ], &ei_vars_.vals_p[ zc3_bo ] );
+					for ( size_type i = zc3_.b(), j = zc3_bo, e = zc_.e(); i < e; ++i, ++j ) { // Order 3+ observers
+						observers_[ i ]->advance_observer_3( ei_vars_.vals_p[ j ] );
 					}
+				}
+			} else { // Order 1 triggers only
+				Time tN( t + options::dtND );
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : zc_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				fmu_me_->get_reals( zc_n, &ei_vars_.refs[ 0 ], &ei_vars_.vals_p[ 0 ] );
+
+				for ( size_type i = zc_.b(), j = 0, e = zc_.e(); i < e; ++i, ++j ) {
+					observers_[ i ]->advance_observer_1( t, ei_vars_.vals[ j ], ei_vars_.vals_p[ j ] );
 				}
 			}
 			fmu_me_->set_time( t );
-		} else { // Explicit zero-crossing variables
-			assert( zc_.n() == zc_vars_.size() );
-			assert( zc_.n() == zc_ders_.size() );
-			assert( fmu_me_->has_explicit_ZCs );
-			fmu_me_->get_reals( zc_.n(), &zc_vars_.refs[ 0 ], &zc_vars_.vals[ 0 ] );
-			fmu_me_->get_reals( zc_.n(), &zc_ders_.refs[ 0 ], &zc_ders_.vals[ 0 ] );
-			for ( size_type i = zc_.b(), j = 0, e = zc_.e(); i < e; ++i, ++j ) {
-				observers_[ i ]->advance_observer_1( t, zc_ders_.vals[ j ], zc_vars_.vals[ j ] );
+		} else if ( zc_type_ == ZC_Type::EventIndicatorDD ) { // Event indicator directional derivative variables
+			assert( fmu_me_->has_event_indicators );
+			assert( zc_n == dd_vars_.size() );
+			fmu_me_->get_reals( zc_n, &dd_vars_.refs[ 0 ], &dd_vars_.vals[ 0 ] );
+			for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
+				zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( t );
 			}
-			if ( zc2_.have() ) {
-				Time tN( t + options::dtND );
+			fmu_me_->get_directional_derivatives(
+			 zc_observees_v_ref_.data(),
+			 zc_observees_v_ref_.size(),
+			 dd_vars_.refs.data(),
+			 dd_vars_.refs.size(),
+			 zc_observees_dv_.data(),
+			 dd_vars_.ders.data()
+			);
+			for ( size_type i = zc_.b(), j = 0, e = zc_.e(); i < e; ++i, ++j ) {
+				observers_[ i ]->advance_observer_1( t, dd_vars_.vals[ j ], dd_vars_.ders[ j ] );
+			}
+			if ( zc3_.have() ) {
+				Time tN( t - options::dtND );
 				fmu_me_->set_time( tN );
-				for ( Variable * observee : zc_same_order_ ? zc_observees_ : zc2_observees_ ) {
+				for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
 					observee->fmu_set_x( tN );
 				}
-				size_type const zc2_b( zc2_.b() - zc_.b() );
-				fmu_me_->get_reals( zc2_.n(), &zc_ders_.refs[ zc2_b ], &zc_ders_.vals[ zc2_b ] );
-				for ( size_type i = zc2_.b(), j = zc2_b, e = zc_.e(); i < e; ++i, ++j ) { // Order 2+ observers
-					observers_[ i ]->advance_observer_2( zc_ders_.vals[ j ] );
+				for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
+					zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( tN );
 				}
-				if ( zc3_.have() ) {
-					tN = t - options::dtND;
-					fmu_me_->set_time( tN );
-					for ( Variable * observee : zc_same_order_ ? zc_observees_ : zc3_observees_ ) {
-						observee->fmu_set_x( tN );
-					}
-					size_type const zc3_b( zc3_.b() - zc_.b() );
-					fmu_me_->get_reals( zc3_.n(), &zc_ders_.refs[ zc3_b ], &zc_ders_.vals[ zc3_b ] );
-					for ( size_type i = zc3_.b(), j = zc3_b, e = zc_.e(); i < e; ++i, ++j ) { // Order 3+ observers
-						observers_[ i ]->advance_observer_3( zc_ders_.vals[ j ] );
-					}
+				fmu_me_->get_directional_derivatives(
+				 zc_observees_v_ref_.data(),
+				 zc_observees_v_ref_.size(),
+				 dd_vars_.refs.data(),
+				 dd_vars_.refs.size(),
+				 zc_observees_dv_.data(),
+				 dd_vars_.ders_m.data()
+				);
+				tN = t + options::dtND;
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
+					zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( tN );
+				}
+				fmu_me_->get_directional_derivatives(
+				 zc_observees_v_ref_.data(),
+				 zc_observees_v_ref_.size(),
+				 dd_vars_.refs.data(),
+				 dd_vars_.refs.size(),
+				 zc_observees_dv_.data(),
+				 dd_vars_.ders_p.data()
+				);
+				size_type const zc2_bo( zc2_.b() - zc_.b() );
+				for ( size_type i = zc2_.b(), j = zc2_bo, e = zc_.e(); i < e; ++i, ++j ) { // Order 2+ observers
+					observers_[ i ]->advance_observer_2( dd_vars_.ders_m[ j ], dd_vars_.ders_p[ j ] );
+				}
+				for ( size_type i = zc3_.b(), e = zc_.e(); i < e; ++i ) { // Order 3+ observers
+					observers_[ i ]->advance_observer_3();
+				}
+				fmu_me_->set_time( t );
+			} else if ( zc2_.have() ) {
+				Time tN( t + options::dtND );
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
+					zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( tN );
+				}
+				fmu_me_->get_directional_derivatives(
+				 zc_observees_v_ref_.data(),
+				 zc_observees_v_ref_.size(),
+				 dd_vars_.refs.data(),
+				 dd_vars_.refs.size(),
+				 zc_observees_dv_.data(),
+				 dd_vars_.ders_p.data()
+				);
+				size_type const zc2_bo( zc2_.b() - zc_.b() );
+				for ( size_type i = zc2_.b(), j = zc2_bo, e = zc_.e(); i < e; ++i, ++j ) { // Order 2+ observers
+					observers_[ i ]->advance_observer_2( dd_vars_.ders_p[ j ] );
+				}
+				fmu_me_->set_time( t );
+			}
+		} else { // Explicit zero-crossing variables
+			assert( zc_type_ == ZC_Type::Explicit );
+			assert( fmu_me_->has_explicit_ZCs );
+			assert( zc_n == zc_vars_.size() );
+			assert( zc_n == zc_ders_.size() );
+			fmu_me_->get_reals( zc_n, &zc_vars_.refs[ 0 ], &zc_vars_.vals[ 0 ] );
+			fmu_me_->get_reals( zc_n, &zc_ders_.refs[ 0 ], &zc_ders_.ders[ 0 ] );
+			for ( size_type i = zc_.b(), j = 0, e = zc_.e(); i < e; ++i, ++j ) {
+				observers_[ i ]->advance_observer_1( t, zc_vars_.vals[ j ], zc_ders_.ders[ j ] );
+			}
+			if ( zc3_.have() ) {
+				Time tN( t - options::dtND );
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				size_type const zc2_bo( zc2_.b() - zc_.b() );
+				fmu_me_->get_reals( zc2_.n(), &zc_ders_.refs[ zc2_bo ], &zc_ders_.ders_m[ zc2_bo ] );
+				tN = t + options::dtND;
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				fmu_me_->get_reals( zc2_.n(), &zc_ders_.refs[ zc2_bo ], &zc_ders_.ders_p[ zc2_bo ] );
+				for ( size_type i = zc2_.b(), j = zc2_bo, e = zc_.e(); i < e; ++i, ++j ) { // Order 2+ observers
+					observers_[ i ]->advance_observer_2( zc_ders_.ders_m[ j ], zc_ders_.ders_p[ j ] );
+				}
+				for ( size_type i = zc3_.b(), e = zc_.e(); i < e; ++i ) { // Order 3+ observers
+					observers_[ i ]->advance_observer_3();
+				}
+				fmu_me_->set_time( t );
+			} else if ( zc2_.have() ) {
+				Time tN( t + options::dtND );
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				size_type const zc2_bo( zc2_.b() - zc_.b() );
+				fmu_me_->get_reals( zc2_.n(), &zc_ders_.refs[ zc2_bo ], &zc_ders_.ders_p[ zc2_bo ] );
+				for ( size_type i = zc2_.b(), j = zc2_bo, e = zc_.e(); i < e; ++i, ++j ) { // Order 2+ observers
+					observers_[ i ]->advance_observer_2( zc_ders_.ders_p[ j ] );
 				}
 				fmu_me_->set_time( t );
 			}
@@ -722,6 +844,8 @@ private: // Data
 
 	FMU_ME * fmu_me_{ nullptr }; // FMU-ME (non-owning) pointer
 
+	ZC_Type zc_type_{ ZC_Type::None }; // Zero-crossing variable type
+
 	Variables observers_; // Observers
 
 	bool connected_output_observer_{ false }; // Output connection observer to another FMU?
@@ -735,14 +859,15 @@ private: // Data
 	Range zc3_; // Zero-crossing observers of order 3+
 	Range ox_; // Other x-based observers
 
-	bool qss_same_order_{ false }; // QSS observers all the same order?
-	bool zc_same_order_{ false }; // ZC observers all the same order?
+	bool qss_uni_order_{ false }; // QSS observers all the same order?
+	bool zc_uni_order_{ false }; // ZC observers all the same order?
 
 	// Observer FMU pooled call data
-	RefsVals< Variable > qss_ders_; // QSS state derivatives
+	RefsDers< Variable > qss_ders_; // QSS state derivatives
 	RefsValsEI< Variable > ei_vars_; // Event indicator variables
+	RefsValsEIDD< Variable > dd_vars_; // Event indicator directional derivative variables
 	RefsVals< Variable > zc_vars_; // Explicit zero-crossing variables
-	RefsVals< Variable > zc_ders_; // Explicit zero-crossing derivatives
+	RefsDers< Variable > zc_ders_; // Explicit zero-crossing derivatives
 
 	// QSS state observers observees (including self-observers)
 	Variables qss_observees_; // Observers observees
@@ -753,6 +878,10 @@ private: // Data
 	Variables zc_observees_; // Observers observees
 	Variables zc2_observees_; // Observers of order 2+ observees
 	Variables zc3_observees_; // Observers of order 3+ observees
+
+	// Observee directional derivative seed data
+	VariableRefs zc_observees_v_ref_; // Observee value references for FMU directional derivative
+	Reals zc_observees_dv_; // Observee seed derivatives for FMU directional derivative lookup
 
 }; // Observers
 
