@@ -183,9 +183,9 @@ public: // Methods
 		if ( options::output::d ) {
 			std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0;
 			int const out_var_order( out_var_->order() );
-			if ( out_var_order >= 1 ) std::cout << out_var_->x1( tQ ) << "*t";
-			if ( out_var_order >= 2 ) std::cout << one_half * out_var_->x2( tQ ) << "*t^2";
-			if ( out_var_order >= 3 ) std::cout << one_sixth * out_var_->x3( tQ ) << "*t^3";
+			if ( out_var_order >= 1 ) std::cout << out_var_->x1( tQ ) << x_delta;
+			if ( out_var_order >= 2 ) std::cout << one_half * out_var_->x2( tQ ) << x_delta_2;
+			if ( out_var_order >= 3 ) std::cout << one_sixth * out_var_->x3( tQ ) << x_delta_3;
 			std::cout << std::noshowpos << "   tD=" << out_var_->tD << '\n';
 		}
 	}

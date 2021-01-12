@@ -46,6 +46,13 @@
 
 namespace QSS {
 
+// Globals
+extern std::string const delta;
+extern std::string const x_delta;
+extern std::string const x_delta_2;
+extern std::string const x_delta_3;
+extern std::string const x_delta_4;
+
 // Is char Pointer Pointing to String Whitespace Tail
 bool
 is_tail( char * end );
