@@ -156,6 +156,15 @@ public: // Assignment
 	FMU_ME &
 	operator =( FMU_ME && ) = delete;
 
+public: // Predicate
+
+	// Forward Time?
+	bool
+	fwd_time( Time const time ) const
+	{
+		return time >= t0;
+	}
+
 public: // Property
 
 	// Variable Lookup by Name (for Testing)
@@ -491,7 +500,7 @@ public: // Data
 	size_type iOut{ 1u }; // Output step index
 
 	// Event queue
-	EventQ * eventq; // Event queue
+	EventQ * eventq{ nullptr }; // Event queue
 	bool eventq_own{ true }; // Own the event queue?
 
 	// Tolerances

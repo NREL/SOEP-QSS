@@ -171,7 +171,7 @@ public: // Methods
 		init_observers();
 		x_ = static_cast< Integer >( xIni );
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Initialization to a Value: Stage 0
@@ -182,7 +182,7 @@ public: // Methods
 		init_observers();
 		x_ = static_cast< Integer >( x );
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Handler Advance
@@ -194,7 +194,7 @@ public: // Methods
 		Integer const x_old( x_ );
 		x_ = fmu_get_integer(); // Assume FMU ran event handler
 		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 		if ( observed() && ( x_ != x_old ) ) advance_observers();
 	}
 
@@ -212,7 +212,7 @@ public: // Methods
 	advance_handler_F() override final
 	{
 		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "*= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 	// Handler No-Advance
@@ -235,7 +235,7 @@ public: // Methods
 	void
 	advance_observer_d() const override final
 	{
-		std::cout << "  " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		std::cout << " ▲ " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 	}
 
 public: // Methods: FMU

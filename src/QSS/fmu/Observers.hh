@@ -131,6 +131,14 @@ public: // Predicate
 		return connected_output_observer_;
 	}
 
+	// Forward Time?
+	bool
+	fwd_time( Time const t ) const
+	{
+		assert( fmu_me_ != nullptr );
+		return t >= fmu_me_->t0;
+	}
+
 public: // Property
 
 	// Size
@@ -540,26 +548,47 @@ private: // Methods
 			}
 			#pragma omp single
 			{
-
 			if ( qss3_.have() ) {
 				Time tN( t - options::dtND );
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss3_observees_ ) {
-					observee->fmu_set_q( tN );
-				}
-				size_type const qss2_b( qss2_.b() );
-				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_m[ qss2_b ] );
-				tN = t + options::dtND;
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss3_observees_ ) {
-					observee->fmu_set_q( tN );
-				}
-				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
-				for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ observers
-					observers_[ i ]->advance_observer_2_parallel( qss_ders_.ders_m[ i ], qss_ders_.ders_p[ i ] );
-				}
-				for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ observers
-					observers_[ i ]->advance_observer_3_parallel();
+				if ( fwd_time( tN ) ) { // Use centered ND formulas
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss3_observees_ ) {
+						observee->fmu_set_q( tN );
+					}
+					size_type const qss2_b( qss2_.b() );
+					fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_m[ qss2_b ] );
+					tN = t + options::dtND;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss3_observees_ ) {
+						observee->fmu_set_q( tN );
+					}
+					fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
+					for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ observers
+						observers_[ i ]->advance_observer_2_parallel( qss_ders_.ders_m[ i ], qss_ders_.ders_p[ i ] );
+					}
+					for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ observers
+						observers_[ i ]->advance_observer_3_parallel();
+					}
+				} else { // Use forward ND formulas
+					tN = t + options::dtND;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss3_observees_ ) {
+						observee->fmu_set_q( tN );
+					}
+					size_type const qss2_b( qss2_.b() );
+					fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_m[ qss2_b ] );
+					tN = t + options::two_dtND;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss3_observees_ ) {
+						observee->fmu_set_q( tN );
+					}
+					fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
+					for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ observers
+						observers_[ i ]->advance_observer_2_forward_parallel( qss_ders_.ders_m[ i ], qss_ders_.ders_p[ i ] );
+					}
+					for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ observers
+						observers_[ i ]->advance_observer_3_forward_parallel();
+					}
 				}
 				fmu_me_->set_time( t );
 			} else if ( qss2_.have() ) {
@@ -593,23 +622,45 @@ private: // Methods
 		}
 		if ( qss3_.have() ) {
 			Time tN( t - options::dtND );
-			fmu_me_->set_time( tN );
-			for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss3_observees_ ) {
-				observee->fmu_set_q( tN );
-			}
-			size_type const qss2_b( qss2_.b() );
-			fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_m[ qss2_b ] );
-			tN = t + options::dtND;
-			fmu_me_->set_time( tN );
-			for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss3_observees_ ) {
-				observee->fmu_set_q( tN );
-			}
-			fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
-			for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ observers
-				observers_[ i ]->advance_observer_2( qss_ders_.ders_m[ i ], qss_ders_.ders_p[ i ] );
-			}
-			for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ observers
-				observers_[ i ]->advance_observer_3();
+			if ( fwd_time( tN ) ) { // Use centered ND formulas
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss3_observees_ ) {
+					observee->fmu_set_q( tN );
+				}
+				size_type const qss2_b( qss2_.b() );
+				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_m[ qss2_b ] );
+				tN = t + options::dtND;
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss3_observees_ ) {
+					observee->fmu_set_q( tN );
+				}
+				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
+				for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ observers
+					observers_[ i ]->advance_observer_2( qss_ders_.ders_m[ i ], qss_ders_.ders_p[ i ] );
+				}
+				for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ observers
+					observers_[ i ]->advance_observer_3();
+				}
+			} else { // Use forward ND formulas
+				tN = t + options::dtND;
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss3_observees_ ) {
+					observee->fmu_set_q( tN );
+				}
+				size_type const qss2_b( qss2_.b() );
+				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_m[ qss2_b ] );
+				tN = t + options::two_dtND;
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss3_observees_ ) {
+					observee->fmu_set_q( tN );
+				}
+				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
+				for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ observers
+					observers_[ i ]->advance_observer_2_forward( qss_ders_.ders_m[ i ], qss_ders_.ders_p[ i ] );
+				}
+				for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ observers
+					observers_[ i ]->advance_observer_3_forward();
+				}
 			}
 			fmu_me_->set_time( t );
 		} else if ( qss2_.have() ) {
@@ -648,33 +699,66 @@ private: // Methods
 			fmu_me_->get_reals( zc_n, &ei_vars_.refs[ 0 ], &ei_vars_.vals[ 0 ] );
 			if ( zc2_.have() ) {
 				Time tN( t - options::dtND );
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : zc_observees_ ) {
-					observee->fmu_set_x( tN );
-				}
-				fmu_me_->get_reals( zc_n, &ei_vars_.refs[ 0 ], &ei_vars_.vals_m[ 0 ] );
-				tN = t + options::dtND;
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : zc_observees_ ) {
-					observee->fmu_set_x( tN );
-				}
-				fmu_me_->get_reals( zc_n, &ei_vars_.refs[ 0 ], &ei_vars_.vals_p[ 0 ] );
-				for ( size_type i = zc_.b(), j = 0, e = zc_.e(); i < e; ++i, ++j ) {
-					observers_[ i ]->advance_observer_1( t, ei_vars_.vals[ j ], ei_vars_.vals_m[ j ], ei_vars_.vals_p[ j ] );
-				}
-				for ( size_type i = zc2_.b(), e = zc_.e(); i < e; ++i ) { // Order 2+ observers
-					observers_[ i ]->advance_observer_2();
-				}
-				if ( zc3_.have() ) {
-					tN = t + options::two_dtND;
+				if ( fwd_time( tN ) ) { // Use centered ND formulas
 					fmu_me_->set_time( tN );
-					for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc3_observees_ ) {
+					for ( Variable * observee : zc_observees_ ) {
 						observee->fmu_set_x( tN );
 					}
-					size_type const zc3_bo( zc3_.b() - zc_.b() );
-					fmu_me_->get_reals( zc3_.n(), &ei_vars_.refs[ zc3_bo ], &ei_vars_.vals_p[ zc3_bo ] );
-					for ( size_type i = zc3_.b(), j = zc3_bo, e = zc_.e(); i < e; ++i, ++j ) { // Order 3+ observers
-						observers_[ i ]->advance_observer_3( ei_vars_.vals_p[ j ] );
+					fmu_me_->get_reals( zc_n, &ei_vars_.refs[ 0 ], &ei_vars_.vals_m[ 0 ] );
+					tN = t + options::dtND;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : zc_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					fmu_me_->get_reals( zc_n, &ei_vars_.refs[ 0 ], &ei_vars_.vals_p[ 0 ] );
+					for ( size_type i = zc_.b(), j = 0, e = zc_.e(); i < e; ++i, ++j ) {
+						observers_[ i ]->advance_observer_1( t, ei_vars_.vals[ j ], ei_vars_.vals_m[ j ], ei_vars_.vals_p[ j ] );
+					}
+					for ( size_type i = zc2_.b(), e = zc_.e(); i < e; ++i ) { // Order 2+ observers
+						observers_[ i ]->advance_observer_2();
+					}
+					if ( zc3_.have() ) {
+						tN = t + options::two_dtND;
+						fmu_me_->set_time( tN );
+						for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc3_observees_ ) {
+							observee->fmu_set_x( tN );
+						}
+						size_type const zc3_bo( zc3_.b() - zc_.b() );
+						fmu_me_->get_reals( zc3_.n(), &ei_vars_.refs[ zc3_bo ], &ei_vars_.vals_p[ zc3_bo ] );
+						for ( size_type i = zc3_.b(), j = zc3_bo, e = zc_.e(); i < e; ++i, ++j ) { // Order 3+ observers
+							observers_[ i ]->advance_observer_3( ei_vars_.vals_p[ j ] );
+						}
+					}
+				} else { // Use forward ND formulas
+					tN = t + options::dtND;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : zc_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					fmu_me_->get_reals( zc_n, &ei_vars_.refs[ 0 ], &ei_vars_.vals_m[ 0 ] );
+					tN = t + options::two_dtND;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : zc_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					fmu_me_->get_reals( zc_n, &ei_vars_.refs[ 0 ], &ei_vars_.vals_p[ 0 ] );
+					for ( size_type i = zc_.b(), j = 0, e = zc_.e(); i < e; ++i, ++j ) {
+						observers_[ i ]->advance_observer_1_forward( t, ei_vars_.vals[ j ], ei_vars_.vals_m[ j ], ei_vars_.vals_p[ j ] );
+					}
+					for ( size_type i = zc2_.b(), e = zc_.e(); i < e; ++i ) { // Order 2+ observers
+						observers_[ i ]->advance_observer_2_forward();
+					}
+					if ( zc3_.have() ) {
+						tN = t + options::three_dtND;
+						fmu_me_->set_time( tN );
+						for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc3_observees_ ) {
+							observee->fmu_set_x( tN );
+						}
+						size_type const zc3_bo( zc3_.b() - zc_.b() );
+						fmu_me_->get_reals( zc3_.n(), &ei_vars_.refs[ zc3_bo ], &ei_vars_.vals_p[ zc3_bo ] );
+						for ( size_type i = zc3_.b(), j = zc3_bo, e = zc_.e(); i < e; ++i, ++j ) { // Order 3+ observers
+							observers_[ i ]->advance_observer_3_forward( ei_vars_.vals_p[ j ] );
+						}
 					}
 				}
 			} else { // Order 1 triggers only
@@ -710,43 +794,85 @@ private: // Methods
 			}
 			if ( zc3_.have() ) {
 				Time tN( t - options::dtND );
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
-					observee->fmu_set_x( tN );
-				}
-				for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
-					zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( tN );
-				}
-				fmu_me_->get_directional_derivatives(
-				 zc_observees_v_ref_.data(),
-				 zc_observees_v_ref_.size(),
-				 dd_vars_.refs.data(),
-				 dd_vars_.refs.size(),
-				 zc_observees_dv_.data(),
-				 dd_vars_.ders_m.data()
-				);
-				tN = t + options::dtND;
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
-					observee->fmu_set_x( tN );
-				}
-				for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
-					zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( tN );
-				}
-				fmu_me_->get_directional_derivatives(
-				 zc_observees_v_ref_.data(),
-				 zc_observees_v_ref_.size(),
-				 dd_vars_.refs.data(),
-				 dd_vars_.refs.size(),
-				 zc_observees_dv_.data(),
-				 dd_vars_.ders_p.data()
-				);
-				size_type const zc2_bo( zc2_.b() - zc_.b() );
-				for ( size_type i = zc2_.b(), j = zc2_bo, e = zc_.e(); i < e; ++i, ++j ) { // Order 2+ observers
-					observers_[ i ]->advance_observer_2( dd_vars_.ders_m[ j ], dd_vars_.ders_p[ j ] );
-				}
-				for ( size_type i = zc3_.b(), e = zc_.e(); i < e; ++i ) { // Order 3+ observers
-					observers_[ i ]->advance_observer_3();
+				if ( fwd_time( tN ) ) { // Use centered ND formulas
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
+						zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( tN );
+					}
+					fmu_me_->get_directional_derivatives(
+					zc_observees_v_ref_.data(),
+					zc_observees_v_ref_.size(),
+					dd_vars_.refs.data(),
+					dd_vars_.refs.size(),
+					zc_observees_dv_.data(),
+					dd_vars_.ders_m.data()
+					);
+					tN = t + options::dtND;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
+						zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( tN );
+					}
+					fmu_me_->get_directional_derivatives(
+					zc_observees_v_ref_.data(),
+					zc_observees_v_ref_.size(),
+					dd_vars_.refs.data(),
+					dd_vars_.refs.size(),
+					zc_observees_dv_.data(),
+					dd_vars_.ders_p.data()
+					);
+					size_type const zc2_bo( zc2_.b() - zc_.b() );
+					for ( size_type i = zc2_.b(), j = zc2_bo, e = zc_.e(); i < e; ++i, ++j ) { // Order 2+ observers
+						observers_[ i ]->advance_observer_2( dd_vars_.ders_m[ j ], dd_vars_.ders_p[ j ] );
+					}
+					for ( size_type i = zc3_.b(), e = zc_.e(); i < e; ++i ) { // Order 3+ observers
+						observers_[ i ]->advance_observer_3();
+					}
+				} else { // Use forward ND formulas
+					tN = t + options::dtND;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
+						zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( tN );
+					}
+					fmu_me_->get_directional_derivatives(
+					zc_observees_v_ref_.data(),
+					zc_observees_v_ref_.size(),
+					dd_vars_.refs.data(),
+					dd_vars_.refs.size(),
+					zc_observees_dv_.data(),
+					dd_vars_.ders_m.data()
+					);
+					tN = t + options::two_dtND;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
+						zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( tN );
+					}
+					fmu_me_->get_directional_derivatives(
+					zc_observees_v_ref_.data(),
+					zc_observees_v_ref_.size(),
+					dd_vars_.refs.data(),
+					dd_vars_.refs.size(),
+					zc_observees_dv_.data(),
+					dd_vars_.ders_p.data()
+					);
+					size_type const zc2_bo( zc2_.b() - zc_.b() );
+					for ( size_type i = zc2_.b(), j = zc2_bo, e = zc_.e(); i < e; ++i, ++j ) { // Order 2+ observers
+						observers_[ i ]->advance_observer_2_forward( dd_vars_.ders_m[ j ], dd_vars_.ders_p[ j ] );
+					}
+					for ( size_type i = zc3_.b(), e = zc_.e(); i < e; ++i ) { // Order 3+ observers
+						observers_[ i ]->advance_observer_3_forward();
+					}
 				}
 				fmu_me_->set_time( t );
 			} else if ( zc2_.have() ) {
@@ -784,23 +910,45 @@ private: // Methods
 			}
 			if ( zc3_.have() ) {
 				Time tN( t - options::dtND );
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
-					observee->fmu_set_x( tN );
-				}
-				size_type const zc2_bo( zc2_.b() - zc_.b() );
-				fmu_me_->get_reals( zc2_.n(), &zc_ders_.refs[ zc2_bo ], &zc_ders_.ders_m[ zc2_bo ] );
-				tN = t + options::dtND;
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
-					observee->fmu_set_x( tN );
-				}
-				fmu_me_->get_reals( zc2_.n(), &zc_ders_.refs[ zc2_bo ], &zc_ders_.ders_p[ zc2_bo ] );
-				for ( size_type i = zc2_.b(), j = zc2_bo, e = zc_.e(); i < e; ++i, ++j ) { // Order 2+ observers
-					observers_[ i ]->advance_observer_2( zc_ders_.ders_m[ j ], zc_ders_.ders_p[ j ] );
-				}
-				for ( size_type i = zc3_.b(), e = zc_.e(); i < e; ++i ) { // Order 3+ observers
-					observers_[ i ]->advance_observer_3();
+				if ( fwd_time( tN ) ) { // Use centered ND formulas
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					size_type const zc2_bo( zc2_.b() - zc_.b() );
+					fmu_me_->get_reals( zc2_.n(), &zc_ders_.refs[ zc2_bo ], &zc_ders_.ders_m[ zc2_bo ] );
+					tN = t + options::dtND;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					fmu_me_->get_reals( zc2_.n(), &zc_ders_.refs[ zc2_bo ], &zc_ders_.ders_p[ zc2_bo ] );
+					for ( size_type i = zc2_.b(), j = zc2_bo, e = zc_.e(); i < e; ++i, ++j ) { // Order 2+ observers
+						observers_[ i ]->advance_observer_2( zc_ders_.ders_m[ j ], zc_ders_.ders_p[ j ] );
+					}
+					for ( size_type i = zc3_.b(), e = zc_.e(); i < e; ++i ) { // Order 3+ observers
+						observers_[ i ]->advance_observer_3();
+					}
+				} else { // Use forward ND formulas
+					tN = t + options::dtND;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					size_type const zc2_bo( zc2_.b() - zc_.b() );
+					fmu_me_->get_reals( zc2_.n(), &zc_ders_.refs[ zc2_bo ], &zc_ders_.ders_m[ zc2_bo ] );
+					tN = t + options::two_dtND;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					fmu_me_->get_reals( zc2_.n(), &zc_ders_.refs[ zc2_bo ], &zc_ders_.ders_p[ zc2_bo ] );
+					for ( size_type i = zc2_.b(), j = zc2_bo, e = zc_.e(); i < e; ++i, ++j ) { // Order 2+ observers
+						observers_[ i ]->advance_observer_2_forward( zc_ders_.ders_m[ j ], zc_ders_.ders_p[ j ] );
+					}
+					for ( size_type i = zc3_.b(), e = zc_.e(); i < e; ++i ) { // Order 3+ observers
+						observers_[ i ]->advance_observer_3_forward();
+					}
 				}
 				fmu_me_->set_time( t );
 			} else if ( zc2_.have() ) {

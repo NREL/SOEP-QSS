@@ -153,7 +153,7 @@ public: // Methods
 		init_observers();
 		x_ = ( xIni != 0 );
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
 	}
 
 	// Initialization to a Value: Stage 0
@@ -164,7 +164,7 @@ public: // Methods
 		init_observers();
 		x_ = ( x != 0 );
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
 	}
 
 	// Handler Advance
@@ -177,7 +177,7 @@ public: // Methods
 		Boolean const x_new( x != 0.0 );
 		bool const chg( x_ != x_new );
 		x_ = x_new;
-		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
 		if ( chg && observed() ) advance_observers();
 	}
 
@@ -190,7 +190,7 @@ public: // Methods
 		shift_handler();
 		Boolean const x_new( x != 0.0 );
 		x_ = x_new;
-		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "*= " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
 	}
 
 private: // Data

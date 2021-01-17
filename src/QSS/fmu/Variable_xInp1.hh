@@ -125,7 +125,7 @@ public: // Methods
 		set_qTol();
 		set_tE();
 		( tE < tD ) ? add_QSS_Inp( tE ) : add_discrete( tD );
-		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
 	// Discrete Advance
@@ -139,7 +139,7 @@ public: // Methods
 		set_qTol();
 		set_tE();
 		( tE < tD ) ? shift_QSS_Inp( tE ) : shift_discrete( tD );
-		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "↕  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 		if ( observed() ) advance_observers();
 	}
 
@@ -154,7 +154,7 @@ public: // Methods
 		set_qTol();
 		set_tE();
 		( tE < tD ) ? shift_QSS_Inp( tE ) : shift_discrete( tD );
-		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "↕= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 	}
 
 	// QSS Advance
@@ -168,7 +168,7 @@ public: // Methods
 		set_qTol();
 		set_tE();
 		( tE < tD ) ? shift_QSS_Inp( tE ) : shift_discrete( tD );
-		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
 		if ( observed() ) advance_observers();
 	}
 

@@ -318,7 +318,7 @@ protected: // Methods
 			v_p = v;
 		}
 		if ( ( t >= tBeg ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
-		if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name() << '(' << t << ')' << " tZ may not have converged" <<  '\n';
+		if ( ( i == n ) && ( options::output::d ) ) std::cout << " ▲ " << name() << '(' << t << ')' << " tZ may not have converged" <<  '\n';
 	}
 
 public: // Data

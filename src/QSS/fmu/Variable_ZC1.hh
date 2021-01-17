@@ -121,7 +121,7 @@ public: // Methods
 		set_tE();
 		set_tZ();
 		( tE < tZ ) ? add_QSS_ZC( tE ) : add_ZC( tZ );
-		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
 	// QSS Advance
@@ -145,7 +145,7 @@ public: // Methods
 		set_tZ();
 		( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 #endif
-		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
 	// QSS Advance: Stage 0
@@ -176,6 +176,13 @@ public: // Methods
 		x_1_ = n_1( x_0_m, x_0_p );
 	}
 
+	// QSS Advance: Stage 1
+	void
+	advance_QSS_1_forward( Real const x_0_p, Real const x_0_2p ) override final
+	{
+		x_1_ = f_1( x_0_p, x_0_2p );
+	}
+
 	// QSS Advance: Stage Final
 	void
 	advance_QSS_F() override final
@@ -188,7 +195,7 @@ public: // Methods
 		set_tZ();
 		( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 #endif
-		if ( options::output::d ) std::cout << "= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
+		if ( options::output::d ) std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
 	}
 
 	// Zero-Crossing Advance
@@ -197,7 +204,7 @@ public: // Methods
 	{
 		assert( in_conditional() );
 		conditional->activity( tZ );
-		if ( options::output::d ) std::cout << "Z " << name() << '(' << tZ << ')' << '\n';
+		if ( options::output::d ) std::cout << "Z  " << name() << '(' << tZ << ')' << '\n';
 		crossing_last = crossing;
 		x_mag_ = 0.0;
 		set_tZ( tZ_last = tZ ); // Next zero-crossing: Might be in active segment
@@ -255,11 +262,28 @@ public: // Methods
 		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
 	}
 
+	// Observer Advance: Stage 1
+	void
+	advance_observer_1_forward( Time const t, Real const x_0, Real const x_0_p, Real const x_0_2p ) override final
+	{
+		assert( ( tX <= t ) && ( t <= tE ) );
+		tX = tQ = t;
+		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
+		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
+		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
+		x_0_ = ( !handler_modified_ && ( t == tZ_last ) ? 0.0 : x_0 ); // Force exact zero if at zero-crossing time
+		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
+		x_1_ = f_1( x_0_p, x_0_2p );
+		set_qTol();
+		set_tE();
+		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
+	}
+
 	// Observer Advance: Stage d
 	void
 	advance_observer_d() const override final
 	{
-		std::cout << "  " << name() << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ <<  '\n';
+		std::cout << " ▲ " << name() << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ <<  '\n';
 	}
 
 private: // Methods
@@ -363,6 +387,13 @@ private: // Methods
 	n_1( Real const x_0_m, Real const x_0_p ) const
 	{
 		return options::one_over_two_dtND * ( x_0_p - x_0_m ); //ND Centered difference
+	}
+
+	// Coefficient 1 from FMU
+	Real
+	f_1( Real const x_0_p, Real const x_0_2p ) const
+	{
+		return options::one_over_two_dtND * ( ( three * ( x_0_p - x_0_ ) ) + ( x_0_p - x_0_2p ) ); //ND Forward 3-point
 	}
 
 private: // Data

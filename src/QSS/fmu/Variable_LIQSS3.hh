@@ -54,7 +54,7 @@ private: // Types
 
 	using Super::c_1;
 	using Super::c_2;
-	using Super::c_3;
+	using Super::f_3;
 
 public: // Creation
 
@@ -210,9 +210,9 @@ public: // Methods
 	{
 		set_qTol();
 		if ( self_observer() ) {
-			advance_LIQSS_s();
+			advance_LIQSS_s_forward();
 		} else {
-			x_3_ = s_3();
+			x_3_ = F_3();
 		}
 	}
 
@@ -229,7 +229,7 @@ public: // Methods
 		}
 		set_tE_aligned();
 		add_QSS( tE );
-		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 	// QSS Advance
@@ -241,16 +241,25 @@ public: // Methods
 		x_0_ = q_c_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
 		set_qTol();
 		if ( self_observer() ) {
-			advance_LIQSS();
+			if ( fwd_time_ND( tQ ) ) { // Use centered ND formulas
+				advance_LIQSS();
+			} else { // Use forward ND formulas
+				advance_LIQSS_forward();
+			}
 		} else {
 			x_1_ = q_1_ = h_1();
-			x_2_ = q_2_ = h_2();
-			x_3_ = h_3();
+			if ( fwd_time_ND( tQ ) ) { // Use centered ND formulas
+				x_2_ = q_2_ = h_2();
+				x_3_ = n_3();
+			} else { // Use forward ND formulas
+				x_2_ = q_2_ = fh_2();
+				x_3_ = f_3();
+			}
 			q_0_ += signum( x_3_ ) * qTol;
 		}
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 		if ( observed() ) advance_observers();
 		if ( connected() ) advance_connections();
 	}
@@ -278,6 +287,13 @@ public: // Methods
 		x_2_ = n_2( x_1_m, x_1_p );
 	}
 
+	// QSS Advance: Stage 2
+	void
+	advance_QSS_2_forward( Real const x_1_p, Real const x_1_2p ) override final
+	{
+		x_2_ = f_2( x_1_p, x_1_2p );
+	}
+
 	// QSS Advance: Stage 2.1
 	void
 	advance_QSS_2_1() override final
@@ -297,6 +313,18 @@ public: // Methods
 		}
 	}
 
+	// QSS Advance: Stage 3
+	void
+	advance_QSS_3_forward() override final
+	{
+		set_qTol();
+		if ( self_observer() ) {
+			advance_LIQSS_s_forward();
+		} else {
+			x_3_ = f_3();
+		}
+	}
+
 	// QSS Advance: Stage Final
 	void
 	advance_QSS_F() override final
@@ -310,7 +338,7 @@ public: // Methods
 		}
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 		if ( connected() ) advance_connections();
 	}
 
@@ -322,12 +350,17 @@ public: // Methods
 		tX = tQ = t;
 		x_0_ = q_c_ = q_0_ = p_0();
 		x_1_ = q_1_ = h_1();
-		x_2_ = q_2_ = c_2();
-		x_3_ = c_3();
+		if ( fwd_time_ND( tQ ) ) { // Use centered ND formulas
+			x_2_ = q_2_ = c_2();
+			x_3_ = n_3();
+		} else { // Use forward ND formulas
+			x_2_ = q_2_ = f_2();
+			x_3_ = f_3();
+		}
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 		if ( observed() ) advance_observers();
 		if ( connected() ) advance_connections();
 	}
@@ -343,16 +376,23 @@ public: // Methods
 
 	// Handler Advance: Stage 1
 	void
-	advance_handler_1() override final
+	advance_handler_1( Real const x_1 ) override final
 	{
-		x_1_ = q_1_ = h_1();
+		x_1_ = q_1_ = x_1;
 	}
 
 	// Handler Advance: Stage 2
 	void
-	advance_handler_2() override final
+	advance_handler_2( Real const x_1_m, Real const x_1_p ) override final
 	{
-		x_2_ = s_2();
+		x_2_ = n_2( x_1_m, x_1_p );
+	}
+
+	// QSS Advance: Stage 2
+	void
+	advance_handler_2_forward( Real const x_1_p, Real const x_1_2p ) override final
+	{
+		x_2_ = f_2( x_1_p, x_1_2p );
 	}
 
 	// Handler Advance: Stage 2.1
@@ -366,7 +406,14 @@ public: // Methods
 	void
 	advance_handler_3() override final
 	{
-		x_3_ = s_3();
+		x_3_ = n_3();
+	}
+
+	// Handler Advance: Stage 3
+	void
+	advance_handler_3_forward() override final
+	{
+		x_3_ = f_3();
 	}
 
 	// Handler Advance: Stage Final
@@ -376,7 +423,7 @@ public: // Methods
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "*= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 		if ( connected() ) advance_connections();
 	}
 
@@ -397,7 +444,7 @@ public: // Methods
 		x_0_ += ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
 		x_1_ = c_1( t );
 		x_2_ = c_2( t );
-		x_3_ = c_3();
+		x_3_ = n_3();
 		set_tE_unaligned();
 		shift_QSS( tE );
 		if ( connected() ) advance_connections_observer();
@@ -436,6 +483,20 @@ public: // Methods
 		x_2_ = n_2( x_1_m, x_1_p );
 	}
 
+	// Observer Advance: Stage 2
+	void
+	advance_observer_2_forward( Real const x_1_p, Real const x_1_2p ) override final
+	{
+		x_2_ = f_2( x_1_p, x_1_2p );
+	}
+
+	// Observer Advance: Stage 2 Parallel
+	void
+	advance_observer_2_forward_parallel( Real const x_1_p, Real const x_1_2p ) override final
+	{
+		x_2_ = f_2( x_1_p, x_1_2p );
+	}
+
 	// Observer Advance: Stage 3
 	void
 	advance_observer_3() override final
@@ -451,6 +512,23 @@ public: // Methods
 	advance_observer_3_parallel() override final
 	{
 		x_3_ = n_3();
+	}
+
+	// Observer Advance: Stage 3
+	void
+	advance_observer_3_forward() override final
+	{
+		x_3_ = f_3();
+		set_tE_unaligned();
+		shift_QSS( tE );
+		if ( connected() ) advance_connections_observer();
+	}
+
+	// Observer Advance: Stage 3 Parallel
+	void
+	advance_observer_3_forward_parallel() override final
+	{
+		x_3_ = f_3();
 	}
 
 	// Observer Advance: Stage Final Parallel
@@ -472,7 +550,7 @@ public: // Methods
 	void
 	advance_observer_d() const override final
 	{
-		std::cout << "  " << name() << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q(" << std::noshowpos << tQ << std::showpos << ")]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		std::cout << " ▲ " << name() << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q(" << std::noshowpos << tQ << std::showpos << ")]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
 	}
 
 private: // Methods
@@ -530,9 +608,17 @@ private: // Methods
 	void
 	advance_LIQSS();
 
+	// Advance Self-Observing Trigger
+	void
+	advance_LIQSS_forward();
+
 	// Advance Self-Observing Trigger: Simultaneous
 	void
 	advance_LIQSS_s();
+
+	// Advance Self-Observing Trigger: Simultaneous
+	void
+	advance_LIQSS_s_forward();
 
 	// Coefficient 1 from FMU at Time tQ
 	Real
@@ -567,6 +653,55 @@ private: // Methods
 		x_1_p_ = c_1( tN );
 		fmu_set_time( t );
 		return options::one_over_four_dtND * ( x_1_p_ - x_1_m_ ); //ND Centered difference
+	}
+
+	// Coefficient 2 from FMU at Time tQ
+	Real
+	f_2() const
+	{
+		return f_2( tQ );
+	}
+
+	// Coefficient 2 from FMU at Time t
+	Real
+	f_2( Time const t ) const
+	{
+		Time tN( t + options::dtND );
+		fmu_set_time( tN );
+		x_1_p_ = c_1( tN );
+		tN = t + options::two_dtND;
+		fmu_set_time( tN );
+		x_1_2p_ = c_1( tN );
+		fmu_set_time( t );
+		return options::one_over_four_dtND * ( ( three * ( x_1_p_ - x_1_ ) ) + ( x_1_p_ - x_1_2p_ ) ); //ND Forward 3-point
+	}
+
+	// Coefficient 2 from FMU
+	Real
+	f_2( Real const x_1_p, Real const x_1_2p ) const
+	{
+		return options::one_over_four_dtND * ( ( three * ( ( x_1_p_ = x_1_p ) - x_1_ ) ) + ( x_1_p - ( x_1_2p_ = x_1_2p ) ) ); //ND Forward 3-point
+	}
+
+	// Coefficient 2 from FMU at Time tQ
+	Real
+	fh_2() const
+	{
+		return fh_2( tQ );
+	}
+
+	// Coefficient 2 from FMU at Time t
+	Real
+	fh_2( Time const t ) const
+	{
+		Time tN( t + options::dtND );
+		fmu_set_time( tN );
+		x_1_p_ = h_1( tN );
+		tN = t + options::two_dtND;
+		fmu_set_time( tN );
+		x_1_2p_ = h_1( tN );
+		fmu_set_time( t );
+		return options::one_over_four_dtND * ( ( three * ( x_1_p_ - x_1_ ) ) + ( x_1_p_ - x_1_2p_ ) ); //ND Forward 3-point
 	}
 
 	// Coefficient 2 from FMU at Time tQ
@@ -606,23 +741,16 @@ private: // Methods
 
 	// Coefficient 3 from FMU
 	Real
-	c_3() const
+	f_3() const
 	{
-		return options::one_over_six_dtND_squared * ( ( x_1_p_ - x_1_ ) + ( x_1_m_ - x_1_ ) ); //ND Centered difference
+		return options::one_over_six_dtND_squared * ( ( x_1_2p_ - x_1_p_ ) + ( x_1_ - x_1_p_ ) ); //ND Forward 3-point
 	}
 
 	// Coefficient 3 from FMU
 	Real
-	h_3() const
+	F_3() const
 	{
-		return options::one_over_six_dtND_squared * ( ( x_1_p_ - x_1_ ) + ( x_1_m_ - x_1_ ) ); //ND Centered difference
-	}
-
-	// Coefficient 3 from FMU
-	Real
-	s_3() const
-	{
-		return c_3( tQ, x_1_ );
+		return f_3( tQ, x_1_ );
 	}
 
 private: // Data
@@ -630,7 +758,7 @@ private: // Data
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Continuous rep coefficients
 	Real q_c_{ 0.0 }, q_0_{ 0.0 }, q_1_{ 0.0 }, q_2_{ 0.0 }; // Quantized rep coefficients
 	Real l_0_{ 0.0 }; // LIQSS-adjusted coefficient
-	mutable Real x_1_m_{ 0.0 }, x_1_p_{ 0.0 }; // Coefficient 1 at minus and plus delta-t for numeric differentiation
+	mutable Real x_1_m_{ 0.0 }, x_1_p_{ 0.0 }, x_1_2p_{ 0.0 }; // Coefficient 1 at numeric differentiation time offsets
 
 }; // Variable_LIQSS3
 

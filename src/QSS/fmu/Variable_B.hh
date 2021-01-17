@@ -171,7 +171,7 @@ public: // Methods
 		init_observers();
 		x_ = ( xIni != 0 );
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
 	}
 
 	// Initialization to a Value: Stage 0
@@ -182,7 +182,7 @@ public: // Methods
 		init_observers();
 		x_ = ( x != 0 );
 		add_handler();
-		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
 	}
 
 	// Handler Advance
@@ -194,7 +194,7 @@ public: // Methods
 		Boolean const x_old( x_ );
 		x_ = fmu_get_boolean(); // Assume FMU ran event handler
 		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
 		if ( observed() && ( x_ != x_old ) ) advance_observers();
 	}
 
@@ -212,7 +212,7 @@ public: // Methods
 	advance_handler_F() override final
 	{
 		shift_handler();
-		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "*= " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
 	}
 
 	// Handler No-Advance
@@ -235,7 +235,7 @@ public: // Methods
 	void
 	advance_observer_d() const override final
 	{
-		std::cout << "  " << name() << '(' << tX << ')' << " = " << x_ << '\n';
+		std::cout << " ▲ " << name() << '(' << tX << ')' << " = " << x_ << '\n';
 	}
 
 public: // Methods: FMU

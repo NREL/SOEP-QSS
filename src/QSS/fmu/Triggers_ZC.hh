@@ -125,6 +125,14 @@ public: // Predicate
 		return ( ! triggers_.empty() );
 	}
 
+	// Forward Time?
+	bool
+	fwd_time( Time const t ) const
+	{
+		assert( fmu_me_ != nullptr );
+		return t >= fmu_me_->t0;
+	}
+
 public: // Property
 
 	// Size
@@ -259,33 +267,66 @@ public: // Methods
 			}
 			if ( qss2_.have() ) {
 				Time tN( t - options::dtND );
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : qss_observees_ ) {
-					observee->fmu_set_x( tN );
-				}
-				fmu_me_->get_reals( qss_n, &ei_vars_.refs[ 0 ], &ei_vars_.vals_m[ 0 ] );
-				tN = t + options::dtND;
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : qss_observees_ ) {
-					observee->fmu_set_x( tN );
-				}
-				fmu_me_->get_reals( qss_n, &ei_vars_.refs[ 0 ], &ei_vars_.vals_p[ 0 ] );
-				for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
-					triggers_[ i ]->advance_QSS_1( ei_vars_.vals_m[ i ], ei_vars_.vals_p[ i ] );
-				}
-				for ( size_type i = qss2_.b(), e = qss_.e(); i < e; ++i ) { // Order 2+ triggers
-					triggers_[ i ]->advance_QSS_2();
-				}
-				if ( qss3_.have() ) {
-					tN = t + options::two_dtND;
+				if ( fwd_time( tN ) ) { // Use centered ND formulas
 					fmu_me_->set_time( tN );
-					for ( Variable * observee : uni_order_ ? qss_observees_ : qss3_observees_ ) {
+					for ( Variable * observee : qss_observees_ ) {
 						observee->fmu_set_x( tN );
 					}
-					size_type const qss3_b( qss3_.b() );
-					fmu_me_->get_reals( qss3_.n(), &ei_vars_.refs[ qss3_b ], &ei_vars_.vals_p[ qss3_b ] );
-					for ( size_type i = qss3_b, e = qss_.e(); i < e; ++i ) { // Order 3+ triggers
-						triggers_[ i ]->advance_QSS_3( ei_vars_.vals_p[ i ] );
+					fmu_me_->get_reals( qss_n, &ei_vars_.refs[ 0 ], &ei_vars_.vals_m[ 0 ] );
+					tN = t + options::dtND;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : qss_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					fmu_me_->get_reals( qss_n, &ei_vars_.refs[ 0 ], &ei_vars_.vals_p[ 0 ] );
+					for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
+						triggers_[ i ]->advance_QSS_1( ei_vars_.vals_m[ i ], ei_vars_.vals_p[ i ] );
+					}
+					for ( size_type i = qss2_.b(), e = qss_.e(); i < e; ++i ) { // Order 2+ triggers
+						triggers_[ i ]->advance_QSS_2();
+					}
+					if ( qss3_.have() ) {
+						tN = t + options::two_dtND;
+						fmu_me_->set_time( tN );
+						for ( Variable * observee : uni_order_ ? qss_observees_ : qss3_observees_ ) {
+							observee->fmu_set_x( tN );
+						}
+						size_type const qss3_b( qss3_.b() );
+						fmu_me_->get_reals( qss3_.n(), &ei_vars_.refs[ qss3_b ], &ei_vars_.vals_p[ qss3_b ] );
+						for ( size_type i = qss3_b, e = qss_.e(); i < e; ++i ) { // Order 3+ triggers
+							triggers_[ i ]->advance_QSS_3( ei_vars_.vals_p[ i ] );
+						}
+					}
+				} else { // Use forward ND formulas
+					tN = t + options::dtND;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : qss_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					fmu_me_->get_reals( qss_n, &ei_vars_.refs[ 0 ], &ei_vars_.vals_m[ 0 ] );
+					tN = t + options::two_dtND;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : qss_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					fmu_me_->get_reals( qss_n, &ei_vars_.refs[ 0 ], &ei_vars_.vals_p[ 0 ] );
+					for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
+						triggers_[ i ]->advance_QSS_1_forward( ei_vars_.vals_m[ i ], ei_vars_.vals_p[ i ] );
+					}
+					for ( size_type i = qss2_.b(), e = qss_.e(); i < e; ++i ) { // Order 2+ triggers
+						triggers_[ i ]->advance_QSS_2_forward();
+					}
+					if ( qss3_.have() ) {
+						tN = t + options::three_dtND;
+						fmu_me_->set_time( tN );
+						for ( Variable * observee : uni_order_ ? qss_observees_ : qss3_observees_ ) {
+							observee->fmu_set_x( tN );
+						}
+						size_type const qss3_b( qss3_.b() );
+						fmu_me_->get_reals( qss3_.n(), &ei_vars_.refs[ qss3_b ], &ei_vars_.vals_p[ qss3_b ] );
+						for ( size_type i = qss3_b, e = qss_.e(); i < e; ++i ) { // Order 3+ triggers
+							triggers_[ i ]->advance_QSS_3_forward( ei_vars_.vals_p[ i ] );
+						}
 					}
 				}
 			} else { // Order 1 triggers only
@@ -328,42 +369,83 @@ public: // Methods
 			}
 			if ( qss3_.have() ) {
 				Time tN( t - options::dtND );
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : uni_order_ ? qss_observees_ : qss2_observees_ ) {
-					observee->fmu_set_x( tN );
-				}
-				for ( size_type i = 0, e = qss_observees_.size(); i < e; ++i ) { //? Worth it to do this for observees of order 2+ triggers only?
-					qss_observees_dv_[ i ] = qss_observees_[ i ]->x1( tN );
-				}
-				fmu_me_->get_directional_derivatives(
-				 qss_observees_v_ref_.data(),
-				 qss_observees_v_ref_.size(),
-				 dd_vars_.refs.data(),
-				 dd_vars_.refs.size(),
-				 qss_observees_dv_.data(),
-				 dd_vars_.ders_m.data()
-				);
-				tN = t + options::dtND;
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : uni_order_ ? qss_observees_ : qss2_observees_ ) {
-					observee->fmu_set_x( tN );
-				}
-				for ( size_type i = 0, e = qss_observees_.size(); i < e; ++i ) { //? Worth it to do this for observees of order 2+ triggers only?
-					qss_observees_dv_[ i ] = qss_observees_[ i ]->x1( tN );
-				}
-				fmu_me_->get_directional_derivatives(
-				 qss_observees_v_ref_.data(),
-				 qss_observees_v_ref_.size(),
-				 dd_vars_.refs.data(),
-				 dd_vars_.refs.size(),
-				 qss_observees_dv_.data(),
-				 dd_vars_.ders_p.data()
-				);
-				for ( size_type i = qss2_.b(), e = qss_.e(); i < e; ++i ) { // Order 2+ triggers
-					triggers_[ i ]->advance_QSS_2( dd_vars_.ders_m[ i ], dd_vars_.ders_p[ i ] );
-				}
-				for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ triggers
-					triggers_[ i ]->advance_QSS_3();
+				if ( fwd_time( tN ) ) { // Use centered ND formulas
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : uni_order_ ? qss_observees_ : qss2_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					for ( size_type i = 0, e = qss_observees_.size(); i < e; ++i ) { //? Worth it to do this for observees of order 2+ triggers only?
+						qss_observees_dv_[ i ] = qss_observees_[ i ]->x1( tN );
+					}
+					 fmu_me_->get_directional_derivatives(
+					 qss_observees_v_ref_.data(),
+					 qss_observees_v_ref_.size(),
+					 dd_vars_.refs.data(),
+					 dd_vars_.refs.size(),
+					 qss_observees_dv_.data(),
+					 dd_vars_.ders_m.data()
+					);
+					tN = t + options::dtND;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : uni_order_ ? qss_observees_ : qss2_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					for ( size_type i = 0, e = qss_observees_.size(); i < e; ++i ) { //? Worth it to do this for observees of order 2+ triggers only?
+						qss_observees_dv_[ i ] = qss_observees_[ i ]->x1( tN );
+					}
+					 fmu_me_->get_directional_derivatives(
+					 qss_observees_v_ref_.data(),
+					 qss_observees_v_ref_.size(),
+					 dd_vars_.refs.data(),
+					 dd_vars_.refs.size(),
+					 qss_observees_dv_.data(),
+					 dd_vars_.ders_p.data()
+					);
+					for ( size_type i = qss2_.b(), e = qss_.e(); i < e; ++i ) { // Order 2+ triggers
+						triggers_[ i ]->advance_QSS_2( dd_vars_.ders_m[ i ], dd_vars_.ders_p[ i ] );
+					}
+					for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ triggers
+						triggers_[ i ]->advance_QSS_3();
+					}
+				} else { // Use forward ND formulas
+					tN = t + options::dtND;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : uni_order_ ? qss_observees_ : qss2_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					for ( size_type i = 0, e = qss_observees_.size(); i < e; ++i ) { //? Worth it to do this for observees of order 2+ triggers only?
+						qss_observees_dv_[ i ] = qss_observees_[ i ]->x1( tN );
+					}
+					 fmu_me_->get_directional_derivatives(
+					 qss_observees_v_ref_.data(),
+					 qss_observees_v_ref_.size(),
+					 dd_vars_.refs.data(),
+					 dd_vars_.refs.size(),
+					 qss_observees_dv_.data(),
+					 dd_vars_.ders_m.data()
+					);
+					tN = t + options::two_dtND;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : uni_order_ ? qss_observees_ : qss2_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					for ( size_type i = 0, e = qss_observees_.size(); i < e; ++i ) { //? Worth it to do this for observees of order 2+ triggers only?
+						qss_observees_dv_[ i ] = qss_observees_[ i ]->x1( tN );
+					}
+					 fmu_me_->get_directional_derivatives(
+					 qss_observees_v_ref_.data(),
+					 qss_observees_v_ref_.size(),
+					 dd_vars_.refs.data(),
+					 dd_vars_.refs.size(),
+					 qss_observees_dv_.data(),
+					 dd_vars_.ders_p.data()
+					);
+					for ( size_type i = qss2_.b(), e = qss_.e(); i < e; ++i ) { // Order 2+ triggers
+						triggers_[ i ]->advance_QSS_2_forward( dd_vars_.ders_m[ i ], dd_vars_.ders_p[ i ] );
+					}
+					for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ triggers
+						triggers_[ i ]->advance_QSS_3_forward();
+					}
 				}
 				fmu_me_->set_time( t );
 			} else if ( qss2_.have() ) {
@@ -425,23 +507,45 @@ public: // Methods
 #endif
 			if ( qss3_.have() ) {
 				Time tN( t - options::dtND );
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : uni_order_ ? qss_observees_ : qss2_observees_ ) {
-					observee->fmu_set_x( tN );
-				}
-				size_type const qss2_b( qss2_.b() );
-				fmu_me_->get_reals( qss2_.n(), &zc_ders_.refs[ qss2_b ], &zc_ders_.ders_m[ qss2_b ] );
-				tN = t + options::dtND;
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : uni_order_ ? qss_observees_ : qss2_observees_ ) {
-					observee->fmu_set_x( tN );
-				}
-				fmu_me_->get_reals( qss2_.n(), &zc_ders_.refs[ qss2_b ], &zc_ders_.ders_p[ qss2_b ] );
-				for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ triggers
-					triggers_[ i ]->advance_QSS_2( zc_ders_.ders_m[ i ], zc_ders_.ders_p[ i ] );
-				}
-				for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ triggers
-					triggers_[ i ]->advance_QSS_3();
+				if ( fwd_time( tN ) ) { // Use centered ND formulas
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : uni_order_ ? qss_observees_ : qss2_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					size_type const qss2_b( qss2_.b() );
+					fmu_me_->get_reals( qss2_.n(), &zc_ders_.refs[ qss2_b ], &zc_ders_.ders_m[ qss2_b ] );
+					tN = t + options::dtND;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : uni_order_ ? qss_observees_ : qss2_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					fmu_me_->get_reals( qss2_.n(), &zc_ders_.refs[ qss2_b ], &zc_ders_.ders_p[ qss2_b ] );
+					for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ triggers
+						triggers_[ i ]->advance_QSS_2( zc_ders_.ders_m[ i ], zc_ders_.ders_p[ i ] );
+					}
+					for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ triggers
+						triggers_[ i ]->advance_QSS_3();
+					}
+				} else { // Use forward ND formulas
+					tN = t + options::dtND;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : uni_order_ ? qss_observees_ : qss2_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					size_type const qss2_b( qss2_.b() );
+					fmu_me_->get_reals( qss2_.n(), &zc_ders_.refs[ qss2_b ], &zc_ders_.ders_m[ qss2_b ] );
+					tN = t + options::two_dtND;
+					fmu_me_->set_time( tN );
+					for ( Variable * observee : uni_order_ ? qss_observees_ : qss2_observees_ ) {
+						observee->fmu_set_x( tN );
+					}
+					fmu_me_->get_reals( qss2_.n(), &zc_ders_.refs[ qss2_b ], &zc_ders_.ders_p[ qss2_b ] );
+					for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ triggers
+						triggers_[ i ]->advance_QSS_2_forward( zc_ders_.ders_m[ i ], zc_ders_.ders_p[ i ] );
+					}
+					for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ triggers
+						triggers_[ i ]->advance_QSS_3_forward();
+					}
 				}
 				fmu_me_->set_time( t );
 			} else if ( qss2_.have() ) {
@@ -566,22 +670,22 @@ private: // Data
 
 	Variables triggers_; // Triggers
 
+	// Trigger index specs
+	bool uni_order_{ false }; // Triggers all the same order?
 	Range qss_; // Triggers
 	Range qss2_; // Triggers of order 2+
 	Range qss3_; // Triggers of order 3+
 
-	bool uni_order_{ false }; // Triggers all the same order?
+	// Observees
+	Variables qss_observees_; // Triggers observees
+	Variables qss2_observees_; // Triggers of order 2+ observees
+	Variables qss3_observees_; // Triggers of order 3+ observees
 
 	// Trigger FMU pooled call data
 	RefsValsEI< Variable > ei_vars_; // Event indicator variables
 	RefsValsEIDD< Variable > dd_vars_; // Event indicator directional derivative variables
 	RefsVals< Variable > zc_vars_; // Explict zero-crossing variables
 	RefsDers< Variable > zc_ders_; // Explict zero-crossing derivatives
-
-	// Observees
-	Variables qss_observees_; // Triggers observees
-	Variables qss2_observees_; // Triggers of order 2+ observees
-	Variables qss3_observees_; // Triggers of order 3+ observees
 
 	// Observee directional derivative seed data
 	VariableRefs qss_observees_v_ref_; // Observee value references for FMU directional derivative

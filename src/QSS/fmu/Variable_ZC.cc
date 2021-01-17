@@ -64,7 +64,7 @@ namespace fmu {
 			v_p = v;
 		}
 		if ( ( t >= tBeg ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
-		if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name() << '(' << t << ')' << " tZ may not have converged" <<  '\n';
+		if ( ( i == n ) && ( options::output::d ) ) std::cout << "   " << name() << '(' << t << ')' << " tZ may not have converged" <<  '\n';
 		fmu_set_time( t_fmu );
 	}
 
@@ -93,7 +93,7 @@ namespace fmu {
 			v_p = v;
 		}
 		if ( ( t >= tBeg ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
-		if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name() << '(' << t << ')' << " tZ may not have converged" <<  '\n';
+		if ( ( i == n ) && ( options::output::d ) ) std::cout << "   " << name() << '(' << t << ')' << " tZ may not have converged" <<  '\n';
 		fmu_set_time( t_fmu );
 	}
 
@@ -122,7 +122,7 @@ namespace fmu {
 			v_p = v;
 		}
 		if ( ( t >= tBeg ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
-		if ( ( i == n ) && ( options::output::d ) ) std::cout << "  " << name() << '(' << t << ')' << " tZ may not have converged" <<  '\n';
+		if ( ( i == n ) && ( options::output::d ) ) std::cout << "   " << name() << '(' << t << ')' << " tZ may not have converged" <<  '\n';
 		fmu_set_time( t_fmu );
 	}
 

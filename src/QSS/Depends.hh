@@ -104,7 +104,6 @@ public: // Types
 	}; // Dependency
 
 	using Dependencies = std::vector< Dependency >;
-	using size_type = Dependencies::size_type;
 
 public: // Predicate
 

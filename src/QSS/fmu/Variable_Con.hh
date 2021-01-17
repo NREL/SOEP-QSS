@@ -181,7 +181,7 @@ public: // Methods
 		Real const x_0( out_var_->x( tQ ) );
 		fmu_set_real( x_0 );
 		if ( options::output::d ) {
-			std::cout << "! " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0;
+			std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0;
 			int const out_var_order( out_var_->order() );
 			if ( out_var_order >= 1 ) std::cout << out_var_->x1( tQ ) << x_delta;
 			if ( out_var_order >= 2 ) std::cout << one_half * out_var_->x2( tQ ) << x_delta_2;
@@ -201,7 +201,7 @@ public: // Methods
 		Real const x_( out_var_->x( t ) );
 		fmu_set_time( t ); // Different FMU-ME than trigger
 		fmu_set_real( x_ );
-		if ( options::output::d ) std::cout << "| " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "|  " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
 		if ( observed() ) advance_observers();
 	}
 

@@ -42,6 +42,7 @@
 #include <QSS/fmu/Function_Inp_sin.hh>
 #include <QSS/fmu/Function_Inp_step.hh>
 #include <QSS/fmu/Function_Inp_toggle.hh>
+#include <QSS/fmu/Handlers.hh>
 #include <QSS/fmu/Triggers.hh>
 #include <QSS/fmu/Triggers_ZC.hh>
 #include <QSS/fmu/Variable_all.hh>
@@ -2008,6 +2009,7 @@ namespace fmu {
 		Variables triggers; // Reusable triggers container
 		Variables handlers; // Reusable handlers container
 		Variable_ZCs var_ZCs; // Last zero-crossing trigger variables
+		Handlers< Variable > handlers_s( this ); // Simultaneous handlers
 		Triggers< Variable > triggers_s( this ); // Binned/simultaneous triggers
 		Triggers_ZC< Variable > triggers_zc_s( this ); // Binned/simultaneous triggers
 		Observers< Variable > observers_s( this ); // Binned/simultaneous observers
@@ -2294,7 +2296,6 @@ namespace fmu {
 						} else { // Simultaneous handlers
 							eventq->top_subs< Variable >( handlers );
 							observers_s.assign( handlers );
-							sort_by_order( handlers );
 
 							for ( Variable_ZC const * trigger : var_ZCs ) { // Un-bump time
 								trigger->un_bump_time( t, handlers );
@@ -2311,32 +2312,8 @@ namespace fmu {
 								}
 							}
 
-							for ( Variable * handler : handlers ) {
-								handler->advance_handler_0( t );
-							}
-							int const handlers_order_max( handlers.back()->order() );
-							if ( handlers_order_max >= 1 ) { // 1st order pass
-								for ( size_type i = begin_order_index( handlers, 1 ), n = handlers.size(); i < n; ++i ) {
-									handlers[ i ]->advance_handler_1();
-								}
-								if ( handlers_order_max >= 2 ) { // 2nd order pass
-									size_type const b2( begin_order_index( handlers, 2 ) );
-									for ( size_type i = b2, n = handlers.size(); i < n; ++i ) {
-										handlers[ i ]->advance_handler_2();
-									}
-									for ( size_type i = b2, n = handlers.size(); i < n; ++i ) {
-										handlers[ i ]->advance_handler_2_1();
-									}
-									if ( handlers_order_max >= 3 ) { // 3rd order pass
-										for ( size_type i = begin_order_index( handlers, 3 ), n = handlers.size(); i < n; ++i ) {
-											handlers[ i ]->advance_handler_3();
-										}
-									}
-								}
-							}
-							for ( Variable * handler : handlers ) {
-								handler->advance_handler_F();
-							}
+							handlers_s.assign( handlers );
+							handlers_s.advance_handler( t );
 							if ( observers_s.have() ) observers_s.advance( t ); // Advance observers
 
 							if ( doROut ) { // Requantization output: post

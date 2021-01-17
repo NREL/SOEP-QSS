@@ -60,6 +60,7 @@ double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits<
 double dtZC( 1.0e-9 ); // FMU zero-crossing time step (s)
 double dtND( 1.0e-6 ); // Numeric differentiation time step (s)
 double two_dtND( 2.0e-6 ); // 2 * dtND
+double three_dtND( 3.0e-6 ); // 3 * dtND
 double one_over_dtND( 1.0e6 ); // 1 / dtND
 double one_over_two_dtND( 5.0e5 ); // 1 / ( 2 * dtND )
 double one_over_two_dtND_squared( 5.0e11 ); // 1 / ( 2 * dtND^2 )
@@ -437,6 +438,7 @@ process_args( int argc, char * argv[] )
 					fatal = true;
 				}
 				two_dtND = 2.0 * dtND;
+				three_dtND = 3.0 * dtND;
 				one_over_dtND = 1.0 / dtND;
 				one_over_two_dtND = 1.0 / ( 2.0 * dtND );
 				one_over_two_dtND_squared = 1.0 / ( 2.0 * ( dtND * dtND ) );

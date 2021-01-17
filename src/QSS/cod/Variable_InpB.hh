@@ -165,7 +165,7 @@ public: // Methods
 		x_ = ( f_.vs( tQ ) != 0.0 );
 		tD = f_.tD( tQ );
 		add_discrete( tD );
-		if ( options::output::d ) std::cout << "! " << name() << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 	}
 
 	// Discrete Advance
@@ -177,7 +177,7 @@ public: // Methods
 		shift_discrete( tD );
 		bool const chg( x_ != x_new );
 		x_ = x_new;
-		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "↕  " << name() << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 		if ( chg && observed() ) advance_observers();
 	}
 
@@ -189,7 +189,7 @@ public: // Methods
 		tD = f_.tD( tQ );
 		shift_discrete( tD );
 		x_ = x_new;
-		if ( options::output::d ) std::cout << "* " << name() << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "↕= " << name() << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << '\n';
 	}
 
 private: // Data

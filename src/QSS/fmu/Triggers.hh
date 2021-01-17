@@ -120,6 +120,14 @@ public: // Predicate
 		return ( ! triggers_.empty() );
 	}
 
+	// Forward Time?
+	bool
+	fwd_time( Time const t ) const
+	{
+		assert( fmu_me_ != nullptr );
+		return t >= fmu_me_->t0;
+	}
+
 public: // Property
 
 	// Size
@@ -246,23 +254,51 @@ public: // Methods
 #endif
 		if ( qss3_.have() ) {
 			Time tN( t - options::dtND );
-			fmu_me_->set_time( tN );
-			for ( Variable * observee : uni_order_ ? qss_observees_ : qss2_observees_ ) {
-				observee->fmu_set_q( tN );
-			}
-			size_type const qss2_b( qss2_.b() );
-			fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_m[ qss2_b ] );
-			tN = t + options::dtND;
-			fmu_me_->set_time( tN );
-			for ( Variable * observee : uni_order_ ? qss_observees_ : qss2_observees_ ) {
-				observee->fmu_set_q( tN );
-			}
-			fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
-			for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ triggers
-				triggers_[ i ]->advance_QSS_2( qss_ders_.ders_m[ i ], qss_ders_.ders_p[ i ] );
-			}
-			for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ triggers
-				triggers_[ i ]->advance_QSS_3();
+			if ( fwd_time( tN ) ) { // Use centered ND formulas
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : uni_order_ ? qss_observees_ : qss2_observees_ ) {
+					observee->fmu_set_q( tN );
+				}
+				size_type const qss2_b( qss2_.b() );
+				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_m[ qss2_b ] );
+				tN = t + options::dtND;
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : uni_order_ ? qss_observees_ : qss2_observees_ ) {
+					observee->fmu_set_q( tN );
+				}
+				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
+				for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ triggers
+					triggers_[ i ]->advance_QSS_2( qss_ders_.ders_m[ i ], qss_ders_.ders_p[ i ] );
+				}
+				for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ triggers
+					triggers_[ i ]->advance_QSS_2_1();
+				}
+				for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ triggers
+					triggers_[ i ]->advance_QSS_3();
+				}
+			} else { // Use forward ND formulas
+				tN = t + options::dtND;
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : uni_order_ ? qss_observees_ : qss2_observees_ ) {
+					observee->fmu_set_q( tN );
+				}
+				size_type const qss2_b( qss2_.b() );
+				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_m[ qss2_b ] );
+				tN = t + options::two_dtND;
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : uni_order_ ? qss_observees_ : qss2_observees_ ) {
+					observee->fmu_set_q( tN );
+				}
+				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
+				for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ triggers
+					triggers_[ i ]->advance_QSS_2_forward( qss_ders_.ders_m[ i ], qss_ders_.ders_p[ i ] );
+				}
+				for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ triggers
+					triggers_[ i ]->advance_QSS_2_1();
+				}
+				for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ triggers
+					triggers_[ i ]->advance_QSS_3_forward();
+				}
 			}
 			fmu_me_->set_time( t );
 		} else if ( qss2_.have() ) {
@@ -383,18 +419,18 @@ private: // Data
 
 	Variables triggers_; // Triggers
 
+	// Trigger index specs
+	bool uni_order_{ false }; // Triggers all the same order?
 	Range qss_; // Triggers
 	Range qss2_; // Triggers of order 2+
 	Range qss3_; // Triggers of order 3+
-
-	bool uni_order_{ false }; // Triggers all the same order?
-
-	RefsDers< Variable > qss_ders_; // Trigger derivative FMU pooled call data
 
 	// Observees (including self-observers)
 	Variables qss_observees_; // Triggers observees
 	Variables qss2_observees_; // Triggers of order 2+ observees
 	Variables qss3_observees_; // Triggers of order 3+ observees
+
+	RefsDers< Variable > qss_ders_; // Trigger derivative FMU pooled call data
 
 }; // Triggers
 

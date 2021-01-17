@@ -93,6 +93,7 @@ extern double dtInf; // Inf time step (s)
 extern double dtZC; // FMU zero-crossing time step (s)
 extern double dtND; // Numeric differentiation time step (s)
 extern double two_dtND; // 2 * dtND
+extern double three_dtND; // 3 * dtND
 extern double one_over_dtND; // 1 / dtND
 extern double one_over_two_dtND; // 1 / ( 2 * dtND )
 extern double one_over_two_dtND_squared; // 1 / ( 2 * dtND^2 )
