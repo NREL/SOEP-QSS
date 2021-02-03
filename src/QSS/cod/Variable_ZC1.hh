@@ -104,7 +104,7 @@ public: // Creation
 	 std::string const & name,
 	 Real const rTol = 1.0e-4,
 	 Real const aTol = 1.0e-6,
-	 Real const zTol = 0.0
+	 Real const zTol = 1.0e-6
 	) :
 	 Super( 1, name, rTol, aTol, zTol )
 	{}
@@ -113,24 +113,22 @@ public: // Property
 
 	// Continuous Value at Time t
 	Real
-	x( Time const t ) const
+	x( Time const t ) const override final
 	{
 		return x_0_ + ( x_1_ * ( t - tX ) );
 	}
 
 	// Continuous First Derivative at Time t
 	Real
-	x1( Time const t ) const
+	x1( Time const ) const override final
 	{
-		(void)t; // Suppress unused warning
 		return x_1_;
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const t ) const
+	q( Time const ) const override final
 	{
-		(void)t; // Suppress unused warning
 		return x_0_;
 	}
 
@@ -138,7 +136,7 @@ public: // Methods
 
 	// Initialization
 	void
-	init()
+	init() override final
 	{
 		// Initialize trajectory specs
 		x_0_ = f_.x( tQ );
@@ -148,30 +146,20 @@ public: // Methods
 		set_tE();
 		set_tZ();
 		( tE < tZ ) ? add_QSS_ZC( tE ) : add_ZC( tZ );
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << std::endl;
 	}
 
 	// QSS Advance
 	void
 	advance_QSS() override final
 	{
-		Real const x_tE( zChatter_ ? x( tE ) : Real( 0.0 ) );
-#ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
-		bool const check_crossing( ( tE > tZ_last ) || ( x_mag_ != 0.0 ) );
-		int const sign_old( check_crossing ? signum( zChatter_ ? x_tE : x( tE ) ) : 0 );
-#endif
+		advance_pre( tE );
 		x_0_ = f_.x( tX = tQ = tE );
-		x_mag_ = max( x_mag_, std::abs( x_tE ), std::abs( x_0_ ) );
 		x_1_ = f_.x1( tQ );
 		set_qTol();
 		set_tE();
-#ifndef QSS_ZC_REQUANT_NO_CROSSING_CHECK
-		crossing_detect( sign_old, signum( x_0_ ), check_crossing );
-#else
-		set_tZ();
-		( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
-#endif
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << '\n';
+		crossing_detect();
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << std::endl;
 	}
 
 	// Zero-Crossing Advance
@@ -180,11 +168,11 @@ public: // Methods
 	{
 		for ( typename If::Clause * clause : if_clauses ) clause->activity( tZ );
 		for ( typename When::Clause * clause : when_clauses ) clause->activity( tZ );
-		if ( options::output::d ) std::cout << "Z  " << name() << '(' << tZ << ')' << '\n';
 		crossing_last = crossing;
-		x_mag_ = 0.0;
+		x_mag_zero();
 		set_tZ( tZ_last = tZ ); // Next zero-crossing: Might be in active segment
 		( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
+		if ( options::output::d ) std::cout << "Z  " << name() << '(' << tZ_last << ')' << "   tZ=" << tZ << std::endl;
 	}
 
 	// Observer Advance
@@ -192,17 +180,14 @@ public: // Methods
 	advance_observer( Time const t ) override final
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
+		advance_pre( t );
 		tX = tQ = t;
-		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
-		bool const check_crossing( ( t > tZ_last ) || ( x_mag_ != 0.0 ) );
-		int const sign_old( check_crossing ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
 		x_0_ = ( t == tZ_last ? 0.0 : f_.x( t ) ); // Force exact zero if at zero-crossing time
-		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		x_1_ = f_.x1( t );
 		set_qTol();
 		set_tE();
-		crossing_detect( sign_old, signum( x_0_ ), check_crossing );
-		if ( options::output::d ) std::cout << " ▲ " << name() << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ <<  '\n';
+		crossing_detect();
+		if ( options::output::d ) std::cout << " ^ " << name() << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << std::endl;
 	}
 
 	// Observer Advance: Parallel
@@ -210,12 +195,9 @@ public: // Methods
 	advance_observer_parallel( Time const t ) override final
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
+		advance_pre( t );
 		tX = tQ = t;
-		Real const x_t( zChatter_ ? x( t ) : Real( 0.0 ) );
-		check_crossing_ = ( t > tZ_last ) || ( x_mag_ != 0.0 );
-		sign_old_ = ( check_crossing_ ? signum( zChatter_ ? x_t : x( t ) ) : 0 );
 		x_0_ = ( t == tZ_last ? 0.0 : f_.x( t ) ); // Force exact zero if at zero-crossing time
-		x_mag_ = max( x_mag_, std::abs( x_t ), std::abs( x_0_ ) );
 		x_1_ = f_.x1( t );
 		set_qTol();
 		set_tE();
@@ -225,7 +207,7 @@ public: // Methods
 	void
 	advance_observer_serial() override final
 	{
-		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
+		crossing_detect();
 	}
 
 	// Observer Advance: Serial + Diagnostics
@@ -233,8 +215,8 @@ public: // Methods
 	advance_observer_serial_d() override final
 	{
 		assert( options::output::d );
-		crossing_detect( sign_old_, signum( x_0_ ), check_crossing_ );
-		std::cout << " ▲ " << name() << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ <<  '\n';
+		crossing_detect();
+		std::cout << " ^ " << name() << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << std::endl;
 	}
 
 private: // Methods
@@ -247,12 +229,29 @@ private: // Methods
 		assert( qTol > 0.0 );
 	}
 
+	// Updates Before Trajectory Advance to Time t
+	void
+	advance_pre( Time const t )
+	{
+		bool const past_tZ( t > tZ_last );
+		Real const x_t( this->Variable_ZC1::x( t ) );
+
+		// Unpredicted zero crossing check setup
+		if ( check_crossing_ = past_tZ || ( x_t != 0.0 ) ) sign_old_ = signum( x_t );
+
+		// Anti-chatter trajectory magnitude updates for [tX,t] span
+		if ( zChatter_ && past_tZ ) { // Anti-chatter is active
+			x_mag_update( x_t ); // Trajectory can have a discontinuity at updates
+		}
+	}
+
 	// Set End Time
 	void
 	set_tE()
 	{
 		assert( tX <= tQ );
 		assert( dt_min <= dt_max );
+		x_mag_update( x_0_ );
 		Time dt( x_1_ != 0.0 ? qTol / std::abs( x_1_ ) : infinity );
 		dt = std::min( std::max( dt_infinity( dt ), dt_min ), dt_max );
 		tE = ( dt != infinity ? tQ + dt : infinity );
@@ -262,29 +261,20 @@ private: // Methods
 	void
 	set_tZ()
 	{
-		if ( x_0_ == 0.0 ) { // Zero at segment start
-			tZ = infinity;
-		} else if ( zChatter_ && ( x_mag_ < zTol ) ) { // Chatter prevention
-			tZ = infinity;
-		} else { // Use root of continuous rep: Only robust for small active segments with continuous rep close to function
-			int const sign_old( signum( x_0_ ) );
-			int const sign_new( signum( x_1_ ) );
-			Crossing const crossing_check( crossing_type( sign_old, sign_new ) );
+		// Find root of continuous rep: Only robust for small active segments with continuous rep close to function
+		Time const dt( zc_root_linear( x_1_, x_0_, zTol, x_mag_ ) );
+		assert( dt > 0.0 );
+		if ( dt != infinity ) { // Root exists
+			tZ = tX + dt;
+			Crossing const crossing_check( crossing_type( x_1_ ) );
 			if ( has( crossing_check ) ) { // Crossing type is relevant
-				if ( ( x_1_ != 0.0 ) && ( sign_old != sign_new ) ) { // Heading towards zero
-					tZ = tX - ( x_0_ / x_1_ ); // Root of continuous rep
-					if ( tZ > tX ) {
-						crossing = crossing_check;
-						if ( options::refine ) refine_root_ZC( tX ); // Refine root: Expensive!
-					} else { // Essentially flat
-						tZ = infinity;
-					}
-				} else { // Heading away from zero
-					tZ = infinity;
-				}
+				crossing = crossing_check;
+				if ( options::refine ) refine_root_ZC( tX ); // Refine root: Expensive!
 			} else { // Crossing type not relevant
 				tZ = infinity;
 			}
+		} else { // Root not found
+			tZ = infinity;
 		}
 	}
 
@@ -297,31 +287,34 @@ private: // Methods
 		tZ = ( tZ > tB ? tZ : infinity );
 	}
 
-	// Crossing Detection
+	// Zero Crossing Detection and Set Next Crossing Time
 	void
-	crossing_detect( int const sign_old, int const sign_new, bool const check_crossing = true )
+	crossing_detect()
 	{
-		if ( zChatter_ && ( x_mag_ < zTol ) ) { // Chatter prevention
-			tZ = infinity;
-			shift_QSS_ZC( tE );
-		} else if ( ( ! check_crossing ) || ( sign_old == sign_new ) ) {
+		if ( zChatter_ && ( x_mag_ < zTol ) ) { // Anti-chatter => Don't check for crossing
 			set_tZ();
 			( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
-		} else { // Check zero-crossing
-			Crossing const crossing_check( crossing_type( sign_old, sign_new ) );
-			if ( has( crossing_check ) ) { // Crossing type is relevant
-				crossing = crossing_check;
-				shift_ZC( tZ = tX );
-			} else {
+		} else { // Maybe check for crossing
+			int const sign_new( signum( x_0_ ) );
+			if ( ( ! check_crossing_ ) || ( sign_old_ == sign_new ) ) { // Don't check for crossing
 				set_tZ();
 				( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
+			} else { // Check zero-crossing
+				Crossing const crossing_check( crossing_type( sign_old_, sign_new ) );
+				if ( has( crossing_check ) ) { // Crossing type is relevant
+					crossing = crossing_check;
+					shift_ZC( tZ = tX );
+				} else {
+					set_tZ();
+					( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
+				}
 			}
 		}
 	}
 
 private: // Data
 
-	Real x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous rep coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }; // Coefficients
 
 }; // Variable_ZC1
 

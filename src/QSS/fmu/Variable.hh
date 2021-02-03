@@ -595,15 +595,6 @@ public: // Property
 		return fmu_me_->t0;
 	}
 
-	// Zero-Crossing Time
-	virtual
-	Time
-	tZC() const
-	{
-		assert( false ); // Not a ZC variable
-		return Time( 0.0 );
-	}
-
 	// Observers
 	Observers< Variable > const &
 	observers() const

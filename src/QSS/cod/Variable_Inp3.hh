@@ -95,7 +95,7 @@ public: // Property
 
 	// Continuous Value at Time t
 	Real
-	x( Time const t ) const
+	x( Time const t ) const override final
 	{
 		Time const tDel( t - tX );
 		return x_0_ + ( ( x_1_ + ( ( x_2_ + ( x_3_ * tDel ) ) * tDel ) ) * tDel );
@@ -103,7 +103,7 @@ public: // Property
 
 	// Continuous First Derivative at Time t
 	Real
-	x1( Time const t ) const
+	x1( Time const t ) const override final
 	{
 		Time const tDel( t - tX );
 		return x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_ * tDel ) ) * tDel );
@@ -111,21 +111,21 @@ public: // Property
 
 	// Continuous Second Derivative at Time t
 	Real
-	x2( Time const t ) const
+	x2( Time const t ) const override final
 	{
 		return ( two * x_2_ ) + ( six * x_3_ * ( t - tX ) );
 	}
 
 	// Continuous Third Derivative at Time t
 	Real
-	x3( Time const ) const
+	x3( Time const ) const override final
 	{
 		return six * x_3_;
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const t ) const
+	q( Time const t ) const override final
 	{
 		Time const tDel( t - tQ );
 		return x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
@@ -133,14 +133,14 @@ public: // Property
 
 	// Quantized First Derivative at Time t
 	Real
-	q1( Time const t ) const
+	q1( Time const t ) const override final
 	{
 		return x_1_ + ( two * x_2_ * ( t - tQ ) );
 	}
 
 	// Quantized Second Derivative at Time t
 	Real
-	q2( Time const ) const
+	q2( Time const ) const override final
 	{
 		return two * x_2_;
 	}
@@ -149,7 +149,7 @@ public: // Methods
 
 	// Initialization
 	void
-	init()
+	init() override final
 	{
 		init_0();
 		init_1();
@@ -159,7 +159,7 @@ public: // Methods
 
 	// Initialization: Stage 0
 	void
-	init_0()
+	init_0() override final
 	{
 		assert( ! observes() );
 		init_observers();
@@ -168,33 +168,33 @@ public: // Methods
 
 	// Initialization: Stage 1
 	void
-	init_1()
+	init_1() override final
 	{
 		x_1_ = f_.dc1( tQ );
 	}
 
 	// Initialization: Stage 2
 	void
-	init_2()
+	init_2() override final
 	{
 		x_2_ = one_half * f_.dc2( tQ );
 	}
 
 	// Initialization: Stage 3
 	void
-	init_3()
+	init_3() override final
 	{
 		x_3_ = one_sixth * f_.dc3( tQ );
 		tD = f_.tD( tQ );
 		set_qTol();
 		set_tE();
 		( tE < tD ) ? add_QSS_Inp( tE ) : add_discrete( tD );
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << std::endl;
 	}
 
 	// Discrete Advance
 	void
-	advance_discrete()
+	advance_discrete() override final
 	{
 		x_0_ = f_.vs( tX = tQ = tD );
 		x_1_ = f_.dc1( tD );
@@ -204,13 +204,13 @@ public: // Methods
 		set_qTol();
 		set_tE();
 		( tE < tD ) ? shift_QSS_Inp( tE ) : shift_discrete( tD );
-		if ( options::output::d ) std::cout << "↕  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "|  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << std::endl;
 		if ( observed() ) advance_observers();
 	}
 
 	// Discrete Advance: Simultaneous
 	void
-	advance_discrete_s()
+	advance_discrete_s() override final
 	{
 		x_0_ = f_.vs( tX = tQ = tD );
 		x_1_ = f_.dc1( tD );
@@ -220,12 +220,12 @@ public: // Methods
 		set_qTol();
 		set_tE();
 		( tE < tD ) ? shift_QSS_Inp( tE ) : shift_discrete( tD );
-		if ( options::output::d ) std::cout << "↕= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "|= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << std::endl;
 	}
 
 	// QSS Advance
 	void
-	advance_QSS()
+	advance_QSS() override final
 	{
 		x_0_ = f_.vs( tX = tQ = tE );
 		x_1_ = f_.dc1( tQ );
@@ -235,7 +235,7 @@ public: // Methods
 		set_qTol();
 		set_tE();
 		( tE < tD ) ? shift_QSS_Inp( tE ) : shift_discrete( tD );
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << "   tD=" << tD << std::endl;
 		if ( observed() ) advance_observers();
 	}
 

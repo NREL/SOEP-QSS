@@ -64,12 +64,14 @@ protected: // Creation
 	 std::string const & name,
 	 Real const rTol,
 	 Real const aTol,
+	 Real const zTol,
 	 Real const xIni,
 	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
-	 Super( order, name, rTol, aTol, xIni, fmu_me, var, der )
+	 Super( order, name, rTol, aTol, xIni, fmu_me, var, der ),
+	 zTol( std::max( zTol, 0.0 ) )
 	{}
 
 protected: // Assignment
@@ -86,10 +88,14 @@ public: // Predicate
 
 	// QSS Variable?
 	bool
-	is_QSS() const
+	is_QSS() const override final
 	{
 		return true;
 	}
+
+public: // Data
+
+	Real zTol{ 0.0 }; // Zero-crossing/root tolerance
 
 }; // Variable_QSS
 

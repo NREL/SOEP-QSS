@@ -249,9 +249,23 @@ namespace fmu {
 		);
 
 		// Check FMU capabilities includes directional derivatives
-		if ( options::eidd && ( ! bool( fmi2_import_get_capability( fmu, fmi2_me_providesDirectionalDerivatives ) ) ) ) {
-			std::cerr << "\nError: " + name + " FMU-ME does not have directional derivative support" << std::endl;
-			std::exit( EXIT_FAILURE );
+		if ( bool( fmi2_import_get_capability( fmu, fmi2_me_providesDirectionalDerivatives ) ) ) { // FMU supports directional derivatives
+			if ( options::specified::eidd ) {
+				if ( ! options::eidd ) {
+					std::cerr << "\nInfo: " + name + " Option --no-eidd specified: FMU-ME directional derivative support is present but will not be used for event indicators" << std::endl;
+				}
+			} else { // Use directional derivatives by default
+				options::eidd = true;
+			}
+		} else { // FMU doesn't support directional derivatives
+			if ( options::specified::eidd ) {
+				if ( options::eidd ) {
+					std::cerr << "\nError: Option --eidd specified but " + name + " FMU-ME does not have directional derivative support" << std::endl;
+					std::exit( EXIT_FAILURE );
+				}
+			} else { // Don't use directional derivatives by default
+				options::eidd = false;
+			}
 		}
 
 		// Check SI units
@@ -962,23 +976,23 @@ namespace fmu {
 					Variable_QSS * qss_var( nullptr );
 					Real const aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac * x_nominal[ i ], std::numeric_limits< double >::min() ) ); // Use variable nominal value to set the absolute tolerance unless aTol specified
 					if ( options::qss == options::QSS::QSS1 ) {
-						qss_var = new Variable_QSS1( var_name, options::rTol, aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_QSS1( var_name, options::rTol, aTol, options::zTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::QSS2 ) {
-						qss_var = new Variable_QSS2( var_name, options::rTol, aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_QSS2( var_name, options::rTol, aTol, options::zTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::QSS3 ) {
-						qss_var = new Variable_QSS3( var_name, options::rTol, aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_QSS3( var_name, options::rTol, aTol, options::zTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS1 ) {
-						qss_var = new Variable_LIQSS1( var_name, options::rTol, aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_LIQSS1( var_name, options::rTol, aTol, options::zTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS2 ) {
-						qss_var = new Variable_LIQSS2( var_name, options::rTol, aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_LIQSS2( var_name, options::rTol, aTol, options::zTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS3 ) {
-						qss_var = new Variable_LIQSS3( var_name, options::rTol, aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_LIQSS3( var_name, options::rTol, aTol, options::zTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::xQSS1 ) {
-						qss_var = new Variable_xQSS1( var_name, options::rTol, aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_xQSS1( var_name, options::rTol, aTol, options::zTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::xQSS2 ) {
-						qss_var = new Variable_xQSS2( var_name, options::rTol, aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_xQSS2( var_name, options::rTol, aTol, options::zTol, states_initial, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::xQSS3 ) {
-						qss_var = new Variable_xQSS3( var_name, options::rTol, aTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_xQSS3( var_name, options::rTol, aTol, options::zTol, states_initial, this, fmu_var, fmu_der );
 					} else {
 						std::cerr << " Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 						std::exit( EXIT_FAILURE );
@@ -1193,6 +1207,7 @@ namespace fmu {
 
 		if ( n_ZC_vars > 0u ) {
 			std::cout << "\nZero Crossing Tolerance: zTol = " << options::zTol << std::endl;
+			std::cout << "\nZero Crossing Tolerance Bump Multiplier: zMul = " << options::zMul << std::endl;
 			std::cout << "\nZero Crossing Time Step: dtZC = " << options::dtZC << " (s)" << std::endl;
 		}
 		if ( fmu_generator == FMU_Generator::Dymola ) {
@@ -2225,7 +2240,7 @@ namespace fmu {
 				} else if ( event.is_handler() ) { // Zero-crossing handler event(s)
 
 					if ( options::output::d ) std::cout << "Zero-crossing handler event(s): Bump time = " << t_bump << std::endl;
-					set_time( t_bump ); // Reset FMU to bump time
+					set_time( t_bump ); // Set FMU to bump time
 					for ( Variable_ZC const * trigger : var_ZCs ) { // Advance zero-crossing variables observees to bump time
 						trigger->bump_time( t_bump );
 						if ( options::output::d ) std::cout << "  " << trigger->name() << " bump value = " << trigger->fmu_get_real() << std::endl;

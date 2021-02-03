@@ -87,6 +87,7 @@ TEST( fmu_Variable_ZCd3Test, BouncingBall )
 
 	options::qss = options::QSS::QSS3;
 	options::specified::qss = true;
+	options::eidd = true;
 	options::rTol = 1.0;
 	options::specified::rTol = true;
 	options::aTol = 1.0;
@@ -109,6 +110,9 @@ TEST( fmu_Variable_ZCd3Test, BouncingBall )
 	Variable_ZCd3 * z( dynamic_cast< Variable_ZCd3 * >( fmu.var_named( "_eventIndicator_1" ) ) );
 	if ( ( h == nullptr ) || ( v == nullptr ) || ( z == nullptr ) ) {
 		std::cout << ">>>>>>>>>>>> fmu::Variable_ZCd3 BouncingBall test not run: Variables h and/or v and/or _eventIndicator_1 not found in FMU" << std::endl;
+		std::cout << h << std::endl;/////////////////////////////////
+		std::cout << v << std::endl;/////////////////////////////////
+		std::cout << z << std::endl;/////////////////////////////////
 		return;
 	}
 

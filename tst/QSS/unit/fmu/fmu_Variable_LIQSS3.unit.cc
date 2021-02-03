@@ -47,7 +47,7 @@ TEST( fmu_Variable_LIQSS3Test, Basic )
 {
 	FMU_ME fmu;
 
-	Variable_LIQSS3 x1( "x1", 1.0e-4, 1.0e-6, 42.0, &fmu );
+	Variable_LIQSS3 x1( "x1", 1.0e-4, 1.0e-6, 0.0, 42.0, &fmu );
 	EXPECT_EQ( 1.0e-4, x1.rTol );
 	EXPECT_EQ( 1.0e-6, x1.aTol );
 	EXPECT_EQ( 0.0, x1.tQ );
@@ -70,7 +70,7 @@ TEST( fmu_Variable_LIQSS3Test, Basic )
 	EXPECT_EQ( 0.0, x1.x3( 1.0 ) );
 	EXPECT_EQ( 0.0, x1.q3( 1.0 ) );
 
-	Variable_LIQSS3 x2( "x2", 1.0e-4, 1.0e-3, 99.0, &fmu );
+	Variable_LIQSS3 x2( "x2", 1.0e-4, 1.0e-3, 0.0, 99.0, &fmu );
 	EXPECT_EQ( 1.0e-4, x2.rTol );
 	EXPECT_EQ( 1.0e-3, x2.aTol );
 	EXPECT_EQ( 0.0, x2.tQ );
@@ -104,6 +104,7 @@ TEST( fmu_Variable_LIQSS3Test, Achilles )
 
 	options::qss = options::QSS::LIQSS3;
 	options::specified::qss = true;
+	options::eidd = false;
 	options::rTol = 100.0;
 	options::specified::rTol = true;
 	options::aTol = 1.0;
@@ -135,7 +136,7 @@ TEST( fmu_Variable_LIQSS3Test, Achilles )
 	EXPECT_EQ( 1.0, x1->aTol );
 	EXPECT_EQ( 0.0, x1->tQ );
 	EXPECT_EQ( 0.0, x1->tX );
-	EXPECT_NEAR( 1.1762022263383756, x1->tE, 1e-9 );
+	EXPECT_NEAR( 1.1968321140810172, x1->tE, 1e-9 );
 	EXPECT_EQ( 0.0, x1->x( 0.0 ) );
 	EXPECT_EQ( -1.0, x1->q( 0.0 ) );
 	EXPECT_EQ( 3.5, x1->x1( 0.0 ) );
@@ -146,7 +147,7 @@ TEST( fmu_Variable_LIQSS3Test, Achilles )
 	EXPECT_EQ( 1.0, x2->aTol );
 	EXPECT_EQ( 0.0, x2->tQ );
 	EXPECT_EQ( 0.0, x2->tX );
-	EXPECT_NEAR( 9.2831776682322467, x2->tE, 1e-9 );
+	EXPECT_NEAR( 9.2831776656111948, x2->tE, 1e-9 );
 	EXPECT_EQ( 2.0, x2->x( 0.0 ) );
 	EXPECT_EQ( 202.0, x2->q( 0.0 ) );
 	EXPECT_EQ( 0.0, x2->x1( 0.0 ) );
@@ -159,19 +160,19 @@ TEST( fmu_Variable_LIQSS3Test, Achilles )
 
 	EXPECT_EQ( x1_tE, x1->tQ );
 	EXPECT_EQ( x1_tE, x1->tX );
-	EXPECT_NEAR( 4.8706922733485793, x1->tE, 1e-9 );
-	EXPECT_NEAR( 1.9061862776331158, x1->x( x1->tX ), 1e-9 );
-	EXPECT_NEAR( 192.52481404094468, x1->q( x1->tQ ), 1e-9 );
-	EXPECT_NEAR( 203.62482670573013, x1->x1( x1->tX ), 1e-9 );
-	EXPECT_NEAR( 203.62482670573013, x1->q1( x1->tQ ), 1e-9 );
-	EXPECT_NEAR( -107.10532518487526, x1->x2( x1->tX ), 1e-9 );
+	EXPECT_NEAR( 4.9195527881465679, x1->tE, 1e-9 );
+	EXPECT_NEAR( 1.9355548357916963, x1->x( x1->tX ), 1e-9 );
+	EXPECT_NEAR( 195.49103841496131, x1->q( x1->tQ ), 1e-9 );
+	EXPECT_NEAR( 202.03156479660419, x1->x1( x1->tX ), 1e-9 );
+	EXPECT_NEAR( 202.03156479660419, x1->q1( x1->tQ ), 1e-9 );
+	EXPECT_NEAR( -106.40152873975239, x1->x2( x1->tX ), 1e-9 );
 
 	EXPECT_EQ( 0.0, x2->tQ );
 	EXPECT_EQ( x1_tE, x2->tX );
-	EXPECT_NEAR( 1.9575757904626743, x2->tE, 1e-9 );
-	EXPECT_NEAR( 0.33162721970392606, x2->x( x2->tX ), 1e-9 );
+	EXPECT_NEAR( 1.9724349696533512, x2->tE, 1e-9 );
+	EXPECT_NEAR( 0.27997704349088526, x2->x( x2->tX ), 1e-9 );
 	EXPECT_EQ( 202.0, x2->q( x2->tQ ) );
-	EXPECT_NEAR( -192.52481404094468, x2->x1( x2->tX ), 1e-9 );
+	EXPECT_NEAR( -195.49103841496131, x2->x1( x2->tX ), 1e-9 );
 	EXPECT_EQ( 0.0, x2->q1( x2->tQ ) );
-	EXPECT_NEAR( -203.62477314961325, x2->x2( x2->tX ), 1e-9 );
+	EXPECT_NEAR( -202.03156478260098, x2->x2( x2->tX ), 1e-9 );
 }

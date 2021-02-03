@@ -87,6 +87,7 @@ TEST( fmu_Variable_ZC3Test, BouncingBall )
 
 	options::qss = options::QSS::QSS3;
 	options::specified::qss = true;
+	options::eidd = false;
 	options::rTol = 1.0;
 	options::specified::rTol = true;
 	options::aTol = 1.0;
@@ -148,8 +149,8 @@ TEST( fmu_Variable_ZC3Test, BouncingBall )
 	//EXPECT_EQ( infinity, z->tE ); // Numeric differentiation => Imprecise
 	EXPECT_EQ( 1.0, z->x( 0.0 ) );
 	EXPECT_EQ( 1.0, z->q( 0.0 ) );
-	EXPECT_EQ( 0.0, z->x1( 0.0 ) );
-	EXPECT_EQ( 0.0, z->q1( 0.0 ) );
+	EXPECT_NEAR( 0.0, z->x1( 0.0 ), 1e-9 ); // With forward ND at startup instead of centered we don't get exactly 0
+	EXPECT_NEAR( 0.0, z->q1( 0.0 ), 1e-9 ); // With forward ND at startup instead of centered we don't get exactly 0
 	EXPECT_NEAR( -9.80665, z->x2( 0.0 ), 3e-4 );
 	EXPECT_NEAR( -9.80665, z->q2( 0.0 ), 3e-4 );
 	//EXPECT_EQ( 0.0, z->x3( 0.0 ) ); // Numeric differentiation => Imprecise

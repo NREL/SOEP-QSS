@@ -87,9 +87,10 @@ public: // Creation
 	 std::string const & name,
 	 Real const rTol = 1.0e-4,
 	 Real const aTol = 1.0e-6,
+	 Real const zTol = 1.0e-6,
 	 Real const xIni = 0.0
 	) :
-	 Super( 3, name, rTol, aTol, xIni ),
+	 Super( 3, name, rTol, aTol, zTol, xIni ),
 	 x_0_( xIni ),
 	 q_c_( xIni ),
 	 q_0_( xIni )
@@ -101,7 +102,7 @@ public: // Predicate
 
 	// LIQSS Variable?
 	bool
-	is_LIQSS() const
+	is_LIQSS() const override final
 	{
 		return true;
 	}
@@ -110,7 +111,7 @@ public: // Property
 
 	// Continuous Value at Time t
 	Real
-	x( Time const t ) const
+	x( Time const t ) const override final
 	{
 		Time const tDel( t - tX );
 		return x_0_ + ( ( x_1_ + ( ( x_2_ + ( x_3_ * tDel ) ) * tDel ) ) * tDel );
@@ -118,7 +119,7 @@ public: // Property
 
 	// Continuous First Derivative at Time t
 	Real
-	x1( Time const t ) const
+	x1( Time const t ) const override final
 	{
 		Time const tDel( t - tX );
 		return x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_ * tDel ) ) * tDel );
@@ -126,21 +127,21 @@ public: // Property
 
 	// Continuous Second Derivative at Time t
 	Real
-	x2( Time const t ) const
+	x2( Time const t ) const override final
 	{
 		return ( two * x_2_ ) + ( six * x_3_ * ( t - tX ) );
 	}
 
 	// Continuous Third Derivative at Time t
 	Real
-	x3( Time const ) const
+	x3( Time const ) const override final
 	{
 		return six * x_3_;
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const t ) const
+	q( Time const t ) const override final
 	{
 		Time const tDel( t - tQ );
 		return q_0_ + ( ( q_1_ + ( q_2_ * tDel ) ) * tDel );
@@ -148,14 +149,14 @@ public: // Property
 
 	// Quantized First Derivative at Time t
 	Real
-	q1( Time const t ) const
+	q1( Time const t ) const override final
 	{
 		return q_1_ + ( two * q_2_ * ( t - tQ ) );
 	}
 
 	// Quantized Second Derivative at Time t
 	Real
-	q2( Time const ) const
+	q2( Time const ) const override final
 	{
 		return two * q_2_;
 	}
@@ -164,7 +165,7 @@ public: // Methods
 
 	// Initialization
 	void
-	init()
+	init() override final
 	{
 		init_0();
 		init_1();
@@ -175,7 +176,7 @@ public: // Methods
 
 	// Initialization to a Value
 	void
-	init( Real const x )
+	init( Real const x ) override final
 	{
 		init_0( x );
 		init_1();
@@ -186,21 +187,21 @@ public: // Methods
 
 	// Initialization: Stage 0
 	void
-	init_0()
+	init_0() override final
 	{
 		x_0_ = q_c_ = q_0_ = xIni;
 	}
 
 	// Initialization to a Value: Stage 0
 	void
-	init_0( Real const x )
+	init_0( Real const x ) override final
 	{
 		x_0_ = q_c_ = q_0_ = x;
 	}
 
 	// Initialization: Stage 1
 	void
-	init_1()
+	init_1() override final
 	{
 		init_observers();
 		init_observees();
@@ -209,14 +210,14 @@ public: // Methods
 
 	// Initialization: Stage 2
 	void
-	init_2()
+	init_2() override final
 	{
 		x_2_ = q_2_ = one_half * d_.qc1( tQ );
 	}
 
 	// Initialization: Stage 3
 	void
-	init_3()
+	init_3() override final
 	{
 		set_qTol();
 		if ( self_observer() ) {
@@ -228,7 +229,7 @@ public: // Methods
 
 	// Initialization: Stage LIQSS
 	void
-	init_LIQSS()
+	init_LIQSS() override final
 	{
 		if ( self_observer() ) {
 			q_0_ = l_0_;
@@ -239,7 +240,7 @@ public: // Methods
 		}
 		set_tE_aligned();
 		add_QSS( tE );
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 	}
 
 	// QSS Advance
@@ -260,7 +261,7 @@ public: // Methods
 		}
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 		if ( observed() ) advance_observers();
 	}
 
@@ -312,7 +313,7 @@ public: // Methods
 		}
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 	}
 
 	// Handler Advance
@@ -328,7 +329,7 @@ public: // Methods
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 		if ( observed() ) advance_observers();
 	}
 
@@ -363,7 +364,7 @@ public: // Methods
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "*= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << "*= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 	}
 
 	// Observer Advance
@@ -378,7 +379,7 @@ public: // Methods
 		x_3_ = one_sixth * d_.qc2( tX = t );
 		set_tE_unaligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << " ▲ " << name() << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q(" << std::noshowpos << tQ << std::showpos << ")]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		if ( options::output::d ) std::cout << " ^ " << name() << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q(" << std::noshowpos << tQ << std::showpos << ")]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 	}
 
 	// Observer Advance: Parallel
@@ -400,7 +401,7 @@ public: // Methods
 	{
 		assert( options::output::d );
 		shift_QSS( tE );
-		std::cout << " ▲ " << name() << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q(" << std::noshowpos << tQ << std::showpos << ")]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << '\n';
+		std::cout << " ^ " << name() << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q(" << std::noshowpos << tQ << std::showpos << ")]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 	}
 
 private: // Methods
@@ -440,11 +441,11 @@ private: // Methods
 		Real const d_2( x_2_ - q_2_ );
 		Time dt;
 		if ( ( x_3_ >= 0.0 ) && ( d_2 >= 0.0 ) && ( d_1 >= 0.0 ) ) { // Upper boundary crossing
-			dt = min_root_cubic_upper( x_3_, d_2, d_1, d_0 - qTol );
+			dt = min_root_cubic_upper( x_3_, d_2, d_1, d_0 - qTol, zTol );
 		} else if ( ( x_3_ <= 0.0 ) && ( d_2 <= 0.0 ) && ( d_1 <= 0.0 ) ) { // Lower boundary crossing
-			dt = min_root_cubic_lower( x_3_, d_2, d_1, d_0 + qTol );
+			dt = min_root_cubic_lower( x_3_, d_2, d_1, d_0 + qTol, zTol );
 		} else { // Both boundaries can have crossings
-			dt = min_root_cubic_both( x_3_, d_2, d_1, d_0 + qTol, d_0 - qTol );
+			dt = min_root_cubic_both( x_3_, d_2, d_1, d_0 + qTol, d_0 - qTol, zTol );
 		}
 		dt = std::min( std::max( dt_infinity( dt ), dt_min ), dt_max );
 		tE = ( dt != infinity ? tX + dt : infinity );

@@ -91,6 +91,10 @@ TEST( cod_Variable_ZC3Test, Roots )
 	x.init( 2.0 * ( M_E - 1.0 ) );
 	// x' = x - 2 e, x(0) = 2(e-1) => x = -2 e^t + 2 e with a downward zero crossing at t=1
 	// At t=0 x rep is: x_0 = q_0 = 2(e-1), x_1 = q_1 = -2, x_2 = -1, x_3 = -1/3
+	EXPECT_DOUBLE_EQ( 2.0 * ( M_E - 1.0 ), x.x( 0.0 ) );
+	EXPECT_EQ( -2.0, x.x1( 0.0 ) );
+	EXPECT_EQ( -2.0, x.x2( 0.0 ) );
+	EXPECT_EQ( -2.0, x.x3( 0.0 ) );
 
 	Variable_ZC3< Function_LTI > z( "z" );
 	z.add_crossings_Dn();

@@ -47,7 +47,7 @@ TEST( fmu_Variable_LIQSS1Test, Basic )
 {
 	FMU_ME fmu;
 
-	Variable_LIQSS1 x1( "x1", 1.0e-4, 1.0e-6, 42.0, &fmu );
+	Variable_LIQSS1 x1( "x1", 1.0e-4, 1.0e-6, 0.0, 42.0, &fmu );
 	EXPECT_EQ( 1.0e-4, x1.rTol );
 	EXPECT_EQ( 1.0e-6, x1.aTol );
 	EXPECT_EQ( 0.0, x1.tQ );
@@ -62,7 +62,7 @@ TEST( fmu_Variable_LIQSS1Test, Basic )
 	EXPECT_EQ( 0.0, x1.x1( 1.0 ) );
 	EXPECT_EQ( 0.0, x1.q1( 1.0 ) );
 
-	Variable_LIQSS1 x2( "x2", 1.0e-4, 1.0e-3, 99.0, &fmu );
+	Variable_LIQSS1 x2( "x2", 1.0e-4, 1.0e-3, 0.0, 99.0, &fmu );
 	EXPECT_EQ( 1.0e-4, x2.rTol );
 	EXPECT_EQ( 1.0e-3, x2.aTol );
 	EXPECT_EQ( 0.0, x2.tQ );
@@ -88,6 +88,7 @@ TEST( fmu_Variable_LIQSS1Test, Achilles )
 
 	options::qss = options::QSS::LIQSS1;
 	options::specified::qss = true;
+	options::eidd = false;
 	options::rTol = 100.0;
 	options::specified::rTol = true;
 	options::aTol = 1.0;

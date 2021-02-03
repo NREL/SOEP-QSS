@@ -66,7 +66,7 @@ public: // Predicate
 
 	// Discrete Variable?
 	bool
-	is_Discrete() const
+	is_Discrete() const override final
 	{
 		return true;
 	}
@@ -75,28 +75,28 @@ public: // Property
 
 	// Real Value
 	Real
-	r() const
+	r() const override final
 	{
 		return x_;
 	}
 
 	// Real Value at Time t
 	Real
-	r( Time const ) const
+	r( Time const ) const override final
 	{
 		return x_;
 	}
 
 	// Continuous Value at Time t
 	Real
-	x( Time const ) const
+	x( Time const ) const override final
 	{
 		return x_;
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const ) const
+	q( Time const ) const override final
 	{
 		return x_;
 	}
@@ -105,14 +105,14 @@ public: // Methods
 
 	// Initialization
 	void
-	init()
+	init() override final
 	{
 		init_0();
 	}
 
 	// Initialization: Stage 0
 	void
-	init_0()
+	init_0() override final
 	{
 		assert( f() );
 		assert( ! observes() );
@@ -121,12 +121,12 @@ public: // Methods
 		x_ = s_.x0;
 		tD = s_.tD;
 		add_discrete( tD );
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << std::endl;
 	}
 
 	// Discrete Advance
 	void
-	advance_discrete()
+	advance_discrete() override final
 	{
 		s_ = f_( tX = tQ = tD );
 		Real const x_new( s_.x0 );
@@ -134,20 +134,20 @@ public: // Methods
 		shift_discrete( tD );
 		bool const chg( x_ != x_new );
 		x_ = x_new;
-		if ( options::output::d ) std::cout << "↕  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "|  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << std::endl;
 		if ( chg && observed() ) advance_observers();
 	}
 
 	// Discrete Advance: Simultaneous
 	void
-	advance_discrete_s()
+	advance_discrete_s() override final
 	{
 		s_ = f_( tX = tQ = tD );
 		Real const x_new( s_.x0 );
 		tD = s_.tD;
 		shift_discrete( tD );
 		x_ = x_new;
-		if ( options::output::d ) std::cout << "↕= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << '\n';
+		if ( options::output::d ) std::cout << "|= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << std::endl;
 	}
 
 private: // Data

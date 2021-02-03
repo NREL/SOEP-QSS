@@ -66,7 +66,7 @@ public: // Predicate
 
 	// Discrete Variable?
 	bool
-	is_Discrete() const
+	is_Discrete() const override final
 	{
 		return true;
 	}
@@ -75,56 +75,56 @@ public: // Property
 
 	// Boolean Value
 	Boolean
-	b() const
+	b() const override final
 	{
 		return x_;
 	}
 
 	// Boolean Value at Time t
 	Boolean
-	b( Time const ) const
+	b( Time const ) const override final
 	{
 		return x_;
 	}
 
 	// Integer Value
 	Integer
-	i() const
+	i() const override final
 	{
 		return Integer( x_ );
 	}
 
 	// Integer Value at Time t
 	Integer
-	i( Time const ) const
+	i( Time const ) const override final
 	{
 		return Integer( x_ );
 	}
 
 	// Real Value
 	Real
-	r() const
+	r() const override final
 	{
 		return Real( x_ );
 	}
 
 	// Real Value at Time t
 	Real
-	r( Time const ) const
+	r( Time const ) const override final
 	{
 		return Real( x_ );
 	}
 
 	// Continuous Value at Time t
 	Real
-	x( Time const ) const
+	x( Time const ) const override final
 	{
 		return Real( x_ );
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const ) const
+	q( Time const ) const override final
 	{
 		return Real( x_ );
 	}
@@ -133,43 +133,43 @@ public: // Methods
 
 	// Initialization
 	void
-	init()
+	init() override final
 	{
 		init_0();
 	}
 
 	// Initialization to a Value
 	void
-	init( Real const x )
+	init( Real const x ) override final
 	{
 		init_0( x );
 	}
 
 	// Initialization: Stage 0
 	void
-	init_0()
+	init_0() override final
 	{
 		assert( ! observes() );
 		init_observers();
 		x_ = ( xIni != 0 );
 		add_handler();
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << x_ << std::endl;
 	}
 
 	// Initialization to a Value: Stage 0
 	void
-	init_0( Real const x )
+	init_0( Real const x ) override final
 	{
 		assert( ! observes() );
 		init_observers();
 		x_ = ( x != 0 );
 		add_handler();
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << x_ << std::endl;
 	}
 
 	// Handler Advance
 	void
-	advance_handler( Time const t, Real const x )
+	advance_handler( Time const t, Real const x ) override final
 	{
 		assert( tX <= t );
 		tX = tQ = t;
@@ -177,20 +177,20 @@ public: // Methods
 		Boolean const x_new( x != 0.0 );
 		bool const chg( x_ != x_new );
 		x_ = x_new;
-		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << x_ << std::endl;
 		if ( chg && observed() ) advance_observers();
 	}
 
 	// Handler Advance: Stage 0
 	void
-	advance_handler_0( Time const t, Real const x )
+	advance_handler_0( Time const t, Real const x ) override final
 	{
 		assert( tX <= t );
 		tX = tQ = t;
 		shift_handler();
 		Boolean const x_new( x != 0.0 );
 		x_ = x_new;
-		if ( options::output::d ) std::cout << "*= " << name() << '(' << tQ << ')' << " = " << x_ << '\n';
+		if ( options::output::d ) std::cout << "*= " << name() << '(' << tQ << ')' << " = " << x_ << std::endl;
 	}
 
 private: // Data

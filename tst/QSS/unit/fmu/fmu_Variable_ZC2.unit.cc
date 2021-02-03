@@ -83,6 +83,7 @@ TEST( fmu_Variable_ZC2Test, BouncingBall )
 
 	options::qss = options::QSS::QSS2;
 	options::specified::qss = true;
+	options::eidd = false;
 	options::rTol = 1.0;
 	options::specified::rTol = true;
 	options::aTol = 1.0;
@@ -90,7 +91,7 @@ TEST( fmu_Variable_ZC2Test, BouncingBall )
 	options::output::X = false;
 	options::output::F = false;
 	options::output::L = false;
-	options::zFac = 1.0;
+	options::zFac = 2.0; // So h tE is less than z tE when we call advance_QSS
 
 	std::streambuf * coutBuf( std::cout.rdbuf() ); std::ostringstream strCout; std::cout.rdbuf( strCout.rdbuf() ); // Redirect cout
 	allEventIndicators.clear();
@@ -134,14 +135,14 @@ TEST( fmu_Variable_ZC2Test, BouncingBall )
 
 	EXPECT_EQ( 1.0, z->rTol );
 	EXPECT_EQ( 1.0, z->aTol );
-	EXPECT_EQ( 1.0, z->qTol );
+	EXPECT_EQ( 2.0, z->qTol );
 	EXPECT_EQ( 0.0, z->tQ );
 	EXPECT_EQ( 0.0, z->tX );
-	EXPECT_NEAR( std::sqrt( 1.0 / ( 0.5 * 9.80665 ) ), z->tE, 1e-5 );
+	EXPECT_NEAR( std::sqrt( 2.0 / ( 0.5 * 9.80665 ) ), z->tE, 1e-5 );
 	EXPECT_EQ( 1.0, z->x( 0.0 ) );
 	EXPECT_EQ( 1.0, z->q( 0.0 ) );
-	EXPECT_EQ( 0.0, z->x1( 0.0 ) );
-	EXPECT_EQ( 0.0, z->q1( 0.0 ) );
+	EXPECT_NEAR( 0.0, z->x1( 0.0 ), 1.0e-9 );
+	EXPECT_NEAR( 0.0, z->q1( 0.0 ), 1.0e-9 );
 	EXPECT_NEAR( -9.80665, z->x2( 0.0 ), 3e-4 );
 
 	double const h_tE( h->tE );
@@ -160,4 +161,6 @@ TEST( fmu_Variable_ZC2Test, BouncingBall )
 	EXPECT_EQ( h_tE, z->tX );
 	EXPECT_NEAR( 1.0 - ( 0.5 * 9.80665 ) * square( h_tE ), z->x( z->tX ), 1e-12 );
 	EXPECT_NEAR( 1.0 - ( 0.5 * 9.80665 ) * square( h_tE ), z->q( z->tQ ), 1e-12 );
+
+	options::zFac = 1.0; // Restore in case another test forgets to set it
 }

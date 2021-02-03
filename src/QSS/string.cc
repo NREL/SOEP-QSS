@@ -52,7 +52,7 @@ std::string const x_delta_4( x_delta + "⁴" );
 
 // Is char Pointer Pointing to String Whitespace Tail
 bool
-is_tail( char * end )
+is_tail( char const * end )
 {
 	if ( end == nullptr ) return false;
 	while ( std::isspace( *end ) ) ++end;

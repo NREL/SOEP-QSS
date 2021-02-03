@@ -86,6 +86,7 @@ extern double rTol; // Relative tolerance
 extern double aTol; // Absolute tolerance
 extern double aFac; // Absolute tolerance factor
 extern double zTol; // Zero-crossing tolerance
+extern double zMul; // Zero-crossing tolerance bump multiplier
 extern double zFac; // Zero-crossing tolerance factor
 extern double dtMin; // Min time step (s)
 extern double dtMax; // Max time step (s)
@@ -127,6 +128,7 @@ extern Models models; // Name of model(s) or FMU(s)
 namespace specified {
 
 extern bool qss; // QSS method specified?
+extern bool eidd; // Event indicators directional derivative specified?
 extern bool rTol; // Relative tolerance specified?
 extern bool aTol; // Absolute tolerance specified?
 extern bool zTol; // Zero-crossing tolerance specified?

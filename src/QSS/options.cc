@@ -48,11 +48,12 @@ namespace QSS {
 namespace options {
 
 QSS qss( QSS::QSS2 ); // QSS method: (x)(LI)QSS(1|2|3)
-bool eidd( false ); // Use event indicator directional derivatives?
+bool eidd( true ); // Use event indicator directional derivatives?
 double rTol( 1.0e-4 ); // Relative tolerance
 double aTol( 1.0e-6 ); // Absolute tolerance
 double aFac( 0.01 ); // Absolute tolerance factor
-double zTol( 0.0 ); // Zero-crossing tolerance
+double zTol( 1.0e-6 ); // Zero-crossing/root tolerance
+double zMul( 8.0 ); // Zero-crossing tolerance bump multiplier
 double zFac( 1.01 ); // Zero-crossing tolerance factor
 double dtMin( 0.0 ); // Min time step (s)
 double dtMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Max time step (s)
@@ -94,9 +95,10 @@ Models models; // Name of model(s) or FMU(s)
 namespace specified {
 
 bool qss( false ); // QSS method specified?
+bool eidd( false ); // Event indicators directional derivative specified?
 bool rTol( false ); // Relative tolerance specified?
 bool aTol( false ); // Absolute tolerance specified?
-bool zTol( false ); // Zero-crossing tolerance specified?
+bool zTol( false ); // Zero-crossing/root tolerance specified?
 bool dtZC( false ); // FMU zero-crossing time step specified?
 bool dtOut( false ); // Sampled output time step specified?
 bool tEnd( false ); // End time specified?
@@ -130,11 +132,13 @@ help_display()
 	std::cout << '\n' << "QSS [options] [model [model ...]]" << "\n\n";
 	std::cout << "Options:" << "\n\n";
 	std::cout << " --qss=QSS        QSS method: (x)(LI)QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
-	std::cout << " --eidd           Use event indicator directional derivatives" << '\n';
+	std::cout << " --eidd           Use FMU event indicator directional derivatives  [if supported by FMU]" << '\n';
+	std::cout << " --no-eidd        Don't use FMU event indicator directional derivatives" << '\n';
 	std::cout << " --rTol=TOL       Relative tolerance  [1e-4|FMU]" << '\n';
 	std::cout << " --aTol=TOL       Absolute tolerance  [rTol*aFac*nominal]" << '\n';
 	std::cout << " --aFac=FAC       Absolute tolerance factor  [0.01]" << '\n';
-	std::cout << " --zTol=TOL       Zero-crossing tolerance  [0|FMU]" << '\n';
+	std::cout << " --zTol=TOL       Zero-crossing/root tolerance  [1e-6|FMU]" << '\n';
+	std::cout << " --zMul=MUL       Zero-crossing tolerance bump multiplier  [8]" << '\n';
 	std::cout << " --zFac=FAC       Zero-crossing tolerance factor  [1.01]" << '\n';
 	std::cout << " --dtMin=STEP     Min time step (s)  [0]" << '\n';
 	std::cout << " --dtMax=STEP     Max time step (s)  [infinity]" << '\n';
@@ -277,7 +281,11 @@ process_args( int argc, char * argv[] )
 				fatal = true;
 			}
 		} else if ( has_option( arg, "eidd" ) ) {
+			specified::eidd = true;
 			eidd = true;
+		} else if ( ( has_option( arg, "no-eidd" ) ) || ( has_option( arg, "noeidd" ) ) ) {
+			specified::eidd = true;
+			eidd = false;
 		} else if ( has_option( arg, "cycles" ) ) {
 			cycles = true;
 		} else if ( has_option( arg, "inflection" ) ) {
@@ -362,6 +370,18 @@ process_args( int argc, char * argv[] )
 				}
 			} else {
 				std::cerr << "\nError: Nonnumeric zTol: " << zTol_str << std::endl;
+				fatal = true;
+			}
+		} else if ( has_value_option( arg, "zMul" ) ) {
+			std::string const zMul_str( arg_value( arg ) );
+			if ( is_double( zMul_str ) ) {
+				zMul = double_of( zMul_str );
+				if ( zMul <= 0.0 ) {
+					std::cerr << "\nError: zMul <= 0.0: " << zMul_str << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::cerr << "\nError: Nonnumeric zMul: " << zMul_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "zFac" ) ) {

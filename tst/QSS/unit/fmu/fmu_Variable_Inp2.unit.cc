@@ -81,6 +81,7 @@ TEST( fmu_Variable_Inp2Test, InputFunction )
 
 	options::qss = options::QSS::QSS2;
 	options::specified::qss = true;
+	options::eidd = false;
 	options::rTol = 100.0;
 	options::specified::rTol = true;
 	options::aTol = 1.0;

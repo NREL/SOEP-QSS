@@ -77,14 +77,14 @@ public: // Predicate
 
 	// Discrete Variable?
 	bool
-	is_Discrete() const
+	is_Discrete() const override final
 	{
 		return true;
 	}
 
 	// B|I|D|R Variable?
 	bool
-	is_BIDR() const
+	is_BIDR() const override final
 	{
 		return true;
 	}
@@ -93,56 +93,56 @@ public: // Property
 
 	// Boolean Value
 	Boolean
-	b() const
+	b() const override final
 	{
 		return Boolean( x_ );
 	}
 
 	// Boolean Value at Time t
 	Boolean
-	b( Time const ) const
+	b( Time const ) const override final
 	{
 		return Boolean( x_ );
 	}
 
 	// Integer Value
 	Integer
-	i() const
+	i() const override final
 	{
 		return x_;
 	}
 
 	// Integer Value at Time t
 	Integer
-	i( Time const ) const
+	i( Time const ) const override final
 	{
 		return x_;
 	}
 
 	// Real Value
 	Real
-	r() const
+	r() const override final
 	{
 		return Real( x_ );
 	}
 
 	// Real Value at Time t
 	Real
-	r( Time const ) const
+	r( Time const ) const override final
 	{
 		return Real( x_ );
 	}
 
 	// Continuous Value at Time t
 	Real
-	x( Time const ) const
+	x( Time const ) const override final
 	{
 		return Real( x_ );
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const ) const
+	q( Time const ) const override final
 	{
 		return Real( x_ );
 	}
@@ -151,38 +151,38 @@ public: // Methods
 
 	// Initialization
 	void
-	init()
+	init() override final
 	{
 		init_0();
 	}
 
 	// Initialization to a Value
 	void
-	init( Real const x )
+	init( Real const x ) override final
 	{
 		init_0( x );
 	}
 
 	// Initialization: Stage 0
 	void
-	init_0()
+	init_0() override final
 	{
 		assert( ! observes() );
 		init_observers();
 		x_ = static_cast< Integer >( xIni );
 		add_handler();
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << std::endl;
 	}
 
 	// Initialization to a Value: Stage 0
 	void
-	init_0( Real const x )
+	init_0( Real const x ) override final
 	{
 		assert( ! observes() );
 		init_observers();
 		x_ = static_cast< Integer >( x );
 		add_handler();
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << std::endl;
 	}
 
 	// Handler Advance
@@ -194,7 +194,7 @@ public: // Methods
 		Integer const x_old( x_ );
 		x_ = fmu_get_integer(); // Assume FMU ran event handler
 		shift_handler();
-		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << std::endl;
 		if ( observed() && ( x_ != x_old ) ) advance_observers();
 	}
 
@@ -212,7 +212,7 @@ public: // Methods
 	advance_handler_F() override final
 	{
 		shift_handler();
-		if ( options::output::d ) std::cout << "*= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "*= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << std::endl;
 	}
 
 	// Handler No-Advance
@@ -235,21 +235,21 @@ public: // Methods
 	void
 	advance_observer_d() const override final
 	{
-		std::cout << " ▲ " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		std::cout << " ^ " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << std::endl;
 	}
 
 public: // Methods: FMU
 
 	// Set FMU Variable to Continuous Value at Time t
 	void
-	fmu_set_x( Time const ) const
+	fmu_set_x( Time const ) const override final
 	{
 		fmu_set_integer( x_ );
 	}
 
 	// Set FMU Variable to Quantized Value at Time t
 	void
-	fmu_set_q( Time const ) const
+	fmu_set_q( Time const ) const override final
 	{
 		fmu_set_integer( x_ );
 	}

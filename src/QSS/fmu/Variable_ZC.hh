@@ -92,7 +92,7 @@ public: // Predicate
 
 	// Zero-Crossing Variable?
 	bool
-	is_ZC() const
+	is_ZC() const override final
 	{
 		return true;
 	}
@@ -108,7 +108,7 @@ public: // Property
 
 	// Boolean Value at Time t
 	Boolean
-	b( Time const t ) const
+	b( Time const t ) const override final
 	{
 		return ( t == tZ_last );
 	}
@@ -249,6 +249,34 @@ public: // Crossing Methods
 
 protected: // Methods
 
+	// Set Trajectory Magnitude to Zero
+	void
+	x_mag_zero()
+	{
+		x_mag_ = Real( 0.0 );
+	}
+
+	// Update Trajectory Magnitude with Given Value
+	void
+	x_mag_update( Real const val )
+	{
+		x_mag_ = std::max( x_mag_, std::abs( val ) );
+	}
+
+	// Refine Zero-Crossing Time: Event Indicator Zero-Crossing Variable
+	void
+	refine_root_ZC( Time const tBeg );
+
+	// Refine Zero-Crossing Time: Event Indicator Directional Derivative Zero-Crossing Variable
+	void
+	refine_root_ZCd( Time const tBeg );
+
+	// Refine Zero-Crossing Time: Explicit Zero-Crossing Variable
+	void
+	refine_root_ZCe( Time const tBeg );
+
+protected: // Static Methods
+
 	// Crossing Type from Values
 	template< typename T >
 	static
@@ -279,21 +307,9 @@ protected: // Methods
 		}
 	}
 
-	// Refine Zero-Crossing Time: Event Indicator Zero-Crossing Variable
-	void
-	refine_root_ZC( Time const tBeg );
-
-	// Refine Zero-Crossing Time: Event Indicator Directional Derivative Zero-Crossing Variable
-	void
-	refine_root_ZCd( Time const tBeg );
-
-	// Refine Zero-Crossing Time: Explicit Zero-Crossing Variable
-	void
-	refine_root_ZCe( Time const tBeg );
-
 public: // Data
 
-	Real zTol{ 0.0 }; // Zero-crossing anti-chatter tolerance
+	Real zTol{ 0.0 }; // Zero-crossing tolerance
 	Time tZ{ infinity }; // Zero-crossing time: tQ <= tZ and tX <= tZ
 	Time tZ_last{ neg_infinity }; // Zero-crossing time of last crossing
 	Crossing crossing{ Crossing::Flat }; // Zero-crossing type
@@ -302,7 +318,7 @@ public: // Data
 protected: // Data
 
 	bool zChatter_{ false }; // Zero-crossing chatter control active?
-	Real x_mag_{ 0.0 }; // Value max magnitude since last zero crossing
+	Real x_mag_{ 0.0 }; // Max trajectory magnitude since last zero crossing
 	bool check_crossing_{ false }; // Check for zero crossing?
 	int sign_old_{ 0 }; // Sign of zero-crossing function before advance
 	mutable bool handler_modified_{ false }; // Did last handler modify this value?

@@ -72,6 +72,8 @@ $(TAR_OBJ) : $(TAR_SRC)
 
 $(EXE) : $(SLB) $(TAR_OBJ)
 	$(CXX) $(CXXFLAGS) $(PGO) /Fe:$@ $(TAR_OBJ) $(LINKFLAGS) $(SLB) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib expat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
+# xilink needed with /Qipo interprocedural optimization
+#	$(LD) /OUT:$@ /NOLOGO /SUBSYSTEM:CONSOLE /MACHINE:X64 /STACK:8388608 $(TAR_OBJ) $(OBJ) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib expat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
 	@-DEL $(BIN_PATH)\$(TAR).exp $(BIN_PATH)\$(TAR).ilk $(BIN_PATH)\$(TAR).lib >nul 2>&1
 
 # Dependencies

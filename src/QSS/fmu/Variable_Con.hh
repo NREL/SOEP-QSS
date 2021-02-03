@@ -67,14 +67,14 @@ public: // Predicate
 
 	// Input Variable?
 	bool
-	is_Input() const
+	is_Input() const override final
 	{
 		return true;
 	}
 
 	// Connection Input Variable?
 	bool
-	is_connection() const
+	is_connection() const override final
 	{
 		return true;
 	}
@@ -83,7 +83,7 @@ public: // Property
 
 	// Continuous Value at Time t
 	Real
-	x( Time const t ) const
+	x( Time const t ) const override final
 	{
 		assert( out_var_ != nullptr );
 		return out_var_->x( t );
@@ -91,7 +91,7 @@ public: // Property
 
 	// Continuous First Derivative at Time t
 	Real
-	x1( Time const t ) const
+	x1( Time const t ) const override final
 	{
 		assert( out_var_ != nullptr );
 		return out_var_->x1( t );
@@ -99,7 +99,7 @@ public: // Property
 
 	// Continuous Second Derivative at Time t
 	Real
-	x2( Time const t ) const
+	x2( Time const t ) const override final
 	{
 		assert( out_var_ != nullptr );
 		return out_var_->x2( t );
@@ -107,7 +107,7 @@ public: // Property
 
 	// Continuous Third Derivative at Time t
 	Real
-	x3( Time const t ) const
+	x3( Time const t ) const override final
 	{
 		assert( out_var_ != nullptr );
 		return out_var_->x3( t );
@@ -115,7 +115,7 @@ public: // Property
 
 	// Quantized Value at Time t
 	Real
-	q( Time const t ) const
+	q( Time const t ) const override final
 	{
 		assert( out_var_ != nullptr );
 		return out_var_->q( t );
@@ -123,7 +123,7 @@ public: // Property
 
 	// Quantized First Derivative at Time t
 	Real
-	q1( Time const t ) const
+	q1( Time const t ) const override final
 	{
 		assert( out_var_ != nullptr );
 		return out_var_->q1( t );
@@ -131,7 +131,7 @@ public: // Property
 
 	// Quantized Second Derivative at Time t
 	Real
-	q2( Time const t ) const
+	q2( Time const t ) const override final
 	{
 		assert( out_var_ != nullptr );
 		return out_var_->q2( t );
@@ -139,7 +139,7 @@ public: // Property
 
 	// Quantized Third Derivative at Time t
 	Real
-	q3( Time const t ) const
+	q3( Time const t ) const override final
 	{
 		assert( out_var_ != nullptr );
 		return out_var_->q3( t );
@@ -163,14 +163,14 @@ public: // Methods
 
 	// Initialization
 	void
-	init()
+	init() override final
 	{
 		init_0();
 	}
 
 	// Initialization: Stage 0
 	void
-	init_0()
+	init_0() override final
 	{
 		assert( out_var_ != nullptr );
 		assert( ! observes() );
@@ -186,7 +186,7 @@ public: // Methods
 			if ( out_var_order >= 1 ) std::cout << out_var_->x1( tQ ) << x_delta;
 			if ( out_var_order >= 2 ) std::cout << one_half * out_var_->x2( tQ ) << x_delta_2;
 			if ( out_var_order >= 3 ) std::cout << one_sixth * out_var_->x3( tQ ) << x_delta_3;
-			std::cout << std::noshowpos << "   tD=" << out_var_->tD << '\n';
+			std::cout << std::noshowpos << "   tD=" << out_var_->tD << std::endl;
 		}
 	}
 
@@ -201,7 +201,7 @@ public: // Methods
 		Real const x_( out_var_->x( t ) );
 		fmu_set_time( t ); // Different FMU-ME than trigger
 		fmu_set_real( x_ );
-		if ( options::output::d ) std::cout << "|  " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << '\n';
+		if ( options::output::d ) std::cout << "|  " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << std::endl;
 		if ( observed() ) advance_observers();
 	}
 

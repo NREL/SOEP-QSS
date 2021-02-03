@@ -768,7 +768,6 @@ private: // Methods
 					observee->fmu_set_x( tN );
 				}
 				fmu_me_->get_reals( zc_n, &ei_vars_.refs[ 0 ], &ei_vars_.vals_p[ 0 ] );
-
 				for ( size_type i = zc_.b(), j = 0, e = zc_.e(); i < e; ++i, ++j ) {
 					observers_[ i ]->advance_observer_1( t, ei_vars_.vals[ j ], ei_vars_.vals_p[ j ] );
 				}

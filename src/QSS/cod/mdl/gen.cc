@@ -207,29 +207,29 @@ gen(
 		std::string const x_nam( "x" + i_stream.str() );
 		Real const x_ini( uniform_random_real( -x_mag, x_mag ) );
 		if ( qss == QSS::QSS1 ) {
-			vars.push_back( x = new Variable_QSS1< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
+			vars.push_back( x = new Variable_QSS1< Function_LTI >( x_nam, rTol, aTol, 1.0e-9, x_ini ) );
 		} else if ( qss == QSS::QSS2 ) {
-			vars.push_back( x = new Variable_QSS2< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
+			vars.push_back( x = new Variable_QSS2< Function_LTI >( x_nam, rTol, aTol, 1.0e-9, x_ini ) );
 		} else if ( qss == QSS::QSS3 ) {
-			vars.push_back( x = new Variable_QSS3< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
+			vars.push_back( x = new Variable_QSS3< Function_LTI >( x_nam, rTol, aTol, 1.0e-9, x_ini ) );
 		} else if ( qss == QSS::LIQSS1 ) {
-			vars.push_back( x = new Variable_LIQSS1< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
+			vars.push_back( x = new Variable_LIQSS1< Function_LTI >( x_nam, rTol, aTol, 1.0e-9, x_ini ) );
 		} else if ( qss == QSS::LIQSS2 ) {
-			vars.push_back( x = new Variable_LIQSS2< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
+			vars.push_back( x = new Variable_LIQSS2< Function_LTI >( x_nam, rTol, aTol, 1.0e-9, x_ini ) );
 		} else if ( qss == QSS::LIQSS3 ) {
-			vars.push_back( x = new Variable_LIQSS3< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
+			vars.push_back( x = new Variable_LIQSS3< Function_LTI >( x_nam, rTol, aTol, 1.0e-9, x_ini ) );
 		} else if ( qss == QSS::xQSS1 ) {
-			vars.push_back( x = new Variable_xQSS1< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
+			vars.push_back( x = new Variable_xQSS1< Function_LTI >( x_nam, rTol, aTol, 1.0e-9, x_ini ) );
 		} else if ( qss == QSS::xQSS2 ) {
-			vars.push_back( x = new Variable_xQSS2< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
+			vars.push_back( x = new Variable_xQSS2< Function_LTI >( x_nam, rTol, aTol, 1.0e-9, x_ini ) );
 		} else if ( qss == QSS::xQSS3 ) {
-			vars.push_back( x = new Variable_xQSS3< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
+			vars.push_back( x = new Variable_xQSS3< Function_LTI >( x_nam, rTol, aTol, 1.0e-9, x_ini ) );
 		} else if ( qss == QSS::xLIQSS1 ) {
-			vars.push_back( x = new Variable_xLIQSS1< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
+			vars.push_back( x = new Variable_xLIQSS1< Function_LTI >( x_nam, rTol, aTol, 1.0e-9, x_ini ) );
 		} else if ( qss == QSS::xLIQSS2 ) {
-			vars.push_back( x = new Variable_xLIQSS2< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
+			vars.push_back( x = new Variable_xLIQSS2< Function_LTI >( x_nam, rTol, aTol, 1.0e-9, x_ini ) );
 		} else if ( qss == QSS::xLIQSS3 ) {
-			vars.push_back( x = new Variable_xLIQSS3< Function_LTI >( x_nam, rTol, aTol, x_ini ) );
+			vars.push_back( x = new Variable_xLIQSS3< Function_LTI >( x_nam, rTol, aTol, 1.0e-9, x_ini ) );
 		} else {
 			std::cerr << "Error: Unsupported QSS method" << std::endl;
 			std::exit( EXIT_FAILURE );

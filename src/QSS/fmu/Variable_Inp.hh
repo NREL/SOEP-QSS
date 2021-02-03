@@ -106,14 +106,14 @@ public: // Predicate
 
 	// Input Variable?
 	bool
-	is_Input() const
+	is_Input() const override final
 	{
 		return true;
 	}
 
 	// Connection Input Variable?
 	bool
-	is_connection() const
+	is_connection() const override final
 	{
 		return is_connection_;
 	}

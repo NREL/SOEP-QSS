@@ -71,9 +71,11 @@ protected: // Creation
 	 std::string const & name,
 	 Real const rTol = 1.0e-4,
 	 Real const aTol = 1.0e-6,
+	 Real const zTol = 1.0e-6,
 	 Real const xIni = 0.0
 	) :
-	 Super( order, name, rTol, aTol, xIni )
+	 Super( order, name, rTol, aTol, xIni ),
+	 zTol( std::max( zTol, 0.0 ) )
 	{}
 
 protected: // Assignment
@@ -90,7 +92,7 @@ public: // Predicate
 
 	// QSS Variable?
 	bool
-	is_QSS() const
+	is_QSS() const override final
 	{
 		return true;
 	}
@@ -141,6 +143,10 @@ public: // Function Methods
 		observe( v );
 		return *this;
 	}
+
+public: // Data
+
+	Real zTol{ 0.0 }; // Zero-crossing tolerance
 
 protected: // Data
 

@@ -37,6 +37,7 @@
 #include <QSS/cod/simulate_cod.hh>
 #include <QSS/cod/Conditional.hh>
 #include <QSS/cod/Variable.hh>
+#include <QSS/cod/Variable_ZC.hh>
 #include <QSS/cod/cycles.hh>
 #include <QSS/cod/events.hh>
 #include <QSS/cod/mdl/achilles.hh>

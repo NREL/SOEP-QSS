@@ -41,6 +41,45 @@
 
 using namespace QSS;
 
+TEST( MathTest, BoolSign )
+{
+	EXPECT_TRUE( bool_sign( 0.0 ) );
+	EXPECT_TRUE( bool_sign( -0.0 ) );
+	EXPECT_TRUE( bool_sign( 3.0 ) );
+	EXPECT_FALSE( bool_sign( -5.0 ) );
+}
+
+TEST( MathTest, SignsSame )
+{
+	EXPECT_TRUE( signs_same( 3.0, 5.0 ) );
+	EXPECT_TRUE( signs_same( -5.0, -2.0 ) );
+	EXPECT_TRUE( signs_same( 0, 0 ) );
+	EXPECT_TRUE( signs_same( 0.0, -0.0 ) );
+	EXPECT_FALSE( signs_same( 3.0, -5.0 ) );
+	EXPECT_FALSE( signs_same( -3.0, 5.0 ) );
+}
+
+TEST( MathTest, SignsDiffer )
+{
+	EXPECT_FALSE( signs_differ( 3.0, 5.0 ) );
+	EXPECT_FALSE( signs_differ( -5.0, -2.0 ) );
+	EXPECT_FALSE( signs_differ( 0, 0 ) );
+	EXPECT_FALSE( signs_differ( 0.0, -0.0 ) );
+	EXPECT_TRUE( signs_differ( 3.0, -5.0 ) );
+	EXPECT_TRUE( signs_differ( -3.0, 5.0 ) );
+}
+
+TEST( MathTest, NonZeroAndSignsDiffer )
+{
+	EXPECT_FALSE( nonzero_and_signs_differ( 3.0, 5.0 ) );
+	EXPECT_FALSE( nonzero_and_signs_differ( -5.0, -2.0 ) );
+	EXPECT_FALSE( nonzero_and_signs_differ( 0, 0 ) );
+	EXPECT_FALSE( nonzero_and_signs_differ( 0.0, -0.0 ) );
+	EXPECT_FALSE( nonzero_and_signs_differ( 5.0, -0.0 ) );
+	EXPECT_TRUE( nonzero_and_signs_differ( 3.0, -5.0 ) );
+	EXPECT_TRUE( nonzero_and_signs_differ( -3.0, 5.0 ) );
+}
+
 TEST( MathTest, Sign )
 {
 	EXPECT_EQ( 1.0, sign( 3.0 ) );
@@ -91,33 +130,12 @@ TEST( MathTest, Quad )
 	EXPECT_EQ( 16, quad( 2 ) );
 }
 
-TEST( MathTest, Infinityish )
-{
-	EXPECT_EQ( infinity, infinityish< double >() );
-	EXPECT_EQ( std::numeric_limits< double >::infinity(), infinityish< double >() );
-	EXPECT_EQ( std::numeric_limits< float >::infinity(), infinityish< float >() );
-	EXPECT_EQ( std::numeric_limits< int >::max(), infinityish< int >() );
-}
-
-TEST( MathTest, PositiveOrInfinity )
-{
-	EXPECT_EQ( 3.0, positive_or_infinity( 3.0 ) );
-	EXPECT_EQ( infinity, positive_or_infinity( -5.0 ) );
-	EXPECT_EQ( infinity, positive_or_infinity( 0.0 ) );
-	EXPECT_EQ( 2, positive_or_infinity( 2 ) );
-}
-
-TEST( MathTest, MinMax )
+TEST( MathTest, Min )
 {
 	EXPECT_EQ( 3.0, min( 44.0, 77.0, 3.0 ) );
 	EXPECT_EQ( 5, min( 8, 99, 38, 5 ) );
 	EXPECT_EQ( 5, min( 8, 99, 38, 5, 373 ) );
 	EXPECT_EQ( 4, min( 8, 99, 38, 5, 373, 4 ) );
-
-	EXPECT_EQ( 77.0, max( 44.0, 77.0, 3.0 ) );
-	EXPECT_EQ( 373, max( 8, 99, 38, 373 ) );
-	EXPECT_EQ( 373, max( 8, 99, 38, 5, 373 ) );
-	EXPECT_EQ( 555, max( 8, 99, 38, 5, 555, 373 ) );
 
 	EXPECT_EQ( 3.0, min_nonnegative_or_zero( 77.0, 3.0 ) );
 	EXPECT_EQ( 77.0, min_nonnegative_or_zero( 77.0, -3.0 ) );
@@ -132,55 +150,327 @@ TEST( MathTest, MinMax )
 	EXPECT_EQ( infinity, min_positive_or_infinity( -77.0, -3.0, -2.0 ) );
 }
 
+TEST( MathTest, Max )
+{
+	EXPECT_EQ( 77.0, max( 44.0, 77.0, 3.0 ) );
+	EXPECT_EQ( 373, max( 8, 99, 38, 373 ) );
+	EXPECT_EQ( 373, max( 8, 99, 38, 5, 373 ) );
+	EXPECT_EQ( 555, max( 8, 99, 38, 5, 555, 373 ) );
+}
+
+TEST( MathTest, Nonnegative )
+{
+	EXPECT_EQ( 42, nonnegative( 42 ) );
+	EXPECT_EQ( 0, nonnegative( -42 ) );
+	EXPECT_EQ( 44.0, nonnegative( 44.0 ) );
+	EXPECT_EQ( 0.0, nonnegative( -44.0 ) );
+}
+
+TEST( MathTest, Infinityish )
+{
+	EXPECT_EQ( infinity, inf< double >() );
+	EXPECT_EQ( std::numeric_limits< double >::infinity(), inf< double >() );
+	EXPECT_EQ( std::numeric_limits< float >::infinity(), inf< float >() );
+	EXPECT_EQ( std::numeric_limits< int >::max(), inf< int >() );
+}
+
+TEST( MathTest, PositiveOrInfinity )
+{
+	EXPECT_EQ( 3.0, positive_or_infinity( 3.0 ) );
+	EXPECT_EQ( infinity, positive_or_infinity( -5.0 ) );
+	EXPECT_EQ( infinity, positive_or_infinity( 0.0 ) );
+	EXPECT_EQ( 2, positive_or_infinity( 2 ) );
+}
+
+TEST( MathTest, SortedPositive )
+{
+	using AD3 = std::array< double, 3 >;
+	EXPECT_EQ( AD3( { 1.0, 2.0, 3.0 } ), sorted_positive( 1.0, 2.0, 3.0 ) );
+	EXPECT_EQ( AD3( { infinity, infinity, infinity } ), sorted_positive( -1.0, -2.0, -3.0 ) );
+	EXPECT_EQ( AD3( { 1.0, infinity, infinity } ), sorted_positive( 1.0, 0.0, -1.0 ) );
+	EXPECT_EQ( AD3( { 2.0, 3.0, 5.0 } ), sorted_positive( 3.0, 2.0, 5.0 ) );
+	EXPECT_EQ( AD3( { 2.0, 3.0, 5.0 } ), sorted_positive( 5.0, 3.0, 2.0 ) );
+}
+
+TEST( MathTest, ZCRootCull )
+{
+	EXPECT_EQ( 3.0, zc_root_cull( 3.0, 1.0e-6, 1.0e-6 ) );
+	EXPECT_EQ( 3.0, zc_root_cull( 3.0, 1.0e-5, 1.0e-6 ) );
+	EXPECT_EQ( -3.0, zc_root_cull( -3.0, 1.0e-5, 1.0e-5 ) );
+	EXPECT_EQ( inf< double >(), zc_root_cull( 3.0, 1.0e-7 ) );
+	EXPECT_EQ( inf< double >(), zc_root_cull( 3.0, 1.0e-7, 1.0e-6 ) );
+	EXPECT_EQ( 3.0, zc_root_cull( 3.0, -1.0e-5, 1.0e-6 ) );
+	EXPECT_EQ( inf< double >(), zc_root_cull( 3.0, -1.0e-7 ) );
+}
+
+TEST( MathTest, ZCRootCullMag )
+{
+	EXPECT_EQ( 3.0, zc_root_cull_mag( 3.0, 1.0e-6, 1.0e-6 ) );
+	EXPECT_EQ( 3.0, zc_root_cull_mag( 3.0, 1.0e-5, 1.0e-6 ) );
+	EXPECT_EQ( -3.0, zc_root_cull_mag( -3.0, 1.0e-5, 1.0e-5 ) );
+	EXPECT_EQ( inf< double >(), zc_root_cull_mag( 3.0, 1.0e-7 ) );
+	EXPECT_EQ( inf< double >(), zc_root_cull_mag( 3.0, 1.0e-7, 1.0e-6 ) );
+}
+
+TEST( MathTest, RootClass )
+{
+	{
+	Root< double > root;
+	EXPECT_EQ( 0.0, root.x );
+	EXPECT_EQ( 0.0, root.v );
+	EXPECT_FALSE( root.valid );
+	EXPECT_FALSE( bool( root ) );
+	}
+
+	{
+	Root< double > root( 3.0, -0.001 );
+	EXPECT_EQ( 3.0, root.x );
+	EXPECT_EQ( -0.001, root.v );
+	EXPECT_TRUE( root.valid );
+	EXPECT_TRUE( bool( root ) );
+	}
+
+	{
+	Root< double > root( 3.0, 0.001, 0.01 );
+	EXPECT_EQ( 3.0, root.x );
+	EXPECT_EQ( 0.001, root.v );
+	EXPECT_TRUE( root.valid );
+	EXPECT_TRUE( bool( root ) );
+	}
+
+	{
+	Root< double > root( 3.0, -0.002, 0.001 );
+	EXPECT_EQ( 3.0, root.x );
+	EXPECT_EQ( -0.002, root.v );
+	EXPECT_FALSE( root.valid );
+	EXPECT_FALSE( bool( root ) );
+	}
+}
+
+TEST( MathTest, ZCRootLinear )
+{
+	double const inf( inf< double >() );
+	EXPECT_EQ( inf, zc_root_linear( 0.0, 3.0 ) );
+	EXPECT_EQ( inf, zc_root_linear( -0.0, -3.0 ) );
+	EXPECT_EQ( inf, zc_root_linear( 3.0, 0.0 ) );
+	EXPECT_EQ( inf, zc_root_linear( -3.0, -0.0 ) );
+	EXPECT_EQ( inf, zc_root_linear( 3.0, 5.0 ) );
+	EXPECT_EQ( inf, zc_root_linear( -3.0, -2.0 ) );
+	EXPECT_EQ( 2.0, zc_root_linear( 3.0, -6.0 ) );
+	EXPECT_EQ( 2.0, zc_root_linear( -3.0, 6.0 ) );
+}
+
+TEST( MathTest, NewtonPositiveRootQuadratic )
+{
+	EXPECT_DOUBLE_EQ( 1.0 + std::sqrt( 2.5 ), newton_positive_root_quadratic( 2.0, -4.0, -3.0, 2.5 ).x );
+	EXPECT_DOUBLE_EQ( 5.0 / 3.0, newton_positive_root_quadratic( -3.0, 5.0, 0.0, 1.5 ).x );
+	EXPECT_EQ( 0.0, newton_positive_root_quadratic( 0.0, 0.0, 2.0, 1.5 ).x );
+	EXPECT_EQ( 0.0, newton_positive_root_quadratic( 0.0, 5.0, 2.0, 1.5 ).x );
+	EXPECT_FALSE( newton_positive_root_quadratic( 0.0, 0.0, 2.0, 1.5 ).valid );
+	EXPECT_FALSE( newton_positive_root_quadratic( 0.0, 5.0, 2.0, 1.5 ).valid );
+	EXPECT_DOUBLE_EQ( 0.4, newton_positive_root_quadratic( 0.0, 5.0, -2.0, 0.0 ).x );
+	EXPECT_DOUBLE_EQ( 0.4, newton_positive_root_quadratic( 0.0, -5.0, 2.0, 0.5 ).x );
+}
+
+TEST( MathTest, HalleyPositiveRootQuadratic )
+{
+	EXPECT_DOUBLE_EQ( 1.0 + std::sqrt( 2.5 ), halley_positive_root_quadratic( 2.0, -4.0, -3.0, 2.5 ).x );
+	EXPECT_DOUBLE_EQ( 5.0 / 3.0, halley_positive_root_quadratic( -3.0, 5.0, 0.0, 1.5 ).x );
+	EXPECT_EQ( 0.0, halley_positive_root_quadratic( 0.0, 0.0, 2.0, 1.5 ).x );
+	EXPECT_EQ( 0.0, halley_positive_root_quadratic( 0.0, 5.0, 2.0, 1.5 ).x );
+	EXPECT_FALSE( halley_positive_root_quadratic( 0.0, 0.0, 2.0, 1.5 ).valid );
+	EXPECT_FALSE( halley_positive_root_quadratic( 0.0, 5.0, 2.0, 1.5 ).valid );
+	EXPECT_DOUBLE_EQ( 0.4, halley_positive_root_quadratic( 0.0, 5.0, -2.0, 0.0 ).x );
+	EXPECT_DOUBLE_EQ( 0.4, halley_positive_root_quadratic( 0.0, -5.0, 2.0, 0.5 ).x );
+}
+
+TEST( MathTest, IterativePositiveRootQuadratic )
+{
+	EXPECT_DOUBLE_EQ( 1.0 + std::sqrt( 2.5 ), iterative_positive_root_quadratic( 2.0, -4.0, -3.0, 2.5 ).x );
+	EXPECT_DOUBLE_EQ( 5.0 / 3.0, iterative_positive_root_quadratic( -3.0, 5.0, 0.0, 1.5 ).x );
+	EXPECT_EQ( 0.0, iterative_positive_root_quadratic( 0.0, 0.0, 2.0, 1.5 ).x );
+	EXPECT_EQ( 0.0, iterative_positive_root_quadratic( 0.0, 5.0, 2.0, 1.5 ).x );
+	EXPECT_FALSE( iterative_positive_root_quadratic( 0.0, 0.0, 2.0, 1.5 ).valid );
+	EXPECT_FALSE( iterative_positive_root_quadratic( 0.0, 5.0, 2.0, 1.5 ).valid );
+	EXPECT_DOUBLE_EQ( 0.4, iterative_positive_root_quadratic( 0.0, 5.0, -2.0, 0.0 ).x );
+	EXPECT_DOUBLE_EQ( 0.4, iterative_positive_root_quadratic( 0.0, -5.0, 2.0, 0.5 ).x );
+}
+
+TEST( MathTest, CriticalPointMagnitudeQuadratic )
+{
+	EXPECT_DOUBLE_EQ( 4.0, critical_point_magnitude_quadratic( -3.0, 6.0, 1.0, 2.0 ) );
+	EXPECT_DOUBLE_EQ( 1.2, critical_point_magnitude_quadratic( 5.0, -8.0, 2.0, 2.0 ) );
+	EXPECT_EQ( 0.0, critical_point_magnitude_quadratic( 0.0, -8.0, 2.0, 2.0 ) );
+	EXPECT_EQ( 0.0, critical_point_magnitude_quadratic( 5.0, 0.0, 2.0, 2.0 ) );
+	EXPECT_EQ( 0.0, critical_point_magnitude_quadratic( 5.0, 8.0, 2.0, 2.0 ) );
+	EXPECT_EQ( 0.0, critical_point_magnitude_quadratic( 5.0, -8.0, 2.0, 0.75 ) );
+}
+
+TEST( MathTest, ZCRootQuadratic )
+{
+	double const inf( inf< double >() );
+	EXPECT_DOUBLE_EQ( 1.0 + std::sqrt( 2.5 ), zc_root_quadratic( 2.0, -4.0, -3.0 ) );
+	EXPECT_DOUBLE_EQ( 5.0 / 3.0, zc_root_quadratic( -3.0, 5.0, 0.0 ) );
+	EXPECT_EQ( inf, zc_root_quadratic( 0.0, 0.0, 2.0 ) );
+	EXPECT_EQ( inf, zc_root_quadratic( 0.0, 5.0, 2.0 ) );
+	EXPECT_DOUBLE_EQ( 0.4, zc_root_quadratic( 0.0, 5.0, -2.0 ) );
+	EXPECT_DOUBLE_EQ( 0.4, zc_root_quadratic( 0.0, -5.0, 2.0 ) );
+}
+
 TEST( MathTest, MinRootQuadratic )
 {
-	EXPECT_DOUBLE_EQ( 0.32287565553229536, min_root_quadratic( -4.0, -8.0, 3.0 ) );
-	EXPECT_DOUBLE_EQ( 0.87082869338697070, min_root_quadratic( -2.0, -4.0, 5.0 ) );
-	EXPECT_DOUBLE_EQ( 0.42214438511238006, min_root_quadratic( -2.0, -11.0, 5.0 ) );
-	EXPECT_DOUBLE_EQ( 0.0, min_root_quadratic( -2.0, -11.0, -0.001 ) );
-	EXPECT_DOUBLE_EQ( 0.32287565553229536, min_positive_root_quadratic( -4.0, -8.0, 3.0 ) );
-	EXPECT_DOUBLE_EQ( 0.87082869338697070, min_positive_root_quadratic( -2.0, -4.0, 5.0 ) );
-	EXPECT_DOUBLE_EQ( 0.42214438511238006, min_positive_root_quadratic( -2.0, -11.0, 5.0 ) );
-	EXPECT_DOUBLE_EQ( infinity, min_positive_root_quadratic( -2.0, -11.0, -0.001 ) );
-	EXPECT_DOUBLE_EQ( 0.32287565553229536, min_root_quadratic_lower( -4.0, -8.0, 3.0 ) );
-	EXPECT_DOUBLE_EQ( 0.87082869338697070, min_root_quadratic_lower( -2.0, -4.0, 5.0 ) );
-	EXPECT_DOUBLE_EQ( 0.42214438511238006, min_root_quadratic_lower( -2.0, -11.0, 5.0 ) );
-	EXPECT_DOUBLE_EQ( 0.0, min_root_quadratic_lower( -2.0, -11.0, -0.001 ) );
-	EXPECT_DOUBLE_EQ( 0.32287565553229536, min_root_quadratic_upper( 4.0, 8.0, -3.0 ) );
-	EXPECT_DOUBLE_EQ( 0.87082869338697070, min_root_quadratic_upper( 2.0, 4.0, -5.0 ) );
-	EXPECT_DOUBLE_EQ( 0.42214438511238006, min_root_quadratic_upper( 2.0, 11.0, -5.0 ) );
-	EXPECT_DOUBLE_EQ( 0.0, min_root_quadratic_upper( 2.0, 11.0, 0.001 ) );
-	EXPECT_DOUBLE_EQ( 0.5, min_root_quadratic_both( -4.0, 8.0, 3.0, -3.0 ) );
-	EXPECT_DOUBLE_EQ( 0.8708286933869707, min_root_quadratic_both( 2.0, 4.0, 5.0, -5.0 ) );
-	EXPECT_DOUBLE_EQ( 0.5, min_root_quadratic_both( -2.0, 11.0, 5.0, -5.0 ) );
+	double const inf( inf< double >() );
+
+	EXPECT_DOUBLE_EQ( std::sqrt( 2.5 ) - 1.0, min_root_quadratic_lower( -2.0, -4.0, 3.0 ) );
+	EXPECT_NEAR( ( 2.0 / std::sqrt( 3 ) ) - 1.0, min_root_quadratic_lower( -3.0, -6.0, 1.0 ), 1.0e-14 );
+	EXPECT_EQ( inf, min_root_quadratic_lower( 0.0, 0.0, 2.0 ) );
+	EXPECT_DOUBLE_EQ( 0.4, min_root_quadratic_lower( 0.0, -5.0, 2.0 ) );
+
+	EXPECT_DOUBLE_EQ( std::sqrt( 2.5 ) - 1.0, min_root_quadratic_upper( 2.0, 4.0, -3.0 ) );
+	EXPECT_NEAR( ( 2.0 / std::sqrt( 3 ) ) - 1.0, min_root_quadratic_upper( 3.0, 6.0, -1.0 ), 1.0e-14 );
+	EXPECT_EQ( inf, min_root_quadratic_upper( 0.0, 0.0, -2.0 ) );
+	EXPECT_DOUBLE_EQ( 0.4, min_root_quadratic_upper( 0.0, 5.0, -2.0 ) );
+
+	EXPECT_DOUBLE_EQ( std::sqrt( 2.5 ) - 1.0, min_root_quadratic_both( -2.0, -4.0, 3.0, -9.0 ) );
+	EXPECT_NEAR( ( 2.0 / std::sqrt( 3 ) ) - 1.0, min_root_quadratic_both( -3.0, -6.0, 1.0, -9.0 ), 1.0e-14 );
+	EXPECT_EQ( inf, min_root_quadratic_both( 0.0, 0.0, 2.0, -9.0 ) );
+	EXPECT_DOUBLE_EQ( 0.4, min_root_quadratic_both( 0.0, -5.0, 2.0, -9.0 ) );
+
+	EXPECT_DOUBLE_EQ( std::sqrt( 2.5 ) - 1.0, min_root_quadratic_both( 2.0, 4.0, 9.0, -3.0 ) );
+	EXPECT_NEAR( ( 2.0 / std::sqrt( 3 ) ) - 1.0, min_root_quadratic_both( 3.0, 6.0, 9.0, -1.0 ), 1.0e-14 );
+	EXPECT_EQ( inf, min_root_quadratic_both( 0.0, 0.0, 9.0, -2.0 ) );
+	EXPECT_DOUBLE_EQ( 0.4, min_root_quadratic_both( 0.0, 5.0, 9.0, -2.0 ) );
 }
 
 TEST( MathTest, CubicUtils )
 {
-	EXPECT_EQ( 3.0, peak_mag_quadratic( 0.0, 0.0, 3.0 ) );
-	EXPECT_EQ( infinity, peak_mag_quadratic( 0.0, 1.0, 3.0 ) );
-	EXPECT_EQ( 0.0, peak_mag_quadratic( 2.0, 0.0, 0.0 ) );
-	EXPECT_EQ( 3.0, peak_mag_quadratic( 1.0, 2.0, 4.0 ) );
-	EXPECT_EQ( 7.0, peak_mag_quadratic( 1.0, 2.0, 8.0 ) );
+	EXPECT_EQ( 4.0, cubic( 1.0, 2.0, -8.0, 4.0, 0.0 ) );
+	EXPECT_EQ( -1.0, cubic( 1.0, 2.0, -8.0, 4.0, 1.0 ) );
+	EXPECT_EQ( 4.0, cubic( 1.0, 2.0, -8.0, 4.0, 2.0 ) );
+
+	EXPECT_EQ( 4.0, cubic_monic( 2.0, -8.0, 4.0, 0.0 ) );
+	EXPECT_EQ( -1.0, cubic_monic( 2.0, -8.0, 4.0, 1.0 ) );
+	EXPECT_EQ( 4.0, cubic_monic( 2.0, -8.0, 4.0, 2.0 ) );
 
 	EXPECT_EQ( 0.0, cubic_cull( 1.0, 2.0, -8.0 ) );
 	EXPECT_EQ( 8.0, cubic_cull( 1.0, 2.0, 8.0 ) );
 
-	EXPECT_EQ( 0.0, cubic_cull_lower( 1.0, 2.0, -8.0, -1.5 ) );
-	EXPECT_EQ( 8.0, cubic_cull_lower( 9.0, 8.0, 8.0, -1.5 ) );
+	EXPECT_EQ( 0.0, cubic_cull_lower( 1.0, 2.0, -8.0, true ) );
+	EXPECT_EQ( 8.0, cubic_cull_lower( 9.0, 8.0, 8.0, false ) );
 
-	EXPECT_EQ( 0.0, cubic_cull_upper( 1.0, 2.0, -8.0, 1.5 ) );
-	EXPECT_EQ( 8.0, cubic_cull_upper( 1.0, 2.0, 8.0, 1.5 ) );
+	EXPECT_EQ( 0.0, cubic_cull_upper( 1.0, 2.0, -8.0, true ) );
+	EXPECT_EQ( 8.0, cubic_cull_upper( 1.0, 2.0, 8.0, true ) );
+}
+
+TEST( MathTest, NewtonSmallPositiveRootCubicMonic )
+{
+	EXPECT_EQ( 0.0, newton_small_positive_root_cubic_monic( -3.0, 6.0, 1.0 ).x );
+	EXPECT_FALSE( newton_small_positive_root_cubic_monic( -3.0, 6.0, 1.0 ).valid );
+	EXPECT_DOUBLE_EQ( 1.32218535462608559, newton_small_positive_root_cubic_monic( -3.0, 6.0, -5.0 ).x );
+	EXPECT_TRUE( newton_small_positive_root_cubic_monic( -3.0, 6.0, -5.0 ).valid );
+}
+
+TEST( MathTest, HalleySmallPositiveRootCubicMonic )
+{
+	EXPECT_EQ( 0.0, halley_small_positive_root_cubic_monic( -3.0, 6.0, 1.0 ).x );
+	EXPECT_FALSE( halley_small_positive_root_cubic_monic( -3.0, 6.0, 1.0 ).valid );
+	EXPECT_DOUBLE_EQ( 1.32218535462608559, halley_small_positive_root_cubic_monic( -3.0, 6.0, -5.0 ).x );
+	EXPECT_TRUE( halley_small_positive_root_cubic_monic( -3.0, 6.0, -5.0 ).valid );
+}
+
+TEST( MathTest, IterativeSmallPositiveRootCubicMonic )
+{
+	EXPECT_EQ( 0.0, iterative_small_positive_root_cubic_monic( -3.0, 6.0, 1.0 ).x );
+	EXPECT_FALSE( iterative_small_positive_root_cubic_monic( -3.0, 6.0, 1.0 ).valid );
+	EXPECT_DOUBLE_EQ( 1.32218535462608559, iterative_small_positive_root_cubic_monic( -3.0, 6.0, -5.0 ).x );
+	EXPECT_TRUE( iterative_small_positive_root_cubic_monic( -3.0, 6.0, -5.0 ).valid );
+}
+
+TEST( MathTest, NewtonPositiveRootCubicMonic )
+{
+	EXPECT_EQ( 0.0, newton_positive_root_cubic_monic( -3.0, 6.0, 1.0, 0.0 ).x );
+	EXPECT_FALSE( newton_positive_root_cubic_monic( -3.0, 6.0, 1.0, 0.0  ).valid );
+	EXPECT_DOUBLE_EQ( 1.32218535462608559, newton_positive_root_cubic_monic( -3.0, 6.0, -5.0, 1.3 ).x );
+	EXPECT_TRUE( newton_positive_root_cubic_monic( -3.0, 6.0, -5.0, 1.3 ).valid );
+	EXPECT_DOUBLE_EQ( 2.0915403681203739, newton_positive_root_cubic_monic( -0.2, -3.0, -2.0, 1.9 ).x );
+}
+
+TEST( MathTest, HalleyPositiveRootCubicMonic )
+{
+	EXPECT_EQ( 0.0, halley_positive_root_cubic_monic( -3.0, 6.0, 1.0, 0.0 ).x );
+	EXPECT_FALSE( halley_positive_root_cubic_monic( -3.0, 6.0, 1.0, 0.0  ).valid );
+	EXPECT_DOUBLE_EQ( 1.32218535462608559, halley_positive_root_cubic_monic( -3.0, 6.0, -5.0, 1.3 ).x );
+	EXPECT_TRUE( halley_positive_root_cubic_monic( -3.0, 6.0, -5.0, 1.3 ).valid );
+	EXPECT_DOUBLE_EQ( 2.0915403681203739, halley_positive_root_cubic_monic( -0.2, -3.0, -2.0, 1.9 ).x );
+}
+
+TEST( MathTest, IterativePositiveRootCubicMonic )
+{
+	EXPECT_EQ( 0.0, iterative_positive_root_cubic_monic( -3.0, 6.0, 1.0, 0.0 ).x );
+	EXPECT_FALSE( iterative_positive_root_cubic_monic( -3.0, 6.0, 1.0, 0.0  ).valid );
+	EXPECT_DOUBLE_EQ( 1.32218535462608559, iterative_positive_root_cubic_monic( -3.0, 6.0, -5.0, 1.3 ).x );
+	EXPECT_TRUE( iterative_positive_root_cubic_monic( -3.0, 6.0, -5.0, 1.3 ).valid );
+	EXPECT_DOUBLE_EQ( 2.0915403681203739, iterative_positive_root_cubic_monic( -0.2, -3.0, -2.0, 1.9 ).x );
+}
+
+TEST( MathTest, CriticalPointMagnitudeCubic )
+{
+	EXPECT_DOUBLE_EQ( 1.7362735784511805, critical_point_magnitude_cubic( 9.0, -3.0, -6.0, 1.0, 1.0 ) );
+	EXPECT_DOUBLE_EQ( 26.426101068499275, critical_point_magnitude_cubic( 1.0, -4.0, -6.0, 1.0, 5.0 ) );
+}
+
+TEST( MathTest, CriticalPointMagnitudeCubicMonic )
+{
+	EXPECT_DOUBLE_EQ( 1.7362735784511805/9.0, critical_point_magnitude_cubic_monic( -3.0/9.0, -6.0/9.0, 1.0/9.0, 1.0 ) );
+	EXPECT_DOUBLE_EQ( 26.426101068499275, critical_point_magnitude_cubic_monic( -4.0, -6.0, 1.0, 5.0 ) );
+}
+
+TEST( MathTest, ZCRootCullCubicMonic )
+{
+	EXPECT_DOUBLE_EQ( 5.0, zc_root_cull_cubic_monic( -4.0, -6.0, 1.0, 5.0, 1.0, 0.0 ) );
+	EXPECT_DOUBLE_EQ( 5.0, zc_root_cull_cubic_monic( -4.0, -6.0, 1.0, 5.0, 1.0, 26.0 ) ); // Extrema is 26.426101068499275
+	EXPECT_DOUBLE_EQ( infinity, zc_root_cull_cubic_monic( -4.0, -6.0, 1.0, 5.0, 1.0, 27.0 ) ); // Extrema is 26.426101068499275
+	EXPECT_DOUBLE_EQ( 5.0, zc_root_cull_cubic_monic( -4.0, -6.0, 1.0, 5.0, 27.0, 27.0 ) ); // Extrema is 26.426101068499275
+}
+
+TEST( MathTest, ZCPositiveRootCullCubicMonic )
+{
+	EXPECT_DOUBLE_EQ( 5.0, zc_positive_root_cull_cubic_monic( -4.0, -6.0, 1.0, 5.0, 1.0, 0.0 ) );
+	EXPECT_DOUBLE_EQ( 5.0, zc_positive_root_cull_cubic_monic( -4.0, -6.0, 1.0, 5.0, 1.0, 26.0 ) ); // Extrema is 26.426101068499275
+	EXPECT_DOUBLE_EQ( infinity, zc_positive_root_cull_cubic_monic( -4.0, -6.0, 1.0, 5.0, 1.0, 27.0 ) ); // Extrema is 26.426101068499275
+	EXPECT_DOUBLE_EQ( 5.0, zc_positive_root_cull_cubic_monic( -4.0, -6.0, 1.0, 5.0, 27.0, 27.0 ) ); // Extrema is 26.426101068499275
+
+	EXPECT_DOUBLE_EQ( infinity, zc_positive_root_cull_cubic_monic( -4.0, -6.0, 1.0, -5.0, 1.0, 0.0 ) );
+	EXPECT_DOUBLE_EQ( infinity, zc_positive_root_cull_cubic_monic( -4.0, -6.0, 1.0, -5.0, 1.0, 26.0 ) ); // Extrema is 26.426101068499275
+	EXPECT_DOUBLE_EQ( infinity, zc_positive_root_cull_cubic_monic( -4.0, -6.0, 1.0, -5.0, 1.0, 27.0 ) ); // Extrema is 26.426101068499275
+	EXPECT_DOUBLE_EQ( infinity, zc_positive_root_cull_cubic_monic( -4.0, -6.0, 1.0, -5.0, 27.0, 27.0 ) ); // Extrema is 26.426101068499275
+}
+
+TEST( MathTest, ZCRootCubic )
+{
+	EXPECT_DOUBLE_EQ( 0.7073498763104491, zc_root_cubic( -2.25, -6.5, -7.0, 9.0 ) );
+	EXPECT_DOUBLE_EQ( 0.7073498763104491, zc_root_cubic( 2.25, 6.5, 7.0, -9.0 ) );
+	EXPECT_DOUBLE_EQ( 0.021503603166631264, zc_root_cubic( 1.0, 2000.0, 50.0, -2.0 ) ); // Near quadratic but Halley small root converges
+	EXPECT_DOUBLE_EQ( 0.04650293690494123, zc_root_cubic( 1.0, 2000.0, -50.0, -2.0 ) ); // Near quadratic
+}
+
+TEST( MathTest, MinRootCubicMonicAnalytical )
+{
+	EXPECT_DOUBLE_EQ( 0.15417149518144127, min_root_cubic_monic_boundary_analytical( 3.0, 6.0, -1.0 ) );
+	EXPECT_DOUBLE_EQ( 0.609695494016669, min_root_cubic_monic_boundary_analytical( 3.0, 6.0, -5.0 ) );
+	EXPECT_DOUBLE_EQ( 0.57943586314575579, min_root_cubic_monic_boundary_analytical( 0.2, 3.0, -2.0 ) );
 }
 
 TEST( MathTest, MinRootCubic )
 {
-	EXPECT_NEAR( 0.7073498763104409, min_root_cubic_lower( -2.25, -6.5, -7.0, 9.0 ), 1.0e-14 );
+	EXPECT_DOUBLE_EQ( 0.7073498763104491, min_root_cubic_lower( -2.25, -6.5, -7.0, 9.0 ) );
 	EXPECT_DOUBLE_EQ( 0.0, min_root_cubic_lower( -2.25, -6.5, -7.0, -0.01 ) ); // d < 0 => Precision loss
-	EXPECT_NEAR( 0.7073498763104409, min_root_cubic_upper( 2.25, 6.5, 7.0, -9.0 ), 1.0e-14 );
+
+	EXPECT_DOUBLE_EQ( 0.7073498763104491, min_root_cubic_upper( 2.25, 6.5, 7.0, -9.0 ) );
 	EXPECT_DOUBLE_EQ( 0.0, min_root_cubic_upper( 2.25, 6.5, 7.0, 0.01 ) ); // d > 0 => Precision loss
-	EXPECT_DOUBLE_EQ( 1.359787450380789, min_root_cubic_both( -2.0, 3.0, -7.0, 9.0, 9.0 ) );
-	EXPECT_DOUBLE_EQ( 1.4175965758288351, min_root_cubic_both( -2.0, 4.0, -8.0, 9.0, 9.0 ) );
-	EXPECT_NEAR( 0.29037158997385715, min_root_cubic_both( -9.0, 3.0, -7.0, 2.0, 2.0 ), 1.0e-15 );
-	EXPECT_DOUBLE_EQ( 1.060647778684131, min_root_cubic_both( -9.0, 3.0, 6.0, 1.0, 1.0 ) );
+
+	EXPECT_DOUBLE_EQ( 1.359787450380789, min_root_cubic_both( -2.0, 3.0, -7.0, 9.0, -9.0 ) );
+	EXPECT_DOUBLE_EQ( 1.4175965758288351, min_root_cubic_both( -2.0, 4.0, -8.0, 9.0, -9.0 ) );
+	EXPECT_DOUBLE_EQ( 0.29037158997385715, min_root_cubic_both( -9.0, 3.0, -7.0, 2.0, -2.0 ) );
+	EXPECT_DOUBLE_EQ( 1.060647778684131, min_root_cubic_both( -9.0, 3.0, 6.0, 1.0, -3.0 ) );
 }

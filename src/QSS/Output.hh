@@ -199,6 +199,7 @@ public: // Methods
 		for ( size_type i = 0, e = t_.size(); i < e; ++i ) {
 			s << t_[ i ] << '\t' << v_[ i ] << '\n';
 		}
+		s.close();
 		t_.clear();
 		v_.clear();
 	}
