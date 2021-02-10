@@ -80,6 +80,7 @@ TEST( fmu_Variable_ZCd1Test, BouncingBall )
 	options::qss = options::QSS::QSS1;
 	options::specified::qss = true;
 	options::eidd = true;
+	options::specified::eidd = true;
 	options::rTol = 1.0;
 	options::specified::rTol = true;
 	options::aTol = 1.0;

@@ -88,6 +88,7 @@ TEST( fmu_Variable_ZC3Test, BouncingBall )
 	options::qss = options::QSS::QSS3;
 	options::specified::qss = true;
 	options::eidd = false;
+	options::specified::eidd = true;
 	options::rTol = 1.0;
 	options::specified::rTol = true;
 	options::aTol = 1.0;

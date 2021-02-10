@@ -1162,7 +1162,7 @@ zc_root_cubic( T a, T b, T c, T const d, T zTol = T( 1e-6 ), T xMag = T( 0 ) )
 		// Handle near-quadratic case where analytical cubic solution gets degraded
 		if ( std::abs( a ) > T( 1e3 ) ) { // Near-quadratic
 			T root( zc_root_quadratic( a, b, c, zTol, xMag ) );
-			if ( root != inf< T >() ) { // Refine root
+			if ( ( root != inf< T >() ) && ( root > T( 0 ) ) ) { // Refine root
 				Root< T > const quadratic_root( iterative_positive_root_cubic_monic( a, b, c, root, zTol ) );
 				if ( quadratic_root ) return quadratic_root.x; // Assume safe not to cull since zc_root_quadratic culls
 			}
@@ -1296,10 +1296,10 @@ min_root_cubic_monic_boundary_analytical( T const a, T const b, T const c, T con
 		}
 	}
 
-//	return nonnegative( root ); // No crossing direction test // No root refinement
-//	return cubic_cull( a, b, root ); // Crossing direction test // No root refinement
-//	return iterative_positive_root_cubic_monic( a, b, c, cubic_cull( a, b, root ), zTol ).x; // Root refinement // Crossing direction test
-	return iterative_positive_root_cubic_monic( a, b, c, nonnegative( root ), zTol ).x; // Root refinement // No crossing direction test
+	root = nonnegative( root ); // No crossing direction test
+//	root = cubic_cull( a, b, root ); // Crossing direction test
+	if ( root > T( 0 ) ) root = iterative_positive_root_cubic_monic( a, b, c, root, zTol ).x; // Root refinement
+	return root;
 }
 
 // Min Nonnegative Root of Lower Boundary Cubic Equation a x^3 + b x^2 + c x + d
@@ -1338,7 +1338,7 @@ min_root_cubic_lower( T a, T b, T c, T const d, T zTol = T( 1e-6 ) )
 		// Handle near-quadratic case where analytical cubic solution gets degraded
 		if ( std::abs( a ) > T( 1e3 ) ) { // Near-quadratic
 			T root( min_root_quadratic_upper( a, b, c ) );
-			if ( root != inf< T >() ) { // Refine root
+			if ( ( root != inf< T >() ) && ( root > T( 0 ) ) )  { // Refine root
 				Root< T > const quadratic_root( iterative_positive_root_cubic_monic( a, b, c, root, zTol ) );
 				if ( quadratic_root ) return quadratic_root.x;
 			}
@@ -1385,7 +1385,7 @@ min_root_cubic_upper( T a, T b, T c, T const d, T zTol = T( 1e-6 ) )
 		// Handle near-quadratic case where analytical cubic solution gets degraded
 		if ( std::abs( a ) > T( 1e3 ) ) { // Near-quadratic
 			T root( min_root_quadratic_upper( a, b, c ) );
-			if ( root != inf< T >() ) { // Refine root
+			if ( ( root != inf< T >() ) && ( root > T( 0 ) ) )  { // Refine root
 				Root< T > const quadratic_root( iterative_positive_root_cubic_monic( a, b, c, root, zTol ) );
 				if ( quadratic_root ) return quadratic_root.x;
 			}

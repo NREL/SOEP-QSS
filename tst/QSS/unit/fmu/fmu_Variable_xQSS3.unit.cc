@@ -107,6 +107,7 @@ TEST( fmu_Variable_xQSS3Test, Achilles )
 	options::qss = options::QSS::xQSS3;
 	options::specified::qss = true;
 	options::eidd = false;
+	options::specified::eidd = true;
 	options::rTol = 100.0;
 	options::specified::rTol = true;
 	options::aTol = 1.0;

@@ -91,6 +91,7 @@ TEST( fmu_Variable_xQSS1Test, Achilles )
 	options::qss = options::QSS::xQSS1;
 	options::specified::qss = true;
 	options::eidd = false;
+	options::specified::eidd = true;
 	options::rTol = 100.0;
 	options::specified::rTol = true;
 	options::aTol = 1.0;

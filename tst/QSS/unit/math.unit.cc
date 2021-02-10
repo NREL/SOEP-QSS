@@ -388,8 +388,7 @@ TEST( MathTest, IterativeSmallPositiveRootCubicMonic )
 
 TEST( MathTest, NewtonPositiveRootCubicMonic )
 {
-	EXPECT_EQ( 0.0, newton_positive_root_cubic_monic( -3.0, 6.0, 1.0, 0.0 ).x );
-	EXPECT_FALSE( newton_positive_root_cubic_monic( -3.0, 6.0, 1.0, 0.0  ).valid );
+	EXPECT_FALSE( newton_positive_root_cubic_monic( -3.0, 6.0, 1.0, 1.0 ).valid );
 	EXPECT_DOUBLE_EQ( 1.32218535462608559, newton_positive_root_cubic_monic( -3.0, 6.0, -5.0, 1.3 ).x );
 	EXPECT_TRUE( newton_positive_root_cubic_monic( -3.0, 6.0, -5.0, 1.3 ).valid );
 	EXPECT_DOUBLE_EQ( 2.0915403681203739, newton_positive_root_cubic_monic( -0.2, -3.0, -2.0, 1.9 ).x );
@@ -397,8 +396,7 @@ TEST( MathTest, NewtonPositiveRootCubicMonic )
 
 TEST( MathTest, HalleyPositiveRootCubicMonic )
 {
-	EXPECT_EQ( 0.0, halley_positive_root_cubic_monic( -3.0, 6.0, 1.0, 0.0 ).x );
-	EXPECT_FALSE( halley_positive_root_cubic_monic( -3.0, 6.0, 1.0, 0.0  ).valid );
+	EXPECT_FALSE( halley_positive_root_cubic_monic( -3.0, 6.0, 1.0, 1.0 ).valid );
 	EXPECT_DOUBLE_EQ( 1.32218535462608559, halley_positive_root_cubic_monic( -3.0, 6.0, -5.0, 1.3 ).x );
 	EXPECT_TRUE( halley_positive_root_cubic_monic( -3.0, 6.0, -5.0, 1.3 ).valid );
 	EXPECT_DOUBLE_EQ( 2.0915403681203739, halley_positive_root_cubic_monic( -0.2, -3.0, -2.0, 1.9 ).x );
@@ -406,8 +404,7 @@ TEST( MathTest, HalleyPositiveRootCubicMonic )
 
 TEST( MathTest, IterativePositiveRootCubicMonic )
 {
-	EXPECT_EQ( 0.0, iterative_positive_root_cubic_monic( -3.0, 6.0, 1.0, 0.0 ).x );
-	EXPECT_FALSE( iterative_positive_root_cubic_monic( -3.0, 6.0, 1.0, 0.0  ).valid );
+	EXPECT_FALSE( iterative_positive_root_cubic_monic( -3.0, 6.0, 1.0, 1.0 ).valid );
 	EXPECT_DOUBLE_EQ( 1.32218535462608559, iterative_positive_root_cubic_monic( -3.0, 6.0, -5.0, 1.3 ).x );
 	EXPECT_TRUE( iterative_positive_root_cubic_monic( -3.0, 6.0, -5.0, 1.3 ).valid );
 	EXPECT_DOUBLE_EQ( 2.0915403681203739, iterative_positive_root_cubic_monic( -0.2, -3.0, -2.0, 1.9 ).x );

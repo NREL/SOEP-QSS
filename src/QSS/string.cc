@@ -45,7 +45,7 @@ namespace QSS {
 
 // Globals
 std::string const delta( "Δ" );
-std::string const x_delta( "*" + delta  );
+std::string const x_delta( "*" + delta );
 std::string const x_delta_2( x_delta + "²" );
 std::string const x_delta_3( x_delta + "³" );
 std::string const x_delta_4( x_delta + "⁴" );

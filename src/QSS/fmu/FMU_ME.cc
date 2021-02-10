@@ -250,11 +250,7 @@ namespace fmu {
 
 		// Check FMU capabilities includes directional derivatives
 		if ( bool( fmi2_import_get_capability( fmu, fmi2_me_providesDirectionalDerivatives ) ) ) { // FMU supports directional derivatives
-			if ( options::specified::eidd ) {
-				if ( ! options::eidd ) {
-					std::cerr << "\nInfo: " + name + " Option --no-eidd specified: FMU-ME directional derivative support is present but will not be used for event indicators" << std::endl;
-				}
-			} else { // Use directional derivatives by default
+			if ( ! options::specified::eidd ) { // Use directional derivatives by default
 				options::eidd = true;
 			}
 		} else { // FMU doesn't support directional derivatives
