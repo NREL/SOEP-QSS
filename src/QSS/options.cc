@@ -54,7 +54,7 @@ double aTol( 1.0e-6 ); // Absolute tolerance
 double aFac( 0.01 ); // Absolute tolerance factor
 double zTol( 1.0e-6 ); // Zero-crossing/root tolerance
 double zMul( 8.0 ); // Zero-crossing tolerance bump multiplier
-double zFac( 1.01 ); // Zero-crossing tolerance factor
+double zFac( 8.0 ); // Zero-crossing tolerance factor
 double dtMin( 0.0 ); // Min time step (s)
 double dtMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Max time step (s)
 double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Inf time step (s)
@@ -139,7 +139,7 @@ help_display()
 	std::cout << " --aFac=FAC       Absolute tolerance factor  [0.01]" << '\n';
 	std::cout << " --zTol=TOL       Zero-crossing/root tolerance  [1e-6|FMU]" << '\n';
 	std::cout << " --zMul=MUL       Zero-crossing tolerance bump multiplier  [8]" << '\n';
-	std::cout << " --zFac=FAC       Zero-crossing tolerance factor  [1.01]" << '\n';
+	std::cout << " --zFac=FAC       Zero-crossing tolerance factor  [8]" << '\n';
 	std::cout << " --dtMin=STEP     Min time step (s)  [0]" << '\n';
 	std::cout << " --dtMax=STEP     Max time step (s)  [infinity]" << '\n';
 	std::cout << " --dtInf=STEP     Deactivation control time step (s)  [infinity]" << '\n';
@@ -154,7 +154,7 @@ help_display()
 	std::cout << " --refine         Refine FMU zero-crossing roots" << '\n';
 	std::cout << " --prune          Prune variables with no observers" << '\n';
 	std::cout << " --perfect        Perfect FMU-ME connection sync" << '\n';
-	std::cout << " --steps          Generate step count file" << '\n';
+	std::cout << " --steps          Generate step count file for FMU" << '\n';
 	std::cout << " --log=LEVEL      Logging level  [warning]" << '\n';
 	std::cout << "       fatal" << '\n';
 	std::cout << "       error" << '\n';

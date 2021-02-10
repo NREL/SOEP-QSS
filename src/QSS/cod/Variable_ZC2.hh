@@ -153,7 +153,7 @@ public: // Methods
 	void
 	init() override final
 	{
-		// Initialize trajectory specs
+		// Initialize specs
 		x_0_ = f_.x( tQ );
 		x_mag_ = std::abs( x_0_ );
 		x_1_ = f_.x1( tQ );
@@ -348,6 +348,7 @@ private: // Methods
 				Crossing const crossing_check( crossing_type( sign_old_, sign_new ) );
 				if ( has( crossing_check ) ) { // Crossing type is relevant
 					crossing = crossing_check;
+					detected_crossing_ = true;
 					shift_ZC( tZ = tX );
 				} else {
 					set_tZ();

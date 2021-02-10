@@ -665,6 +665,28 @@ simulate( std::string const & model )
 #ifdef _OPENMP
 	std::cout << "Simulation wall time: " << wall_time_end - wall_time_beg << " (s)" << std::endl; // Wall time
 #endif
+	if ( options::output::s ) { // Statistics
+//		if ( n_QSS_events > 0 ) {
+//			std::cout << "\nQSS Requantization Events:" << std::endl;
+//			for ( Variable const * var : vars ) {
+//				if ( c_QSS_events[ var ] > 0u ) std::cout << ' ' << var->name() << ' ' << c_QSS_events[ var ] << " (" <<  100u * c_QSS_events[ var ] / n_QSS_events << "%)" << std::endl;
+//			}
+//		}
+		if ( n_ZC_events > 0 ) {
+//			std::cout << "\nQSS Zero-Crossing Events:" << std::endl;
+			bool any_detected_crossings( false );
+			for ( Variable const * var : vars_ZC ) {
+//				if ( c_ZC_events[ var ] > 0u ) std::cout << ' ' << var->name() << ' ' << c_ZC_events[ var ] << " (" <<  100u * c_ZC_events[ var ] / n_ZC_events << "%)" << std::endl;
+				if ( var->detected_crossing() ) any_detected_crossings = true;
+			}
+			if ( any_detected_crossings ) {
+				std::cout << "\nQSS Zero-Crossing Variables with Unpredicted Zero Crossings Detected:" << std::endl;
+				for ( Variable const * var : vars_ZC ) {
+					if ( var->detected_crossing() ) std::cout << ' ' << var->name() << std::endl;
+				}
+			}
+		}
+	}
 
 	// QSS cleanup
 	for ( auto & var : vars ) delete var;

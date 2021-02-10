@@ -425,6 +425,15 @@ public: // Predicate
 		return t - options::dtND >= t0();
 	}
 
+	// Unpredicted Crossing Detected?
+	virtual
+	bool
+	detected_crossing() const
+	{
+		assert( false ); // Missing override
+		return false;
+	}
+
 public: // Property
 
 	// Order

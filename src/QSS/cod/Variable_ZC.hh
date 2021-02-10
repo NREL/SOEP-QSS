@@ -100,9 +100,18 @@ public: // Predicate
 		return true;
 	}
 
+	// Unpredicted Crossing Detected?
+	bool
+	detected_crossing() const override final
+	{
+		return detected_crossing_;
+	}
+
+protected: // Predicate
+
 	// Has Crossing Type?
 	bool
-	has( Crossing const c )
+	has( Crossing const c ) const
 	{
 		return ( std::find( crossings_.begin(), crossings_.end(), c ) != crossings_.end() );
 	}
@@ -148,6 +157,9 @@ public: // Methods
 			std::cerr << "Error: Zero-crossing variable has observers: " << name() << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
+
+		detected_crossing_ = false;
+		sign_old_ = 0; // Sign of zero-crossing function before advance
 
 		// Initialize observees
 		init_observees();
@@ -318,6 +330,7 @@ protected: // Static Methods
 		} else if ( val2 == T( 0 ) ) {
 			return ( val1 > T( 0 ) ? Crossing::DnPZ : Crossing::UpNZ );
 		} else {
+			assert( val1 != val2 );
 			return ( val1 > T( 0 ) ? Crossing::DnPN : Crossing::UpNP );
 		}
 	}
@@ -350,6 +363,7 @@ protected: // Data
 	bool zChatter_{ false }; // Zero-crossing chatter control active?
 	Real x_mag_{ 0.0 }; // Max trajectory magnitude since last zero crossing
 	bool check_crossing_{ false }; // Check for zero crossing?
+	bool detected_crossing_{ false }; // Unpredicted zero crossing detected?
 	int sign_old_{ 0 }; // Sign of zero-crossing function before advance
 	Function f_; // Zero-crossing function
 

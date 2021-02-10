@@ -169,6 +169,7 @@ public: // Methods
 		init_observees();
 
 		// Initialize specs
+		detected_crossing_ = false;
 		x_0_ = z_0();
 		x_mag_ = std::abs( x_0_ );
 		x_1_ = p_1();
@@ -445,6 +446,7 @@ private: // Methods
 				Crossing const crossing_check( crossing_type( sign_old_, sign_new ) );
 				if ( has( crossing_check ) ) { // Crossing type is relevant
 					crossing = crossing_check;
+					detected_crossing_ = true;
 					shift_ZC( tZ = tX );
 				} else {
 					set_tZ();

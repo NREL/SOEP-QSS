@@ -2745,8 +2745,16 @@ namespace fmu {
 				}
 				if ( n_ZC_events > 0 ) {
 					std::cout << "\nQSS Zero-Crossing Events:" << std::endl;
+					bool any_detected_crossings( false );
 					for ( Variable const * var : vars_ZC ) {
 						if ( c_ZC_events[ var ] > 0u ) std::cout << ' ' << var->name() << ' ' << c_ZC_events[ var ] << " (" <<  100u * c_ZC_events[ var ] / n_ZC_events << "%)" << std::endl;
+						if ( var->detected_crossing() ) any_detected_crossings = true;
+					}
+					if ( any_detected_crossings ) {
+						std::cout << "\nQSS Zero-Crossing Variables with Unpredicted Zero Crossings Detected:" << std::endl;
+						for ( Variable const * var : vars_ZC ) {
+							if ( var->detected_crossing() ) std::cout << ' ' << var->name() << std::endl;
+						}
 					}
 				}
 			}
