@@ -122,7 +122,7 @@ public: // Types
 	using Conditionals = std::vector< Conditional< Variable > * >;
 	using FMU_Vars = std::unordered_map< FMUVarPtr, FMU_Variable, FMUVarPtrHash >; // Map from FMU variables to FMU_Variable objects
 	using FMU_Idxs = std::unordered_map< size_type, Variable * >; // Map from FMU variable indexes to QSS Variables
-	using SmoothTokenOutput = Output_T< SmoothToken >;
+	using SmoothTokenOutput = Output< SmoothToken >;
 	using Counts = std::unordered_map< Variable const *, size_type >; // Map from Variables to counters
 
 public: // Creation
@@ -527,8 +527,8 @@ public: // Data
 	FMU_Idxs fmu_idxs; // Map from FMU variable index to QSS variable
 	Ref_Var qss_var_of_ref;
 	Var_Refs out_var_refs;
-	std::vector< Output > f_outs; // FMU QSS variable outputs
-	std::vector< Output > l_outs; // FMU local variable outputs
+	std::vector< Output<> > f_outs; // FMU QSS variable outputs
+	std::vector< Output<> > l_outs; // FMU local variable outputs
 	std::vector< SmoothTokenOutput > k_qss_outs; // FMU-QSS QSS variable smooth token outputs
 	int order_max_CI{ 0 }; // Connection input QSS variable max order
 	int order_max_NC{ 0 }; // Non-zero-crossing non-connection QSS variable max order

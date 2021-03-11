@@ -46,6 +46,7 @@
 #include <QSS/fmu/Triggers.hh>
 #include <QSS/fmu/Triggers_ZC.hh>
 #include <QSS/fmu/Variable_all.hh>
+#include <QSS/fmu/Variable_name_decoration.hh>
 #include <QSS/BinOptimizer.hh>
 #include <QSS/container.hh>
 #include <QSS/cpu_time.hh>
@@ -1928,6 +1929,9 @@ namespace fmu {
 		std::string const output_dir( options::have_multiple_models() ? name : std::string() );
 		OutputFilter const output_filter( options::var );
 		if ( ( options::output::R || options::output::Z || options::output::D || options::output::S ) && ( options::output::X || options::output::Q ) ) { // QSS t0 outputs
+#ifdef _WIN32
+			name_decorate( vars );
+#endif
 			for ( auto var : vars ) {
 				if ( output_filter.fmu( var->name() ) ) {
 					var->init_out( output_dir );
@@ -1938,21 +1942,35 @@ namespace fmu {
 		if ( options::output::F && ( n_f_outs > 0u ) ) { // FMU QSS variable t0 outputs
 			f_outs.reserve( n_f_outs );
 			for ( auto const & var : f_outs_vars ) { // FMU QSS variables
-				f_outs.emplace_back( output_dir, var->name(), 'f' );
+				f_outs.emplace_back( output_dir, var->name() + var->decoration(), 'f' );
 				f_outs.back().append( t, var->x( t ) );
 			}
 		}
 		if ( options::output::L && ( n_l_outs > 0u ) ) { // FMU local variable t0 outputs
+#ifdef _WIN32
+			std::vector< std::string > names;
+			for ( auto const & e : fmu_outs ) {
+				FMU_Variable const & var( e.second );
+				names.emplace_back( fmi2_import_get_variable_name( var.var ) );
+			}
+			std::unordered_map< std::string, std::string > decs;
+			name_decorations( names, decs );
+#endif
 			l_outs.reserve( n_l_outs );
 			for ( auto const & e : fmu_outs ) {
 				FMU_Variable const & var( e.second );
-				l_outs.emplace_back( output_dir, fmi2_import_get_variable_name( var.var ), 'f' );
+				std::string const var_name( fmi2_import_get_variable_name( var.var ) );
+#ifdef _WIN32
+				l_outs.emplace_back( output_dir, var_name, 'f', decs[ var_name ] );
+#else
+				l_outs.emplace_back( output_dir, var_name, 'f' );
+#endif
 				l_outs.back().append( t, get_as_real( var ) );
 			}
 		}
 		if ( doKOut ) { // FMU-QSS t0 smooth token outputs
 			for ( Variable * var : fmu_qss_qss_outs ) {
-				k_qss_outs.emplace_back( output_dir, var->name(), 'k' );
+				k_qss_outs.emplace_back( output_dir, var->name() + var->decoration(), 'k' );
 				k_qss_outs.back().append( t, var->k( t ) );
 			}
 //			for ( FMU_Variable const & fmu_var : fmu_qss_fmu_outs ) {

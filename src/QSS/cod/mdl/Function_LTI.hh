@@ -460,7 +460,7 @@ public: // Methods
 			switch ( v->order() ) {
 			case 0:
 				++iBeg1;
-#if __cplusplus >= 201703L //C++17
+#if (__cplusplus >= 201703L) //C++17
 				[[fallthrough]];
 #elif defined(__clang__)
 				[[clang::fallthrough]];
@@ -469,7 +469,7 @@ public: // Methods
 #endif
 			case 1:
 				++iBeg2;
-#if __cplusplus >= 201703L //C++17
+#if (__cplusplus >= 201703L) //C++17
 				[[fallthrough]];
 #elif defined(__clang__)
 				[[clang::fallthrough]];
@@ -487,7 +487,7 @@ public: // Methods
 			case 0:
 				++iBeg1;
 				++ioBeg1;
-#if __cplusplus >= 201703L //C++17
+#if (__cplusplus >= 201703L) //C++17
 				[[fallthrough]];
 #elif defined(__clang__)
 				[[clang::fallthrough]];
@@ -497,7 +497,7 @@ public: // Methods
 			case 1:
 				++iBeg2;
 				++ioBeg2;
-#if __cplusplus >= 201703L //C++17
+#if (__cplusplus >= 201703L) //C++17
 				[[fallthrough]];
 #elif defined(__clang__)
 				[[clang::fallthrough]];
@@ -527,7 +527,7 @@ public: // Methods
 			switch ( v->order() ) {
 			case 0:
 				++iBeg1;
-#if __cplusplus >= 201703L //C++17
+#if (__cplusplus >= 201703L) //C++17
 				[[fallthrough]];
 #elif defined(__clang__)
 				[[clang::fallthrough]];
@@ -536,7 +536,7 @@ public: // Methods
 #endif
 			case 1:
 				++iBeg2;
-#if __cplusplus >= 201703L //C++17
+#if (__cplusplus >= 201703L) //C++17
 				[[fallthrough]];
 #elif defined(__clang__)
 				[[clang::fallthrough]];
@@ -555,7 +555,7 @@ public: // Methods
 			case 0:
 				++iBeg1;
 				++ioBeg1;
-#if __cplusplus >= 201703L //C++17
+#if (__cplusplus >= 201703L) //C++17
 				[[fallthrough]];
 #elif defined(__clang__)
 				[[clang::fallthrough]];
@@ -565,7 +565,7 @@ public: // Methods
 			case 1:
 				++iBeg2;
 				++ioBeg2;
-#if __cplusplus >= 201703L //C++17
+#if (__cplusplus >= 201703L) //C++17
 				[[fallthrough]];
 #elif defined(__clang__)
 				[[clang::fallthrough]];

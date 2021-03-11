@@ -47,6 +47,7 @@ namespace QSS {
 namespace fmu {
 
 // EventIndicator Global Lookup by FMU-ME Context
+using AllEventIndicators = std::vector< FMUEventIndicators >;
 AllEventIndicators allEventIndicators;
 
 // XML Callbacks Global

@@ -980,10 +980,10 @@ public: // Methods: Output
 
 	// Initialize Outputs
 	void
-	init_out()
+	init_out( std::string const & dec = std::string() )
 	{
-		if ( options::output::X ) out_x_.init( name(), 'x' );
-		if ( options::output::Q ) out_q_.init( name(), 'q' );
+		if ( options::output::X ) out_x_.init( name(), 'x', dec );
+		if ( options::output::Q ) out_q_.init( name(), 'q', dec );
 	}
 
 	// Output at Time t
@@ -1090,8 +1090,8 @@ private: // Data
 	bool observes_{ false }; // Has observees?
 
 	// Outputs
-	Output out_x_; // Continuous rep output
-	Output out_q_; // Quantized rep output
+	Output<> out_x_; // Continuous rep output
+	Output<> out_q_; // Quantized rep output
 
 }; // Variable
 

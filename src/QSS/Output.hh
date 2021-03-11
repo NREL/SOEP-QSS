@@ -44,14 +44,19 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <string>
+#include <type_traits>
 #include <vector>
+#if (__cplusplus >= 201703L) && defined(_MSC_VER) // C++17 or later // VC++ has to_chars for doubles but not GCC or Clang yet
+#include <charconv>
+#endif
 
 namespace QSS {
 
-// QSS Output Signal Class Template
+// QSS Output Signal Class
 template< typename Value = double >
-class Output_T final
+class Output final
 {
 
 public: // Types
@@ -64,10 +69,27 @@ public: // Types
 public: // Creation
 
 	// Default Constructor
-	Output_T() = default;
+	Output() = default;
 
 	// Name + Type Constructor
-	Output_T(
+	Output(
+	 std::string const & var,
+	 char const type,
+	 std::string const & dec,
+	 bool const do_init = true
+	) :
+	 dec_( dec ),
+	 file_( var + dec + '.' + type + ".out" )
+	{
+		if ( do_init ) {
+			t_.reserve( capacity_ );
+			v_.reserve( capacity_ );
+			std::ofstream( file_, std::ios_base::binary | std::ios_base::out );
+		}
+	}
+
+	// Name + Type Constructor
+	Output(
 	 std::string const & var,
 	 char const type,
 	 bool const do_init = true
@@ -82,12 +104,14 @@ public: // Creation
 	}
 
 	// Directory + Name + Type Constructor
-	Output_T(
+	Output(
 	 std::string const & dir,
 	 std::string const & var,
-	 char const type
+	 char const type,
+	 std::string const & dec = std::string()
 	) :
-	 file_( var + '.' + type + ".out" )
+	 dec_( dec ),
+	 file_( var + dec + '.' + type + ".out" )
 	{
 		t_.reserve( capacity_ );
 		v_.reserve( capacity_ );
@@ -102,7 +126,7 @@ public: // Creation
 	}
 
 	// Destructor
-	~Output_T()
+	~Output()
 	{
 		assert( t_.size() == v_.size() );
 		assert( t_.size() < capacity_ );
@@ -120,14 +144,23 @@ public: // Property
 
 public: // Methods
 
+	// Decoration Set
+	void
+	decorate( std::string const & dec = std::string() )
+	{
+		dec_ = dec;
+	}
+
 	// Initialize Without Output Directory
 	void
 	init(
 	 std::string const & var,
-	 char const type
+	 char const type,
+	 std::string const & dec = std::string() // Decoration
 	)
 	{
-		file_ = std::string( var + '.' + type + ".out" );
+		if ( !dec.empty() ) dec_ = dec;
+		file_ = std::string( var + dec_ + '.' + type + ".out" );
 		t_.clear();
 		v_.clear();
 		t_.reserve( capacity_ );
@@ -140,10 +173,12 @@ public: // Methods
 	init(
 	 std::string const & dir,
 	 std::string const & var,
-	 char const type
+	 char const type,
+	 std::string const & dec = std::string() // Decoration
 	)
 	{
-		file_ = std::string( var + '.' + type + ".out" );
+		if ( !dec.empty() ) dec_ = dec;
+		file_ = std::string( var + dec_ + '.' + type + ".out" );
 		t_.clear();
 		v_.clear();
 		t_.reserve( capacity_ );
@@ -197,30 +232,101 @@ public: // Methods
 		std::ofstream s( file_, std::ios_base::binary | std::ios_base::out | std::ios_base::app );
 		s << std::setprecision( 15 );
 		for ( size_type i = 0, e = t_.size(); i < e; ++i ) {
-			s << t_[ i ] << '\t' << v_[ i ] << '\n';
+			s << t_[ i ] << ' ' << v_[ i ] << '\n';
 		}
 		s.close();
 		t_.clear();
 		v_.clear();
 	}
 
+private: // Static Functions
+
+	// Type-Specific Precision and Width Scientific-Formatted String of a Number
+	static
+	std::string
+	sci( double const num )
+	{
+#if (__cplusplus >= 201703L) && (_MSC_VER >= 1922) // C++17 or later // VC++2019 16.2 or later has to_chars with scientific support but not GCC or Clang yet
+		std::string num_string( 23, ' ' );
+		char * xb( num_string.data() + 1u );
+		char * xe( xb + 22u );
+		std::to_chars_result const x_res( std::to_chars( ( std::signbit( num ) ? xb : xb + 1u ), xe, num, std::chars_format::scientific, 15 ) );
+		if ( x_res.ec == std::errc{} ) return num_string; // Fall through on error
+#endif
+		std::ostringstream num_stream;
+		num_stream << std::right << std::uppercase << std::scientific << std::setprecision( 15 ) << std::setw( 23 ) << num;
+		return num_stream.str();
+	}
+
 private: // Static Data
 
-	static size_type const capacity_{ 2048 }; // Buffer size
+	static size_type constexpr capacity_{ 2048 }; // Buffer size
 
 private: // Data
 
+	std::string dec_; // File name decoration
 	std::string file_; // File name
 	Times t_; // Time buffer
 	Values v_; // Value buffer
 
 }; // Output
 
-	// Static Data Member Template Definitions
-	template< typename Value > typename Output_T< Value >::size_type const Output_T< Value >::capacity_;
+#if (__cplusplus >= 201703L) && defined(_MSC_VER) // C++17 or later // VC++ has to_chars for doubles but not GCC or Clang yet
 
-// Types
-using Output = Output_T< double >;
+	// Flush Buffers to File: double Values Specialization
+	void
+	Output< double >::
+	flush()
+	{
+		assert( t_.size() == v_.size() );
+		assert( t_.size() <= capacity_ );
+		if ( t_.size() == 0u ) return;
+		std::ofstream s( file_, std::ios_base::binary | std::ios_base::out | std::ios_base::app );
+		std::string tv_string( 48u, ' ' );
+		tv_string[ 47 ] = '\n';
+		char * const t0( tv_string.data() );
+		char * tb( t0 + 1u );
+		char * tc( tb + 1u );
+		char * te( tb + 22u );
+		char * vb( t0 + 25u );
+		char * vc( vb + 1u );
+		char * ve( vb + 22u );
+		int const precision( 15 );
+		for ( size_type i = 0, e = t_.size(); i < e; ++i ) {
+			Time const t( t_[ i ] );
+			char * tB;
+			if ( std::signbit( t ) ) {
+				tB = tb;
+			} else {
+				tB = tc;
+				*tb = ' ';
+			}
+			std::to_chars_result const t_res( std::to_chars( tB, te, t, std::chars_format::scientific, precision ) );
+			if ( t_res.ec != std::errc{} ) tv_string.replace( 0u, 23u, sci( t ) ); // Error: fallback code
+			char * tp( t_res.ptr );
+			while ( tp < te ) *(tp++) = ' ';
+
+			double const v( v_[ i ] );
+			char * vB;
+			if ( std::signbit( v ) ) {
+				vB = vb;
+			} else {
+				vB = vc;
+				*vb = ' ';
+			}
+			std::to_chars_result const v_res( std::to_chars( vB, ve, v, std::chars_format::scientific, precision ) );
+			if ( v_res.ec != std::errc{} ) tv_string.replace( 24u, 23u, sci( v ) ); // Error: fallback code
+			char * vp( v_res.ptr );
+			while ( vp < ve ) *(vp++) = ' ';
+
+			s << tv_string;
+		}
+		s.close();
+		t_.clear();
+		v_.clear();
+	}
+
+#endif
 
 } // QSS
 

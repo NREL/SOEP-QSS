@@ -1,4 +1,4 @@
-// FMU-ME Event Indicator Support
+// FMU-Based Variable Name Decoration for Case-Insentive File Systems
 //
 // Project: QSS Solver
 //
@@ -33,87 +33,34 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// FMI Library Headers
-#include <fmilib.h>
+#ifndef QSS_fmu_Variable_name_decoration_hh_INCLUDED
+#define QSS_fmu_Variable_name_decoration_hh_INCLUDED
+
+// QSS Headers
+#include <QSS/fmu/Variable.fwd.hh>
 
 // C++ Headers
-#include <cstdlib>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
 namespace QSS {
 namespace fmu {
 
-// Event Indicator XML Entry Specs
-struct EventIndicator final
-{
-	// Types
-	using size_type = std::size_t;
-
-	// Data
-	size_type index{ 0u };
-	std::vector< size_type > reverseDependencies;
-};
-
-// FMU-ME EventIndicators Collection
-struct FMUEventIndicators final
-{
-	// Types
-	using EventIndicators = std::vector< EventIndicator >;
-
-	// Constructor
-	FMUEventIndicators( void * context ) :
-	 context( context )
-	{}
-
-	// Data
-	EventIndicators eventIndicators;
-	bool inEventIndicators{ false };
-	void * context{ nullptr }; // Context pointer to its FMU-ME
-};
-
-// EventIndicator Global Lookup by FMU-ME Context
 namespace { // Pollution control
-using AllEventIndicators = std::vector< FMUEventIndicators >;
-}
-extern AllEventIndicators allEventIndicators;
-
-// XML Callbacks Global
-extern fmi2_xml_callbacks_t xml_callbacks;
-
-extern "C" {
-
-int
-annotation_start_handle(
- void * /* context */,
- char const * parentName,
- void * /* parent */,
- char const * elm,
- char const ** attr
-);
-
-inline
-int
-annotation_data_handle(
- void * /* context */,
- char const * /* s */,
- int const /* len */
-)
-{
-	return 0;
+using Variables = std::vector< Variable * >;
+using Names = std::vector< std::string >;
+using Decs =  std::unordered_map< std::string, std::string >;
 }
 
-inline
-int
-annotation_end_handle(
- void * /* context */,
- char const * /* elm */
-)
-{
-	return 0;
-}
+// Set Variable Output File Name Decoration for Case-Insensitive Collisions
+void
+name_decorate( Variables & vars );
 
-} // extern "C"
+void
+name_decorations( Names & names, Decs & decs );
 
 } // fmu
 } // QSS
+
+#endif

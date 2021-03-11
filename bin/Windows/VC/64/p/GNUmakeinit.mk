@@ -5,7 +5,7 @@
 # Platform: Windows/VC/64/p
 
 # Variables
-CXXFLAGS := /nologo /std:c++17 /TP /EHsc /W4 /wd4068 /wd4996 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DWIN32 /DQSS_FMU /DNDEBUG /arch:AVX2 /openmp /O2 /fp:precise /Qpar /GS- /Z7 /MD
+CXXFLAGS := /nologo /std:c++17 /Zc:__cplusplus /TP /EHsc /W4 /wd4068 /wd4996 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DWIN32 /DQSS_FMU /DNDEBUG /arch:AVX2 /openmp /O2 /fp:precise /Qpar /GS- /Z7 /MD
 CXXFLAGS += /wd4100 /wd4505 # For FMIL
 CXXFLAGS += /wd4127 # For momo
 # Disabled Warnings:

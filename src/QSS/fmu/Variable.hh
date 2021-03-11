@@ -457,6 +457,13 @@ public: // Property
 		return ( is_state() ? 0 : 1 );
 	}
 
+	// Output File Name Decoration
+	std::string const &
+	decoration() const
+	{
+		return dec_;
+	}
+
 	// Boolean Value
 	virtual
 	Boolean
@@ -1414,13 +1421,24 @@ public: // Methods: Output
 		out_on_ = false;
 	}
 
+	// Decorate Outputs
+	void
+	decorate_out( std::string const & dec = std::string() )
+	{
+		dec_ = dec;
+		if ( out_on_ ) {
+			if ( options::output::X ) out_x_.decorate( dec );
+			if ( options::output::Q ) out_q_.decorate( dec );
+		}
+	}
+
 	// Initialize Outputs
 	void
-	init_out( std::string const & dir )
+	init_out( std::string const & dir, std::string const & dec = std::string() )
 	{
 		if ( out_on_ ) {
-			if ( options::output::X ) out_x_.init( dir, name(), 'x' );
-			if ( options::output::Q ) out_q_.init( dir, name(), 'q' );
+			if ( options::output::X ) out_x_.init( dir, name(), 'x', dec );
+			if ( options::output::Q ) out_q_.init( dir, name(), 'q', dec );
 		}
 	}
 
@@ -1963,8 +1981,9 @@ private: // Data
 
 	// Outputs
 	bool out_on_{ true }; // Output on?
-	Output out_x_; // Continuous rep output
-	Output out_q_; // Quantized rep output
+	std::string dec_; // Output file name decoration
+	Output<> out_x_; // Continuous rep output
+	Output<> out_q_; // Quantized rep output
 
 }; // Variable
 
