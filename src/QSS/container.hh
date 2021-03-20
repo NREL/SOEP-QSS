@@ -36,6 +36,9 @@
 #ifndef QSS_container_hh_INCLUDED
 #define QSS_container_hh_INCLUDED
 
+// QSS Headers
+#include <QSS/options.hh>
+
 // C++ Headers
 #include <algorithm>
 #include <cassert>
@@ -110,7 +113,11 @@ void
 sort_by_order( Variables & variables )
 {
 	using V = typename std::remove_pointer< typename Variables::value_type >::type;
-	std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->order() < v2->order(); } );
+	if ( options::output::d ) { // Also sort by name for deterministic diagnostic output
+		std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return ( v1->order() < v2->order() ) || ( ( v1->order() == v2->order() ) && ( v1->name() < v2->name() ) ); } );
+	} else { // Just sort by order (faster)
+		std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->order() < v2->order(); } );
+	}
 }
 
 // Sort Variables by Type (State First) and Order
@@ -120,7 +127,11 @@ void
 sort_by_type_and_order( Variables & variables )
 {
 	using V = typename std::remove_pointer< typename Variables::value_type >::type;
-	std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->state_order() < v2->state_order(); } );
+	if ( options::output::d ) { // Also sort by name for deterministic diagnostic output
+		std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return ( v1->state_order() < v2->state_order() ) || ( ( v1->state_order() == v2->state_order() ) && ( v1->name() < v2->name() ) ); } );
+	} else { // Just sort by type and order (faster)
+		std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->state_order() < v2->state_order(); } );
+	}
 }
 
 // Set up Non-Trigger Observers of Triggers and Sort Both by Order

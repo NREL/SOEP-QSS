@@ -169,7 +169,7 @@ public: // Methods
 			return;
 		}
 
-		// Sort by type and order
+		// Sort by order
 		assert( is_unique( triggers_ ) ); // Precondition: No duplicates
 		sort_by_order( triggers_ );
 

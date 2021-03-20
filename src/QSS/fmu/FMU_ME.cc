@@ -471,7 +471,7 @@ namespace fmu {
 			var_name_ref[ var_name ] = var_ref;
 			bool const var_has_start( fmi2_import_get_variable_has_start( var ) == 1 );
 			std::cout << " Start? " << var_has_start << std::endl;
-			fmi2_base_type_enu_t var_base_type( fmi2_import_get_variable_base_type( var ) );
+			fmi2_base_type_enu_t const var_base_type( fmi2_import_get_variable_base_type( var ) );
 			fmi2_variability_enu_t const var_variability( fmi2_import_get_variability( var ) );
 			fmi2_causality_enu_t const var_causality( fmi2_import_get_causality( var ) );
 			switch ( var_base_type ) {
@@ -930,7 +930,7 @@ namespace fmu {
 			std::cout << " Name: " << der_name << std::endl;
 			std::cout << " Desc: " << ( fmi2_import_get_variable_description( der ) ? fmi2_import_get_variable_description( der ) : "" ) << std::endl;
 			std::cout << " Ref: " << fmi2_import_get_variable_vr( der ) << std::endl;
-			fmi2_base_type_enu_t der_base_type( fmi2_import_get_variable_base_type( der ) );
+			fmi2_base_type_enu_t const der_base_type( fmi2_import_get_variable_base_type( der ) );
 			bool const der_has_start( fmi2_import_get_variable_has_start( der ) == 1 );
 			std::cout << " Start? " << der_has_start << std::endl;
 			switch ( der_base_type ) {
@@ -943,7 +943,7 @@ namespace fmu {
 				if ( var_real != nullptr ) { // Add to Variable to Derivative Map
 					FMU_Variable & fmu_der( fmu_vars[ der_real ] );
 					FMU_Variable & fmu_var( fmu_vars[ var_real ] );
-					Real const states_initial( states[ ics ] ); // Initial value from fmi2_import_get_continuous_states()
+					Real const states_initial_value( states[ ics ] ); // Initial value from fmi2_import_get_continuous_states()
 					fmu_der.ics = fmu_var.ics = ++ics;
 					fmu_ders[ var_real ] = fmu_der;
 					fmu_dvrs[ der_real ] = fmu_var;
@@ -957,13 +957,19 @@ namespace fmu {
 						std::cerr << " Error: Non-SI unit used for state derivative: Not currently supported: " << der_name << std::endl;
 						//std::exit( EXIT_FAILURE );
 					}
-					std::cout << " Initial value of " << var_name << " = " << states_initial << std::endl;
+					std::cout << " Initial value of " << var_name << " = " << states_initial_value << std::endl;
 					bool const start( fmi2_import_get_variable_has_start( fmu_var.var ) == 1 );
 					if ( start ) {
-						Real const var_initial( fmi2_import_get_real_variable_start( var_real ) );
-						if ( var_initial != states_initial ) {
-							std::cerr << " Warning: Initial value from xml specs: " << var_initial << " is not equal to initial value from fmi2GetContinuousStates(): " << states_initial << '\n';
-							std::cerr << "          Using initial value from fmi2GetContinuousStates()" << std::endl;
+						Real const var_initial_value( fmi2_import_get_real_variable_start( var_real ) );
+						fmi2_initial_enu_t const var_initial( fmi2_import_get_initial( fmu_var.var ) );
+						if ( var_initial_value != states_initial_value ) {
+							if ( var_initial == fmi2_initial_enu_approx ) {
+								std::cerr << " Info: Initial approximate value from xml specs: " << var_initial_value << " is not equal to initial value from fmi2GetContinuousStates that is being used by QSS: " << states_initial_value << std::endl;
+							} else if ( var_initial == fmi2_initial_enu_exact ) {
+								std::cerr << " Warning: Initial exact value from xml specs: " << var_initial_value << " is not equal to initial value from fmi2GetContinuousStates that is being used by QSS: " << states_initial_value << std::endl;
+							} else {
+								std::cerr << " Warning: Initial value from xml specs: " << var_initial_value << " is not equal to initial value from fmi2GetContinuousStates that is being used by QSS: " << states_initial_value << std::endl;
+							}
 						}
 					}
 					if ( x_nominal[ i ] <= 0.0 ) { // FMU generation should fail if nominal is zero and should convert negative nominals to their absolute value // FMU should return a nominal of 1 if not specified in the model
@@ -973,23 +979,23 @@ namespace fmu {
 					Variable_QSS * qss_var( nullptr );
 					Real const aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac * x_nominal[ i ], std::numeric_limits< double >::min() ) ); // Use variable nominal value to set the absolute tolerance unless aTol specified
 					if ( options::qss == options::QSS::QSS1 ) {
-						qss_var = new Variable_QSS1( var_name, options::rTol, aTol, options::zTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_QSS1( var_name, options::rTol, aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::QSS2 ) {
-						qss_var = new Variable_QSS2( var_name, options::rTol, aTol, options::zTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_QSS2( var_name, options::rTol, aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::QSS3 ) {
-						qss_var = new Variable_QSS3( var_name, options::rTol, aTol, options::zTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_QSS3( var_name, options::rTol, aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS1 ) {
-						qss_var = new Variable_LIQSS1( var_name, options::rTol, aTol, options::zTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_LIQSS1( var_name, options::rTol, aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS2 ) {
-						qss_var = new Variable_LIQSS2( var_name, options::rTol, aTol, options::zTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_LIQSS2( var_name, options::rTol, aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS3 ) {
-						qss_var = new Variable_LIQSS3( var_name, options::rTol, aTol, options::zTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_LIQSS3( var_name, options::rTol, aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::xQSS1 ) {
-						qss_var = new Variable_xQSS1( var_name, options::rTol, aTol, options::zTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_xQSS1( var_name, options::rTol, aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::xQSS2 ) {
-						qss_var = new Variable_xQSS2( var_name, options::rTol, aTol, options::zTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_xQSS2( var_name, options::rTol, aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::xQSS3 ) {
-						qss_var = new Variable_xQSS3( var_name, options::rTol, aTol, options::zTol, states_initial, this, fmu_var, fmu_der );
+						qss_var = new Variable_xQSS3( var_name, options::rTol, aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
 					} else {
 						std::cerr << " Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 						std::exit( EXIT_FAILURE );
@@ -1376,7 +1382,7 @@ namespace fmu {
 					std::string const dis_name( fmi2_import_get_variable_name( dis ) );
 					std::cout << " Name: " << dis_name << std::endl;
 					FMU_Variable * fmu_dis( nullptr );
-					fmi2_base_type_enu_t dis_base_type( fmi2_import_get_variable_base_type( dis ) );
+					fmi2_base_type_enu_t const dis_base_type( fmi2_import_get_variable_base_type( dis ) );
 					switch ( dis_base_type ) {
 					case fmi2_base_type_real:
 						std::cout << " Type: Real" << std::endl;
@@ -1490,7 +1496,7 @@ namespace fmu {
 					FMU_Variable * fmu_out( nullptr ); // FMU output variable
 					FMU_Variable * fmu_var( nullptr ); // FMU variable that output variable is derivative of, if any
 					fmi2_import_real_variable_t * out_real( nullptr );
-					fmi2_base_type_enu_t out_base_type( fmi2_import_get_variable_base_type( out ) );
+					fmi2_base_type_enu_t const out_base_type( fmi2_import_get_variable_base_type( out ) );
 					switch ( out_base_type ) {
 					case fmi2_base_type_real:
 						std::cout << " Type: Real" << std::endl;
