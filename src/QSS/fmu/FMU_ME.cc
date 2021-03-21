@@ -1774,6 +1774,7 @@ namespace fmu {
 		init_3_1();
 		init_F();
 		init_XB();
+		init_t0();
 		init_pre_simulate();
 	}
 
@@ -1893,6 +1894,20 @@ namespace fmu {
 		std::cout << '\n' + name + " Initialization: Stage XB =====" << std::endl;
 		for ( auto var : vars_XB ) {
 			var->init();
+		}
+	}
+
+	// Initialization: Stage Set State to t0
+	void
+	FMU_ME::
+	init_t0()
+	{
+		// Set variable FMU state to t0 after initialization ND steps
+		//  before generating FMU local/output variable outputs at t0
+		// Zero-crossing variables have no observers so they are skipped
+		set_time( t0 );
+		for ( auto var : vars_NC ) {
+			var->fmu_set_x( t0 );
 		}
 	}
 

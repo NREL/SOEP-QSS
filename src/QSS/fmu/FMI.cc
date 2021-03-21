@@ -342,6 +342,7 @@ fmi2EnterInitializationMode( fmi2Component c )
 		fmu_me.init_XB();
 		return fmi2OK;
 	case 9:
+		fmu_me.init_t0();
 		fmu_me.init_pre_simulate();
 		return (fmi2Status)fmi2_import_enter_initialization_mode( fmu_qss.fmu_me.fmu );
 	default:

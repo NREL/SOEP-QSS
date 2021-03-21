@@ -237,6 +237,10 @@ public: // Simulation Methods
 	void
 	init_XB();
 
+	// Initialization: Stage Set State to t0
+	void
+	init_t0();
+
 	// Initialization: Stage Pre-Simulate
 	void
 	init_pre_simulate();

@@ -190,6 +190,9 @@ simulate_fmu_me_con_perfect( std::vector< std::string > const & paths )
 		fmu_mes[ i ]->init_XB();
 	}
 	for ( size_type i = 0; i < n_models; ++i ) {
+		fmu_mes[ i ]->init_t0();
+	}
+	for ( size_type i = 0; i < n_models; ++i ) {
 		fmu_mes[ i ]->init_pre_simulate();
 	}
 
