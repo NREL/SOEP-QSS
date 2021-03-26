@@ -355,11 +355,13 @@ TEST( MathTest, CubicUtils )
 	EXPECT_EQ( 0.0, cubic_cull( 1.0, 2.0, -8.0 ) );
 	EXPECT_EQ( 8.0, cubic_cull( 1.0, 2.0, 8.0 ) );
 
-	EXPECT_EQ( 0.0, cubic_cull_lower( 1.0, 2.0, -8.0, true ) );
-	EXPECT_EQ( 8.0, cubic_cull_lower( 9.0, 8.0, 8.0, false ) );
+	EXPECT_EQ( 0.0, cubic_cull_lower( 1.0, 2.0, -8.0 ) );
+	EXPECT_EQ( 0.0, cubic_cull_lower( 9.0, 8.0, 8.0 ) );
+	EXPECT_EQ( 4.0, cubic_cull_lower( -9.0, 3.0, 4.0 ) );
 
-	EXPECT_EQ( 0.0, cubic_cull_upper( 1.0, 2.0, -8.0, true ) );
-	EXPECT_EQ( 8.0, cubic_cull_upper( 1.0, 2.0, 8.0, true ) );
+	EXPECT_EQ( 0.0, cubic_cull_upper( 1.0, 2.0, -8.0 ) );
+	EXPECT_EQ( 0.0, cubic_cull_upper( -9.0, 3.0, 4.0 ) );
+	EXPECT_EQ( 8.0, cubic_cull_upper( 1.0, 2.0, 8.0 ) );
 }
 
 TEST( MathTest, NewtonSmallPositiveRootCubicMonic )
@@ -470,4 +472,7 @@ TEST( MathTest, MinRootCubic )
 	EXPECT_DOUBLE_EQ( 1.4175965758288351, min_root_cubic_both( -2.0, 4.0, -8.0, 9.0, -9.0 ) );
 	EXPECT_DOUBLE_EQ( 0.29037158997385715, min_root_cubic_both( -9.0, 3.0, -7.0, 2.0, -2.0 ) );
 	EXPECT_DOUBLE_EQ( 1.060647778684131, min_root_cubic_both( -9.0, 3.0, 6.0, 1.0, -3.0 ) );
+
+	EXPECT_DOUBLE_EQ( 2.4141969797051361, min_root_cubic_both( 0.00001, 3.0, -6.0, 6.0, -3.0 ) ); // Near quadratic
+	EXPECT_DOUBLE_EQ( 2.4142301455300395, min_root_cubic_both( -0.00001, 3.0, -6.0, 6.0, -3.0 ) ); // Near quadratic
 }

@@ -242,14 +242,14 @@ public: // Methods: FMU
 
 	// Set FMU Variable to Continuous Value at Time t
 	void
-	fmu_set_x( Time const ) const
+	fmu_set_x( Time const ) const override final
 	{
 		fmu_set_boolean( x_ );
 	}
 
 	// Set FMU Variable to Quantized Value at Time t
 	void
-	fmu_set_q( Time const ) const
+	fmu_set_q( Time const ) const override final
 	{
 		fmu_set_boolean( x_ );
 	}

@@ -43,6 +43,7 @@
 #include <cmath>
 #include <limits>
 #include <type_traits>
+#include <utility>
 
 namespace QSS {
 
@@ -180,6 +181,15 @@ acos_clipped( T const x )
 	return std::min( std::max( x, T( -1 ) ), T( 1 ) );
 }
 
+// Infinity
+template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
+inline
+T
+inf()
+{
+	return std::numeric_limits< T >::has_infinity ? std::numeric_limits< T >::infinity() : std::numeric_limits< T >::max();
+}
+
 // Use std::min for 2 arguments
 using std::min;
 
@@ -278,15 +288,6 @@ T
 nonnegative( T const r )
 {
 	return ( r > T( 0 ) ? r : T( 0 ) );
-}
-
-// Infinity
-template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
-T
-inf()
-{
-	return std::numeric_limits< T >::has_infinity ? std::numeric_limits< T >::infinity() : std::numeric_limits< T >::max();
 }
 
 // Value if Positive or Infinity
@@ -743,10 +744,97 @@ min_root_quadratic_both( T const a, T const b, T const cl, T const cu )
 				}
 			}
 
+			// Select root
 			if ( ( rootl == inf< T >() ) && ( rootu == inf< T >() ) ) { // Precision loss
 				return T( 0 );
 			} else {
 				return min_nonnegative_or_zero( rootl, rootu );
+			}
+		}
+	}
+}
+
+// Min Nonnegative Root of Both Boundary Quadratic Equations a x^2 + b x + c
+template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
+inline
+std::pair< T, T >
+min_root_quadratic_both_c( T const a, T const b, T const cl, T const cu )
+{
+	// cl > 0 with exact precision
+	// cu < 0 with exact precision
+	if ( cl <= T( 0 ) ) { // Precision loss: x(tX) < q(tX) - qTol
+		return std::make_pair( T( 0 ), cl );
+	} else if ( cu >= T( 0 ) ) { // Precision loss: x(tX) > q(tX) + qTol
+		return std::make_pair( T( 0 ), cu );
+	} else if ( a == T( 0 ) ) { // Linear
+		if ( b == T( 0 ) ) { // Constant
+			return std::make_pair( inf< T >(), T( 0 ) );
+		} else if ( b <= T( 0 ) ) {
+			return std::make_pair( -( cl / b ), cl );
+		} else {
+			return std::make_pair( -( cu / b ), cu );
+		}
+	} else { // Quadratic
+		if ( b == T( 0 ) ) { // Simple case: Critical point at x=0
+			if ( a < T( 0 ) ) {
+				assert( -( cl / a ) > T( 0 ) );
+				return std::make_pair( std::sqrt( -( cl / a ) ), cl );
+			} else {
+				assert( a > T( 0 ) );
+				assert( -( cu / a ) > T( 0 ) );
+				return std::make_pair( std::sqrt( -( cu / a ) ), cu );
+			}
+		} else { // General case: b != 0
+			T const bb( b * b );
+			T const a4( T( 4 ) * a );
+
+			// Lower boundary
+			T const discl( bb - ( a4 * cl ) );
+			T rootl;
+			if ( discl < T( 0 ) ) { // No real roots
+				rootl = inf< T >();
+			} else if ( discl == T( 0 ) ) { // One real (double) root
+				rootl = positive_or_infinity( -b / ( T( 2 ) * a ) );
+			} else { // Two real roots: From https://mathworld.wolfram.com/QuadraticEquation.html for precision
+				T const q( -T( 0.5 ) * ( b + ( sign( b ) * std::sqrt( discl ) ) ) );
+				if ( ( T( 2 ) * q ) + b <= T( 0 ) ) { // Crossing direction test: Root might be negative
+					rootl = q / a;
+				} else {
+					rootl = cl / q;
+				}
+			}
+
+			// Upper boundary
+			T const discu( bb - ( a4 * cu ) );
+			T rootu;
+			if ( discu < T( 0 ) ) { // No real roots
+				rootu = inf< T >();
+			} else if ( discu == T( 0 ) ) { // One real (double) root
+				rootu = positive_or_infinity( -b / ( T( 2 ) * a ) );
+			} else { // Two real roots: From https://mathworld.wolfram.com/QuadraticEquation.html for precision
+				T const q( -T( 0.5 ) * ( b + ( sign( b ) * std::sqrt( discu ) ) ) );
+				if ( ( T( 2 ) * q ) + b >= T( 0 ) ) { // Crossing direction test: Root might be negative
+					rootu = q / a;
+				} else {
+					rootu = cu / q;
+				}
+			}
+
+			// Select root
+			if ( ( rootl == inf< T >() ) && ( rootu == inf< T >() ) ) { // Precision loss
+				return std::make_pair( T( 0 ), T( 0 ) );
+			} else {
+				if ( rootl >= T( 0 ) ) {
+					if ( rootu >= T( 0 ) ) {
+						return ( rootl <= rootu ? std::make_pair( rootl, cl ) : std::make_pair( rootu, cu ) );
+					} else {
+						return std::make_pair( rootl, cl );
+					}
+				} else if ( rootu >= T( 0 ) ) {
+					return std::make_pair( rootu, cu );
+				} else {
+					return std::make_pair( T( 0 ), T( 0 ) );
+				}
 			}
 		}
 	}
@@ -785,18 +873,18 @@ cubic_cull( T const a, T const b, T const r )
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
-cubic_cull_lower( T const a, T const b, T const r, bool const s )
+cubic_cull_lower( T const a, T const b, T const r )
 {
-	return ( r > T( 0 ) ? ( s ? ( ( T( 3 ) * r * r ) + ( T( 2 ) * a * r ) + b <= T( 0 ) ? r : T( 0 ) ) : ( ( T( 3 ) * r * r ) + ( T( 2 ) * a * r ) + b >= T( 0 ) ? r : T( 0 ) ) ) : T( 0 ) );
+	return ( ( r > T( 0 ) ) && ( ( T( 3 ) * r * r ) + ( T( 2 ) * a * r ) + b <= T( 0 ) ) ? r : T( 0 ) );
 }
 
 // Root of Monic Cubic Equation x^3 + a x^2 + b x + c if it is Positive and Crosses Upward or Zero
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline
 T
-cubic_cull_upper( T const a, T const b, T const r, bool const s )
+cubic_cull_upper( T const a, T const b, T const r )
 {
-	return ( r > T( 0 ) ? ( s ? ( ( T( 3 ) * r * r ) + ( T( 2 ) * a * r ) + b >= T( 0 ) ? r : T( 0 ) ) : ( ( T( 3 ) * r * r ) + ( T( 2 ) * a * r ) + b <= T( 0 ) ? r : T( 0 ) ) ) : T( 0 ) );
+	return ( ( r > T( 0 ) ) && ( ( T( 3 ) * r * r ) + ( T( 2 ) * a * r ) + b >= T( 0 ) ) ? r : T( 0 ) );
 }
 
 // Newton Iterative Positive Root Near x=0 of Monic Cubic Equation x^3 + a x^2 + b x + c
@@ -1314,10 +1402,6 @@ min_root_cubic_lower( T a, T b, T c, T const d, T zTol = T( 1e-6 ) )
 	// d > 0 with exact precision
 	assert( zTol >= T( 0 ) );
 
-	static T const inv_54( T( 1 ) / T( 54 ) );
-	static T const inv_1458( T( 1 ) / T( 1458 ) );
-	static T const two_thirds_pi( ( T( 2 ) / T( 3 ) ) * pi );
-
 	if ( d <= T( 0 ) ) { // Precision loss
 		return T( 0 );
 	} else if ( a == T( 0 ) ) { // Quadratic
@@ -1360,10 +1444,6 @@ min_root_cubic_upper( T a, T b, T c, T const d, T zTol = T( 1e-6 ) )
 	assert( c >= T( 0 ) );
 	// d < 0 with exact precision
 	assert( zTol >= T( 0 ) );
-
-	static T const inv_54( T( 1 ) / T( 54 ) );
-	static T const inv_1458( T( 1 ) / T( 1458 ) );
-	static T const two_thirds_pi( ( T( 2 ) / T( 3 ) ) * pi );
 
 	if ( d >= T( 0 ) ) { // Precision loss
 		return T( 0 );
@@ -1421,8 +1501,8 @@ min_root_cubic_both( T a, T b, T const c, T const dl, T const du, T zTol = T( 1e
 		T const inv_a( T( 1 ) / a );
 		a = b * inv_a;
 		b = c * inv_a;
-		T const cl( dl * inv_a );
-		T const cu( du * inv_a );
+		T const cl( ( s ? dl : du ) * inv_a );
+		T const cu( ( s ? du : dl ) * inv_a );
 		zTol *= std::abs( inv_a );
 
 		// Look for positive root near x=0
@@ -1440,9 +1520,11 @@ min_root_cubic_both( T a, T b, T const c, T const dl, T const du, T zTol = T( 1e
 
 		// Handle near-quadratic case where analytical cubic solution gets degraded
 		if ( std::abs( a ) > T( 1e3 ) ) { // Near-quadratic
-			T root( min_root_quadratic_both( a, b, cl, cu ) );
-			if ( root != inf< T >() ) { // Refine root
-				Root< T > const quadratic_root( iterative_positive_root_cubic_monic( a, b, c, root, zTol ) );
+			std::pair< T, T > const root_info( min_root_quadratic_both_c( a, b, cl, cu ) );
+			T root( root_info.first );
+			T cr( root_info.second );
+			if ( ( root != inf< T >() ) && ( root > T( 0 ) ) )  { // Refine root
+				Root< T > const quadratic_root( iterative_positive_root_cubic_monic( a, b, cr, root, zTol ) );
 				if ( quadratic_root ) return quadratic_root.x;
 			}
 		}
@@ -1465,7 +1547,7 @@ min_root_cubic_both( T a, T b, T const c, T const dl, T const du, T zTol = T( 1e
 			if ( CR2 > CQ3 ) { // One real root
 				T const A( -sign( r ) * std::cbrt( ( inv_54 * std::abs( r ) ) + ( inv_1458 * std::sqrt( CR2 - CQ3 ) ) ) );
 				T const B( q / ( T( 9 ) * A ) );
-				rootl = cubic_cull_lower( a, b, A + B - a_3, s ); // No root refinement
+				rootl = cubic_cull_lower( a, b, A + B - a_3 ); // No root refinement
 				if ( rootl > T( 0 ) ) { // Refine root
 					rootl = iterative_positive_root_cubic_monic( a, b, cl, rootl, zTol ).x;
 				}
@@ -1473,9 +1555,9 @@ min_root_cubic_both( T a, T b, T const c, T const dl, T const du, T zTol = T( 1e
 				T const sqrt_q( std::sqrt( q ) );
 				T const scl( -two_thirds * sqrt_q );
 				T const theta_3( one_third * std::acos( acos_clipped( T( 0.5 ) * r / cube( sqrt_q ) ) ) );
-				T const root1( cubic_cull_lower( a, b, ( scl * std::cos( theta_3 ) ) - a_3, s ) );
-				T const root2( cubic_cull_lower( a, b, ( scl * std::cos( theta_3 + two_thirds_pi ) ) - a_3, s ) );
-				T const root3( cubic_cull_lower( a, b, ( scl * std::cos( theta_3 - two_thirds_pi ) ) - a_3, s ) );
+				T const root1( cubic_cull_lower( a, b, ( scl * std::cos( theta_3 ) ) - a_3 ) );
+				T const root2( cubic_cull_lower( a, b, ( scl * std::cos( theta_3 + two_thirds_pi ) ) - a_3 ) );
+				T const root3( cubic_cull_lower( a, b, ( scl * std::cos( theta_3 - two_thirds_pi ) ) - a_3 ) );
 				rootl = min_positive_or_infinity( root1, root2, root3 );
 				if ( rootl != inf< T >() ) { // Refine root
 					rootl = iterative_positive_root_cubic_monic( a, b, cl, rootl, zTol ).x;
@@ -1484,21 +1566,21 @@ min_root_cubic_both( T a, T b, T const c, T const dl, T const du, T zTol = T( 1e
 				assert( CR2 == CQ3 );
 				T const sqrt_Q( std::sqrt( one_ninth * q ) );
 				if ( r > T( 0 ) ) {
-					rootl = cubic_cull_lower( a, b, -( T( 2 ) * sqrt_Q ) - a_3, s );
+					rootl = cubic_cull_lower( a, b, -( T( 2 ) * sqrt_Q ) - a_3 );
 					if ( rootl > T( 0 ) ) { // Must be smallest positive root
 						rootl = iterative_positive_root_cubic_monic( a, b, cl, rootl, zTol ).x;
 					} else {
-						rootl = cubic_cull_lower( a, b, sqrt_Q - a_3, s );
+						rootl = cubic_cull_lower( a, b, sqrt_Q - a_3 );
 						if ( rootl > T( 0 ) ) { // Refine root
 							rootl = iterative_positive_root_cubic_monic( a, b, cl, rootl, zTol ).x;
 						}
 					}
 				} else {
-					rootl = cubic_cull_lower( a, b, -sqrt_Q - a_3, s );
+					rootl = cubic_cull_lower( a, b, -sqrt_Q - a_3 );
 					if ( rootl > T( 0 ) ) { // Must be smallest positive root
 						rootl = iterative_positive_root_cubic_monic( a, b, cl, rootl, zTol ).x;
 					} else {
-						rootl = cubic_cull_lower( a, b, ( T( 2 ) * sqrt_Q ) - a_3, s );
+						rootl = cubic_cull_lower( a, b, ( T( 2 ) * sqrt_Q ) - a_3 );
 						if ( rootl > T( 0 ) ) { // Refine root
 							rootl = iterative_positive_root_cubic_monic( a, b, cl, rootl, zTol ).x;
 						}
@@ -1518,7 +1600,7 @@ min_root_cubic_both( T a, T b, T const c, T const dl, T const du, T zTol = T( 1e
 			if ( CR2 > CQ3 ) { // One real root
 				T const A( -sign( r ) * std::cbrt( ( inv_54 * std::abs( r ) ) + ( inv_1458 * std::sqrt( CR2 - CQ3 ) ) ) );
 				T const B( q / ( T( 9 ) * A ) );
-				rootu = cubic_cull_upper( a, b, A + B - a_3, s );
+				rootu = cubic_cull_upper( a, b, A + B - a_3 );
 				if ( rootu > T( 0 ) ) { // Refine root
 					rootu = iterative_positive_root_cubic_monic( a, b, cu, rootu, zTol ).x;
 				}
@@ -1526,9 +1608,9 @@ min_root_cubic_both( T a, T b, T const c, T const dl, T const du, T zTol = T( 1e
 				T const sqrt_q( std::sqrt( q ) );
 				T const scl( -two_thirds * sqrt_q );
 				T const theta_3( one_third * std::acos( acos_clipped( T( 0.5 ) * r / cube( sqrt_q ) ) ) );
-				T const root1( cubic_cull_upper( a, b, ( scl * std::cos( theta_3 ) ) - a_3, s ) );
-				T const root2( cubic_cull_upper( a, b, ( scl * std::cos( theta_3 + two_thirds_pi ) ) - a_3, s ) );
-				T const root3( cubic_cull_upper( a, b, ( scl * std::cos( theta_3 - two_thirds_pi ) ) - a_3, s ) );
+				T const root1( cubic_cull_upper( a, b, ( scl * std::cos( theta_3 ) ) - a_3 ) );
+				T const root2( cubic_cull_upper( a, b, ( scl * std::cos( theta_3 + two_thirds_pi ) ) - a_3 ) );
+				T const root3( cubic_cull_upper( a, b, ( scl * std::cos( theta_3 - two_thirds_pi ) ) - a_3 ) );
 				rootu = min_positive_or_infinity( root1, root2, root3 );
 				if ( rootu != inf< T >() ) { // Refine root
 					rootu = iterative_positive_root_cubic_monic( a, b, cu, rootu, zTol ).x;
@@ -1537,21 +1619,21 @@ min_root_cubic_both( T a, T b, T const c, T const dl, T const du, T zTol = T( 1e
 				assert( CR2 == CQ3 );
 				T const sqrt_Q( std::sqrt( one_ninth * q ) );
 				if ( r > T( 0 ) ) {
-					rootu = cubic_cull_upper( a, b, -( T( 2 ) * sqrt_Q ) - a_3, s );
+					rootu = cubic_cull_upper( a, b, -( T( 2 ) * sqrt_Q ) - a_3 );
 					if ( rootu > T( 0 ) ) { // Must be smallest positive root
 						rootu = iterative_positive_root_cubic_monic( a, b, cu, rootu, zTol ).x;
 					} else {
-						rootu = cubic_cull_upper( a, b, sqrt_Q - a_3, s );
+						rootu = cubic_cull_upper( a, b, sqrt_Q - a_3 );
 						if ( rootu > T( 0 ) ) { // Refine root
 							rootu = iterative_positive_root_cubic_monic( a, b, cu, rootu, zTol ).x;
 						}
 					}
 				} else {
-					rootu = cubic_cull_upper( a, b, -sqrt_Q - a_3, s );
+					rootu = cubic_cull_upper( a, b, -sqrt_Q - a_3 );
 					if ( rootu > T( 0 ) ) { // Must be smallest positive root
 						rootu = iterative_positive_root_cubic_monic( a, b, cu, rootu, zTol ).x;
 					} else {
-						rootu = cubic_cull_upper( a, b, ( T( 2 ) * sqrt_Q ) - a_3, s );
+						rootu = cubic_cull_upper( a, b, ( T( 2 ) * sqrt_Q ) - a_3 );
 						if ( rootu > T( 0 ) ) { // Refine root
 							rootu = iterative_positive_root_cubic_monic( a, b, cu, rootu, zTol ).x;
 						}

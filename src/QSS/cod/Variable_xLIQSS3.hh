@@ -59,6 +59,7 @@ public: // Types
 	using Super::rTol;
 	using Super::aTol;
 	using Super::qTol;
+	using Super::zTol;
 	using Super::xIni;
 	using Super::tQ;
 	using Super::tX;

@@ -524,13 +524,6 @@ private: // Methods
 	void
 	advance_LIQSS_s();
 
-	// Coefficient 1 from FMU at Time tQ
-	Real
-	c_1() const
-	{
-		return c_1( tQ, q_0_ );
-	}
-
 	// Coefficient 2 from FMU
 	Real
 	n_2( Real const x_1_p ) const

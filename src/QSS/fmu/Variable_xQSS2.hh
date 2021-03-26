@@ -505,7 +505,7 @@ private: // Methods
 	Real
 	c_1() const
 	{
-		return c_1( tQ, q_0_ );
+		return c_1( tQ, x_0_ );
 	}
 
 	// Coefficient 2 from FMU

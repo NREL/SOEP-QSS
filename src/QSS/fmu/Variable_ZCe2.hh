@@ -323,7 +323,8 @@ private: // Methods
 		Real const x_t( this->Variable_ZCe2::x( t ) );
 
 		// Unpredicted zero crossing check setup
-		if ( check_crossing_ = past_tZ || ( x_t != 0.0 ) ) sign_old_ = signum( x_t );
+		check_crossing_ = past_tZ;
+		if ( past_tZ || ( x_t != 0.0 ) ) sign_old_ = signum( x_t );
 
 		// Anti-chatter trajectory magnitude updates for [tX,t] span
 		if ( zChatter_ && past_tZ ) { // Anti-chatter is active

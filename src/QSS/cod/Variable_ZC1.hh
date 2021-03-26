@@ -61,6 +61,7 @@ public: // Types
 	using Super::check_crossing_;
 	using Super::crossing;
 	using Super::crossing_last;
+	using Super::detected_crossing_;
 	using Super::if_clauses;
 	using Super::name;
 	using Super::rTol;
@@ -87,6 +88,8 @@ public: // Types
 	using Super::refine_root_ZC;
 	using Super::shift_QSS_ZC;
 	using Super::shift_ZC;
+	using Super::x_mag_update;
+	using Super::x_mag_zero;
 
 protected: // Types
 
@@ -237,7 +240,8 @@ private: // Methods
 		Real const x_t( this->Variable_ZC1::x( t ) );
 
 		// Unpredicted zero crossing check setup
-		if ( check_crossing_ = past_tZ || ( x_t != 0.0 ) ) sign_old_ = signum( x_t );
+		check_crossing_ = past_tZ;
+		if ( past_tZ || ( x_t != 0.0 ) ) sign_old_ = signum( x_t );
 
 		// Anti-chatter trajectory magnitude updates for [tX,t] span
 		if ( zChatter_ && past_tZ ) { // Anti-chatter is active
