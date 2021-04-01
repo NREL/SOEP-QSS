@@ -47,7 +47,7 @@ using namespace QSS::cod::mdl;
 
 TEST( cod_Variable_ZC1Test, Basic )
 {
-	options::zFac = 1.0;
+	options::zFac = options::zrFac = options::zaFac = 1.0;
 
 	Variable_QSS2< Function_LTI > x( "x", 1.0e-4, 1.0e-4 );
 	x.add( -1.0 );

@@ -136,7 +136,7 @@ public: // Property
 
 public: // Methods
 
-	// Bump Time for FMU Detection
+	// Bump Time for FMU Zero-Crossing Detection
 	void
 	bump_time( Time const t_bump ) const
 	{
@@ -150,7 +150,7 @@ public: // Methods
 		}
 	}
 
-	// Re-Bump Time for FMU Detection
+	// Re-Bump Time for FMU Zero-Crossing Detection
 	void
 	re_bump_time( Time const t_bump ) const
 	{
@@ -158,7 +158,7 @@ public: // Methods
 		fmu_set_observees_x( t_bump );
 	}
 
-	// Un-Bump Time for FMU Detection
+	// Un-Bump Time for FMU Zero-Crossing Detection
 	void
 	un_bump_time( Time const t, Variable const * const handler ) const
 	{
@@ -166,7 +166,7 @@ public: // Methods
 		fmu_set_observees_x( t, handler );
 	}
 
-	// Un-Bump Time for FMU Detection
+	// Un-Bump Time for FMU Zero-Crossing Detection
 	void
 	un_bump_time( Time const t, Variables const & handlers ) const
 	{

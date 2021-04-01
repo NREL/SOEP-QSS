@@ -636,19 +636,19 @@ namespace fmu {
 						}
 						Variable * qss_var( nullptr );
 						if ( inp_fxn || !options::perfect ) { // Use input variables for connections
-							Real const aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac * fmi2_xml_get_real_variable_nominal( var_real ), std::numeric_limits< double >::min() ) );
+							Real const var_aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac * fmi2_xml_get_real_variable_nominal( var_real ), std::numeric_limits< double >::min() ) );
 							if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) ) {
-								qss_var = new Variable_Inp1( var_name, options::rTol, aTol, this, fmu_var, inp_fxn );
+								qss_var = new Variable_Inp1( var_name, options::rTol, var_aTol, this, fmu_var, inp_fxn );
 							} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) ) {
-								qss_var = new Variable_Inp2( var_name, options::rTol, aTol, this, fmu_var, inp_fxn );
+								qss_var = new Variable_Inp2( var_name, options::rTol, var_aTol, this, fmu_var, inp_fxn );
 							} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) ) {
-								qss_var = new Variable_Inp3( var_name, options::rTol, aTol, this, fmu_var, inp_fxn );
+								qss_var = new Variable_Inp3( var_name, options::rTol, var_aTol, this, fmu_var, inp_fxn );
 							} else if ( options::qss == options::QSS::xQSS1 ) {
-								qss_var = new Variable_xInp1( var_name, options::rTol, aTol, this, fmu_var, inp_fxn );
+								qss_var = new Variable_xInp1( var_name, options::rTol, var_aTol, this, fmu_var, inp_fxn );
 							} else if ( options::qss == options::QSS::xQSS2 ) {
-								qss_var = new Variable_xInp2( var_name, options::rTol, aTol, this, fmu_var, inp_fxn );
+								qss_var = new Variable_xInp2( var_name, options::rTol, var_aTol, this, fmu_var, inp_fxn );
 							} else if ( options::qss == options::QSS::xQSS3 ) {
-								qss_var = new Variable_xInp3( var_name, options::rTol, aTol, this, fmu_var, inp_fxn );
+								qss_var = new Variable_xInp3( var_name, options::rTol, var_aTol, this, fmu_var, inp_fxn );
 							} else {
 								std::cerr << " Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 								std::exit( EXIT_FAILURE );
@@ -977,25 +977,25 @@ namespace fmu {
 						std::exit( EXIT_FAILURE );
 					}
 					Variable_QSS * qss_var( nullptr );
-					Real const aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac * x_nominal[ i ], std::numeric_limits< double >::min() ) ); // Use variable nominal value to set the absolute tolerance unless aTol specified
+					Real const var_aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac * x_nominal[ i ], std::numeric_limits< double >::min() ) ); // Use variable nominal value to set the absolute tolerance unless aTol specified
 					if ( options::qss == options::QSS::QSS1 ) {
-						qss_var = new Variable_QSS1( var_name, options::rTol, aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
+						qss_var = new Variable_QSS1( var_name, options::rTol, var_aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::QSS2 ) {
-						qss_var = new Variable_QSS2( var_name, options::rTol, aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
+						qss_var = new Variable_QSS2( var_name, options::rTol, var_aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::QSS3 ) {
-						qss_var = new Variable_QSS3( var_name, options::rTol, aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
+						qss_var = new Variable_QSS3( var_name, options::rTol, var_aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS1 ) {
-						qss_var = new Variable_LIQSS1( var_name, options::rTol, aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
+						qss_var = new Variable_LIQSS1( var_name, options::rTol, var_aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS2 ) {
-						qss_var = new Variable_LIQSS2( var_name, options::rTol, aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
+						qss_var = new Variable_LIQSS2( var_name, options::rTol, var_aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::LIQSS3 ) {
-						qss_var = new Variable_LIQSS3( var_name, options::rTol, aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
+						qss_var = new Variable_LIQSS3( var_name, options::rTol, var_aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::xQSS1 ) {
-						qss_var = new Variable_xQSS1( var_name, options::rTol, aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
+						qss_var = new Variable_xQSS1( var_name, options::rTol, var_aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::xQSS2 ) {
-						qss_var = new Variable_xQSS2( var_name, options::rTol, aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
+						qss_var = new Variable_xQSS2( var_name, options::rTol, var_aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
 					} else if ( options::qss == options::QSS::xQSS3 ) {
-						qss_var = new Variable_xQSS3( var_name, options::rTol, aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
+						qss_var = new Variable_xQSS3( var_name, options::rTol, var_aTol, options::zTol, states_initial_value, this, fmu_var, fmu_der );
 					} else {
 						std::cerr << " Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 						std::exit( EXIT_FAILURE );
@@ -1065,24 +1065,25 @@ namespace fmu {
 				FMU_Variable & fmu_var( fmu_vars[ var_real ] );
 				std::cout << "\nEvent Indicator: " << var_name << std::endl;
 				Variable_ZC * qss_var( nullptr );
-				Real const aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac * fmi2_xml_get_real_variable_nominal( var_real ), std::numeric_limits< double >::min() ) );
+				Real const var_rTol( options::rTol * options::zFac * options::zrFac );
+				Real const var_aTol( std::max( ( options::specified::aTol ? options::aTol : options::rTol * options::aFac * fmi2_xml_get_real_variable_nominal( var_real ) ) * options::zFac * options::zaFac, std::numeric_limits< double >::min() ) ); // Use variable nominal value to set the absolute tolerance unless aTol specified
 				if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) || ( options::qss == options::QSS::xQSS1 ) ) {
 					if ( options::eidd ) {
-						qss_var = new Variable_ZCd1( var_name, options::rTol, aTol, options::zTol, this, fmu_var );
+						qss_var = new Variable_ZCd1( var_name, var_rTol, var_aTol, options::zTol, this, fmu_var );
 					} else {
-						qss_var = new Variable_ZC1( var_name, options::rTol, aTol, options::zTol, this, fmu_var );
+						qss_var = new Variable_ZC1( var_name, var_rTol, var_aTol, options::zTol, this, fmu_var );
 					}
 				} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) || ( options::qss == options::QSS::xQSS2 ) ) {
 					if ( options::eidd ) {
-						qss_var = new Variable_ZCd2( var_name, options::rTol, aTol, options::zTol, this, fmu_var );
+						qss_var = new Variable_ZCd2( var_name, var_rTol, var_aTol, options::zTol, this, fmu_var );
 					} else {
-						qss_var = new Variable_ZC2( var_name, options::rTol, aTol, options::zTol, this, fmu_var );
+						qss_var = new Variable_ZC2( var_name, var_rTol, var_aTol, options::zTol, this, fmu_var );
 					}
 				} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) || ( options::qss == options::QSS::xQSS3 ) ) {
 					if ( options::eidd ) {
-						qss_var = new Variable_ZCd3( var_name, options::rTol, aTol, options::zTol, this, fmu_var );
+						qss_var = new Variable_ZCd3( var_name, var_rTol, var_aTol, options::zTol, this, fmu_var );
 					} else {
-						qss_var = new Variable_ZC3( var_name, options::rTol, aTol, options::zTol, this, fmu_var );
+						qss_var = new Variable_ZC3( var_name, var_rTol, var_aTol, options::zTol, this, fmu_var );
 					}
 				} else {
 					std::cerr << " Error: Specified QSS method is not yet supported for FMUs" << std::endl;
@@ -1171,13 +1172,14 @@ namespace fmu {
 									fmu_ders[ var_real ] = fmu_der;
 									fmu_dvrs[ der_real ] = fmu_var;
 									Variable_ZC * qss_var( nullptr );
-									Real const aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac * fmi2_xml_get_real_variable_nominal( var_real ), std::numeric_limits< double >::min() ) );
+									Real const var_rTol( options::rTol * options::zFac * options::zrFac );
+									Real const var_aTol( std::max( ( options::specified::aTol ? options::aTol : options::rTol * options::aFac * fmi2_xml_get_real_variable_nominal( var_real ) ) * options::zFac * options::zaFac, std::numeric_limits< double >::min() ) ); // Use variable nominal value to set the absolute tolerance unless aTol specified
 									if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) || ( options::qss == options::QSS::xQSS1 ) ) {
-										qss_var = new Variable_ZCe1( var_name, options::rTol, aTol, options::zTol, this, fmu_var, fmu_der );
+										qss_var = new Variable_ZCe1( var_name, var_rTol, var_aTol, options::zTol, this, fmu_var, fmu_der );
 									} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) || ( options::qss == options::QSS::xQSS2 ) ) {
-										qss_var = new Variable_ZCe2( var_name, options::rTol, aTol, options::zTol, this, fmu_var, fmu_der );
+										qss_var = new Variable_ZCe2( var_name, var_rTol, var_aTol, options::zTol, this, fmu_var, fmu_der );
 									} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) || ( options::qss == options::QSS::xQSS3 ) ) {
-										qss_var = new Variable_ZCe3( var_name, options::rTol, aTol, options::zTol, this, fmu_var, fmu_der );
+										qss_var = new Variable_ZCe3( var_name, var_rTol, var_aTol, options::zTol, this, fmu_var, fmu_der );
 									} else {
 										std::cerr << " Error: Specified QSS method is not yet supported for FMUs" << std::endl;
 										std::exit( EXIT_FAILURE );
@@ -2247,8 +2249,8 @@ namespace fmu {
 				} else if ( event.is_ZC() ) { // Zero-crossing event(s)
 					++n_ZC_events;
 					var_ZCs.clear();
-					t_bump = t; // Bump time for FMU crossing detection
-					while ( eventq->top_superdense_time() == s ) {
+					t_bump = t; // Bump time for FMU zero-crossing detection
+					while ( eventq->top_superdense_time() == s ) { // Set bump time and do zero-crossing outputs
 						Variable_ZC * trigger( eventq->top_sub< Variable_ZC >() );
 						var_ZCs.push_back( trigger );
 						assert( trigger->tZC() == t );
@@ -2256,7 +2258,7 @@ namespace fmu {
 						trigger->advance_ZC();
 						++c_ZC_events[ trigger ];
 						t_bump = std::max( t_bump, trigger->tZC_bump( t ) );
-						if ( doZOut ) { // Zero crossing event output
+						if ( doZOut ) { // Zero-crossing event output
 							if ( options::output::A ) { // All variables output
 								for ( auto var : vars ) {
 									var->out( t );
@@ -2454,8 +2456,9 @@ namespace fmu {
 					if ( bin_size > 1u ) {
 						eventq->bin_QSS< Variable >( bin_size, bin_frac, triggers );
 						if ( options::output::d ) {
-							std::cout << "\nBin @ " << t << " trigger(s):" << std::endl;
-							for ( Variable * trigger : triggers ) std::cout << "  " << trigger->name() << "  tQ-tE: " << trigger->tQ << '-' << trigger->tE << std::endl;
+							std::cout << "\nBin @ " << t << " trigger(s):" << '\n';
+							for ( Variable * trigger : triggers ) std::cout << "   " << trigger->name() << "  tQ-tE: " << trigger->tQ << '-' << trigger->tE << '\n';
+							std::cout << std::endl;
 						}
 						if ( triggers.size() == 1u ) {
 							trigger1 = triggers[ 0 ]; // Use single trigger processing
@@ -2562,8 +2565,9 @@ namespace fmu {
 					if ( bin_size > 1u ) {
 						eventq->bin_QSS_ZC< Variable >( bin_size, bin_frac, triggers );
 						if ( options::output::d ) {
-							std::cout << "\nBin @ " << t << " trigger(s):" << std::endl;
-							for ( Variable * trigger : triggers ) std::cout << "  " << trigger->name() << "  tQ-tE: " << trigger->tQ << '-' << trigger->tE << std::endl;
+							std::cout << "\nBin @ " << t << " trigger(s):" << '\n';
+							for ( Variable * trigger : triggers ) std::cout << "   " << trigger->name() << "  tQ-tE: " << trigger->tQ << '-' << trigger->tE << '\n';
+							std::cout << std::endl;
 						}
 						if ( triggers.size() == 1u ) {
 							trigger1 = triggers[ 0 ]; // Use single trigger processing

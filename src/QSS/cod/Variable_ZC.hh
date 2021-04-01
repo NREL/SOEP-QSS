@@ -76,7 +76,7 @@ protected: // Creation
 	 Real const aTol = 1.0e-6,
 	 Real const zTol = 1.0e-6
 	) :
-	 Super( order, name, rTol, aTol ),
+	 Super( order, name, rTol * options::zFac * options::zrFac, aTol * options::zFac * options::zaFac ),
 	 zTol( std::max( zTol, 0.0 ) ),
 	 zChatter_( zTol > 0.0 )
 	{}

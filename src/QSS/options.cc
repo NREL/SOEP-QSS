@@ -53,8 +53,10 @@ double rTol( 1.0e-4 ); // Relative tolerance
 double aTol( 1.0e-6 ); // Absolute tolerance
 double aFac( 0.01 ); // Absolute tolerance factor
 double zTol( 1.0e-6 ); // Zero-crossing/root tolerance
-double zMul( 8.0 ); // Zero-crossing tolerance bump multiplier
-double zFac( 8.0 ); // Zero-crossing tolerance factor
+double zMul( 10.0 ); // Zero-crossing tolerance bump multiplier
+double zFac( 1.0 ); // Zero-crossing tolerance factor
+double zrFac( 10.0 ); // Zero-crossing relative tolerance factor
+double zaFac( 0.1 ); // Zero-crossing absolute tolerance factor
 double dtMin( 0.0 ); // Min time step (s)
 double dtMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Max time step (s)
 double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Inf time step (s)
@@ -138,8 +140,10 @@ help_display()
 	std::cout << " --aTol=TOL       Absolute tolerance  [rTol*aFac*nominal]" << '\n';
 	std::cout << " --aFac=FAC       Absolute tolerance factor  [0.01]" << '\n';
 	std::cout << " --zTol=TOL       Zero-crossing/root tolerance  [1e-6|FMU]" << '\n';
-	std::cout << " --zMul=MUL       Zero-crossing tolerance bump multiplier  [8]" << '\n';
-	std::cout << " --zFac=FAC       Zero-crossing tolerance factor  [8]" << '\n';
+	std::cout << " --zMul=MUL       Zero-crossing tolerance bump multiplier  [" << zMul << "]" << '\n';
+	std::cout << " --zFac=FAC       Zero-crossing tolerance factor  [" << zFac << "]" << '\n';
+	std::cout << " --zrFac=FAC      Zero-crossing relative tolerance factor  [" << zrFac << "]" << '\n';
+	std::cout << " --zaFac=FAC      Zero-crossing absolute tolerance factor  [" << zaFac << "]" << '\n';
 	std::cout << " --dtMin=STEP     Min time step (s)  [0]" << '\n';
 	std::cout << " --dtMax=STEP     Max time step (s)  [infinity]" << '\n';
 	std::cout << " --dtInf=STEP     Deactivation control time step (s)  [infinity]" << '\n';
@@ -388,16 +392,36 @@ process_args( int argc, char * argv[] )
 			std::string const zFac_str( arg_value( arg ) );
 			if ( is_double( zFac_str ) ) {
 				zFac = double_of( zFac_str );
-//				if ( zFac < 1.0 ) {
-//					std::cerr << "\nError: zFac < 1.0: " << zFac_str << std::endl;
-//					fatal = true;
-//				}
 				if ( zFac <= 0.0 ) {
 					std::cerr << "\nError: zFac <= 0.0: " << zFac_str << std::endl;
 					fatal = true;
 				}
 			} else {
 				std::cerr << "\nError: Nonnumeric zFac: " << zFac_str << std::endl;
+				fatal = true;
+			}
+		} else if ( has_value_option( arg, "zrFac" ) ) {
+			std::string const zrFac_str( arg_value( arg ) );
+			if ( is_double( zrFac_str ) ) {
+				zrFac = double_of( zrFac_str );
+				if ( zrFac <= 0.0 ) {
+					std::cerr << "\nError: zrFac <= 0.0: " << zrFac_str << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::cerr << "\nError: Nonnumeric zrFac: " << zrFac_str << std::endl;
+				fatal = true;
+			}
+		} else if ( has_value_option( arg, "zaFac" ) ) {
+			std::string const zaFac_str( arg_value( arg ) );
+			if ( is_double( zaFac_str ) ) {
+				zaFac = double_of( zaFac_str );
+				if ( zaFac <= 0.0 ) {
+					std::cerr << "\nError: zaFac <= 0.0: " << zaFac_str << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::cerr << "\nError: Nonnumeric zaFac: " << zaFac_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtMin" ) ) {

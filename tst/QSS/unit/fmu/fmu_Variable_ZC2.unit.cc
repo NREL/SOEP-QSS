@@ -93,6 +93,7 @@ TEST( fmu_Variable_ZC2Test, BouncingBall )
 	options::output::F = false;
 	options::output::L = false;
 	options::zFac = 2.0; // So h tE is less than z tE when we call advance_QSS
+	options::zrFac = options::zaFac = 1.0;
 
 	std::streambuf * coutBuf( std::cout.rdbuf() ); std::ostringstream strCout; std::cout.rdbuf( strCout.rdbuf() ); // Redirect cout
 	allEventIndicators.clear();
@@ -163,5 +164,5 @@ TEST( fmu_Variable_ZC2Test, BouncingBall )
 	EXPECT_NEAR( 1.0 - ( 0.5 * 9.80665 ) * square( h_tE ), z->x( z->tX ), 1e-12 );
 	EXPECT_NEAR( 1.0 - ( 0.5 * 9.80665 ) * square( h_tE ), z->q( z->tQ ), 1e-12 );
 
-	options::zFac = 1.0; // Restore in case another test forgets to set it
+	options::zFac = 1.0; // Reset to common unit testing value
 }

@@ -96,7 +96,7 @@ TEST( fmu_Variable_ZC3Test, BouncingBall )
 	options::output::X = false;
 	options::output::F = false;
 	options::output::L = false;
-	options::zFac = 1.0;
+	options::zFac = options::zrFac = options::zaFac = 1.0;
 
 	std::streambuf * coutBuf( std::cout.rdbuf() ); std::ostringstream strCout; std::cout.rdbuf( strCout.rdbuf() ); // Redirect cout
 	allEventIndicators.clear();

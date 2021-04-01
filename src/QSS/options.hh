@@ -88,6 +88,8 @@ extern double aFac; // Absolute tolerance factor
 extern double zTol; // Zero-crossing tolerance
 extern double zMul; // Zero-crossing tolerance bump multiplier
 extern double zFac; // Zero-crossing tolerance factor
+extern double zrFac; // Zero-crossing relative tolerance factor
+extern double zaFac; // Zero-crossing absolute tolerance factor
 extern double dtMin; // Min time step (s)
 extern double dtMax; // Max time step (s)
 extern double dtInf; // Inf time step (s)
