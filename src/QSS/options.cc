@@ -60,6 +60,7 @@ double zaFac( 0.1 ); // Zero-crossing absolute tolerance factor
 double dtMin( 0.0 ); // Min time step (s)
 double dtMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Max time step (s)
 double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Inf time step (s)
+double dtZMax( 0.01 ); // Max time step before zero-crossing (s)
 double dtZC( 1.0e-9 ); // FMU zero-crossing time step (s)
 double dtND( 1.0e-6 ); // Numeric differentiation time step (s)
 double two_dtND( 2.0e-6 ); // 2 * dtND
@@ -134,12 +135,12 @@ help_display()
 	std::cout << '\n' << "QSS [options] [model [model ...]]" << "\n\n";
 	std::cout << "Options:" << "\n\n";
 	std::cout << " --qss=QSS        QSS method: (x)(LI)QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
-	std::cout << " --eidd           Use FMU event indicator directional derivatives  [if supported by FMU]" << '\n';
+	std::cout << " --eidd           Use FMU event indicator directional derivatives" << '\n';
 	std::cout << " --no-eidd        Don't use FMU event indicator directional derivatives" << '\n';
-	std::cout << " --rTol=TOL       Relative tolerance  [1e-4|FMU]" << '\n';
+	std::cout << " --rTol=TOL       Relative tolerance  [" << rTol << "|FMU]" << '\n';
 	std::cout << " --aTol=TOL       Absolute tolerance  [rTol*aFac*nominal]" << '\n';
-	std::cout << " --aFac=FAC       Absolute tolerance factor  [0.01]" << '\n';
-	std::cout << " --zTol=TOL       Zero-crossing/root tolerance  [1e-6|FMU]" << '\n';
+	std::cout << " --aFac=FAC       Absolute tolerance factor  [" << aTol << "]" << '\n';
+	std::cout << " --zTol=TOL       Zero-crossing/root tolerance  [" << zTol << "|FMU]" << '\n';
 	std::cout << " --zMul=MUL       Zero-crossing tolerance bump multiplier  [" << zMul << "]" << '\n';
 	std::cout << " --zFac=FAC       Zero-crossing tolerance factor  [" << zFac << "]" << '\n';
 	std::cout << " --zrFac=FAC      Zero-crossing relative tolerance factor  [" << zrFac << "]" << '\n';
@@ -147,12 +148,13 @@ help_display()
 	std::cout << " --dtMin=STEP     Min time step (s)  [0]" << '\n';
 	std::cout << " --dtMax=STEP     Max time step (s)  [infinity]" << '\n';
 	std::cout << " --dtInf=STEP     Deactivation control time step (s)  [infinity]" << '\n';
-	std::cout << " --dtZC=STEP      FMU zero-crossing time step (s)  [1e-9]" << '\n';
-	std::cout << " --dtND=STEP      Numeric differentiation time step (s)  [1e-6]" << '\n';
+	std::cout << " --dtZMax=STEP    Max time step before zero-crossing (s)  (0 => Off)  [" << dtZMax << "]" << '\n';
+	std::cout << " --dtZC=STEP      FMU zero-crossing time step (s)  [" << dtZC << "]" << '\n';
+	std::cout << " --dtND=STEP      Numeric differentiation time step (s)  [" << dtND << "]" << '\n';
 	std::cout << " --dtCon=STEP     FMU connection sync time step (s)  [0]" << '\n';
 	std::cout << " --dtOut=STEP     Sampled output time step (s)  [computed]" << '\n';
 	std::cout << " --tEnd=TIME      End time (s)  [1|FMU]" << '\n';
-	std::cout << " --pass=COUNT     Pass count limit  [20]" << '\n';
+	std::cout << " --pass=COUNT     Pass count limit  [" << pass << "]" << '\n';
 	std::cout << " --cycles         Report dependency cycles" << '\n';
 	std::cout << " --inflection     Requantize at inflections" << '\n';
 	std::cout << " --refine         Refine FMU zero-crossing roots" << '\n';
@@ -335,6 +337,9 @@ process_args( int argc, char * argv[] )
 				std::cerr << "\nError: Nonnumeric rTol: " << rTol_str << std::endl;
 				fatal = true;
 			}
+			if ( rTol >= 1.0 ) {
+				std::cerr << "\nWarning: rTol >= 1: " << rTol << std::endl;
+			}
 		} else if ( has_value_option( arg, "aTol" ) ) {
 			specified::aTol = true;
 			std::string const aTol_str( arg_value( arg ) );
@@ -458,6 +463,18 @@ process_args( int argc, char * argv[] )
 				}
 			} else {
 				std::cerr << "\nError: Nonnumeric dtInf: " << dtInf_str << std::endl;
+				fatal = true;
+			}
+		} else if ( has_value_option( arg, "dtZMax" ) ) {
+			std::string const dtZMax_str( arg_value( arg ) );
+			if ( is_double( dtZMax_str ) ) {
+				dtZMax = double_of( dtZMax_str );
+				if ( dtZMax < 0.0 ) {
+					std::cerr << "\nError: Negative dtZMax: " << dtZMax_str << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::cerr << "\nError: Nonnumeric dtZMax: " << dtZMax_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtZC" ) ) {
@@ -921,8 +938,19 @@ process_args( int argc, char * argv[] )
 		if ( ! specified::aTol ) aTol = rTol * aFac; // Make unspecified aTol consistent with rTol * aFac for use in cod
 	}
 
+	// Inter-option checks
+	if ( specified::rTol && ( rTol * zFac * zrFac >= 1.0 ) ) {
+		std::cerr << "\nWarning: Zero-crossing relative tolerance: rTol * zFac * zrFac >= 1: " << rTol * zFac * zrFac << std::endl;
+	}
+
 	if ( help ) std::exit( EXIT_SUCCESS );
 	if ( fatal ) std::exit( EXIT_FAILURE );
+
+	std::cout << "\nQSS Command Line Arguments:\n";
+	for ( int i = 1; i < argc; ++i ) {
+		std::cout << ' ' <<  argv[ i ] << '\n';
+	}
+	std::cout << std::endl;
 }
 
 // Multiple models?

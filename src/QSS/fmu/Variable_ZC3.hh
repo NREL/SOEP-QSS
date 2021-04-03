@@ -169,6 +169,7 @@ public: // Methods
 		set_tE();
 		set_tZ();
 		( tE < tZ ) ? add_QSS_ZC( tE ) : add_ZC( tZ );
+		fixup_tE();
 		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << std::endl;
 	}
 
@@ -266,6 +267,7 @@ public: // Methods
 		x_mag_zero();
 		set_tZ( tZ_last = tZ ); // Next zero-crossing: Might be in active segment
 		( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
+		fixup_tE();
 		if ( options::output::d ) std::cout << "Z  " << name() << '(' << tZ_last << ')' << "   tZ=" << tZ << std::endl;
 	}
 
@@ -462,6 +464,7 @@ private: // Methods
 				}
 			}
 		}
+		fixup_tE();
 	}
 
 	// Coefficient 1 from FMU at Time tQ

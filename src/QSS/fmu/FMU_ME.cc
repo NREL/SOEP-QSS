@@ -481,6 +481,8 @@ namespace fmu {
 				fmi2_import_real_variable_t * var_real( fmi2_import_get_variable_as_real( var ) );
 				fmi2_real_t const var_start( var_has_start ? fmi2_import_get_real_variable_start( var_real ) : 0.0 );
 				if ( var_has_start ) std::cout << " Start: " << var_start << std::endl;
+				Real const var_nominal( fmi2_xml_get_real_variable_nominal( var_real ) );
+				std::cout << " Nominal: " << var_nominal << std::endl;
 				if ( ( var_causality == fmi2_causality_enu_local ) || ( var_causality == fmi2_causality_enu_output ) ) {
 					if ( var_causality == fmi2_causality_enu_local ) std::cout << " Causality: Local" << std::endl;
 					if ( var_causality == fmi2_causality_enu_output ) std::cout << " Causality: Output" << std::endl;
@@ -636,7 +638,7 @@ namespace fmu {
 						}
 						Variable * qss_var( nullptr );
 						if ( inp_fxn || !options::perfect ) { // Use input variables for connections
-							Real const var_aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac * fmi2_xml_get_real_variable_nominal( var_real ), std::numeric_limits< double >::min() ) );
+							Real const var_aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac * var_nominal, std::numeric_limits< double >::min() ) ); // Use variable nominal value to set the absolute tolerance unless aTol specified
 							if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) ) {
 								qss_var = new Variable_Inp1( var_name, options::rTol, var_aTol, this, fmu_var, inp_fxn );
 							} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) ) {
@@ -976,6 +978,7 @@ namespace fmu {
 						std::cerr << " Error: Nonpositive nominal value for " << var_name << ": " << x_nominal[ i ] << std::endl;
 						std::exit( EXIT_FAILURE );
 					}
+					std::cout << " Nominal value of " << var_name << " = " << x_nominal[ i ] << std::endl;
 					Variable_QSS * qss_var( nullptr );
 					Real const var_aTol( options::specified::aTol ? options::aTol : std::max( options::rTol * options::aFac * x_nominal[ i ], std::numeric_limits< double >::min() ) ); // Use variable nominal value to set the absolute tolerance unless aTol specified
 					if ( options::qss == options::QSS::QSS1 ) {

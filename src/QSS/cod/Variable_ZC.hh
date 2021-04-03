@@ -317,6 +317,16 @@ protected: // Methods
 		if ( ( i == n ) && ( options::output::d ) ) std::cout << " ^ " << name() << '(' << t << ')' << " tZ may not have converged" << std::endl;
 	}
 
+	// Fix Up tE < tZ if Needed
+	void
+	fixup_tE()
+	{
+		if ( ( options::dtZMax > 0.0 ) && ( tZ <= tE ) && ( tX < tZ - options::dtZMax ) ) { // Move tE before tZ
+			tE = tZ - options::dtZMax;
+			shift_QSS_ZC( tE );
+		}
+	}
+
 protected: // Static Methods
 
 	// Crossing Type from Values

@@ -93,6 +93,7 @@ extern double zaFac; // Zero-crossing absolute tolerance factor
 extern double dtMin; // Min time step (s)
 extern double dtMax; // Max time step (s)
 extern double dtInf; // Inf time step (s)
+extern double dtZMax; // Max time step before zero-crossing (s)
 extern double dtZC; // FMU zero-crossing time step (s)
 extern double dtND; // Numeric differentiation time step (s)
 extern double two_dtND; // 2 * dtND

@@ -284,6 +284,16 @@ protected: // Methods
 	void
 	refine_root_ZCe( Time const tBeg );
 
+	// Fix Up tE < tZ if Needed
+	void
+	fixup_tE()
+	{
+		if ( ( options::dtZMax > 0.0 ) && ( tZ <= tE ) && ( tX < tZ - options::dtZMax ) ) { // Move tE before tZ
+			tE = tZ - options::dtZMax;
+			shift_QSS_ZC( tE );
+		}
+	}
+
 protected: // Static Methods
 
 	// Crossing Type from Values

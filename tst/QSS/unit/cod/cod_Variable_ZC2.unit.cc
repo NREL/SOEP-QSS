@@ -53,6 +53,7 @@ using namespace QSS::cod::mdl;
 TEST( cod_Variable_ZC2Test, Basic )
 {
 	options::zFac = options::zrFac = options::zaFac = 1.0;
+	options::dtZMax = 0.0;
 
 	Variable_QSS2< Function_LTI > x( "x", 1.0e-4, 1.0e-4 );
 	x.add( -1.0 );
@@ -92,6 +93,7 @@ TEST( cod_Variable_ZC2Test, Basic )
 TEST( cod_Variable_ZC2Test, Roots )
 {
 	options::zFac = options::zrFac = options::zaFac = 1.0;
+	options::dtZMax = 0.0;
 
 	Variable_QSS2< Function_LTI > x( "x" );
 	x.add( &x ).add( -2.0 * M_E );

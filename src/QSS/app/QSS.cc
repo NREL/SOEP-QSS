@@ -85,6 +85,12 @@ main( int argc, char * argv[] )
 	std::cerr << std::setprecision( 15 ) << std::boolalpha;
 	std::clog << std::setprecision( 15 ) << std::boolalpha;
 
+	// Startup banner
+	std::cout << '\n';
+	std::cout << "_______________________________________________________________" << "\n\n";
+	std::cout << "|||   LBNL/DOE   SOEP-QSS   Quantized State System Solver   |||" << '\n';
+	std::cout << "_______________________________________________________________" << "\n\n";
+
 	// Process command line arguments
 	options::process_args( argc, argv );
 	if ( options::models.empty() ) {
