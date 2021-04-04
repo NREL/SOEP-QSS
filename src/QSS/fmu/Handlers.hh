@@ -163,8 +163,7 @@ public: // Methods
 		set_specs();
 
 		// FMU pooled data set up
-		size_type const hnd_n( hnd_.n() );
-		hnd_ders_.clear(); hnd_ders_.reserve( hnd_n );
+		hnd_ders_.clear(); hnd_ders_.reserve( hnd_.n() );
 		for ( Variable * handler : handlers_ ) {
 			assert( handler->not_ZC() && handler->not_Input() ); // Check valid handler types
 			hnd_ders_.push_back( handler->der().ref );
@@ -230,8 +229,7 @@ public: // Methods
 			for ( Variable * observee : uni_order_ ? hnd_observees_ : hnd1_observees_ ) {
 				observee->fmu_set_q( t );
 			}
-			size_type const hnd_n( hnd_.n() );
-			assert( hnd_n == hnd_ders_.size() );
+			assert( hnd_.n() == hnd_ders_.size() );
 			size_type const hnd1_b( hnd1_.b() );
 			fmu_me_->get_reals( hnd1_.n(), &hnd_ders_.refs[ hnd1_b ], &hnd_ders_.ders[ hnd1_b ] );
 			for ( size_type i = hnd1_.b(), e = hnd_.e(); i < e; ++i ) { // Order 1+ handlers

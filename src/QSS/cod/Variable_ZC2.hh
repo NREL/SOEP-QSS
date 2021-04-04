@@ -84,6 +84,7 @@ public: // Types
 	using Super::add_QSS_ZC;
 	using Super::add_ZC;
 	using Super::dt_infinity;
+	using Super::fixup_tE;
 	using Super::has;
 	using Super::refine_root_ZC;
 	using Super::shift_QSS_ZC;

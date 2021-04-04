@@ -75,7 +75,7 @@ run : $(EXE)
 $(EXE) : $(OBJ) $(PATH_LIBS)
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d))
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.o))
-	$(CXX) $(LDFLAGS) -o $@ $^ $(LINK_LIBS) -L$(FMIL_HOME)/lib -lfmilib -L$(GTEST_BIN) -lgtest -lpthread
+	$(CXX) $(LDFLAGS) -o $@ $^ $(LINK_LIBS) -L$(FMIL_HOME)/lib -lfmilib -L$(GTEST_BIN) -lgtest -lpthread -ldl
 
 .PRECIOUS : $(EXE)
 
