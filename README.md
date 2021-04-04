@@ -368,6 +368,7 @@ Instructions for building the QSS application on different platforms follows.
 ### Linux
 
 FMIL:
+* See the FMIL directory for full information on building and using the FMIL with QSS.
 * You will need a build of the latest [FMI Library](http://www.jmodelica.org/FMILibrary).
 * If your FMI Library is not installed to directories the `setFMIL` scripts expect (such as `/opt/FMIL.GCC.r`) copy the corresponding `bin/Linux/<compiler>/setFMIL` to a directory in your PATH and adapt it to the location of you FMI Library installation.
 * FMU-QSS support needs extra FMIL headers added to the FMIL installation. For Linux this would be installed with commands of the form (adjusted for your configuration):
