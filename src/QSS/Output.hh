@@ -196,8 +196,8 @@ public: // Methods
 	// Write Header Lines
 	void
 	header(
-	 std::string const & v_type,
-	 std::string const & v_unit
+	 std::string const & v_type = std::string(),
+	 std::string const & v_unit = std::string()
 	)
 	{
 		std::ofstream s( file_, std::ios_base::binary | std::ios_base::out | std::ios_base::app );

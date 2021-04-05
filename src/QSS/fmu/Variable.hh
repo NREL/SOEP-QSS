@@ -1449,10 +1449,13 @@ public: // Methods: Output
 			} else if ( var_.is_Integer() ) {
 				char const * var_type_char( fmi2_import_get_integer_variable_quantity( var_.ivr ) );
 				std::string const var_type( var_type_char == nullptr ? "" : var_type_char );
-				std::string const var_unit{}; // Integer variables have no unit
-				if ( options::output::X ) out_x_.header( var_type, var_unit );
-				if ( options::output::Q ) out_q_.header( var_type, var_unit );
-			} // Modelica Boolean variables can have a quantity but there is no FMIL API for getting it
+				// Integer variables have no unit
+				if ( options::output::X ) out_x_.header( var_type );
+				if ( options::output::Q ) out_q_.header( var_type );
+			} else { // Modelica Boolean variables can have a quantity but there is no FMIL API for getting it
+				if ( options::output::X ) out_x_.header();
+				if ( options::output::Q ) out_q_.header();
+			}
 		}
 	}
 
