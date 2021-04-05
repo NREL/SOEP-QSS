@@ -71,15 +71,30 @@ public: // Creation
 	// Default Constructor
 	Output() = default;
 
-	// Name + Type Constructor
+	// Name + Flag Constructor
 	Output(
 	 std::string const & var,
-	 char const type,
+	 char const flag,
+	 bool const do_init = true
+	) :
+	 file_( var + '.' + flag + ".out" )
+	{
+		if ( do_init ) {
+			t_.reserve( capacity_ );
+			v_.reserve( capacity_ );
+			std::ofstream( file_, std::ios_base::binary | std::ios_base::out );
+		}
+	}
+
+	// Name + Flag + Decoration Constructor
+	Output(
+	 std::string const & var,
+	 char const flag,
 	 std::string const & dec,
 	 bool const do_init = true
 	) :
 	 dec_( dec ),
-	 file_( var + dec + '.' + type + ".out" )
+	 file_( var + dec + '.' + flag + ".out" )
 	{
 		if ( do_init ) {
 			t_.reserve( capacity_ );
@@ -88,30 +103,15 @@ public: // Creation
 		}
 	}
 
-	// Name + Type Constructor
-	Output(
-	 std::string const & var,
-	 char const type,
-	 bool const do_init = true
-	) :
-	 file_( var + '.' + type + ".out" )
-	{
-		if ( do_init ) {
-			t_.reserve( capacity_ );
-			v_.reserve( capacity_ );
-			std::ofstream( file_, std::ios_base::binary | std::ios_base::out );
-		}
-	}
-
-	// Directory + Name + Type Constructor
+	// Directory + Name + Flag Constructor
 	Output(
 	 std::string const & dir,
 	 std::string const & var,
-	 char const type,
+	 char const flag,
 	 std::string const & dec = std::string()
 	) :
 	 dec_( dec ),
-	 file_( var + dec + '.' + type + ".out" )
+	 file_( var + dec + '.' + flag + ".out" )
 	{
 		t_.reserve( capacity_ );
 		v_.reserve( capacity_ );
@@ -155,12 +155,12 @@ public: // Methods
 	void
 	init(
 	 std::string const & var,
-	 char const type,
+	 char const flag,
 	 std::string const & dec = std::string() // Decoration
 	)
 	{
 		if ( !dec.empty() ) dec_ = dec;
-		file_ = std::string( var + dec_ + '.' + type + ".out" );
+		file_ = std::string( var + dec_ + '.' + flag + ".out" );
 		t_.clear();
 		v_.clear();
 		t_.reserve( capacity_ );
@@ -173,12 +173,12 @@ public: // Methods
 	init(
 	 std::string const & dir,
 	 std::string const & var,
-	 char const type,
+	 char const flag,
 	 std::string const & dec = std::string() // Decoration
 	)
 	{
 		if ( !dec.empty() ) dec_ = dec;
-		file_ = std::string( var + dec_ + '.' + type + ".out" );
+		file_ = std::string( var + dec_ + '.' + flag + ".out" );
 		t_.clear();
 		v_.clear();
 		t_.reserve( capacity_ );
@@ -191,6 +191,18 @@ public: // Methods
 			file_ = dir + path::sep + file_;
 		}
 		std::ofstream( file_, std::ios_base::binary | std::ios_base::out );
+	}
+
+	// Write Header Lines
+	void
+	header(
+	 std::string const & v_type,
+	 std::string const & v_unit
+	)
+	{
+		std::ofstream s( file_, std::ios_base::binary | std::ios_base::out | std::ios_base::app );
+		s << "Time " << v_type << '\n' << "s " << v_unit << '\n';
+		s.close();
 	}
 
 	// Append Time and Value Pair
@@ -241,7 +253,7 @@ public: // Methods
 
 private: // Static Functions
 
-	// Type-Specific Precision and Width Scientific-Formatted String of a Number
+	// Precision and Width Scientific-Formatted String of a double
 	static
 	std::string
 	sci( double const num )

@@ -1439,6 +1439,20 @@ public: // Methods: Output
 		if ( out_on_ ) {
 			if ( options::output::X ) out_x_.init( dir, name(), 'x', dec );
 			if ( options::output::Q ) out_q_.init( dir, name(), 'q', dec );
+			if ( var_.is_Real() ) {
+				char const * var_type_char( fmi2_import_get_real_variable_quantity( var_.rvr ) );
+				std::string const var_type( var_type_char == nullptr ? "" : var_type_char );
+				fmi2_import_unit_t * const var_unit_ptr( fmi2_import_get_real_variable_unit( var_.rvr ) );
+				std::string const var_unit( var_unit_ptr == nullptr ? "" : fmi2_import_get_unit_name( var_unit_ptr ) );
+				if ( options::output::X ) out_x_.header( var_type, var_unit );
+				if ( options::output::Q ) out_q_.header( var_type, var_unit );
+			} else if ( var_.is_Integer() ) {
+				char const * var_type_char( fmi2_import_get_integer_variable_quantity( var_.ivr ) );
+				std::string const var_type( var_type_char == nullptr ? "" : var_type_char );
+				std::string const var_unit{}; // Integer variables have no unit
+				if ( options::output::X ) out_x_.header( var_type, var_unit );
+				if ( options::output::Q ) out_q_.header( var_type, var_unit );
+			} // Modelica Boolean variables can have a quantity but there is no FMIL API for getting it
 		}
 	}
 
