@@ -147,6 +147,7 @@ namespace output { // Output selections
 
 extern bool d; // Diagnostics?
 extern bool s; // Statistics?
+extern bool h; // Headers?
 extern bool R; // Requantizations?
 extern bool O; // Observer updates?
 extern bool Z; // Zero-crossings?

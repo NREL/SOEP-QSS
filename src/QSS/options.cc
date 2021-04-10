@@ -114,6 +114,7 @@ namespace output { // Output selections
 
 bool d( false ); // Diagnostics?
 bool s( false ); // Statistics?
+bool h( false ); // Headers?
 bool R( true ); // Requantizations?
 bool O( true ); // Observer updates?
 bool Z( true ); // Zero-crossings?
@@ -195,6 +196,7 @@ help_display()
 	std::cout << " --out=OUTPUTS  Outputs  [ROZDX]" << '\n';
 	std::cout << "       d  Diagnostics" << '\n';
 	std::cout << "       s  Statistics" << '\n';
+	std::cout << "       h  Headers" << '\n';
 	std::cout << "     QSS Variables:" << '\n';
 	std::cout << "       R  Requantizations" << '\n';
 	std::cout << "       O  Observer updates" << '\n';
@@ -863,14 +865,15 @@ process_args( int argc, char * argv[] )
 			}
 			rdep.add( var_regex, rdeps_regex );
 		} else if ( has_option( arg, "out" ) || has_value_option( arg, "out" ) ) {
-			static std::string const out_flags( "dsROZDSXQAFLK" );
+			static std::string const out_flags( "dshROZDSXQAFLK" );
 			out = arg_value( arg );
 			if ( has_any_not_of( out, out_flags ) ) {
-				std::cerr << "\nError: Output flag not in " << out_flags << ": " << out << std::endl;
+				std::cerr << "\nError: Output option has flag not in " << out_flags << ": " << out << std::endl;
 				fatal = true;
 			}
 			output::d = has( out, 'd' );
 			output::s = has( out, 's' );
+			output::h = has( out, 'h' );
 			output::R = has( out, 'R' );
 			output::O = has( out, 'O' );
 			output::Z = has( out, 'Z' );

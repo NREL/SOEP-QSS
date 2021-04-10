@@ -1969,7 +1969,24 @@ namespace fmu {
 			f_outs.reserve( n_f_outs );
 			for ( auto const & var : f_outs_vars ) { // FMU QSS variables
 				f_outs.emplace_back( output_dir, var->name() + var->decoration(), 'f' );
-				f_outs.back().append( t, var->x( t ) );
+				Output< double > & f_out( f_outs.back() );
+				if ( options::output::h ) {
+					if ( var->var().is_Real() ) {
+						char const * var_type_char( fmi2_import_get_real_variable_quantity( var->var().rvr ) );
+						std::string const var_type( var_type_char == nullptr ? "" : var_type_char );
+						fmi2_import_unit_t * const var_unit_ptr( fmi2_import_get_real_variable_unit( var->var().rvr ) );
+						std::string const var_unit( var_unit_ptr == nullptr ? "" : fmi2_import_get_unit_name( var_unit_ptr ) );
+						f_out.header( var_type, var_unit );
+					} else if ( var->var().is_Integer() ) {
+						char const * var_type_char( fmi2_import_get_integer_variable_quantity( var->var().ivr ) );
+						std::string const var_type( var_type_char == nullptr ? "" : var_type_char );
+						// Integer variables have no unit
+						f_out.header( var_type );
+					} else { // Modelica Boolean variables can have a quantity but there is no FMIL API for getting it
+						f_out.header();
+					}
+				}
+				f_out.append( t, var->x( t ) );
 			}
 		}
 		if ( options::output::L && ( n_l_outs > 0u ) ) { // FMU local variable t0 outputs
@@ -1991,7 +2008,24 @@ namespace fmu {
 #else
 				l_outs.emplace_back( output_dir, var_name, 'f' );
 #endif
-				l_outs.back().append( t, get_as_real( var ) );
+				Output< double > & l_out( l_outs.back() );
+				if ( options::output::h ) {
+					if ( var.is_Real() ) {
+						char const * var_type_char( fmi2_import_get_real_variable_quantity( var.rvr ) );
+						std::string const var_type( var_type_char == nullptr ? "" : var_type_char );
+						fmi2_import_unit_t * const var_unit_ptr( fmi2_import_get_real_variable_unit( var.rvr ) );
+						std::string const var_unit( var_unit_ptr == nullptr ? "" : fmi2_import_get_unit_name( var_unit_ptr ) );
+						l_out.header( var_type, var_unit );
+					} else if ( var.is_Integer() ) {
+						char const * var_type_char( fmi2_import_get_integer_variable_quantity( var.ivr ) );
+						std::string const var_type( var_type_char == nullptr ? "" : var_type_char );
+						// Integer variables have no unit
+						l_out.header( var_type );
+					} else { // Modelica Boolean variables can have a quantity but there is no FMIL API for getting it
+						l_out.header();
+					}
+				}
+				l_out.append( t, get_as_real( var ) );
 			}
 		}
 		if ( doKOut ) { // FMU-QSS t0 smooth token outputs
