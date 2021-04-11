@@ -221,6 +221,15 @@ protected: // Creation
 	 out_q_( name, 'q', false )
 	{}
 
+public: // Creation
+
+	// Destructor
+	virtual
+	~Variable()
+	{
+		if ( conditional != nullptr ) conditional->rem_variable();
+	}
+
 protected: // Assignment
 
 	// Copy Assignment

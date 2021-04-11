@@ -178,6 +178,10 @@ connected();
 void
 dtOut_set( double const t );
 
+// Set dtND
+void
+dtND_set( double const dt );
+
 } // options
 } // QSS
 

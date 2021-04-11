@@ -495,20 +495,11 @@ process_args( int argc, char * argv[] )
 		} else if ( has_value_option( arg, "dtND" ) || has_value_option( arg, "dtNum" ) ) { // dtNum was prior name for dtND
 			std::string const dtND_str( arg_value( arg ) );
 			if ( is_double( dtND_str ) ) {
-				dtND = double_of( dtND_str );
+				dtND_set( double_of( dtND_str ) );
 				if ( dtND <= 0.0 ) {
 					std::cerr << "\nError: Nonpositive dtND: " << dtND_str << std::endl;
 					fatal = true;
 				}
-				two_dtND = 2.0 * dtND;
-				three_dtND = 3.0 * dtND;
-				one_over_dtND = 1.0 / dtND;
-				one_over_two_dtND = 1.0 / ( 2.0 * dtND );
-				one_over_two_dtND_squared = 1.0 / ( 2.0 * ( dtND * dtND ) );
-				one_over_four_dtND = 1.0 / ( 4.0 * dtND );
-				one_over_six_dtND = 1.0 / ( 6.0 * dtND );
-				one_over_six_dtND_squared = 1.0 / ( 6.0 * ( dtND * dtND ) );
-				one_over_six_dtND_cubed = 1.0 / ( 6.0 * ( dtND * dtND * dtND ) );
 			} else {
 				std::cerr << "\nError: Nonnumeric dtND: " << dtND_str << std::endl;
 				fatal = true;
@@ -975,6 +966,22 @@ void
 dtOut_set( double const t )
 {
 	if ( ! specified::dtOut ) dtOut = std::pow( 10.0, std::round( std::log10( t * 0.0002 ) ) );
+}
+
+// Set dtND
+void
+dtND_set( double const dt )
+{
+	dtND = dt;
+	two_dtND = 2.0 * dtND;
+	three_dtND = 3.0 * dtND;
+	one_over_dtND = 1.0 / dtND;
+	one_over_two_dtND = 1.0 / ( 2.0 * dtND );
+	one_over_two_dtND_squared = 1.0 / ( 2.0 * ( dtND * dtND ) );
+	one_over_four_dtND = 1.0 / ( 4.0 * dtND );
+	one_over_six_dtND = 1.0 / ( 6.0 * dtND );
+	one_over_six_dtND_squared = 1.0 / ( 6.0 * ( dtND * dtND ) );
+	one_over_six_dtND_cubed = 1.0 / ( 6.0 * ( dtND * dtND * dtND ) );
 }
 
 } // options

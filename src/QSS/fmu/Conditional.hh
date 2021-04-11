@@ -242,6 +242,13 @@ public: // Methods
 		shift_conditional();
 	}
 
+	// Remove Variable
+	void
+	rem_variable()
+	{
+		var_ = nullptr;
+	}
+
 private: // Data
 
 	Variable * var_{ nullptr }; // Event variable
