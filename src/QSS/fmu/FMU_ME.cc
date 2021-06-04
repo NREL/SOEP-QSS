@@ -621,9 +621,9 @@ namespace fmu {
 							std::cout << " Type: Real: Continuous: Input: Connection: " << con_name << std::endl;
 						} else { // Use hard-coded default function
 	//						inp_fxn = Function_Inp_constant( var_has_start ? var_start : 1.0 ); // Constant start value
-	//						inp_fxn = Function_Inp_sin( 2.0, 10.0, var_has_start ? var_start : 1.0 ); // 2 * sin( 10 * t ) + 1
-							inp_fxn = Function_Inp_step( var_has_start ? var_start : 0.0, 1.0, 1.0 ); // Step up by 1 every 1 s via discrete events
-	//						inp_fxn = Function_Inp_toggle( var_has_start ? var_start : 0.0, 1.0, 0.1 ); // Step up/down by 1 every 0.1 s via discrete events
+	//						inp_fxn = Function_Inp_sin( 2.0, 10.0, ( var_has_start ? var_start : 1.0 ) ); // 2 * sin( 10 * t ) + 1
+							inp_fxn = Function_Inp_step( ( var_has_start ? var_start : 0.0 ), 1.0, 1.0 ); // Step up by 1 every 1 s via discrete events
+	//						inp_fxn = Function_Inp_toggle( ( var_has_start ? var_start : 0.0 ), 1.0, 0.1 ); // Toggle by 1 every 1 s via discrete events
 							std::cout << " Type: Real: Continuous: Input: Function" << std::endl;
 						}
 						if ( inp_fxn ) {
@@ -685,8 +685,8 @@ namespace fmu {
 					if ( var_causality == fmi2_causality_enu_input ) {
 						std::cout << " Type: Real: Discrete: Input" << std::endl;
 //						Function inp_fxn = Function_Inp_constant( var_start ); // Constant start value
-						Function inp_fxn = Function_Inp_step( var_has_start ? var_start : 1.0, 1.0, 0.1 ); // Step up by 1 every 0.1 s via discrete events
-//						Function inp_fxn = Function_Inp_toggle( var_has_start ? var_start : 1.0, 1.0, 0.1 ); // Toggle 0-1 every 0.1 s via discrete events
+						Function inp_fxn = Function_Inp_step( var_has_start ? var_start : 0.0, 1.0, 1.0 ); // Step up by 1 every 1 s via discrete events
+//						Function inp_fxn = Function_Inp_toggle( var_has_start ? var_start : 0.0, 1.0, 1.0 ); // Toggle by 1 every 1 s via discrete events
 						Variable_InpD * qss_var( new Variable_InpD( var_name, this, fmu_var, inp_fxn ) );
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
@@ -765,8 +765,8 @@ namespace fmu {
 					if ( var_causality == fmi2_causality_enu_input ) {
 						std::cout << " Type: Integer: Discrete: Input" << std::endl;
 //						Function inp_fxn = Function_Inp_constant( var_start ); // Constant start value
-						Function inp_fxn = Function_Inp_step( var_has_start ? var_start : 1.0, 1.0, 0.1 ); // Step up by 1 every 0.1 s via discrete events
-//						Function inp_fxn = Function_Inp_toggle( var_has_start ? var_start : 1.0, 1.0, 0.1 ); // Toggle 0-1 every 0.1 s via discrete events
+						Function inp_fxn = Function_Inp_step( ( var_has_start ? var_start : 0.0 ), 1.0, 1.0 ); // Step up by 1 every 1 s via discrete events
+//						Function inp_fxn = Function_Inp_toggle( ( var_has_start ? var_start : 0.0 ), 1.0, 1.0 ); // Toggle by 1 every 1 s via discrete events
 						Variable_InpI * qss_var( new Variable_InpI( var_name, this, fmu_var, inp_fxn ) );
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
@@ -842,7 +842,7 @@ namespace fmu {
 					fmu_var_of_ref[ var_ref ] = fmu_var;
 					if ( var_causality == fmi2_causality_enu_input ) {
 						std::cout << " Type: Boolean: Discrete: Input" << std::endl;
-						Function inp_fxn = Function_Inp_toggle( 1.0, 1.0, 0.1 ); // Toggle 0-1 every 0.1 s via discrete events
+						Function inp_fxn = Function_Inp_toggle( 0.0, 1.0, 1.0 ); // Toggle 0-1 every 1 s via discrete events
 						Variable_InpB * qss_var( new Variable_InpB( var_name, this, fmu_var, inp_fxn ) );
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
@@ -1928,11 +1928,14 @@ namespace fmu {
 		if ( options::cycles ) cycles< Variable >( vars );
 
 		// Output initialization
+		OutputFilter const output_filter( options::var );
 		if ( options::output::K && ( out_var_refs.size() > 0u ) ) { // FMU t0 smooth token outputs
 			for ( auto const & var_ref : out_var_refs ) {
 				auto ivar( qss_var_of_ref.find( var_ref ) );
 				if ( ivar != qss_var_of_ref.end() ) {
-					fmu_qss_qss_outs.push_back( ivar->second );
+					if ( output_filter.fmu( ivar->second->name() ) ) {
+						fmu_qss_qss_outs.push_back( ivar->second );
+					}
 				}
 //				else {
 //					auto ifvar( fmu_var_of_ref.find( var_ref ) );
@@ -1953,7 +1956,6 @@ namespace fmu {
 		 ( options::output::K && ( n_fmu_qss_qss_outs > 0u ) ) );
 		doKOut = options::output::K && ( out_var_refs.size() > 0u );
 		std::string const output_dir( options::have_multiple_models() ? name : std::string() );
-		OutputFilter const output_filter( options::var );
 		if ( ( options::output::R || options::output::Z || options::output::D || options::output::S ) && ( options::output::X || options::output::Q ) ) { // QSS t0 outputs
 #ifdef _WIN32
 			name_decorate( vars );

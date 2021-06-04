@@ -140,7 +140,7 @@ help_display()
 	std::cout << " --no-eidd        Don't use FMU event indicator directional derivatives" << '\n';
 	std::cout << " --rTol=TOL       Relative tolerance  [" << rTol << "|FMU]" << '\n';
 	std::cout << " --aTol=TOL       Absolute tolerance  [rTol*aFac*nominal]" << '\n';
-	std::cout << " --aFac=FAC       Absolute tolerance factor  [" << aTol << "]" << '\n';
+	std::cout << " --aFac=FAC       Absolute tolerance factor  [" << aFac << "]" << '\n';
 	std::cout << " --zTol=TOL       Zero-crossing/root tolerance  [" << zTol << "|FMU]" << '\n';
 	std::cout << " --zMul=MUL       Zero-crossing tolerance bump multiplier  [" << zMul << "]" << '\n';
 	std::cout << " --zFac=FAC       Zero-crossing tolerance factor  [" << zFac << "]" << '\n';

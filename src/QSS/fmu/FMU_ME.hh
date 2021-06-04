@@ -557,6 +557,7 @@ public: // Data
 	Variables observers;
 	fmi2_boolean_t enterEventMode{ fmi2_false };
 	fmi2_boolean_t terminateSimulation{ fmi2_false };
+	int tPer{ 0 }; // Percent of simulation time completed
 	double sim_cpu_time{ 0.0 }; // Simulation CPU time
 	double sim_wall_time{ 0.0 }; // Simulation wall time
 	Counts c_QSS_events;
