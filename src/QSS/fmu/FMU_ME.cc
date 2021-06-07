@@ -1271,13 +1271,13 @@ namespace fmu {
 							if ( idep != fmu_idxs.end() ) {
 								Variable * dep( idep->second );
 								if ( dep == var ) {
-									std::cout << "  Var: " << dep->name() << " is self-observer" << std::endl;
+									std::cout << "  Self-observes" << std::endl;
 									var->self_observe();
 								} else if ( dep->is_ZC() ) {
-									std::cout << "  Zero Crossing Var: " << dep->name() << " handler modifies " << var->name() << std::endl;
+									std::cout << "  Modified by handler of zero crossing var: " << dep->name() << std::endl;
 									if ( dep->in_conditional() ) dep->conditional->add_observer( var );
 								} else {
-									std::cout << "  Var: " << dep->name() << " has observer " << var->name() << std::endl;
+									std::cout << "  Observes var: " << dep->name() << std::endl;
 									var->observe_forward( dep );
 								}
 							} else {
@@ -1347,13 +1347,13 @@ namespace fmu {
 							if ( idep != fmu_idxs.end() ) {
 								Variable * dep( idep->second );
 								if ( dep == var ) {
-									std::cout << "  Var: " << dep->name() << " is self-observer" << std::endl;
+									std::cout << "  Self-observes" << std::endl;
 									var->self_observe();
 								} else if ( dep->is_ZC() ) {
-									std::cout << "  Zero Crossing Var: " << dep->name() << " handler modifies " << var->name() << std::endl;
+									std::cout << "  Modified by handler of zero crossing var: " << dep->name() << std::endl;
 									if ( dep->in_conditional() ) dep->conditional->add_observer( var );
 								} else {
-									std::cout << "  Var: " << dep->name() << " has observer " << var->name() << std::endl;
+									std::cout << "  Observes var: " << dep->name() << std::endl;
 									var->observe_forward( dep );
 								}
 							} else {
@@ -1568,13 +1568,13 @@ namespace fmu {
 							if ( idep != fmu_idxs.end() ) { // Dependency is a QSS variable
 								Variable * dep( idep->second );
 								if ( dep == out_var ) {
-									std::cerr << "   Error: Output variable " << out_name << " has self-dependency" << std::endl;
+									std::cout << "  Self-observes" << std::endl;
 									std::exit( EXIT_FAILURE );
 								} else if ( dep->is_ZC() ) {
-									std::cout << "  Zero Crossing Var: " << dep->name() << " handler modifies output variable " << out_name << std::endl;
+									std::cout << "  Modified by handler of zero crossing var: " << dep->name() << std::endl;
 									if ( dep->in_conditional() ) dep->conditional->add_observer( out_var );
 								} else {
-									std::cout << "  Var: " << dep->name() << " has observer " << out_name << std::endl;
+									std::cout << "  Observes var: " << dep->name() << std::endl;
 									out_var->observe_forward( dep );
 								}
 							} else { // Dependency is a non-QSS variable
@@ -1619,10 +1619,10 @@ namespace fmu {
 							if ( idep_qss != fmu_idxs.end() ) { // Dependency is a QSS variable
 								Variable * dep( idep_qss->second );
 								if ( dep->is_ZC() ) {
-									std::cout << "  Zero Crossing Var: " << dep->name() << " handler modifies output variable " << out_name << std::endl;
+									std::cout << "  Modified by handler of zero crossing var: " << dep->name() << std::endl;
 									if ( dep->in_conditional() ) dep->conditional->add_observer( qss_var );
 								} else {
-									std::cout << "  Var: " << dep->name() << " has observer " << out_name << std::endl;
+									std::cout << "  Observes var: " << dep->name() << std::endl;
 									qss_var->observe_forward( dep );
 								}
 							} else { // Dependency is a non-QSS variable: These don't have relevant transitive dependencies on QSS variables

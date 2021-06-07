@@ -113,7 +113,7 @@ bool bin( false ); // Bin controls specified?
 namespace output { // Output selections
 
 bool d( false ); // Diagnostics?
-bool s( false ); // Statistics?
+bool s( true ); // Statistics?
 bool h( false ); // Headers?
 bool R( true ); // Requantizations?
 bool O( true ); // Observer updates?
@@ -193,7 +193,7 @@ help_display()
 	std::cout << "       SIZE  Bin size  (Size or U for Unlimited)  [U]" << '\n';
 	std::cout << "            FRAC  Min time step fraction  (0-1]  [0.25]" << '\n';
 	std::cout << "                 AUTO  Automatic bin size optimization?  (Y|N)  [N]" << '\n';
-	std::cout << " --out=OUTPUTS  Outputs  [ROZDX]" << '\n';
+	std::cout << " --out=OUTPUTS  Outputs  [sROZDX]" << '\n';
 	std::cout << "       d  Diagnostics" << '\n';
 	std::cout << "       s  Statistics" << '\n';
 	std::cout << "       h  Headers" << '\n';
@@ -208,7 +208,7 @@ help_display()
 	std::cout << "       A  All variables at every event" << '\n';
 	std::cout << "     FMU Variables (sampled @ dtOut):" << '\n';
 	std::cout << "       F  Ouput variables" << '\n';
-	std::cout << "       L  Local variables" << '\n';
+	std::cout << "       L  Local variables (enabled if --var used)" << '\n';
 	std::cout << "       K  FMU-QSS smooth tokens" << '\n';
 	std::cout << " --tLoc=TIME1:TIME2  FMU local variable full output time range (s)" << '\n';
 	std::cout << " --var=FILE       Variable output spec file" << '\n';
@@ -874,7 +874,7 @@ process_args( int argc, char * argv[] )
 			output::Q = has( out, 'Q' );
 			output::A = has( out, 'A' );
 			output::F = has( out, 'F' );
-			output::L = has( out, 'L' );
+			output::L = has( out, 'L' ) || has_value_option( arg, "var" );
 			output::K = has( out, 'K' );
 		} else if ( has_value_option( arg, "tLoc" ) ) {
 			specified::tLoc = true;
