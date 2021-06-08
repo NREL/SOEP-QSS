@@ -10,7 +10,6 @@
 *.log
 *.map
 *.o
-*.out
 *.o-*
 *.obj
 *.optrpt
@@ -22,6 +21,7 @@
 *.so
 *.so.*
 *~
+perf.data
 .directory
 .DS_Store
 
@@ -29,16 +29,17 @@
 .project
 .cproject
 .idea
-.se/*.vpwhist*
-.se/*.vtg
-.vscode/*.code-workspace
+.se/*
+.vscode/*
 
 *.asc
 *.csv
 *.fmu
 *.mo
+*.mof
+*.mos
+*.out
 *.xml
-perf.data
 
 fmu-uuid
 bin/Linux/**/QSS*

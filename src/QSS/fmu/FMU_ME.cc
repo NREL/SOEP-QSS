@@ -2042,6 +2042,7 @@ namespace fmu {
 		}
 
 		// Simulation loop initialization
+		tPer = 0;
 		n_discrete_events = 0;
 		n_QSS_events = 0;
 		n_QSS_simultaneous_events = 0;
@@ -2080,7 +2081,6 @@ namespace fmu {
 		Time const tPass( eventq->top_time() ); // Pass start time
 		Time tNext( eventInfoMaster->nextEventTimeDefined ? std::min( eventInfoMaster->nextEventTime, tE ) : tE );
 		Time t_bump( t ); // Bump time for FMU crossing detection
-		int tPer( 0 ); // Percent of simulation time completed
 		double const cpu_time_beg( cpu_time() ); // CPU time
 #ifdef _OPENMP
 		double const wall_time_beg( omp_get_wtime() ); // Wall time
