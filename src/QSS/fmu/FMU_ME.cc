@@ -623,7 +623,7 @@ namespace fmu {
 	//						inp_fxn = Function_Inp_constant( var_has_start ? var_start : 1.0 ); // Constant start value
 	//						inp_fxn = Function_Inp_sin( 2.0, 10.0, ( var_has_start ? var_start : 1.0 ) ); // 2 * sin( 10 * t ) + 1
 							inp_fxn = Function_Inp_step( ( var_has_start ? var_start : 0.0 ), 1.0, 1.0 ); // Step up by 1 every 1 s via discrete events
-	//						inp_fxn = Function_Inp_toggle( ( var_has_start ? var_start : 0.0 ), 1.0, 0.1 ); // Toggle by 1 every 1 s via discrete events
+	//						inp_fxn = Function_Inp_toggle( ( var_has_start ? var_start : 0.0 ), 1.0, 1.0 ); // Toggle by 1 every 1 s via discrete events
 							std::cout << " Type: Real: Continuous: Input: Function" << std::endl;
 						}
 						if ( inp_fxn ) {
@@ -1568,7 +1568,7 @@ namespace fmu {
 							if ( idep != fmu_idxs.end() ) { // Dependency is a QSS variable
 								Variable * dep( idep->second );
 								if ( dep == out_var ) {
-									std::cout << "  Self-observes" << std::endl;
+									std::cerr << "  Error: Self-observing output variable" << std::endl;
 									std::exit( EXIT_FAILURE );
 								} else if ( dep->is_ZC() ) {
 									std::cout << "  Modified by handler of zero crossing var: " << dep->name() << std::endl;

@@ -136,8 +136,8 @@ TEST( fmu_Variable_ZC2Test, BouncingBall )
 	EXPECT_EQ( -9.80665, v->q1( 0.0 ) );
 	EXPECT_EQ( 0.0, v->x2( 0.0 ) );
 
-	EXPECT_EQ( 1.0, z->rTol );
-	EXPECT_EQ( 1.0, z->aTol );
+	EXPECT_EQ( 2.0, z->rTol ); // zFac modifies this
+	EXPECT_EQ( 2.0, z->aTol ); // zFac modifies this
 	EXPECT_EQ( 2.0, z->qTol );
 	EXPECT_EQ( 0.0, z->tQ );
 	EXPECT_EQ( 0.0, z->tX );
