@@ -88,7 +88,7 @@ public: // Predicate
 
 	// QSS Variable?
 	bool
-	is_QSS() const override final
+	is_QSS() const override
 	{
 		return true;
 	}

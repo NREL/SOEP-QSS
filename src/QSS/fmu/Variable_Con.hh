@@ -67,14 +67,14 @@ public: // Predicate
 
 	// Input Variable?
 	bool
-	is_Input() const override final
+	is_Input() const override
 	{
 		return true;
 	}
 
 	// Connection Input Variable?
 	bool
-	is_connection() const override final
+	is_connection() const override
 	{
 		return true;
 	}
@@ -83,7 +83,7 @@ public: // Property
 
 	// Continuous Value at Time t
 	Real
-	x( Time const t ) const override final
+	x( Time const t ) const override
 	{
 		assert( out_var_ != nullptr );
 		return out_var_->x( t );
@@ -91,7 +91,7 @@ public: // Property
 
 	// Continuous First Derivative at Time t
 	Real
-	x1( Time const t ) const override final
+	x1( Time const t ) const override
 	{
 		assert( out_var_ != nullptr );
 		return out_var_->x1( t );
@@ -99,7 +99,7 @@ public: // Property
 
 	// Continuous Second Derivative at Time t
 	Real
-	x2( Time const t ) const override final
+	x2( Time const t ) const override
 	{
 		assert( out_var_ != nullptr );
 		return out_var_->x2( t );
@@ -107,7 +107,7 @@ public: // Property
 
 	// Continuous Third Derivative at Time t
 	Real
-	x3( Time const t ) const override final
+	x3( Time const t ) const override
 	{
 		assert( out_var_ != nullptr );
 		return out_var_->x3( t );
@@ -115,7 +115,7 @@ public: // Property
 
 	// Quantized Value at Time t
 	Real
-	q( Time const t ) const override final
+	q( Time const t ) const override
 	{
 		assert( out_var_ != nullptr );
 		return out_var_->q( t );
@@ -123,7 +123,7 @@ public: // Property
 
 	// Quantized First Derivative at Time t
 	Real
-	q1( Time const t ) const override final
+	q1( Time const t ) const override
 	{
 		assert( out_var_ != nullptr );
 		return out_var_->q1( t );
@@ -131,7 +131,7 @@ public: // Property
 
 	// Quantized Second Derivative at Time t
 	Real
-	q2( Time const t ) const override final
+	q2( Time const t ) const override
 	{
 		assert( out_var_ != nullptr );
 		return out_var_->q2( t );
@@ -139,7 +139,7 @@ public: // Property
 
 	// Quantized Third Derivative at Time t
 	Real
-	q3( Time const t ) const override final
+	q3( Time const t ) const override
 	{
 		assert( out_var_ != nullptr );
 		return out_var_->q3( t );
@@ -163,14 +163,14 @@ public: // Methods
 
 	// Initialization
 	void
-	init() override final
+	init() override
 	{
 		init_0();
 	}
 
 	// Initialization: Stage 0
 	void
-	init_0() override final
+	init_0() override
 	{
 		assert( out_var_ != nullptr );
 		assert( ! observes() );

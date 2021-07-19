@@ -92,14 +92,14 @@ public: // Predicate
 
 	// Zero-Crossing Variable?
 	bool
-	is_ZC() const override final
+	is_ZC() const override
 	{
 		return true;
 	}
 
 	// Unpredicted Crossing Detected?
 	bool
-	detected_crossing() const override final
+	detected_crossing() const override
 	{
 		return detected_crossing_;
 	}
@@ -117,7 +117,7 @@ public: // Property
 
 	// Boolean Value at Time t
 	Boolean
-	b( Time const t ) const override final
+	b( Time const t ) const override
 	{
 		return ( t == tZ_last );
 	}

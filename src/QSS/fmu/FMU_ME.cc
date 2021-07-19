@@ -50,9 +50,11 @@
 #include <QSS/BinOptimizer.hh>
 #include <QSS/container.hh>
 #include <QSS/cpu_time.hh>
+#include <QSS/math.hh>
 #include <QSS/options.hh>
 #include <QSS/OutputFilter.hh>
 #include <QSS/path.hh>
+#include <QSS/Range.hh>
 #include <QSS/string.hh>
 #include <QSS/Timers.hh>
 
@@ -417,7 +419,7 @@ namespace fmu {
 		}
 
 		// Report numeric differentiation time step
-		std::cout << "\nNumeric differentiation time step: " << options::dtND << " (s)" << std::endl;
+		std::cout << "\nNumeric differentiation time step: " << options::dtND << " (s)" << ( options::dtND_optimizer ? " before optimization" : "" ) << std::endl;
 
 		// FMU event info initialization
 		eventInfo.newDiscreteStatesNeeded = fmi2_false;
@@ -454,6 +456,20 @@ namespace fmu {
 		size_type const n_fmu_vars( fmi2_import_get_variable_list_size( var_list ) );
 		std::cout << "\nFMU Variable Processing: Num FMU-ME Variables: " << n_fmu_vars << " =====" << std::endl;
 		fmi2_value_reference_t const * vrs( fmi2_import_get_value_referece_list( var_list ) ); // reference is misspelled in FMIL API
+		{ // Check for duplicate value references
+			std::vector< fmi2_value_reference_t > var_ref_vec( vrs, vrs + n_fmu_vars );
+			std::sort( var_ref_vec.begin(), var_ref_vec.end() );
+			bool dups( false );
+			fmi2_value_reference_t last( 0 );
+			for ( std::vector< fmi2_value_reference_t >::size_type i = 1; i < n_fmu_vars; ++i ) {
+				if ( ( var_ref_vec[ i - 1 ] == var_ref_vec[ i ] ) && ( last != var_ref_vec[ i ] ) ) {
+					std::cerr << " Error: FMU value reference number repeats: " << var_ref_vec[ i ] << std::endl;
+					dups = true;
+					last = var_ref_vec[ i ];
+				}
+			}
+			if ( dups ) std::exit( EXIT_FAILURE );
+		}
 		std::unordered_map< fmi2_value_reference_t, FMU_Variable > fmu_var_of_ref;
 		for ( size_type i = 0; i < n_fmu_vars; ++i ) {
 			std::cout << "\nVariable  Index: " << i+1 << " Ref: " << vrs[ i ] << std::endl;
@@ -1765,15 +1781,170 @@ namespace fmu {
 		assert( order_max_NC <= max_rep_order );
 	}
 
+	// Optimize ND Time Step
+	void
+	FMU_ME::
+	dtND_optimize( Time const to )
+	{
+		// Note: Zero-crossing variables are not currently considered since they aren't integrated but it may be worth adding them
+
+		assert( options::dtND_optimizer );
+
+		if ( ( order_max_NC <= 1 ) || ( vars_NC.size() == 0u ) ) return; // Nothing to optimize
+
+		Time const dtND_ori( options::dtND );
+		Time const dtND_min( std::max( std::abs( t0 ), std::abs( tE ) ) * std::numeric_limits< Time >::epsilon() * 2.0 );
+		Time const dtND_max( options::dtND_max );
+		Time dtND( dtND_max );
+		Time dtND_opt( dtND_ori );
+		assert( dtND_min < dtND_ori );
+
+		size_type const n_NC( vars_NC.size() );
+		using DtVec = std::vector< Time >;
+		using DerVec = std::vector< Real >;
+		using DerVecs = std::vector< DerVec >;
+		DtVec dtNDs;
+		DerVecs x2( n_NC ); // Second derivatives
+		DerVecs x3( n_NC ); // Third derivatives
+
+		// Derivatives with dtND max
+		options::dtND_set( dtND );
+		dtNDs.push_back( dtND );
+		init_2_1();
+		init_3_1();
+		for ( size_type i = 0; i < n_NC; ++i ) {
+			Real const x2_i( vars_NC[ i ]->x2( to ) );
+			x2[ i ].push_back( x2_i );
+			if ( vars_NC[ i ]->order() >= 3 ) {
+				Real const x3_i( vars_NC[ i ]->x3( to ) );
+				x3[ i ].push_back( x3_i );
+			}
+		}
+
+		// Derivatives with half dtND max
+		options::dtND_set( dtND *= 0.5 );
+		dtNDs.push_back( dtND );
+		init_2_1();
+		init_3_1();
+		for ( size_type i = 0; i < n_NC; ++i ) {
+			Real const x2_i( vars_NC[ i ]->x2( to ) );
+			x2[ i ].push_back( x2_i );
+			if ( vars_NC[ i ]->order() >= 3 ) {
+				Real const x3_i( vars_NC[ i ]->x3( to ) );
+				x3[ i ].push_back( x3_i );
+			}
+		}
+
+		// Derivatives as dtND decreases
+		while ( dtND >= dtND_min * 2.0 ) {
+			options::dtND_set( dtND *= 0.5 );
+			dtNDs.push_back( dtND );
+			init_2_1();
+			init_3_1();
+			for ( size_type i = 0; i < n_NC; ++i ) {
+				Real const x2_i( vars_NC[ i ]->x2( to ) );
+				x2[ i ].push_back( x2_i );
+				Real const x3_i( vars_NC[ i ]->x3( to ) );
+				x3[ i ].push_back( x3_i );
+			}
+		}
+
+		size_type const n_dtND( dtNDs.size() );
+		if ( n_dtND >= 2u ) { // Compute and assign the optimal dtND
+			using Ranges = std::vector< Range >;
+			Ranges ranges;
+			size_type n_dtND_vars( 0u );
+
+			for ( size_type i = 0; i < n_NC; ++i ) { // Each variable
+				if ( vars_NC[ i ]->order() >= 2 ) {
+					size_type l( 0u ), u( 1u );
+					Real d2_min( std::abs( x2[ i ][ 1 ] - x2[ i ][ 0 ] ) );
+					for ( size_type j = 2; j < n_dtND; ++j ) { // Each dtND interval
+						Real const d2( std::abs( x2[ i ][ j ] - x2[ i ][ j-1 ] ) );
+						if ( d2 <= d2_min ) {
+							u = j;
+							if ( d2 < d2_min ) {
+								l = j-1;
+								d2_min = d2;
+							}
+						}
+					}
+					if ( ( d2_min > 0.0 ) || ( u < n_dtND - 1u ) || ( l > 0u ) ) { // Add range
+						++n_dtND_vars;
+						ranges.emplace_back( l, u + 1 );
+					}
+				}
+			}
+
+			if ( order_max_NC >= 3 ) { // 3rd order
+				for ( size_type i = 0; i < n_NC; ++i ) { // Each variable
+					if ( vars_NC[ i ]->order() >= 3 ) {
+						size_type l( 0u ), u( 1u );
+						Real d3_min( std::abs( x3[ i ][ 1 ] - x3[ i ][ 0 ] ) );
+						for ( size_type j = 2; j < n_dtND; ++j ) { // Each dtND interval
+							Real const d3( std::abs( x3[ i ][ j ] - x3[ i ][ j-1 ] ) );
+							if ( d3 <= d3_min ) {
+								u = j;
+								if ( d3 < d3_min ) {
+									l = j-1;
+									d3_min = d3;
+								}
+							}
+						}
+						if ( ( d3_min > 0.0 ) || ( u < n_dtND - 1u ) || ( l > 0u ) ) { // Add range
+							++n_dtND_vars;
+							ranges.emplace_back( l, u + 1 );
+						}
+					}
+				}
+			}
+
+			if ( n_dtND_vars > 0u ) { // Find range intersection expanding ranges if needed
+				assert( ! ranges.empty() );
+				Range ri; // Intersection range
+				while ( ri.empty() ) {
+					ri = ranges[ 0 ];
+					for ( Range const & r : ranges ) {
+						ri.intersect( r );
+						if ( ri.empty() ) { // Expand ranges
+							for ( Range & re : ranges ) { // Expand range
+								if ( re.b() > 0u ) --re.b();
+								if ( re.e() < n_dtND ) ++re.e();
+							}
+							break; // Try with larger ranges
+						}
+					}
+				}
+				assert( ! ri.empty() );
+				dtND_opt = dtND_max * std::pow( 2.0, -static_cast< double >( ri.b() ) ); // Use largest dtND in range intersection for now
+				options::dtND_set( dtND_opt );
+				std::cout << "\nAutomatic numeric differentiation time step: " << options::dtND << " (s)" << std::endl;
+			} else {
+				std::cout << "\nNumeric differentiation time step can't be set automatically" << std::endl;
+				options::dtND_set( dtND_ori );
+			}
+
+		} else {
+			std::cout << "\nNumeric differentiation time step can't be set automatically" << std::endl;
+			options::dtND_set( dtND_ori );
+		}
+	}
+
 	// Initialization
 	void
 	FMU_ME::
 	init()
 	{
+		double const dtND_min( std::max( std::abs( t0 ), std::abs( tE ) ) * std::numeric_limits< double >::epsilon() * 2.0 );
+		if ( options::dtND < dtND_min ) {
+			options::dtND = dtND_min;
+			std::cout << "\nNumeric differentiation time step raised for compatibility with time range and double precision epsilon: " << options::dtND << std::endl;
+		}
 		init_0_1();
 		init_0_2();
 		init_1_1();
 		init_1_2();
+		if ( options::dtND_optimizer ) dtND_optimize( t0 );
 		init_2_1();
 		init_2_2();
 		init_3_1();

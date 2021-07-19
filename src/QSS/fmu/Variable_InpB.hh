@@ -66,7 +66,7 @@ public: // Predicate
 
 	// Discrete Variable?
 	bool
-	is_Discrete() const override final
+	is_Discrete() const override
 	{
 		return true;
 	}
@@ -75,56 +75,56 @@ public: // Property
 
 	// Boolean Value
 	Boolean
-	b() const override final
+	b() const override
 	{
 		return x_;
 	}
 
 	// Boolean Value at Time t
 	Boolean
-	b( Time const ) const override final
+	b( Time const ) const override
 	{
 		return x_;
 	}
 
 	// Integer Value
 	Integer
-	i() const override final
+	i() const override
 	{
 		return Integer( x_ );
 	}
 
 	// Integer Value at Time t
 	Integer
-	i( Time const ) const override final
+	i( Time const ) const override
 	{
 		return Integer( x_ );
 	}
 
 	// Real Value
 	Real
-	r() const override final
+	r() const override
 	{
 		return Real( x_ );
 	}
 
 	// Real Value at Time t
 	Real
-	r( Time const ) const override final
+	r( Time const ) const override
 	{
 		return Real( x_ );
 	}
 
 	// Continuous Value at Time t
 	Real
-	x( Time const ) const override final
+	x( Time const ) const override
 	{
 		return Real( x_ );
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const ) const override final
+	q( Time const ) const override
 	{
 		return Real( x_ );
 	}
@@ -133,14 +133,14 @@ public: // Methods
 
 	// Initialization
 	void
-	init() override final
+	init() override
 	{
 		init_0();
 	}
 
 	// Initialization: Stage 0
 	void
-	init_0() override final
+	init_0() override
 	{
 		assert( f() );
 		assert( ! observes() );
@@ -154,7 +154,7 @@ public: // Methods
 
 	// Discrete Advance
 	void
-	advance_discrete() override final
+	advance_discrete() override
 	{
 		s_ = f_( tX = tQ = tD );
 		Boolean const x_new( s_.x0 != 0.0 );
@@ -168,7 +168,7 @@ public: // Methods
 
 	// Discrete Advance: Simultaneous
 	void
-	advance_discrete_s() override final
+	advance_discrete_s() override
 	{
 		s_ = f_( tX = tQ = tD );
 		Boolean const x_new( s_.x0 != 0.0 );
@@ -180,14 +180,14 @@ public: // Methods
 
 	// Set FMU Variable to Continuous Value at Time t
 	void
-	fmu_set_x( Time const ) const override final
+	fmu_set_x( Time const ) const override
 	{
 		fmu_set_boolean( x_ );
 	}
 
 	// Set FMU Variable to Quantized Value at Time t
 	void
-	fmu_set_q( Time const ) const override final
+	fmu_set_q( Time const ) const override
 	{
 		fmu_set_boolean( x_ );
 	}

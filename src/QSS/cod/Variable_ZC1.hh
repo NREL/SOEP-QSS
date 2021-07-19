@@ -117,21 +117,21 @@ public: // Property
 
 	// Continuous Value at Time t
 	Real
-	x( Time const t ) const override final
+	x( Time const t ) const override
 	{
 		return x_0_ + ( x_1_ * ( t - tX ) );
 	}
 
 	// Continuous First Derivative at Time t
 	Real
-	x1( Time const ) const override final
+	x1( Time const ) const override
 	{
 		return x_1_;
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const ) const override final
+	q( Time const ) const override
 	{
 		return x_0_;
 	}
@@ -140,7 +140,7 @@ public: // Methods
 
 	// Initialization
 	void
-	init() override final
+	init() override
 	{
 		// Initialize specs
 		x_0_ = f_.x( tQ );
@@ -156,7 +156,7 @@ public: // Methods
 
 	// QSS Advance
 	void
-	advance_QSS() override final
+	advance_QSS() override
 	{
 		advance_pre( tE );
 		x_0_ = f_.x( tX = tQ = tE );
@@ -169,7 +169,7 @@ public: // Methods
 
 	// Zero-Crossing Advance
 	void
-	advance_ZC() override final
+	advance_ZC() override
 	{
 		for ( typename If::Clause * clause : if_clauses ) clause->activity( tZ );
 		for ( typename When::Clause * clause : when_clauses ) clause->activity( tZ );
@@ -183,7 +183,7 @@ public: // Methods
 
 	// Observer Advance
 	void
-	advance_observer( Time const t ) override final
+	advance_observer( Time const t ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		advance_pre( t );
@@ -198,7 +198,7 @@ public: // Methods
 
 	// Observer Advance: Parallel
 	void
-	advance_observer_parallel( Time const t ) override final
+	advance_observer_parallel( Time const t ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		advance_pre( t );
@@ -211,14 +211,14 @@ public: // Methods
 
 	// Observer Advance: Serial
 	void
-	advance_observer_serial() override final
+	advance_observer_serial() override
 	{
 		crossing_detect();
 	}
 
 	// Observer Advance: Serial + Diagnostics
 	void
-	advance_observer_serial_d() override final
+	advance_observer_serial_d() override
 	{
 		assert( options::output::d );
 		crossing_detect();

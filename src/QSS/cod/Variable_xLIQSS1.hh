@@ -102,7 +102,7 @@ public: // Predicate
 
 	// LIQSS Variable?
 	bool
-	is_LIQSS() const override final
+	is_LIQSS() const override
 	{
 		return true;
 	}
@@ -111,28 +111,28 @@ public: // Property
 
 	// Continuous Value at Time t
 	Real
-	x( Time const t ) const override final
+	x( Time const t ) const override
 	{
 		return x_0_ + ( x_1_ * ( t - tX ) );
 	}
 
 	// Continuous First Derivative at Time t
 	Real
-	x1( Time const ) const override final
+	x1( Time const ) const override
 	{
 		return x_1_;
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const t ) const override final
+	q( Time const t ) const override
 	{
 		return q_0_ + ( q_1_ * ( t - tQ ) );
 	}
 
 	// Quantized First Derivative at Time t
 	Real
-	q1( Time const ) const override final
+	q1( Time const ) const override
 	{
 		return q_1_;
 	}
@@ -141,7 +141,7 @@ public: // Methods
 
 	// Initialization
 	void
-	init() override final
+	init() override
 	{
 		init_0();
 		init_1();
@@ -150,7 +150,7 @@ public: // Methods
 
 	// Initialization to a Value
 	void
-	init( Real const x ) override final
+	init( Real const x ) override
 	{
 		init_0( x );
 		init_1();
@@ -159,21 +159,21 @@ public: // Methods
 
 	// Initialization: Stage 0
 	void
-	init_0() override final
+	init_0() override
 	{
 		x_0_ = q_c_ = q_0_ = xIni;
 	}
 
 	// Initialization to a Value: Stage 0
 	void
-	init_0( Real const x ) override final
+	init_0( Real const x ) override
 	{
 		x_0_ = q_c_ = q_0_ = x;
 	}
 
 	// Initialization: Stage 1
 	void
-	init_1() override final
+	init_1() override
 	{
 		init_observers();
 		init_observees();
@@ -188,7 +188,7 @@ public: // Methods
 
 	// Initialization: Stage LIQSS
 	void
-	init_LIQSS() override final
+	init_LIQSS() override
 	{
 		if ( self_observer() ) {
 			q_0_ = l_0_;
@@ -203,7 +203,7 @@ public: // Methods
 
 	// QSS Advance
 	void
-	advance_QSS() override final
+	advance_QSS() override
 	{
 		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
 		tX = tQ = tE;
@@ -222,7 +222,7 @@ public: // Methods
 
 	// QSS Advance: Stage 0
 	void
-	advance_QSS_0() override final
+	advance_QSS_0() override
 	{
 		x_0_ = q_c_ = q_0_ = x_0_ + ( x_1_ * ( tE - tX ) );
 		tX = tQ = tE;
@@ -230,7 +230,7 @@ public: // Methods
 
 	// QSS Advance: Stage 1
 	void
-	advance_QSS_1() override final
+	advance_QSS_1() override
 	{
 		q_1_ = d_.q( tQ );
 		set_qTol();
@@ -243,7 +243,7 @@ public: // Methods
 
 	// QSS Advance: Stage Final
 	void
-	advance_QSS_F() override final
+	advance_QSS_F() override
 	{
 		if ( self_observer() ) {
 			q_0_ = l_0_;
@@ -258,7 +258,7 @@ public: // Methods
 
 	// Handler Advance
 	void
-	advance_handler( Time const t, Real const x ) override final
+	advance_handler( Time const t, Real const x ) override
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		x_0_ = q_c_ = q_0_ = x;
@@ -272,7 +272,7 @@ public: // Methods
 
 	// Handler Advance: Stage 0
 	void
-	advance_handler_0( Time const t, Real const x ) override final
+	advance_handler_0( Time const t, Real const x ) override
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
@@ -281,7 +281,7 @@ public: // Methods
 
 	// Handler Advance: Stage 1
 	void
-	advance_handler_1() override final
+	advance_handler_1() override
 	{
 		x_1_ = q_1_ = d_.q( tQ );
 		set_qTol();
@@ -292,7 +292,7 @@ public: // Methods
 
 	// Observer Advance
 	void
-	advance_observer( Time const t ) override final
+	advance_observer( Time const t ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		x_0_ += ( x_1_ * ( t - tX ) );
@@ -304,7 +304,7 @@ public: // Methods
 
 	// Observer Advance: Parallel
 	void
-	advance_observer_parallel( Time const t ) override final
+	advance_observer_parallel( Time const t ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		x_0_ += ( x_1_ * ( t - tX ) );
@@ -314,7 +314,7 @@ public: // Methods
 
 	// Observer Advance: Serial + Diagnostics
 	void
-	advance_observer_serial_d() override final
+	advance_observer_serial_d() override
 	{
 		assert( options::output::d );
 		shift_QSS( tE );

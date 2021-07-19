@@ -117,7 +117,7 @@ public: // Property
 
 	// Continuous Value at Time t
 	Real
-	x( Time const t ) const override final
+	x( Time const t ) const override
 	{
 		Time const tDel( t - tX );
 		return x_0_ + ( ( x_1_ + ( ( x_2_ + ( x_3_ * tDel ) ) * tDel ) ) * tDel );
@@ -125,7 +125,7 @@ public: // Property
 
 	// Continuous First Derivative at Time t
 	Real
-	x1( Time const t ) const override final
+	x1( Time const t ) const override
 	{
 		Time const tDel( t - tX );
 		return x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_ * tDel ) ) * tDel );
@@ -133,21 +133,21 @@ public: // Property
 
 	// Continuous Second Derivative at Time t
 	Real
-	x2( Time const t ) const override final
+	x2( Time const t ) const override
 	{
 		return ( two * x_2_ ) + ( six * x_3_ * ( t - tX ) );
 	}
 
 	// Continuous Third Derivative at Time t
 	Real
-	x3( Time const ) const override final
+	x3( Time const ) const override
 	{
 		return six * x_3_;
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const t ) const override final
+	q( Time const t ) const override
 	{
 		Time const tDel( t - tQ );
 		return x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
@@ -155,14 +155,14 @@ public: // Property
 
 	// Quantized First Derivative at Time t
 	Real
-	q1( Time const t ) const override final
+	q1( Time const t ) const override
 	{
 		return x_1_ + ( two * x_2_ * ( t - tQ ) );
 	}
 
 	// Quantized Second Derivative at Time t
 	Real
-	q2( Time const ) const override final
+	q2( Time const ) const override
 	{
 		return two * x_2_;
 	}
@@ -171,7 +171,7 @@ public: // Methods
 
 	// Initialization
 	void
-	init() override final
+	init() override
 	{
 		// Initialize specs
 		x_0_ = f_.x( tQ );
@@ -189,7 +189,7 @@ public: // Methods
 
 	// QSS Advance
 	void
-	advance_QSS() override final
+	advance_QSS() override
 	{
 		advance_pre( tE );
 		x_0_ = f_.x( tX = tQ = tE );
@@ -204,7 +204,7 @@ public: // Methods
 
 	// Zero-Crossing Advance
 	void
-	advance_ZC() override final
+	advance_ZC() override
 	{
 		for ( typename If::Clause * clause : if_clauses ) clause->activity( tZ );
 		for ( typename When::Clause * clause : when_clauses ) clause->activity( tZ );
@@ -218,7 +218,7 @@ public: // Methods
 
 	// Observer Advance
 	void
-	advance_observer( Time const t ) override final
+	advance_observer( Time const t ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		advance_pre( t );
@@ -235,7 +235,7 @@ public: // Methods
 
 	// Observer Advance: Parallel
 	void
-	advance_observer_parallel( Time const t ) override final
+	advance_observer_parallel( Time const t ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		advance_pre( t );
@@ -250,14 +250,14 @@ public: // Methods
 
 	// Observer Advance: Serial
 	void
-	advance_observer_serial() override final
+	advance_observer_serial() override
 	{
 		crossing_detect();
 	}
 
 	// Observer Advance: Serial + Diagnostics
 	void
-	advance_observer_serial_d() override final
+	advance_observer_serial_d() override
 	{
 		assert( options::output::d );
 		crossing_detect();

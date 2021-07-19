@@ -91,7 +91,7 @@ public: // Predicate
 
 	// Input Variable?
 	bool
-	is_Input() const override final
+	is_Input() const override
 	{
 		return true;
 	}

@@ -69,7 +69,7 @@ public: // Predicate
 
 	// Explicit Zero-Crossing Variable?
 	bool
-	is_ZCe() const override final
+	is_ZCe() const override
 	{
 		return true;
 	}
@@ -78,28 +78,28 @@ public: // Property
 
 	// Continuous Value at Time t
 	Real
-	x( Time const t ) const override final
+	x( Time const t ) const override
 	{
 		return x_0_ + ( x_1_ * ( t - tX ) );
 	}
 
 	// Continuous First Derivative at Time t
 	Real
-	x1( Time const ) const override final
+	x1( Time const ) const override
 	{
 		return x_1_;
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const ) const override final
+	q( Time const ) const override
 	{
 		return x_0_;
 	}
 
 	// Zero-Crossing Bump Time for FMU Detection
 	Time
-	tZC_bump( Time const t ) const override final
+	tZC_bump( Time const t ) const override
 	{
 		if ( zTol > 0.0 ) {
 			return t + ( x_1_ != 0.0 ? options::zMul * zTol / std::abs( x_1_ ) : options::dtZC ); // Hope FMU detects the crossing at this bump tolerance
@@ -112,7 +112,7 @@ public: // Methods
 
 	// Initialization
 	void
-	init() override final
+	init() override
 	{
 		// Check no observers
 		if ( self_observer() || observed() ) {
@@ -138,7 +138,7 @@ public: // Methods
 
 	// QSS Advance
 	void
-	advance_QSS() override final
+	advance_QSS() override
 	{
 		advance_pre( tE );
 		tX = tQ = tE;
@@ -152,7 +152,7 @@ public: // Methods
 
 	// QSS Advance: Stage 0
 	void
-	advance_QSS_0( Real const x_0 ) override final
+	advance_QSS_0( Real const x_0 ) override
 	{
 		advance_pre( tE );
 		tX = tQ = tE;
@@ -161,14 +161,14 @@ public: // Methods
 
 	// QSS Advance: Stage 1
 	void
-	advance_QSS_1( Real const x_1 ) override final
+	advance_QSS_1( Real const x_1 ) override
 	{
 		x_1_ = x_1;
 	}
 
 	// QSS Advance: Stage Final
 	void
-	advance_QSS_F() override final
+	advance_QSS_F() override
 	{
 		set_qTol();
 		set_tE();
@@ -178,7 +178,7 @@ public: // Methods
 
 	// Zero-Crossing Advance
 	void
-	advance_ZC() override final
+	advance_ZC() override
 	{
 		assert( in_conditional() );
 		conditional->activity( tZ );
@@ -192,7 +192,7 @@ public: // Methods
 
 	// Observer Advance
 	void
-	advance_observer( Time const t ) override final
+	advance_observer( Time const t ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		advance_pre( t );
@@ -206,7 +206,7 @@ public: // Methods
 
 	// Observer Advance: Stage 1
 	void
-	advance_observer_1( Time const t, Real const x_0, Real const x_1 ) override final
+	advance_observer_1( Time const t, Real const x_0, Real const x_1 ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		advance_pre( t );
@@ -222,7 +222,7 @@ public: // Methods
 
 	// Observer Advance: Stage d
 	void
-	advance_observer_d() const override final
+	advance_observer_d() const override
 	{
 		std::cout << " ^ " << name() << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << std::endl;
 	}

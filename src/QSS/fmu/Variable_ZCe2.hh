@@ -73,7 +73,7 @@ public: // Predicate
 
 	// Explicit Zero-Crossing Variable?
 	bool
-	is_ZCe() const override final
+	is_ZCe() const override
 	{
 		return true;
 	}
@@ -82,7 +82,7 @@ public: // Property
 
 	// Continuous Value at Time t
 	Real
-	x( Time const t ) const override final
+	x( Time const t ) const override
 	{
 		Time const tDel( t - tX );
 		return x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
@@ -90,35 +90,35 @@ public: // Property
 
 	// Continuous First Derivative at Time t
 	Real
-	x1( Time const t ) const override final
+	x1( Time const t ) const override
 	{
 		return x_1_ + ( two * x_2_ * ( t - tX ) );
 	}
 
 	// Continuous Second Derivative at Time t
 	Real
-	x2( Time const ) const override final
+	x2( Time const ) const override
 	{
 		return two * x_2_;
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const t ) const override final
+	q( Time const t ) const override
 	{
 		return x_0_ + ( x_1_ * ( t - tQ ) );
 	}
 
 	// Quantized First Derivative at Time t
 	Real
-	q1( Time const ) const override final
+	q1( Time const ) const override
 	{
 		return x_1_;
 	}
 
 	// Zero-Crossing Bump Time for FMU Detection
 	Time
-	tZC_bump( Time const t ) const override final
+	tZC_bump( Time const t ) const override
 	{
 		if ( zChatter_ ) {
 			Real const x_1_t( x_1_ + ( two * x_2_ * ( t - tX ) ) );
@@ -142,7 +142,7 @@ public: // Methods
 
 	// Initialization
 	void
-	init() override final
+	init() override
 	{
 		// Check no observers
 		if ( self_observer() || observed() ) {
@@ -168,7 +168,7 @@ public: // Methods
 
 	// QSS Advance
 	void
-	advance_QSS() override final
+	advance_QSS() override
 	{
 		advance_pre( tE );
 		tX = tQ = tE;
@@ -183,7 +183,7 @@ public: // Methods
 
 	// QSS Advance: Stage 0
 	void
-	advance_QSS_0( Real const x_0 ) override final
+	advance_QSS_0( Real const x_0 ) override
 	{
 		advance_pre( tE );
 		tX = tQ = tE;
@@ -192,35 +192,35 @@ public: // Methods
 
 	// QSS Advance: Stage 1
 	void
-	advance_QSS_1( Real const x_1 ) override final
+	advance_QSS_1( Real const x_1 ) override
 	{
 		x_1_ = x_1;
 	}
 
 	// QSS Advance: Stage 2
 	void
-	advance_QSS_2( Real const x_1_p ) override final
+	advance_QSS_2( Real const x_1_p ) override
 	{
 		x_2_ = n_2( x_1_p );
 	}
 
 	// QSS Advance: Stage 2
 	void
-	advance_QSS_2( Real const x_1_m, Real const x_1_p ) override final
+	advance_QSS_2( Real const x_1_m, Real const x_1_p ) override
 	{
 		x_2_ = n_2( x_1_m, x_1_p );
 	}
 
 	// QSS Advance: Stage 2
 	void
-	advance_QSS_2_forward( Real const x_1_p, Real const x_1_2p ) override final
+	advance_QSS_2_forward( Real const x_1_p, Real const x_1_2p ) override
 	{
 		x_2_ = f_2( x_1_p, x_1_2p );
 	}
 
 	// QSS Advance: Stage Final
 	void
-	advance_QSS_F() override final
+	advance_QSS_F() override
 	{
 		set_qTol();
 		set_tE();
@@ -230,7 +230,7 @@ public: // Methods
 
 	// Zero-Crossing Advance
 	void
-	advance_ZC() override final
+	advance_ZC() override
 	{
 		assert( in_conditional() );
 		conditional->activity( tZ );
@@ -244,7 +244,7 @@ public: // Methods
 
 	// Observer Advance
 	void
-	advance_observer( Time const t ) override final
+	advance_observer( Time const t ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		advance_pre( t );
@@ -259,7 +259,7 @@ public: // Methods
 
 	// Observer Advance: Stage 1
 	void
-	advance_observer_1( Time const t, Real const x_0, Real const x_1 ) override final
+	advance_observer_1( Time const t, Real const x_0, Real const x_1 ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		advance_pre( t );
@@ -272,7 +272,7 @@ public: // Methods
 
 	// Observer Advance: Stage 2
 	void
-	advance_observer_2( Real const x_1_p ) override final
+	advance_observer_2( Real const x_1_p ) override
 	{
 		x_2_ = n_2( x_1_p );
 		set_qTol();
@@ -282,7 +282,7 @@ public: // Methods
 
 	// Observer Advance: Stage 2
 	void
-	advance_observer_2( Real const x_1_m, Real const x_1_p ) override final
+	advance_observer_2( Real const x_1_m, Real const x_1_p ) override
 	{
 		x_2_ = n_2( x_1_m, x_1_p );
 		set_qTol();
@@ -292,7 +292,7 @@ public: // Methods
 
 	// Observer Advance: Stage 2
 	void
-	advance_observer_2_forward( Real const x_1_p, Real const x_1_2p ) override final
+	advance_observer_2_forward( Real const x_1_p, Real const x_1_2p ) override
 	{
 		x_2_ = f_2( x_1_p, x_1_2p );
 		set_qTol();
@@ -302,7 +302,7 @@ public: // Methods
 
 	// Observer Advance: Stage d
 	void
-	advance_observer_d() const override final
+	advance_observer_d() const override
 	{
 		std::cout << " ^ " << name() << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << std::endl;
 	}

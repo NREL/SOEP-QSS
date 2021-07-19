@@ -85,6 +85,17 @@ public: // Predicate
 		return ( b_ < std::numeric_limits< size_type >::max() );
 	}
 
+	// Intersects a Range?
+	bool
+	intersects( Range const & r ) const
+	{
+		if ( empty() || r.empty() ) {
+			return false;
+		} else {
+			return ( ( b_ <= r.e_ ) && ( r.b_ <= e_ ) );
+		}
+	}
+
 public: // Property
 
 	// Size
@@ -137,6 +148,14 @@ public: // Methods
 	{
 		b_ = b;
 		e_ = e;
+	}
+
+	// Intersect with a Range
+	void
+	intersect( Range const & r )
+	{
+		b_ = std::max( b_, r.b_ );
+		e_ = std::min( e_, r.e_ );
 	}
 
 	// Reset

@@ -96,6 +96,8 @@ extern double dtInf; // Inf time step (s)
 extern double dtZMax; // Max time step before zero-crossing (s)
 extern double dtZC; // FMU zero-crossing time step (s)
 extern double dtND; // Numeric differentiation time step (s)
+extern double dtND_max; // Numeric differentiation time step max (s)
+extern bool dtND_optimizer; // Optimize FMU numeric differentiation time step?
 extern double two_dtND; // 2 * dtND
 extern double three_dtND; // 3 * dtND
 extern double one_over_dtND; // 1 / dtND

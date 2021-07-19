@@ -68,21 +68,21 @@ public: // Property
 
 	// Continuous Value at Time t
 	Real
-	x( Time const t ) const override final
+	x( Time const t ) const override
 	{
 		return x_0_ + ( x_1_ * ( t - tX ) );
 	}
 
 	// Continuous First Derivative at Time t
 	Real
-	x1( Time const ) const override final
+	x1( Time const ) const override
 	{
 		return x_1_;
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const ) const override final
+	q( Time const ) const override
 	{
 		return x_0_;
 	}
@@ -91,7 +91,7 @@ public: // Methods
 
 	// Initialization
 	void
-	init() override final
+	init() override
 	{
 		init_0();
 		init_1();
@@ -99,7 +99,7 @@ public: // Methods
 
 	// Initialization: Stage 0
 	void
-	init_0() override final
+	init_0() override
 	{
 		assert( f() );
 		assert( ! observes() );
@@ -111,7 +111,7 @@ public: // Methods
 
 	// Initialization: Stage 1
 	void
-	init_1() override final
+	init_1() override
 	{
 		x_1_ = s_.x1;
 		tD = s_.tD;
@@ -123,7 +123,7 @@ public: // Methods
 
 	// Discrete Advance
 	void
-	advance_discrete() override final
+	advance_discrete() override
 	{
 		s_ = f_( tX = tQ = tD );
 		x_0_ = s_.x0;
@@ -138,7 +138,7 @@ public: // Methods
 
 	// Discrete Advance: Simultaneous
 	void
-	advance_discrete_s() override final
+	advance_discrete_s() override
 	{
 		s_ = f_( tX = tQ = tD );
 		x_0_ = s_.x0;
@@ -152,7 +152,7 @@ public: // Methods
 
 	// QSS Advance
 	void
-	advance_QSS() override final
+	advance_QSS() override
 	{
 		s_ = f_( tX = tQ = tE );
 		x_0_ = s_.x0;

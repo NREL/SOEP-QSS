@@ -1332,7 +1332,7 @@ T
 min_root_cubic_monic_boundary_analytical( T const a, T const b, T const c, T const zTol = T( 1e-6 ) )
 {
 	// Preconditions for lower and upper boundary calls used by QSS to set tE in observer updates
-	assert( a > T( 0 ) );
+	assert( a >= T( 0 ) );
 	assert( b >= T( 0 ) );
 	assert( c < T( 0 ) );
 	assert( zTol >= T( 0 ) );

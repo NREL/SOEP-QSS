@@ -217,14 +217,14 @@ public: // Nested Types
 
 		// Handler-Modified Variables
 		Variables const &
-		observers() const override final
+		observers() const override
 		{
 			return h.observers();
 		}
 
 		// Handler-Modified Variables
 		Variables &
-		observers() override final
+		observers() override
 		{
 			return h.observers();
 		}
@@ -233,7 +233,7 @@ public: // Nested Types
 
 		// Handler
 		void
-		handler( Time const t ) override final
+		handler( Time const t ) override
 		{
 			h( t );
 		}
@@ -349,7 +349,7 @@ public: // Methods
 
 	// Run Handler of Highest Priority Active Clause
 	void
-	advance_conditional() override final
+	advance_conditional() override
 	{
 		assert( valid() );
 		for ( Clause * clause : clauses ) {
@@ -524,14 +524,14 @@ public: // Nested Types
 
 		// Handler-Modified Variables
 		Variables const &
-		observers() const override final
+		observers() const override
 		{
 			return h.observers();
 		}
 
 		// Handler-Modified Variables
 		Variables &
-		observers() override final
+		observers() override
 		{
 			return h.observers();
 		}
@@ -540,7 +540,7 @@ public: // Nested Types
 
 		// Handler
 		void
-		handler( Time const t ) override final
+		handler( Time const t ) override
 		{
 			h( t );
 		}
@@ -653,7 +653,7 @@ public: // Methods
 
 	// Run Handler of Highest Priority Active Clause
 	void
-	advance_conditional() override final
+	advance_conditional() override
 	{
 		assert( valid() );
 		for ( Clause * clause : clauses ) {

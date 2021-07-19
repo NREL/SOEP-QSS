@@ -63,6 +63,8 @@ double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits<
 double dtZMax( 0.01 ); // Max time step before zero-crossing (s)
 double dtZC( 1.0e-9 ); // FMU zero-crossing time step (s)
 double dtND( 1.0e-6 ); // Numeric differentiation time step (s)
+double dtND_max( 1.0 ); // Numeric differentiation time step max (s)
+bool dtND_optimizer( false ); // Optimize FMU numeric differentiation time step?
 double two_dtND( 2.0e-6 ); // 2 * dtND
 double three_dtND( 3.0e-6 ); // 3 * dtND
 double one_over_dtND( 1.0e6 ); // 1 / dtND
@@ -135,34 +137,37 @@ help_display()
 {
 	std::cout << '\n' << "QSS [options] [model [model ...]]" << "\n\n";
 	std::cout << "Options:" << "\n\n";
-	std::cout << " --qss=QSS        QSS method: (x)(LI)QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
-	std::cout << " --eidd           Use FMU event indicator directional derivatives" << '\n';
-	std::cout << " --no-eidd        Don't use FMU event indicator directional derivatives" << '\n';
-	std::cout << " --rTol=TOL       Relative tolerance  [" << rTol << "|FMU]" << '\n';
-	std::cout << " --aTol=TOL       Absolute tolerance  [rTol*aFac*nominal]" << '\n';
-	std::cout << " --aFac=FAC       Absolute tolerance factor  [" << aFac << "]" << '\n';
-	std::cout << " --zTol=TOL       Zero-crossing/root tolerance  [" << zTol << "|FMU]" << '\n';
-	std::cout << " --zMul=MUL       Zero-crossing tolerance bump multiplier  [" << zMul << "]" << '\n';
-	std::cout << " --zFac=FAC       Zero-crossing tolerance factor  [" << zFac << "]" << '\n';
-	std::cout << " --zrFac=FAC      Zero-crossing relative tolerance factor  [" << zrFac << "]" << '\n';
-	std::cout << " --zaFac=FAC      Zero-crossing absolute tolerance factor  [" << zaFac << "]" << '\n';
-	std::cout << " --dtMin=STEP     Min time step (s)  [0]" << '\n';
-	std::cout << " --dtMax=STEP     Max time step (s)  [infinity]" << '\n';
-	std::cout << " --dtInf=STEP     Deactivation control time step (s)  [infinity]" << '\n';
-	std::cout << " --dtZMax=STEP    Max time step before zero-crossing (s)  (0 => Off)  [" << dtZMax << "]" << '\n';
-	std::cout << " --dtZC=STEP      FMU zero-crossing time step (s)  [" << dtZC << "]" << '\n';
-	std::cout << " --dtND=STEP      Numeric differentiation time step (s)  [" << dtND << "]" << '\n';
-	std::cout << " --dtCon=STEP     FMU connection sync time step (s)  [0]" << '\n';
-	std::cout << " --dtOut=STEP     Sampled output time step (s)  [computed]" << '\n';
-	std::cout << " --tEnd=TIME      End time (s)  [1|FMU]" << '\n';
-	std::cout << " --pass=COUNT     Pass count limit  [" << pass << "]" << '\n';
-	std::cout << " --cycles         Report dependency cycles" << '\n';
-	std::cout << " --inflection     Requantize at inflections" << '\n';
-	std::cout << " --refine         Refine FMU zero-crossing roots" << '\n';
-	std::cout << " --prune          Prune variables with no observers" << '\n';
-	std::cout << " --perfect        Perfect FMU-ME connection sync" << '\n';
-	std::cout << " --steps          Generate step count file for FMU" << '\n';
-	std::cout << " --log=LEVEL      Logging level  [warning]" << '\n';
+	std::cout << " --qss=QSS          QSS method: (x)(LI)QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
+	std::cout << " --eidd             Use FMU event indicator directional derivatives" << '\n';
+	std::cout << " --no-eidd          Don't use FMU event indicator directional derivatives" << '\n';
+	std::cout << " --rTol=TOL         Relative tolerance  [" << rTol << "|FMU]" << '\n';
+	std::cout << " --aTol=TOL         Absolute tolerance  [rTol*aFac*nominal]" << '\n';
+	std::cout << " --aFac=FAC         Absolute tolerance factor  [" << aFac << ']' << '\n';
+	std::cout << " --zTol=TOL         Zero-crossing/root tolerance  [" << zTol << "|FMU]" << '\n';
+	std::cout << " --zMul=MUL         Zero-crossing tolerance bump multiplier  [" << zMul << ']' << '\n';
+	std::cout << " --zFac=FAC         Zero-crossing tolerance factor  [" << zFac << ']' << '\n';
+	std::cout << " --zrFac=FAC        Zero-crossing relative tolerance factor  [" << zrFac << ']' << '\n';
+	std::cout << " --zaFac=FAC        Zero-crossing absolute tolerance factor  [" << zaFac << ']' << '\n';
+	std::cout << " --dtMin=STEP       Min time step (s)  [0]" << '\n';
+	std::cout << " --dtMax=STEP       Max time step (s)  [infinity]" << '\n';
+	std::cout << " --dtInf=STEP       Deactivation control time step (s)  [infinity]" << '\n';
+	std::cout << " --dtZMax=STEP      Max time step before zero-crossing (s)  (0 => Off)  [" << dtZMax << ']' << '\n';
+	std::cout << " --dtZC=STEP        FMU zero-crossing time step (s)  [" << dtZC << ']' << '\n';
+	std::cout << " --dtND=STEP[:Y|U]  Numeric differentiation time step specs" << '\n';
+	std::cout << "        STEP        Time step (s)" << '\n';
+	std::cout << "              Y     Use automatic time step" << '\n';
+	std::cout << "              U     Upper time step for automatic scan (s)  [" << dtND_max << ']' << '\n';
+	std::cout << " --dtCon=STEP       FMU connection sync time step (s)  [0]" << '\n';
+	std::cout << " --dtOut=STEP       Sampled output time step (s)  [computed]" << '\n';
+	std::cout << " --tEnd=TIME        End time (s)  [1|FMU]" << '\n';
+	std::cout << " --pass=COUNT       Pass count limit  [" << pass << ']' << '\n';
+	std::cout << " --cycles           Report dependency cycles" << '\n';
+	std::cout << " --inflection       Requantize at inflections" << '\n';
+	std::cout << " --refine           Refine FMU zero-crossing roots" << '\n';
+	std::cout << " --prune            Prune variables with no observers" << '\n';
+	std::cout << " --perfect          Perfect FMU-ME connection sync" << '\n';
+	std::cout << " --steps            Generate step count file for FMU" << '\n';
+	std::cout << " --log=LEVEL        Logging level  [warning]" << '\n';
 	std::cout << "       fatal" << '\n';
 	std::cout << "       error" << '\n';
 	std::cout << "       warning" << '\n';
@@ -208,7 +213,7 @@ help_display()
 	std::cout << "       A  All variables at every event" << '\n';
 	std::cout << "     FMU Variables (sampled @ dtOut):" << '\n';
 	std::cout << "       F  Ouput variables" << '\n';
-	std::cout << "       L  Local variables (enabled if --var used)" << '\n';
+	std::cout << "       L  Local variables" << '\n';
 	std::cout << "       K  FMU-QSS smooth tokens" << '\n';
 	std::cout << " --tLoc=TIME1:TIME2  FMU local variable full output time range (s)" << '\n';
 	std::cout << " --var=FILE       Variable output spec file" << '\n';
@@ -493,17 +498,47 @@ process_args( int argc, char * argv[] )
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "dtND" ) || has_value_option( arg, "dtNum" ) ) { // dtNum was prior name for dtND
-			std::string const dtND_str( arg_value( arg ) );
+			std::vector< std::string > const dtND_args( split( arg_value( arg ), ':' ) );
+			std::string const dtND_str( dtND_args[ 0 ] );
 			if ( is_double( dtND_str ) ) {
 				dtND_set( double_of( dtND_str ) );
 				if ( dtND <= 0.0 ) {
-					std::cerr << "\nError: Nonpositive dtND: " << dtND_str << std::endl;
+					std::cerr << "\nError: Nonpositive dtND: " << dtND << std::endl;
 					fatal = true;
 				}
+			} else if ( ( dtND_args.size() == 1u ) && ( is_any_of( dtND_args[ 0 ][ 0 ], "YyTtOo" ) ) ) { // dtND optimizer on
+				dtND_optimizer = true;
 			} else {
 				std::cerr << "\nError: Nonnumeric dtND: " << dtND_str << std::endl;
 				fatal = true;
 			}
+			if ( dtND_args.size() > 1u ) {
+				bool const dtND_arg_1_char( dtND_args[ 1 ].length() == 1u );
+				char const dtND_arg_1( dtND_args[ 1 ][ 0 ] );
+				if ( dtND_arg_1_char && is_any_of( dtND_arg_1, "YyTtOo" ) ) { // dtND optimizer on
+					dtND_optimizer = true;
+				} else if ( dtND_arg_1_char && is_any_of( dtND_arg_1, "NnFf" ) ) { // dtND optimizer off
+					dtND_optimizer = false;
+				} else if ( is_double( dtND_args[ 1 ] ) ) {
+					dtND_optimizer = true;
+					std::string const dtND_max_str( dtND_args[ 1 ] );
+					dtND_max = double_of( dtND_max_str );
+					if ( dtND_max <= 0.0 ) {
+						std::cerr << "\nError: Nonpositive upper dtND: " << dtND_max << std::endl;
+						fatal = true;
+					} else if ( dtND_max < 4.0 * dtND ) {
+						dtND_max = 4.0 * dtND;
+						std::cerr << "\nInfo: Upper dtND increased to 4 * dtND: " << dtND_max << std::endl;
+					}
+				} else {
+					std::cerr << "\nError: Invalid dtND optimizer flag: " << dtND_args[ 1 ] << std::endl;
+					fatal = true;
+				}
+			}
+			if ( dtND_optimizer ) dtND_max = std::max( 4.0 * dtND, dtND_max );
+		} else if ( has_option( arg, "dtND" ) || has_option( arg, "dtNum" ) ) { // dtNum was prior name for dtND
+			dtND_optimizer = true;
+			dtND_max = std::max( 4.0 * dtND, dtND_max );
 		} else if ( has_value_option( arg, "dtCon" ) ) {
 			std::string const dtCon_str( arg_value( arg ) );
 			if ( is_double( dtCon_str ) ) {
@@ -874,7 +909,7 @@ process_args( int argc, char * argv[] )
 			output::Q = has( out, 'Q' );
 			output::A = has( out, 'A' );
 			output::F = has( out, 'F' );
-			output::L = has( out, 'L' ) || has_value_option( arg, "var" );
+			output::L = has( out, 'L' );
 			output::K = has( out, 'K' );
 		} else if ( has_value_option( arg, "tLoc" ) ) {
 			specified::tLoc = true;

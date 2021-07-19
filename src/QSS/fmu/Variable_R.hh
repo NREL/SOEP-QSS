@@ -77,7 +77,7 @@ public: // Predicate
 
 	// B|I|D|R Variable?
 	bool
-	is_BIDR() const override final
+	is_BIDR() const override
 	{
 		return true;
 	}
@@ -86,56 +86,56 @@ public: // Property
 
 	// Boolean Value
 	Boolean
-	b() const override final
+	b() const override
 	{
 		return Boolean( x_ );
 	}
 
 	// Boolean Value at Time t
 	Boolean
-	b( Time const ) const override final
+	b( Time const ) const override
 	{
 		return Boolean( x_ );
 	}
 
 	// Integer Value
 	Integer
-	i() const override final
+	i() const override
 	{
 		return Integer( x_ );
 	}
 
 	// Integer Value at Time t
 	Integer
-	i( Time const ) const override final
+	i( Time const ) const override
 	{
 		return Integer( x_ );
 	}
 
 	// Real Value
 	Real
-	r() const override final
+	r() const override
 	{
 		return x_;
 	}
 
 	// Real Value at Time t
 	Real
-	r( Time const ) const override final
+	r( Time const ) const override
 	{
 		return x_;
 	}
 
 	// Continuous Value at Time t
 	Real
-	x( Time const ) const override final
+	x( Time const ) const override
 	{
 		return x_;
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const ) const override final
+	q( Time const ) const override
 	{
 		return x_;
 	}
@@ -144,21 +144,21 @@ public: // Methods
 
 	// Initialization
 	void
-	init() override final
+	init() override
 	{
 		init_0();
 	}
 
 	// Initialization to a Value
 	void
-	init( Real const x ) override final
+	init( Real const x ) override
 	{
 		init_0( x );
 	}
 
 	// Initialization: Stage 0
 	void
-	init_0() override final
+	init_0() override
 	{
 		assert( ! observes() );
 		init_observers();
@@ -169,7 +169,7 @@ public: // Methods
 
 	// Initialization to a Value: Stage 0
 	void
-	init_0( Real const x ) override final
+	init_0( Real const x ) override
 	{
 		assert( ! observes() );
 		init_observers();
@@ -180,7 +180,7 @@ public: // Methods
 
 	// Handler Advance
 	void
-	advance_handler( Time const t ) override final
+	advance_handler( Time const t ) override
 	{
 		assert( tX <= t );
 		tX = tQ = t;
@@ -192,7 +192,7 @@ public: // Methods
 
 	// Handler Advance: Stage 0
 	void
-	advance_handler_0( Time const t ) override final
+	advance_handler_0( Time const t ) override
 	{
 		assert( tX <= t );
 		tX = tQ = t;
@@ -201,7 +201,7 @@ public: // Methods
 
 	// Handler Advance: Stage Final
 	void
-	advance_handler_F() override final
+	advance_handler_F() override
 	{
 		shift_handler();
 		if ( options::output::d ) std::cout << "*= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << std::endl;
@@ -209,14 +209,14 @@ public: // Methods
 
 	// Handler No-Advance
 	void
-	no_advance_handler() override final
+	no_advance_handler() override
 	{
 		shift_handler();
 	}
 
 	// Observer Advance
 	void
-	advance_observer( Time const t ) override final
+	advance_observer( Time const t ) override
 	{
 		assert( tX <= t );
 		tX = t;
@@ -225,7 +225,7 @@ public: // Methods
 
 	// Observer Advance: Stage 1
 	void
-	advance_observer_1( Time const t, Real const x ) override final
+	advance_observer_1( Time const t, Real const x ) override
 	{
 		assert( tX <= t );
 		tX = t;
@@ -234,7 +234,7 @@ public: // Methods
 
 	// Observer Advance: Stage d
 	void
-	advance_observer_d() const override final
+	advance_observer_d() const override
 	{
 		std::cout << " ^ " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << std::endl;
 	}

@@ -68,7 +68,7 @@ public: // Property
 
 	// Continuous Value at Time t
 	Real
-	x( Time const t ) const override final
+	x( Time const t ) const override
 	{
 		Time const tDel( t - tX );
 		return x_0_ + ( ( x_1_ + ( ( x_2_ + ( x_3_ * tDel ) ) * tDel ) ) * tDel );
@@ -76,7 +76,7 @@ public: // Property
 
 	// Continuous First Derivative at Time t
 	Real
-	x1( Time const t ) const override final
+	x1( Time const t ) const override
 	{
 		Time const tDel( t - tX );
 		return x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_ * tDel ) ) * tDel );
@@ -84,21 +84,21 @@ public: // Property
 
 	// Continuous Second Derivative at Time t
 	Real
-	x2( Time const t ) const override final
+	x2( Time const t ) const override
 	{
 		return ( two * x_2_ ) + ( six * x_3_ * ( t - tX ) );
 	}
 
 	// Continuous Third Derivative at Time t
 	Real
-	x3( Time const ) const override final
+	x3( Time const ) const override
 	{
 		return six * x_3_;
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const t ) const override final
+	q( Time const t ) const override
 	{
 		Time const tDel( t - tQ );
 		return x_0_ + ( ( x_1_ + ( ( x_2_ + ( x_3_ * tDel ) ) * tDel ) ) * tDel );
@@ -106,7 +106,7 @@ public: // Property
 
 	// Quantized First Derivative at Time t
 	Real
-	q1( Time const t ) const override final
+	q1( Time const t ) const override
 	{
 		Time const tDel( t - tQ );
 		return x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_ * tDel ) ) * tDel );
@@ -114,14 +114,14 @@ public: // Property
 
 	// Quantized Second Derivative at Time t
 	Real
-	q2( Time const t ) const override final
+	q2( Time const t ) const override
 	{
 		return ( two * x_2_ ) + ( six * x_3_ * ( t - tQ ) );
 	}
 
 	// Quantized Third Derivative at Time t
 	Real
-	q3( Time const ) const override final
+	q3( Time const ) const override
 	{
 		return six * x_3_;
 	}
@@ -130,7 +130,7 @@ public: // Methods
 
 	// Initialization
 	void
-	init() override final
+	init() override
 	{
 		init_0();
 		init_1();
@@ -139,7 +139,7 @@ public: // Methods
 
 	// Initialization: Stage 0
 	void
-	init_0() override final
+	init_0() override
 	{
 		assert( f() );
 		assert( ! observes() );
@@ -151,14 +151,14 @@ public: // Methods
 
 	// Initialization: Stage 1
 	void
-	init_1() override final
+	init_1() override
 	{
 		x_1_ = s_.x1;
 	}
 
 	// Initialization: Stage 2
 	void
-	init_2() override final
+	init_2() override
 	{
 		x_2_ = one_half * s_.x2;
 		x_3_ = one_sixth * s_.x3;
@@ -171,7 +171,7 @@ public: // Methods
 
 	// Discrete Advance
 	void
-	advance_discrete() override final
+	advance_discrete() override
 	{
 		s_ = f_( tX = tQ = tD );
 		x_0_ = s_.x0;
@@ -188,7 +188,7 @@ public: // Methods
 
 	// Discrete Advance: Simultaneous
 	void
-	advance_discrete_s() override final
+	advance_discrete_s() override
 	{
 		s_ = f_( tX = tQ = tD );
 		x_0_ = s_.x0;
@@ -204,7 +204,7 @@ public: // Methods
 
 	// QSS Advance
 	void
-	advance_QSS() override final
+	advance_QSS() override
 	{
 		s_ = f_( tX = tQ = tE );
 		x_0_ = s_.x0;

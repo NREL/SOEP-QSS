@@ -66,7 +66,7 @@ public: // Predicate
 
 	// Discrete Variable?
 	bool
-	is_Discrete() const override final
+	is_Discrete() const override
 	{
 		return true;
 	}
@@ -75,56 +75,56 @@ public: // Property
 
 	// Boolean Value
 	Boolean
-	b() const override final
+	b() const override
 	{
 		return Boolean( x_ );
 	}
 
 	// Boolean Value at Time t
 	Boolean
-	b( Time const ) const override final
+	b( Time const ) const override
 	{
 		return Boolean( x_ );
 	}
 
 	// Integer Value
 	Integer
-	i() const override final
+	i() const override
 	{
 		return x_;
 	}
 
 	// Integer Value at Time t
 	Integer
-	i( Time const ) const override final
+	i( Time const ) const override
 	{
 		return x_;
 	}
 
 	// Real Value
 	Real
-	r() const override final
+	r() const override
 	{
 		return Real( x_ );
 	}
 
 	// Real Value at Time t
 	Real
-	r( Time const ) const override final
+	r( Time const ) const override
 	{
 		return Real( x_ );
 	}
 
 	// Continuous Value at Time t
 	Real
-	x( Time const ) const override final
+	x( Time const ) const override
 	{
 		return Real( x_ );
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const ) const override final
+	q( Time const ) const override
 	{
 		return Real( x_ );
 	}
@@ -133,21 +133,21 @@ public: // Methods
 
 	// Initialization
 	void
-	init() override final
+	init() override
 	{
 		init_0();
 	}
 
 	// Initialization to a Value
 	void
-	init( Real const x ) override final
+	init( Real const x ) override
 	{
 		init_0( x );
 	}
 
 	// Initialization: Stage 0
 	void
-	init_0() override final
+	init_0() override
 	{
 		assert( ! observes() );
 		init_observers();
@@ -158,7 +158,7 @@ public: // Methods
 
 	// Initialization to a Value: Stage 0
 	void
-	init_0( Real const x ) override final
+	init_0( Real const x ) override
 	{
 		assert( ! observes() );
 		init_observers();
@@ -169,7 +169,7 @@ public: // Methods
 
 	// Handler Advance
 	void
-	advance_handler( Time const t, Real const x ) override final
+	advance_handler( Time const t, Real const x ) override
 	{
 		assert( tX <= t );
 		tX = tQ = t;
@@ -183,7 +183,7 @@ public: // Methods
 
 	// Handler Advance: Stage 0
 	void
-	advance_handler_0( Time const t, Real const x ) override final
+	advance_handler_0( Time const t, Real const x ) override
 	{
 		assert( tX <= t );
 		tX = tQ = t;

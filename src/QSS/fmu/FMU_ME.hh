@@ -197,6 +197,10 @@ public: // Simulation Methods
 	void
 	pre_simulate();
 
+	// Optimize ND Time Step
+	void
+	dtND_optimize( Time const to );
+
 	// Initialization
 	void
 	init();
@@ -283,7 +287,7 @@ public: // FMU Methods
 	init_derivatives()
 	{
 		if ( derivatives != nullptr ) delete derivatives;
-		derivatives = n_derivatives > 0u ? new fmi2_real_t[ n_derivatives ] : nullptr;
+		derivatives = ( n_derivatives > 0u ? new fmi2_real_t[ n_derivatives ] : nullptr );
 	}
 
 	// Get a Real FMU Variable Value

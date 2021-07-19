@@ -79,7 +79,7 @@ public: // Property
 
 	// Continuous Value at Time t
 	Real
-	x( Time const t ) const override final
+	x( Time const t ) const override
 	{
 		Time const tDel( t - tX );
 		return x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
@@ -87,28 +87,28 @@ public: // Property
 
 	// Continuous First Derivative at Time t
 	Real
-	x1( Time const t ) const override final
+	x1( Time const t ) const override
 	{
 		return x_1_ + ( two * x_2_ * ( t - tX ) );
 	}
 
 	// Continuous Second Derivative at Time t
 	Real
-	x2( Time const ) const override final
+	x2( Time const ) const override
 	{
 		return two * x_2_;
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const t ) const override final
+	q( Time const t ) const override
 	{
 		return q_0_ + ( q_1_ * ( t - tQ ) );
 	}
 
 	// Quantized First Derivative at Time t
 	Real
-	q1( Time const ) const override final
+	q1( Time const ) const override
 	{
 		return q_1_;
 	}
@@ -117,7 +117,7 @@ public: // Methods
 
 	// Initialization
 	void
-	init() override final
+	init() override
 	{
 		init_0();
 		init_1();
@@ -127,7 +127,7 @@ public: // Methods
 
 	// Initialization to a Value
 	void
-	init( Real const x ) override final
+	init( Real const x ) override
 	{
 		init_0( x );
 		init_1();
@@ -137,7 +137,7 @@ public: // Methods
 
 	// Initialization: Stage 0
 	void
-	init_0() override final
+	init_0() override
 	{
 		init_observers();
 		init_observees();
@@ -146,7 +146,7 @@ public: // Methods
 
 	// Initialization to a Value: Stage 0
 	void
-	init_0( Real const x ) override final
+	init_0( Real const x ) override
 	{
 		init_observers();
 		init_observees();
@@ -155,21 +155,21 @@ public: // Methods
 
 	// Initialization: Stage 1
 	void
-	init_1() override final
+	init_1() override
 	{
 		x_1_ = q_1_ = p_1();
 	}
 
 	// Initialization: Stage 2
 	void
-	init_2() override final
+	init_2() override
 	{
 		x_2_ = c_2();
 	}
 
 	// Initialization: Stage Final
 	void
-	init_F() override final
+	init_F() override
 	{
 		set_qTol();
 		set_tE_aligned();
@@ -179,7 +179,7 @@ public: // Methods
 
 	// QSS Advance
 	void
-	advance_QSS() override final
+	advance_QSS() override
 	{
 		Time const tDel( tE - tX );
 		tX = tQ = tE;
@@ -196,7 +196,7 @@ public: // Methods
 
 	// QSS Advance: Stage 0
 	void
-	advance_QSS_0() override final
+	advance_QSS_0() override
 	{
 		Time const tDel( tE - tX );
 		tX = tQ = tE;
@@ -205,35 +205,35 @@ public: // Methods
 
 	// QSS Advance: Stage 1
 	void
-	advance_QSS_1( Real const x_1 ) override final
+	advance_QSS_1( Real const x_1 ) override
 	{
 		x_1_ = q_1_ = x_1;
 	}
 
 	// QSS Advance: Stage 2
 	void
-	advance_QSS_2( Real const x_1_p ) override final
+	advance_QSS_2( Real const x_1_p ) override
 	{
 		x_2_ = n_2( x_1_p );
 	}
 
 	// QSS Advance: Stage 2
 	void
-	advance_QSS_2( Real const x_1_m, Real const x_1_p ) override final
+	advance_QSS_2( Real const x_1_m, Real const x_1_p ) override
 	{
 		x_2_ = n_2( x_1_m, x_1_p );
 	}
 
 	// QSS Advance: Stage 2
 	void
-	advance_QSS_2_forward( Real const x_1_p, Real const x_1_2p ) override final
+	advance_QSS_2_forward( Real const x_1_p, Real const x_1_2p ) override
 	{
 		x_2_ = f_2( x_1_p, x_1_2p );
 	}
 
 	// QSS Advance: Stage Final
 	void
-	advance_QSS_F() override final
+	advance_QSS_F() override
 	{
 		set_qTol();
 		set_tE_aligned();
@@ -244,7 +244,7 @@ public: // Methods
 
 	// Handler Advance
 	void
-	advance_handler( Time const t ) override final
+	advance_handler( Time const t ) override
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
@@ -261,7 +261,7 @@ public: // Methods
 
 	// Handler Advance: Stage 0
 	void
-	advance_handler_0( Time const t ) override final
+	advance_handler_0( Time const t ) override
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
@@ -270,35 +270,35 @@ public: // Methods
 
 	// Handler Advance: Stage 1
 	void
-	advance_handler_1( Real const x_1 ) override final
+	advance_handler_1( Real const x_1 ) override
 	{
 		x_1_ = q_1_ = x_1;
 	}
 
 	// Handler Advance: Stage 2
 	void
-	advance_handler_2( Real const x_1_p ) override final
+	advance_handler_2( Real const x_1_p ) override
 	{
 		x_2_ = n_2( x_1_p );
 	}
 
 	// Handler Advance: Stage 2
 	void
-	advance_handler_2( Real const x_1_m, Real const x_1_p ) override final
+	advance_handler_2( Real const x_1_m, Real const x_1_p ) override
 	{
 		x_2_ = n_2( x_1_m, x_1_p );
 	}
 
 	// QSS Advance: Stage 2
 	void
-	advance_handler_2_forward( Real const x_1_p, Real const x_1_2p ) override final
+	advance_handler_2_forward( Real const x_1_p, Real const x_1_2p ) override
 	{
 		x_2_ = f_2( x_1_p, x_1_2p );
 	}
 
 	// Handler Advance: Stage Final
 	void
-	advance_handler_F() override final
+	advance_handler_F() override
 	{
 		set_qTol();
 		set_tE_aligned();
@@ -309,14 +309,14 @@ public: // Methods
 
 	// Handler No-Advance
 	void
-	no_advance_handler() override final
+	no_advance_handler() override
 	{
 		shift_QSS( tE );
 	}
 
 	// Observer Advance
 	void
-	advance_observer( Time const t ) override final
+	advance_observer( Time const t ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		Time const tDel( t - tX );
@@ -331,7 +331,7 @@ public: // Methods
 
 	// Observer Advance: Stage 1
 	void
-	advance_observer_1( Time const t, Real const x_1 ) override final
+	advance_observer_1( Time const t, Real const x_1 ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		assert( x_1 == p_1() );
@@ -343,14 +343,14 @@ public: // Methods
 
 	// Observer Advance: Stage 1 Parallel
 	void
-	advance_observer_1_parallel( Time const t, Real const x_1 ) override final
+	advance_observer_1_parallel( Time const t, Real const x_1 ) override
 	{
 		advance_observer_1( t, x_1 );
 	}
 
 	// Observer Advance: Stage 2
 	void
-	advance_observer_2( Real const x_1_p ) override final
+	advance_observer_2( Real const x_1_p ) override
 	{
 		x_2_ = n_2( x_1_p );
 		set_tE_unaligned();
@@ -360,14 +360,14 @@ public: // Methods
 
 	// Observer Advance: Stage 2 Parallel
 	void
-	advance_observer_2_parallel( Real const x_1_p ) override final
+	advance_observer_2_parallel( Real const x_1_p ) override
 	{
 		x_2_ = n_2( x_1_p );
 	}
 
 	// Observer Advance: Stage 2
 	void
-	advance_observer_2( Real const x_1_m, Real const x_1_p ) override final
+	advance_observer_2( Real const x_1_m, Real const x_1_p ) override
 	{
 		x_2_ = n_2( x_1_m, x_1_p );
 		set_tE_unaligned();
@@ -377,14 +377,14 @@ public: // Methods
 
 	// Observer Advance: Stage 2 Parallel
 	void
-	advance_observer_2_parallel( Real const x_1_m, Real const x_1_p ) override final
+	advance_observer_2_parallel( Real const x_1_m, Real const x_1_p ) override
 	{
 		x_2_ = n_2( x_1_m, x_1_p );
 	}
 
 	// Observer Advance: Stage 2
 	void
-	advance_observer_2_forward( Real const x_1_p, Real const x_1_2p ) override final
+	advance_observer_2_forward( Real const x_1_p, Real const x_1_2p ) override
 	{
 		x_2_ = f_2( x_1_p, x_1_2p );
 		set_tE_unaligned();
@@ -394,21 +394,21 @@ public: // Methods
 
 	// Observer Advance: Stage 2 Parallel
 	void
-	advance_observer_2_forward_parallel( Real const x_1_p, Real const x_1_2p ) override final
+	advance_observer_2_forward_parallel( Real const x_1_p, Real const x_1_2p ) override
 	{
 		x_2_ = f_2( x_1_p, x_1_2p );
 	}
 
 	// Observer Advance: Stage Final Parallel
 	void
-	advance_observer_F_parallel() override final
+	advance_observer_F_parallel() override
 	{
 		set_tE_unaligned();
 	}
 
 	// Observer Advance: Stage Final Serial
 	void
-	advance_observer_F_serial() override final
+	advance_observer_F_serial() override
 	{
 		shift_QSS( tE );
 		if ( connected() ) advance_connections_observer();
@@ -416,7 +416,7 @@ public: // Methods
 
 	// Observer Advance: Stage d
 	void
-	advance_observer_d() const override final
+	advance_observer_d() const override
 	{
 		std::cout << " ^ " << name() << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q(" << std::noshowpos << tQ << std::showpos << ")]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 	}

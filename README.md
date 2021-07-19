@@ -10,7 +10,7 @@ Currently the code has:
 * Linear and nonlinear derivative function support.
 * Input variables/functions.
 * Discrete-valued variables.
-* Numeric differentiation support.
+* Numeric differentiation support with specified or automatic ND time step.
 * Zero-crossing event support via OCT event indicator variables or explicit zero crossing variables.
 * Conditional if and when block framework.
 * A simple "baseline" event queue built on `std::multimap`.
