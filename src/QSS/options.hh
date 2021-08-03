@@ -49,6 +49,7 @@
 namespace QSS {
 namespace options {
 
+using Args = std::vector< std::string >;
 using Models = std::vector< std::string >;
 using InpFxn = std::unordered_map< std::string, std::string >;
 using InpOut = std::unordered_map< std::string, std::string >;
@@ -166,7 +167,7 @@ extern bool K; // FMU-QSS smooth tokens?
 
 // Process command line arguments
 void
-process_args( int argc, char * argv[] );
+process_args( Args const & args );
 
 // Multiple models?
 bool

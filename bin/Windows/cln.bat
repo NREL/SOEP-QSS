@@ -20,6 +20,7 @@ if not "%QSS_bin%" == "" (
   del %QSS_bin%\*.ilk >nul 2>&1
   del %QSS_bin%\*.lib >nul 2>&1
   del %QSS_bin%\*.pdb >nul 2>&1
+  del %QSS_bin%\*.pyd >nul 2>&1
 )
 
 endlocal

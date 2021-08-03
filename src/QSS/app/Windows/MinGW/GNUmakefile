@@ -14,26 +14,29 @@ TST_PATH := $(QSS)\tst\QSS\unit
 include $(QSS_bin)/GNUmakeinit.mk
 
 # Variables
-TAR := QSS
-TAR_SRC := $(SRC_PATH)/app/$(TAR).cc
-TAR_DEP := $(TAR).d
-TAR_OBJ := $(TAR).o
+QSS_SRC := $(SRC_PATH)/app/QSS.cc
+QSS_DEP := QSS.d
+QSS_OBJ := QSS.o
+PyQSS_SRC := $(SRC_PATH)/app/PyQSS.cc
+PyQSS_DEP := PyQSS.d
+PyQSS_OBJ := PyQSS.o
 SRC := $(notdir $(wildcard $(SRC_PATH)/*.cc))
 SRC += $(notdir $(wildcard $(SRC_PATH)/cod/*.cc))
 SRC += $(notdir $(wildcard $(SRC_PATH)/cod/mdl/*.cc))
 SRC += $(notdir $(wildcard $(SRC_PATH)/fmu/*.cc))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .o,$(basename $(SRC)))
-SLB := $(BIN_PATH)\lib$(TAR).a
-EXE := $(BIN_PATH)\$(TAR).exe
+SLB := $(BIN_PATH)\libQSS.a
+EXE := $(BIN_PATH)\QSS.exe
+PYD := $(BIN_PATH)\PyQSS.pyd
 
 # Rules
 
-.PHONY : all
-all : $(EXE) $(SLB)
-
 .PHONY : exe
 exe : $(EXE)
+
+.PHONY : pyd
+pyd : $(PYD)
 
 .PHONY : lib
 lib : $(SLB)
@@ -46,12 +49,12 @@ obj : $(OBJ)
 
 .PHONY : check
 check :
-	@echo $(TAR)
 	@echo $(SRC)
 	@echo $(DEP)
 	@echo $(OBJ)
 	@echo $(SLB)
 	@echo $(EXE)
+	@echo $(PYD)
 
 .PHONY : clear
 clear :
@@ -59,19 +62,26 @@ clear :
 
 .PHONY : clean
 clean :
-	-DEL *.d *.o $(SLB) $(EXE)
+	-DEL *.d *.o $(SLB) $(EXE) $(PYD) $(BIN_PATH)\QSS.* $(BIN_PATH)\PyQSS.*
 
 $(SLB) : $(OBJ)
-	@-FOR %%F in ($(filter-out $(DEP) $(TAR_DEP),$(wildcard *.d))) DO DEL %%F
-	@-FOR %%F in ($(filter-out $(OBJ) $(TAR_OBJ),$(wildcard *.o))) DO DEL %%F
+	@-FOR %%F in ($(filter-out $(DEP) $(QSS_DEP) $(PyQSS_DEP),$(wildcard *.d))) DO DEL %%F
+	@-FOR %%F in ($(filter-out $(OBJ) $(QSS_OBJ) $(PyQSS_OBJ),$(wildcard *.o))) DO DEL %%F
 	$(AR) $(ARFLAGS) $@ $?
 
-$(TAR_OBJ) : $(TAR_SRC)
+$(QSS_OBJ) : $(QSS_SRC)
 	@$(MAKEDEPEND) $<
 	$(CXX) $(CXXFLAGS) -c -o $@ $(subst /,\,$<)
 
-$(EXE) : $(SLB) $(TAR_OBJ)
-	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) -o $@ $(TAR_OBJ) -L$(QSS_bin) -l$(TAR) -L$(FMIL_HOME)\lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -lshlwapi
+$(PyQSS_OBJ) : $(PyQSS_SRC)
+	@$(MAKEDEPEND) $<
+	$(CXX) $(CXXFLAGS) -c -o $@ $(subst /,\,$<)
+
+$(EXE) : $(SLB) $(QSS_OBJ)
+	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) -o $@ $(QSS_OBJ) -L$(QSS_bin) -lQSS -L$(FMIL_HOME)\lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -lshlwapi
+
+$(PYD) : $(SLB) $(PyQSS_OBJ)
+	$(CXX) $(CXXFLAGS) -shared -fPIC $(PGO) $(LDFLAGS) -o $@ $(PyQSS_OBJ) -L$(QSS_bin) -lQSS -L$(FMIL_HOME)\lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -lshlwapi
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)

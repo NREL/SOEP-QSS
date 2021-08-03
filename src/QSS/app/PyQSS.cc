@@ -1,4 +1,4 @@
-// QSS Solver Main
+// PyQSS Solver Main
 //
 // Project: QSS Solver
 //
@@ -36,16 +36,18 @@
 // QSS Headers
 #include <QSS/QSS_main.hh>
 
-// QSS Solver Main
-int
-main( int argc, char * argv[] )
-{
+// Pybin11 Headers
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
-	// Process command line arguments
-	std::vector< std::string > args;
-	args.reserve( argc );
-	for ( int i = 0; i < argc; ++i ) {
-		args.push_back( std::string( argv[ i ] ) );
-	}
+// QSS Driver
+void
+run_QSS( std::vector< std::string > const args )
+{
 	QSS::QSS_main( args );
+}
+
+PYBIND11_MODULE( PyQSS, m )
+{
+	m.def( "run_QSS", &run_QSS, R"pbdoc( Run QSS )pbdoc" );
 }

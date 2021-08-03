@@ -1,4 +1,4 @@
-// QSS Solver Main
+// QSS Solver Main Implementation
 //
 // Project: QSS Solver
 //
@@ -33,19 +33,26 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// QSS Headers
-#include <QSS/QSS_main.hh>
+#ifndef QSS_main_hh_INCLUDED
+#define QSS_main_hh_INCLUDED
 
-// QSS Solver Main
-int
-main( int argc, char * argv[] )
-{
+// C++ Headers
+#include <string>
+#include <vector>
 
-	// Process command line arguments
-	std::vector< std::string > args;
-	args.reserve( argc );
-	for ( int i = 0; i < argc; ++i ) {
-		args.push_back( std::string( argv[ i ] ) );
-	}
-	QSS::QSS_main( args );
-}
+namespace QSS {
+
+// Types
+enum class ModelType { UNK, COD, FMU_ME, FMU_QSS };
+
+// Model Type from Name
+ModelType
+model_type_of( std::string const & model );
+
+// QSS Main Implementation
+void
+QSS_main( std::vector< std::string > const & args );
+
+} // QSS
+
+#endif

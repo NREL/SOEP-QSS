@@ -22,6 +22,7 @@ Currently the code has:
 * FMU-QSS generation and simulation support.
 * Connected FMU-ME and FMU-QSS simulation support.
 * Binned-QSS support.
+* Experimental Python wrapping with Pybind11.
 
 ### Notes
 * Modelica input file processing is not provided: test cases are code-defined or loaded from Modelica-generated FMUs.
@@ -483,3 +484,16 @@ Input/output connections between models can be specified via command line option
 `--con=`_model1_`.`_inp\_var_`:`_model2_`.`_out\_var_
 
 Run `QSS --help` to see the command line usage.
+
+## PyQSS
+
+To prepare for integration into PyFMI support for building a Python wrapper for QSS was developed and is included.
+A Python front end to QSS can be built by running the `mak pyd` command from the `app` subdirectory of `src`.
+This builds a shared/dynamic library, `PyQSS`, that can be imported as a Python module.
+(`PyQSS` is not built by the `bld` or default `mak` commands.)
+A front end script, `QSS.py`, is included.
+To run QSS from the Python front end use:
+* `QSS.py <arguments> [options]`
+
+### Notes
+* Pybind11 does not work with the Windows MinGW GCC compilers with the stock Python binary distribution that is built with Visual C++.

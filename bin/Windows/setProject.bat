@@ -9,3 +9,16 @@ set QSS=%QSS:~0,-13%
 set Path=%Path%;%QSS%\bin\Windows;%QSS%\bin
 
 call setPython.bat
+
+if not "%QSS_bin%" == "" (
+  if "%PYTHONPATH%" == "" (
+    set PYTHONPATH=%QSS_bin%
+  ) else (
+    set PYTHONPATH=%PYTHONPATH%;%QSS_bin%
+  )
+)
+
+set "PYBIND_INC=%PYTHON_DIR%\lib\site-packages\pybind11\include"
+if not "%CPATH%" == "" set CPATH=%CPATH%;%PYTHON_INC%;%PYBIND_INC%
+if not "%INCLUDE%" == "" set INCLUDE=%INCLUDE%;%PYTHON_INC%;%PYBIND_INC%
+if not "%LIB%" == "" set LIB=%LIB%;%PYTHON_DIR%\libs

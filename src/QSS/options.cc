@@ -249,16 +249,17 @@ help_display()
 
 // Process command line arguments
 void
-process_args( int argc, char * argv[] )
+process_args( Args const & args )
 {
+	Args::size_type const argc( args.size() );
 	bool help( false );
-	if ( argc == 1 ) { // No arguments: Show help
+	if ( argc <= 1u ) { // No arguments: Show help
 		help_display();
 		help = true;
 	}
 	bool fatal( false ); // Fatal error occurred?
-	for ( int i = 1; i < argc; ++i ) {
-		std::string const arg( argv[ i ] );
+	for ( Args::size_type i = 1; i < argc; ++i ) {
+		std::string const arg( args[ i ] );
 		if ( ( arg == "--help" ) || ( arg == "-h" ) ) { // Show help
 			help_display();
 			help = true;
@@ -976,8 +977,8 @@ process_args( int argc, char * argv[] )
 	if ( fatal ) std::exit( EXIT_FAILURE );
 
 	std::cout << "\nQSS Command Line Arguments:\n";
-	for ( int i = 1; i < argc; ++i ) {
-		std::cout << ' ' <<  argv[ i ] << '\n';
+	for ( Args::size_type i = 1; i < argc; ++i ) {
+		std::cout << ' ' <<  args[ i ] << '\n';
 	}
 	std::cout << std::endl;
 }

@@ -6,3 +6,11 @@ if [ -z "$QSS" ]; then
 fi
 
 export PATH=$PATH:$QSS/bin/Linux:$QSS/bin
+
+if [ -n "$QSS_bin" ]; then
+  if [ -z "$PYTHONPATH" ]; then
+    export PYTHONPATH=$QSS_bin
+  else
+    export PYTHONPATH=$PYTHONPATH:$QSS_bin
+  fi
+fi

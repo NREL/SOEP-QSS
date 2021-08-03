@@ -32,7 +32,7 @@ def main():
     # Get options and arguments
     parser = argparse.ArgumentParser( description = 'Generates C/C++ dependency files' )
     parser.add_argument( '--inc', help = 'include path or env var [CPATH|CPLUS_INCLUDE_PATH|INCLUDE]' )
-    parser.add_argument( '--ext', help = 'object file extension [obj|o]', default = ( 'obj' if os.name == 'nt' else 'o' ) )
+    parser.add_argument( '--ext', help = 'object file extension [obj|o]', default = ( 'obj' if os.name == 'nt' and sys.platform != 'msys' and os.sep != '/' else 'o' ) )
     parser.add_argument( 'source', help = 'Source file' )
     arg = parser.parse_args()
 
