@@ -1702,7 +1702,7 @@ protected: // Methods: FMU
 		}
 	}
 
-	// Coefficient 0 from FMU: Observees Set
+	// Boolean Coefficient 0 from FMU: Observees Set
 	Boolean
 	bp_0() const
 	{
@@ -1710,7 +1710,7 @@ protected: // Methods: FMU
 		return fmu_me_->get_boolean( var_.ref );
 	}
 
-	// Coefficient 0 from FMU at Time t: X-Based
+	// Boolean Coefficient 0 from FMU at Time t: X-Based
 	Boolean
 	bz_0( Time const t ) const
 	{
@@ -1718,7 +1718,7 @@ protected: // Methods: FMU
 		return bp_0();
 	}
 
-	// Coefficient 0 from FMU: Observees Set
+	// Integer Coefficient 0 from FMU: Observees Set
 	Integer
 	ip_0() const
 	{
@@ -1726,7 +1726,7 @@ protected: // Methods: FMU
 		return fmu_me_->get_integer( var_.ref );
 	}
 
-	// Coefficient 0 from FMU at Time t: X-Based
+	// Integer Coefficient 0 from FMU at Time t: X-Based
 	Integer
 	iz_0( Time const t ) const
 	{

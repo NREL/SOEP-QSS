@@ -456,21 +456,6 @@ namespace fmu {
 		size_type const n_fmu_vars( fmi2_import_get_variable_list_size( var_list ) );
 		std::cout << "\nFMU Variable Processing: Num FMU-ME Variables: " << n_fmu_vars << " =====" << std::endl;
 		fmi2_value_reference_t const * vrs( fmi2_import_get_value_referece_list( var_list ) ); // reference is misspelled in FMIL API
-		{ // Check for duplicate value references
-			std::vector< fmi2_value_reference_t > var_ref_vec( vrs, vrs + n_fmu_vars );
-			std::sort( var_ref_vec.begin(), var_ref_vec.end() );
-			bool dups( false );
-			fmi2_value_reference_t last( 0 );
-			for ( std::vector< fmi2_value_reference_t >::size_type i = 1; i < n_fmu_vars; ++i ) {
-				if ( ( var_ref_vec[ i - 1 ] == var_ref_vec[ i ] ) && ( last != var_ref_vec[ i ] ) ) {
-					std::cerr << " Error: FMU value reference number repeats: " << var_ref_vec[ i ] << std::endl;
-					dups = true;
-					last = var_ref_vec[ i ];
-				}
-			}
-			if ( dups ) std::exit( EXIT_FAILURE );
-		}
-		std::unordered_map< fmi2_value_reference_t, FMU_Variable > fmu_var_of_ref;
 		for ( size_type i = 0; i < n_fmu_vars; ++i ) {
 			std::cout << "\nVariable  Index: " << i+1 << " Ref: " << vrs[ i ] << std::endl;
 			fmi2_import_variable_t * var( fmi2_import_get_variable( var_list, i ) );
@@ -516,7 +501,6 @@ namespace fmu {
 					}
 					FMU_Variable const fmu_var( var, var_real, var_ref, i+1 );
 					fmu_vars[ var_real ] = fmu_var;
-					fmu_var_of_ref[ var_ref ] = fmu_var;
 					if ( var_causality == fmi2_causality_enu_input ) {
 						std::cout << " Type: Real: Continuous: Input" << std::endl;
 						Function inp_fxn;
@@ -697,7 +681,6 @@ namespace fmu {
 					}
 					FMU_Variable const fmu_var( var, var_real, var_ref, i+1 );
 					fmu_vars[ var_real ] = fmu_var;
-					fmu_var_of_ref[ var_ref ] = fmu_var;
 					if ( var_causality == fmi2_causality_enu_input ) {
 						std::cout << " Type: Real: Discrete: Input" << std::endl;
 //						Function inp_fxn = Function_Inp_constant( var_start ); // Constant start value
@@ -777,7 +760,6 @@ namespace fmu {
 					std::cout << " Type: Integer: Discrete" << std::endl;
 					FMU_Variable const fmu_var( var, var_int, var_ref, i+1 );
 					fmu_vars[ var_int ] = fmu_var;
-					fmu_var_of_ref[ var_ref ] = fmu_var;
 					if ( var_causality == fmi2_causality_enu_input ) {
 						std::cout << " Type: Integer: Discrete: Input" << std::endl;
 //						Function inp_fxn = Function_Inp_constant( var_start ); // Constant start value
@@ -855,7 +837,6 @@ namespace fmu {
 					std::cout << " Type: Boolean: Discrete" << std::endl;
 					FMU_Variable const fmu_var( var, var_bool, var_ref, i+1 );
 					fmu_vars[ var_bool ] = fmu_var;
-					fmu_var_of_ref[ var_ref ] = fmu_var;
 					if ( var_causality == fmi2_causality_enu_input ) {
 						std::cout << " Type: Boolean: Discrete: Input" << std::endl;
 						Function inp_fxn = Function_Inp_toggle( 0.0, 1.0, 1.0 ); // Toggle 0-1 every 1 s via discrete events
@@ -941,6 +922,7 @@ namespace fmu {
 		n_derivatives = fmi2_import_get_variable_list_size( der_list );
 		std::cout << "\nFMU Derivative Processing: Num FMU-ME Derivatives: " << n_derivatives << " =====" << std::endl;
 		fmi2_value_reference_t const * drs( fmi2_import_get_value_referece_list( der_list ) ); // reference is spelled wrong in FMIL API
+		std::unordered_multimap< fmi2_value_reference_t, FMU_Variable > fmu_ref_to_der_state; // Reference to FMU_Variable map to check for duplicate reference numbers
 		for ( size_type i = 0, ics = 0; i < n_derivatives; ++i ) { // i is also index into states and x_nominal arrays
 			std::cout << "\nDerivative  Ref: " << drs[ i ] << std::endl;
 			fmi2_import_variable_t * der( fmi2_import_get_variable( der_list, i ) );
@@ -966,6 +948,8 @@ namespace fmu {
 					fmu_ders[ var_real ] = fmu_der;
 					fmu_dvrs[ der_real ] = fmu_var;
 					der_to_var_idx[ fmu_der.idx ] = fmu_var.idx;
+					fmu_ref_to_der_state.insert( std::pair( fmu_der.ref, fmu_der ) );
+					fmu_ref_to_der_state.insert( std::pair( fmu_var.ref, fmu_var ) );
 					std::string const var_name( fmi2_import_get_variable_name( fmu_var.var ) );
 					if ( ! SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) {
 						std::cerr << " Error: Non-SI unit used for state variable: Not currently supported: " << var_name << std::endl;
@@ -1058,6 +1042,22 @@ namespace fmu {
 				std::cout << " Type: Unknown" << std::endl;
 				break;
 			}
+		}
+		{ // Check for duplicate value references in state/derivative variables
+			bool dups( false );
+			fmi2_value_reference_t last_ref( std::numeric_limits< fmi2_value_reference_t >::max() );
+			FMU_Variable const * last_fmu_var( nullptr );
+			for ( auto const & ref_var : fmu_ref_to_der_state ) {
+				fmi2_value_reference_t const ref( ref_var.first );
+				FMU_Variable const * fmu_var( &ref_var.second );
+				if ( ref == last_ref ) {
+					std::cerr << "Error: FMU value reference number " << ref << " repeats in state/derivative variables: " << fmi2_import_get_variable_name(  last_fmu_var->var ) << " and " << fmi2_import_get_variable_name( fmu_var->var ) << std::endl;
+					dups = true;
+				}
+				last_ref = ref;
+				last_fmu_var = fmu_var;
+			}
+			if ( dups ) std::exit( EXIT_FAILURE );
 		}
 		size_type const n_state_vars( state_vars.size() );
 
@@ -2108,12 +2108,6 @@ namespace fmu {
 						fmu_qss_qss_outs.push_back( ivar->second );
 					}
 				}
-//				else {
-//					auto ifvar( fmu_var_of_ref.find( var_ref ) );
-//					if ( ifvar != fmu_var_of_ref.end() ) {
-//						fmu_qss_fmu_outs.push_back( *ifvar );
-//					}
-//				}
 			}
 			n_fmu_qss_qss_outs = fmu_qss_qss_outs.size();
 		}
