@@ -357,6 +357,8 @@ namespace fmu {
 	{
 		t0 = tBeg;
 		tE = tEnd;
+		options::dtMin = std::max( options::dtMin, 2.0 * std::numeric_limits< Time >::epsilon() * std::max( std::abs( t0 ), std::abs( tE ) ) ); // Prevent t + dt == t
+		options::dtMax = std::max( options::dtMax, options::dtMin );
 		rTol = rTolerance;
 	}
 
@@ -2371,7 +2373,7 @@ namespace fmu {
 								break;
 							}
 						} else { // Set dtMin
-							sim_dtMin = std::min( std::max( 1.0e-9, tNext * 1.0e-12 ), 0.5 * options::dtMax );
+							sim_dtMin = std::min( 2.0 * std::numeric_limits< Time >::epsilon() * std::max( std::abs( t0 ), std::abs( tE ) ), 0.5 * options::dtMax );
 						}
 						for ( auto var : vars ) {
 							var->dt_min = sim_dtMin;

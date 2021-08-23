@@ -243,6 +243,8 @@ simulate( std::string const & model )
 	// Timing setup
 	Time const t0( 0.0 ); // Simulation start time
 	Time tE( options::tEnd ); // Simulation end time
+	options::dtMin = std::max( options::dtMin, 2.0 * std::numeric_limits< Time >::epsilon() * std::max( std::abs( t0 ), std::abs( tE ) ) ); // Prevent t + dt == t
+	options::dtMax = std::max( options::dtMax, options::dtMin );
 	Time t( t0 ); // Simulation current time
 	options::dtOut_set( tE - t0 ); // Set dtOut to default if not specified
 	Time tOut( t0 + options::dtOut ); // Sampling time
@@ -333,7 +335,7 @@ simulate( std::string const & model )
 							break;
 						}
 					} else { // Set dtMin
-						sim_dtMin = std::min( std::max( 1.0e-9, tE * 1.0e-12 ), 0.5 * options::dtMax );
+						sim_dtMin = std::min( 2.0 * std::numeric_limits< Time >::epsilon() * std::max( std::abs( t0 ), std::abs( tE ) ), 0.5 * options::dtMax );
 					}
 					for ( auto var : vars ) {
 						var->dt_min = sim_dtMin;
