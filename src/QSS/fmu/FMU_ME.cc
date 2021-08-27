@@ -251,7 +251,7 @@ namespace fmu {
 		 fmu_generation_tool.find( "Dymola" ) == 0u ? FMU_Generator::Dymola : FMU_Generator::Other ) )
 		);
 
-		// Check FMU capabilities includes directional derivatives
+		// Check if FMU capabilities includes directional derivatives
 		if ( bool( fmi2_import_get_capability( fmu, fmi2_me_providesDirectionalDerivatives ) ) ) { // FMU supports directional derivatives
 			if ( ! options::specified::eidd ) { // Use directional derivatives by default
 				options::eidd = true;
@@ -453,13 +453,16 @@ namespace fmu {
 		Var_Names var_names; // Variable names (to check for duplicates)
 		Var_Idx_Lookup der_to_var_idx; // Derivative to Variable index lookup
 
-		// Process FMU variables
+		// FMU variable list
 		var_list = fmi2_import_get_variable_list( fmu, 0 ); // sort order = 0 for original order
+
+		// Process FMU variables
 		size_type const n_fmu_vars( fmi2_import_get_variable_list_size( var_list ) );
 		std::cout << "\nFMU Variable Processing: Num FMU-ME Variables: " << n_fmu_vars << " =====" << std::endl;
 		fmi2_value_reference_t const * vrs( fmi2_import_get_value_referece_list( var_list ) ); // reference is misspelled in FMIL API
 		for ( size_type i = 0; i < n_fmu_vars; ++i ) {
-			std::cout << "\nVariable  Index: " << i+1 << " Ref: " << vrs[ i ] << std::endl;
+			size_type const idx( i + 1 );
+			std::cout << "\nVariable  Index: " << idx << " Ref: " << vrs[ i ] << std::endl;
 			fmi2_import_variable_t * var( fmi2_import_get_variable( var_list, i ) );
 			std::string const var_name( fmi2_import_get_variable_name( var ) );
 			if ( var_names.find( var_name ) != var_names.end() ) {
@@ -487,11 +490,14 @@ namespace fmu {
 				Real const var_nominal( fmi2_xml_get_real_variable_nominal( var_real ) );
 				std::cout << " Nominal: " << var_nominal << std::endl;
 				if ( ( var_causality == fmi2_causality_enu_local ) || ( var_causality == fmi2_causality_enu_output ) ) {
-					if ( var_causality == fmi2_causality_enu_local ) std::cout << " Causality: Local" << std::endl;
-					if ( var_causality == fmi2_causality_enu_output ) std::cout << " Causality: Output" << std::endl;
+					if ( var_causality == fmi2_causality_enu_local ) {
+						std::cout << " Causality: Local" << std::endl;
+					} else if ( var_causality == fmi2_causality_enu_output ) {
+						std::cout << " Causality: Output" << std::endl;
+					}
 					if ( ( var_variability == fmi2_variability_enu_continuous ) || ( var_variability == fmi2_variability_enu_discrete ) ) {
 						if ( ( options::output::F && ( var_causality == fmi2_causality_enu_output ) ) || ( options::output::L && ( var_causality == fmi2_causality_enu_local ) ) ) { // Add to FMU outputs
-							if ( output_filter.fmu( var_name ) ) fmu_outs[ var_real ] = FMU_Variable( var, var_real, var_ref, i+1 );
+							if ( output_filter.fmu( var_name ) ) fmu_outs[ var_real ] = FMU_Variable( var, var_real, var_ref, idx );
 						}
 					}
 				}
@@ -501,7 +507,7 @@ namespace fmu {
 						std::cerr << " Error: Non-SI unit used for real variable: Not currently supported: " << var_name << std::endl;
 						//std::exit( EXIT_FAILURE );
 					}
-					FMU_Variable const fmu_var( var, var_real, var_ref, i+1 );
+					FMU_Variable const fmu_var( var, var_real, var_ref, idx );
 					fmu_vars[ var_real ] = fmu_var;
 					if ( var_causality == fmi2_causality_enu_input ) {
 						std::cout << " Type: Real: Continuous: Input" << std::endl;
@@ -672,8 +678,8 @@ namespace fmu {
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
 						var_name_var[ var_name ] = qss_var;
-						fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
-						std::cout << " FMU-ME idx: " << i+1 << " maps to QSS var: " << qss_var->name() << std::endl;
+						fmu_idxs[ idx ] = qss_var; // Add to map from FMU variable index to QSS variable
+						std::cout << " FMU-ME idx: " << idx << " maps to QSS var: " << qss_var->name() << std::endl;
 					}
 				} else if ( var_variability == fmi2_variability_enu_discrete ) {
 					std::cout << " Type: Real: Discrete" << std::endl;
@@ -681,7 +687,7 @@ namespace fmu {
 						std::cerr << " Error: Non-SI unit used for discrete variable: Not currently supported: " << var_name << std::endl;
 						//std::exit( EXIT_FAILURE );
 					}
-					FMU_Variable const fmu_var( var, var_real, var_ref, i+1 );
+					FMU_Variable const fmu_var( var, var_real, var_ref, idx );
 					fmu_vars[ var_real ] = fmu_var;
 					if ( var_causality == fmi2_causality_enu_input ) {
 						std::cout << " Type: Real: Discrete: Input" << std::endl;
@@ -692,23 +698,23 @@ namespace fmu {
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
 						var_name_var[ var_name ] = qss_var;
-						fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
-						std::cout << " FMU-ME idx: " << i+1 << " maps to QSS var: " << qss_var->name() << std::endl;
-					} else if ( var_causality == fmi2_causality_enu_local ) { // Local (non-state) variables have no dependencies so QSS doesn't track them
+						fmu_idxs[ idx ] = qss_var; // Add to map from FMU variable index to QSS variable
+						std::cout << " FMU-ME idx: " << idx << " maps to QSS var: " << qss_var->name() << std::endl;
+					} else if ( var_causality == fmi2_causality_enu_local ) {
 						std::cout << " Type: Real: Discrete: Local" << std::endl;
-						std::cout << " FMU-ME idx: " << i+1 << " is not a QSS var" << std::endl;
+						std::cout << " FMU-ME idx: " << idx << " is not a QSS var" << std::endl;
 					} else {
 						std::cout << " Type: Real: Discrete: QSS" << std::endl;
 						Variable_D * qss_var( new Variable_D( var_name, var_start, this, fmu_var ) );
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
 						var_name_var[ var_name ] = qss_var;
+						fmu_idxs[ idx ] = qss_var; // Add to map from FMU variable index to QSS variable
 						if ( var_causality == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
 							if ( output_filter( var_name ) ) f_outs_vars.push_back( qss_var );
 							fmu_outs.erase( var_real ); // Remove it from non-QSS FMU outputs
 						}
-						fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
-						std::cout << " FMU-ME idx: " << i+1 << " maps to QSS var: " << qss_var->name() << std::endl;
+						std::cout << " FMU-ME idx: " << idx << " maps to QSS var: " << qss_var->name() << std::endl;
 					}
 				} else if ( var_variability == fmi2_variability_enu_fixed ) {
 					if ( var_name == "_events_default_tol" ) { // OCT/JModelica parameter for setting FMU zero crossing value tolerance
@@ -750,17 +756,20 @@ namespace fmu {
 				int const var_start( var_has_start ? fmi2_import_get_integer_variable_start( var_int ) : 0 );
 				if ( var_has_start ) std::cout << " Start: " << var_start << std::endl;
 				if ( ( var_causality == fmi2_causality_enu_local ) || ( var_causality == fmi2_causality_enu_output ) ) {
-					if ( var_causality == fmi2_causality_enu_local ) std::cout << " Causality: Local" << std::endl;
-					if ( var_causality == fmi2_causality_enu_output ) std::cout << " Causality: Output" << std::endl;
+					if ( var_causality == fmi2_causality_enu_local ) {
+						std::cout << " Causality: Local" << std::endl;
+					} else if ( var_causality == fmi2_causality_enu_output ) {
+						std::cout << " Causality: Output" << std::endl;
+					}
 					if ( var_variability == fmi2_variability_enu_discrete ) {
 						if ( ( options::output::F && ( var_causality == fmi2_causality_enu_output ) ) || ( options::output::L && ( var_causality == fmi2_causality_enu_local ) ) ) { // Add to FMU outputs
-							if ( output_filter.fmu( var_name ) ) fmu_outs[ var_int ] = FMU_Variable( var, var_int, var_ref, i+1 );
+							if ( output_filter.fmu( var_name ) ) fmu_outs[ var_int ] = FMU_Variable( var, var_int, var_ref, idx );
 						}
 					}
 				}
 				if ( var_variability == fmi2_variability_enu_discrete ) {
 					std::cout << " Type: Integer: Discrete" << std::endl;
-					FMU_Variable const fmu_var( var, var_int, var_ref, i+1 );
+					FMU_Variable const fmu_var( var, var_int, var_ref, idx );
 					fmu_vars[ var_int ] = fmu_var;
 					if ( var_causality == fmi2_causality_enu_input ) {
 						std::cout << " Type: Integer: Discrete: Input" << std::endl;
@@ -771,23 +780,23 @@ namespace fmu {
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
 						var_name_var[ var_name ] = qss_var;
-						fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
-						std::cout << " FMU-ME idx: " << i+1 << " maps to QSS var: " << qss_var->name() << std::endl;
-					} else if ( var_causality == fmi2_causality_enu_local ) { // Local (non-state) variables have no dependencies so QSS doesn't track them
+						fmu_idxs[ idx ] = qss_var; // Add to map from FMU variable index to QSS variable
+						std::cout << " FMU-ME idx: " << idx << " maps to QSS var: " << qss_var->name() << std::endl;
+					} else if ( var_causality == fmi2_causality_enu_local ) {
 						std::cout << " Type: Integer: Discrete: Local" << std::endl;
-						std::cout << " FMU-ME idx: " << i+1 << " is not a QSS var" << std::endl;
+						std::cout << " FMU-ME idx: " << idx << " is not a QSS var" << std::endl;
 					} else {
 						std::cout << " Type: Integer: Discrete: QSS" << std::endl;
 						Variable_I * qss_var( new Variable_I( var_name, var_start, this, fmu_var ) );
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
 						var_name_var[ var_name ] = qss_var;
+						fmu_idxs[ idx ] = qss_var; // Add to map from FMU variable index to QSS variable
 						if ( var_causality == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
 							if ( output_filter( var_name ) ) f_outs_vars.push_back( qss_var );
 							fmu_outs.erase( var_int ); // Remove it from non-QSS FMU outputs
 						}
-						fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
-						std::cout << " FMU-ME idx: " << i+1 << " maps to QSS var: " << qss_var->name() << std::endl;
+						std::cout << " FMU-ME idx: " << idx << " maps to QSS var: " << qss_var->name() << std::endl;
 					}
 				} else if ( var_variability == fmi2_variability_enu_fixed ) {
 					if ( var_causality == fmi2_causality_enu_parameter ) {
@@ -827,17 +836,20 @@ namespace fmu {
 				bool const var_start( var_has_start ? fmi2_import_get_boolean_variable_start( var_bool ) != 0 : 0 );
 				if ( var_has_start ) std::cout << " Start: " << var_start << std::endl;
 				if ( ( var_causality == fmi2_causality_enu_local ) || ( var_causality == fmi2_causality_enu_output ) ) {
-					if ( var_causality == fmi2_causality_enu_local ) std::cout << " Causality: Local" << std::endl;
-					if ( var_causality == fmi2_causality_enu_output ) std::cout << " Causality: Output" << std::endl;
+					if ( var_causality == fmi2_causality_enu_local ) {
+						std::cout << " Causality: Local" << std::endl;
+					} else if ( var_causality == fmi2_causality_enu_output ) {
+						std::cout << " Causality: Output" << std::endl;
+					}
 					if ( var_variability == fmi2_variability_enu_discrete ) {
 						if ( ( options::output::F && ( var_causality == fmi2_causality_enu_output ) ) || ( options::output::L && ( var_causality == fmi2_causality_enu_local ) ) ) { // Add to FMU outputs
-							if ( output_filter.fmu( var_name ) ) fmu_outs[ var_bool ] = FMU_Variable( var, var_bool, var_ref, i+1 );
+							if ( output_filter.fmu( var_name ) ) fmu_outs[ var_bool ] = FMU_Variable( var, var_bool, var_ref, idx );
 						}
 					}
 				}
 				if ( var_variability == fmi2_variability_enu_discrete ) {
 					std::cout << " Type: Boolean: Discrete" << std::endl;
-					FMU_Variable const fmu_var( var, var_bool, var_ref, i+1 );
+					FMU_Variable const fmu_var( var, var_bool, var_ref, idx );
 					fmu_vars[ var_bool ] = fmu_var;
 					if ( var_causality == fmi2_causality_enu_input ) {
 						std::cout << " Type: Boolean: Discrete: Input" << std::endl;
@@ -846,23 +858,23 @@ namespace fmu {
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
 						var_name_var[ var_name ] = qss_var;
-						fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
-						std::cout << " FMU-ME idx: " << i+1 << " maps to QSS var: " << qss_var->name() << std::endl;
-					} else if ( var_causality == fmi2_causality_enu_local ) { // Local (non-state) variables have no dependencies so QSS doesn't track them
+						fmu_idxs[ idx ] = qss_var; // Add to map from FMU variable index to QSS variable
+						std::cout << " FMU-ME idx: " << idx << " maps to QSS var: " << qss_var->name() << std::endl;
+					} else if ( var_causality == fmi2_causality_enu_local ) {
 						std::cout << " Type: Boolean: Discrete: Local" << std::endl;
-						std::cout << " FMU-ME idx: " << i+1 << " is not a QSS var" << std::endl;
+						std::cout << " FMU-ME idx: " << idx << " is not a QSS var" << std::endl;
 					} else {
 						std::cout << " Type: Boolean: Discrete: QSS" << std::endl;
 						Variable_B * qss_var( new Variable_B( var_name, var_start, this, fmu_var ) );
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
 						var_name_var[ var_name ] = qss_var;
+						fmu_idxs[ idx ] = qss_var; // Add to map from FMU variable index to QSS variable
 						if ( var_causality == fmi2_causality_enu_output ) { // Add to FMU QSS variable outputs
 							if ( output_filter( var_name ) ) f_outs_vars.push_back( qss_var );
 							fmu_outs.erase( var_bool ); // Remove it from non-QSS FMU outputs
 						}
-						fmu_idxs[ i+1 ] = qss_var; // Add to map from FMU variable index to QSS variable
-						std::cout << " FMU-ME idx: " << i+1 << " maps to QSS var: " << qss_var->name() << std::endl;
+						std::cout << " FMU-ME idx: " << idx << " maps to QSS var: " << qss_var->name() << std::endl;
 					}
 				}
 				}
@@ -1266,7 +1278,7 @@ namespace fmu {
 						for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
 							size_type const dep_idx( dependency[ j ] );
 							std::cout << "  Dep Index: " << dep_idx << std::endl;
-							if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
+							if ( dep_idx == 0u ) { // No info: Depends on all (don't support depends on all for now)
 								std::cerr << "   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
 								std::exit( EXIT_FAILURE );
 							} else { // Process based on kind of dependent
@@ -1342,7 +1354,7 @@ namespace fmu {
 						for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
 							size_type const dep_idx( dependency[ j ] );
 							std::cout << "  Dep Index: " << dep_idx << std::endl;
-							if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
+							if ( dep_idx == 0u ) { // No info: Depends on all (don't support depends on all for now)
 								std::cerr << "   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
 //								std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes
 							} else { // Process based on kind of dependent
@@ -1449,7 +1461,7 @@ namespace fmu {
 						for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
 							size_type const dep_idx( dependency[ j ] );
 							std::cout << "  Dep Index: " << dep_idx << std::endl;
-							if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
+							if ( dep_idx == 0u ) { // No info: Depends on all (don't support depends on all for now)
 								std::cerr << "   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
 								std::exit( EXIT_FAILURE );
 							} else { // Process based on kind of dependent
@@ -1563,7 +1575,7 @@ namespace fmu {
 						for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
 							size_type const dep_idx( dependency[ j ] );
 							std::cout << "  Dep Index: " << dep_idx << std::endl;
-							if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
+							if ( dep_idx == 0u ) { // No info: Depends on all (don't support depends on all for now)
 								std::cerr << "   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
 //								std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes
 							} else { // Process based on kind of dependent
@@ -1614,7 +1626,7 @@ namespace fmu {
 						for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
 							size_type const dep_idx( dependency[ j ] );
 							std::cout << "  Dep Index: " << dep_idx << std::endl;
-							if ( dep_idx == 0 ) { // No info: Depends on all (don't support depends on all for now)
+							if ( dep_idx == 0u ) { // No info: Depends on all (don't support depends on all for now)
 								std::cerr << "   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
 //								std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes
 							} else { // Process based on kind of dependent
