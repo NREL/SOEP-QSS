@@ -38,6 +38,7 @@
 #include <QSS/math.hh>
 #include <QSS/path.hh>
 #include <QSS/string.hh>
+#include <QSS/version.hh>
 
 // C++ Headers
 #include <iostream>
@@ -257,12 +258,16 @@ process_args( Args const & args )
 		help_display();
 		help = true;
 	}
+	bool version_arg( false );
 	bool fatal( false ); // Fatal error occurred?
 	for ( Args::size_type i = 1; i < argc; ++i ) {
 		std::string const arg( args[ i ] );
 		if ( ( arg == "--help" ) || ( arg == "-h" ) ) { // Show help
 			help_display();
 			help = true;
+		} else if ( ( arg == "--version" ) || ( arg == "-v" ) ) { // Show version
+			std::cout << "\nSOEP-QSS " << version() << '\n';
+			version_arg = true;
 		} else if ( has_value_option( arg, "qss" ) ) {
 			specified::qss = true;
 			std::string const qss_name( uppercased( arg_value( arg ) ) );
@@ -974,6 +979,7 @@ process_args( Args const & args )
 	}
 
 	if ( help ) std::exit( EXIT_SUCCESS );
+	if ( version_arg ) std::exit( EXIT_SUCCESS );
 	if ( fatal ) std::exit( EXIT_FAILURE );
 
 	std::cout << "\nQSS Command Line Arguments:\n";

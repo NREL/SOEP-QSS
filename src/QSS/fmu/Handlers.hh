@@ -165,7 +165,8 @@ public: // Methods
 		// FMU pooled data set up
 		hnd_ders_.clear(); hnd_ders_.reserve( hnd_.n() );
 		for ( Variable * handler : handlers_ ) {
-			assert( handler->not_ZC() && handler->not_Input() ); // Check valid handler types
+			assert( handler->not_Input() ); // Check valid handler types
+			assert( handler->not_ZC() ); // Check valid handler types
 			hnd_ders_.push_back( handler->der().ref );
 		}
 
@@ -222,7 +223,8 @@ public: // Methods
 		assert( fmu_me_->get_time() == t );
 
 		for ( Variable * handler : handlers_ ) {
-			assert( handler->not_ZC() && handler->not_Input() ); // Check valid handler types
+			assert( handler->not_Input() ); // Check valid handler types
+			assert( handler->not_ZC() ); // Check valid handler types
 			handler->advance_handler_0( t );
 		}
 		if ( hnd1_.have() ) {

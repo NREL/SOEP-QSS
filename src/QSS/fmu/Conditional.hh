@@ -175,7 +175,18 @@ public: // Methods
 	void
 	add_observer( Variable * v )
 	{
+		assert( v != nullptr );
+		assert( v->not_Input() );
+		assert( v->not_ZC() );
 		observers_.push_back( v );
+		if ( v->is_Input() ) {
+			std::cerr << "\nError: Input variable " << v->name() << " is modified in conditional clause of " << var_->name() << std::endl;
+			std::exit( EXIT_FAILURE );
+		}
+		if ( v->is_ZC() ) {
+			std::cerr << "\nError: Zero-crossing variable " << v->name() << " is modified in conditional clause of " << var_->name() << std::endl;
+			std::exit( EXIT_FAILURE );
+		}
 	}
 
 	// Initialize Observers Collection

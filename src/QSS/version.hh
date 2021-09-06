@@ -1,4 +1,4 @@
-// QSS Solver Main
+// QSS Version
 //
 // Project: QSS Solver
 //
@@ -33,21 +33,18 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// QSS Headers
-#include <QSS/QSS_main.hh>
+#ifndef QSS_version_hh_INCLUDED
+#define QSS_version_hh_INCLUDED
 
-// QSS Solver Main
-int
-main( int argc, char * argv[] )
-{
+// C++ Headers
+#include <string>
 
-	// Collect command line arguments
-	std::vector< std::string > args;
-	args.reserve( argc );
-	for ( int i = 0; i < argc; ++i ) {
-		args.push_back( std::string( argv[ i ] ) );
-	}
+namespace QSS {
 
-	// Run QSS
-	QSS::QSS_main( args );
-}
+// QSS Version
+std::string const &
+version();
+
+} // QSS
+
+#endif

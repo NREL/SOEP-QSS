@@ -37,6 +37,7 @@
 #include <QSS/QSS_main.hh>
 #include <QSS/options.hh>
 #include <QSS/path.hh>
+#include <QSS/version.hh>
 #include <QSS/cod/simulate_cod.hh>
 #ifdef QSS_FMU
 #include <QSS/fmu/simulate_fmu_me.hh>
@@ -86,10 +87,7 @@ QSS_main( std::vector< std::string > const & args )
 	std::clog << std::setprecision( 15 ) << std::boolalpha;
 
 	// Startup banner
-	std::cout << '\n';
-	std::cout << "_______________________________________________________________" << "\n\n";
-	std::cout << "|||   LBNL/DOE   SOEP-QSS   Quantized State System Solver   |||" << '\n';
-	std::cout << "_______________________________________________________________" << "\n\n";
+	std::cout << "\nLBNL/DOE  SOEP-QSS  Quantized State System Solver  Version: " << version() << '\n';
 
 	// Process command line arguments
 	options::process_args( args );
