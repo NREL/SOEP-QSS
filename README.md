@@ -489,11 +489,13 @@ Run `QSS --help` to see the command line usage.
 
 To prepare for integration into PyFMI support for building a Python wrapper for QSS was developed and is included.
 A Python front end to QSS can be built by running the `mak pyd` command from the `app` subdirectory of `src`.
-This builds a shared/dynamic library, `PyQSS`, that can be imported as a Python module.
+This builds the `PyQSS` shared/dynamic library that can be imported as a Python module.
 (`PyQSS` is not built by the `bld` or default `mak` commands.)
-A front end script, `QSS.py`, is included.
+A simple front end script, `QSS.py`, is included.
 To run QSS from the Python front end use:
 * `QSS.py <arguments> [options]`
 
 ### Notes
 * Pybind11 does not work with the Windows MinGW GCC compilers with the stock Python binary distribution that is built with Visual C++.
+* To use `PyQSS` with PyFMI it must be built with the same Python version that PyFMI runs under.
+  To support this usage the Windows environment setup uses the OCT Python installation, if present, in favor of the primary system Python.

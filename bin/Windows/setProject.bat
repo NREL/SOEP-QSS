@@ -8,7 +8,7 @@ set QSS=%QSS:~0,-13%
 
 set Path=%Path%;%QSS%\bin\Windows;%QSS%\bin
 
-call setPython.bat
+call setPython.QSS.bat
 
 if not "%QSS_bin%" == "" (
   if "%PYTHONPATH%" == "" (

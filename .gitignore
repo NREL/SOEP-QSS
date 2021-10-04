@@ -17,6 +17,7 @@
 *.pdb
 *.png
 *.pyc
+*.pyd
 *.res
 *.so
 *.so.*

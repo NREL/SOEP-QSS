@@ -42,7 +42,7 @@ import os, sys
 
 # QSS imports
 if os.name == 'nt': # Windows
-    try: # Python 3.8+ needs this
+    try: # Python 3.8+ needs this if QSS was built with Intel C++
         os.add_dll_directory( os.environ[ 'INTEL_DLL_DIR' ] ) # Intel C++ build of QSS has dependencies on Intel DLLs
     except:
         pass
