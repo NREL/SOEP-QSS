@@ -70,7 +70,7 @@ The build scripts install these extra/internal FMIL headers on Linux (analogous 
 
 ### Intel C++
 * Intel C++ oneAPI (2021), 19 (2019), and 19.1 (2020) work
-* ICX builds use Clang-based icx compiler
+* IX builds use Clang-based icx compiler
 
 ## Linking
 

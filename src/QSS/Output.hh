@@ -1,4 +1,4 @@
-// QSS Output Signal Class
+// QSS Variable Output Signal Class
 //
 // Project: QSS Solver
 //
@@ -48,13 +48,13 @@
 #include <string>
 #include <type_traits>
 #include <vector>
-#if ( __cplusplus >= 201703L ) && ( ( _MSC_VER >= 1922 ) || ( ( __GNUC__ >= 11 ) && !defined(__llvm__) && !defined(__INTEL_COMPILER) ) ) // C++17+ // VS 16.2+ and GCC 11+ have floating point to_chars support
+#if ( __cplusplus >= 201703L ) && ( ( _MSC_VER >= 1922 ) || ( ( __GNUC__ >= 11 ) && !defined(__llvm__) && !defined(__INTEL_COMPILER) && !defined(__INTEL_LLVM_COMPILER) ) ) // C++17+ // VS 16.2+ and GCC 11+ have floating point to_chars support
 #include <charconv>
 #endif
 
 namespace QSS {
 
-// QSS Output Signal Class
+// QSS Variable Output Signal Class
 template< typename Value = double >
 class Output final
 {
@@ -258,7 +258,7 @@ private: // Static Functions
 	std::string
 	sci( double const num )
 	{
-#if ( __cplusplus >= 201703L ) && ( ( _MSC_VER >= 1922 ) || ( ( __GNUC__ >= 11 ) && !defined(__llvm__) && !defined(__INTEL_COMPILER) ) ) // C++17+ // VS 16.2+ and GCC 11+ have floating point to_chars support
+#if ( __cplusplus >= 201703L ) && ( ( _MSC_VER >= 1922 ) || ( ( __GNUC__ >= 11 ) && !defined(__llvm__) && !defined(__INTEL_COMPILER) && !defined(__INTEL_LLVM_COMPILER) ) ) // C++17+ // VS 16.2+ and GCC 11+ have floating point to_chars support
 		std::string num_string( 23, ' ' );
 		char * xb( num_string.data() + 1u );
 		char * xe( xb + 22u );
@@ -283,10 +283,11 @@ private: // Data
 
 }; // Output
 
-#if ( __cplusplus >= 201703L ) && ( ( _MSC_VER >= 1922 ) || ( ( __GNUC__ >= 11 ) && !defined(__llvm__) && !defined(__INTEL_COMPILER) ) ) // C++17+ // VS 16.2+ and GCC 11+ have floating point to_chars support
+#if ( __cplusplus >= 201703L ) && ( ( _MSC_VER >= 1922 ) || ( ( __GNUC__ >= 11 ) && !defined(__llvm__) && !defined(__INTEL_COMPILER) && !defined(__INTEL_LLVM_COMPILER) ) ) // C++17+ // VS 16.2+ and GCC 11+ have floating point to_chars support
 
 	// Flush Buffers to File: double Specialization
 	template<>
+	inline
 	void
 	Output< double >::
 	flush()

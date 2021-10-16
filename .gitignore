@@ -30,8 +30,8 @@ perf.data
 .project
 .cproject
 .idea
-.se/*
-.vscode/*
+.se/
+.vscode/
 
 *.asc
 *.csv
