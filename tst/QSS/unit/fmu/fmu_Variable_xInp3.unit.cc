@@ -78,7 +78,7 @@ TEST( fmu_Variable_xInp3Test, Basic )
 TEST( fmu_Variable_xInp3Test, InputFunction )
 {
 	std::string const model( "InputFunction.fmu" );
-	if ( ! path::is_file( model ) ) {
+	if ( !path::is_file( model ) ) {
 		std::cout << ">>>>>>>>>>>> fmu::Variable_xInp3 InputFunction test not run: InputFunction.fmu not present" << std::endl;
 		return;
 	}

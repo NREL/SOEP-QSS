@@ -153,8 +153,8 @@ simulate_fmu_me_con( std::vector< std::string > const & paths )
 			}
 			inp_var->f() = [out_ref]( Time const t ){ return out_ref.second->k( t ); };
 		} else {
-			if ( ! inp_found ) std::cerr << "\nError: Connection input variable not found: " << inp << std::endl;
-			if ( ! out_found ) std::cerr << "\nError: Connection output variable not found: " << out << std::endl;
+			if ( !inp_found ) std::cerr << "\nError: Connection input variable not found: " << inp << std::endl;
+			if ( !out_found ) std::cerr << "\nError: Connection output variable not found: " << out << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
 	}
@@ -244,7 +244,7 @@ simulate_fmu_me_con( std::vector< std::string > const & paths )
 		while ( time <= tEnd ) {
 			for ( size_type i = 0; i < n_models; ++i ) {
 				fmi2_event_info_t & eventInfo( eventInfos[ i ] );
-				if ( ! eventInfo.terminateSimulation ) {
+				if ( !eventInfo.terminateSimulation ) {
 					eventInfo.newDiscreteStatesNeeded = fmi2_true;
 					eventInfo.nextEventTimeDefined = fmi2_true;
 					eventInfo.nextEventTime = tNext; // Signal QSS simulation pass when to stop

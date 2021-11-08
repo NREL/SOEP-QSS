@@ -80,7 +80,7 @@ TEST( fmu_Variable_ZC3Test, Basic )
 TEST( fmu_Variable_ZC3Test, BouncingBall )
 {
 	std::string const model( "BouncingBall.fmu" );
-	if ( ! path::is_file( model ) ) {
+	if ( !path::is_file( model ) ) {
 		std::cout << ">>>>>>>>>>>> fmu::Variable_ZC3 BouncingBall test not run: BouncingBall.fmu not present" << std::endl;
 		return;
 	}

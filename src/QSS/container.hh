@@ -99,7 +99,7 @@ inline
 void
 uniquify( Variables & variables, bool const shrink = false )
 {
-	if ( ! variables.empty() ) {
+	if ( !variables.empty() ) {
 		std::sort( variables.begin(), variables.end() ); // Sort by address
 		variables.erase( std::unique( variables.begin(), variables.end() ), variables.end() ); // Remove duplicates
 		if ( shrink ) variables.shrink_to_fit();
@@ -154,17 +154,17 @@ variables_observers( Variables & triggers, Variables & observers )
 		std::sort( triggers.begin(), triggers.end() ); // Side effect!
 		for ( V * trigger : triggers ) {
 			for ( V * observer : trigger->observers() ) {
-				if ( ! std::binary_search( triggers.begin(), triggers.end(), observer ) ) observers.push_back( observer );
+				if ( !std::binary_search( triggers.begin(), triggers.end(), observer ) ) observers.push_back( observer );
 			}
 		}
 	}
 
 	// Remove duplicates and sort by type and order
-	if ( ! observers.empty() ) {
+	if ( !observers.empty() ) {
 		std::sort( observers.begin(), observers.end() ); // Sort by address
 		observers.erase( std::unique( observers.begin(), observers.end() ), observers.end() ); // Remove duplicates
 		//if ( shrink ) observers.shrink_to_fit(); // Since we always reuse these containers we don't need a shrink option
-		if ( ! observers.empty() ) sort_by_type_and_order( observers );
+		if ( !observers.empty() ) sort_by_type_and_order( observers );
 	}
 
 	// Sort triggers by order

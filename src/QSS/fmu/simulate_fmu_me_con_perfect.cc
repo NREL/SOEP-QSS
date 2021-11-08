@@ -155,8 +155,8 @@ simulate_fmu_me_con_perfect( std::vector< std::string > const & paths )
 			out_var->connections().push_back( inp_var );
 			inp_var->out_var() = out_var; // Set connection variable's output variable
 		} else {
-			if ( ! inp_found ) std::cerr << "\nError: Connection input variable not found: " << inp << std::endl;
-			if ( ! out_found ) std::cerr << "\nError: Connection output variable not found: " << out << std::endl;
+			if ( !inp_found ) std::cerr << "\nError: Connection input variable not found: " << inp << std::endl;
+			if ( !out_found ) std::cerr << "\nError: Connection output variable not found: " << out << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
 	}

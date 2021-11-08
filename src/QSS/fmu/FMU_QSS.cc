@@ -78,7 +78,7 @@ namespace fmu {
 	initialize( std::string const & path )
 	{
 		// Check FMU file name form
-		if ( ! has_suffix( path, "_QSS.fmu" ) ) {
+		if ( !has_suffix( path, "_QSS.fmu" ) ) {
 			std::cerr << "FMU-QSS name is not of the form <model>_QSS.fmu: " << path << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
@@ -118,7 +118,7 @@ namespace fmu {
 		// Unzip the FMU-QSS in a temporary directory
 		name = path::base( path );
 		unzip_dir = path::tmp + path::sep + name; //Do Randomize the path to avoid collisions
-		if ( ! path::make_dir( unzip_dir ) ) {
+		if ( !path::make_dir( unzip_dir ) ) {
 			std::cerr << "\nError: FMU-QSS unzip directory creation failed: " << unzip_dir << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
@@ -138,7 +138,7 @@ namespace fmu {
 
 		// Check model name form
 		name = fmi2_import_get_model_name( fmu );
-		if ( ! has_suffix( name, "_QSS" ) ) {
+		if ( !has_suffix( name, "_QSS" ) ) {
 			std::cerr << "FMU-QSS model name is not of the form <model>_QSS: " << name << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
@@ -214,7 +214,7 @@ namespace fmu {
 
 		// Check model name form
 		name = fmi2_import_get_model_name( fmu );
-		if ( ! has_suffix( name, "_QSS" ) ) {
+		if ( !has_suffix( name, "_QSS" ) ) {
 			std::cerr << "FMU-QSS model name is not of the form <model>_QSS: " << name << std::endl;
 			std::exit( EXIT_FAILURE );
 		}

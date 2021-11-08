@@ -115,8 +115,8 @@ public: // Creation
 	{
 		t_.reserve( capacity_ );
 		v_.reserve( capacity_ );
-		if ( ! dir.empty() ) {
-			if ( ! path::make_dir( dir ) ) { // Model name must be valid directory name
+		if ( !dir.empty() ) {
+			if ( !path::make_dir( dir ) ) { // Model name must be valid directory name
 				std::cerr << "\nError: Output directory creation failed: " << dir << std::endl;
 				std::exit( EXIT_FAILURE );
 			}
@@ -160,7 +160,7 @@ public: // Methods
 	)
 	{
 		if ( !dec.empty() ) dec_ = dec;
-		file_ = std::string( var + dec_ + '.' + flag + ".out" );
+		file_ = var + dec_ + '.' + flag + ".out";
 		t_.clear();
 		v_.clear();
 		t_.reserve( capacity_ );
@@ -178,13 +178,13 @@ public: // Methods
 	)
 	{
 		if ( !dec.empty() ) dec_ = dec;
-		file_ = std::string( var + dec_ + '.' + flag + ".out" );
+		file_ = var + dec_ + '.' + flag + ".out";
 		t_.clear();
 		v_.clear();
 		t_.reserve( capacity_ );
 		v_.reserve( capacity_ );
-		if ( ! dir.empty() ) {
-			if ( ! path::make_dir( dir ) ) { // Model name must be valid directory name
+		if ( !dir.empty() ) {
+			if ( !path::make_dir( dir ) ) { // Model name must be valid directory name
 				std::cerr << "\nError: Output directory creation failed: " << dir << std::endl;
 				std::exit( EXIT_FAILURE );
 			}

@@ -149,7 +149,7 @@ public: // Methods
 	void
 	init_0() override
 	{
-		assert( ! observes() );
+		assert( !observes() );
 		init_observers();
 		x_ = static_cast< Integer >( xIni );
 		add_handler();
@@ -160,7 +160,7 @@ public: // Methods
 	void
 	init_0( Real const x ) override
 	{
-		assert( ! observes() );
+		assert( !observes() );
 		init_observers();
 		x_ = static_cast< Integer >( x );
 		add_handler();

@@ -210,7 +210,7 @@ fmi2Instantiate(
 		assert( fmuResourceLocation != nullptr );
 		fmu_qss.pre_instantiate( FMU_QSS::unzip_loc( fmuResourceLocation ) );
 	}
-	if ( ! FMU_QSS_GUID_ok( GUID ) ) {
+	if ( !FMU_QSS_GUID_ok( GUID ) ) {
 		std::cerr << "\nError: Incorrect GUID found in FMU-QSS modelDescription.xml" << std::endl;
 		std::exit( EXIT_FAILURE );
 	}
@@ -260,26 +260,26 @@ fmi2SetupExperiment(
 	assert( c == fmu_qss.fmu->capi->c );
 
 	// Merge any command line options specified with FMU-QSS QSS options
-	if ( ! options::specified::qss ) {
+	if ( !options::specified::qss ) {
 		options::qss = fmu_qss_qss;
 		options::specified::qss = true;
 	}
 	if ( toleranceDefined ) {
 		options::rTol = tolerance;
 		options::specified::rTol = true;
-	} else if ( ( ! options::specified::rTol ) && ( fmu_qss_rTol >= 0.0 ) ) {
+	} else if ( ( !options::specified::rTol ) && ( fmu_qss_rTol >= 0.0 ) ) {
 		options::rTol = fmu_qss_rTol;
 		options::specified::rTol = true;
 		toleranceDefined = true;
 	}
-	if ( ! options::specified::aTol ) {
+	if ( !options::specified::aTol ) {
 		options::aTol = fmu_qss_aTol;
 		options::specified::aTol = true;
 	}
 	if ( stopTimeDefined ) {
 		options::tEnd = stopTime;
 		options::specified::tEnd = true;
-	} else if ( ( ! options::specified::tEnd ) && ( fmu_qss_tEnd >= 0.0 ) ) {
+	} else if ( ( !options::specified::tEnd ) && ( fmu_qss_tEnd >= 0.0 ) ) {
 		options::tEnd = fmu_qss_tEnd;
 		options::specified::tEnd = true;
 		stopTimeDefined = true;

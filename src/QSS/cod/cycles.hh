@@ -91,7 +91,7 @@ cycles( typename Variable::Variables const & vars )
 		bool
 		advance_child()
 		{
-			assert( ! observers.empty() );
+			assert( !observers.empty() );
 			return ++i != observers.end();
 		}
 
@@ -141,7 +141,7 @@ cycles( typename Variable::Variables const & vars )
 			branch.push_front( &root );
 			step = Step::Push;
 			Node * node( &root );
-			while ( ! branch.empty() ) {
+			while ( !branch.empty() ) {
 				if ( node->state == Node::State::None ) { // First visit to node
 					assert( step == Step::Push );
 					node->enter();
@@ -153,19 +153,19 @@ cycles( typename Variable::Variables const & vars )
 						node->state = Node::State::Done;
 						branch.pop_front();
 						step = Step::Pop;
-						node = ( ! branch.empty() ? branch.front() : nullptr );
+						node = ( !branch.empty() ? branch.front() : nullptr );
 					}
 				} else if ( node->state == Node::State::Stack ) { // Revisiting node on branch
 					if ( step == Step::Push ) { // Cycle detected
 						std::cerr << "\nVariable dependency cycle present:" << std::endl;
 						bool active( false );
 						for ( typename Branch::const_iterator i = branch.begin(); i != branch.end(); ++i ) {
-							if ( ( ! active ) && ( *i == node ) ) active = true;
+							if ( ( !active ) && ( *i == node ) ) active = true;
 							if ( active ) std::cerr << ' ' << (*i)->var->name() << std::endl;
 						}
 						branch.pop_front();
 						step = Step::Pop;
-						node = ( ! branch.empty() ? branch.front() : nullptr );
+						node = ( !branch.empty() ? branch.front() : nullptr );
 					} else { // Moved up from child
 						assert( step == Step::Pop );
 						if ( node->advance_child() ) { // Move down branch to next child
@@ -176,14 +176,14 @@ cycles( typename Variable::Variables const & vars )
 							node->state = Node::State::Done;
 							branch.pop_front();
 							step = Step::Pop;
-							node = ( ! branch.empty() ? branch.front() : nullptr );
+							node = ( !branch.empty() ? branch.front() : nullptr );
 						}
 					}
 				} else { // Move up branch
 					assert( node->state == Node::State::Done );
 					branch.pop_front();
 					step = Step::Pop;
-					node = ( ! branch.empty() ? branch.front() : nullptr );
+					node = ( !branch.empty() ? branch.front() : nullptr );
 				}
 			}
 		}

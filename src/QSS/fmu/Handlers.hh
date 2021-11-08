@@ -108,7 +108,7 @@ public: // Predicate
 	bool
 	have() const
 	{
-		return ( ! handlers_.empty() );
+		return ( !handlers_.empty() );
 	}
 
 	// Forward Time?
@@ -175,18 +175,18 @@ public: // Methods
 		for ( Variable * handler : handlers_ ) {
 			if ( handler->self_observer() ) hnd_observees_.push_back( handler );
 			for ( auto observee : handler->observees() ) {
-				if ( ! observee->is_Discrete() ) hnd_observees_.push_back( observee );
+				if ( !observee->is_Discrete() ) hnd_observees_.push_back( observee );
 			}
 		}
 		uniquify( hnd_observees_ );
-		if ( ! uni_order_ ) {
+		if ( !uni_order_ ) {
 			assert( hnd1_.have() );
 			hnd1_observees_.clear();
 			for ( size_type i = hnd1_.b(), e = hnd_.e(); i < e; ++i ) { // Order 1+ handlers
 				Variable * handler( handlers_[ i ] );
 				if ( handler->self_observer() ) hnd1_observees_.push_back( handler );
 				for ( auto observee : handler->observees() ) {
-					if ( ! observee->is_Discrete() ) hnd1_observees_.push_back( observee );
+					if ( !observee->is_Discrete() ) hnd1_observees_.push_back( observee );
 				}
 			}
 			uniquify( hnd1_observees_ );
@@ -196,7 +196,7 @@ public: // Methods
 					Variable * handler( handlers_[ i ] );
 					if ( handler->self_observer() ) hnd2_observees_.push_back( handler );
 					for ( auto observee : handler->observees() ) {
-						if ( ! observee->is_Discrete() ) hnd2_observees_.push_back( observee );
+						if ( !observee->is_Discrete() ) hnd2_observees_.push_back( observee );
 					}
 				}
 				uniquify( hnd2_observees_ );
@@ -206,7 +206,7 @@ public: // Methods
 						Variable * handler( handlers_[ i ] );
 						if ( handler->self_observer() ) hnd3_observees_.push_back( handler );
 						for ( auto observee : handler->observees() ) {
-							if ( ! observee->is_Discrete() ) hnd3_observees_.push_back( observee );
+							if ( !observee->is_Discrete() ) hnd3_observees_.push_back( observee );
 						}
 					}
 					uniquify( hnd3_observees_ );

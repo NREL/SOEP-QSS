@@ -115,7 +115,7 @@ public: // Methods
 	init_0() override
 	{
 		assert( f() );
-		assert( ! observes() );
+		assert( !observes() );
 		init_observers();
 		s_ = f_( tQ );
 		x_ = s_.x0;

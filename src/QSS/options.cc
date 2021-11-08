@@ -94,6 +94,7 @@ InpOut con; // Map from input variables to output variables
 Depends dep; // Dependencies
 Depends rdep; // Reverse dependencies
 std::string out; // Outputs
+bool csv( false ); // CSV results file?
 std::pair< double, double > tLoc( 0.0, 0.0 ); // Local output time range (s)
 std::string var; // Variable output filter file
 Models models; // Name of model(s) or FMU(s)
@@ -216,8 +217,9 @@ help_display()
 	std::cout << "       F  Ouput variables" << '\n';
 	std::cout << "       L  Local variables" << '\n';
 	std::cout << "       K  FMU-QSS smooth tokens" << '\n';
+	std::cout << " --csv  Output CSV results file" << '\n';
 	std::cout << " --tLoc=TIME1:TIME2  FMU local variable full output time range (s)" << '\n';
-	std::cout << " --var=FILE       Variable output spec file" << '\n';
+	std::cout << " --var=FILE  Variable output spec file" << '\n';
 	std::cout << '\n';
 	std::cout << "Code-Defined Models:" << "\n\n";
 	std::cout << "  <model>.fmu : FMU-ME (FMU for Model Exchange)" << '\n';
@@ -632,7 +634,7 @@ process_args( Args const & args )
 					}
 				}
 
-			} else if ( ! bin_str.empty() ) { // Treat single parameter as bin_size
+			} else if ( !bin_str.empty() ) { // Treat single parameter as bin_size
 				if ( is_size( bin_str ) ) {
 					bin_size = size_of( bin_str );
 				} else if ( bin_str == "U" ) { // Unlimited max bin size
@@ -766,14 +768,14 @@ process_args( Args const & args )
 			for ( char const c : deps_spec ) {
 				if ( c == '"' ) {
 					if ( in_quote ) { // End quoted string
-						if ( ! strip( dep_spec ).empty() ) {
+						if ( !strip( dep_spec ).empty() ) {
 							dep_specs.push_back( dep_spec );
 							dep_spec.clear();
 						}
 					}
 					in_quote = ! in_quote;
-				} else if ( ( ! in_quote ) && ( c == ',' ) ) {
-					if ( ! strip( dep_spec ).empty() ) {
+				} else if ( ( !in_quote ) && ( c == ',' ) ) {
+					if ( !strip( dep_spec ).empty() ) {
 						dep_specs.push_back( dep_spec );
 						dep_spec.clear();
 					}
@@ -781,7 +783,7 @@ process_args( Args const & args )
 					dep_spec.push_back( c );
 				}
 			}
-			if ( ! strip( dep_spec ).empty() ) dep_specs.push_back( dep_spec );
+			if ( !strip( dep_spec ).empty() ) dep_specs.push_back( dep_spec );
 			} // Scope
 			if ( var_spec == "*" ) { // Check for all-depends-on-all
 				if ( dep_specs.empty() ) {
@@ -850,14 +852,14 @@ process_args( Args const & args )
 			for ( char const c : rdeps_spec ) {
 				if ( c == '"' ) {
 					if ( in_quote ) { // End quoted string
-						if ( ! strip( rdep_spec ).empty() ) {
+						if ( !strip( rdep_spec ).empty() ) {
 							rdep_specs.push_back( rdep_spec );
 							rdep_spec.clear();
 						}
 					}
 					in_quote = ! in_quote;
-				} else if ( ( ! in_quote ) && ( c == ',' ) ) {
-					if ( ! strip( rdep_spec ).empty() ) {
+				} else if ( ( !in_quote ) && ( c == ',' ) ) {
+					if ( !strip( rdep_spec ).empty() ) {
 						rdep_specs.push_back( rdep_spec );
 						rdep_spec.clear();
 					}
@@ -865,7 +867,7 @@ process_args( Args const & args )
 					rdep_spec.push_back( c );
 				}
 			}
-			if ( ! strip( rdep_spec ).empty() ) rdep_specs.push_back( rdep_spec );
+			if ( !strip( rdep_spec ).empty() ) rdep_specs.push_back( rdep_spec );
 			} // Scope
 			if ( var_spec == "*" ) { // Check for all-rdepends-on-all
 				if ( rdep_specs.empty() ) {
@@ -917,6 +919,8 @@ process_args( Args const & args )
 			output::F = has( out, 'F' );
 			output::L = has( out, 'L' );
 			output::K = has( out, 'K' );
+		} else if ( has_option( arg, "csv" ) ) {
+			csv = true;
 		} else if ( has_value_option( arg, "tLoc" ) ) {
 			specified::tLoc = true;
 			std::string const tLoc_str( arg_value( arg ) );
@@ -961,7 +965,7 @@ process_args( Args const & args )
 			}
 		} else if ( has_value_option( arg, "var" ) ) {
 			var = arg_value( arg );
-			if ( ! path::is_file( var ) ) {
+			if ( !path::is_file( var ) ) {
 				std::cerr << "\nError: File specified in --var option not found: " << var << ": Output filtering disabled" << std::endl;
 			}
 		} else if ( arg[ 0 ] == '-' ) {
@@ -970,7 +974,7 @@ process_args( Args const & args )
 		} else { // Treat non-option argument as model
 			models.push_back( arg );
 		}
-		if ( ! specified::aTol ) aTol = rTol * aFac; // Make unspecified aTol consistent with rTol * aFac for use in cod
+		if ( !specified::aTol ) aTol = rTol * aFac; // Make unspecified aTol consistent with rTol * aFac for use in cod
 	}
 
 	// Inter-option checks
@@ -1000,14 +1004,14 @@ have_multiple_models()
 bool
 connected()
 {
-	return ( ! con.empty() );
+	return ( !con.empty() );
 }
 
 // Set dtOut to Default for a Given Time Span
 void
 dtOut_set( double const t )
 {
-	if ( ! specified::dtOut ) dtOut = std::pow( 10.0, std::round( std::log10( t * 0.0002 ) ) );
+	if ( !specified::dtOut ) dtOut = std::pow( 10.0, std::round( std::log10( t * 0.0002 ) ) );
 }
 
 // Set dtND

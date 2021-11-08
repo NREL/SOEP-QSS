@@ -52,7 +52,6 @@
 #include <QSS/cpu_time.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
-#include <QSS/OutputFilter.hh>
 #include <QSS/path.hh>
 #include <QSS/Range.hh>
 #include <QSS/string.hh>
@@ -77,7 +76,6 @@
 #include <iostream>
 #include <iterator>
 #include <limits>
-#include <unordered_set>
 #include <utility>
 
 namespace QSS {
@@ -155,7 +153,7 @@ namespace fmu {
 	FMU_ME::
 	initialize( std::string const & path, bool const in_place )
 	{
-		if ( ! has_suffix( path, ".fmu" ) ) {
+		if ( !has_suffix( path, ".fmu" ) ) {
 			std::cerr << "\nFMU-ME name is not of the form <model>.fmu" << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
@@ -193,7 +191,7 @@ namespace fmu {
 		context = fmi_import_allocate_context( &callbacks );
 
 		// Check FMU-ME exists and is FMI 2.0
-		if ( ! path::is_file( path ) ) {
+		if ( !path::is_file( path ) ) {
 			std::cerr << "\nError: FMU file not found: " << path << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
@@ -205,7 +203,7 @@ namespace fmu {
 			unzip_dir = path::dir( path );
 		} else { // Use temporary directory
 			unzip_dir = path::tmp + path::sep + name; //Do Randomize the path to avoid collisions
-			if ( ! path::make_dir( unzip_dir ) ) {
+			if ( !path::make_dir( unzip_dir ) ) {
 				std::cerr << "\nError: FMU-ME unzip directory creation failed: " << unzip_dir << std::endl;
 				std::exit( EXIT_FAILURE );
 			}
@@ -253,7 +251,7 @@ namespace fmu {
 
 		// Check if FMU capabilities includes directional derivatives
 		if ( bool( fmi2_import_get_capability( fmu, fmi2_me_providesDirectionalDerivatives ) ) ) { // FMU supports directional derivatives
-			if ( ! options::specified::eidd ) { // Use directional derivatives by default
+			if ( !options::specified::eidd ) { // Use directional derivatives by default
 				options::eidd = true;
 			}
 		} else { // FMU doesn't support directional derivatives
@@ -372,14 +370,15 @@ namespace fmu {
 		using size_type = Variables::size_type;
 		using Time = Variable::Time;
 		using Real = Variable::Real;
-		using Var_Names = std::unordered_set< std::string >; // FMU Variables names
+		using Name = std::string;
+		using Var_Names = std::vector< Name >;
 		using Function = std::function< SmoothToken ( Time const ) >;
 		using Var_Idx_Lookup = std::unordered_map< size_type, size_type >;
 
 		// I/o setup
 		std::cout << std::setprecision( 15 );
 		std::cerr << std::setprecision( 15 );
-		OutputFilter const output_filter( options::var );
+		output_filter = OutputFilter( options::var );
 
 		// Report QSS method
 		if ( options::qss == options::QSS::QSS1 ) {
@@ -410,7 +409,7 @@ namespace fmu {
 		options::dtOut_set( tE - t0 ); // Set dtOut to default if not specified
 		tOut = t0 + options::dtOut; // Sampling time
 		iOut = 1u; // Output step index
-		if ( ! options::specified::rTol ) options::rTol = rTol; // Quantization relative tolerance (FMU doesn't have an absolute tolerance)
+		if ( !options::specified::rTol ) options::rTol = rTol; // Quantization relative tolerance (FMU doesn't have an absolute tolerance)
 		std::cout << "Relative Tolerance: " << options::rTol << std::endl;
 		if ( options::specified::aTol ) {
 			std::cout << "Absolute Tolerance: " << options::aTol << std::endl;
@@ -455,9 +454,11 @@ namespace fmu {
 
 		// FMU variable list
 		var_list = fmi2_import_get_variable_list( fmu, 0 ); // sort order = 0 for original order
+		size_type const n_fmu_vars( fmi2_import_get_variable_list_size( var_list ) );
+		fmu_variables.clear();
+		fmu_variables.resize( n_fmu_vars );
 
 		// Process FMU variables
-		size_type const n_fmu_vars( fmi2_import_get_variable_list_size( var_list ) );
 		std::cout << "\nFMU Variable Processing: Num FMU-ME Variables: " << n_fmu_vars << " =====" << std::endl;
 		fmi2_value_reference_t const * vrs( fmi2_import_get_value_referece_list( var_list ) ); // reference is misspelled in FMIL API
 		for ( size_type i = 0; i < n_fmu_vars; ++i ) {
@@ -465,11 +466,7 @@ namespace fmu {
 			std::cout << "\nVariable  Index: " << idx << " Ref: " << vrs[ i ] << std::endl;
 			fmi2_import_variable_t * var( fmi2_import_get_variable( var_list, i ) );
 			std::string const var_name( fmi2_import_get_variable_name( var ) );
-			if ( var_names.find( var_name ) != var_names.end() ) {
-				std::cerr << " Error: Variable name repeats: " << var_name << std::endl;
-				std::exit( EXIT_FAILURE );
-			}
-			var_names.insert( var_name );
+			var_names.push_back( var_name );
 			std::cout << " Name: " << var_name << std::endl;
 			std::cout << " Desc: " << ( fmi2_import_get_variable_description( var ) ? fmi2_import_get_variable_description( var ) : "" ) << std::endl;
 			fmi2_value_reference_t const var_ref( fmi2_import_get_variable_vr( var ) );
@@ -485,6 +482,8 @@ namespace fmu {
 				std::cout << " Type: Real" << std::endl;
 				{
 				fmi2_import_real_variable_t * var_real( fmi2_import_get_variable_as_real( var ) );
+				FMU_Variable const fmu_var( var, var_real, var_ref, idx );
+				fmu_variables[ i ] = fmu_var;
 				fmi2_real_t const var_start( var_has_start ? fmi2_import_get_real_variable_start( var_real ) : 0.0 );
 				if ( var_has_start ) std::cout << " Start: " << var_start << std::endl;
 				Real const var_nominal( fmi2_xml_get_real_variable_nominal( var_real ) );
@@ -503,11 +502,10 @@ namespace fmu {
 				}
 				if ( var_variability == fmi2_variability_enu_continuous ) {
 					std::cout << " Type: Real: Continuous" << std::endl;
-					if ( ! SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) { // May not be necessary: LBL preference
+					if ( !SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) { // May not be necessary: LBL preference
 						std::cerr << " Error: Non-SI unit used for real variable: Not currently supported: " << var_name << std::endl;
 						//std::exit( EXIT_FAILURE );
 					}
-					FMU_Variable const fmu_var( var, var_real, var_ref, idx );
 					fmu_vars[ var_real ] = fmu_var;
 					if ( var_causality == fmi2_causality_enu_input ) {
 						std::cout << " Type: Real: Continuous: Input" << std::endl;
@@ -628,10 +626,10 @@ namespace fmu {
 							std::string const & con_name( i_con_var->second );
 							std::cout << " Type: Real: Continuous: Input: Connection: " << con_name << std::endl;
 						} else { // Use hard-coded default function
-	//						inp_fxn = Function_Inp_constant( var_has_start ? var_start : 1.0 ); // Constant start value
-	//						inp_fxn = Function_Inp_sin( 2.0, 10.0, ( var_has_start ? var_start : 1.0 ) ); // 2 * sin( 10 * t ) + 1
+//							inp_fxn = Function_Inp_constant( var_has_start ? var_start : 1.0 ); // Constant start value
+//							inp_fxn = Function_Inp_sin( 2.0, 10.0, ( var_has_start ? var_start : 1.0 ) ); // 2 * sin( 10 * t ) + 1
 							inp_fxn = Function_Inp_step( ( var_has_start ? var_start : 0.0 ), 1.0, 1.0 ); // Step up by 1 every 1 s via discrete events
-	//						inp_fxn = Function_Inp_toggle( ( var_has_start ? var_start : 0.0 ), 1.0, 1.0 ); // Toggle by 1 every 1 s via discrete events
+//							inp_fxn = Function_Inp_toggle( ( var_has_start ? var_start : 0.0 ), 1.0, 1.0 ); // Toggle by 1 every 1 s via discrete events
 							std::cout << " Type: Real: Continuous: Input: Function" << std::endl;
 						}
 						if ( inp_fxn ) {
@@ -640,7 +638,7 @@ namespace fmu {
 								std::exit( EXIT_FAILURE );
 							}
 						}
-						if ( ! SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) { // May not be necessary: LBL preference
+						if ( !SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) { // May not be necessary: LBL preference
 							std::cerr << " Error: Non-SI unit used for input variable: Not currently supported: " << var_name << std::endl;
 							//std::exit( EXIT_FAILURE );
 						}
@@ -683,7 +681,7 @@ namespace fmu {
 					}
 				} else if ( var_variability == fmi2_variability_enu_discrete ) {
 					std::cout << " Type: Real: Discrete" << std::endl;
-					if ( ! SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) { // May not be necessary: LBL preference
+					if ( !SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) { // May not be necessary: LBL preference
 						std::cerr << " Error: Non-SI unit used for discrete variable: Not currently supported: " << var_name << std::endl;
 						//std::exit( EXIT_FAILURE );
 					}
@@ -720,7 +718,7 @@ namespace fmu {
 					if ( var_name == "_events_default_tol" ) { // OCT/JModelica parameter for setting FMU zero crossing value tolerance
 						if ( var_causality == fmi2_causality_enu_parameter ) {
 							if ( var_has_start ) {
-								if ( ! options::specified::zTol ) {
+								if ( !options::specified::zTol ) {
 									double const zTol( std::abs( var_start ) );
 									if ( zTol > 0.0 ) {
 										options::specified::zTol = true;
@@ -735,7 +733,7 @@ namespace fmu {
 //					if ( var_name == "_events_tol_factor" ) { // OCT/JModelica parameter for setting FMU zero crossing value tolerance
 //						if ( var_causality == fmi2_causality_enu_parameter ) {
 //							if ( var_has_start ) {
-//								if ( ! options::specified::zTol ) {
+//								if ( !options::specified::zTol ) {
 //									double const zTol( std::abs( var_start ) * options::rTol );
 //									if ( zTol > 0.0 ) {
 //										options::specified::zTol = true;
@@ -753,6 +751,8 @@ namespace fmu {
 				std::cout << " Type: Integer" << std::endl;
 				{
 				fmi2_import_integer_variable_t * var_int( fmi2_import_get_variable_as_integer( var ) );
+				FMU_Variable const fmu_var( var, var_int, var_ref, idx );
+				fmu_variables[ i ] = fmu_var;
 				int const var_start( var_has_start ? fmi2_import_get_integer_variable_start( var_int ) : 0 );
 				if ( var_has_start ) std::cout << " Start: " << var_start << std::endl;
 				if ( ( var_causality == fmi2_causality_enu_local ) || ( var_causality == fmi2_causality_enu_output ) ) {
@@ -769,7 +769,6 @@ namespace fmu {
 				}
 				if ( var_variability == fmi2_variability_enu_discrete ) {
 					std::cout << " Type: Integer: Discrete" << std::endl;
-					FMU_Variable const fmu_var( var, var_int, var_ref, idx );
 					fmu_vars[ var_int ] = fmu_var;
 					if ( var_causality == fmi2_causality_enu_input ) {
 						std::cout << " Type: Integer: Discrete: Input" << std::endl;
@@ -833,6 +832,8 @@ namespace fmu {
 				std::cout << " Type: Boolean" << std::endl;
 				{
 				fmi2_import_bool_variable_t * var_bool( fmi2_import_get_variable_as_boolean( var ) );
+				FMU_Variable const fmu_var( var, var_bool, var_ref, idx );
+				fmu_variables[ i ] = fmu_var;
 				bool const var_start( var_has_start ? fmi2_import_get_boolean_variable_start( var_bool ) != 0 : 0 );
 				if ( var_has_start ) std::cout << " Start: " << var_start << std::endl;
 				if ( ( var_causality == fmi2_causality_enu_local ) || ( var_causality == fmi2_causality_enu_output ) ) {
@@ -849,7 +850,6 @@ namespace fmu {
 				}
 				if ( var_variability == fmi2_variability_enu_discrete ) {
 					std::cout << " Type: Boolean: Discrete" << std::endl;
-					FMU_Variable const fmu_var( var, var_bool, var_ref, idx );
 					fmu_vars[ var_bool ] = fmu_var;
 					if ( var_causality == fmi2_causality_enu_input ) {
 						std::cout << " Type: Boolean: Discrete: Input" << std::endl;
@@ -881,11 +881,15 @@ namespace fmu {
 				break;
 			case fmi2_base_type_str:
 				std::cout << " Type: String" << std::endl;
+				{
 				if ( var_has_start ) std::cout << " Start: " << fmi2_import_get_string_variable_start( fmi2_import_get_variable_as_string( var ) ) << std::endl;
+				}
 				break;
 			case fmi2_base_type_enum:
 				std::cout << " Type: Enum" << std::endl;
+				{
 				if ( var_has_start ) std::cout << " Start: " << fmi2_import_get_enum_variable_start( fmi2_import_get_variable_as_enum( var ) ) << std::endl;
+				}
 				break;
 			default:
 				std::cout << " Type: Unknown" << std::endl;
@@ -930,6 +934,35 @@ namespace fmu {
 				std::cout << " Initial: Unknown" << std::endl;
 			}
 		}
+		if ( var_names.size() > 1u ) { // Check for repeat variable names
+			Var_Names sorted_var_names( var_names );
+			std::sort( sorted_var_names.begin(), sorted_var_names.end() );
+			std::string repeat_name;
+			for ( Var_Names::size_type i = 0, l = var_names.size() - 1; i < l; ++i ) {
+				if ( ( var_names[ i ] == var_names[ i + 1 ] ) && ( var_names[ i ] != repeat_name ) ) { // New repeat name
+					repeat_name = var_names[ i ];
+					std::cerr << " Error: Variable name repeats: " << repeat_name << std::endl;
+				}
+			}
+			if ( !repeat_name.empty() ) {
+				std::exit( EXIT_FAILURE );
+			}
+		}
+		if ( options::csv ) {
+			csv.init( name );
+			Var_Names res_var_names;
+			res_var_indexes.clear();
+			for ( size_type i = 0; i < n_fmu_vars; ++i ) {
+				Name const & var_name( var_names[ i ] );
+				if ( output_filter.res( var_name ) ) {
+					res_var_names.push_back( var_name );
+					res_var_indexes.push_back( i );
+				}
+			}
+			csv.labels( res_var_names );
+			res_var_vals.clear();
+			res_var_vals.resize( res_var_indexes.size() );
+		}
 
 		// Process FMU derivatives
 		der_list = fmi2_import_get_derivatives_list( fmu );
@@ -965,11 +998,11 @@ namespace fmu {
 					fmu_ref_to_der_state.insert( std::pair( fmu_der.ref, fmu_der ) );
 					fmu_ref_to_der_state.insert( std::pair( fmu_var.ref, fmu_var ) );
 					std::string const var_name( fmi2_import_get_variable_name( fmu_var.var ) );
-					if ( ! SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) {
+					if ( !SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) {
 						std::cerr << " Error: Non-SI unit used for state variable: Not currently supported: " << var_name << std::endl;
 						//std::exit( EXIT_FAILURE );
 					}
-					if ( ! SI_unit_check( fmi2_import_get_real_variable_unit( der_real ) ) ) {
+					if ( !SI_unit_check( fmi2_import_get_real_variable_unit( der_real ) ) ) {
 						std::cerr << " Error: Non-SI unit used for state derivative: Not currently supported: " << der_name << std::endl;
 						//std::exit( EXIT_FAILURE );
 					}
@@ -1091,7 +1124,7 @@ namespace fmu {
 			std::string const var_name( fmi2_import_get_variable_name( var ) );
 			if ( ( fmi2_import_get_variability( var ) == fmi2_variability_enu_continuous ) && ( fmi2_import_get_variable_base_type( var ) == fmi2_base_type_real ) ) {
 				fmi2_import_real_variable_t * var_real( fmi2_import_get_variable_as_real( var ) );
-				if ( ! SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) { // May not be necessary: LBL preference
+				if ( !SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) { // May not be necessary: LBL preference
 					std::cerr << "\n Error: Non-SI unit used for event indicator variable: Not currently supported: " << var_name << std::endl;
 					//std::exit( EXIT_FAILURE );
 				}
@@ -1190,11 +1223,11 @@ namespace fmu {
 								}
 								fmi2_import_real_variable_t * var_real( fmi2_import_get_variable_as_real( var ) );
 								fmi2_import_real_variable_t * der_real( fmi2_import_get_variable_as_real( der ) );
-								if ( ! SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) { // May not be necessary: LBL preference
+								if ( !SI_unit_check( fmi2_import_get_real_variable_unit( var_real ) ) ) { // May not be necessary: LBL preference
 									std::cerr << "\n Error: Non-SI unit used for zero-crossing variable: Not currently supported: " << var_name << std::endl;
 									//std::exit( EXIT_FAILURE );
 								}
-								if ( ! SI_unit_check( fmi2_import_get_real_variable_unit( der_real ) ) ) { // May not be necessary: LBL preference
+								if ( !SI_unit_check( fmi2_import_get_real_variable_unit( der_real ) ) ) { // May not be necessary: LBL preference
 									std::cerr << "\n Error: Non-SI unit used for zero-crossing derivative: Not currently supported: " << der_name << std::endl;
 									//std::exit( EXIT_FAILURE );
 								}
@@ -1728,7 +1761,7 @@ namespace fmu {
 			Variables vars_new;
 			for ( auto var : vars ) {
 				if ( var->not_ZC() ) { // Non-zero-crossing variable
-					if ( ! var->observers().empty() ) { // Keep it (Note: can't use var->observed() before variable initialization)
+					if ( !var->observers().empty() ) { // Keep it (Note: can't use var->observed() before variable initialization)
 						vars_new.push_back( var );
 					} else { // Prune it
 						std::cout << ' ' << var->name() << " pruned" << std::endl;
@@ -1763,7 +1796,7 @@ namespace fmu {
 
 		// Variable output filtering
 		for ( auto var : vars ) {
-			if ( ! output_filter( var->name() ) ) var->out_off();
+			if ( !output_filter( var->name() ) ) var->out_off();
 		}
 
 		// Variable subtype containers and specs
@@ -1914,7 +1947,7 @@ namespace fmu {
 			}
 
 			if ( n_dtND_vars > 0u ) { // Find range intersection expanding ranges if needed
-				assert( ! ranges.empty() );
+				assert( !ranges.empty() );
 				Range ri; // Intersection range
 				while ( ri.empty() ) {
 					ri = ranges[ 0 ];
@@ -1929,7 +1962,7 @@ namespace fmu {
 						}
 					}
 				}
-				assert( ! ri.empty() );
+				assert( !ri.empty() );
 				dtND_opt = dtND_max * std::pow( 2.0, -static_cast< double >( ri.b() ) ); // Use largest dtND in range intersection for now
 				options::dtND_set( dtND_opt );
 				std::cout << "\nAutomatic numeric differentiation time step: " << options::dtND << " (s)" << std::endl;
@@ -2113,7 +2146,6 @@ namespace fmu {
 		if ( options::cycles ) cycles< Variable >( vars );
 
 		// Output initialization
-		OutputFilter const output_filter( options::var );
 		if ( options::output::K && ( out_var_refs.size() > 0u ) ) { // FMU t0 smooth token outputs
 			for ( auto const & var_ref : out_var_refs ) {
 				auto ivar( qss_var_of_ref.find( var_ref ) );
@@ -2132,7 +2164,9 @@ namespace fmu {
 		 ( options::output::S && ( options::output::X || options::output::Q ) ) ||
 		 ( options::output::F && ( n_f_outs > 0u ) ) ||
 		 ( options::output::L && ( n_l_outs > 0u ) ) ||
-		 ( options::output::K && ( n_fmu_qss_qss_outs > 0u ) ) );
+		 ( options::output::K && ( n_fmu_qss_qss_outs > 0u ) ) ||
+		 options::csv
+		);
 		doKOut = options::output::K && ( out_var_refs.size() > 0u );
 		std::string const output_dir( options::have_multiple_models() ? name : std::string() );
 		if ( ( options::output::R || options::output::Z || options::output::D || options::output::S ) && ( options::output::X || options::output::Q ) ) { // QSS t0 outputs
@@ -2150,7 +2184,7 @@ namespace fmu {
 			f_outs.reserve( n_f_outs );
 			for ( auto const & var : f_outs_vars ) { // FMU QSS variables
 				f_outs.emplace_back( output_dir, var->name() + var->decoration(), 'f' );
-				Output< double > & f_out( f_outs.back() );
+				Output<> & f_out( f_outs.back() );
 				if ( options::output::h ) {
 					if ( var->var().is_Real() ) {
 						char const * var_type_char( fmi2_import_get_real_variable_quantity( var->var().rvr ) );
@@ -2189,7 +2223,7 @@ namespace fmu {
 #else
 				l_outs.emplace_back( output_dir, var_name, 'f' );
 #endif
-				Output< double > & l_out( l_outs.back() );
+				Output<> & l_out( l_outs.back() );
 				if ( options::output::h ) {
 					if ( var.is_Real() ) {
 						char const * var_type_char( fmi2_import_get_real_variable_quantity( var.rvr ) );
@@ -2340,6 +2374,15 @@ namespace fmu {
 //							}
 //						}
 					}
+					if ( options::csv ) {
+						for ( auto var : vars ) {
+							var->fmu_set_x( tOut );
+						}
+						for ( std::size_t i = 0, n = res_var_indexes.size(); i < n; ++i ) {
+							res_var_vals[ i ] = get_as_real( fmu_variables[ res_var_indexes[ i ] ] );
+						}
+						csv.values( res_var_vals );
+					}
 					assert( iOut < std::numeric_limits< size_type >::max() );
 					tOut = t0 + ( ++iOut ) * options::dtOut;
 				}
@@ -2390,7 +2433,7 @@ namespace fmu {
 						for ( auto var : vars ) {
 							var->dt_min = sim_dtMin;
 						}
-						if ( ! pass_warned ) {
+						if ( !pass_warned ) {
 							std::cerr << "\nWarning: Pass count limit reached at time: " << t << "  Min time step control activated" << std::endl;
 							pass_warned = true;
 						}
@@ -2683,7 +2726,7 @@ namespace fmu {
 						} else {
 							if ( connected ) { // Check if next event(s) will modify a connected output
 								if ( options::perfect ) { // Flag whether next event(s) will modify a connected output
-									if ( ! connected_output_event ) {
+									if ( !connected_output_event ) {
 										for ( Variable const * trigger : triggers ) {
 											if ( trigger->connected_output || trigger->connected_output_observer ) {
 												connected_output_event = true;
@@ -2792,7 +2835,7 @@ namespace fmu {
 						} else {
 							if ( connected ) { // Check if next event(s) will modify a connected output
 								if ( options::perfect ) { // Flag whether next event(s) will modify a connected output
-									if ( ! connected_output_event ) {
+									if ( !connected_output_event ) {
 										for ( Variable const * trigger : triggers ) {
 											if ( trigger->connected_output || trigger->connected_output_observer ) {
 												connected_output_event = true;
@@ -2942,7 +2985,7 @@ namespace fmu {
 			}
 
 			// Report % complete
-			if ( ! options::output::d ) {
+			if ( !options::output::d ) {
 				int const tPerNow( static_cast< int >( 100 * ( tProc - t0 ) / tSim ) );
 				if ( tPerNow > tPer ) { // Report % complete
 					tPer = tPerNow;
@@ -2980,7 +3023,7 @@ namespace fmu {
 
 		// Reporting
 		if ( t >= tE ) {
-			if ( ! options::output::d ) std::cout << '\r' + name + " Simulation 100% =====" << std::endl;
+			if ( !options::output::d ) std::cout << '\r' + name + " Simulation 100% =====" << std::endl;
 			std::cout << '\n' + name + " Simulation Complete =====" << std::endl;
 			if ( n_discrete_events > 0 ) std::cout << n_discrete_events << " discrete event passes" << std::endl;
 			if ( n_QSS_events > 0 ) std::cout << n_QSS_events << " requantization event passes" << std::endl;
@@ -3103,7 +3146,16 @@ namespace fmu {
 //				}
 //			}
 		}
-}
+		if ( options::csv ) {
+			for ( auto var : vars ) {
+				var->fmu_set_x( tE );
+			}
+			for ( std::size_t i = 0, n = res_var_indexes.size(); i < n; ++i ) {
+				res_var_vals[ i ] = get_as_real( fmu_variables[ res_var_indexes[ i ] ] );
+			}
+			csv.values( res_var_vals );
+		}
+	}
 
 	// FMI Status Check/Report
 	bool
@@ -3114,19 +3166,19 @@ namespace fmu {
 		case fmi2_status_ok:
 			return true;
 		case fmi2_status_warning:
-			if ( ! fxn_name.empty() ) std::cerr << '\n' << fxn_name << " FMI status = warning" << std::endl;
+			if ( !fxn_name.empty() ) std::cerr << '\n' << fxn_name << " FMI status = warning" << std::endl;
 			return false;
 		case fmi2_status_discard:
-			if ( ! fxn_name.empty() ) std::cerr << '\n' << fxn_name << " FMI status = discard" << std::endl;
+			if ( !fxn_name.empty() ) std::cerr << '\n' << fxn_name << " FMI status = discard" << std::endl;
 			return false;
 		case fmi2_status_error:
-			if ( ! fxn_name.empty() ) std::cerr << '\n' << fxn_name << " FMI status = error" << std::endl;
+			if ( !fxn_name.empty() ) std::cerr << '\n' << fxn_name << " FMI status = error" << std::endl;
 			return false;
 		case fmi2_status_fatal:
-			if ( ! fxn_name.empty() ) std::cerr << '\n' << fxn_name << " FMI status = fatal" << std::endl;
+			if ( !fxn_name.empty() ) std::cerr << '\n' << fxn_name << " FMI status = fatal" << std::endl;
 			return false;
 		case fmi2_status_pending:
-			if ( ! fxn_name.empty() ) std::cerr << '\n' << fxn_name << " FMI status = pending" << std::endl;
+			if ( !fxn_name.empty() ) std::cerr << '\n' << fxn_name << " FMI status = pending" << std::endl;
 			return false;
 		default:
 			return false;

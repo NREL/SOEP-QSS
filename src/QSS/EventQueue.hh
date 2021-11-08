@@ -204,7 +204,7 @@ public: // Property
 	Type
 	top_Event_Type() const
 	{
-		assert( ! m_.empty() );
+		assert( !m_.empty() );
 		return m_.begin()->second.type();
 	}
 
@@ -212,7 +212,7 @@ public: // Property
 	EventT const &
 	top() const
 	{
-		assert( ! m_.empty() );
+		assert( !m_.empty() );
 		return m_.begin()->second;
 	}
 
@@ -220,7 +220,7 @@ public: // Property
 	EventT &
 	top()
 	{
-		assert( ! m_.empty() );
+		assert( !m_.empty() );
 		return m_.begin()->second;
 	}
 
@@ -228,7 +228,7 @@ public: // Property
 	Target const *
 	top_target() const
 	{
-		assert( ! m_.empty() );
+		assert( !m_.empty() );
 		return m_.begin()->second.tar();
 	}
 
@@ -236,7 +236,7 @@ public: // Property
 	Target *
 	top_target()
 	{
-		assert( ! m_.empty() );
+		assert( !m_.empty() );
 		return m_.begin()->second.tar();
 	}
 
@@ -245,7 +245,7 @@ public: // Property
 	S const *
 	top_sub() const
 	{
-		assert( ! m_.empty() );
+		assert( !m_.empty() );
 		return m_.begin()->second.template sub< S >();
 	}
 
@@ -254,7 +254,7 @@ public: // Property
 	S *
 	top_sub()
 	{
-		assert( ! m_.empty() );
+		assert( !m_.empty() );
 		return m_.begin()->second.template sub< S >();
 	}
 
@@ -262,7 +262,7 @@ public: // Property
 	Time
 	top_time() const
 	{
-		assert( ! m_.empty() );
+		assert( !m_.empty() );
 		return m_.begin()->first.t;
 	}
 
@@ -270,7 +270,7 @@ public: // Property
 	SuperdenseTime const &
 	top_superdense_time() const
 	{
-		assert( ! m_.empty() );
+		assert( !m_.empty() );
 		return m_.begin()->first;
 	}
 
@@ -292,7 +292,7 @@ public: // Property
 	Index
 	top_index() const
 	{
-		assert( ! m_.empty() );
+		assert( !m_.empty() );
 		return m_.begin()->first.i;
 	}
 
@@ -300,7 +300,7 @@ public: // Property
 	Index
 	next_index() const
 	{
-		assert( ! m_.empty() );
+		assert( !m_.empty() );
 		return m_.begin()->first.i + Index( 1u );
 	}
 
@@ -362,7 +362,7 @@ public: // Methods
 	top_events() const
 	{
 		Events tops;
-		if ( ! m_.empty() ) {
+		if ( !m_.empty() ) {
 			const_iterator i( m_.begin() );
 			const_iterator const e( m_.end() );
 			SuperdenseTime const & s( i->first );
@@ -379,7 +379,7 @@ public: // Methods
 	top_events( Events & tops ) const
 	{
 		tops.clear();
-		if ( ! m_.empty() ) {
+		if ( !m_.empty() ) {
 			const_iterator i( m_.begin() );
 			const_iterator const e( m_.end() );
 			SuperdenseTime const & s( i->first );
@@ -395,7 +395,7 @@ public: // Methods
 	top_targets() const
 	{
 		Targets targets;
-		if ( ! m_.empty() ) {
+		if ( !m_.empty() ) {
 			const_iterator i( m_.begin() );
 			const_iterator const e( m_.end() );
 			SuperdenseTime const & s( i->first );
@@ -412,7 +412,7 @@ public: // Methods
 	top_targets( Targets & targets ) const
 	{
 		targets.clear();
-		if ( ! m_.empty() ) {
+		if ( !m_.empty() ) {
 			const_iterator i( m_.begin() );
 			const_iterator const e( m_.end() );
 			SuperdenseTime const & s( i->first );
@@ -429,7 +429,7 @@ public: // Methods
 	top_subs()
 	{
 		std::vector< S * > subs;
-		if ( ! m_.empty() ) {
+		if ( !m_.empty() ) {
 			iterator i( m_.begin() );
 			iterator const e( m_.end() );
 			SuperdenseTime const & s( i->first );
@@ -447,7 +447,7 @@ public: // Methods
 	top_subs( std::vector< S * > & subs )
 	{
 		subs.clear();
-		if ( ! m_.empty() ) {
+		if ( !m_.empty() ) {
 			iterator i( m_.begin() );
 			iterator const e( m_.end() );
 			SuperdenseTime const & s( i->first );
@@ -464,7 +464,7 @@ public: // Methods
 	bin_QSS( size_type const bin_size, double const bin_frac )
 	{
 		std::vector< S * > subs;
-		if ( ! m_.empty() ) {
+		if ( !m_.empty() ) {
 			iterator i( m_.begin() );
 			iterator const e( m_.end() );
 			SuperdenseTime const & s( i->first );
@@ -494,7 +494,7 @@ public: // Methods
 	bin_QSS( size_type const bin_size, double const bin_frac, std::vector< S * > & subs )
 	{
 		subs.clear();
-		if ( ! m_.empty() ) {
+		if ( !m_.empty() ) {
 			iterator i( m_.begin() );
 			iterator const e( m_.end() );
 			SuperdenseTime const & s( i->first );
@@ -523,7 +523,7 @@ public: // Methods
 	bin_QSS_ZC( size_type const bin_size, double const bin_frac, std::vector< S * > & subs )
 	{
 		subs.clear();
-		if ( ! m_.empty() ) {
+		if ( !m_.empty() ) {
 			iterator i( m_.begin() );
 			iterator const e( m_.end() );
 			SuperdenseTime const & s( i->first );
@@ -550,7 +550,7 @@ public: // Methods
 	void
 	set_active_time()
 	{
-		s_ = ( ! m_.empty() ? m_.begin()->first : sZero_ );
+		s_ = ( !m_.empty() ? m_.begin()->first : sZero_ );
 		t_ = s_.t;
 	}
 

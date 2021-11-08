@@ -97,7 +97,7 @@ TEST( fmu_Variable_LIQSS3Test, Basic )
 TEST( fmu_Variable_LIQSS3Test, Achilles )
 {
 	std::string const model( "Achilles.fmu" );
-	if ( ! path::is_file( model ) ) {
+	if ( !path::is_file( model ) ) {
 		std::cout << ">>>>>>>>>>>> fmu::Variable_LIQSS3 Achilles test not run: Achilles.fmu not present" << std::endl;
 		return;
 	}

@@ -254,7 +254,7 @@ public: // Predicate
 	bool
 	not_Discrete() const
 	{
-		return ( ! is_Discrete() );
+		return ( !is_Discrete() );
 	}
 
 	// Input Variable?
@@ -269,7 +269,7 @@ public: // Predicate
 	bool
 	not_Input() const
 	{
-		return ( ! is_Input() );
+		return ( !is_Input() );
 	}
 
 	// Connection Input Variable?
@@ -284,7 +284,7 @@ public: // Predicate
 	bool
 	not_connection() const
 	{
-		return ( ! is_connection() );
+		return ( !is_connection() );
 	}
 
 	// Connected?
@@ -306,7 +306,7 @@ public: // Predicate
 	bool
 	not_QSS() const
 	{
-		return ( ! is_QSS() );
+		return ( !is_QSS() );
 	}
 
 	// State Variable?
@@ -320,7 +320,7 @@ public: // Predicate
 	bool
 	not_state() const
 	{
-		return ( ! is_QSS() );
+		return ( !is_QSS() );
 	}
 
 	// LIQSS Variable?
@@ -335,7 +335,7 @@ public: // Predicate
 	bool
 	not_LIQSS() const
 	{
-		return ( ! is_LIQSS() );
+		return ( !is_LIQSS() );
 	}
 
 	// Zero-Crossing Variable?
@@ -350,7 +350,7 @@ public: // Predicate
 	bool
 	not_ZC() const
 	{
-		return ( ! is_ZC() );
+		return ( !is_ZC() );
 	}
 
 	// Directional Derivative Zero-Crossing Variable?
@@ -365,7 +365,7 @@ public: // Predicate
 	bool
 	not_ZCd() const
 	{
-		return ( ! is_ZCd() );
+		return ( !is_ZCd() );
 	}
 
 	// Explicit Zero-Crossing Variable?
@@ -380,7 +380,7 @@ public: // Predicate
 	bool
 	not_ZCe() const
 	{
-		return ( ! is_ZCe() );
+		return ( !is_ZCe() );
 	}
 
 	// In Conditional?
@@ -756,7 +756,7 @@ public: // Methods
 	void
 	add_back_observers()
 	{
-		if ( ! observees_.empty() ) {
+		if ( !observees_.empty() ) {
 			for ( Variable * observee : observees_ ) {
 				observee->observers_.add( this );
 			}
@@ -768,7 +768,7 @@ public: // Methods
 	add_drill_through_observees()
 	{
 		assert( not_state() );
-		if ( ! observees_.empty() ) {
+		if ( !observees_.empty() ) {
 			for ( Variable * vo : observees_ ) {
 				for ( Variable * voo : vo->observees_ ) {
 					voo->observers_.add( this ); // Only need back-observer to force updates when observee has observer update
@@ -790,11 +790,11 @@ public: // Methods
 	void
 	init_observees()
 	{
-		observes_ = ( ! observees_.empty() );
+		observes_ = ( !observees_.empty() );
 		if ( observes_ ) { // Remove duplicates and discrete variables
 			observees_.erase( std::remove_if( observees_.begin(), observees_.end(), []( Variable * v ){ return v->is_Discrete(); } ), observees_.end() ); // Remove discrete variables: Don't need them after ZC drill-thru observees set up
 			uniquify( observees_, true ); // Sort by address and remove duplicates and recover unused memory
-			observes_ = ( ! observees_.empty() ); // In case all were discrete
+			observes_ = ( !observees_.empty() ); // In case all were discrete
 		}
 
 		// FMU directional derivative call argument initialization
@@ -1496,7 +1496,7 @@ public: // Methods: Output
 	observer_out_pre( Time const t )
 	{
 		if ( out_on_ ) {
-			if ( options::output::X && ( ! is_BIDR() ) ) out_x_.append( t, x( t ) );
+			if ( options::output::X && ( !is_BIDR() ) ) out_x_.append( t, x( t ) );
 			if ( options::output::Q && is_ZC() ) out_q_.append( t, q( t ) );
 		}
 		if ( connected_ ) connections_observer_out_pre( t );

@@ -154,7 +154,7 @@ make_path( std::string const & path )
 		while ( ( i = path.find_first_of( "\\/", i ) ) != std::string::npos ) {
 			if ( i + 1 == path.length() ) { // Last directory
 				return make_dir( path.substr( 0u, i ) );
-			} else if ( ! make_dir( path.substr( 0u, i ) ) ) { // Failed
+			} else if ( !make_dir( path.substr( 0u, i ) ) ) { // Failed
 				return false;
 			}
 			++i;
@@ -174,7 +174,7 @@ make_path( std::string const & path )
 		while ( ( i = path.find_first_of( "/", i ) ) != std::string::npos ) {
 			if ( i + 1 == path.length() ) { // Last directory
 				return make_dir( path.substr( 0u, i ) );
-			} else if ( ! make_dir( path.substr( 0u, i ) ) ) { // Failed
+			} else if ( !make_dir( path.substr( 0u, i ) ) ) { // Failed
 				return false;
 			}
 			++i;

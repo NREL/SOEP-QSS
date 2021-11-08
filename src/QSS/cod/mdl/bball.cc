@@ -137,7 +137,7 @@ bball( Variable::Variables & vars, std::vector< Conditional * > & cons )
 	using namespace options;
 
 	// Timing
-	if ( ! options::specified::tEnd ) options::tEnd = 3.0;
+	if ( !options::specified::tEnd ) options::tEnd = 3.0;
 
 	// QSS variables
 	using V = Variable_QSS< Function_LTI >;

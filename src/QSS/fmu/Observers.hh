@@ -121,7 +121,7 @@ public: // Predicate
 	bool
 	have() const
 	{
-		return ( ! observers_.empty() );
+		return ( !observers_.empty() );
 	}
 
 	// Have Connected Output Observer(s)?
@@ -252,7 +252,7 @@ public: // Methods
 			std::sort( triggers.begin(), triggers.end() ); //! Side effect!
 			for ( Variable * trigger : triggers ) {
 				for ( Variable * observer : trigger->observers() ) {
-					if ( ! std::binary_search( triggers.begin(), triggers.end(), observer ) ) observers_.push_back( observer );
+					if ( !std::binary_search( triggers.begin(), triggers.end(), observer ) ) observers_.push_back( observer );
 				}
 			}
 		}
@@ -439,18 +439,18 @@ private: // Methods
 				Variable * observer( observers_[ i ] );
 				if ( observer->self_observer() ) qss_observees_.push_back( observer );
 				for ( auto observee : observer->observees() ) {
-					if ( ! observee->is_Discrete() ) qss_observees_.push_back( observee );
+					if ( !observee->is_Discrete() ) qss_observees_.push_back( observee );
 				}
 			}
 			uniquify( qss_observees_ );
-			if ( ! qss_uni_order_ ) {
+			if ( !qss_uni_order_ ) {
 				assert( qss2_.have() );
 				qss2_observees_.clear();
 				for ( size_type i = qss2_.b(), e = qss_.e(); i < e; ++i ) { // Order 2+ observers
 					Variable * observer( observers_[ i ] );
 					if ( observer->self_observer() ) qss2_observees_.push_back( observer );
 					for ( auto observee : observer->observees() ) {
-						if ( ! observee->is_Discrete() ) qss2_observees_.push_back( observee );
+						if ( !observee->is_Discrete() ) qss2_observees_.push_back( observee );
 					}
 				}
 				uniquify( qss2_observees_ );
@@ -460,7 +460,7 @@ private: // Methods
 						Variable * observer( observers_[ i ] );
 						if ( observer->self_observer() ) qss3_observees_.push_back( observer );
 						for ( auto observee : observer->observees() ) {
-							if ( ! observee->is_Discrete() ) qss3_observees_.push_back( observee );
+							if ( !observee->is_Discrete() ) qss3_observees_.push_back( observee );
 						}
 					}
 					uniquify( qss3_observees_ );
@@ -475,20 +475,20 @@ private: // Methods
 				Variable * observer( observers_[ i ] );
 				if ( observer->self_observer() ) zc_observees_.push_back( observer );
 				for ( auto observee : observer->observees() ) {
-					if ( ! observee->is_Discrete() ) zc_observees_.push_back( observee );
+					if ( !observee->is_Discrete() ) zc_observees_.push_back( observee );
 				}
 			}
 			uniquify( zc_observees_ );
-			if ( ! zc_uni_order_ ) {
+			if ( !zc_uni_order_ ) {
 				assert( zc2_.have() );
 				assert( fmu_me_ != nullptr );
-				if ( ! fmu_me_->has_event_indicators ) { // Event indicators don't currently need the order 2+ observees
+				if ( !fmu_me_->has_event_indicators ) { // Event indicators don't currently need the order 2+ observees
 					zc2_observees_.clear();
 					for ( size_type i = zc2_.b(), e = zc_.e(); i < e; ++i ) { // Order 2+ observers
 						Variable * observer( observers_[ i ] );
 						if ( observer->self_observer() ) zc2_observees_.push_back( observer );
 						for ( auto observee : observer->observees() ) {
-							if ( ! observee->is_Discrete() ) zc2_observees_.push_back( observee );
+							if ( !observee->is_Discrete() ) zc2_observees_.push_back( observee );
 						}
 					}
 					uniquify( zc2_observees_ );
@@ -499,7 +499,7 @@ private: // Methods
 						Variable * observer( observers_[ i ] );
 						if ( observer->self_observer() ) zc3_observees_.push_back( observer );
 						for ( auto observee : observer->observees() ) {
-							if ( ! observee->is_Discrete() ) zc3_observees_.push_back( observee );
+							if ( !observee->is_Discrete() ) zc3_observees_.push_back( observee );
 						}
 					}
 					uniquify( zc3_observees_ );

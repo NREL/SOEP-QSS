@@ -160,7 +160,7 @@ public: // Methods
 	void
 	init_0() override
 	{
-		assert( ! observes() );
+		assert( !observes() );
 		init_observers();
 		x_ = static_cast< Integer >( f_.vs( tQ ) );
 		tD = f_.tD( tQ );

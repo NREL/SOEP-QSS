@@ -66,7 +66,7 @@ public: // Creation
 	OutputFilter( std::vector< std::string > const & var_specs )
 	{
 		for ( std::string var_spec : var_specs ) {
-			if ( ! strip( var_spec ).empty() ) { // Add to filter
+			if ( !strip( var_spec ).empty() ) { // Add to filter
 				try {
 					filters_.push_back( std::regex( regex_string( var_spec ) ) );
 				} catch (...) {
@@ -84,7 +84,7 @@ public: // Creation
 		if ( var_stream.is_open() ) {
 			std::string line;
 			while ( std::getline( var_stream, line ) ) {
-				if ( ( ! strip( line ).empty() ) && ( line[ 0 ] != '#' ) ) { // Add to filter
+				if ( ( !strip( line ).empty() ) && ( line[ 0 ] != '#' ) ) { // Add to filter
 					try {
 						filters_.push_back( std::regex( regex_string( line ) ) );
 					} catch (...) {
@@ -133,6 +133,18 @@ public: // Predicate
 		if ( has_prefix( var_name, "der(" ) && has_suffix( var_name, ")" ) ) return false; // Omit derivatives
 		if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
 		if ( filters_.empty() ) return true;
+		for ( auto const & filter : filters_ ) { // Check if name matches filter
+			if ( std::regex_match( var_name, filter ) ) return true;
+		}
+		return false;
+	}
+
+	// Generate Results Outputs for a Variable with Given Name?
+	bool
+	res( std::string const & var_name ) const
+	{
+		if ( filters_.empty() ) return true;
+		if ( var_name == "time" ) return true; // Always include time in results outputs
 		for ( auto const & filter : filters_ ) { // Check if name matches filter
 			if ( std::regex_match( var_name, filter ) ) return true;
 		}

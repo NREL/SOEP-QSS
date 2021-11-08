@@ -91,7 +91,7 @@ TEST( fmu_Variable_xQSS2Test, Basic )
 TEST( fmu_Variable_xQSS2Test, Achilles )
 {
 	std::string const model( "Achilles.fmu" );
-	if ( ! path::is_file( model ) ) {
+	if ( !path::is_file( model ) ) {
 		std::cout << ">>>>>>>>>>>> fmu::Variable_xQSS2 Achilles test not run: Achilles.fmu not present" << std::endl;
 		return;
 	}

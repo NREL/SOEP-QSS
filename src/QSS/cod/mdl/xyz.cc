@@ -50,7 +50,7 @@ xyz( Variable::Variables & vars )
 	using namespace options;
 
 	// Timing
-	if ( ! options::specified::tEnd ) options::tEnd = 2.0;
+	if ( !options::specified::tEnd ) options::tEnd = 2.0;
 
 	// Variables
 	using V = Variable_QSS< Function_LTI >;

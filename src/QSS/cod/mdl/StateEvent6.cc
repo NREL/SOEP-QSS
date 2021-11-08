@@ -250,7 +250,7 @@ StateEvent6( Variable::Variables & vars, std::vector< Conditional * > & cons )
 	using namespace options;
 
 	// Timing
-	if ( ! options::specified::tEnd ) options::tEnd = 10.0;
+	if ( !options::specified::tEnd ) options::tEnd = 10.0;
 
 	vars.clear();
 	vars.reserve( 5 );

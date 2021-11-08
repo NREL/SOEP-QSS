@@ -52,7 +52,7 @@ stiff( Variable::Variables & vars )
 	using namespace options;
 
 	// Timing
-	if ( ! options::specified::tEnd ) options::tEnd = 600.0;
+	if ( !options::specified::tEnd ) options::tEnd = 600.0;
 
 	// Variables
 	using V = Variable_QSS< Function_LTI >;

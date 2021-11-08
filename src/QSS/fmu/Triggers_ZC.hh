@@ -122,7 +122,7 @@ public: // Predicate
 	bool
 	have() const
 	{
-		return ( ! triggers_.empty() );
+		return ( !triggers_.empty() );
 	}
 
 	// Forward Time?
@@ -205,17 +205,17 @@ public: // Methods
 		qss_observees_.clear();
 		for ( Variable * trigger : triggers_ ) {
 			for ( auto observee : trigger->observees() ) {
-				if ( ! observee->is_Discrete() ) qss_observees_.push_back( observee );
+				if ( !observee->is_Discrete() ) qss_observees_.push_back( observee );
 			}
 		}
 		uniquify( qss_observees_ );
-		if ( ! uni_order_ ) {
+		if ( !uni_order_ ) {
 			assert( qss2_.have() );
 			qss2_observees_.clear();
 			for ( size_type i = qss2_.b(), e = qss_.e(); i < e; ++i ) { // Order 2+ triggers
 				Variable * trigger( triggers_[ i ] );
 				for ( auto observee : trigger->observees() ) {
-					if ( ! observee->is_Discrete() ) qss2_observees_.push_back( observee );
+					if ( !observee->is_Discrete() ) qss2_observees_.push_back( observee );
 				}
 			}
 			uniquify( qss2_observees_ );
@@ -224,7 +224,7 @@ public: // Methods
 				for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ triggers
 					Variable * trigger( triggers_[ i ] );
 					for ( auto observee : trigger->observees() ) {
-						if ( ! observee->is_Discrete() ) qss3_observees_.push_back( observee );
+						if ( !observee->is_Discrete() ) qss3_observees_.push_back( observee );
 					}
 				}
 				uniquify( qss3_observees_ );

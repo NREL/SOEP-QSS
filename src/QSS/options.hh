@@ -127,6 +127,7 @@ extern InpOut con; // Map from input variables to output variables
 extern Depends dep; // Dependencies
 extern Depends rdep; // Reverse dependencies
 extern std::string out; // Outputs: r, a, s, x, q, f
+extern bool csv; // CSV results file?
 extern std::pair< double, double > tLoc; // Local output time range (s)
 extern std::string var; // Variable output filter file
 extern Models models; // Name of model(s) or FMU(s)

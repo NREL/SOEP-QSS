@@ -144,7 +144,7 @@ public: // Methods
 	void
 	init_0() override
 	{
-		assert( ! observes() );
+		assert( !observes() );
 		init_observers();
 		x_0_ = f_.vs( tQ );
 	}

@@ -40,6 +40,8 @@
 #include <QSS/fmu/FMU_Variable.hh>
 #include <QSS/EventQueue.hh>
 #include <QSS/Output.hh>
+#include <QSS/OutputFilter.hh>
+#include <QSS/Results_CSV.hh>
 #include <QSS/SmoothToken.hh>
 
 // FMI Library Headers
@@ -114,12 +116,14 @@ public: // Types
 	using Boolean = bool;
 	using EventQ = EventQueue< Target >;
 	using Variables = std::vector< Variable * >;
+	using Var_Indexes = std::vector< size_type >;
 	using Var_Idx = std::unordered_map< Variable const *, size_type >; // Map from Variables to their indexes
 	using Var_Name_Var = std::unordered_map< std::string, Variable * >; // Map from variable names to variables
 	using Var_Name_Ref = std::unordered_map< std::string, fmi2_value_reference_t >; // Map from variable names to FMU variable value references
 	using Ref_Var = std::unordered_map< fmi2_value_reference_t, Variable * >;
 	using Var_Refs = std::vector< fmi2_value_reference_t >;
 	using Conditionals = std::vector< Conditional< Variable > * >;
+	using FMU_Variables = std::vector< FMU_Variable >;
 	using FMU_Vars = std::unordered_map< FMUVarPtr, FMU_Variable, FMUVarPtrHash >; // Map from FMU variables to FMU_Variable objects
 	using FMU_Idxs = std::unordered_map< size_type, Variable * >; // Map from FMU variable indexes to QSS Variables
 	using SmoothTokenOutput = Output< SmoothToken >;
@@ -528,11 +532,12 @@ public: // Data
 	Var_Name_Ref var_name_ref; // Map from variable names to FMU variable value references
 	Var_Name_Var var_name_var; // Map from variable names to variables
 	Conditionals cons; // Conditionals
-	FMU_Vars fmu_vars; // FMU variables
-	FMU_Vars fmu_outs; // FMU output variables
-	FMU_Vars fmu_ders; // FMU variable to derivative map
-	FMU_Vars fmu_dvrs; // FMU derivative to variable map
-	FMU_Idxs fmu_idxs; // Map from FMU variable index to QSS variable
+	FMU_Variables fmu_variables; // FMU variables
+	FMU_Vars fmu_vars; // FMU variables lookup
+	FMU_Vars fmu_outs; // FMU output variables lookup
+	FMU_Vars fmu_ders; // FMU variable to derivative lookup
+	FMU_Vars fmu_dvrs; // FMU derivative to variable lookup
+	FMU_Idxs fmu_idxs; // FMU variable index to QSS variable lookup
 	Ref_Var qss_var_of_ref;
 	Var_Refs out_var_refs;
 	std::vector< Output<> > f_outs; // FMU QSS variable outputs
@@ -544,11 +549,17 @@ public: // Data
 	bool has_explicit_ZCs{ false };
 
 	// Output controls
+	OutputFilter output_filter; // Output filter
 	bool doROut{ false }; // Requantizations
 	bool doZOut{ false }; // Zero crossings
 	bool doDOut{ false }; // Discrete events
 	bool doSOut{ false }; // Sampled
 	bool doKOut{ false }; // Smooth token
+
+	// Results
+	Results_CSV<> csv;
+	Results_CSV<>::Values res_var_vals;
+	Var_Indexes res_var_indexes;
 
 	// Simulation
 	size_type const max_pass_count_multiplier{ 2 };

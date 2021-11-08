@@ -51,7 +51,7 @@ achillesc( Variable::Variables & vars )
 	using namespace options;
 
 	// Timing
-	if ( ! options::specified::tEnd ) options::tEnd = 10.0;
+	if ( !options::specified::tEnd ) options::tEnd = 10.0;
 
 	// Variables
 	using V1 = Variable_QSS< Function_achilles1 >;

@@ -449,7 +449,7 @@ private: // Methods
 			( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 		} else { // Maybe check for crossing
 			int const sign_new( signum( x_0_ ) );
-			if ( ( ! check_crossing_ ) || ( sign_old_ == sign_new ) ) { // Don't check for crossing
+			if ( ( !check_crossing_ ) || ( sign_old_ == sign_new ) ) { // Don't check for crossing
 				set_tZ();
 				( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 			} else { // Check zero-crossing

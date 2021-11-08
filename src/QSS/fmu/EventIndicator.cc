@@ -75,7 +75,7 @@ annotation_start_handle(
 	if ( std::strcmp( parentName, "OCT_StateEvents" ) == 0 ) {
 		FMUEventIndicators & fmuEventIndicators( allEventIndicators.back() ); // This is not thread safe!
 		if ( std::strcmp( elm, "EventIndicators" ) == 0 ) {
-			if ( fmuEventIndicators.inEventIndicators || ( ! fmuEventIndicators.eventIndicators.empty() ) ) {
+			if ( fmuEventIndicators.inEventIndicators || ( !fmuEventIndicators.eventIndicators.empty() ) ) {
 				std::cerr << "\nError: XML EventIndicators block is ill-formed" << std::endl;
 				std::exit( EXIT_FAILURE );
 			}
@@ -116,7 +116,7 @@ annotation_start_handle(
 				}
 				i += 2;
 			}
-			if ( ! has_index ) {
+			if ( !has_index ) {
 				std::cerr << "\nError: XML EventIndicators Element has no index attribute" << std::endl;
 				std::exit( EXIT_FAILURE );
 			}

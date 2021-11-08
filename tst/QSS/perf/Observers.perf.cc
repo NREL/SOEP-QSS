@@ -117,7 +117,7 @@ main()
 			std::sort( triggers.begin(), triggers.end() );
 			for ( Variable * trigger : triggers ) {
 				for ( Variable * observer : trigger->observers ) {
-					if ( ! std::binary_search( triggers.begin(), triggers.end(), observer ) ) observers.push_back( observer );
+					if ( !std::binary_search( triggers.begin(), triggers.end(), observer ) ) observers.push_back( observer );
 				}
 			}
 			size += observers.size();

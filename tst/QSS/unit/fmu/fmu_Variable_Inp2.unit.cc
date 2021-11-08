@@ -74,7 +74,7 @@ TEST( fmu_Variable_Inp2Test, Basic )
 TEST( fmu_Variable_Inp2Test, InputFunction )
 {
 	std::string const model( "InputFunction.fmu" );
-	if ( ! path::is_file( model ) ) {
+	if ( !path::is_file( model ) ) {
 		std::cout << ">>>>>>>>>>>> fmu::Variable_Inp2 InputFunction test not run: InputFunction.fmu not present" << std::endl;
 		return;
 	}

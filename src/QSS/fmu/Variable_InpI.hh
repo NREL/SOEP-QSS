@@ -143,7 +143,7 @@ public: // Methods
 	init_0() override
 	{
 		assert( f() );
-		assert( ! observes() );
+		assert( !observes() );
 		init_observers();
 		s_ = f_( tQ );
 		x_ = static_cast< Integer >( s_.x0 );

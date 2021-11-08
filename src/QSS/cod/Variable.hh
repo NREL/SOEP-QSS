@@ -210,7 +210,7 @@ public: // Predicate
 	bool
 	not_QSS() const
 	{
-		return ( ! is_QSS() );
+		return ( !is_QSS() );
 	}
 
 	// State Variable?
@@ -224,7 +224,7 @@ public: // Predicate
 	bool
 	not_state() const
 	{
-		return ( ! is_QSS() );
+		return ( !is_QSS() );
 	}
 
 	// LIQSS Variable?
@@ -247,7 +247,7 @@ public: // Predicate
 	bool
 	not_ZC() const
 	{
-		return ( ! is_ZC() );
+		return ( !is_ZC() );
 	}
 
 	// Self-Observer?
@@ -507,7 +507,7 @@ public: // Methods
 	add_drill_through_observees()
 	{
 		assert( not_state() );
-		if ( ! observees_.empty() ) {
+		if ( !observees_.empty() ) {
 			for ( Variable * vo : observees_ ) {
 				for ( Variable * voo : vo->observees_ ) {
 					voo->observers_.push_back( this ); // Only need back-observer to force updates when observee has observer update
@@ -520,7 +520,7 @@ public: // Methods
 	void
 	init_observers()
 	{
-		observed_ = ( ! observers_.empty() );
+		observed_ = ( !observers_.empty() );
 		if ( observed_ ) {
 			// Remove duplicates
 			uniquify( observers_, true ); // Sort by address and remove duplicates and recover unused memory
@@ -529,7 +529,7 @@ public: // Methods
 			std::sort( observers_.begin(), observers_.end(), []( Variable const * v1, Variable const * v2 ){ return v1->not_ZC() && v2->is_ZC(); } );
 
 			// Set index to first ZC observer
-			if ( ! observers_.empty() ) {
+			if ( !observers_.empty() ) {
 				Variable const * front( observers_.front() );
 				if ( front->is_ZC() ) {
 					i_beg_ZC_observers_ = 0;
@@ -546,7 +546,7 @@ public: // Methods
 	void
 	init_observees()
 	{
-		observes_ = ( ! observees_.empty() );
+		observes_ = ( !observees_.empty() );
 		if ( observes_ ) { // Remove duplicates and discrete variables
 			observees_.erase( std::remove_if( observees_.begin(), observees_.end(), []( Variable * v ){ return v->is_Discrete(); } ), observees_.end() ); // Remove discrete variables: Don't need them after ZC drill-through observees set up
 			uniquify( observees_, true ); // Sort by address and remove duplicates and recover unused memory
@@ -554,7 +554,7 @@ public: // Methods
 			// Put ZC variables at end
 			std::sort( observees_.begin(), observees_.end(), []( Variable const * v1, Variable const * v2 ){ return v1->not_ZC() && v2->is_ZC(); } );
 
-			observes_ = ( ! observees_.empty() ); // In case all were discrete
+			observes_ = ( !observees_.empty() ); // In case all were discrete
 		}
 	}
 
@@ -879,7 +879,7 @@ public: // Methods
 	{
 #ifdef _OPENMP
 		static size_type const observer_crossover( 40u ); // Size when parallel starts to be faster
-		std::int64_t bZC( ( ! observers.empty() ) && observers.front()->not_ZC() ?
+		std::int64_t bZC( ( !observers.empty() ) && observers.front()->not_ZC() ?
 		 std::distance( observers.begin(), std::upper_bound( observers.begin(), observers.end(), observers.front(), []( Variable const * v1, Variable const * v2 ){ return v1->not_ZC() && v2->is_ZC(); } ) ) :
 		 observers.size() );
 		size_type const nzo( bZC );

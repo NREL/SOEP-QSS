@@ -251,7 +251,7 @@ std::string &
 strip( std::string & s )
 {
 	static std::string const WHITE( " \t\0", 3 );
-	if ( ! s.empty() ) {
+	if ( !s.empty() ) {
 		std::string::size_type const ib( s.find_first_not_of( WHITE ) );
 		std::string::size_type const ie( s.find_last_not_of( WHITE ) );
 		if ( ( ib == std::string::npos ) || ( ie == std::string::npos ) ) { // All of string is whitespace

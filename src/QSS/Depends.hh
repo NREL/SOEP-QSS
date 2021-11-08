@@ -88,7 +88,7 @@ public: // Types
 		bool
 		any() const
 		{
-			return ( ! deps.empty() );
+			return ( !deps.empty() );
 		}
 
 		// Size
@@ -118,7 +118,7 @@ public: // Predicate
 	bool
 	any() const
 	{
-		return ( ! dependencies_.empty() );
+		return ( !dependencies_.empty() );
 	}
 
 	// All Depend on All?
