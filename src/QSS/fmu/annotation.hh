@@ -1,4 +1,4 @@
-// FMU-ME Event Indicator Support
+// FMU-ME XML Annotation Support
 //
 // Project: QSS Solver
 //
@@ -33,14 +33,53 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// QSS Headers
-#include <QSS/fmu/EventIndicator.hh>
+#ifndef QSS_fmu_annotation_hh_INCLUDED
+#define QSS_fmu_annotation_hh_INCLUDED
+
+// FMI Library Headers
+#include <fmilib.h>
 
 namespace QSS {
 namespace fmu {
 
-// EventIndicator Global Lookup by FMU-ME Context
-AllEventIndicators allEventIndicators;
+// XML Callbacks Global
+extern fmi2_xml_callbacks_t xml_callbacks;
+
+extern "C" {
+
+int
+annotation_start_handle(
+ void * /* context */,
+ char const * parentName,
+ void * /* parent */,
+ char const * elm,
+ char const ** attr
+);
+
+inline
+int
+annotation_data_handle(
+ void * /* context */,
+ char const * /* s */,
+ int const /* len */
+)
+{
+	return 0; // Unused by QSS
+}
+
+inline
+int
+annotation_end_handle(
+ void * /* context */,
+ char const * /* elm */
+)
+{
+	return 0; // Unused by QSS
+}
+
+} // extern "C"
 
 } // fmu
 } // QSS
+
+#endif

@@ -36,12 +36,8 @@
 #ifndef QSS_fmu_EventIndicator_hh_INCLUDED
 #define QSS_fmu_EventIndicator_hh_INCLUDED
 
-// FMI Library Headers
-#include <fmilib.h>
-
 // C++ Headers
 #include <cstdlib>
-#include <unordered_map>
 #include <vector>
 
 namespace QSS {
@@ -80,43 +76,6 @@ namespace { // Pollution control
 using AllEventIndicators = std::vector< FMUEventIndicators >;
 }
 extern AllEventIndicators allEventIndicators;
-
-// XML Callbacks Global
-extern fmi2_xml_callbacks_t xml_callbacks;
-
-extern "C" {
-
-int
-annotation_start_handle(
- void * /* context */,
- char const * parentName,
- void * /* parent */,
- char const * elm,
- char const ** attr
-);
-
-inline
-int
-annotation_data_handle(
- void * /* context */,
- char const * /* s */,
- int const /* len */
-)
-{
-	return 0;
-}
-
-inline
-int
-annotation_end_handle(
- void * /* context */,
- char const * /* elm */
-)
-{
-	return 0;
-}
-
-} // extern "C"
 
 } // fmu
 } // QSS

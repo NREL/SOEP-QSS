@@ -35,6 +35,7 @@
 
 // QSS Headers
 #include <QSS/fmu/FMU_ME.hh>
+#include <QSS/fmu/annotation.hh>
 #include <QSS/fmu/Conditional.hh>
 #include <QSS/fmu/cycles.hh>
 #include <QSS/fmu/EventIndicator.hh>
@@ -685,7 +686,6 @@ namespace fmu {
 						std::cerr << " Error: Non-SI unit used for discrete variable: Not currently supported: " << var_name << std::endl;
 						//std::exit( EXIT_FAILURE );
 					}
-					FMU_Variable const fmu_var( var, var_real, var_ref, idx );
 					fmu_vars[ var_real ] = fmu_var;
 					if ( var_causality == fmi2_causality_enu_input ) {
 						std::cout << " Type: Real: Discrete: Input" << std::endl;
