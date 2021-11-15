@@ -36,11 +36,9 @@
 #ifndef QSS_options_hh_INCLUDED
 #define QSS_options_hh_INCLUDED
 
-// QSS Headers
-#include <QSS/Depends.hh>
-
 // C++ Headers
 #include <cstddef>
+#include <regex>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -80,6 +78,185 @@ enum class LogLevel {
  debug,
  all
 };
+
+// Dependency Specs Class
+class DepSpecs final
+{
+
+public: // Types
+
+	using Spec = std::regex;
+	using Deps = std::vector< Spec >;
+	using size_type = Deps::size_type;
+
+	struct Dependency final
+	{
+
+		// Variable Spec Constructor
+		Dependency( std::regex const & var_regex ) :
+		 spec( var_regex )
+		{}
+
+		// Variable and Dependency Spec Constructor
+		Dependency( std::regex const & var_regex, std::regex const & dep_regex ) :
+		 spec( var_regex ),
+		 deps( 1u, std::regex( dep_regex ) )
+		{}
+
+		// Variable and Dependency Specs Constructor
+		Dependency( std::regex const & var_regex, std::vector< std::regex > const & dep_regexs ) :
+		 spec( var_regex ),
+		 deps( dep_regexs )
+		{}
+
+		// Empty?
+		bool
+		empty() const
+		{
+			return deps.empty();
+		}
+
+		// Any?
+		bool
+		any() const
+		{
+			return ( !deps.empty() );
+		}
+
+		// Size
+		size_type
+		size() const
+		{
+			return deps.size();
+		}
+
+		Spec spec; // Variable
+		Deps deps; // Dependencies
+
+	}; // Dependency
+
+	using Dependencies = std::vector< Dependency >;
+
+public: // Predicate
+
+	// Empty?
+	bool
+	empty() const
+	{
+		return dependencies_.empty();
+	}
+
+	// Any?
+	bool
+	any() const
+	{
+		return ( !dependencies_.empty() );
+	}
+
+	// All Depend on All?
+	bool
+	all() const
+	{
+		return all_;
+	}
+
+	// All Depend on All?
+	bool &
+	all()
+	{
+		return all_;
+	}
+
+	// Dependencies Has a Variable?
+	bool
+	has( std::string const & var_name ) const
+	{
+		if ( all_ ) return true;
+		for ( Dependency const & dependency : dependencies_ ) {
+			if ( std::regex_match( regex_string( var_name ), dependency.spec ) ) return true;
+		}
+		return false;
+	}
+
+	// Dependencies Has a Variable and Dependency?
+	bool
+	has( std::string const & var_name, std::string const & dep_name ) const
+	{
+		if ( all_ ) return true;
+		for ( Dependency const & dependency : dependencies_ ) {
+			if ( std::regex_match( regex_string( var_name ), dependency.spec ) ) {
+				for ( Spec const & spec : dependency.deps ) {
+					if ( std::regex_match( regex_string( dep_name ), spec ) ) return true;
+				}
+			}
+		}
+		return false;
+	}
+
+public: // Property
+
+	// Size
+	size_type
+	size() const
+	{
+		return dependencies_.size();
+	}
+
+	// Dependencies
+	Dependencies const &
+	dependencies() const
+	{
+		return dependencies_;
+	}
+
+	// Add a Variable and Dependencies
+	void
+	add( std::regex const & var_regex, std::vector< std::regex > const & dep_regexs )
+	{
+		dependencies_.emplace_back( var_regex, dep_regexs );
+	}
+
+public: // Static Methods
+
+	// Regex String of a Variable Spec
+	static
+	std::string
+	regex_string( std::string spec )
+	{
+		// Convert glob usage to regex (imperfect)
+		std::string re_spec;
+		for ( char const c : spec ) {
+			if ( c == '?' ) {
+				re_spec.push_back( '.' );
+			} else if ( c == '*' ) {
+				re_spec.append( ".*" );
+			} else if ( c == '.' ) {
+				re_spec.append( "\\." );
+			} else if ( c == '[' ) {
+				re_spec.append( "\\[" );
+			} else if ( c == ']' ) {
+				re_spec.append( "\\]" );
+			} else {
+				re_spec.push_back( c );
+			}
+		}
+		return re_spec;
+	}
+
+	// Regex of a Variable Spec
+	static
+	std::regex
+	regex( std::string spec )
+	{
+		return std::regex( regex_string( spec ) ); // Can throw exception if resulting string is not a valid regex
+	}
+
+private: // Data
+
+	bool all_{ false }; // All variables depend on all others?
+	Dependencies dependencies_; // Dependency specs
+
+}; // DepSpecs
 
 extern QSS qss; // QSS method: (x)(LI)QSS(1|2|3)
 extern bool eidd; // Use event indicator directional derivatives?
@@ -124,8 +301,8 @@ extern bool steps; // Generate requantization step count file?
 extern LogLevel log; // Logging level
 extern InpFxn fxn; // Map from input variables to function specs
 extern InpOut con; // Map from input variables to output variables
-extern Depends dep; // Dependencies
-extern Depends rdep; // Reverse dependencies
+extern DepSpecs dep; // Additional forward dependencies
+extern DepSpecs rdep; // Additional reverse dependencies
 extern std::string out; // Outputs: r, a, s, x, q, f
 extern bool csv; // CSV results file?
 extern std::pair< double, double > tLoc; // Local output time range (s)

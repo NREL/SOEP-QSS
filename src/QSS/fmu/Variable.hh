@@ -49,6 +49,7 @@
 #include <QSS/options.hh>
 #include <QSS/Output.hh>
 #include <QSS/SmoothToken.hh>
+#include <QSS/string.hh>
 
 // FMI Library Headers
 #include <fmilib.h>

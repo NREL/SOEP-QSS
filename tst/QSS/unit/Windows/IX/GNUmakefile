@@ -37,7 +37,7 @@ vpath %.h   $(GTEST_INC)
 
 %.obj : %.cc
 	@$(MAKEDEPEND) $<
-	$(CXX) $(CXXFLAGS) /I$(TST_PATH) /I$(GTEST_INC) /c /object:$@ $(subst /,\,$<)
+	$(CXX) $(CXXFLAGS) /I$(TST_PATH) /I$(GTEST_INC) /c /Fo:$@ $(subst /,\,$<)
 
 # Rules
 

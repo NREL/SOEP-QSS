@@ -249,13 +249,13 @@ TEST( MathTest, RootClass )
 
 TEST( MathTest, ZCRootLinear )
 {
-	double const inf( inf< double >() );
-	EXPECT_EQ( inf, zc_root_linear( 0.0, 3.0 ) );
-	EXPECT_EQ( inf, zc_root_linear( -0.0, -3.0 ) );
-	EXPECT_EQ( inf, zc_root_linear( 3.0, 0.0 ) );
-	EXPECT_EQ( inf, zc_root_linear( -3.0, -0.0 ) );
-	EXPECT_EQ( inf, zc_root_linear( 3.0, 5.0 ) );
-	EXPECT_EQ( inf, zc_root_linear( -3.0, -2.0 ) );
+	double const inf_double( inf< double >() );
+	EXPECT_EQ( inf_double, zc_root_linear( 0.0, 3.0 ) );
+	EXPECT_EQ( inf_double, zc_root_linear( -0.0, -3.0 ) );
+	EXPECT_EQ( inf_double, zc_root_linear( 3.0, 0.0 ) );
+	EXPECT_EQ( inf_double, zc_root_linear( -3.0, -0.0 ) );
+	EXPECT_EQ( inf_double, zc_root_linear( 3.0, 5.0 ) );
+	EXPECT_EQ( inf_double, zc_root_linear( -3.0, -2.0 ) );
 	EXPECT_EQ( 2.0, zc_root_linear( 3.0, -6.0 ) );
 	EXPECT_EQ( 2.0, zc_root_linear( -3.0, 6.0 ) );
 }
@@ -308,37 +308,37 @@ TEST( MathTest, CriticalPointMagnitudeQuadratic )
 
 TEST( MathTest, ZCRootQuadratic )
 {
-	double const inf( inf< double >() );
+	double const inf_double( inf< double >() );
 	EXPECT_DOUBLE_EQ( 1.0 + std::sqrt( 2.5 ), zc_root_quadratic( 2.0, -4.0, -3.0 ) );
 	EXPECT_DOUBLE_EQ( 5.0 / 3.0, zc_root_quadratic( -3.0, 5.0, 0.0 ) );
-	EXPECT_EQ( inf, zc_root_quadratic( 0.0, 0.0, 2.0 ) );
-	EXPECT_EQ( inf, zc_root_quadratic( 0.0, 5.0, 2.0 ) );
+	EXPECT_EQ( inf_double, zc_root_quadratic( 0.0, 0.0, 2.0 ) );
+	EXPECT_EQ( inf_double, zc_root_quadratic( 0.0, 5.0, 2.0 ) );
 	EXPECT_DOUBLE_EQ( 0.4, zc_root_quadratic( 0.0, 5.0, -2.0 ) );
 	EXPECT_DOUBLE_EQ( 0.4, zc_root_quadratic( 0.0, -5.0, 2.0 ) );
 }
 
 TEST( MathTest, MinRootQuadratic )
 {
-	double const inf( inf< double >() );
+	double const inf_double( inf< double >() );
 
 	EXPECT_DOUBLE_EQ( std::sqrt( 2.5 ) - 1.0, min_root_quadratic_lower( -2.0, -4.0, 3.0 ) );
 	EXPECT_NEAR( ( 2.0 / std::sqrt( 3 ) ) - 1.0, min_root_quadratic_lower( -3.0, -6.0, 1.0 ), 1.0e-14 );
-	EXPECT_EQ( inf, min_root_quadratic_lower( 0.0, 0.0, 2.0 ) );
+	EXPECT_EQ( inf_double, min_root_quadratic_lower( 0.0, 0.0, 2.0 ) );
 	EXPECT_DOUBLE_EQ( 0.4, min_root_quadratic_lower( 0.0, -5.0, 2.0 ) );
 
 	EXPECT_DOUBLE_EQ( std::sqrt( 2.5 ) - 1.0, min_root_quadratic_upper( 2.0, 4.0, -3.0 ) );
 	EXPECT_NEAR( ( 2.0 / std::sqrt( 3 ) ) - 1.0, min_root_quadratic_upper( 3.0, 6.0, -1.0 ), 1.0e-14 );
-	EXPECT_EQ( inf, min_root_quadratic_upper( 0.0, 0.0, -2.0 ) );
+	EXPECT_EQ( inf_double, min_root_quadratic_upper( 0.0, 0.0, -2.0 ) );
 	EXPECT_DOUBLE_EQ( 0.4, min_root_quadratic_upper( 0.0, 5.0, -2.0 ) );
 
 	EXPECT_DOUBLE_EQ( std::sqrt( 2.5 ) - 1.0, min_root_quadratic_both( -2.0, -4.0, 3.0, -9.0 ) );
 	EXPECT_NEAR( ( 2.0 / std::sqrt( 3 ) ) - 1.0, min_root_quadratic_both( -3.0, -6.0, 1.0, -9.0 ), 1.0e-14 );
-	EXPECT_EQ( inf, min_root_quadratic_both( 0.0, 0.0, 2.0, -9.0 ) );
+	EXPECT_EQ( inf_double, min_root_quadratic_both( 0.0, 0.0, 2.0, -9.0 ) );
 	EXPECT_DOUBLE_EQ( 0.4, min_root_quadratic_both( 0.0, -5.0, 2.0, -9.0 ) );
 
 	EXPECT_DOUBLE_EQ( std::sqrt( 2.5 ) - 1.0, min_root_quadratic_both( 2.0, 4.0, 9.0, -3.0 ) );
 	EXPECT_NEAR( ( 2.0 / std::sqrt( 3 ) ) - 1.0, min_root_quadratic_both( 3.0, 6.0, 9.0, -1.0 ), 1.0e-14 );
-	EXPECT_EQ( inf, min_root_quadratic_both( 0.0, 0.0, 9.0, -2.0 ) );
+	EXPECT_EQ( inf_double, min_root_quadratic_both( 0.0, 0.0, 9.0, -2.0 ) );
 	EXPECT_DOUBLE_EQ( 0.4, min_root_quadratic_both( 0.0, 5.0, 9.0, -2.0 ) );
 }
 

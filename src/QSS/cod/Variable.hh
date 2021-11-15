@@ -47,6 +47,7 @@
 #include <QSS/options.hh>
 #include <QSS/Output.hh>
 #include <QSS/SmoothToken.hh>
+#include <QSS/string.hh>
 
 // C++ Headers
 #include <algorithm>

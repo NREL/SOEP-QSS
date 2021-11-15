@@ -91,8 +91,8 @@ bool steps( false ); // Generate requantization step count file?
 LogLevel log( LogLevel::warning ); // Logging level
 InpFxn fxn; // Map from input variables to function specs
 InpOut con; // Map from input variables to output variables
-Depends dep; // Dependencies
-Depends rdep; // Reverse dependencies
+DepSpecs dep; // Additional forward dependencies
+DepSpecs rdep; // Additional reverse dependencies
 std::string out; // Outputs
 bool csv( false ); // CSV results file?
 std::pair< double, double > tLoc( 0.0, 0.0 ); // Local output time range (s)
@@ -799,7 +799,7 @@ process_args( Args const & args )
 			}
 			std::regex var_regex;
 			try {
-				var_regex = Depends::regex( var_spec );
+				var_regex = DepSpecs::regex( var_spec );
 			} catch (...) {
 				std::cerr << "\nError: Dependency variable spec cannot be converted into a regex " << var_spec << std::endl;
 				fatal = true;
@@ -807,7 +807,7 @@ process_args( Args const & args )
 			std::vector< std::regex > deps_regex;
 			for ( std::string const & dep_spec : dep_specs ) {
 				try {
-					deps_regex.push_back( Depends::regex( dep_spec ) );
+					deps_regex.push_back( DepSpecs::regex( dep_spec ) );
 				} catch (...) {
 					std::cerr << "\nError: Dependency spec cannot be converted into a regex " << dep_spec << std::endl;
 					fatal = true;
@@ -883,7 +883,7 @@ process_args( Args const & args )
 			}
 			std::regex var_regex;
 			try {
-				var_regex = Depends::regex( var_spec );
+				var_regex = DepSpecs::regex( var_spec );
 			} catch (...) {
 				std::cerr << "\nError: Reverse dependency variable spec cannot be converted into a regex " << var_spec << std::endl;
 				fatal = true;
@@ -891,7 +891,7 @@ process_args( Args const & args )
 			std::vector< std::regex > rdeps_regex;
 			for ( std::string const & rdep_spec : rdep_specs ) {
 				try {
-					rdeps_regex.push_back( Depends::regex( rdep_spec ) );
+					rdeps_regex.push_back( DepSpecs::regex( rdep_spec ) );
 				} catch (...) {
 					std::cerr << "\nError: Reverse dependency spec cannot be converted into a regex " << rdep_spec << std::endl;
 					fatal = true;

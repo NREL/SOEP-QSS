@@ -1710,7 +1710,7 @@ namespace fmu {
 			}
 		} else if ( options::dep.any() ) {
 			for ( Variable * var : vars ) {
-				for ( Depends::Dependency const & dependency : options::dep.dependencies() ) {
+				for ( options::DepSpecs::Dependency const & dependency : options::dep.dependencies() ) {
 					if ( std::regex_match( var->name(), dependency.spec ) ) {
 						for ( std::regex const & dep_regex : dependency.deps ) {
 							for ( Variable * dep : vars ) {
@@ -1735,7 +1735,7 @@ namespace fmu {
 			}
 		} else if ( options::rdep.any() ) {
 			for ( Variable * var : vars ) {
-				for ( Depends::Dependency const & dependency : options::rdep.dependencies() ) {
+				for ( options::DepSpecs::Dependency const & dependency : options::rdep.dependencies() ) {
 					if ( std::regex_match( var->name(), dependency.spec ) ) {
 						for ( std::regex const & rdep_regex : dependency.deps ) {
 							for ( Variable * rdep : vars_ZC ) {

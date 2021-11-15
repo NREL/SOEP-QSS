@@ -33,6 +33,9 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#ifndef QSS_fmu_EventIndicator_hh_INCLUDED
+#define QSS_fmu_EventIndicator_hh_INCLUDED
+
 // FMI Library Headers
 #include <fmilib.h>
 
@@ -117,3 +120,5 @@ annotation_end_handle(
 
 } // fmu
 } // QSS
+
+#endif

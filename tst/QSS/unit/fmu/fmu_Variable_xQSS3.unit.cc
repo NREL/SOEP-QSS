@@ -163,7 +163,7 @@ TEST( fmu_Variable_xQSS3Test, Achilles )
 
 	EXPECT_EQ( x1_tE, x1->tQ );
 	EXPECT_EQ( x1_tE, x1->tX );
-	EXPECT_NEAR( 10.435164088465516, x1->tE, 1e-9 );
+	EXPECT_NEAR( 10.435164088465516, x1->tE, 2e-3 );
 	EXPECT_NEAR( 1.4827925477547366, x1->x( x1->tX ), 1e-9 );
 	EXPECT_NEAR( 1.4827925477547366, x1->q( x1->tQ ), 1e-9 );
 	EXPECT_NEAR( -0.21922390527473534, x1->x1( x1->tX ), 1e-9 );

@@ -1,4 +1,4 @@
-// QSS::Depends Unit Tests
+// QSS::options::DepSpecs Unit Tests
 //
 // Project: QSS Solver
 //
@@ -37,40 +37,40 @@
 #include <gtest/gtest.h>
 
 // QSS Headers
-#include <QSS/Depends.hh>
+#include <QSS/options.hh>
 
 using namespace QSS;
 
-TEST( DependsTest, Basic )
+TEST( OptionsDepSpecsTest, Basic )
 {
-	Depends depends;
+	options::DepSpecs deps;
 
-	EXPECT_TRUE( depends.empty() );
-	EXPECT_FALSE( depends.any() );
-	EXPECT_FALSE( depends.all() );
-	EXPECT_FALSE( depends.has( "var" ) );
-	EXPECT_FALSE( depends.has( "var", "dep" ) );
-	EXPECT_EQ( 0u, depends.size() );
+	EXPECT_TRUE( deps.empty() );
+	EXPECT_FALSE( deps.any() );
+	EXPECT_FALSE( deps.all() );
+	EXPECT_FALSE( deps.has( "var" ) );
+	EXPECT_FALSE( deps.has( "var", "dep" ) );
+	EXPECT_EQ( 0u, deps.size() );
 
-	depends.add( Depends::regex( "vol*.T" ), { Depends::regex( "wall*.T" ), Depends::regex( "floor.T" ), Depends::regex( "ceil.T" ) } );
+	deps.add( options::DepSpecs::regex( "vol*.T" ), { options::DepSpecs::regex( "wall*.T" ), options::DepSpecs::regex( "floor.T" ), options::DepSpecs::regex( "ceil.T" ) } );
 
-	EXPECT_FALSE( depends.empty() );
-	EXPECT_TRUE( depends.any() );
-	EXPECT_FALSE( depends.all() );
-	EXPECT_TRUE( depends.has( "vol[1].T" ) );
-	EXPECT_FALSE( depends.has( "Avol.T" ) );
-	EXPECT_TRUE( depends.has( "vol[1].T", "wallSouth.T" ) );
-	EXPECT_FALSE( depends.has( "vol[1].T", "WellSouth.T" ) );
-	EXPECT_EQ( 1u, depends.size() );
+	EXPECT_FALSE( deps.empty() );
+	EXPECT_TRUE( deps.any() );
+	EXPECT_FALSE( deps.all() );
+	EXPECT_TRUE( deps.has( "vol[1].T" ) );
+	EXPECT_FALSE( deps.has( "Avol.T" ) );
+	EXPECT_TRUE( deps.has( "vol[1].T", "wallSouth.T" ) );
+	EXPECT_FALSE( deps.has( "vol[1].T", "WellSouth.T" ) );
+	EXPECT_EQ( 1u, deps.size() );
 
-	depends.add( Depends::regex( "mass*.U" ), { Depends::regex( "window*.U" ), Depends::regex( "door*.U" ) } );
+	deps.add( options::DepSpecs::regex( "mass*.U" ), { options::DepSpecs::regex( "window*.U" ), options::DepSpecs::regex( "door*.U" ) } );
 
-	EXPECT_FALSE( depends.empty() );
-	EXPECT_TRUE( depends.any() );
-	EXPECT_FALSE( depends.all() );
-	EXPECT_TRUE( depends.has( "mass[3].U" ) );
-	EXPECT_FALSE( depends.has( "moss.U" ) );
-	EXPECT_TRUE( depends.has( "mass[3].U", "door_4.U" ) );
-	EXPECT_FALSE( depends.has( "mass[3].U", "skylight[55].U" ) );
-	EXPECT_EQ( 2u, depends.size() );
+	EXPECT_FALSE( deps.empty() );
+	EXPECT_TRUE( deps.any() );
+	EXPECT_FALSE( deps.all() );
+	EXPECT_TRUE( deps.has( "mass[3].U" ) );
+	EXPECT_FALSE( deps.has( "moss.U" ) );
+	EXPECT_TRUE( deps.has( "mass[3].U", "door_4.U" ) );
+	EXPECT_FALSE( deps.has( "mass[3].U", "skylight[55].U" ) );
+	EXPECT_EQ( 2u, deps.size() );
 }
