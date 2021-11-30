@@ -39,7 +39,7 @@
 // QSS Headers
 #include <QSS/fmu/Variable_xInp3.hh>
 #include <QSS/fmu/Variable_xQSS3.hh>
-#include <QSS/fmu/EventIndicator.hh>
+#include <QSS/fmu/EventIndicators.hh>
 
 using namespace QSS;
 using namespace QSS::fmu;

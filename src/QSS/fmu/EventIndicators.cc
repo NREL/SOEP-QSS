@@ -34,7 +34,7 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // QSS Headers
-#include <QSS/fmu/EventIndicator.hh>
+#include <QSS/fmu/EventIndicators.hh>
 
 namespace QSS {
 namespace fmu {

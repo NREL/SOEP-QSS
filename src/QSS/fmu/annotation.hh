@@ -64,18 +64,14 @@ annotation_data_handle(
  int const /* len */
 )
 {
-	return 0; // Unused by QSS
+	return 0;
 }
 
-inline
 int
 annotation_end_handle(
  void * /* context */,
- char const * /* elm */
-)
-{
-	return 0; // Unused by QSS
-}
+ char const * elm
+);
 
 } // extern "C"
 

@@ -38,7 +38,7 @@
 #include <QSS/fmu/annotation.hh>
 #include <QSS/fmu/Conditional.hh>
 #include <QSS/fmu/cycles.hh>
-#include <QSS/fmu/EventIndicator.hh>
+#include <QSS/fmu/EventIndicators.hh>
 #include <QSS/fmu/Function_Inp_constant.hh>
 #include <QSS/fmu/Function_Inp_sin.hh>
 #include <QSS/fmu/Function_Inp_step.hh>
@@ -217,13 +217,15 @@ namespace fmu {
 			std::exit( EXIT_FAILURE );
 		}
 
-		// Parse the XML
+		// Parse the XML: Set up EventIndicators and Dependencies data structures
 		allEventIndicators.emplace_back( this );
 		fmu = fmi2_import_parse_xml( context, unzip_dir.c_str(), &xml_callbacks );
 		if ( !fmu ) {
 			std::cerr << "\nError: FMU-ME XML parsing error" << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
+		FMUEventIndicators & fmuEventIndicators( allEventIndicators.back() );
+		fmuEventIndicators.sort();
 
 		// Check FMU-ME is ME
 		if ( fmi2_import_get_fmu_kind( fmu ) == fmi2_fmu_kind_cs ) {
@@ -1119,7 +1121,7 @@ namespace fmu {
 			std::cerr << "\nError: FMU event indicators collection lookup failed for FMU-ME " << name << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
-		for ( EventIndicator const & ei : ieis->eventIndicators ) {
+		for ( EventIndicator const & ei : ieis->event_indicators ) {
 			fmi2_import_variable_t * var( fmi2_import_get_variable( var_list, ei.index - 1 ) );
 			std::string const var_name( fmi2_import_get_variable_name( var ) );
 			if ( ( fmi2_import_get_variability( var ) == fmi2_variability_enu_continuous ) && ( fmi2_import_get_variable_base_type( var ) == fmi2_base_type_real ) ) {
@@ -1276,6 +1278,7 @@ namespace fmu {
 			std::cout << "\n" << n_ZC_vars << " explicit zero-crossing variable" << ( n_ZC_vars > 1u ? "s" : "" )  << " present" << std::endl;
 		}
 
+		// Zero-crossing checks/messages
 		if ( n_ZC_vars > 0u ) {
 			std::cout << "\nZero Crossing Tolerance: zTol = " << options::zTol << std::endl;
 			std::cout << "\nZero Crossing Tolerance Bump Multiplier: zMul = " << options::zMul << std::endl;

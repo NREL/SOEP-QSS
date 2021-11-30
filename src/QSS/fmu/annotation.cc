@@ -35,7 +35,7 @@
 
 // QSS Headers
 #include <QSS/fmu/annotation.hh>
-#include <QSS/fmu/EventIndicator.hh>
+#include <QSS/fmu/EventIndicators.hh>
 #include <QSS/string.hh>
 
 // C++ Headers
@@ -43,6 +43,7 @@
 #include <cstring>
 #include <iostream>
 #include <sstream>
+#include <utility> // std::move
 
 namespace QSS {
 namespace fmu {
@@ -71,9 +72,9 @@ annotation_start_handle(
 	assert( attr != nullptr );
 	if ( std::strcmp( parentName, "OCT_StateEvents" ) == 0 ) {
 		FMUEventIndicators & fmuEventIndicators( allEventIndicators.back() ); // This is not thread safe!
-		if ( std::strcmp( elm, "EventIndicators" ) == 0 ) {
-			if ( fmuEventIndicators.inEventIndicators || ( !fmuEventIndicators.eventIndicators.empty() ) ) {
-				std::cerr << "\nError: XML EventIndicators block is ill-formed" << std::endl;
+		if ( std::strcmp( elm, "EventIndicators" ) == 0 ) { // EventIndicators section start
+			if ( fmuEventIndicators.inEventIndicators || !fmuEventIndicators.empty() ) {
+				std::cerr << "\nError: XML OCT annotations EventIndicators block repeats or is ill-formed" << std::endl;
 				std::exit( EXIT_FAILURE );
 			}
 			fmuEventIndicators.inEventIndicators = true;
@@ -91,7 +92,7 @@ annotation_start_handle(
 					if ( is_int( index_string ) ) {
 						ei.index = int_of( index_string );
 					} else {
-						std::cerr << "\nError: XML EventIndicators Element has non-integer index: " << index_string << std::endl;
+						std::cerr << "\nError: XML EventIndicators Element has non-integer variable index: " << index_string << std::endl;
 						std::exit( EXIT_FAILURE );
 					}
 					has_index = true;
@@ -101,7 +102,7 @@ annotation_start_handle(
 					std::string reverseDependency_string;
 					while ( reverseDependencies_stream >> reverseDependency_string ) {
 						if ( is_int( reverseDependency_string ) ) {
-							ei.reverseDependencies.push_back( int_of( reverseDependency_string ) );
+							ei.add( int_of( reverseDependency_string ) );
 							has_reverseDependencies = true;
 						} else {
 							std::cerr << "\nError: XML EventIndicators Element has non-integer reverseDependencies entry: " << reverseDependency_string << std::endl;
@@ -117,18 +118,35 @@ annotation_start_handle(
 				std::cerr << "\nError: XML EventIndicators Element has no index attribute" << std::endl;
 				std::exit( EXIT_FAILURE );
 			}
+			std::cout << "\n EventIndicator Element\n";
+			std::cout << "  index: " << ei.index << '\n';
 			if ( has_reverseDependencies ) {
-				fmuEventIndicators.eventIndicators.push_back( ei );
-				std::cout << "\n EventIndicator Element\n";
-				std::cout << "  index: " << ei.index << '\n';
 				std::cout << "  reverseDependencies:";
 				for ( EventIndicator::size_type const d : ei.reverseDependencies ) std::cout << ' ' << d;
 				std::cout << std::endl;
 			} else {
-				std::cerr << "\nError: XML EventIndicators Element with index " << ei.index << " has no reverseDependencies: Omitting" << std::endl;
+				std::cerr << "\nInfo: XML EventIndicators Element with index " << ei.index << " has no reverseDependencies: Omitting" << std::endl;
 			}
-		} else {
+			fmuEventIndicators.add( std::move( ei ) );
+		}
+	}
+	return 0;
+}
+
+int
+annotation_end_handle(
+ void * /* context */,
+ char const * elm
+)
+{
+	assert( elm != nullptr );
+	FMUEventIndicators & fmuEventIndicators( allEventIndicators.back() ); // This is not thread safe!
+	if ( std::strcmp( elm, "EventIndicators" ) == 0 ) { // EventIndicators section end
+		if ( fmuEventIndicators.inEventIndicators ) {
 			fmuEventIndicators.inEventIndicators = false;
+		} else {
+			std::cerr << "\nError: XML OCT annotations EventIndicators block is ill-formed" << std::endl;
+			std::exit( EXIT_FAILURE );
 		}
 	}
 	return 0;
