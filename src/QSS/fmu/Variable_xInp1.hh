@@ -109,7 +109,7 @@ public: // Methods
 	init_0() override
 	{
 		assert( f() );
-		assert( !observes() );
+		assert( observees().empty() );
 		init_observers();
 		s_ = f_( tQ );
 		x_0_ = s_.x0;

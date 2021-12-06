@@ -173,7 +173,7 @@ public: // Methods
 	init_0() override
 	{
 		assert( out_var_ != nullptr );
-		assert( !observes() );
+		assert( observees().empty() );
 		init_observers();
 		tQ = out_var_->tQ;
 		tX = out_var_->tX;

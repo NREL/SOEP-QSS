@@ -793,7 +793,7 @@ public: // Methods
 	{
 		observes_ = ( !observees_.empty() );
 		if ( observes_ ) { // Remove duplicates and discrete variables
-			observees_.erase( std::remove_if( observees_.begin(), observees_.end(), []( Variable * v ){ return v->is_Discrete(); } ), observees_.end() ); // Remove discrete variables: Don't need them after ZC drill-thru observees set up
+			observees_.erase( std::remove_if( observees_.begin(), observees_.end(), []( Variable * v ){ return v->is_Discrete(); } ), observees_.end() ); // Remove discrete variables: Don't need them after ZC drill-through observees set up
 			uniquify( observees_, true ); // Sort by address and remove duplicates and recover unused memory
 			observes_ = ( !observees_.empty() ); // In case all were discrete
 		}
