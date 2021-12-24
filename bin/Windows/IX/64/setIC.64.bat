@@ -1,14 +1,25 @@
 @echo off
 :: Intel Compiler 64-Bit Setup
 
-:: oneAPI
+:: oneAPI + VS2022
 if not "%ONEAPI_ROOT%" == "" (
-rem	@call "%ONEAPI_ROOT%\setvars.bat" intel64 vs2019
-	@call "%ONEAPI_ROOT%\compiler\latest\env\vars.bat" intel64 vs2019
-rem	@call "%ONEAPI_ROOT%\mkl\latest\env\vars.bat" intel64
-rem	@call "%ONEAPI_ROOT%\tbb\latest\env\vars.bat" intel64 vs2019
-rem	@call "%ONEAPI_ROOT%\mpi\latest\env\vars.bat"
-	set "INTEL_DLL_DIR=%ONEAPI_ROOT%\compiler\latest\windows\redist\intel64_win\compiler"
+	@call "%ONEAPI_ROOT%setvars.bat" intel64 vs2022
+rem	@call "%ONEAPI_ROOT%compiler\latest\env\vars.bat" intel64 vs2022
+rem	@call "%ONEAPI_ROOT%mkl\latest\env\vars.bat" intel64
+rem	@call "%ONEAPI_ROOT%tbb\latest\env\vars.bat" intel64 vs2022
+rem	@call "%ONEAPI_ROOT%mpi\latest\env\vars.bat"
+	set "INTEL_DLL_DIR=%ONEAPI_ROOT%compiler\latest\windows\redist\intel64_win\compiler"
+	goto Exit
+)
+
+:: oneAPI + VS2019
+if not "%ONEAPI_ROOT%" == "" (
+rem	@call "%ONEAPI_ROOT%setvars.bat" intel64 vs2019
+	@call "%ONEAPI_ROOT%compiler\latest\env\vars.bat" intel64 vs2019
+rem	@call "%ONEAPI_ROOT%mkl\latest\env\vars.bat" intel64
+rem	@call "%ONEAPI_ROOT%tbb\latest\env\vars.bat" intel64 vs2019
+rem	@call "%ONEAPI_ROOT%mpi\latest\env\vars.bat"
+	set "INTEL_DLL_DIR=%ONEAPI_ROOT%compiler\latest\windows\redist\intel64_win\compiler"
 	goto Exit
 )
 

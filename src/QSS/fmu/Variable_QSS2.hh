@@ -181,6 +181,7 @@ public: // Methods
 	void
 	advance_QSS() override
 	{
+		if ( options::stiff ) liqss_qss_ratio_pass();
 		Time const tDel( tE - tX );
 		tX = tQ = tE;
 		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
@@ -198,6 +199,7 @@ public: // Methods
 	void
 	advance_QSS_0() override
 	{
+		if ( options::stiff ) liqss_qss_ratio_pass();
 		Time const tDel( tE - tX );
 		tX = tQ = tE;
 		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
@@ -240,6 +242,65 @@ public: // Methods
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 		if ( connected() ) advance_connections();
+	}
+
+	// QSS Advance LIQSS/QSS Step Ratio
+	Real
+	advance_LIQSS_QSS_step_ratio() override
+	{
+		if ( !self_observer() ) return 1.0; // Same step size
+
+		Time const t_fmu( fmu_get_time() ); // Save FMU time
+
+		Time const tDel( tE - tX );
+		Real const x_0( x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel ) );
+		Real const q( std::max( rTol * std::abs( x_0 ), aTol ) );
+		Real x_1, x_2;
+
+		fmu_set_time( tE );
+
+		// QSS
+		x_1 = c_1( tE, x_0 );
+		x_2 = c_2( tE, x_1 );
+		Time const dt_QSS( x_2 != 0.0 ? std::sqrt( q / std::abs( x_2 ) ) : infinity );
+
+		// LIQSS /////
+
+		// Value at +/- q
+		Real const q_l( x_0 - q );
+		Real const q_u( x_0 + q );
+
+		// Derivative at +/- q
+		fmu_set_observees_q( tE );
+		fmu_set_real( q_l );
+		Real const x_1_l( p_1() );
+		fmu_set_real( q_u );
+		Real const x_1_u( p_1() );
+
+		// Second derivative at +/- q
+		Time const tN( tE + options::dtND );
+		fmu_set_time( tN );
+		fmu_set_observees_q( tN );
+		fmu_set_real( q_l + ( x_1_l * options::dtND ) );
+		Real const x_2_l( options::one_over_two_dtND * ( p_1() - x_1_l ) ); //ND Forward Euler
+		int const x_2_l_s( signum( x_2_l ) );
+		fmu_set_real( q_u + ( x_1_u * options::dtND ) );
+		Real const x_2_u( options::one_over_two_dtND * ( p_1() - x_1_u ) ); //ND Forward Euler
+		int const x_2_u_s( signum( x_2_u ) );
+
+		// Set coefficients based on second derivative signs
+		if ( ( x_2_l_s == -1 ) && ( x_2_u_s == -1 ) ) { // Downward curving trajectory
+			x_2 = x_2_l;
+		} else if ( ( x_2_l_s == +1 ) && ( x_2_u_s == +1 ) ) { // Upward curving trajectory
+			x_2 = x_2_u;
+		} else { // Non-curving trajectory
+			x_2 = 0.0;
+		}
+		Time const dt_LIQSS( x_2 != 0.0 ? std::sqrt( q / std::abs( x_2 ) ) : infinity );
+
+		fmu_set_time( t_fmu ); // Restore FMU time
+
+		return ( dt_QSS > 0.0 ? dt_LIQSS / dt_QSS : ( dt_LIQSS > 0.0 ? infinity : 1.0 ) );
 	}
 
 	// Handler Advance

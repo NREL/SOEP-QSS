@@ -88,7 +88,7 @@ namespace fmu {
 		// Reset FMU time
 		fmu_set_time( tQ );
 
-		// Set coefficients based on second derivative signs
+		// Set coefficients based on third derivative signs
 		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward curve-changing trajectory
 			q_0_ = q_l;
 			x_1_ = q_1_ = x_1_l;
@@ -162,7 +162,7 @@ namespace fmu {
 		// Reset FMU time
 		fmu_set_time( tQ );
 
-		// Set coefficients based on second derivative signs
+		// Set coefficients based on third derivative signs
 		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward curve-changing trajectory
 			q_0_ = q_l;
 			x_1_ = q_1_ = x_1_l;
@@ -239,7 +239,7 @@ namespace fmu {
 		fmu_set_observees_q( tQ );
 		fmu_set_real( q_c_ );
 
-		// Set coefficients based on second derivative signs
+		// Set coefficients based on third derivative signs
 		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward curve-changing trajectory
 			l_0_ = q_l;
 			x_1_ = x_1_l;
@@ -316,7 +316,7 @@ namespace fmu {
 		fmu_set_observees_q( tQ );
 		fmu_set_real( q_c_ );
 
-		// Set coefficients based on second derivative signs
+		// Set coefficients based on third derivative signs
 		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward curve-changing trajectory
 			l_0_ = q_l;
 			x_1_ = x_1_l;

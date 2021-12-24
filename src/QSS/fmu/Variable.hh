@@ -400,6 +400,13 @@ public: // Predicate
 		return false;
 	}
 
+	// Time Variable?
+	bool
+	is_time() const
+	{
+		return is_time_;
+	}
+
 	// Self-Observer?
 	bool
 	self_observer() const
@@ -1084,6 +1091,14 @@ public: // Methods
 	advance_QSS_F()
 	{
 		assert( false );
+	}
+
+	// QSS Advance LIQSS/QSS Step Ratio
+	virtual
+	Real
+	advance_LIQSS_QSS_step_ratio()
+	{
+		return 1.0;
 	}
 
 	// Zero-Crossing Add Event
@@ -1786,11 +1801,10 @@ protected: // Methods: FMU
 		return p_1();
 	}
 
-	// Coefficient 1 from FMU at Time tQ: QSS
+	// Coefficient 1 from FMU at Time t: QSS
 	Real
 	c_1( Time const t, Real const q_0 ) const
 	{
-		assert( t == tQ );
 		fmu_set_observees_q( t );
 		if ( self_observer_ ) fmu_set_real( q_0 );
 		return p_1();

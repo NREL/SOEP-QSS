@@ -261,6 +261,7 @@ StateEvent6( Variable::Variables & vars, std::vector< Conditional * > & cons )
 	V1 * x1( nullptr );
 	V * x2( nullptr );
 	V * x3( nullptr );
+	// Note: No variables are self-observers so LIQSS methods offer no benefit
 	if ( qss == QSS::QSS1 ) {
 		vars.push_back( x1 = new Variable_QSS1< Function_x1 >( "x1", rTol, aTol, 1.0e-9, +1.1 ) );
 		vars.push_back( x2 = new Variable_QSS1< Function_LTI >( "x2", rTol, aTol, 1.0e-9, -2.5 ) );

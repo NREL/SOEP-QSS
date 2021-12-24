@@ -60,6 +60,7 @@ stiff( Variable::Variables & vars )
 	V * x2( nullptr );
 	vars.clear();
 	vars.reserve( 2 );
+	// Note: x1 is not a self-observer so LIQSS methods offer no benefit
 	if ( qss == QSS::QSS1 ) {
 		vars.push_back( x1 = new Variable_QSS1< Function_LTI >( "x1", rTol, aTol, 1.0e-9, 0.0 ) );
 		vars.push_back( x2 = new Variable_QSS1< Function_LTI >( "x2", rTol, aTol, 1.0e-9, 20.0 ) );
@@ -70,13 +71,13 @@ stiff( Variable::Variables & vars )
 		vars.push_back( x1 = new Variable_QSS3< Function_LTI >( "x1", rTol, aTol, 1.0e-9, 0.0 ) );
 		vars.push_back( x2 = new Variable_QSS3< Function_LTI >( "x2", rTol, aTol, 1.0e-9, 20.0 ) );
 	} else if ( qss == QSS::LIQSS1 ) {
-		vars.push_back( x1 = new Variable_LIQSS1< Function_LTI >( "x1", rTol, aTol, 1.0e-9, 0.0 ) );
+		vars.push_back( x1 = new Variable_QSS1< Function_LTI >( "x1", rTol, aTol, 1.0e-9, 0.0 ) );
 		vars.push_back( x2 = new Variable_LIQSS1< Function_LTI >( "x2", rTol, aTol, 1.0e-9, 20.0 ) );
 	} else if ( qss == QSS::LIQSS2 ) {
-		vars.push_back( x1 = new Variable_LIQSS2< Function_LTI >( "x1", rTol, aTol, 1.0e-9, 0.0 ) );
+		vars.push_back( x1 = new Variable_QSS2< Function_LTI >( "x1", rTol, aTol, 1.0e-9, 0.0 ) );
 		vars.push_back( x2 = new Variable_LIQSS2< Function_LTI >( "x2", rTol, aTol, 1.0e-9, 20.0 ) );
 	} else if ( qss == QSS::LIQSS3 ) {
-		vars.push_back( x1 = new Variable_LIQSS3< Function_LTI >( "x1", rTol, aTol, 1.0e-9, 0.0 ) );
+		vars.push_back( x1 = new Variable_QSS3< Function_LTI >( "x1", rTol, aTol, 1.0e-9, 0.0 ) );
 		vars.push_back( x2 = new Variable_LIQSS3< Function_LTI >( "x2", rTol, aTol, 1.0e-9, 20.0 ) );
 	} else if ( qss == QSS::xQSS1 ) {
 		vars.push_back( x1 = new Variable_xQSS1< Function_LTI >( "x1", rTol, aTol, 1.0e-9, 0.0 ) );
@@ -88,13 +89,13 @@ stiff( Variable::Variables & vars )
 		vars.push_back( x1 = new Variable_xQSS3< Function_LTI >( "x1", rTol, aTol, 1.0e-9, 0.0 ) );
 		vars.push_back( x2 = new Variable_xQSS3< Function_LTI >( "x2", rTol, aTol, 1.0e-9, 20.0 ) );
 	} else if ( qss == QSS::xLIQSS1 ) {
-		vars.push_back( x1 = new Variable_xLIQSS1< Function_LTI >( "x1", rTol, aTol, 1.0e-9, 0.0 ) );
+		vars.push_back( x1 = new Variable_xQSS1< Function_LTI >( "x1", rTol, aTol, 1.0e-9, 0.0 ) );
 		vars.push_back( x2 = new Variable_xLIQSS1< Function_LTI >( "x2", rTol, aTol, 1.0e-9, 20.0 ) );
 	} else if ( qss == QSS::xLIQSS2 ) {
-		vars.push_back( x1 = new Variable_xLIQSS2< Function_LTI >( "x1", rTol, aTol, 1.0e-9, 0.0 ) );
+		vars.push_back( x1 = new Variable_xQSS2< Function_LTI >( "x1", rTol, aTol, 1.0e-9, 0.0 ) );
 		vars.push_back( x2 = new Variable_xLIQSS2< Function_LTI >( "x2", rTol, aTol, 1.0e-9, 20.0 ) );
 	} else if ( qss == QSS::xLIQSS3 ) {
-		vars.push_back( x1 = new Variable_xLIQSS3< Function_LTI >( "x1", rTol, aTol, 1.0e-9, 0.0 ) );
+		vars.push_back( x1 = new Variable_xQSS3< Function_LTI >( "x1", rTol, aTol, 1.0e-9, 0.0 ) );
 		vars.push_back( x2 = new Variable_xLIQSS3< Function_LTI >( "x2", rTol, aTol, 1.0e-9, 20.0 ) );
 	} else {
 		std::cerr << "Error: Unsupported QSS method" << std::endl;

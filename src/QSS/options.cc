@@ -87,6 +87,7 @@ bool inflection( false ); // Requantize at inflections?
 bool refine( false ); // Refine FMU zero-crossing roots?
 bool prune( false ); // Prune variables with no observers?
 bool perfect( false ); // Perfect FMU-ME connection sync?
+bool stiff( false ); // Stiffness detection/report?
 bool steps( false ); // Generate requantization step count file?
 LogLevel log( LogLevel::warning ); // Logging level
 InpFxn fxn; // Map from input variables to function specs
@@ -168,6 +169,7 @@ help_display()
 	std::cout << " --refine           Refine FMU zero-crossing roots" << '\n';
 	std::cout << " --prune            Prune variables with no observers" << '\n';
 	std::cout << " --perfect          Perfect FMU-ME connection sync" << '\n';
+	std::cout << " --stiff            Stiffness detection/report for FMU" << '\n';
 	std::cout << " --steps            Generate step count file for FMU" << '\n';
 	std::cout << " --log=LEVEL        Logging level  [warning]" << '\n';
 	std::cout << "       fatal" << '\n';
@@ -319,6 +321,8 @@ process_args( Args const & args )
 			perfect = true;
 		} else if ( has_option( arg, "steps" ) ) {
 			steps = true;
+		} else if ( has_option( arg, "stiff" ) || has_option( arg, "stiffness" ) ) {
+			stiff = true;
 		} else if ( has_value_option( arg, "log" ) ) { // Accept PyFMI numeric logging levels for scripting convenience
 			std::string const log_str( lowercased( arg_value( arg ) ) );
 			if ( ( log_str == "fatal" ) || ( log_str == "f" ) || ( log_str == "0" ) ) {

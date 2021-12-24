@@ -62,6 +62,7 @@ achilles2( Variable::Variables & vars )
 	V * y2( nullptr );
 	vars.clear();
 	vars.reserve( 4 );
+	// Note: No variables are self-observers so LIQSS methods offer no benefit
 	if ( qss == QSS::QSS1 ) {
 		vars.push_back( x1 = new Variable_QSS1< Function_LTI >( "x1", rTol, aTol, 1.0e-9, 0.0 ) );
 		vars.push_back( x2 = new Variable_QSS1< Function_LTI >( "x2", rTol, aTol, 1.0e-9, 2.0 ) );

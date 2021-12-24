@@ -42,6 +42,65 @@
 namespace QSS {
 namespace fmu {
 
+// LIQSS/QSS Step Size Ratio
+class LIQSS_QSS_Step_Ratio final
+{
+
+public: // Types
+
+	using Real = double;
+	using size_type = std::size_t;
+
+public: // Predicate
+
+	// Check Ratio This Step?
+	bool
+	check_ratio()
+	{
+		return ( step_count_++ % step_check_every_ ) == 0u;
+	}
+
+public: // Properties
+
+	// Ratio
+	Real
+	ratio() const
+	{
+		size_type const ratio_den_( ratio_count_ - ratio_inf_count_ );
+		return ( ratio_den_ > 0u ? ratio_sum_ / ratio_den_ : 1.0 );
+	}
+
+	// Ratio Infinity percent
+	Real
+	ratio_inf_percent() const
+	{
+		return ( ratio_count_ > 0u ? ( 100.0 * ratio_inf_count_ ) / ratio_count_ : 0.0 );
+	}
+
+public: // Methods
+
+	// Add a Ratio
+	void
+	add( Real const ratio )
+	{
+		if ( ratio == infinity ) {
+			++ratio_inf_count_;
+		} else {
+			ratio_sum_ += ratio;
+		}
+		++ratio_count_;
+	}
+
+private: // Data
+
+	Real ratio_sum_{ 0.0 };
+	size_type ratio_inf_count_{ 0u };
+	size_type ratio_count_{ 0u };
+	size_type step_count_{ 0u };
+	static size_type const step_check_every_{ 100u };
+
+}; // LIQSS_QSS_Step_Ratio
+
 // FMU-Based QSS Variable Abstract Base Class
 class Variable_QSS : public Variable
 {
@@ -93,9 +152,22 @@ public: // Predicate
 		return true;
 	}
 
+public: // Methods
+
+	// LIQSS/QSS Step Ratio Pass
+	void
+	liqss_qss_ratio_pass()
+	{
+		assert( !is_LIQSS() );
+		if ( liqss_qss_step_ratio.check_ratio() ) {
+			liqss_qss_step_ratio.add( advance_LIQSS_QSS_step_ratio() );
+		}
+	}
+
 public: // Data
 
 	Real zTol{ 0.0 }; // Zero-crossing/root tolerance
+	LIQSS_QSS_Step_Ratio liqss_qss_step_ratio; // LIQSS/QSS step size ratio metric
 
 }; // Variable_QSS
 

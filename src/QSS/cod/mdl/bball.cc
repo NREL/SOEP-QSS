@@ -145,6 +145,7 @@ bball( Variable::Variables & vars, std::vector< Conditional * > & cons )
 	V * v( nullptr ); // Velocity (m/s)
 	vars.clear();
 	vars.reserve( 4 );
+	// Note: No variables are self-observers so LIQSS methods offer no benefit
 	if ( qss == QSS::QSS1 ) {
 		vars.push_back( h = new Variable_QSS1< Function_LTI >( "h", rTol, aTol, 1.0e-9, 1.0 ) );
 		vars.push_back( v = new Variable_QSS1< Function_LTI >( "v", rTol, aTol, 1.0e-9, 0.0 ) );
@@ -190,8 +191,7 @@ bball( Variable::Variables & vars, std::vector< Conditional * > & cons )
 	h->add( v );
 	v->add( -9.80665 ); // g = 9.80665 m/s^2
 
-	// Discrete variable
-//	Variable_D * b( new Variable_D( "b", 0 ) ); // Bounce counter (to demo discrete variables)
+	// Bounce counter variable
 	Variable_I * b( new Variable_I( "b", 0 ) ); // Bounce counter (to demo integer variables)
 	vars.push_back( b );
 

@@ -251,6 +251,13 @@ public: // Predicate
 		return ( !is_ZC() );
 	}
 
+	// Time Variable?
+	bool
+	is_time() const
+	{
+		return is_time_;
+	}
+
 	// Self-Observer?
 	bool
 	self_observer() const

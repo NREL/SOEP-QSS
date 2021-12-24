@@ -297,6 +297,7 @@ extern bool inflection; // Requantize at inflections?
 extern bool refine; // Refine FMU zero-crossing roots?
 extern bool prune; // Prune variables with no observers?
 extern bool perfect; // Perfect FMU-ME connection sync?
+extern bool stiff; // Stiffness detection/report?
 extern bool steps; // Generate requantization step count file?
 extern LogLevel log; // Logging level
 extern InpFxn fxn; // Map from input variables to function specs

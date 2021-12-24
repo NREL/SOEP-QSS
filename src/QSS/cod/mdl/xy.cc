@@ -64,6 +64,7 @@ xy( Variable::Variables & vars )
 	V * y( nullptr );
 	vars.clear();
 	vars.reserve( 2 );
+	// Note: No variables are self-observers so LIQSS methods offer no benefit
 	if ( qss == QSS::QSS1 ) {
 		vars.push_back( x = new Variable_QSS1< Function_LTI >( "x", rTol, aTol, 1.0e-9, 1.0 ) );
 		vars.push_back( y = new Variable_QSS1< Function_LTI >( "y", rTol, aTol, 1.0e-9, 0.0 ) );
