@@ -185,13 +185,13 @@ simulate( std::string const & model )
 		bool do_seed( false );
 		if ( is_size( nQSS_string ) ) {
 			nQSS = size_of( nQSS_string );
-		} else if ( ! nQSS_string.empty() ) {
+		} else if ( !nQSS_string.empty() ) {
 			std::cerr << "\nError: gen model specifier not in gen:nQSS or gen:nQSS,nZC,SEED format: " << model << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
 		if ( is_size( nZC_string ) ) {
 			nZC = size_of( nZC_string );
-		} else if ( ! nZC_string.empty() ) {
+		} else if ( !nZC_string.empty() ) {
 			std::cerr << "\nError: gen model specifier not in gen:nQSS or gen:nQSS,nZC,SEED format: " << model << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
@@ -202,7 +202,7 @@ simulate( std::string const & model )
 			do_seed = true;
 		} else if ( seed_string == "F" ) {
 			do_seed = false;
-		} else if ( ! seed_string.empty() ) {
+		} else if ( !seed_string.empty() ) {
 			std::cerr << "\nError: gen model specifier not in gen:nQSS or gen:nQSS,nZC,SEED format: " << model << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
@@ -340,7 +340,7 @@ simulate( std::string const & model )
 					for ( auto var : vars ) {
 						var->dt_min = sim_dtMin;
 					}
-					if ( ! pass_warned ) {
+					if ( !pass_warned ) {
 						std::cerr << "\nWarning: Pass count limit reached at time: " << t << "  Min time step control activated" << std::endl;
 						pass_warned = true;
 					}
@@ -636,7 +636,7 @@ simulate( std::string const & model )
 				assert( false );
 			}
 		}
-		if ( ! options::output::d ) { // % complete reporting
+		if ( !options::output::d ) { // % complete reporting
 			int const tPerNow( std::min( static_cast< int >( 100 * ( t - t0 ) / tSim ), 100 ) );
 			if ( tPerNow > tPer ) { // Report % complete
 				tPer = tPerNow;
@@ -648,7 +648,7 @@ simulate( std::string const & model )
 #ifdef _OPENMP
 	double const wall_time_end( omp_get_wtime() ); // Wall time
 #endif
-	if ( ! options::output::d ) std::cout << "\r100% =====" << std::endl;
+	if ( !options::output::d ) std::cout << "\r100% =====" << std::endl;
 
 	// End time outputs
 	if ( ( options::output::R || options::output::Z || options::output::D || options::output::S ) && ( options::output::X || options::output::Q ) ) {

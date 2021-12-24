@@ -777,7 +777,7 @@ process_args( Args const & args )
 							dep_spec.clear();
 						}
 					}
-					in_quote = ! in_quote;
+					in_quote = !in_quote;
 				} else if ( ( !in_quote ) && ( c == ',' ) ) {
 					if ( !strip( dep_spec ).empty() ) {
 						dep_specs.push_back( dep_spec );
@@ -861,7 +861,7 @@ process_args( Args const & args )
 							rdep_spec.clear();
 						}
 					}
-					in_quote = ! in_quote;
+					in_quote = !in_quote;
 				} else if ( ( !in_quote ) && ( c == ',' ) ) {
 					if ( !strip( rdep_spec ).empty() ) {
 						rdep_specs.push_back( rdep_spec );
