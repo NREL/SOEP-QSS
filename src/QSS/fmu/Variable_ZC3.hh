@@ -200,7 +200,6 @@ public: // Methods
 	advance_QSS_0( Real const x_0 ) override
 	{
 		advance_pre( tE );
-
 		tX = tQ = tE;
 		x_0_ = x_0;
 	}

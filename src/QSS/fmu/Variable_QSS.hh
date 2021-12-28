@@ -129,8 +129,7 @@ protected: // Creation
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
-	 Super( order, name, rTol, aTol, xIni, fmu_me, var, der ),
-	 zTol( std::max( zTol, 0.0 ) )
+	 Super( order, name, rTol, aTol, zTol, xIni, fmu_me, var, der )
 	{}
 
 protected: // Assignment
@@ -166,7 +165,6 @@ public: // Methods
 
 public: // Data
 
-	Real zTol{ 0.0 }; // Zero-crossing/root tolerance
 	LIQSS_QSS_Step_Ratio liqss_qss_step_ratio; // LIQSS/QSS step size ratio metric
 
 }; // Variable_QSS

@@ -71,8 +71,7 @@ protected: // Creation
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
-	 Super( order, name, rTol, aTol, 0.0, fmu_me, var, der ),
-	 zTol( std::max( zTol, 0.0 ) ),
+	 Super( order, name, rTol, aTol, zTol, fmu_me, var, der ),
 	 zChatter_( zTol > 0.0 )
 	{
 		add_crossings_Dn_Up(); // FMI API doesn't currently expose crossing information
@@ -329,7 +328,6 @@ protected: // Static Methods
 
 public: // Data
 
-	Real zTol{ 0.0 }; // Zero-crossing tolerance
 	Time tZ{ infinity }; // Zero-crossing time: tQ <= tZ and tX <= tZ
 	Time tZ_last{ neg_infinity }; // Zero-crossing time of last crossing
 	Crossing crossing{ Crossing::Flat }; // Zero-crossing type

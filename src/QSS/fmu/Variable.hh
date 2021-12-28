@@ -118,6 +118,7 @@ protected: // Creation
 	 std::string const & name,
 	 Real const rTol_,
 	 Real const aTol_,
+	 Real const zTol,
 	 Real const xIni_,
 	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
@@ -128,6 +129,7 @@ protected: // Creation
 	 is_time_( name == "time" ),
 	 rTol( std::max( rTol_, 0.0 ) ),
 	 aTol( std::max( aTol_, std::numeric_limits< Real >::min() ) ),
+	 zTol( std::max( zTol, 0.0 ) ),
 	 xIni( xIni_ ),
 	 dt_min( is_time_ ? 0.0 : options::dtMin ),
 	 dt_max( is_time_ ? infinity : options::dtMax ),
@@ -148,6 +150,7 @@ protected: // Creation
 	 std::string const & name,
 	 Real const rTol_,
 	 Real const aTol_,
+	 Real const zTol,
 	 FMU_ME * fmu_me,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
@@ -1981,6 +1984,7 @@ public: // Data
 
 	Real rTol{ 1.0e-4 }; // Relative tolerance
 	Real aTol{ 1.0e-6 }; // Absolute tolerance
+	Real zTol{ 0.0 }; // Zero-crossing/root tolerance
 	Real qTol{ 1.0e-6 }; // Quantization tolerance
 	Real xIni{ 0.0 }; // Initial value
 	Time tQ{ 0.0 }; // Quantized time range begin

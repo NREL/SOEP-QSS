@@ -230,7 +230,7 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
-		x_0_ = q_c_ = q_0_ = p_0();
+		x_0_ = q_c_ = q_0_ = p_0(); // Assume FMU ran event handler
 		x_1_ = h_1();
 		set_qTol();
 		set_tE_aligned();
@@ -246,7 +246,7 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
 		tX = tQ = t;
-		x_0_ = q_c_ = q_0_ = p_0();
+		x_0_ = q_c_ = q_0_ = p_0(); // Assume FMU ran event handler
 	}
 
 	// Handler Advance: Stage 1
