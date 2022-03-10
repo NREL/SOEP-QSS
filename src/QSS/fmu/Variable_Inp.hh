@@ -74,7 +74,7 @@ protected: // Creation
 	 FMU_Variable const var = FMU_Variable(),
 	 Function f = Function()
 	) :
-	 Super( order, name, rTol, aTol, fmu_me, var ),
+	 Super( order, name, rTol, aTol, 0.0, fmu_me, var ),
 	 f_( f ),
 	 is_connection_( f_ == nullptr )
 	{}
