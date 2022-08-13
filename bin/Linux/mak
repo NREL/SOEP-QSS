@@ -9,7 +9,7 @@ if [ -f $PlatformCompiler/GNUmakefile ]; then
   else
      ntask=8
   fi
-  make -j${ntask} --makefile=../../GNUmakefile $*
+  make -O -j${ntask} --makefile=../../GNUmakefile $*
   cd ../../../..
 else
   echo $PlatformCompiler/GNUmakefile not found
