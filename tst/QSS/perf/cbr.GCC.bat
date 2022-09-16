@@ -7,7 +7,7 @@ if exist %1.cc (
   shift
 )
 
-g++ -pipe -std=c++17 -pedantic -Wall -Wextra -Wno-unused -Wno-unused-parameter -m64 -march=native -DNDEBUG -O3 -funroll-loops -s %CxxSource% %1 %2 %3 %4 %5 %6 %7 %8 %9 %OutputSpec% -L%QSS_bin% -lQSS
+g++ -pipe -std=c++20 -pedantic -Wall -Wextra -Wno-unused -Wno-unused-parameter -m64 -march=native -DNDEBUG -O3 -funroll-loops -s %CxxSource% %1 %2 %3 %4 %5 %6 %7 %8 %9 %OutputSpec% -L%QSS_bin% -lQSS
 
 set CxxSource=
 set OutputSpec=

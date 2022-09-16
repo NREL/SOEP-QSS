@@ -4,6 +4,8 @@
 #
 # Platform: Windows/GCC
 
+# Note: This uses the current QSS static library: We don't update that here
+
 # Paths
 PKG_PATH := $(QSS)/src/QSS
 SRC_PATH := $(PKG_PATH)
@@ -16,8 +18,6 @@ include $(QSS_bin)/GNUmakeinit.mk
 # Variables
 TAR := QSS
 SRC := $(notdir $(wildcard $(TST_PATH)/*.cc))
-SRC += $(notdir $(wildcard $(TST_PATH)/cod/*.cc))
-SRC += $(notdir $(wildcard $(TST_PATH)/fmu/*.cc))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .o,$(basename $(SRC)))
 APP_OBJ := $(filter-out $(QSS)/src/QSS/app/$(PlatformFull)/QSS.o,$(wildcard $(QSS)/src/QSS/app/$(PlatformFull)/*.o))
@@ -28,7 +28,7 @@ PATH_LIBS := $(BIN_PATH)/lib$(TAR).a
 .SUFFIXES: .h
 
 # Search Paths
-vpath %.cc  $(TST_PATH) $(TST_PATH)/cod $(TST_PATH)/fmu
+vpath %.cc  $(TST_PATH)
 vpath %.hh  $(TST_PATH)
 vpath %.h   $(GTEST_INC)
 

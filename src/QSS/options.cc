@@ -49,7 +49,6 @@ namespace QSS {
 namespace options {
 
 QSS qss( QSS::QSS2 ); // QSS method: (x)(LI)QSS(1|2|3)
-bool eidd( true ); // Use event indicator directional derivatives?
 double rTol( 1.0e-4 ); // Relative tolerance
 double aTol( 1.0e-6 ); // Absolute tolerance
 double aFac( 0.01 ); // Absolute tolerance factor
@@ -85,7 +84,6 @@ std::size_t pass( 20 ); // Pass count limit
 bool cycles( false ); // Report dependency cycles?
 bool inflection( false ); // Requantize at inflections?
 bool refine( false ); // Refine FMU zero-crossing roots?
-bool prune( false ); // Prune variables with no observers?
 bool perfect( false ); // Perfect FMU-ME connection sync?
 bool stiff( false ); // Stiffness detection/report?
 bool steps( false ); // Generate requantization step count file?
@@ -93,7 +91,6 @@ LogLevel log( LogLevel::warning ); // Logging level
 InpFxn fxn; // Map from input variables to function specs
 InpOut con; // Map from input variables to output variables
 DepSpecs dep; // Additional forward dependencies
-DepSpecs rdep; // Additional reverse dependencies
 std::string out; // Outputs
 bool csv( false ); // CSV results file?
 std::pair< double, double > tLoc( 0.0, 0.0 ); // Local output time range (s)
@@ -103,7 +100,6 @@ Models models; // Name of model(s) or FMU(s)
 namespace specified {
 
 bool qss( false ); // QSS method specified?
-bool eidd( false ); // Event indicators directional derivative specified?
 bool rTol( false ); // Relative tolerance specified?
 bool aTol( false ); // Absolute tolerance specified?
 bool zTol( false ); // Zero-crossing/root tolerance specified?
@@ -141,8 +137,6 @@ help_display()
 	std::cout << '\n' << "QSS [options] [model [model ...]]" << "\n\n";
 	std::cout << "Options:" << "\n\n";
 	std::cout << " --qss=QSS          QSS method: (x)(LI)QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
-	std::cout << " --eidd             Use FMU event indicator directional derivatives" << '\n';
-	std::cout << " --no-eidd          Don't use FMU event indicator directional derivatives" << '\n';
 	std::cout << " --rTol=TOL         Relative tolerance  [" << rTol << "|FMU]" << '\n';
 	std::cout << " --aTol=TOL         Absolute tolerance  [rTol*aFac*nominal]" << '\n';
 	std::cout << " --aFac=FAC         Absolute tolerance factor  [" << aFac << ']' << '\n';
@@ -167,7 +161,6 @@ help_display()
 	std::cout << " --cycles           Report dependency cycles" << '\n';
 	std::cout << " --inflection       Requantize at inflections" << '\n';
 	std::cout << " --refine           Refine FMU zero-crossing roots" << '\n';
-	std::cout << " --prune            Prune variables with no observers" << '\n';
 	std::cout << " --perfect          Perfect FMU-ME connection sync" << '\n';
 	std::cout << " --stiff            Stiffness detection/report for FMU" << '\n';
 	std::cout << " --steps            Generate step count file for FMU" << '\n';
@@ -193,11 +186,6 @@ help_display()
 	std::cout << "            No VAR => All variables" << '\n';
 	std::cout << "            DEP  Dependency variable (name or glob/regex)" << '\n';
 	std::cout << "                 No DEP => All variables" << '\n';
-	std::cout << " --rdep=VAR[:DEP[,DEP,...]]  FMU reverse dependencies to add" << '\n';
-	std::cout << "        VAR  Variable (name or glob/regex)" << '\n';
-	std::cout << "             No VAR => All variables" << '\n';
-	std::cout << "             DEP  Dependency variable (name or glob/regex)" << '\n';
-	std::cout << "                  No DEP => All variables" << '\n';
 	std::cout << " --bin=SIZE:FRAC:AUTO  FMU requantization binning controls  [1:0.5:N]" << '\n';
 	std::cout << "       SIZE  Bin size  (Size or U for Unlimited)  [U]" << '\n';
 	std::cout << "            FRAC  Min time step fraction  (0-1]  [0.25]" << '\n';
@@ -304,19 +292,15 @@ process_args( Args const & args )
 				fatal = true;
 			}
 		} else if ( has_option( arg, "eidd" ) ) {
-			specified::eidd = true;
-			eidd = true;
+			// Ignore obsolete option
 		} else if ( ( has_option( arg, "no-eidd" ) ) || ( has_option( arg, "noeidd" ) ) ) {
-			specified::eidd = true;
-			eidd = false;
+			// Ignore obsolete option
 		} else if ( has_option( arg, "cycles" ) ) {
 			cycles = true;
 		} else if ( has_option( arg, "inflection" ) ) {
 			inflection = true;
 		} else if ( has_option( arg, "refine" ) ) {
 			refine = true;
-		} else if ( has_option( arg, "prune" ) ) {
-			prune = true;
 		} else if ( has_option( arg, "perfect" ) ) {
 			perfect = true;
 		} else if ( has_option( arg, "steps" ) ) {
@@ -657,11 +641,11 @@ process_args( Args const & args )
 			if ( is_size( pass_str ) ) {
 				pass = size_of( pass_str );
 				if ( pass < 1 ) {
-					std::cerr << "\nError: Nonpositive pass: " << pass_str << std::endl;
+					std::cerr << "\nError: Nonpositive pass option: " << pass_str << std::endl;
 					fatal = true;
 				}
 			} else {
-				std::cerr << "\nError: Nonintegral pass: " << pass_str << std::endl;
+				std::cerr << "\nError: Nonintegral pass option: " << pass_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_value_option( arg, "fxn" ) ) {
@@ -818,90 +802,6 @@ process_args( Args const & args )
 				}
 			}
 			dep.add( var_regex, deps_regex );
-		} else if ( has_option( arg, "rdep" ) || has_value_option( arg, "rdep" ) ) {
-			std::string const var_rdeps( arg_value( arg ) );
-			std::string var_spec;
-			std::string rdeps_spec;
-			if ( var_rdeps.empty() ) { // Implied all
-				var_spec = rdeps_spec = '*';
-			} else if ( var_rdeps[ 0 ] == '"' ) { // Quoted input variable name
-				std::string::size_type const qe( var_rdeps.find( '"', 1u ) );
-				if ( qe != std::string::npos ) {
-					var_spec = var_rdeps.substr( 1u, qe - 1u );
-					std::string::size_type const isep( var_rdeps.find( ':', qe ) );
-					if ( isep != std::string::npos ) {
-						rdeps_spec = var_rdeps.substr( isep + 1u );
-					} else {
-						rdeps_spec = '*'; // Implied all
-					}
-				} else {
-					std::cerr << "\nError: Reverse dependencies spec quoted input variable spec missing end quote: " << var_rdeps << std::endl;
-					fatal = true;
-				}
-			} else {
-				std::string::size_type const isep( var_rdeps.find( ':' ) );
-				if ( isep != std::string::npos ) {
-					var_spec = var_rdeps.substr( 0u, isep );
-					rdeps_spec = var_rdeps.substr( isep + 1u );
-				} else {
-					var_spec = var_rdeps;
-					rdeps_spec = '*'; // Implied all
-				}
-			}
-			if ( var_spec.empty() ) var_spec = '*'; // Implied all
-			std::vector< std::string > rdep_specs;
-			{ // Scope
-			std::string rdep_spec;
-			bool in_quote( false );
-			for ( char const c : rdeps_spec ) {
-				if ( c == '"' ) {
-					if ( in_quote ) { // End quoted string
-						if ( !strip( rdep_spec ).empty() ) {
-							rdep_specs.push_back( rdep_spec );
-							rdep_spec.clear();
-						}
-					}
-					in_quote = !in_quote;
-				} else if ( ( !in_quote ) && ( c == ',' ) ) {
-					if ( !strip( rdep_spec ).empty() ) {
-						rdep_specs.push_back( rdep_spec );
-						rdep_spec.clear();
-					}
-				} else {
-					rdep_spec.push_back( c );
-				}
-			}
-			if ( !strip( rdep_spec ).empty() ) rdep_specs.push_back( rdep_spec );
-			} // Scope
-			if ( var_spec == "*" ) { // Check for all-rdepends-on-all
-				if ( rdep_specs.empty() ) {
-					rdep.all() = true;
-				} else {
-					for ( std::string const & rdep_spec : rdep_specs ) {
-						if ( rdep_spec == "*" ) {
-							rdep.all() = true;
-							break;
-						}
-					}
-				}
-			}
-			std::regex var_regex;
-			try {
-				var_regex = DepSpecs::regex( var_spec );
-			} catch (...) {
-				std::cerr << "\nError: Reverse dependency variable spec cannot be converted into a regex " << var_spec << std::endl;
-				fatal = true;
-			}
-			std::vector< std::regex > rdeps_regex;
-			for ( std::string const & rdep_spec : rdep_specs ) {
-				try {
-					rdeps_regex.push_back( DepSpecs::regex( rdep_spec ) );
-				} catch (...) {
-					std::cerr << "\nError: Reverse dependency spec cannot be converted into a regex " << rdep_spec << std::endl;
-					fatal = true;
-				}
-			}
-			rdep.add( var_regex, rdeps_regex );
 		} else if ( has_option( arg, "out" ) || has_value_option( arg, "out" ) ) {
 			static std::string const out_flags( "dshROZDSXQAFLK" );
 			out = arg_value( arg );
@@ -978,7 +878,7 @@ process_args( Args const & args )
 		} else { // Treat non-option argument as model
 			models.push_back( arg );
 		}
-		if ( !specified::aTol ) aTol = rTol * aFac; // Make unspecified aTol consistent with rTol * aFac for use in cod
+		if ( !specified::aTol ) aTol = rTol * aFac; // Make unspecified aTol consistent with rTol * aFac
 	}
 
 	// Inter-option checks

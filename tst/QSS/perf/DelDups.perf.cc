@@ -1,4 +1,4 @@
-// QSS::cod::Variable Delete Duplicates Performance Tests
+// Vector Delete Duplicates Performance Tests
 //
 // Project: QSS Solver
 //

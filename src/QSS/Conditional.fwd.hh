@@ -38,8 +38,8 @@
 
 namespace QSS {
 
-// Conditional Abstract Base Class
-class Conditional;
+// Conditional Class Template
+template< typename > class Conditional;
 
 } // QSS
 

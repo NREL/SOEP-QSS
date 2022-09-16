@@ -41,15 +41,22 @@
 
 namespace QSS {
 
-// Conditional Abstract Base Class
-class Conditional : public Target
+// Conditional Class Template
+template< typename V >
+class Conditional final : public Target
 {
 
 public: // Types
 
 	using Super = Target;
+	using Variable = V;
+	using Variables = typename Variable::Variables;
+	using Time = typename Variable::Time;
+	using Real = typename Variable::Real;
+	using size_type = typename Variables::size_type;
+	using EventQ = EventQueue< Target >;
 
-protected: // Creation
+public: // Creation
 
 	// Default Constructor
 	Conditional() = default;
@@ -60,13 +67,43 @@ protected: // Creation
 	// Move Constructor
 	Conditional( Conditional && ) noexcept = default;
 
-	// Name Constructor
-	explicit
-	Conditional( std::string const & name ) :
-	 Target( name )
-	{}
+	// Variable + EventQ Constructor
+	Conditional(
+	 Variable * var,
+	 EventQ * eventq
+	) :
+	 var_( var ),
+	 eventq_( eventq )
+	{
+		assert( var_ != nullptr );
+		assert( eventq_ != nullptr );
+		var_->conditional = this;
+		add_conditional();
+	}
 
-protected: // Assignment
+	// Name + Variable + Event Queue Constructor
+	Conditional(
+	 std::string const & name,
+	 Variable * var,
+	 EventQ * eventq
+	) :
+	 Target( name ),
+	 var_( var ),
+	 eventq_( eventq )
+	{
+		assert( var_ != nullptr );
+		assert( eventq_ != nullptr );
+		var_->conditional = this;
+		add_conditional();
+	}
+
+	// Destructor
+	~Conditional()
+	{
+		if ( var_ != nullptr ) var_->conditional = nullptr;
+	}
+
+public: // Assignment
 
 	// Copy Assignment
 	Conditional &
@@ -76,12 +113,168 @@ protected: // Assignment
 	Conditional &
 	operator =( Conditional && ) noexcept = default;
 
+public: // Predicate
+
+	// Empty?
+	bool
+	empty() const
+	{
+		return false;
+	}
+
+	// Valid?
+	bool
+	valid() const
+	{
+		return true;
+	}
+
+public: // Property
+
+	// Size
+	size_type
+	size() const
+	{
+		return 1u;
+	}
+
+	// Variable
+	Variable const *
+	var() const
+	{
+		return var_;
+	}
+
+	// Variable
+	Variable * &
+	var()
+	{
+		return var_;
+	}
+
+	// Handler-Modified (Observer) Variables
+	Variables const &
+	observers() const
+	{
+		return observers_;
+	}
+
+	// Handler-Modified (Observer) Variables
+	Variables &
+	observers()
+	{
+		return observers_;
+	}
+
+	// Boolean Value at SuperdenseTime s
+	bool
+	b( SuperdenseTime const & s ) const
+	{
+		assert( var_ != nullptr );
+		return var_->b( s.t );
+	}
+
+	// Boolean Value at Time t
+	bool
+	b( Time const t ) const
+	{
+		assert( var_ != nullptr );
+		return var_->b( t );
+	}
+
 public: // Methods
 
-	// Run Handler of Highest Priority Active Clause
-	virtual
+	// Add an Observer Variable
 	void
-	advance_conditional() = 0;
+	add_observer( Variable * v )
+	{
+		assert( v != nullptr );
+		if ( v->is_Input() ) {
+			std::cerr << "\nError: Input variable " << v->name() << " is modified in conditional clause of " << var_->name() << std::endl;
+			std::exit( EXIT_FAILURE );
+		} else if ( v->is_ZC() ) {
+			std::cerr << "\nError: Zero-crossing variable " << v->name() << " is modified in conditional clause of " << var_->name() << std::endl;
+			std::exit( EXIT_FAILURE );
+		}
+		observers_.push_back( v );
+	}
+
+	// Initialize Observers Collection
+	void
+	init_observers()
+	{
+		// Flag if output connection observers
+		connected_output_observer = false;
+		for ( auto const observer : observers_ ) {
+			if ( observer->connected_output ) {
+				connected_output_observer = true;
+				break;
+			}
+		}
+	}
+
+	// Variable Activity Notifier
+	void
+	activity( Time const t )
+	{
+		shift_conditional( t );
+	}
+
+	// Set Observer FMU Value and Shift Handler Event
+	void
+	handler( Time const t )
+	{
+		for ( Variable * observer : observers_ ) {
+			observer->fmu_set_x( t ); // Set FMU value for handler derivative dependencies
+			observer->shift_handler( t );
+		}
+	}
+
+	// Add Event at Time Infinity
+	void
+	add_conditional()
+	{
+		assert( eventq_ != nullptr );
+		event_ = eventq_->add_conditional( this );
+	}
+
+	// Shift Event to Time Infinity
+	void
+	shift_conditional()
+	{
+		assert( eventq_ != nullptr );
+		event_ = eventq_->shift_conditional( event_ );
+	}
+
+	// Shift Event to Time t
+	void
+	shift_conditional( Time const t )
+	{
+		assert( eventq_ != nullptr );
+		event_ = eventq_->shift_conditional( t, event_ );
+	}
+
+	// Run Handler
+	void
+	advance_conditional()
+	{
+		assert( var_ != nullptr );
+		if ( var_->b( st.t ) ) handler( st.t );
+		shift_conditional();
+	}
+
+	// Remove Variable
+	void
+	rem_variable()
+	{
+		var_ = nullptr;
+	}
+
+private: // Data
+
+	Variable * var_{ nullptr }; // Event variable
+	Variables observers_; // Variables dependent on this one (modified by handler)
+	EventQ * eventq_{ nullptr }; // Event queue
 
 }; // Conditional
 

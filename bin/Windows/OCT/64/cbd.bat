@@ -7,7 +7,7 @@ set OutputSpec=-o %1.exe
 shift /1
 
 :Build
-g++ -pipe -std=c++17 -pedantic -Wall -Wextra -Wno-unknown-pragmas -Wno-attributes -m64 -march=native -DWIN32 -DQSS_FMU -ffloat-store -fsignaling-nans -fno-omit-frame-pointer -O0 -ggdb %CxxMainSource% %1 %2 %3 %4 %5 %6 %7 %8 %9 %OutputSpec%
+g++ -pipe -std=c++20 -pedantic -Wall -Wextra -Wno-unknown-pragmas -Wno-attributes -m64 -march=native -DWIN32 -ffloat-store -fsignaling-nans -fno-omit-frame-pointer -O0 -ggdb %CxxMainSource% %1 %2 %3 %4 %5 %6 %7 %8 %9 %OutputSpec%
 
 set CxxMainSource=
 set OutputSpec=

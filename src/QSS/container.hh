@@ -100,7 +100,20 @@ void
 uniquify( Variables & variables, bool const shrink = false )
 {
 	if ( !variables.empty() ) {
-		std::sort( variables.begin(), variables.end() ); // Sort by address
+		std::sort( variables.begin(), variables.end() ); // Sort
+		variables.erase( std::unique( variables.begin(), variables.end() ), variables.end() ); // Remove duplicates
+		if ( shrink ) variables.shrink_to_fit();
+	}
+}
+
+// Make Sorted Variables Collection Unique and Optionally Shrink-to-Fit
+template< typename Variables >
+inline
+void
+uniquify_sorted( Variables & variables, bool const shrink = false )
+{
+	if ( !variables.empty() ) {
+		assert( std::is_sorted( variables.begin(), variables.end() ) ); // Precondition: Sorted
 		variables.erase( std::unique( variables.begin(), variables.end() ), variables.end() ); // Remove duplicates
 		if ( shrink ) variables.shrink_to_fit();
 	}
@@ -128,9 +141,9 @@ sort_by_type_and_order( Variables & variables )
 {
 	using V = typename std::remove_pointer< typename Variables::value_type >::type;
 	if ( options::output::d ) { // Also sort by name for deterministic diagnostic output
-		std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return ( v1->state_order() < v2->state_order() ) || ( ( v1->state_order() == v2->state_order() ) && ( v1->name() < v2->name() ) ); } );
+		std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return ( v1->var_sort_index() < v2->var_sort_index() ) || ( ( v1->var_sort_index() == v2->var_sort_index() ) && ( v1->name() < v2->name() ) ); } );
 	} else { // Just sort by type and order (faster)
-		std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->state_order() < v2->state_order(); } );
+		std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->var_sort_index() < v2->var_sort_index(); } );
 	}
 }
 

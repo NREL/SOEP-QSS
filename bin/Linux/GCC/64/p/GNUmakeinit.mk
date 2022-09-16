@@ -5,7 +5,7 @@
 # Platform: Linux/GCC/64/p
 
 # Variables
-CXXFLAGS := -pipe -std=c++17 -pedantic -Wall -Wextra -Wno-unknown-pragmas -m64 -march=native -pthread -fPIC -DQSS_FMU -DNDEBUG -fopenmp -O3 -fno-stack-protector -finline-limit=2000 -pg
+CXXFLAGS := -pipe -std=c++20 -pedantic -Wall -Wextra -Wno-unknown-pragmas -m64 -march=native -pthread -fPIC -DNDEBUG -fopenmp -O3 -fno-stack-protector -finline-limit=2000 -pg
 CXXFLAGS += -Wno-unused-function -Wno-unused-parameter # For FMIL
 CXXFLAGS += -Wno-unused-variable # FMI status flags are assert checked
 CFLAGS := -pipe -std=c11 -pedantic -Wall -Wextra -Wno-unknown-pragmas -m64 -march=native -pthread -fPIC -DNDEBUG -fopenmp -O3 -fno-stack-protector -pg

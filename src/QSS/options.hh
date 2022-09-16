@@ -259,7 +259,6 @@ private: // Data
 }; // DepSpecs
 
 extern QSS qss; // QSS method: (x)(LI)QSS(1|2|3)
-extern bool eidd; // Use event indicator directional derivatives?
 extern double rTol; // Relative tolerance
 extern double aTol; // Absolute tolerance
 extern double aFac; // Absolute tolerance factor
@@ -295,7 +294,6 @@ extern std::size_t pass; // Pass count limit
 extern bool cycles; // Report dependency cycles?
 extern bool inflection; // Requantize at inflections?
 extern bool refine; // Refine FMU zero-crossing roots?
-extern bool prune; // Prune variables with no observers?
 extern bool perfect; // Perfect FMU-ME connection sync?
 extern bool stiff; // Stiffness detection/report?
 extern bool steps; // Generate requantization step count file?
@@ -303,7 +301,6 @@ extern LogLevel log; // Logging level
 extern InpFxn fxn; // Map from input variables to function specs
 extern InpOut con; // Map from input variables to output variables
 extern DepSpecs dep; // Additional forward dependencies
-extern DepSpecs rdep; // Additional reverse dependencies
 extern std::string out; // Outputs: r, a, s, x, q, f
 extern bool csv; // CSV results file?
 extern std::pair< double, double > tLoc; // Local output time range (s)
@@ -313,7 +310,6 @@ extern Models models; // Name of model(s) or FMU(s)
 namespace specified {
 
 extern bool qss; // QSS method specified?
-extern bool eidd; // Event indicators directional derivative specified?
 extern bool rTol; // Relative tolerance specified?
 extern bool aTol; // Absolute tolerance specified?
 extern bool zTol; // Zero-crossing tolerance specified?

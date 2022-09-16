@@ -66,8 +66,8 @@ def fmu_qss_gen():
     parser.add_argument( '--tEnd', help = 'simulation end time  [FMU]', type = float )
     args = parser.parse_args()
     args.qss = args.qss.upper()
-    if args.qss not in ( 'QSS1', 'QSS2', 'QSS3', 'LIQSS1', 'LIQSS2', 'LIQSS3', 'xQSS1', 'xQSS2', 'xQSS3' ):
-        print( '\nUnsupported QSS method: ' + args.qss + ': Must be one of QSS1, QSS2, QSS3, LIQSS1, LIQSS2, LIQSS3, xQSS1, xQSS2, xQSS3' )
+    if args.qss not in ( 'QSS1', 'QSS2', 'QSS3', 'LIQSS1', 'LIQSS2', 'LIQSS3' ):
+        print( '\nUnsupported QSS method: ' + args.qss + ': Must be one of QSS1, QSS2, QSS3, LIQSS1, LIQSS2, LIQSS3' )
         sys.exit( 1 )
     if ( args.rTol is not None ) and ( args.rTol < 0.0 ):
         print( '\nNegative rTol: ' + "{:.16f}".format( args.rTol ) )
