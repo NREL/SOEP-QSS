@@ -1368,15 +1368,6 @@ namespace QSS {
 		dependency_graph << "}\n";
 		dependency_graph.close();
 
-		// Warn about any R|ZC -> R dependencies that aren't supported yet for directional derivatives
-		for ( Variable const * var : vars ) {
-			if ( var->is_R() || var->is_ZC() ) {
-				for ( Variable const * observee : var->observees() ) {
-					if ( observee->is_R() ) std::cerr << "\nWarning: Directional derivatives don't yet support dependency of " << ( var->is_R() ? "real" : "event indicator" ) << " variable " << var->name() << " on real variable: " << observee->name() << std::endl;
-				}
-			}
-		}
-
 		// Size checks
 		if ( n_state_vars != n_states ) {
 			std::cerr << "\nError: Number of state variables found (" << n_state_vars << ") is not equal to number in FMU-ME (" << n_states << ')' << std::endl;
@@ -1585,8 +1576,8 @@ namespace QSS {
 		init_2_2();
 		init_3_1();
 		init_deferred();
-		init_F();
 		init_ZC();
+		init_F();
 		init_t0();
 		init_pre_simulate();
 	}
@@ -1696,17 +1687,6 @@ namespace QSS {
 		}
 	}
 
-	// Initialization: Stage Final
-	void
-	FMU_ME::
-	init_F()
-	{
-		std::cout << '\n' + name + " Initialization: Stage Final =====" << std::endl;
-		for ( auto var : vars_NC ) {
-			var->init_F();
-		}
-	}
-
 	// Initialization: Stage ZC
 	void
 	FMU_ME::
@@ -1715,6 +1695,17 @@ namespace QSS {
 		std::cout << '\n' + name + " Initialization: Stage ZC =====" << std::endl;
 		for ( auto var : vars_ZC ) {
 			var->init();
+		}
+	}
+
+	// Initialization: Stage Final
+	void
+	FMU_ME::
+	init_F()
+	{
+		std::cout << '\n' + name + " Initialization: Stage Final =====" << std::endl;
+		for ( auto var : vars_NC ) {
+			var->init_F();
 		}
 	}
 
@@ -1737,7 +1728,9 @@ namespace QSS {
 	init_pre_simulate()
 	{
 		// Initialize Conditional observers
-		for ( Conditional< Variable > * con : cons ) con->init_observers();
+		for ( Conditional< Variable > * con : cons ) {
+			con->init_observers();
+		}
 
 		// Dependency cycle detection: After observers set up
 		if ( options::cycles ) cycles< Variable >( vars );

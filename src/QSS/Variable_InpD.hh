@@ -127,6 +127,13 @@ public: // Methods
 		s_ = f_( tQ );
 		fmu_set_real( x_ = s_.x0 );
 		tD = s_.tD;
+	}
+
+	// Initialization: Stage Final
+	void
+	init_F() override
+	{
+		init_observers_F();
 		add_discrete( tD );
 		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << std::endl;
 	}

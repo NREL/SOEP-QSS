@@ -164,6 +164,13 @@ public: // Methods
 		x_2_ = one_half * s_.x2;
 		x_3_ = one_sixth * s_.x3;
 		tD = s_.tD;
+	}
+
+	// Initialization: Stage Final
+	void
+	init_F() override
+	{
+		init_observers_F();
 		set_qTol();
 		set_tE();
 		( tE < tD ) ? add_QSS_Inp( tE ) : add_discrete( tD );

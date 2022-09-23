@@ -401,13 +401,13 @@ public: // Simulation Methods
 	void
 	init_deferred();
 
-	// Initialization: Stage Final
-	void
-	init_F();
-
 	// Initialization: Stage ZC
 	void
 	init_ZC();
+
+	// Initialization: Stage Final
+	void
+	init_F();
 
 	// Initialization: Stage Set State to t0
 	void

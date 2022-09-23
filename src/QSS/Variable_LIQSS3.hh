@@ -235,6 +235,7 @@ public: // Methods
 	void
 	init_F() override
 	{
+		init_observers_F();
 		set_tE_aligned();
 		add_QSS( tE );
 		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;

@@ -188,6 +188,13 @@ public: // Methods
 		set_up( true );
 	}
 
+	// Initialize for Observers of a Single Variable: Final
+	void
+	init_F()
+	{
+		set_up_F();
+	}
+
 	// Set up for Current Observers
 	void
 	set_up( bool const recover = false )
@@ -226,6 +233,16 @@ public: // Methods
 
 		// Observees setup
 		set_observees();
+	}
+
+	// Set up for Current Observers: Final
+	void
+	set_up_F()
+	{
+		if ( observers_.empty() ) return;
+
+		// Directional deriviative observees setup
+		set_dd_observees();
 	}
 
 	// Assign a Triggers Collection
@@ -587,14 +604,6 @@ private: // Methods
 					uniquify( r3_observees_ );
 				}
 			}
-
-			// Observee directional derivative seed array set up
-			r_observees_v_ref_.clear();
-			r_observees_dv_.clear();
-			for ( auto observee : r_observees_ ) {
-				r_observees_v_ref_.push_back( observee->var().ref() );
-				r_observees_dv_.push_back( 0.0 );
-			}
 		}
 
 		// // Other X-based observer observees set up // We don't currently do observee operation pooling for these observers
@@ -645,13 +654,50 @@ private: // Methods
 					uniquify( zc3_observees_ );
 				}
 			}
+		}
+	}
 
-			// Observee directional derivative seed array set up
-			zc_observees_v_ref_.clear();
-			zc_observees_dv_.clear();
-			for ( auto observee : zc_observees_ ) {
-				zc_observees_v_ref_.push_back( observee->var().ref() );
-				zc_observees_dv_.push_back( 0.0 );
+	// Set Up Observers' Directional Derivative Observees
+	void
+	set_dd_observees()
+	{
+		// Real observer directional derivative observees set up
+		if ( r_.have() ) {
+			r_dd_observees_.clear();
+			for ( size_type i = r_.b(), e = r_.e(); i < e; ++i ) {
+				Variable * observer( observers_[ i ] );
+				for ( auto observee : observer->dd_observees() ) {
+					r_dd_observees_.push_back( observee );
+				}
+			}
+			uniquify( r_dd_observees_ );
+
+			// Directional derivative observee seed array set up
+			r_dd_observees_v_ref_.clear();
+			r_dd_observees_dv_.clear();
+			for ( auto observee : r_dd_observees_ ) {
+				r_dd_observees_v_ref_.push_back( observee->var().ref() );
+				r_dd_observees_dv_.push_back( 0.0 ); // Actual values assigned when getting directional derivatives
+			}
+		}
+
+		// Zero-crossing observer directional derivative observees set up
+		if ( zc_.have() ) {
+			zc_dd_observees_.clear();
+			for ( size_type i = zc_.b(), e = zc_.e(); i < e; ++i ) {
+				Variable * observer( observers_[ i ] );
+				for ( auto observee : observer->dd_observees() ) {
+					zc_dd_observees_.push_back( observee );
+				}
+			}
+			uniquify( zc_dd_observees_ );
+
+			// Directional derivative observee seed array set up
+			zc_dd_observees_v_ref_.clear();
+			zc_dd_observees_dv_.clear();
+			for ( auto observee : zc_dd_observees_ ) {
+				zc_dd_observees_v_ref_.push_back( observee->var().ref() );
+				zc_dd_observees_dv_.push_back( 0.0 ); // Actual values assigned when getting directional derivatives
 			}
 		}
 	}
@@ -746,17 +792,20 @@ private: // Methods
 		for ( Variable * observee : r_observees_ ) {
 			observee->fmu_set_x( t );
 		}
+		for ( Variable * observee : r_dd_observees_ ) {
+			observee->fmu_set_x( t );
+		}
 		fmu_me_->get_reals( r_.n(), &r_vars_.refs[ 0 ], &r_vars_.vals[ 0 ] );
-		for ( size_type i = 0, e = r_observees_.size(); i < e; ++i ) {
-			r_observees_dv_[ i ] = r_observees_[ i ]->x1( t );
+		for ( size_type i = 0, e = r_dd_observees_.size(); i < e; ++i ) {
+			r_dd_observees_dv_[ i ] = r_dd_observees_[ i ]->x1( t );
 		}
 		fmu_me_->get_directional_derivatives(
-			r_observees_v_ref_.data(),
-			r_observees_v_ref_.size(),
-			r_vars_.refs.data(),
-			r_vars_.refs.size(),
-			r_observees_dv_.data(),
-			r_vars_.ders.data()
+		 r_dd_observees_v_ref_.data(),
+		 r_dd_observees_v_ref_.size(),
+		 r_vars_.refs.data(),
+		 r_vars_.refs.size(),
+		 r_dd_observees_dv_.data(),
+		 r_vars_.ders.data()
 		);
 		for ( size_type i = r_.b(), j = 0, e = r_.e(); i < e; ++i, ++j ) {
 			assert( observers_[ i ]->is_R() );
@@ -769,32 +818,38 @@ private: // Methods
 				for ( Variable * observee : r_uni_order_ ? r_observees_ : r2_observees_ ) {
 					observee->fmu_set_x( tN );
 				}
-				for ( size_type i = 0, e = r_observees_.size(); i < e; ++i ) {
-					r_observees_dv_[ i ] = r_observees_[ i ]->x1( tN );
+				for ( Variable * observee : r_dd_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				for ( size_type i = 0, e = r_dd_observees_.size(); i < e; ++i ) {
+					r_dd_observees_dv_[ i ] = r_dd_observees_[ i ]->x1( tN );
 				}
 				fmu_me_->get_directional_derivatives(
-				r_observees_v_ref_.data(),
-				r_observees_v_ref_.size(),
-				r_vars_.refs.data(),
-				r_vars_.refs.size(),
-				r_observees_dv_.data(),
-				r_vars_.ders_m.data()
+				 r_dd_observees_v_ref_.data(),
+				 r_dd_observees_v_ref_.size(),
+				 r_vars_.refs.data(),
+				 r_vars_.refs.size(),
+				 r_dd_observees_dv_.data(),
+				 r_vars_.ders_m.data()
 				);
 				tN = t + options::dtND;
 				fmu_me_->set_time( tN );
 				for ( Variable * observee : r_uni_order_ ? r_observees_ : r2_observees_ ) {
 					observee->fmu_set_x( tN );
 				}
-				for ( size_type i = 0, e = r_observees_.size(); i < e; ++i ) {
-					r_observees_dv_[ i ] = r_observees_[ i ]->x1( tN );
+				for ( Variable * observee : r_dd_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				for ( size_type i = 0, e = r_dd_observees_.size(); i < e; ++i ) {
+					r_dd_observees_dv_[ i ] = r_dd_observees_[ i ]->x1( tN );
 				}
 				fmu_me_->get_directional_derivatives(
-				r_observees_v_ref_.data(),
-				r_observees_v_ref_.size(),
-				r_vars_.refs.data(),
-				r_vars_.refs.size(),
-				r_observees_dv_.data(),
-				r_vars_.ders_p.data()
+				 r_dd_observees_v_ref_.data(),
+				 r_dd_observees_v_ref_.size(),
+				 r_vars_.refs.data(),
+				 r_vars_.refs.size(),
+				 r_dd_observees_dv_.data(),
+				 r_vars_.ders_p.data()
 				);
 				size_type const r2_bo( r2_.b() - r_.b() );
 				for ( size_type i = r2_.b(), j = r2_bo, e = r_.e(); i < e; ++i, ++j ) { // Order 2+ observers
@@ -809,32 +864,38 @@ private: // Methods
 				for ( Variable * observee : r_uni_order_ ? r_observees_ : r2_observees_ ) {
 					observee->fmu_set_x( tN );
 				}
-				for ( size_type i = 0, e = r_observees_.size(); i < e; ++i ) {
-					r_observees_dv_[ i ] = r_observees_[ i ]->x1( tN );
+				for ( Variable * observee : r_dd_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				for ( size_type i = 0, e = r_dd_observees_.size(); i < e; ++i ) {
+					r_dd_observees_dv_[ i ] = r_dd_observees_[ i ]->x1( tN );
 				}
 				fmu_me_->get_directional_derivatives(
-				r_observees_v_ref_.data(),
-				r_observees_v_ref_.size(),
-				r_vars_.refs.data(),
-				r_vars_.refs.size(),
-				r_observees_dv_.data(),
-				r_vars_.ders_m.data()
+				 r_dd_observees_v_ref_.data(),
+				 r_dd_observees_v_ref_.size(),
+				 r_vars_.refs.data(),
+				 r_vars_.refs.size(),
+				 r_dd_observees_dv_.data(),
+				 r_vars_.ders_m.data()
 				);
 				tN = t + options::two_dtND;
 				fmu_me_->set_time( tN );
 				for ( Variable * observee : r_uni_order_ ? r_observees_ : r2_observees_ ) {
 					observee->fmu_set_x( tN );
 				}
-				for ( size_type i = 0, e = r_observees_.size(); i < e; ++i ) {
-					r_observees_dv_[ i ] = r_observees_[ i ]->x1( tN );
+				for ( Variable * observee : r_dd_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				for ( size_type i = 0, e = r_dd_observees_.size(); i < e; ++i ) {
+					r_dd_observees_dv_[ i ] = r_dd_observees_[ i ]->x1( tN );
 				}
 				fmu_me_->get_directional_derivatives(
-				r_observees_v_ref_.data(),
-				r_observees_v_ref_.size(),
-				r_vars_.refs.data(),
-				r_vars_.refs.size(),
-				r_observees_dv_.data(),
-				r_vars_.ders_p.data()
+				 r_dd_observees_v_ref_.data(),
+				 r_dd_observees_v_ref_.size(),
+				 r_vars_.refs.data(),
+				 r_vars_.refs.size(),
+				 r_dd_observees_dv_.data(),
+				 r_vars_.ders_p.data()
 				);
 				size_type const r2_bo( r2_.b() - r_.b() );
 				for ( size_type i = r2_.b(), j = r2_bo, e = r_.e(); i < e; ++i, ++j ) { // Order 2+ observers
@@ -851,16 +912,19 @@ private: // Methods
 			for ( Variable * observee : r_uni_order_ ? r_observees_ : r2_observees_ ) {
 				observee->fmu_set_x( tN );
 			}
-			for ( size_type i = 0, e = r_observees_.size(); i < e; ++i ) {
-				r_observees_dv_[ i ] = r_observees_[ i ]->x1( tN );
+			for ( Variable * observee : r_dd_observees_ ) {
+				observee->fmu_set_x( tN );
+			}
+			for ( size_type i = 0, e = r_dd_observees_.size(); i < e; ++i ) {
+				r_dd_observees_dv_[ i ] = r_dd_observees_[ i ]->x1( tN );
 			}
 			fmu_me_->get_directional_derivatives(
-				r_observees_v_ref_.data(),
-				r_observees_v_ref_.size(),
-				r_vars_.refs.data(),
-				r_vars_.refs.size(),
-				r_observees_dv_.data(),
-				r_vars_.ders_p.data()
+			 r_dd_observees_v_ref_.data(),
+			 r_dd_observees_v_ref_.size(),
+			 r_vars_.refs.data(),
+			 r_vars_.refs.size(),
+			 r_dd_observees_dv_.data(),
+			 r_vars_.ders_p.data()
 			);
 			size_type const r2_bo( r2_.b() - r_.b() );
 			for ( size_type i = r2_.b(), j = r2_bo, e = r_.e(); i < e; ++i, ++j ) { // Order 2+ observers
@@ -927,17 +991,20 @@ private: // Methods
 		for ( Variable * observee : zc_observees_ ) {
 			observee->fmu_set_x( t );
 		}
+		for ( Variable * observee : zc_dd_observees_ ) {
+			observee->fmu_set_x( t );
+		}
 		fmu_me_->get_reals( zc_.n(), &zc_vars_.refs[ 0 ], &zc_vars_.vals[ 0 ] );
-		for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
-			zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( t );
+		for ( size_type i = 0, e = zc_dd_observees_.size(); i < e; ++i ) {
+			zc_dd_observees_dv_[ i ] = zc_dd_observees_[ i ]->x1( t );
 		}
 		fmu_me_->get_directional_derivatives(
-			zc_observees_v_ref_.data(),
-			zc_observees_v_ref_.size(),
-			zc_vars_.refs.data(),
-			zc_vars_.refs.size(),
-			zc_observees_dv_.data(),
-			zc_vars_.ders.data()
+		 zc_dd_observees_v_ref_.data(),
+		 zc_dd_observees_v_ref_.size(),
+		 zc_vars_.refs.data(),
+		 zc_vars_.refs.size(),
+		 zc_dd_observees_dv_.data(),
+		 zc_vars_.ders.data()
 		);
 		for ( size_type i = zc_.b(), j = 0, e = zc_.e(); i < e; ++i, ++j ) {
 			assert( observers_[ i ]->is_ZC() );
@@ -950,32 +1017,38 @@ private: // Methods
 				for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
 					observee->fmu_set_x( tN );
 				}
-				for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
-					zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( tN );
+				for ( Variable * observee : zc_dd_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				for ( size_type i = 0, e = zc_dd_observees_.size(); i < e; ++i ) {
+					zc_dd_observees_dv_[ i ] = zc_dd_observees_[ i ]->x1( tN );
 				}
 				fmu_me_->get_directional_derivatives(
-				zc_observees_v_ref_.data(),
-				zc_observees_v_ref_.size(),
-				zc_vars_.refs.data(),
-				zc_vars_.refs.size(),
-				zc_observees_dv_.data(),
-				zc_vars_.ders_m.data()
+				 zc_dd_observees_v_ref_.data(),
+				 zc_dd_observees_v_ref_.size(),
+				 zc_vars_.refs.data(),
+				 zc_vars_.refs.size(),
+				 zc_dd_observees_dv_.data(),
+				 zc_vars_.ders_m.data()
 				);
 				tN = t + options::dtND;
 				fmu_me_->set_time( tN );
 				for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
 					observee->fmu_set_x( tN );
 				}
-				for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
-					zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( tN );
+				for ( Variable * observee : zc_dd_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				for ( size_type i = 0, e = zc_dd_observees_.size(); i < e; ++i ) {
+					zc_dd_observees_dv_[ i ] = zc_dd_observees_[ i ]->x1( tN );
 				}
 				fmu_me_->get_directional_derivatives(
-				zc_observees_v_ref_.data(),
-				zc_observees_v_ref_.size(),
-				zc_vars_.refs.data(),
-				zc_vars_.refs.size(),
-				zc_observees_dv_.data(),
-				zc_vars_.ders_p.data()
+				 zc_dd_observees_v_ref_.data(),
+				 zc_dd_observees_v_ref_.size(),
+				 zc_vars_.refs.data(),
+				 zc_vars_.refs.size(),
+				 zc_dd_observees_dv_.data(),
+				 zc_vars_.ders_p.data()
 				);
 				size_type const zc2_bo( zc2_.b() - zc_.b() );
 				for ( size_type i = zc2_.b(), j = zc2_bo, e = zc_.e(); i < e; ++i, ++j ) { // Order 2+ observers
@@ -990,32 +1063,38 @@ private: // Methods
 				for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
 					observee->fmu_set_x( tN );
 				}
-				for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
-					zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( tN );
+				for ( Variable * observee : zc_dd_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				for ( size_type i = 0, e = zc_dd_observees_.size(); i < e; ++i ) {
+					zc_dd_observees_dv_[ i ] = zc_dd_observees_[ i ]->x1( tN );
 				}
 				fmu_me_->get_directional_derivatives(
-				zc_observees_v_ref_.data(),
-				zc_observees_v_ref_.size(),
-				zc_vars_.refs.data(),
-				zc_vars_.refs.size(),
-				zc_observees_dv_.data(),
-				zc_vars_.ders_m.data()
+				 zc_dd_observees_v_ref_.data(),
+				 zc_dd_observees_v_ref_.size(),
+				 zc_vars_.refs.data(),
+				 zc_vars_.refs.size(),
+				 zc_dd_observees_dv_.data(),
+				 zc_vars_.ders_m.data()
 				);
 				tN = t + options::two_dtND;
 				fmu_me_->set_time( tN );
 				for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
 					observee->fmu_set_x( tN );
 				}
-				for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
-					zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( tN );
+				for ( Variable * observee : zc_dd_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				for ( size_type i = 0, e = zc_dd_observees_.size(); i < e; ++i ) {
+					zc_dd_observees_dv_[ i ] = zc_dd_observees_[ i ]->x1( tN );
 				}
 				fmu_me_->get_directional_derivatives(
-				zc_observees_v_ref_.data(),
-				zc_observees_v_ref_.size(),
-				zc_vars_.refs.data(),
-				zc_vars_.refs.size(),
-				zc_observees_dv_.data(),
-				zc_vars_.ders_p.data()
+				 zc_dd_observees_v_ref_.data(),
+				 zc_dd_observees_v_ref_.size(),
+				 zc_vars_.refs.data(),
+				 zc_vars_.refs.size(),
+				 zc_dd_observees_dv_.data(),
+				 zc_vars_.ders_p.data()
 				);
 				size_type const zc2_bo( zc2_.b() - zc_.b() );
 				for ( size_type i = zc2_.b(), j = zc2_bo, e = zc_.e(); i < e; ++i, ++j ) { // Order 2+ observers
@@ -1032,16 +1111,19 @@ private: // Methods
 			for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
 				observee->fmu_set_x( tN );
 			}
-			for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
-				zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( tN );
+			for ( Variable * observee : zc_dd_observees_ ) {
+				observee->fmu_set_x( tN );
+			}
+			for ( size_type i = 0, e = zc_dd_observees_.size(); i < e; ++i ) {
+				zc_dd_observees_dv_[ i ] = zc_dd_observees_[ i ]->x1( tN );
 			}
 			fmu_me_->get_directional_derivatives(
-				zc_observees_v_ref_.data(),
-				zc_observees_v_ref_.size(),
-				zc_vars_.refs.data(),
-				zc_vars_.refs.size(),
-				zc_observees_dv_.data(),
-				zc_vars_.ders_p.data()
+			 zc_dd_observees_v_ref_.data(),
+			 zc_dd_observees_v_ref_.size(),
+			 zc_vars_.refs.data(),
+			 zc_vars_.refs.size(),
+			 zc_dd_observees_dv_.data(),
+			 zc_vars_.ders_p.data()
 			);
 			size_type const zc2_bo( zc2_.b() - zc_.b() );
 			for ( size_type i = zc2_.b(), j = zc2_bo, e = zc_.e(); i < e; ++i, ++j ) { // Order 2+ observers
@@ -1121,12 +1203,14 @@ private: // Data
 	Variables zc3_observees_; // Observers of order 3+ observees
 
 	// Real observers observee directional derivative lookup seed data
-	VariableRefs r_observees_v_ref_; // Observee value references
-	Reals r_observees_dv_; // Observee seed derivatives
+	Variables r_dd_observees_; // Observers directional derivative observees
+	VariableRefs r_dd_observees_v_ref_; // Observers directional derivative observees value references
+	Reals r_dd_observees_dv_; // Observers directional derivative observees seed derivatives
 
 	// Zero-crossing observers observee directional derivative lookup seed data
-	VariableRefs zc_observees_v_ref_; // Observee value references
-	Reals zc_observees_dv_; // Observee seed derivatives
+	Variables zc_dd_observees_; // Observers directional derivative observees
+	VariableRefs zc_dd_observees_v_ref_; // Observers directional derivative observees value references
+	Reals zc_dd_observees_dv_; // Observers directional derivative observees seed derivatives
 
 }; // Observers
 

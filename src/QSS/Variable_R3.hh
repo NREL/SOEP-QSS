@@ -242,6 +242,7 @@ public: // Methods
 	void
 	init_F() override
 	{
+		init_observers_F();
 		set_qTol();
 		set_tE();
 		add_QSS_R( tE );

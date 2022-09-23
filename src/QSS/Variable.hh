@@ -63,6 +63,7 @@
 #include <iostream>
 #include <iterator>
 #include <limits>
+#include <unordered_set>
 #include <vector>
 
 namespace QSS {
@@ -311,6 +312,20 @@ public: // Predicate
 	// Not QSS Variable?
 	bool
 	not_QSS() const
+	{
+		return !is_QSS();
+	}
+
+	// State Variable?
+	bool
+	is_State() const
+	{
+		return is_QSS();
+	}
+
+	// Not State Variable?
+	bool
+	not_State() const
 	{
 		return !is_QSS();
 	}
@@ -647,6 +662,20 @@ public: // Property
 		return observees_;
 	}
 
+	// Directional Derivative Observees
+	Variables const &
+	dd_observees() const
+	{
+		return dd_observees_;
+	}
+
+	// Directional Derivative Observees
+	Variables &
+	dd_observees()
+	{
+		return dd_observees_;
+	}
+
 	// FMU Variable Specs
 	FMU_Variable const &
 	var() const
@@ -760,14 +789,44 @@ public: // Methods
 		observes_ = ( !observees_.empty() );
 		if ( observes_ ) uniquify( observees_, true ); // Sort by address and remove duplicates and recover unused memory
 
-		// FMU directional derivative call argument initialization
-		assert( observees_v_ref_.empty() ); // Initialization shouldn't be called twice for a variable
-		assert( observees_dv_.empty() ); // Initialization shouldn't be called twice for a variable
+		// Directional derivative observees setup
+		std::unordered_set< Variable * > observees_checked;
+		std::unordered_set< Variable * > dd_observee_set;
 		for ( Variable * observee : observees_ ) {
-			observees_v_ref_.push_back( observee->var_.ref() );
-			observees_dv_.push_back( 0.0 );
+			find_dd_observees( observee, observees_checked, dd_observee_set ); // Note: Looks at other variable observees that aren't necessarily uniquified yet but that is OK: Might be more efficient to make this a separate phase after all are uniquified
 		}
-		observees_nv_ = observees_v_ref_.size();
+		assert( dd_observees_.empty() ); // Initialization shouldn't be called twice for a variable
+		dd_observees_.reserve( dd_observee_set.size() );
+		dd_observees_.assign( dd_observee_set.begin(), dd_observee_set.end() ); // Put dd observees in vector
+
+#ifndef NDEBUG
+		// Check for duplicate value references
+		std::vector< VariableRef > dd_observees_refs;
+		dd_observees_refs.reserve( dd_observees_.size() );
+		for ( Variable * observee : dd_observees_ ) {
+			dd_observees_refs.push_back( observee->var_.ref() );
+		}
+		std::sort( dd_observees_refs.begin(), dd_observees_refs.end() );
+		assert( std::adjacent_find( dd_observees_refs.begin(), dd_observees_refs.end() ) == dd_observees_refs.end() ); // No repeat value references
+#endif
+
+		// FMU directional derivative call argument initialization
+		assert( dd_observees_v_ref_.empty() ); // Initialization shouldn't be called twice for a variable
+		assert( dd_observees_dv_.empty() ); // Initialization shouldn't be called twice for a variable
+		dd_observees_nv_ = dd_observees_.size();
+		dd_observees_v_ref_.reserve( dd_observees_nv_ );
+		dd_observees_dv_.reserve( dd_observees_nv_ );
+		for ( Variable * observee : dd_observees_ ) {
+			dd_observees_v_ref_.push_back( observee->var_.ref() );
+			dd_observees_dv_.push_back( 0.0 ); // Actual values assigned when getting directional derivatives
+		}
+	}
+
+	// Initialize Observers Collection: Final
+	void
+	init_observers_F()
+	{
+		observers_.init_F();
 	}
 
 	// Connect
@@ -1679,6 +1738,15 @@ protected: // Methods: FMU
 		}
 	}
 
+	// Set All Directional Derivative Observee FMU Variables to Continuous Value at Time t
+	void
+	fmu_set_dd_observees_x( Time const t ) const
+	{
+		for ( auto observee : dd_observees_ ) {
+			observee->fmu_set_x( t );
+		}
+	}
+
 	// Set All Observee FMU Variables to Quantized Value at Time t
 	void
 	fmu_set_observees_q( Time const t ) const
@@ -1816,14 +1884,15 @@ protected: // Methods: FMU
 	{
 		assert( is_ZC() );
 		assert( fmu_me_ != nullptr );
-		assert( observees_nv_ == observees_v_ref_.size() );
-		assert( observees_nv_ == observees_dv_.size() );
-		assert( observees_nv_ == observees_.size() ); // ZC variables can't be self-observers
-		for ( Variables::size_type i = 0, e = observees_.size(); i < e; ++i ) { // Get observee derivatives
-			observees_dv_[ i ] = observees_[ i ]->x1( tQ );
-		}
+		assert( dd_observees_nv_ == dd_observees_v_ref_.size() );
+		assert( dd_observees_nv_ == dd_observees_dv_.size() );
+		assert( dd_observees_nv_ == dd_observees_.size() ); // ZC variables can't be self-observers
 		fmu_set_observees_x( tQ ); // Modelon indicates that observee state matters for Jacobian computation
-		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var_.ref(), observees_dv_.data() );
+		fmu_set_dd_observees_x( tQ ); // Modelon indicates that observee state matters for Jacobian computation
+		for ( Variables::size_type i = 0, e = dd_observees_.size(); i < e; ++i ) { // Get observee derivatives
+			dd_observees_dv_[ i ] = dd_observees_[ i ]->x1( tQ );
+		}
+		return fmu_me_->get_directional_derivative( dd_observees_v_ref_.data(), dd_observees_nv_, var_.ref(), dd_observees_dv_.data() );
 	}
 
 	// Coefficient 1 from FMU at Time t: X-Based ZC with Directional First Derivative
@@ -1832,14 +1901,15 @@ protected: // Methods: FMU
 	{
 		assert( is_ZC() );
 		assert( fmu_me_ != nullptr );
-		assert( observees_nv_ == observees_v_ref_.size() );
-		assert( observees_nv_ == observees_dv_.size() );
-		assert( observees_nv_ == observees_.size() ); // ZC variables can't be self-observers
-		for ( Variables::size_type i = 0, e = observees_.size(); i < e; ++i ) { // Get observee derivatives
-			observees_dv_[ i ] = observees_[ i ]->x1( t );
-		}
+		assert( dd_observees_nv_ == dd_observees_v_ref_.size() );
+		assert( dd_observees_nv_ == dd_observees_dv_.size() );
+		assert( dd_observees_nv_ == dd_observees_.size() ); // ZC variables can't be self-observers
 		fmu_set_observees_x( t ); // Modelon indicates that observee state matters for Jacobian computation
-		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var_.ref(), observees_dv_.data() );
+		fmu_set_dd_observees_x( t ); // Modelon indicates that observee state matters for Jacobian computation
+		for ( Variables::size_type i = 0, e = dd_observees_.size(); i < e; ++i ) { // Get observee derivatives
+			dd_observees_dv_[ i ] = dd_observees_[ i ]->x1( t );
+		}
+		return fmu_me_->get_directional_derivative( dd_observees_v_ref_.data(), dd_observees_nv_, var_.ref(), dd_observees_dv_.data() );
 	}
 
 	// Coefficient 1 from FMU at Time tQ: X-Based with Directional First Derivative
@@ -1848,15 +1918,16 @@ protected: // Methods: FMU
 	{
 		assert( is_R() );
 		assert( fmu_me_ != nullptr );
-		assert( observees_nv_ == observees_v_ref_.size() );
-		assert( observees_nv_ == observees_dv_.size() );
-		assert( observees_nv_ == observees_.size() ); // Self-observee not used with directional derivatives
-		for ( Variables::size_type i = 0, e = observees_.size(); i < e; ++i ) { // Get observee derivatives
-			observees_dv_[ i ] = observees_[ i ]->x1( tQ );
-		}
+		assert( dd_observees_nv_ == dd_observees_v_ref_.size() );
+		assert( dd_observees_nv_ == dd_observees_dv_.size() );
+		assert( dd_observees_nv_ == dd_observees_.size() ); // Self-observee not used with directional derivatives
 		fmu_set_observees_x( tQ ); // Modelon indicates that observee state matters for Jacobian computation
 		if ( self_observer_ ) fmu_set_x( tQ );
-		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var_.ref(), observees_dv_.data() );
+		fmu_set_dd_observees_x( tQ ); // Modelon indicates that observee state matters for Jacobian computation
+		for ( Variables::size_type i = 0, e = dd_observees_.size(); i < e; ++i ) { // Get observee derivatives
+			dd_observees_dv_[ i ] = dd_observees_[ i ]->x1( tQ );
+		}
+		return fmu_me_->get_directional_derivative( dd_observees_v_ref_.data(), dd_observees_nv_, var_.ref(), dd_observees_dv_.data() );
 	}
 
 	// Coefficient 1 from FMU at Time t: X-Based with Directional First Derivative
@@ -1865,15 +1936,16 @@ protected: // Methods: FMU
 	{
 		assert( is_R() );
 		assert( fmu_me_ != nullptr );
-		assert( observees_nv_ == observees_v_ref_.size() );
-		assert( observees_nv_ == observees_dv_.size() );
-		assert( observees_nv_ == observees_.size() ); // Self-observee not used with directional derivatives
-		for ( Variables::size_type i = 0, e = observees_.size(); i < e; ++i ) { // Get observee derivatives
-			observees_dv_[ i ] = observees_[ i ]->x1( t );
-		}
+		assert( dd_observees_nv_ == dd_observees_v_ref_.size() );
+		assert( dd_observees_nv_ == dd_observees_dv_.size() );
+		assert( dd_observees_nv_ == dd_observees_.size() ); // Self-observee not used with directional derivatives
 		fmu_set_observees_x( t ); // Modelon indicates that observee state matters for Jacobian computation
 		if ( self_observer_ ) fmu_set_x( t );
-		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var_.ref(), observees_dv_.data() );
+		fmu_set_dd_observees_x( t ); // Modelon indicates that observee state matters for Jacobian computation
+		for ( Variables::size_type i = 0, e = dd_observees_.size(); i < e; ++i ) { // Get observee derivatives
+			dd_observees_dv_[ i ] = dd_observees_[ i ]->x1( t );
+		}
+		return fmu_me_->get_directional_derivative( dd_observees_v_ref_.data(), dd_observees_nv_, var_.ref(), dd_observees_dv_.data() );
 	}
 
 	// Coefficient 2 from FMU: Given Derivative
@@ -1958,6 +2030,29 @@ protected: // Methods
 		}
 	}
 
+private: // Methods
+
+	// Find Directional Derivative Seed Observees
+	void
+	find_dd_observees(
+	 Variable * observee,
+	 std::unordered_set< Variable * > & observees_checked,
+	 std::unordered_set< Variable * > & dd_observee_set
+	)
+	{
+		if ( observees_checked.find( observee ) != observees_checked.end() ) { // Observee already processed
+			// Skip
+		} else if ( ( observee->is_state() ) || ( observee->is_Input() ) ) { // State or input: Can be a directional derivative seed
+			dd_observee_set.insert( observee );
+			observees_checked.insert( observee );
+		} else { // Traverse dependency sub-graph until states or inputs reached
+			observees_checked.insert( observee );
+			for ( Variable * oo : observee->observees_ ) { // Recurse
+				find_dd_observees( oo, observees_checked, dd_observee_set );
+			}
+		}
+	}
+
 private: // Data
 
 	int order_{ 0 }; // Method order
@@ -1996,9 +2091,10 @@ private: // Data
 	bool observes_{ false }; // Has observees?
 
 	// Observees: Directional Derivatives
-	VariableRefs observees_v_ref_; // Observee value references for FMU directional derivative
-	mutable Reals observees_dv_; // Observee derivatives for FMU directional derivative lookup
-	std::size_t observees_nv_{ 0u }; // Observee count for FMU directional derivative lookup
+	Variables dd_observees_; // Directional derivative observees: State and input variables only
+	VariableRefs dd_observees_v_ref_; // Observee value references for FMU directional derivative
+	mutable Reals dd_observees_dv_; // Observee derivatives for FMU directional derivative lookup
+	std::size_t dd_observees_nv_{ 0u }; // Observee count for FMU directional derivative lookup
 
 	// Connections
 	Variable_Cons connections_; // Input connection variables this one outputs to

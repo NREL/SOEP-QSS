@@ -200,6 +200,7 @@ public: // Methods
 	void
 	init_F() override
 	{
+		init_observers_F();
 		if ( self_observer() ) {
 			q_0_ = l_0_;
 			q_1_ = x_1_;

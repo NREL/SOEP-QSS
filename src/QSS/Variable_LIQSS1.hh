@@ -169,6 +169,7 @@ public: // Methods
 	void
 	init_F() override
 	{
+		init_observers_F();
 		set_tE_aligned();
 		add_QSS( tE );
 		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]" << "   = " << x_0_ << x_1_ << x_delta << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;

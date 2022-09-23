@@ -184,7 +184,15 @@ variables_observers( Variables & triggers, Variables & observers )
 	sort_by_order( triggers );
 }
 
-// Remove Elements of a Container with a Value
+// Vector Has a Value?
+template< typename T >
+bool
+vector_has( std::vector< T > const & c, T const & t )
+{
+	return std::find( c.begin(), c.end(), t ) != c.end();
+}
+
+// Remove Elements of a Vector with a Value
 template< typename T >
 void
 vector_remove_value( std::vector< T > & c, T const & t )
@@ -193,7 +201,7 @@ vector_remove_value( std::vector< T > & c, T const & t )
 	if ( i != c.end() ) c.erase( i );
 }
 
-// Nullify Elements of a Container with a Value
+// Nullify Elements of a Vector with a Value
 template< typename T >
 void
 vector_nullify_value( std::vector< T > & c, T const & t )
@@ -202,7 +210,7 @@ vector_nullify_value( std::vector< T > & c, T const & t )
 	if ( i != c.end() ) *i = nullptr;
 }
 
-// Remove Elements of a Container with a Value
+// Remove Elements of a Vector with a Value
 template< class C, typename T >
 void
 map_remove_value( C & c, T const & t )

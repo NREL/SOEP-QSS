@@ -155,6 +155,13 @@ public: // Methods
 		s_ = f_( tQ );
 		fmu_set_boolean( x_ = ( s_.x0 != 0.0 ) );
 		tD = s_.tD;
+	}
+
+	// Initialization: Stage Final
+	void
+	init_F() override
+	{
+		init_observers_F();
 		add_discrete( tD );
 		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << std::endl;
 	}

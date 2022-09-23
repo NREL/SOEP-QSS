@@ -183,6 +183,7 @@ public: // Methods
 	void
 	init_F() override
 	{
+		init_observers_F();
 		add_handler();
 		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << x_ << std::endl;
 	}
