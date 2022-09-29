@@ -183,7 +183,7 @@ cycles( typename Variable::Variables const & vars )
 	}
 }
 
-} // cod
+} // fmu
 } // QSS
 
 #endif

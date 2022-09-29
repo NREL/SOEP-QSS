@@ -40,6 +40,7 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <cstddef>
 #include <cmath>
 #include <limits>
 #include <type_traits>
@@ -362,13 +363,13 @@ struct Root
 	Root(
 	 T const x_,
 	 T const v_,
-	 T const zTol_
+	 T const zTol
 	) :
 	 x( x_ ),
 	 v( v_ ),
-	 valid( std::abs( v ) <= zTol_ )
+	 valid( std::abs( v ) <= zTol )
 	{
-		assert( zTol_ >= T( 0 ) );
+		assert( zTol >= T( 0 ) );
 	}
 
 	// bool Conversion
