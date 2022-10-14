@@ -264,7 +264,7 @@ public: // Methods
 		set_tZ( tZ_last = tZ ); // Next zero-crossing: Might be in active segment
 		( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 		fixup_tE();
-		if ( options::output::d ) std::cout << "Z  " << name() << '(' << tZ_last << ')' << "   tZ=" << tZ << std::endl;
+		if ( options::output::d ) std::cout << "Z  " << name() << '(' << tZ_last << ')' << "   tE=" << tE << "   tZ=" << tZ << std::endl;
 	}
 
 	// Observer Advance
@@ -425,7 +425,7 @@ private: // Methods
 		// Find root of continuous rep: Only robust for small active segments with continuous rep close to function
 		Time const dB( tB - tX );
 		assert( dB >= 0.0 );
-		Real const x_0( tB == tZ_last ? 0.0 : x_0_ + ( x_1_ * dB ) + ( x_2_ * square( dB ) ) );
+		Real const x_0( ( tB == tZ_last ) && !( handler_modified_ = ( fmu_get_real() != x_0_bump_ ) ) ? 0.0 : x_0_ + ( x_1_ * dB ) + ( x_2_ * square( dB ) ) );
 		Real const x_1( x_1_ + ( two * x_2_ * dB ) );
 		Time const dt( zc_root_cubic( x_3_, x_2_, x_1, x_0, zTol, x_mag_ ) ); // Positive root using trajectory shifted to tB
 		assert( dt > 0.0 );
@@ -455,7 +455,7 @@ private: // Methods
 			if ( ( !check_crossing_ ) || ( sign_old_ == sign_new ) ) { // Don't check for crossing
 				set_tZ();
 				( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
-			} else { // Check zero-crossing
+			} else { // Check for crossing
 				Crossing const crossing_check( crossing_type( sign_old_, sign_new ) );
 				if ( has( crossing_check ) ) { // Crossing type is relevant
 					crossing = crossing_check;

@@ -2130,6 +2130,24 @@ namespace QSS {
 					}
 				} else if ( event.is_handler() ) { // Zero-crossing handler event(s)
 
+					// Pre-zero-crossing time bump to set event indicator state before the crossing so FMU can detect relevant crossings
+
+					Time const t_pre_bump( ( 2.0 * t ) - t_bump ); // Pre-bump time for FMU crossing detection
+					if ( options::output::d ) std::cout << "Zero-crossing handler event(s): Pre-bump time = " << t_pre_bump << std::endl;
+					set_time( t_pre_bump ); // Set FMU to pre-bump time
+					for ( Variable_ZC const * trigger : var_ZCs ) { // Advance zero-crossing variables observees to pre-bump time
+						trigger->bump_time( t_pre_bump );
+					}
+
+					// Get event indicators
+					fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
+					// if ( options::output::d ) {
+					// 	std::cout << "FMU event indicators: Handler event processing start @ t=" << t_pre_bump << std::endl;
+					// 	for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
+					// }
+
+					// Zero-crossing time bump to try and get the FMU to detect relevant crossings
+
 					if ( options::output::d ) std::cout << "Zero-crossing handler event(s): Bump time = " << t_bump << std::endl;
 					set_time( t_bump ); // Set FMU to bump time
 					for ( Variable_ZC const * trigger : var_ZCs ) { // Advance zero-crossing variables observees to bump time
@@ -2137,15 +2155,13 @@ namespace QSS {
 						if ( options::output::d ) std::cout << "  " << trigger->name() << " bump value = " << trigger->fmu_get_real() << std::endl;
 					}
 
-					// Perform FMU event mode handler processing /////
-
 					// Get event indicators
-					std::swap( event_indicators, event_indicators_last );
+					std::swap( event_indicators, event_indicators_last ); // Save previous event indicators for zero crossing check
 					fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
-//					if ( options::output::d ) {
-//						std::cout << "FMU event indicators: Handler event processing start @ t=" << t << std::endl;
-//						for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
-//					}
+					// if ( options::output::d ) {
+					// 	std::cout << "FMU event indicators: Handler event processing start @ t=" << t_bump << std::endl;
+					// 	for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
+					// }
 
 					// Check if an event indicator has triggered
 					bool zero_crossing_event( false );
@@ -2164,10 +2180,10 @@ namespace QSS {
 						fmi2_import_enter_continuous_time_mode( fmu );
 						fmi2_import_get_continuous_states( fmu, states, n_states );
 						fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
-//						if ( options::output::d ) {
-//							std::cout << "FMU event indicators: Handler event processing after event iteration @ t=" << t << std::endl;
-//							for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
-//						}
+						// if ( options::output::d ) {
+						// 	std::cout << "FMU event indicators: Handler event processing after event iteration @ t=" << t << std::endl;
+						// 	for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
+						// }
 					} else {
 						if ( options::output::d ) std::cout << "Zero-crossing does not trigger FMU-ME event at t=" << t << std::endl;
 					}
@@ -2254,10 +2270,8 @@ namespace QSS {
 							if ( options::output::d ) std::cout << "  " << trigger->name() << " re-bump value = " << trigger->fmu_get_real() << std::endl;
 						}
 
-						// Perform FMU event mode handler processing /////
-
 						// Get event indicators
-						std::swap( event_indicators, event_indicators_last );
+						std::swap( event_indicators, event_indicators_last ); // Save previous event indicators for zero crossing check
 						fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 //						if ( options::output::d ) {
 //							std::cout << "FMU event indicators: Handler event processing after re-bump @ t=" << t << std::endl;

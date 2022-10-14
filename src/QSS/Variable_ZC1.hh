@@ -182,7 +182,7 @@ public: // Methods
 		set_tZ( tZ_last = tZ ); // Next zero-crossing: Might be in active segment
 		( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 		fixup_tE();
-		if ( options::output::d ) std::cout << "Z  " << name() << '(' << tZ_last << ')' << "   tZ=" << tZ << std::endl;
+		if ( options::output::d ) std::cout << "Z  " << name() << '(' << tZ_last << ')' << "   tE=" << tE << "   tZ=" << tZ << std::endl;
 	}
 
 	// Observer Advance
@@ -317,7 +317,7 @@ private: // Methods
 			if ( ( !check_crossing_ ) || ( sign_old_ == sign_new ) ) { // Don't check for crossing
 				set_tZ();
 				( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
-			} else { // Check zero-crossing
+			} else { // Check for crossing
 				Crossing const crossing_check( crossing_type( sign_old_, sign_new ) );
 				if ( has( crossing_check ) ) { // Crossing type is relevant
 					crossing = crossing_check;

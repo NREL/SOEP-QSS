@@ -528,6 +528,7 @@ public: // FMU Methods
 	) const
 	{
 		assert( fmu != nullptr );
+		if ( nv == 0u ) return fmi2_real_t( 0.0 ); // No seed => Zero derivative
 		fmi2_real_t dz;
 		fmi2_status_t const fmi_status = fmi2_import_get_directional_derivative( fmu, v_ref, nv, &z_ref, std::size_t( 1u ), dv, &dz );
 		assert( status_check( fmi_status, "get_directional_derivative" ) );
@@ -547,6 +548,10 @@ public: // FMU Methods
 	) const
 	{
 		assert( fmu != nullptr );
+		if ( nv == 0u ) { // No seed => Zero derivatives
+			for ( std::size_t i = 0; i < nz; ++i ) dz[ i ] = fmi2_real_t( 0.0 );
+			return;
+		}
 		fmi2_status_t const fmi_status = fmi2_import_get_directional_derivative( fmu, v_ref, nv, z_ref, nz, dv, dz );
 		assert( status_check( fmi_status, "get_directional_derivatives" ) );
 		(void)fmi_status; // Suppress unused warning

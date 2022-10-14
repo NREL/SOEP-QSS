@@ -796,8 +796,16 @@ public: // Methods
 			find_dd_observees( observee, observees_checked, dd_observee_set ); // Note: Looks at other variable observees that aren't necessarily uniquified yet but that is OK: Might be more efficient to make this a separate phase after all are uniquified
 		}
 		assert( dd_observees_.empty() ); // Initialization shouldn't be called twice for a variable
-		dd_observees_.reserve( dd_observee_set.size() );
-		dd_observees_.assign( dd_observee_set.begin(), dd_observee_set.end() ); // Put dd observees in vector
+		if ( !dd_observee_set.empty() ) {
+			dd_observees_.reserve( dd_observee_set.size() );
+			dd_observees_.assign( dd_observee_set.begin(), dd_observee_set.end() ); // Put dd observees in vector
+			if ( options::output::d ) {
+				std::cout << '\n' << name() << " Directional Derivative Observees:" << std::endl;
+				for ( Variable * dd_observee : dd_observees_ ) {
+					std::cout << ' ' << dd_observee->name() << " (index #" << dd_observee->var_.index() << ')' << std::endl;
+				}
+			}
+		}
 
 #ifndef NDEBUG
 		// Check for duplicate value references
@@ -1773,7 +1781,7 @@ protected: // Methods: FMU
 		assert( is_Boolean() );
 		fmu_set_observees_x( tQ );
 		if ( self_observer_ ) fmu_set_boolean( b( tQ ) );
-		return fmu_me_->get_boolean( var_.ref() );
+		return fmu_get_boolean();
 	}
 
 	// Integer Coefficient 0 from FMU at Time tQ: X-Based
@@ -1783,7 +1791,7 @@ protected: // Methods: FMU
 		assert( is_Integer() );
 		fmu_set_observees_x( tQ );
 		if ( self_observer_ ) fmu_set_integer( i( tQ ) );
-		return fmu_me_->get_integer( var_.ref() );
+		return fmu_get_integer();
 	}
 
 	// Coefficient 0 from FMU: Observees Set
@@ -1791,7 +1799,7 @@ protected: // Methods: FMU
 	p_0() const
 	{
 		assert( fmu_me_ != nullptr );
-		return fmu_me_->get_real( var_.ref() );
+		return fmu_get_real();
 	}
 
 	// Coefficient 0 from FMU at Time tQ: QSS
@@ -1799,6 +1807,7 @@ protected: // Methods: FMU
 	c_0() const
 	{
 		assert( is_QSS() );
+		assert( fmu_get_time() == tQ );
 		fmu_set_observees_s( tQ );
 		if ( self_observer_ ) fmu_set_s( tQ );
 		return p_0();
@@ -1809,6 +1818,7 @@ protected: // Methods: FMU
 	r_0() const
 	{
 		assert( is_R() || ( is_Real() && is_Discrete() ) );
+		assert( fmu_get_time() == tQ );
 		fmu_set_observees_x( tQ );
 		if ( self_observer_ ) fmu_set_x( tQ );
 		return p_0();
@@ -1819,6 +1829,7 @@ protected: // Methods: FMU
 	z_0() const
 	{
 		assert( is_ZC() );
+		assert( fmu_get_time() == tQ );
 		fmu_set_observees_x( tQ );
 		return p_0();
 	}
@@ -1828,6 +1839,7 @@ protected: // Methods: FMU
 	z_0( Time const t ) const
 	{
 		assert( is_ZC() );
+		assert( fmu_get_time() == t );
 		fmu_set_observees_x( t );
 		return p_0();
 	}
@@ -1845,6 +1857,7 @@ protected: // Methods: FMU
 	c_1( Time const t ) const
 	{
 		assert( is_QSS() );
+		assert( fmu_get_time() == t );
 		fmu_set_observees_s( t );
 		if ( self_observer_ ) fmu_set_s( t );
 		return p_1();
@@ -1855,6 +1868,7 @@ protected: // Methods: FMU
 	c_1( Time const t, Real const x_0 ) const
 	{
 		assert( is_QSS() );
+		assert( fmu_get_time() == t );
 		fmu_set_observees_s( t );
 		if ( self_observer_ ) fmu_set_real( x_0 );
 		return p_1();
@@ -1865,6 +1879,7 @@ protected: // Methods: FMU
 	h_1() const
 	{
 		assert( is_QSS() );
+		assert( fmu_get_time() == tQ );
 		fmu_set_observees_s( tQ );
 		return p_1();
 	}
@@ -1874,6 +1889,7 @@ protected: // Methods: FMU
 	h_1( Time const t ) const
 	{
 		assert( is_QSS() );
+		assert( fmu_get_time() == t );
 		fmu_set_observees_s( t );
 		return p_1();
 	}
@@ -1884,6 +1900,7 @@ protected: // Methods: FMU
 	{
 		assert( is_ZC() );
 		assert( fmu_me_ != nullptr );
+		assert( fmu_get_time() == tQ );
 		assert( dd_observees_nv_ == dd_observees_v_ref_.size() );
 		assert( dd_observees_nv_ == dd_observees_dv_.size() );
 		assert( dd_observees_nv_ == dd_observees_.size() ); // ZC variables can't be self-observers
@@ -1901,6 +1918,7 @@ protected: // Methods: FMU
 	{
 		assert( is_ZC() );
 		assert( fmu_me_ != nullptr );
+		assert( fmu_get_time() == t );
 		assert( dd_observees_nv_ == dd_observees_v_ref_.size() );
 		assert( dd_observees_nv_ == dd_observees_dv_.size() );
 		assert( dd_observees_nv_ == dd_observees_.size() ); // ZC variables can't be self-observers
@@ -1918,6 +1936,7 @@ protected: // Methods: FMU
 	{
 		assert( is_R() );
 		assert( fmu_me_ != nullptr );
+		assert( fmu_get_time() == tQ );
 		assert( dd_observees_nv_ == dd_observees_v_ref_.size() );
 		assert( dd_observees_nv_ == dd_observees_dv_.size() );
 		assert( dd_observees_nv_ == dd_observees_.size() ); // Self-observee not used with directional derivatives
@@ -1936,6 +1955,7 @@ protected: // Methods: FMU
 	{
 		assert( is_R() );
 		assert( fmu_me_ != nullptr );
+		assert( fmu_get_time() == t );
 		assert( dd_observees_nv_ == dd_observees_v_ref_.size() );
 		assert( dd_observees_nv_ == dd_observees_dv_.size() );
 		assert( dd_observees_nv_ == dd_observees_.size() ); // Self-observee not used with directional derivatives
