@@ -55,7 +55,7 @@ public: // Creation
 	Variable_InpI(
 	 FMU_ME * fmu_me,
 	 std::string const & name,
-	 Start_Integer const & xIni_ = Start_Integer(),
+	 Integer const xIni_ = 0,
 	 FMU_Variable const var = FMU_Variable(),
 	 Function f = Function()
 	) :

@@ -55,7 +55,7 @@ public: // Creation
 	Variable_B(
 	 FMU_ME * fmu_me,
 	 std::string const & name,
-	 Start_Boolean const & xIni_ = Start_Boolean(),
+	 Boolean const xIni_ = false,
 	 FMU_Variable const var = FMU_Variable()
 	) :
 	 Super( fmu_me, 0, name, xIni_, var ),

@@ -625,7 +625,7 @@ namespace QSS {
 			fmi2_import_variable_t * var( fmu_var.var );
 			fmi2_value_reference_t const var_ref( fmu_var.ref() );
 			std::string const var_name( fmu_var.name() );
-			bool const var_has_start( fmu_var.has_start() );
+			bool const var_has_xml_start( fmu_var.has_start() );
 
 			std::cout << "\nVariable  Index: " << idx << " Ref: " << var_ref << std::endl;
 			std::cout << " Name: " << var_name << std::endl;
@@ -683,18 +683,20 @@ namespace QSS {
 				std::cout << " Type: Real" << std::endl;
 				{
 				fmi2_import_real_variable_t * var_real( fmu_var.rvr );
-				Variable::Start_Real var_start( var_has_start, fmi2_import_get_real_variable_start( var_real ) );
-				if ( var_has_start ) {
-					std::cout << " Start: " << var_start << std::endl;
-					Real const fmu_start( get_real( fmu_var.ref() ) );
-					if ( var_start != fmu_start ) {
+				Real const var_start( get_real( fmu_var.ref() ) );
+				std::cout << " Start: " << var_start << std::endl;
+				Real const xml_start( fmi2_import_get_real_variable_start( var_real ) );
+				if ( var_has_xml_start ) {
+					if ( xml_start != var_start ) {
+						std::cout << " Start: XML: " << xml_start << std::endl;
 						if ( fmu_var.initial_exact() ) {
-							std::cerr << "  Error: Specified start value differs from initial FMU value = " << fmu_start << std::endl;
+							std::cerr << "  Error: Specified exact start value differs from initial FMU value" << std::endl;
 							//! Suppressed pending OCT fix std::exit( EXIT_FAILURE );
-						} else if ( fmu_var.initial_approx() || fmu_var.initial_calculated() ) {
-							std::cerr << "  Note: Specified start value differs from initial FMU value = " << fmu_start << std::endl;
+						} else if ( fmu_var.initial_approx() ) {
+							std::cerr << "  Info: Specified approximate start value differs from initial FMU value" << std::endl;
+						} else if ( fmu_var.initial_calculated() ) {
+							std::cerr << "  Info: Specified calculated start value differs from initial FMU value" << std::endl;
 						}
-						var_start = fmu_start; // Use FMU initial value: Is this best?
 					}
 				}
 				Real const var_nominal( fmi2_xml_get_real_variable_nominal( var_real ) ); // == x_nominal[ fmu_var.isa ]
@@ -836,14 +838,14 @@ namespace QSS {
 							std::string const & con_name( i_con_var->second );
 							std::cout << " Type: Real: Continuous: Input: Connection: " << con_name << std::endl;
 						} else { // Use hard-coded default function
-//							inp_fxn = Function_Inp_constant( var_has_start ? var_start() : 1.0 ); // Constant start value
-//							inp_fxn = Function_Inp_sin( 2.0, 10.0, ( var_has_start ? var_start() : 1.0 ) ); // 2 * sin( 10 * t ) + 1
-							inp_fxn = Function_Inp_step( ( var_has_start ? var_start() : 0.0 ), 1.0, 1.0 ); // Step up by 1 every 1 s via discrete events
-//							inp_fxn = Function_Inp_toggle( ( var_has_start ? var_start() : 0.0 ), 1.0, 1.0 ); // Toggle by 1 every 1 s via discrete events
+//							inp_fxn = Function_Inp_constant( var_has_xml_start ? xml_start : 1.0 ); // Constant start value
+//							inp_fxn = Function_Inp_sin( 2.0, 10.0, ( var_has_xml_start ? xml_start : 1.0 ) ); // 2 * sin( 10 * t ) + 1
+							inp_fxn = Function_Inp_step( ( var_has_xml_start ? xml_start : 0.0 ), 1.0, 1.0 ); // Step up by 1 every 1 s via discrete events
+//							inp_fxn = Function_Inp_toggle( ( var_has_xml_start ? xml_start : 0.0 ), 1.0, 1.0 ); // Toggle by 1 every 1 s via discrete events
 							std::cout << " Type: Real: Continuous: Input: Function" << std::endl;
 						}
 						if ( inp_fxn ) {
-							if ( var_has_start && var_start != inp_fxn( 0.0 ).x0 ) {
+							if ( var_has_xml_start && xml_start != inp_fxn( 0.0 ).x0 ) {
 								std::cerr << " Error: Specified start value does not match function value at t=0 for " << var_name << std::endl;
 								std::exit( EXIT_FAILURE );
 							}
@@ -880,15 +882,9 @@ namespace QSS {
 					} else if ( fmu_var.is_State() ) { // State
 						std::cout << " Type: Real: Continuous: State" << std::endl;
 						FMU_Variable const & fmu_der( fmu_variables[ fmu_var.idd - 1 ] );
-						Variable::Start_Real const state_start( states[ fmu_var.isa ] ); // Initial value from fmi2_import_get_continuous_states()
-						if ( var_has_start && ( var_start != state_start ) ) {
-							if ( fmu_var.initial_approx() ) {
-								std::cerr << " Info: Initial approximate value from xml specs: " << var_start << " is not equal to initial value from fmi2GetContinuousStates that is being used by QSS: " << state_start << std::endl;
-							} else if ( fmu_var.initial_exact() ) {
-								std::cerr << " Warning: Initial exact value from xml specs: " << var_start << " is not equal to initial value from fmi2GetContinuousStates that is being used by QSS: " << state_start << std::endl;
-							} else {
-								std::cerr << " Warning: Initial value from xml specs: " << var_start << " is not equal to initial value from fmi2GetContinuousStates that is being used by QSS: " << state_start << std::endl;
-							}
+						Real const state_start( states[ fmu_var.isa ] ); // Initial value from fmi2_import_get_continuous_states()
+						if ( var_start != state_start ) {
+							std::cerr << "  Warning: Start value differs from initial FMU state value: " << state_start << std::endl;
 						}
 						Variable_QSS * qss_var( nullptr );
 						Real const var_aTol( std::max( options::specified::aTol ? options::aTol : options::rTol * options::aFac * var_nominal, std::numeric_limits< Real >::min() ) ); // Use variable nominal value to set the absolute tolerance unless aTol specified
@@ -985,10 +981,10 @@ namespace QSS {
 					fmu_vars.add( var_real, fmu_variables.back() );
 					if ( fmu_var.causality_input() ) { // Input
 						std::cout << " Type: Real: Discrete: Input" << std::endl;
-						// Function inp_fxn( Function_Inp_constant( var_start() ) ); // Constant start value
-						Function inp_fxn( Function_Inp_step( var_has_start ? var_start() : 0.0, 1.0, 1.0 ) ); // Step up by 1 every 1 s via discrete events
-						// Function inp_fxn( Function_Inp_toggle( var_has_start ? var_start() : 0.0, 1.0, 1.0 ) ); // Toggle by 1 every 1 s via discrete events
-						Variable_InpD * qss_var( new Variable_InpD( this, var_name, var_start(), fmu_var, inp_fxn ) );
+						// Function inp_fxn( Function_Inp_constant( var_has_xml_start ? xml_start : 0.0 ) ); // Constant start value
+						Function inp_fxn( Function_Inp_step( var_has_xml_start ? xml_start : 0.0, 1.0, 1.0 ) ); // Step up by 1 every 1 s via discrete events
+						// Function inp_fxn( Function_Inp_toggle( var_has_xml_start ? xml_start : 0.0, 1.0, 1.0 ) ); // Toggle by 1 every 1 s via discrete events
+						Variable_InpD * qss_var( new Variable_InpD( this, var_name, var_start, fmu_var, inp_fxn ) );
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ fmu_var.ref() ] = qss_var;
 						var_name_var[ var_name ] = qss_var;
@@ -1008,14 +1004,12 @@ namespace QSS {
 				} else if ( fmu_var.variability_fixed() ) { // Fixed
 					if ( var_name == "_events_default_tol" ) { // OCT/JModelica parameter for setting FMU zero crossing value tolerance
 						if ( fmu_var.causality_parameter() ) {
-							if ( var_has_start ) {
-								if ( !options::specified::zTol ) {
-									double const zTol( std::abs( var_start ) );
-									if ( zTol > 0.0 ) {
-										options::specified::zTol = true;
-										options::zTol = zTol;
-										std::cout << " FMU zero crossing value tolerance set to " << zTol << std::endl;
-									}
+							if ( !options::specified::zTol ) {
+								double const zTol( std::abs( var_start ) );
+								if ( zTol > 0.0 ) {
+									options::specified::zTol = true;
+									options::zTol = zTol;
+									std::cout << " FMU zero crossing value tolerance set to " << zTol << std::endl;
 								}
 							}
 						}
@@ -1040,18 +1034,20 @@ namespace QSS {
 				std::cout << " Type: Integer" << std::endl;
 				{
 				fmi2_import_integer_variable_t * var_int( fmu_var.ivr );
-				Variable::Start_Integer var_start( var_has_start, fmi2_import_get_integer_variable_start( var_int ) );
-				if ( var_has_start ) {
-					std::cout << " Start: " << var_start << std::endl;
-					Integer const fmu_start( get_integer( fmu_var.ref() ) );
-					if ( var_start != fmu_start ) {
+				Integer const var_start( get_integer( fmu_var.ref() ) );
+				std::cout << " Start: " << var_start << std::endl;
+				Integer const xml_start( fmi2_import_get_integer_variable_start( var_int ) );
+				if ( var_has_xml_start ) {
+					if ( xml_start != var_start ) {
+						std::cout << " Start: XML: " << xml_start << std::endl;
 						if ( fmu_var.initial_exact() ) {
-							std::cerr << "  Error: Specified start value differs from initial FMU value = " << fmu_start << std::endl;
+							std::cerr << "  Error: Specified exact start value differs from initial FMU value" << std::endl;
 							//! Suppressed pending OCT fix std::exit( EXIT_FAILURE );
-						} else if ( fmu_var.initial_approx() || fmu_var.initial_calculated() ) {
-							std::cerr << "  Note: Specified start value differs from initial FMU value = " << fmu_start << std::endl;
+						} else if ( fmu_var.initial_approx() ) {
+							std::cerr << "  Info: Specified approximate start value differs from initial FMU value" << std::endl;
+						} else if ( fmu_var.initial_calculated() ) {
+							std::cerr << "  Info: Specified calculated start value differs from initial FMU value" << std::endl;
 						}
-						var_start = fmu_start; // Use FMU initial value: Is this best?
 					}
 				}
 				if ( fmu_var.variability_discrete() ) { // Discrete
@@ -1062,9 +1058,9 @@ namespace QSS {
 					}
 					if ( fmu_var.causality_input() ) { // Input
 						std::cout << " Type: Integer: Discrete: Input" << std::endl;
-						// Function inp_fxn( Function_Inp_constant( var_start() ) ); // Constant start value
-						Function inp_fxn( Function_Inp_step( ( var_has_start ? var_start() : 0.0 ), 1.0, 1.0 ) ); // Step up by 1 every 1 s via discrete events
-						// Function inp_fxn( Function_Inp_toggle( ( var_has_start ? var_start() : 0.0 ), 1.0, 1.0 ) ); // Toggle by 1 every 1 s via discrete events
+						// Function inp_fxn( Function_Inp_constant( var_has_xml_start ? xml_start : 0.0 ) ); // Constant start value
+						Function inp_fxn( Function_Inp_step( ( var_has_xml_start ? xml_start : 0.0 ), 1.0, 1.0 ) ); // Step up by 1 every 1 s via discrete events
+						// Function inp_fxn( Function_Inp_toggle( ( var_has_xml_start ? xml_start : 0.0 ), 1.0, 1.0 ) ); // Toggle by 1 every 1 s via discrete events
 						Variable_InpI * qss_var( new Variable_InpI( this, var_name, var_start, fmu_var, inp_fxn ) );
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ var_ref ] = qss_var;
@@ -1118,18 +1114,20 @@ namespace QSS {
 				std::cout << " Type: Boolean" << std::endl;
 				{
 				fmi2_import_bool_variable_t * var_bool( fmi2_import_get_variable_as_boolean( var ) );
-				Variable::Start_Boolean var_start( var_has_start, bool( fmi2_import_get_boolean_variable_start( var_bool ) ) );
-				if ( var_has_start ) {
-					std::cout << " Start: " << var_start << std::endl;
-					bool const fmu_start( get_boolean( fmu_var.ref() ) );
-					if ( var_start != fmu_start ) {
+				bool const var_start( get_boolean( fmu_var.ref() ) );
+				std::cout << " Start: " << var_start << std::endl;
+				bool const xml_start( fmi2_import_get_boolean_variable_start( var_bool ) );
+				if ( var_has_xml_start ) {
+					if ( xml_start != var_start ) {
+						std::cout << " Start: XML: " << xml_start << std::endl;
 						if ( fmu_var.initial_exact() ) {
-							std::cerr << "  Error: Specified start value differs from initial FMU value = " << fmu_start << std::endl;
+							std::cerr << "  Error: Specified start value differs from initial FMU value" << std::endl;
 							//! Suppressed pending OCT fix std::exit( EXIT_FAILURE );
-						} else if ( fmu_var.initial_approx() || fmu_var.initial_calculated() ) {
-							std::cerr << "  Note: Specified start value differs from initial FMU value = " << fmu_start << std::endl;
+						} else if ( fmu_var.initial_approx() ) {
+							std::cerr << "  Info: Specified approximate start value differs from initial FMU value" << std::endl;
+						} else if ( fmu_var.initial_calculated() ) {
+							std::cerr << "  Info: Specified calculated start value differs from initial FMU value" << std::endl;
 						}
-						var_start = fmu_start; // Use FMU initial value: Is this best?
 					}
 				}
 				if ( fmu_var.variability_discrete() ) { // Discrete
@@ -1165,7 +1163,7 @@ namespace QSS {
 				std::cout << " Type: String" << std::endl;
 				{
 				fmi2_import_string_variable_t * var_string( fmu_var.svr );
-				if ( var_has_start ) std::cout << " Start: " << fmi2_import_get_string_variable_start( var_string ) << std::endl;
+				if ( var_has_xml_start ) std::cout << " Start: " << fmi2_import_get_string_variable_start( var_string ) << std::endl;
 				fmu_vars.add( var_string, fmu_var );
 				}
 				break;
@@ -1173,7 +1171,7 @@ namespace QSS {
 				std::cout << " Type: Enum" << std::endl;
 				{
 				fmi2_import_enum_variable_t * var_enum( fmu_var.evr );
-				if ( var_has_start ) std::cout << " Start: " << fmi2_import_get_enum_variable_start( var_enum ) << std::endl;
+				if ( var_has_xml_start ) std::cout << " Start: " << fmi2_import_get_enum_variable_start( var_enum ) << std::endl;
 				fmu_vars.add( var_enum, fmu_var );
 				}
 				break;

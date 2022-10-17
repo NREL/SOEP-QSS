@@ -64,7 +64,7 @@ public: // Creation
 	 Real const rTol_ = options::rTol,
 	 Real const aTol_ = options::aTol,
 	 Real const zTol_ = options::zTol,
-	 Start_Real const & xIni_ = Start_Real(),
+	 Real const xIni_ = 0.0,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :

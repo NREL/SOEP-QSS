@@ -47,7 +47,6 @@
 #include <QSS/globals.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
-#include <QSS/Optional.hh>
 #include <QSS/Output.hh>
 #include <QSS/SmoothToken.hh>
 #include <QSS/string.hh>
@@ -83,9 +82,6 @@ public: // Types
 	using Integer = int;
 	using Real = double;
 	using Time = double;
-	using Start_Boolean = Optional< Boolean >;
-	using Start_Integer = Optional< Integer >;
-	using Start_Real = Optional< Real >;
 	using Reals = std::vector< Real >;
 	using EventQ = FMU_ME::EventQ;
 	using Variables = std::vector< Variable * >;
@@ -124,7 +120,7 @@ protected: // Creation
 	 Real const rTol_ = options::rTol,
 	 Real const aTol_ = options::aTol,
 	 Real const zTol_ = options::zTol,
-	 Start_Real const & xIni_ = Start_Real(),
+	 Real const xIni_ = 0.0,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
@@ -155,7 +151,7 @@ protected: // Creation
 	 std::string const & name,
 	 Real const rTol_ = options::rTol,
 	 Real const aTol_ = options::aTol,
-	 Start_Real const & xIni_ = Start_Real(),
+	 Real const xIni_ = 0.0,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
@@ -183,7 +179,7 @@ protected: // Creation
 	 FMU_ME * fmu_me,
 	 int const order,
 	 std::string const & name,
-	 Start_Real const & xIni_ = Start_Real(),
+	 Real const xIni_ = 0.0,
 	 FMU_Variable const var = FMU_Variable(),
 	 FMU_Variable const der = FMU_Variable()
 	) :
@@ -2084,7 +2080,7 @@ public: // Data
 	Real aTol{ 1.0e-6 }; // Absolute tolerance
 	Real zTol{ 0.0 }; // Zero-crossing/root tolerance
 	Real qTol{ 1.0e-6 }; // Quantization tolerance
-	Start_Real xIni; // Initial value
+	Real xIni{ 0.0 }; // Initial value
 	Time tQ{ 0.0 }; // Quantized time range begin
 	Time tX{ 0.0 }; // Continuous time range begin
 	Time tE{ 0.0 }; // Time range end: tQ <= tE and tX <= tE

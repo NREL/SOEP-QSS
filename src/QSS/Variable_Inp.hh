@@ -70,7 +70,7 @@ protected: // Creation
 	 std::string const & name,
 	 Real const rTol_ = options::rTol,
 	 Real const aTol_ = options::aTol,
-	 Start_Real const & xIni_ = Start_Real(),
+	 Real const xIni_ = 0.0,
 	 FMU_Variable const var = FMU_Variable(),
 	 Function f = Function()
 	) :
@@ -84,7 +84,7 @@ protected: // Creation
 	 FMU_ME * fmu_me,
 	 int const order,
 	 std::string const & name,
-	 Start_Real const & xIni_ = Start_Real(),
+	 Real const xIni_ = 0.0,
 	 FMU_Variable const var = FMU_Variable(),
 	 Function f = Function()
 	) :

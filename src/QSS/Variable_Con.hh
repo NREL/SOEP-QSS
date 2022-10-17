@@ -57,7 +57,7 @@ public: // Creation
 	 FMU_ME * fmu_me,
 	 int const order,
 	 std::string const & name,
-	 Start_Real const & xIni_ = Start_Real(),
+	 Real const xIni_ = 0.0,
 	 FMU_Variable const var = FMU_Variable()
 	) :
 	 Super( fmu_me, order, name, xIni_, var )
