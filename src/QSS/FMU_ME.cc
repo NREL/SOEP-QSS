@@ -2143,6 +2143,11 @@ namespace QSS {
 					// 	std::cout << "FMU event indicators: Handler event processing start @ t=" << t_pre_bump << std::endl;
 					// 	for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
 					// }
+					fmi2_import_enter_event_mode( fmu );
+					do_event_iteration();
+					fmi2_import_enter_continuous_time_mode( fmu );
+					fmi2_import_get_continuous_states( fmu, states, n_states );
+					fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 
 					// Zero-crossing time bump to try and get the FMU to detect relevant crossings
 
