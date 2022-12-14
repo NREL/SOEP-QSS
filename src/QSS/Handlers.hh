@@ -103,7 +103,7 @@ public: // Predicate
 		return handlers_.empty();
 	}
 
-	// Have Observer(s)?
+	// Have Handler(s)?
 	bool
 	have() const
 	{
@@ -156,156 +156,203 @@ public: // Methods
 
 		// Sort by type and order
 		assert( is_unique( handlers_ ) ); // Precondition: No duplicates
-		sort_by_order( handlers_ );
+		sort_by_type_and_order( handlers_ );
 
 		// Set specs
 		set_specs();
 
 		// FMU pooled data set up
-		hnd_ders_.clear(); hnd_ders_.reserve( hnd_.n() );
-		for ( Variable * handler : handlers_ ) {
-			assert( handler->not_Input() ); // Check valid handler types
-			assert( handler->not_ZC() ); // Check valid handler types
-			hnd_ders_.push_back( handler->der().ref() );
+		if ( qss_.have() ) { // State variables
+			qss_vars_.clear(); qss_vars_.reserve( qss_.n() );
+			qss_ders_.clear(); qss_ders_.reserve( qss_.n() );
+			for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
+				qss_vars_.push_back( handlers_[ i ]->var().ref() );
+				qss_ders_.push_back( handlers_[ i ]->der().ref() );
+			}
+		}
+		if ( r_.have() ) { // R variables
+			r_vars_.clear(); r_vars_.reserve( r_.n() );
+			for ( size_type i = r_.b(), e = r_.e(); i < e; ++i ) {
+				r_vars_.push_back( handlers_[ i ]->var().ref() );
+			}
+		}
+		if ( ox_.have() ) { // Other X-based variables
+			ox_vars_.clear(); ox_vars_.reserve( ox_.n() );
+			for ( size_type i = ox_.b(), e = ox_.e(); i < e; ++i ) {
+				ox_vars_.push_back( handlers_[ i ]->var().ref() );
+			}
+		}
+		if ( zc_.have() ) { // Zero-crossing variables
+			zc_vars_.clear(); zc_vars_.reserve( zc_.n() );
+			for ( size_type i = zc_.b(), e = zc_.e(); i < e; ++i ) {
+				zc_vars_.push_back( handlers_[ i ]->var().ref() );
+			}
 		}
 
-		// Observees set up
-		hnd_observees_.clear();
-		for ( Variable * handler : handlers_ ) {
-			if ( handler->self_observer() ) hnd_observees_.push_back( handler );
-			for ( auto observee : handler->observees() ) {
-				hnd_observees_.push_back( observee );
-			}
-		}
-		uniquify( hnd_observees_ );
-		if ( !uni_order_ ) {
-			assert( hnd1_.have() );
-			hnd1_observees_.clear();
-			for ( size_type i = hnd1_.b(), e = hnd_.e(); i < e; ++i ) { // Order 1+ handlers
+		// Observees setup /////
+
+		// QSS handler observees set up
+		if ( qss_.have() ) {
+			qss_observees_.clear();
+			for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
 				Variable * handler( handlers_[ i ] );
-				if ( handler->self_observer() ) hnd1_observees_.push_back( handler );
+				if ( handler->self_observee() ) qss_observees_.push_back( handler );
 				for ( auto observee : handler->observees() ) {
-					hnd1_observees_.push_back( observee );
+					qss_observees_.push_back( observee );
 				}
 			}
-			uniquify( hnd1_observees_ );
-			if ( hnd2_.have() ) {
-				hnd2_observees_.clear();
-				for ( size_type i = hnd2_.b(), e = hnd_.e(); i < e; ++i ) { // Order 2+ handlers
+			uniquify( qss_observees_ );
+			if ( !qss_uni_order_ ) {
+				assert( qss2_.have() );
+				qss2_observees_.clear();
+				for ( size_type i = qss2_.b(), e = qss_.e(); i < e; ++i ) { // Order 2+ handlers
 					Variable * handler( handlers_[ i ] );
-					if ( handler->self_observer() ) hnd2_observees_.push_back( handler );
+					if ( handler->self_observee() ) qss2_observees_.push_back( handler );
 					for ( auto observee : handler->observees() ) {
-						hnd2_observees_.push_back( observee );
+						qss2_observees_.push_back( observee );
 					}
 				}
-				uniquify( hnd2_observees_ );
-				if ( hnd3_.have() ) {
-					hnd3_observees_.clear();
-					for ( size_type i = hnd3_.b(), e = hnd_.e(); i < e; ++i ) { // Order 3+ handlers
+				uniquify( qss2_observees_ );
+				if ( qss3_.have() ) {
+					qss3_observees_.clear();
+					for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ handlers
 						Variable * handler( handlers_[ i ] );
-						if ( handler->self_observer() ) hnd3_observees_.push_back( handler );
+						if ( handler->self_observee() ) qss3_observees_.push_back( handler );
 						for ( auto observee : handler->observees() ) {
-							hnd3_observees_.push_back( observee );
+							qss3_observees_.push_back( observee );
 						}
 					}
-					uniquify( hnd3_observees_ );
+					uniquify( qss3_observees_ );
 				}
+			}
+		}
+
+		// Real handler observees set up
+		if ( r_.have() ) {
+			r_observees_.clear();
+			for ( size_type i = r_.b(), e = r_.e(); i < e; ++i ) {
+				Variable * handler( handlers_[ i ] );
+				assert( !handler->self_observee() );
+				for ( auto observee : handler->observees() ) {
+					r_observees_.push_back( observee );
+				}
+			}
+			uniquify( r_observees_ );
+			if ( !r_uni_order_ ) {
+				assert( r2_.have() );
+				r2_observees_.clear();
+				for ( size_type i = r2_.b(), e = r_.e(); i < e; ++i ) { // Order 2+ handlers
+					Variable * handler( handlers_[ i ] );
+					assert( !handler->self_observee() );
+					for ( auto observee : handler->observees() ) {
+						r2_observees_.push_back( observee );
+					}
+				}
+				uniquify( r2_observees_ );
+				if ( r3_.have() ) {
+					r3_observees_.clear();
+					for ( size_type i = r3_.b(), e = r_.e(); i < e; ++i ) { // Order 3+ handlers
+						Variable * handler( handlers_[ i ] );
+						assert( !handler->self_observee() );
+						for ( auto observee : handler->observees() ) {
+							r3_observees_.push_back( observee );
+						}
+					}
+					uniquify( r3_observees_ );
+				}
+			}
+		}
+
+		// Other X-based handler observees set up //Do Add observee operation pooling for these handlers
+		// if ( ox_.have() ) {
+		// 	ox_observees_.clear();
+		// 	for ( size_type i = ox_.b(), e = ox_.e(); i < e; ++i ) {
+		// 		Variable * handler( handlers_[ i ] );
+		//			assert( !handler->self_observee() );
+		// 		for ( auto observee : handler->observees() ) {
+		// 			ox_observees_.push_back( observee );
+		// 		}
+		// 	}
+		// 	uniquify( ox_observees_ );
+		// }
+
+		// Zero-crossing handler observees set up
+		if ( zc_.have() ) {
+			zc_observees_.clear();
+			for ( size_type i = zc_.b(), e = zc_.e(); i < e; ++i ) {
+				Variable * handler( handlers_[ i ] );
+				assert( !handler->self_observee() );
+				for ( auto observee : handler->observees() ) {
+					zc_observees_.push_back( observee );
+				}
+			}
+			uniquify( zc_observees_ );
+			if ( !zc_uni_order_ ) {
+				assert( zc2_.have() );
+				zc2_observees_.clear();
+				for ( size_type i = zc2_.b(), e = zc_.e(); i < e; ++i ) { // Order 2+ handlers
+					Variable * handler( handlers_[ i ] );
+					assert( !handler->self_observee() );
+					for ( auto observee : handler->observees() ) {
+						zc2_observees_.push_back( observee );
+					}
+				}
+				uniquify( zc2_observees_ );
+				if ( zc3_.have() ) {
+					zc3_observees_.clear();
+					for ( size_type i = zc3_.b(), e = zc_.e(); i < e; ++i ) { // Order 3+ handlers
+						Variable * handler( handlers_[ i ] );
+						assert( !handler->self_observee() );
+						for ( auto observee : handler->observees() ) {
+							zc3_observees_.push_back( observee );
+						}
+					}
+					uniquify( zc3_observees_ );
+				}
+			}
+		}
+
+		// Set up handlers observees pooled directional derivative seed data /////
+
+		// Real handlers
+		if ( r_.have() ) {
+			r_observees_v_ref_.clear();
+			r_observees_dv_.clear();
+			for ( auto observee : r_observees_ ) {
+				r_observees_v_ref_.push_back( observee->var().ref() );
+				r_observees_dv_.push_back( 0.0 ); // Actual values assigned when getting directional derivatives
+			}
+		}
+
+		// Zero-crossing handlers
+		if ( zc_.have() ) {
+			zc_observees_v_ref_.clear();
+			zc_observees_dv_.clear();
+			for ( auto observee : zc_observees_ ) {
+				zc_observees_v_ref_.push_back( observee->var().ref() );
+				zc_observees_dv_.push_back( 0.0 ); // Actual values assigned when getting directional derivatives
 			}
 		}
 	}
 
-	// Handler Advance
+	// Advance
 	void
-	advance_handler( Time const t )
+	advance( Time const t )
 	{
 		assert( fmu_me_ != nullptr );
 		assert( fmu_me_->get_time() == t );
-
-		for ( Variable * handler : handlers_ ) { //! Change observee->fmu_set_x( t|tN ); to virtual handler->set_observee( observee, t ) so state var's can switch to q or x based | But that adds another virtual call layer so instead prob split handlers into state and non-state
-			assert( handler->not_Input() ); // Check valid handler types
-			assert( handler->not_ZC() ); // Check valid handler types
-			handler->advance_handler_0( t );
+		if ( qss_.have() ) advance_QSS( t ); // QSS state variables
+		if ( r_.have() ) advance_R( t ); // Real variables
+		if ( ox_.have() ) advance_OX( t ); // Other X-based variables
+		if ( qss_.have() ) advance_QSS_F( t );
+		if ( r_.have() ) advance_R_F( t );
+		if ( ox_.have() ) advance_OX_F( t );
+		if ( zc_.have() ) { // Zero-crossing variables
+			advance_ZC( t );
+			advance_ZC_F( t );
 		}
-		if ( hnd1_.have() ) {
-			for ( Variable * observee : uni_order_ ? hnd_observees_ : hnd1_observees_ ) {
-				observee->fmu_set_x( t );
-			}
-			assert( hnd_.n() == hnd_ders_.size() );
-			size_type const hnd1_b( hnd1_.b() );
-			fmu_me_->get_reals( hnd1_.n(), &hnd_ders_.refs[ hnd1_b ], &hnd_ders_.ders[ hnd1_b ] );
-			for ( size_type i = hnd1_.b(), e = hnd_.e(); i < e; ++i ) { // Order 1+ handlers
-				assert( handlers_[ i ]->is_QSS() );
-				handlers_[ i ]->advance_handler_1( hnd_ders_.ders[ i ] );
-			}
-			if ( hnd3_.have() ) {
-				Time tN( t - options::dtND );
-				if ( fwd_time( tN ) ) { // Use centered ND formulas
-					fmu_me_->set_time( tN );
-					for ( Variable * observee : uni_order_ ? hnd_observees_ : hnd2_observees_ ) {
-						observee->fmu_set_x( tN );
-					}
-					size_type const hnd2_b( hnd2_.b() );
-					fmu_me_->get_reals( hnd2_.n(), &hnd_ders_.refs[ hnd2_b ], &hnd_ders_.ders_m[ hnd2_b ] );
-					tN = t + options::dtND;
-					fmu_me_->set_time( tN );
-					for ( Variable * observee : uni_order_ ? hnd_observees_ : hnd2_observees_ ) {
-						observee->fmu_set_x( tN );
-					}
-					fmu_me_->get_reals( hnd2_.n(), &hnd_ders_.refs[ hnd2_b ], &hnd_ders_.ders_p[ hnd2_b ] );
-					for ( size_type i = hnd2_b, e = hnd_.e(); i < e; ++i ) { // Order 2+ handlers
-						handlers_[ i ]->advance_handler_2( hnd_ders_.ders_m[ i ], hnd_ders_.ders_p[ i ] );
-					}
-					for ( size_type i = hnd2_b, e = hnd_.e(); i < e; ++i ) { // Order 2+ handlers
-						handlers_[ i ]->advance_handler_2_1();
-					}
-					for ( size_type i = hnd3_.b(), e = hnd_.e(); i < e; ++i ) { // Order 3+ handlers
-						handlers_[ i ]->advance_handler_3();
-					}
-				} else { // Use forward ND formulas
-					tN = t + options::dtND;
-					fmu_me_->set_time( tN );
-					for ( Variable * observee : uni_order_ ? hnd_observees_ : hnd2_observees_ ) {
-						observee->fmu_set_x( tN );
-					}
-					size_type const hnd2_b( hnd2_.b() );
-					fmu_me_->get_reals( hnd2_.n(), &hnd_ders_.refs[ hnd2_b ], &hnd_ders_.ders_m[ hnd2_b ] );
-					tN = t + options::two_dtND;
-					fmu_me_->set_time( tN );
-					for ( Variable * observee : uni_order_ ? hnd_observees_ : hnd2_observees_ ) {
-						observee->fmu_set_x( tN );
-					}
-					fmu_me_->get_reals( hnd2_.n(), &hnd_ders_.refs[ hnd2_b ], &hnd_ders_.ders_p[ hnd2_b ] );
-					for ( size_type i = hnd2_b, e = hnd_.e(); i < e; ++i ) { // Order 2+ handlers
-						handlers_[ i ]->advance_handler_2_forward( hnd_ders_.ders_m[ i ], hnd_ders_.ders_p[ i ] );
-					}
-					for ( size_type i = hnd2_b, e = hnd_.e(); i < e; ++i ) { // Order 2+ handlers
-						handlers_[ i ]->advance_handler_2_1();
-					}
-					for ( size_type i = hnd3_.b(), e = hnd_.e(); i < e; ++i ) { // Order 3+ handlers
-						handlers_[ i ]->advance_handler_3_forward();
-					}
-				}
-				fmu_me_->set_time( t );
-			} else if ( hnd2_.have() ) {
-				Time tN( t + options::dtND );
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : uni_order_ ? hnd_observees_ : hnd2_observees_ ) {
-					observee->fmu_set_x( tN );
-				}
-				size_type const hnd2_b( hnd2_.b() );
-				fmu_me_->get_reals( hnd2_.n(), &hnd_ders_.refs[ hnd2_b ], &hnd_ders_.ders_p[ hnd2_b ] );
-				for ( size_type i = hnd2_b, e = hnd_.e(); i < e; ++i ) { // Order 2+ handlers
-					handlers_[ i ]->advance_handler_2( hnd_ders_.ders_p[ i ] );
-				}
-				for ( size_type i = hnd2_b, e = hnd_.e(); i < e; ++i ) { // Order 2+ handlers
-					handlers_[ i ]->advance_handler_2_1();
-				}
-				fmu_me_->set_time( t );
-			}
-		}
-		for ( Variable * handler : handlers_ ) {
-			handler->advance_handler_F();
-		}
+		// advance_F( t ); // Using this instead of the other advance_*_F calls above uses old observee values for the observing event indicators, which probably doesn't make sense
+		// if ( options::output::d ) advance_d(); // Currently advance_handler_F calls do diagnostic output
 	}
 
 	// Clear
@@ -368,9 +415,19 @@ private: // Methods
 	void
 	reset_specs()
 	{
-		hnd_.reset();
-		hnd2_.reset();
-		hnd3_.reset();
+		connected_output_handler_ = false;
+		all_.reset();
+		qss_.reset();
+		qss2_.reset();
+		qss3_.reset();
+		ns_.reset();
+		zc_.reset();
+		zc2_.reset();
+		zc3_.reset();
+		r_.reset();
+		r2_.reset();
+		r3_.reset();
+		ox_.reset();
 	}
 
 	// Set Specs
@@ -380,27 +437,531 @@ private: // Methods
 		reset_specs();
 		if ( handlers_.empty() ) return;
 
-		hnd_.b() = 0u;
-		hnd_.e() = hnd1_.b() = hnd1_.e() = hnd2_.b() = hnd2_.e() = hnd3_.b() = hnd3_.e() = handlers_.size();
-		for ( size_type i = 0, e = hnd_.e(); i < e; ++i ) {
-			int const order( handlers_[ i ]->order() );
-			if ( order >= 1 ) {
-				hnd1_.b() = std::min( hnd1_.b(), i );
-				if ( order >= 2 ) {
-					hnd2_.b() = std::min( hnd2_.b(), i );
-					if ( order >= 3 ) {
-						hnd3_.b() = std::min( hnd3_.b(), i );
-						break;
-					}
+		connected_output_handler_ = false;
+		all_.b() = 0u;
+		all_.e() = handlers_.size();
+		size_type i( 0u );
+
+		// QSS state handlers
+		while ( ( i < all_.e() ) && ( handlers_[ i ]->is_QSS() ) ) {
+			Variable const * handler( handlers_[ i ] );
+			qss_.b() = std::min( qss_.b(), i );
+			int const order( handler->order() );
+			if ( order >= 2 ) {
+				qss2_.b() = std::min( qss2_.b(), i );
+				if ( order >= 3 ) {
+					qss3_.b() = std::min( qss3_.b(), i );
+				}
+			}
+			if ( handler->connected_output ) connected_output_handler_ = true;
+			++i;
+		}
+		if ( qss_.began() ) {
+			qss_.e() = i;
+			if ( qss2_.began() ) {
+				qss2_.e() = i;
+				if ( qss3_.began() ) {
+					qss3_.e() = i;
 				}
 			}
 		}
-		size_type const hnd_n( hnd_.n() );
-		uni_order_ = (
-		 ( hnd1_.empty() || hnd1_.n() == hnd_n ) &&
-		 ( hnd2_.empty() || hnd2_.n() == hnd_n ) &&
-		 ( hnd3_.empty() || hnd3_.n() == hnd_n )
+		size_type const qss_n( qss_.n() );
+		qss_uni_order_ = (
+		 ( qss2_.empty() || qss2_.n() == qss_n ) &&
+		 ( qss3_.empty() || qss3_.n() == qss_n )
 		);
+
+		// Non-state handlers
+		if ( i < all_.e() ) {
+			ns_.b() = i;
+			ns_.e() = all_.e();
+		}
+
+		// Real handlers
+		while ( ( i < all_.e() ) && ( handlers_[ i ]->is_R() ) ) {
+			Variable const * handler( handlers_[ i ] );
+			r_.b() = std::min( r_.b(), i );
+			int const order( handler->order() );
+			if ( order >= 2 ) {
+				r2_.b() = std::min( r2_.b(), i );
+				if ( order >= 3 ) {
+					r3_.b() = std::min( r3_.b(), i );
+				}
+			}
+			if ( handler->connected_output ) connected_output_handler_ = true;
+			++i;
+		}
+		if ( r_.began() ) {
+			r_.e() = i;
+			if ( r2_.began() ) {
+				r2_.e() = i;
+				if ( r3_.began() ) {
+					r3_.e() = i;
+				}
+			}
+		}
+		size_type const r_n( r_.n() );
+		r_uni_order_ = (
+		 ( r2_.empty() || r2_.n() == r_n ) &&
+		 ( r3_.empty() || r3_.n() == r_n )
+		);
+
+		// Other X-based handlers
+		while ( ( i < all_.e() ) && ( handlers_[ i ]->not_ZC() ) ) {
+			Variable const * handler( handlers_[ i ] );
+			assert( handler->order() == 0 );
+			ox_.b() = std::min( ox_.b(), i );
+			if ( handler->connected_output ) connected_output_handler_ = true;
+			++i;
+		}
+		if ( ox_.began() ) {
+			ox_.e() = i;
+		}
+
+		// Zero crossing handlers
+		while ( ( i < all_.e() ) && ( handlers_[ i ]->is_ZC() ) ) {
+			Variable const * handler( handlers_[ i ] );
+			zc_.b() = std::min( zc_.b(), i );
+			int const order( handler->order() );
+			if ( order >= 2 ) {
+				zc2_.b() = std::min( zc2_.b(), i );
+				if ( order >= 3 ) {
+					zc3_.b() = std::min( zc3_.b(), i );
+				}
+			}
+			if ( handler->connected_output ) connected_output_handler_ = true;
+			++i;
+		}
+		if ( zc_.began() ) {
+			zc_.e() = i;
+			if ( zc2_.began() ) {
+				zc2_.e() = i;
+				if ( zc3_.began() ) {
+					zc3_.e() = i;
+				}
+			}
+		}
+		size_type const zc_n( zc_.n() );
+		zc_uni_order_ = (
+		 ( zc2_.empty() || zc2_.n() == zc_n ) &&
+		 ( zc3_.empty() || zc3_.n() == zc_n )
+		);
+	}
+
+	// Advance QSS State Handlers
+	void
+	advance_QSS( Time const t )
+	{
+		assert( qss_.have() );
+		assert( fmu_me_ != nullptr );
+		assert( fmu_me_->get_time() == t );
+		assert( qss_.n() == qss_vars_.size() );
+		assert( qss_.n() == qss_ders_.size() );
+
+		fmu_me_->get_reals( qss_.n(), &qss_vars_.refs[ 0 ], &qss_vars_.vals[ 0 ] );
+		for ( size_type i = 0, e = qss_.e(); i < e; ++i ) {
+			handlers_[ i ]->advance_handler_0( t, qss_vars_.vals[ i ] );
+		}
+
+		fmu_me_->get_reals( qss_.n(), &qss_ders_.refs[ 0 ], &qss_ders_.ders[ 0 ] );
+		for ( size_type i = 0, e = qss_.e(); i < e; ++i ) {
+			assert( handlers_[ i ]->is_Active() );
+			assert( handlers_[ i ]->is_QSS() );
+			handlers_[ i ]->advance_handler_1( qss_ders_.ders[ i ] );
+		}
+
+		if ( qss3_.have() ) {
+			Time tN( t - options::dtND );
+			if ( fwd_time( tN ) ) { // Use centered ND formulas
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss2_observees_ ) {
+					observee->fmu_set_s( tN );
+				}
+				size_type const qss2_b( qss2_.b() );
+				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_m[ qss2_b ] );
+				tN = t + options::dtND;
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss2_observees_ ) {
+					observee->fmu_set_s( tN );
+				}
+				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
+				for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ handlers
+					handlers_[ i ]->advance_handler_2( qss_ders_.ders_m[ i ], qss_ders_.ders_p[ i ] );
+				}
+				for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ handlers
+					handlers_[ i ]->advance_handler_3();
+				}
+			} else { // Use forward ND formulas
+				tN = t + options::dtND;
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss2_observees_ ) {
+					observee->fmu_set_s( tN );
+				}
+				size_type const qss2_b( qss2_.b() );
+				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_m[ qss2_b ] );
+				tN = t + options::two_dtND;
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss2_observees_ ) {
+					observee->fmu_set_s( tN );
+				}
+				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
+				for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ handlers
+					handlers_[ i ]->advance_handler_2_forward( qss_ders_.ders_m[ i ], qss_ders_.ders_p[ i ] );
+				}
+				for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ handlers
+					handlers_[ i ]->advance_handler_3_forward();
+				}
+			}
+			fmu_me_->set_time( t );
+		} else if ( qss2_.have() ) {
+			Time const tN( t + options::dtND );
+			fmu_me_->set_time( tN );
+			for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss2_observees_ ) {
+				observee->fmu_set_s( tN );
+			}
+			size_type const qss2_b( qss2_.b() );
+			fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
+			for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ handlers
+				handlers_[ i ]->advance_handler_2( qss_ders_.ders_p[ i ] );
+			}
+			fmu_me_->set_time( t );
+		}
+	}
+
+	// Advance Real Non-State Handlers
+	void
+	advance_R( Time const t )
+	{
+		assert( r_.have() );
+		assert( fmu_me_ != nullptr );
+		assert( fmu_me_->get_time() == t );
+		assert( r_.n() == r_vars_.size() );
+
+		fmu_me_->get_reals( r_.n(), &r_vars_.refs[ 0 ], &r_vars_.vals[ 0 ] );
+		for ( size_type i = r_.b(), e = r_.e(), j = 0; i < e; ++i, ++j ) {
+			handlers_[ i ]->advance_handler_0( t, r_vars_.vals[ j ] );
+		}
+
+		for ( size_type i = 0, e = r_observees_.size(); i < e; ++i ) {
+			r_observees_dv_[ i ] = r_observees_[ i ]->x1( t );
+		}
+		fmu_me_->get_directional_derivatives(
+		 r_observees_v_ref_.data(),
+		 r_observees_v_ref_.size(),
+		 r_vars_.refs.data(),
+		 r_vars_.refs.size(),
+		 r_observees_dv_.data(),
+		 r_vars_.ders.data()
+		);
+		for ( size_type i = r_.b(), e = r_.e(), j = 0; i < e; ++i, ++j ) {
+			assert( handlers_[ i ]->is_Active() );
+			assert( handlers_[ i ]->is_R() );
+			handlers_[ i ]->advance_handler_1( r_vars_.ders[ j ] );
+		}
+
+		if ( r3_.have() ) {
+			Time tN( t - options::dtND );
+			if ( fwd_time( tN ) ) { // Use centered ND formulas
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : r_uni_order_ ? r_observees_ : r2_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				for ( size_type i = 0, e = r_observees_.size(); i < e; ++i ) {
+					r_observees_dv_[ i ] = r_observees_[ i ]->x1( tN );
+				}
+				fmu_me_->get_directional_derivatives(
+				 r_observees_v_ref_.data(),
+				 r_observees_v_ref_.size(),
+				 r_vars_.refs.data(),
+				 r_vars_.refs.size(),
+				 r_observees_dv_.data(),
+				 r_vars_.ders_m.data()
+				);
+				tN = t + options::dtND;
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : r_uni_order_ ? r_observees_ : r2_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				for ( size_type i = 0, e = r_observees_.size(); i < e; ++i ) {
+					r_observees_dv_[ i ] = r_observees_[ i ]->x1( tN );
+				}
+				fmu_me_->get_directional_derivatives(
+				 r_observees_v_ref_.data(),
+				 r_observees_v_ref_.size(),
+				 r_vars_.refs.data(),
+				 r_vars_.refs.size(),
+				 r_observees_dv_.data(),
+				 r_vars_.ders_p.data()
+				);
+				size_type const r2_bo( r2_.b() - r_.b() );
+				for ( size_type i = r2_.b(), j = r2_bo, e = r_.e(); i < e; ++i, ++j ) { // Order 2+ handlers
+					handlers_[ i ]->advance_handler_2( r_vars_.ders_m[ j ], r_vars_.ders_p[ j ] );
+				}
+				for ( size_type i = r3_.b(), e = r_.e(); i < e; ++i ) { // Order 3+ handlers
+					handlers_[ i ]->advance_handler_3();
+				}
+			} else { // Use forward ND formulas
+				tN = t + options::dtND;
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : r_uni_order_ ? r_observees_ : r2_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				for ( size_type i = 0, e = r_observees_.size(); i < e; ++i ) {
+					r_observees_dv_[ i ] = r_observees_[ i ]->x1( tN );
+				}
+				fmu_me_->get_directional_derivatives(
+				 r_observees_v_ref_.data(),
+				 r_observees_v_ref_.size(),
+				 r_vars_.refs.data(),
+				 r_vars_.refs.size(),
+				 r_observees_dv_.data(),
+				 r_vars_.ders_m.data()
+				);
+				tN = t + options::two_dtND;
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : r_uni_order_ ? r_observees_ : r2_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				for ( size_type i = 0, e = r_observees_.size(); i < e; ++i ) {
+					r_observees_dv_[ i ] = r_observees_[ i ]->x1( tN );
+				}
+				fmu_me_->get_directional_derivatives(
+				 r_observees_v_ref_.data(),
+				 r_observees_v_ref_.size(),
+				 r_vars_.refs.data(),
+				 r_vars_.refs.size(),
+				 r_observees_dv_.data(),
+				 r_vars_.ders_p.data()
+				);
+				size_type const r2_bo( r2_.b() - r_.b() );
+				for ( size_type i = r2_.b(), j = r2_bo, e = r_.e(); i < e; ++i, ++j ) { // Order 2+ handlers
+					handlers_[ i ]->advance_handler_2_forward( r_vars_.ders_m[ j ], r_vars_.ders_p[ j ] );
+				}
+				for ( size_type i = r3_.b(), e = r_.e(); i < e; ++i ) { // Order 3+ handlers
+					handlers_[ i ]->advance_handler_3_forward();
+				}
+			}
+			fmu_me_->set_time( t );
+		} else if ( r2_.have() ) {
+			Time const tN( t + options::dtND );
+			fmu_me_->set_time( tN );
+			for ( Variable * observee : r_uni_order_ ? r_observees_ : r2_observees_ ) {
+				observee->fmu_set_x( tN );
+			}
+			for ( size_type i = 0, e = r_observees_.size(); i < e; ++i ) {
+				r_observees_dv_[ i ] = r_observees_[ i ]->x1( tN );
+			}
+			fmu_me_->get_directional_derivatives(
+			 r_observees_v_ref_.data(),
+			 r_observees_v_ref_.size(),
+			 r_vars_.refs.data(),
+			 r_vars_.refs.size(),
+			 r_observees_dv_.data(),
+			 r_vars_.ders_p.data()
+			);
+			size_type const r2_bo( r2_.b() - r_.b() );
+			for ( size_type i = r2_.b(), j = r2_bo, e = r_.e(); i < e; ++i, ++j ) { // Order 2+ handlers
+				handlers_[ i ]->advance_handler_2( r_vars_.ders_p[ j ] );
+			}
+			fmu_me_->set_time( t );
+		}
+	}
+
+	// Advance Other X-Based Handlers
+	void
+	advance_OX( Time const t )
+	{
+		assert( ox_.have() );
+		assert( fmu_me_ != nullptr );
+		assert( fmu_me_->get_time() == t );
+
+		fmu_me_->get_reals( ox_.n(), &ox_vars_.refs[ 0 ], &ox_vars_.vals[ 0 ] );
+		for ( size_type i = ox_.b(), e = ox_.e(), j = 0; i < e; ++i, ++j ) {
+			handlers_[ i ]->advance_handler_0( t, ox_vars_.vals[ j ] );
+		}
+	}
+
+	// Advance Zero-Crossing Handlers
+	void
+	advance_ZC( Time const t )
+	{
+		assert( zc_.have() );
+		assert( fmu_me_ != nullptr );
+		assert( fmu_me_->get_time() == t );
+		assert( zc_.n() == zc_vars_.size() );
+
+		fmu_me_->get_reals( zc_.n(), &zc_vars_.refs[ 0 ], &zc_vars_.vals[ 0 ] );
+		for ( size_type i = zc_.b(), e = zc_.e(), j = 0; i < e; ++i, ++j ) {
+			handlers_[ i ]->advance_handler_0( t, zc_vars_.vals[ j ] );
+		}
+
+		for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
+			zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( t );
+		}
+		fmu_me_->get_directional_derivatives(
+		 zc_observees_v_ref_.data(),
+		 zc_observees_v_ref_.size(),
+		 zc_vars_.refs.data(),
+		 zc_vars_.refs.size(),
+		 zc_observees_dv_.data(),
+		 zc_vars_.ders.data()
+		);
+		for ( size_type i = zc_.b(), e = zc_.e(), j = 0; i < e; ++i, ++j ) {
+			assert( handlers_[ i ]->is_ZC() );
+			handlers_[ i ]->advance_handler_1( zc_vars_.ders[ j ] );
+		}
+
+		if ( zc3_.have() ) {
+			Time tN( t - options::dtND );
+			if ( fwd_time( tN ) ) { // Use centered ND formulas
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
+					zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( tN );
+				}
+				fmu_me_->get_directional_derivatives(
+				 zc_observees_v_ref_.data(),
+				 zc_observees_v_ref_.size(),
+				 zc_vars_.refs.data(),
+				 zc_vars_.refs.size(),
+				 zc_observees_dv_.data(),
+				 zc_vars_.ders_m.data()
+				);
+				tN = t + options::dtND;
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
+					zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( tN );
+				}
+				fmu_me_->get_directional_derivatives(
+				 zc_observees_v_ref_.data(),
+				 zc_observees_v_ref_.size(),
+				 zc_vars_.refs.data(),
+				 zc_vars_.refs.size(),
+				 zc_observees_dv_.data(),
+				 zc_vars_.ders_p.data()
+				);
+				size_type const zc2_bo( zc2_.b() - zc_.b() );
+				for ( size_type i = zc2_.b(), j = zc2_bo, e = zc_.e(); i < e; ++i, ++j ) { // Order 2+ handlers
+					handlers_[ i ]->advance_handler_2( zc_vars_.ders_m[ j ], zc_vars_.ders_p[ j ] );
+				}
+				for ( size_type i = zc3_.b(), e = zc_.e(); i < e; ++i ) { // Order 3+ handlers
+					handlers_[ i ]->advance_handler_3();
+				}
+			} else { // Use forward ND formulas
+				tN = t + options::dtND;
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
+					zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( tN );
+				}
+				fmu_me_->get_directional_derivatives(
+				 zc_observees_v_ref_.data(),
+				 zc_observees_v_ref_.size(),
+				 zc_vars_.refs.data(),
+				 zc_vars_.refs.size(),
+				 zc_observees_dv_.data(),
+				 zc_vars_.ders_m.data()
+				);
+				tN = t + options::two_dtND;
+				fmu_me_->set_time( tN );
+				for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
+					observee->fmu_set_x( tN );
+				}
+				for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
+					zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( tN );
+				}
+				fmu_me_->get_directional_derivatives(
+				 zc_observees_v_ref_.data(),
+				 zc_observees_v_ref_.size(),
+				 zc_vars_.refs.data(),
+				 zc_vars_.refs.size(),
+				 zc_observees_dv_.data(),
+				 zc_vars_.ders_p.data()
+				);
+				size_type const zc2_bo( zc2_.b() - zc_.b() );
+				for ( size_type i = zc2_.b(), j = zc2_bo, e = zc_.e(); i < e; ++i, ++j ) { // Order 2+ handlers
+					handlers_[ i ]->advance_handler_2_forward( zc_vars_.ders_m[ j ], zc_vars_.ders_p[ j ] );
+				}
+				for ( size_type i = zc3_.b(), e = zc_.e(); i < e; ++i ) { // Order 3+ handlers
+					handlers_[ i ]->advance_handler_3_forward();
+				}
+			}
+			fmu_me_->set_time( t );
+		} else if ( zc2_.have() ) {
+			Time const tN( t + options::dtND );
+			fmu_me_->set_time( tN );
+			for ( Variable * observee : zc_uni_order_ ? zc_observees_ : zc2_observees_ ) {
+				observee->fmu_set_x( tN );
+			}
+			for ( size_type i = 0, e = zc_observees_.size(); i < e; ++i ) {
+				zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( tN );
+			}
+			fmu_me_->get_directional_derivatives(
+			 zc_observees_v_ref_.data(),
+			 zc_observees_v_ref_.size(),
+			 zc_vars_.refs.data(),
+			 zc_vars_.refs.size(),
+			 zc_observees_dv_.data(),
+			 zc_vars_.ders_p.data()
+			);
+			size_type const zc2_bo( zc2_.b() - zc_.b() );
+			for ( size_type i = zc2_.b(), j = zc2_bo, e = zc_.e(); i < e; ++i, ++j ) { // Order 2+ handlers
+				handlers_[ i ]->advance_handler_2( zc_vars_.ders_p[ j ] );
+			}
+			fmu_me_->set_time( t );
+		}
+	}
+
+	// Advance QSS State Handlers: Stage Final
+	void
+	advance_QSS_F( Time const t )
+	{
+		for ( size_type i = 0, e = qss_.e(); i < e; ++i ) {
+			handlers_[ i ]->advance_handler_F( t );
+		}
+	}
+
+	// Advance Real Non-State Handlers: Stage Final
+	void
+	advance_R_F( Time const t )
+	{
+		for ( size_type i = r_.b(), e = r_.e(); i < e; ++i ) {
+			handlers_[ i ]->advance_handler_F( t );
+		}
+	}
+
+	// Advance Other X-Based Handlers: Stage Final
+	void
+	advance_OX_F( Time const t )
+	{
+		for ( size_type i = ox_.b(), e = ox_.e(); i < e; ++i ) {
+			handlers_[ i ]->advance_handler_F( t );
+		}
+	}
+
+	// Advance Zero-Crossing Handlers: Stage Final
+	void
+	advance_ZC_F( Time const t )
+	{
+		for ( size_type i = zc_.b(), e = zc_.e(); i < e; ++i ) {
+			handlers_[ i ]->advance_handler_F( t );
+		}
+	}
+
+	// Advance: Stage Final
+	void
+	advance_F( Time const t )
+	{
+		for ( Variable * handler : handlers_ ) {
+			handler->advance_handler_F( t );
+		}
 	}
 
 private: // Data
@@ -409,20 +970,55 @@ private: // Data
 
 	Variables handlers_; // Handlers
 
-	// Handler index specs
-	bool uni_order_{ false }; // Handlers all the same order?
-	Range hnd_; // Handlers
-	Range hnd1_; // Handlers of order 1+
-	Range hnd2_; // Handlers of order 2+
-	Range hnd3_; // Handlers of order 3+
+	bool connected_output_handler_{ false }; // Output connection handler to another FMU?
 
-	// Observees (including self-observers)
-	Variables hnd_observees_; // Handlers observees
-	Variables hnd1_observees_; // Handlers of order 1+ observees
-	Variables hnd2_observees_; // Handlers of order 2+ observees
-	Variables hnd3_observees_; // Handlers of order 3+ observees
+	// Handler index ranges
+	Range all_; // All handlers
+	Range qss_; // QSS state handlers
+	Range qss2_; // QSS state handlers of order 2+
+	Range qss3_; // QSS state handlers of order 3+
+	Range ns_; // Non-state (X-based) handlers
+	Range r_; // Real handlers
+	Range r2_; // Real handlers of order 2+
+	Range r3_; // Real handlers of order 3+
+	Range ox_; // Other X-based handlers
+	Range zc_; // Zero-crossing handlers
+	Range zc2_; // Zero-crossing handlers of order 2+
+	Range zc3_; // Zero-crossing handlers of order 3+
 
-	RefsDers< Variable > hnd_ders_; // Handler derivative FMU pooled call data
+	// Uniform order flags
+	bool qss_uni_order_{ false }; // QSS handlers all the same order?
+	bool zc_uni_order_{ false }; // ZC handlers all the same order?
+	bool r_uni_order_{ false }; // R handlers all the same order?
+
+	// Handler FMU pooled call data
+	RefsVals< Variable > qss_vars_; // QSS values
+	RefsDers< Variable > qss_ders_; // QSS derivatives
+	RefsValsDers< Variable > r_vars_; // Real non-state values and derivatives
+	RefsVals< Variable > ox_vars_; // Other X-based values
+	RefsValsDers< Variable > zc_vars_; // Zero-crossing values and derivatives
+
+	// QSS state handlers observees (including self-observers)
+	Variables qss_observees_; // Handlers observees
+	Variables qss2_observees_; // Handlers of order 2+ observees
+	Variables qss3_observees_; // Handlers of order 3+ observees
+
+	// Real handlers observees
+	Variables r_observees_; // Handlers observees
+	Variables r2_observees_; // Handlers of order 2+ observees
+	Variables r3_observees_; // Handlers of order 3+ observees
+	VariableRefs r_observees_v_ref_; // Handlers observees value references
+	Reals r_observees_dv_; // Handlers observees derivatives
+
+	// Other X-based handlers observees
+	// Variables ox_observees_; // Handlers observees
+
+	// Zero-crossing handlers observees
+	Variables zc_observees_; // Handlers observees
+	Variables zc2_observees_; // Handlers of order 2+ observees
+	Variables zc3_observees_; // Handlers of order 3+ observees
+	VariableRefs zc_observees_v_ref_; // Handlers observees value references
+	Reals zc_observees_dv_; // Handlers observees derivatives
 
 }; // Handlers
 

@@ -90,28 +90,28 @@ namespace QSS {
 		// Set coefficients based on third derivative signs
 		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward curve-changing trajectory
 			q_0_ = q_l;
-			x_1_ = q_1_ = x_1_l;
-			x_2_ = q_2_ = x_2_l;
+			q_1_ = x_1_ = x_1_l;
+			q_2_ = x_2_ = x_2_l;
 			x_3_ = x_3_l;
 		} else if ( ( x_3_l_s == +1 ) && ( x_3_u_s == +1 ) ) { // Upward curve-changing trajectory
 			q_0_ = q_u;
-			x_1_ = q_1_ = x_1_u;
-			x_2_ = q_2_ = x_2_u;
+			q_1_ = x_1_ = x_1_u;
+			q_2_ = x_2_ = x_2_u;
 			x_3_ = x_3_u;
 		} else if ( ( x_3_l_s == 0 ) && ( x_3_u_s == 0 ) ) { // Non-curve-changing trajectory
 			// Keep q_0_ == q_c_
-			x_1_ = q_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st order coefficient at q_0_ == q_c_
-			x_2_ = q_2_ = one_half * ( x_2_l + x_2_u ); // Interpolated 2nd order coefficient at q_0_ == q_c_
+			q_1_ = x_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st order coefficient at q_0_ == q_c_
+			q_2_ = x_2_ = one_half * ( x_2_l + x_2_u ); // Interpolated 2nd order coefficient at q_0_ == q_c_
 			x_3_ = 0.0;
 		} else { // Quadratic trajectory
 			q_0_ = std::min( std::max( ( ( q_l * x_3_u ) - ( q_u * x_3_l ) ) / ( x_3_u - x_3_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
-			x_1_ = q_1_ = ( ( ( q_u - q_0_ ) * x_1_l ) + ( ( q_0_ - q_l ) * x_1_u ) ) / ( two * qTol ); // Interpolated 1st order coefficient at q_0_
-			x_2_ = q_2_ = ( ( ( q_u - q_0_ ) * x_2_l ) + ( ( q_0_ - q_l ) * x_2_u ) ) / ( two * qTol ); // Interpolated 2nd order coefficient at q_0_
+			q_1_ = x_1_ = ( ( ( q_u - q_0_ ) * x_1_l ) + ( ( q_0_ - q_l ) * x_1_u ) ) / ( two * qTol ); // Interpolated 1st order coefficient at q_0_
+			q_2_ = x_2_ = ( ( ( q_u - q_0_ ) * x_2_l ) + ( ( q_0_ - q_l ) * x_2_u ) ) / ( two * qTol ); // Interpolated 2nd order coefficient at q_0_
 			x_3_ = 0.0;
 		}
 	}
 
-	// Advance Self-Observing Trigger
+	// Advance Self-Observing Trigger: Forward ND
 	void
 	Variable_LIQSS3::
 	advance_LIQSS_forward()
@@ -164,23 +164,23 @@ namespace QSS {
 		// Set coefficients based on third derivative signs
 		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward curve-changing trajectory
 			q_0_ = q_l;
-			x_1_ = q_1_ = x_1_l;
-			x_2_ = q_2_ = x_2_l;
+			q_1_ = x_1_ = x_1_l;
+			q_2_ = x_2_ = x_2_l;
 			x_3_ = x_3_l;
 		} else if ( ( x_3_l_s == +1 ) && ( x_3_u_s == +1 ) ) { // Upward curve-changing trajectory
 			q_0_ = q_u;
-			x_1_ = q_1_ = x_1_u;
-			x_2_ = q_2_ = x_2_u;
+			q_1_ = x_1_ = x_1_u;
+			q_2_ = x_2_ = x_2_u;
 			x_3_ = x_3_u;
 		} else if ( ( x_3_l_s == 0 ) && ( x_3_u_s == 0 ) ) { // Non-curve-changing trajectory
 			// Keep q_0_ == q_c_
-			x_1_ = q_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st order coefficient at q_0_ == q_c_
-			x_2_ = q_2_ = one_half * ( x_2_l + x_2_u ); // Interpolated 2nd order coefficient at q_0_ == q_c_
+			q_1_ = x_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st order coefficient at q_0_ == q_c_
+			q_2_ = x_2_ = one_half * ( x_2_l + x_2_u ); // Interpolated 2nd order coefficient at q_0_ == q_c_
 			x_3_ = 0.0;
 		} else { // Quadratic trajectory
 			q_0_ = std::min( std::max( ( ( q_l * x_3_u ) - ( q_u * x_3_l ) ) / ( x_3_u - x_3_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
-			x_1_ = q_1_ = ( ( ( q_u - q_0_ ) * x_1_l ) + ( ( q_0_ - q_l ) * x_1_u ) ) / ( two * qTol ); // Interpolated 1st order coefficient at q_0_
-			x_2_ = q_2_ = ( ( ( q_u - q_0_ ) * x_2_l ) + ( ( q_0_ - q_l ) * x_2_u ) ) / ( two * qTol ); // Interpolated 2nd order coefficient at q_0_
+			q_1_ = x_1_ = ( ( ( q_u - q_0_ ) * x_1_l ) + ( ( q_0_ - q_l ) * x_1_u ) ) / ( two * qTol ); // Interpolated 1st order coefficient at q_0_
+			q_2_ = x_2_ = ( ( ( q_u - q_0_ ) * x_2_l ) + ( ( q_0_ - q_l ) * x_2_u ) ) / ( two * qTol ); // Interpolated 2nd order coefficient at q_0_
 			x_3_ = 0.0;
 		}
 	}
@@ -189,7 +189,7 @@ namespace QSS {
 	// Advance Self-Observing Trigger: Simultaneous
 	void
 	Variable_LIQSS3::
-	advance_LIQSS_s()
+	advance_LIQSS_simultaneous()
 	{
 		assert( qTol > 0.0 );
 		assert( self_observer() );
@@ -211,10 +211,10 @@ namespace QSS {
 		Time tN( tQ + dN );
 		fmu_set_time( tN );
 		fmu_set_observees_x( tN );
-		fmu_set_real( q_l + ( ( x_1_l + ( x_2_ * dN ) ) * dN ) );
+		fmu_set_real( q_l + ( ( x_1_l + ( d_2_ * dN ) ) * dN ) );
 		Real const x_1_p_l( p_1() );
 		Real const x_2_l( options::one_over_two_dtND * ( x_1_p_l - x_1_l ) ); //ND Forward Euler
-		fmu_set_real( q_u + ( ( x_1_u + ( x_2_ * dN ) ) * dN ) );
+		fmu_set_real( q_u + ( ( x_1_u + ( d_2_ * dN ) ) * dN ) );
 		Real const x_1_p_u( p_1() );
 		Real const x_2_u( options::one_over_two_dtND * ( x_1_p_u - x_1_u ) ); //ND Forward Euler
 
@@ -241,31 +241,31 @@ namespace QSS {
 		// Set coefficients based on third derivative signs
 		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward curve-changing trajectory
 			l_0_ = q_l;
-			x_1_ = x_1_l;
-			x_2_ = x_2_l;
-			x_3_ = x_3_l;
+			d_1_ = x_1_l;
+			d_2_ = x_2_l;
+			d_3_ = x_3_l;
 		} else if ( ( x_3_l_s == +1 ) && ( x_3_u_s == +1 ) ) { // Upward curve-changing trajectory
 			l_0_ = q_u;
-			x_1_ = x_1_u;
-			x_2_ = x_2_u;
-			x_3_ = x_3_u;
+			d_1_ = x_1_u;
+			d_2_ = x_2_u;
+			d_3_ = x_3_u;
 		} else if ( ( x_3_l_s == 0 ) && ( x_3_u_s == 0 ) ) { // Non-curve-changing trajectory
 			l_0_ = q_c_;
-			x_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st order coefficient at q_0_ == q_c_
-			x_2_ = one_half * ( x_2_l + x_2_u ); // Interpolated 2nd order coefficient at q_0_ == q_c_
-			x_3_ = 0.0;
+			d_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st order coefficient at q_0_ == q_c_
+			d_2_ = one_half * ( x_2_l + x_2_u ); // Interpolated 2nd order coefficient at q_0_ == q_c_
+			d_3_ = 0.0;
 		} else { // Quadratic trajectory
 			l_0_ = std::min( std::max( ( ( q_l * x_3_u ) - ( q_u * x_3_l ) ) / ( x_3_u - x_3_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
-			x_1_ = ( ( ( q_u - l_0_ ) * x_1_l ) + ( ( l_0_ - q_l ) * x_1_u ) ) / ( two * qTol ); // Interpolated 1st order coefficient at q_0_
-			x_2_ = ( ( ( q_u - l_0_ ) * x_2_l ) + ( ( l_0_ - q_l ) * x_2_u ) ) / ( two * qTol ); // Interpolated 2nd order coefficient at q_0_
-			x_3_ = 0.0;
+			d_1_ = ( ( ( q_u - l_0_ ) * x_1_l ) + ( ( l_0_ - q_l ) * x_1_u ) ) / ( two * qTol ); // Interpolated 1st order coefficient at q_0_
+			d_2_ = ( ( ( q_u - l_0_ ) * x_2_l ) + ( ( l_0_ - q_l ) * x_2_u ) ) / ( two * qTol ); // Interpolated 2nd order coefficient at q_0_
+			d_3_ = 0.0;
 		}
 	}
 
-	// Advance Self-Observing Trigger: Simultaneous
+	// Advance Self-Observing Trigger: Simultaneous: Forward ND
 	void
 	Variable_LIQSS3::
-	advance_LIQSS_s_forward()
+	advance_LIQSS_simultaneous_forward()
 	{
 		assert( qTol > 0.0 );
 		assert( self_observer() );
@@ -287,10 +287,10 @@ namespace QSS {
 		Time tN( tQ + dN );
 		fmu_set_time( tN );
 		fmu_set_observees_x( tN );
-		fmu_set_real( q_l + ( ( x_1_l + ( x_2_ * dN ) ) * dN ) );
+		fmu_set_real( q_l + ( ( x_1_l + ( d_2_ * dN ) ) * dN ) );
 		Real const x_1_p_l( p_1() );
 		Real const x_2_l( options::one_over_two_dtND * ( x_1_p_l - x_1_l ) ); //ND Forward Euler
-		fmu_set_real( q_u + ( ( x_1_u + ( x_2_ * dN ) ) * dN ) );
+		fmu_set_real( q_u + ( ( x_1_u + ( d_2_ * dN ) ) * dN ) );
 		Real const x_1_p_u( p_1() );
 		Real const x_2_u( options::one_over_two_dtND * ( x_1_p_u - x_1_u ) ); //ND Forward Euler
 
@@ -318,24 +318,24 @@ namespace QSS {
 		// Set coefficients based on third derivative signs
 		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward curve-changing trajectory
 			l_0_ = q_l;
-			x_1_ = x_1_l;
-			x_2_ = x_2_l;
-			x_3_ = x_3_l;
+			d_1_ = x_1_l;
+			d_2_ = x_2_l;
+			d_3_ = x_3_l;
 		} else if ( ( x_3_l_s == +1 ) && ( x_3_u_s == +1 ) ) { // Upward curve-changing trajectory
 			l_0_ = q_u;
-			x_1_ = x_1_u;
-			x_2_ = x_2_u;
-			x_3_ = x_3_u;
+			d_1_ = x_1_u;
+			d_2_ = x_2_u;
+			d_3_ = x_3_u;
 		} else if ( ( x_3_l_s == 0 ) && ( x_3_u_s == 0 ) ) { // Non-curve-changing trajectory
 			l_0_ = q_c_;
-			x_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st order coefficient at q_0_ == q_c_
-			x_2_ = one_half * ( x_2_l + x_2_u ); // Interpolated 2nd order coefficient at q_0_ == q_c_
-			x_3_ = 0.0;
+			d_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st order coefficient at q_0_ == q_c_
+			d_2_ = one_half * ( x_2_l + x_2_u ); // Interpolated 2nd order coefficient at q_0_ == q_c_
+			d_3_ = 0.0;
 		} else { // Quadratic trajectory
 			l_0_ = std::min( std::max( ( ( q_l * x_3_u ) - ( q_u * x_3_l ) ) / ( x_3_u - x_3_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
-			x_1_ = ( ( ( q_u - l_0_ ) * x_1_l ) + ( ( l_0_ - q_l ) * x_1_u ) ) / ( two * qTol ); // Interpolated 1st order coefficient at q_0_
-			x_2_ = ( ( ( q_u - l_0_ ) * x_2_l ) + ( ( l_0_ - q_l ) * x_2_u ) ) / ( two * qTol ); // Interpolated 2nd order coefficient at q_0_
-			x_3_ = 0.0;
+			d_1_ = ( ( ( q_u - l_0_ ) * x_1_l ) + ( ( l_0_ - q_l ) * x_1_u ) ) / ( two * qTol ); // Interpolated 1st order coefficient at q_0_
+			d_2_ = ( ( ( q_u - l_0_ ) * x_2_l ) + ( ( l_0_ - q_l ) * x_2_u ) ) / ( two * qTol ); // Interpolated 2nd order coefficient at q_0_
+			d_3_ = 0.0;
 		}
 	}
 

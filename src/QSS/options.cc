@@ -85,6 +85,8 @@ bool cycles( false ); // Report dependency cycles?
 bool inflection( false ); // Requantize at inflections?
 bool refine( false ); // Refine FMU zero-crossing roots?
 bool perfect( false ); // Perfect FMU-ME connection sync?
+bool active( false ); // Active intermediate variables preferred?
+bool passive( true ); // Passive intermediate variables preferred?
 bool stiff( false ); // Stiffness detection/report?
 bool steps( false ); // Generate requantization step count file?
 LogLevel log( LogLevel::warning ); // Logging level
@@ -162,6 +164,8 @@ help_display()
 	std::cout << " --inflection       Requantize at inflections" << '\n';
 	std::cout << " --refine           Refine FMU zero-crossing roots" << '\n';
 	std::cout << " --perfect          Perfect FMU-ME connection sync" << '\n';
+	std::cout << " --active           Active intermediate variables preferred  [Off]" << '\n';
+	std::cout << " --passive          Passive intermediate variables preferred  [On]" << '\n';
 	std::cout << " --stiff            Stiffness detection/report for FMU" << '\n';
 	std::cout << " --steps            Generate step count file for FMU" << '\n';
 	std::cout << " --log=LEVEL        Logging level  [warning]" << '\n';
@@ -303,6 +307,12 @@ process_args( Args const & args )
 			refine = true;
 		} else if ( has_option( arg, "perfect" ) ) {
 			perfect = true;
+		} else if ( has_option( arg, "active" ) ) {
+			active = true;
+			passive = false;
+		} else if ( has_option( arg, "passive" ) ) {
+			active = false;
+			passive = true;
 		} else if ( has_option( arg, "steps" ) ) {
 			steps = true;
 		} else if ( has_option( arg, "stiff" ) || has_option( arg, "stiffness" ) ) {

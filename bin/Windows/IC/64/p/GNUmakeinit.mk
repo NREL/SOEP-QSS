@@ -15,6 +15,6 @@ CXXFLAGS := /nologo /Qstd=c++20 /Zc:__cplusplus /Qcxx-features /Wall /Qdiag-disa
 # 10382 /QxHOST remark
 # 11074 Inlining inhibited by size limit
 # 11075 Inlining report message
-LINKFLAGS := /link /nologo /SUBSYSTEM:CONSOLE /STACK:8388608 /DEBUG /PROFILE
+LINKFLAGS := /link /nologo /SUBSYSTEM:CONSOLE /STACK:16777216 /DEBUG /PROFILE
 
 include $(QSS_bin)\..\GNUmakeinit.mk

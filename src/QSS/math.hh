@@ -300,6 +300,17 @@ positive_or_infinity( T const r )
 	return ( r > T( 0 ) ? r : inf< T >() );
 }
 
+// x == y Within Specified Relative or Absolute Tolerances?
+template< typename T >
+inline
+bool
+eq_tol( T const & x, T const & y, T const & r_tol, T const & a_tol = T( 0 ) )
+{
+	assert( r_tol >= T( 0 ) );
+	assert( a_tol >= T( 0 ) );
+	return ( std::abs( x - y ) <= std::max( r_tol * std::max( std::abs( x ), std::abs( y ) ), a_tol ) );
+}
+
 // Sorted Array of 3 Values Making Non-Positive Values Infinity
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 inline

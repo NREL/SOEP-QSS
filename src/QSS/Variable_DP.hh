@@ -1,4 +1,4 @@
-// QSS Integer Variable
+// QSS Discrete Passive Variable
 //
 // Project: QSS Solver
 //
@@ -33,16 +33,16 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_Variable_I_hh_INCLUDED
-#define QSS_Variable_I_hh_INCLUDED
+#ifndef QSS_Variable_DP_hh_INCLUDED
+#define QSS_Variable_DP_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/Variable.hh>
 
 namespace QSS {
 
-// QSS Integer Variable
-class Variable_I final : public Variable
+// QSS Discrete Passive Variable
+class Variable_DP final : public Variable
 {
 
 public: // Types
@@ -52,21 +52,20 @@ public: // Types
 public: // Creation
 
 	// Name + Value Constructor
-	Variable_I(
+	Variable_DP(
 	 FMU_ME * fmu_me,
 	 std::string const & name,
-	 Integer const xIni_ = 0,
+	 Real const xIni_ = 0.0,
 	 FMU_Variable const var = FMU_Variable()
 	) :
-	 Super( fmu_me, 0, name, xIni_, var ),
-	 x_( xIni_ )
+	 Super( fmu_me, 0, name, xIni_, var )
 	{}
 
 public: // Predicate
 
-	// Integer Variable?
+	// Real Variable?
 	bool
-	is_Integer() const override
+	is_Real() const override
 	{
 		return true;
 	}
@@ -85,34 +84,41 @@ public: // Predicate
 		return true;
 	}
 
-public: // Property
-
-	// Integer Value
-	Integer
-	i() const override
+	// D Variable?
+	bool
+	is_D() const override
 	{
-		return x_;
+		return true;
 	}
 
-	// Integer Value at Time t
-	Integer
-	i( Time const ) const override
+	// Active Variable?
+	bool
+	is_Active() const override
 	{
-		return x_;
+		return false;
+	}
+
+public: // Property
+
+	// Real Value at Time t
+	Real
+	r( Time const t ) const override
+	{
+		return d_0( t );
 	}
 
 	// Continuous Value at Time t
 	Real
-	x( Time const ) const override
+	x( Time const t ) const override
 	{
-		return Real( x_ );
+		return d_0( t );
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const ) const override
+	q( Time const t ) const override
 	{
-		return Real( x_ );
+		return d_0( t );
 	}
 
 public: // Methods
@@ -131,107 +137,17 @@ public: // Methods
 	init_0() override
 	{
 		init_observees();
-		x_ = Integer( xIni );
-		assert( fmu_get_integer() == x_ );
+		assert( fmu_get_real() == xIni );
 	}
 
 	// Initialization: Stage Final
 	void
 	init_F() override
 	{
-		add_handler();
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << std::endl;
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << d_0( tQ ) << std::noshowpos << std::endl;
 	}
 
-	// Handler Advance
-	void
-	advance_handler( Time const t ) override
-	{
-		assert( tX <= t );
-		tQ = tX = t;
-		d_ = i_f();
-		shift_handler();
-		if ( x_ != d_ ) {
-			x_ = d_;
-			if ( options::output::d ) std::cout << "*  " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << std::endl;
-			if ( observed() ) advance_observers();
-			if ( connected() ) advance_connections();
-		}
-	}
-
-	// Handler Advance: Stage 0
-	void
-	advance_handler_0( Time const t, Real const x_0 ) override
-	{
-		assert( tX <= t );
-		d_ = Integer( x_0 );
-	}
-
-	// Handler Advance: Stage Final
-	void
-	advance_handler_F( Time const t ) override
-	{
-		tQ = tX = t;
-		shift_handler();
-		if ( x_ != d_ ) {
-			x_ = d_;
-			if ( options::output::d ) std::cout << "*= " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << std::endl;
-			if ( connected() ) advance_connections();
-		}
-	}
-
-	// Handler No-Advance
-	void
-	no_advance_handler() override
-	{
-		shift_handler();
-	}
-
-	// Observer Advance
-	void
-	advance_observer( Time const t ) override
-	{
-		assert( tX <= t );
-		tQ = tX = t;
-		d_ = i_0();
-		if ( x_ != d_ ) {
-			x_ = d_;
-			if ( connected() ) advance_connections_observer();
-		}
-	}
-
-	// Observer Advance: Stage 1
-	void
-	advance_observer_1( Time const t ) override
-	{
-		assert( tX <= t );
-		d_ = i_0( t );
-	}
-
-	// Observer Advance: Stage Final
-	void
-	advance_observer_F( Time const t ) override
-	{
-		tQ = tX = t;
-		if ( x_ != d_ ) {
-			x_ = d_;
-			if ( connected() ) advance_connections_observer();
-		}
-	}
-
-	// Observer Advance: Stage d
-	void
-	advance_observer_d() const override
-	{
-		std::cout << " ^ " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << std::endl;
-	}
-
-private: // Data
-
-	Integer x_{ 0 }; // Value
-	Integer d_{ 0 }; // Deferred value
-
-}; // Variable_I
+}; // Variable_DP
 
 } // QSS
 

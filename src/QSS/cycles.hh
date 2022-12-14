@@ -45,7 +45,7 @@
 namespace QSS {
 
 // QSS Dependency Cycle Detection
-template< typename Variable >
+template< typename Variable, typename Variable_ZC >
 inline
 void
 cycles( typename Variable::Variables const & vars )
@@ -115,9 +115,12 @@ cycles( typename Variable::Variables const & vars )
 		for ( Variable const * obs : node.var->observers() ) {
 			node.observers.push_back( &*std::find_if( nodes.begin(), nodes.end(), [obs]( Node const & n ){ return n.var == obs; } ) );
 		}
-		if ( node.var->in_conditional() ) { // Short-circuit conditional dependencies
-			for ( Variable const * mod : node.var->conditional->observers() ) {
-				node.observers.push_back( &*std::find_if( nodes.begin(), nodes.end(), [mod]( Node const & n ){ return n.var == mod; } ) );
+		if ( node.var->is_ZC() ) {
+			Variable_ZC const * zc( static_cast< Variable_ZC const * >( node.var ) );
+			if ( zc->in_conditional() ) { // Short-circuit conditional dependencies
+				for ( Variable const * mod : zc->conditional->observers() ) {
+					node.observers.push_back( &*std::find_if( nodes.begin(), nodes.end(), [mod]( Node const & n ){ return n.var == mod; } ) );
+				}
 			}
 		}
 	}

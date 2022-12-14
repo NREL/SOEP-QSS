@@ -38,22 +38,23 @@
 
 // QSS Headers
 #include <QSS/Target.hh>
+#include <QSS/Variable.hh>
 
 namespace QSS {
 
 // Conditional Class Template
-template< typename V >
+template< typename Variable_ZC >
 class Conditional final : public Target
 {
 
 public: // Types
 
 	using Super = Target;
-	using Variable = V;
-	using Variables = typename Variable::Variables;
-	using Time = typename Variable::Time;
-	using Real = typename Variable::Real;
-	using size_type = typename Variables::size_type;
+	using Variables = Variable::Variables;
+	using VariablesSet = Variable::VariablesSet;
+	using Time = Variable::Time;
+	using Real = Variable::Real;
+	using size_type = Variables::size_type;
 	using EventQ = EventQueue< Target >;
 
 public: // Creation
@@ -67,24 +68,10 @@ public: // Creation
 	// Move Constructor
 	Conditional( Conditional && ) noexcept = default;
 
-	// Variable + EventQ Constructor
-	Conditional(
-	 Variable * var,
-	 EventQ * eventq
-	) :
-	 var_( var ),
-	 eventq_( eventq )
-	{
-		assert( var_ != nullptr );
-		assert( eventq_ != nullptr );
-		var_->conditional = this;
-		add_conditional();
-	}
-
-	// Name + Variable + Event Queue Constructor
+	// Name + Variable_ZC + Event Queue Constructor
 	Conditional(
 	 std::string const & name,
-	 Variable * var,
+	 Variable_ZC * var,
 	 EventQ * eventq
 	) :
 	 Target( name ),
@@ -138,15 +125,15 @@ public: // Property
 		return 1u;
 	}
 
-	// Variable
-	Variable const *
+	// Variable_ZC
+	Variable_ZC const *
 	var() const
 	{
 		return var_;
 	}
 
-	// Variable
-	Variable * &
+	// Variable_ZC
+	Variable_ZC * &
 	var()
 	{
 		return var_;
@@ -166,43 +153,34 @@ public: // Property
 		return observers_;
 	}
 
-	// Boolean Value at SuperdenseTime s
-	bool
-	b( SuperdenseTime const & s ) const
-	{
-		assert( var_ != nullptr );
-		return var_->b( s.t );
-	}
-
-	// Boolean Value at Time t
-	bool
-	b( Time const t ) const
-	{
-		assert( var_ != nullptr );
-		return var_->b( t );
-	}
-
 public: // Methods
 
 	// Add an Observer Variable
 	void
-	add_observer( Variable * v )
+	add_observer( Variable * observer )
 	{
-		assert( v != nullptr );
-		if ( v->is_Input() ) {
-			std::cerr << "\nError: Input variable " << v->name() << " is modified in conditional clause of " << var_->name() << std::endl;
-			std::exit( EXIT_FAILURE );
-		} else if ( v->is_ZC() ) {
-			std::cerr << "\nError: Zero-crossing variable " << v->name() << " is modified in conditional clause of " << var_->name() << std::endl;
+		assert( observer != nullptr );
+		if ( observer->is_Input() ) {
+			std::cerr << "\nError: Input variable " << observer->name() << " is modified in conditional clause of " << var_->name() << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
-		observers_.push_back( v );
+		observers_.push_back( observer );
 	}
 
 	// Initialize Observers Collection
 	void
 	init_observers()
 	{
+		// Short-circuit passive observers
+		short_circuit_passive_observers();
+		if ( options::output::d ) {
+			assert( var_ != nullptr );
+			std::cout << '\n' << var_->name() << " Conditional Computational Observers:" << std::endl;
+			for ( Variable const * observer : sorted_by_name( observers_ ) ) {
+				std::cout << ' ' << observer->name() << std::endl;
+			}
+		}
+
 		// Flag if output connection observers
 		connected_output_observer = false;
 		for ( auto const observer : observers_ ) {
@@ -213,7 +191,7 @@ public: // Methods
 		}
 	}
 
-	// Variable Activity Notifier
+	// Activity Notifier
 	void
 	activity( Time const t )
 	{
@@ -225,8 +203,11 @@ public: // Methods
 	handler( Time const t )
 	{
 		for ( Variable * observer : observers_ ) {
-			observer->fmu_set_x( t ); // Set FMU value for handler derivative dependencies
-			observer->shift_handler( t );
+			// Set observers's observee FMU values so FMU event handler computes correct new observer value
+			observer->fmu_set_observees_x( t );
+			if ( observer->self_observer() ) observer->fmu_set_x( t );
+
+			observer->shift_handler( t ); // Set observer's handler event
 		}
 	}
 
@@ -259,20 +240,63 @@ public: // Methods
 	advance_conditional()
 	{
 		assert( var_ != nullptr );
-		if ( var_->b( st.t ) ) handler( st.t );
+		if ( var_->is_tZ_last( st.t ) ) handler( st.t );
 		shift_conditional();
 	}
 
-	// Remove Variable
+	// Remove Associated Zero-Crossing Variable
 	void
 	rem_variable()
 	{
 		var_ = nullptr;
 	}
 
+private: // Methods
+
+	// Short-Circuit Passive Observers
+	void
+	short_circuit_passive_observers()
+	{
+		if ( ! observers_.empty() ) {
+			VariablesSet observers_checked;
+			VariablesSet observers_set;
+			for ( Variable * observer : observers_ ) {
+				if ( observer->is_Active() ) { // Keep it
+					observers_set.insert( observer );
+					observers_checked.insert( observer );
+				} else { // Short-circuit it
+					assert( observer->is_Passive() );
+					find_computational_observers( observer, observers_checked, observers_set ); // Note: Looks at other variable observers that aren't necessarily uniquified yet but that is OK: Might be more efficient to make this a separate phase after all are uniquified
+				}
+			}
+			observers_.assign( observers_set.begin(), observers_set.end() ); // Swap in the computational observers
+		}
+		if ( observers_.empty() ) observers_.push_back( var_ ); // No active handler variables: Enable zero-crossing event processing with self-observation
+	}
+
+	// Find Short-Circuited Computational Observers
+	void
+	find_computational_observers(
+	 Variable * observer,
+	 VariablesSet & observers_checked,
+	 VariablesSet & observers_set
+	)
+	{
+		if ( observers_checked.find( observer ) == observers_checked.end() ) { // Observer not already processed
+			observers_checked.insert( observer );
+			if ( observer->is_Active() ) { // Active => Computational
+				observers_set.insert( observer );
+			} else { // Traverse dependency sub-graph
+				for ( Variable * oo : observer->observers() ) { // Recurse
+					find_computational_observers( oo, observers_checked, observers_set );
+				}
+			}
+		}
+	}
+
 private: // Data
 
-	Variable * var_{ nullptr }; // Event variable
+	Variable_ZC * var_{ nullptr }; // Event indicator variable
 	Variables observers_; // Variables dependent on this one (modified by handler)
 	EventQ * eventq_{ nullptr }; // Event queue
 

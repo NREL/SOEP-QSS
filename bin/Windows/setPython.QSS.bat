@@ -6,7 +6,7 @@ if "%OCT_BIN_HOME%" == "" (
 )
 
 :: Find Python: Prefer OCT Python for building QSS Python extensions that work with OCT PyFMI
-for %%V in (310 39 38 37 36 35) do (
+for %%V in (312 311 310 39 38 37 36 35) do (
   if exist "%OCT_BIN_HOME%" (
     if exist "%OCT_BIN_HOME%\Python%%V\python.exe" (
       set "PYTHON_DIR=%OCT_BIN_HOME%\Python%%V"
@@ -16,7 +16,7 @@ for %%V in (310 39 38 37 36 35) do (
     )
   )
 )
-for %%V in (310 39 38 37 36 35) do (
+for %%V in (312 311 310 39 38 37 36 35) do (
   if exist C:\Python%%V\python.exe (
     set PYTHON_DIR=C:\Python%%V
     set PYTHON_VER=%%V

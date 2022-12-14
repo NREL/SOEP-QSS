@@ -173,17 +173,12 @@ public: // Methods
 
 		// Observees set up
 		observees_.clear();
-		dd_observees_.clear();
 		for ( Variable * trigger : triggers_ ) {
 			for ( auto observee : trigger->observees() ) {
 				observees_.push_back( observee );
 			}
-			for ( auto observee : trigger->dd_observees() ) {
-				dd_observees_.push_back( observee );
-			}
 		}
 		uniquify( observees_ );
-		uniquify( dd_observees_ );
 		if ( !uni_order_ ) {
 			assert( range2_.have() );
 			observees2_.clear();
@@ -207,47 +202,43 @@ public: // Methods
 		}
 
 		// Directional derivative observee seed array set up
-		dd_observees_v_ref_.clear();
-		dd_observees_dv_.clear();
-		for ( auto observee : dd_observees_ ) {
-			dd_observees_v_ref_.push_back( observee->var().ref() );
-			dd_observees_dv_.push_back( 0.0 ); // Actual values assigned when getting directional derivatives
+		observees_v_ref_.clear();
+		observees_dv_.clear();
+		for ( auto observee : observees_ ) {
+			observees_v_ref_.push_back( observee->var().ref() );
+			observees_dv_.push_back( 0.0 ); // Actual values assigned when getting directional derivatives
 		}
 	}
 
-	// QSS Advance
+	// QSS Advance Triggers
 	void
 	advance_QSS( Time const t, SuperdenseTime const & s )
 	{
 		assert( fmu_me_ != nullptr );
 		assert( fmu_me_->get_time() == t );
-		assert( fmu_me_->has_event_indicators );
 		assert( range_.n() == zc_vars_.size() );
 
 		for ( Variable * observee : observees_ ) {
 			observee->fmu_set_x( t );
 		}
-		for ( Variable * observee : dd_observees_ ) {
-			observee->fmu_set_x( t );
-		}
 		fmu_me_->get_reals( range_.n(), &zc_vars_.refs[ 0 ], &zc_vars_.vals[ 0 ] );
 		for ( size_type i = range_.b(), e = range_.e(); i < e; ++i ) {
 			Variable * trigger( triggers_[ i ] );
-			assert( trigger->is_ZC() ); // Event indicator trigger
+			assert( trigger->is_ZC() ); // Zero crossing variable trigger
 			assert( trigger->tE >= t ); // Bin variables tE can be > t
 			trigger->tE = t; // Bin variables tE can be > t
 			trigger->st = s; // Set trigger superdense time
 			trigger->advance_QSS_0( zc_vars_.vals[ i ] );
 		}
-		for ( size_type i = 0, e = dd_observees_.size(); i < e; ++i ) {
-			dd_observees_dv_[ i ] = dd_observees_[ i ]->x1( t );
+		for ( size_type i = 0, e = observees_.size(); i < e; ++i ) {
+			observees_dv_[ i ] = observees_[ i ]->x1( t );
 		}
 		fmu_me_->get_directional_derivatives(
-		 dd_observees_v_ref_.data(),
-		 dd_observees_v_ref_.size(),
+		 observees_v_ref_.data(),
+		 observees_v_ref_.size(),
 		 zc_vars_.refs.data(),
 		 zc_vars_.refs.size(),
-		 dd_observees_dv_.data(),
+		 observees_dv_.data(),
 		 zc_vars_.ders.data()
 		);
 		for ( size_type i = range_.b(), e = range_.e(); i < e; ++i ) {
@@ -260,18 +251,15 @@ public: // Methods
 				for ( Variable * observee : uni_order_ ? observees_ : observees2_ ) {
 					observee->fmu_set_x( tN );
 				}
-				for ( Variable * observee : dd_observees_ ) {
-					observee->fmu_set_x( tN );
-				}
-				for ( size_type i = 0, e = dd_observees_.size(); i < e; ++i ) { //? Worth it to do this for observees of order 2+ triggers only?
-					dd_observees_dv_[ i ] = dd_observees_[ i ]->x1( tN );
+				for ( size_type i = 0, e = observees_.size(); i < e; ++i ) { //? Worth it to do this for observees of order 2+ triggers only?
+					observees_dv_[ i ] = observees_[ i ]->x1( tN );
 				}
 				fmu_me_->get_directional_derivatives(
-				 dd_observees_v_ref_.data(),
-				 dd_observees_v_ref_.size(),
+				 observees_v_ref_.data(),
+				 observees_v_ref_.size(),
 				 zc_vars_.refs.data(),
 				 zc_vars_.refs.size(),
-				 dd_observees_dv_.data(),
+				 observees_dv_.data(),
 				 zc_vars_.ders_m.data()
 				);
 				tN = t + options::dtND;
@@ -279,18 +267,15 @@ public: // Methods
 				for ( Variable * observee : uni_order_ ? observees_ : observees2_ ) {
 					observee->fmu_set_x( tN );
 				}
-				for ( Variable * observee : dd_observees_ ) {
-					observee->fmu_set_x( tN );
-				}
-				for ( size_type i = 0, e = dd_observees_.size(); i < e; ++i ) { //? Worth it to do this for observees of order 2+ triggers only?
-					dd_observees_dv_[ i ] = dd_observees_[ i ]->x1( tN );
+				for ( size_type i = 0, e = observees_.size(); i < e; ++i ) { //? Worth it to do this for observees of order 2+ triggers only?
+					observees_dv_[ i ] = observees_[ i ]->x1( tN );
 				}
 				fmu_me_->get_directional_derivatives(
-				 dd_observees_v_ref_.data(),
-				 dd_observees_v_ref_.size(),
+				 observees_v_ref_.data(),
+				 observees_v_ref_.size(),
 				 zc_vars_.refs.data(),
 				 zc_vars_.refs.size(),
-				 dd_observees_dv_.data(),
+				 observees_dv_.data(),
 				 zc_vars_.ders_p.data()
 				);
 				for ( size_type i = range2_.b(), e = range_.e(); i < e; ++i ) { // Order 2+ triggers
@@ -305,18 +290,15 @@ public: // Methods
 				for ( Variable * observee : uni_order_ ? observees_ : observees2_ ) {
 					observee->fmu_set_x( tN );
 				}
-				for ( Variable * observee : dd_observees_ ) {
-					observee->fmu_set_x( tN );
-				}
-				for ( size_type i = 0, e = dd_observees_.size(); i < e; ++i ) { //? Worth it to do this for observees of order 2+ triggers only?
-					dd_observees_dv_[ i ] = dd_observees_[ i ]->x1( tN );
+				for ( size_type i = 0, e = observees_.size(); i < e; ++i ) { //? Worth it to do this for observees of order 2+ triggers only?
+					observees_dv_[ i ] = observees_[ i ]->x1( tN );
 				}
 				fmu_me_->get_directional_derivatives(
-				 dd_observees_v_ref_.data(),
-				 dd_observees_v_ref_.size(),
+				 observees_v_ref_.data(),
+				 observees_v_ref_.size(),
 				 zc_vars_.refs.data(),
 				 zc_vars_.refs.size(),
-				 dd_observees_dv_.data(),
+				 observees_dv_.data(),
 				 zc_vars_.ders_m.data()
 				);
 				tN = t + options::two_dtND;
@@ -324,18 +306,15 @@ public: // Methods
 				for ( Variable * observee : uni_order_ ? observees_ : observees2_ ) {
 					observee->fmu_set_x( tN );
 				}
-				for ( Variable * observee : dd_observees_ ) {
-					observee->fmu_set_x( tN );
-				}
-				for ( size_type i = 0, e = dd_observees_.size(); i < e; ++i ) { //? Worth it to do this for observees of order 2+ triggers only?
-					dd_observees_dv_[ i ] = dd_observees_[ i ]->x1( tN );
+				for ( size_type i = 0, e = observees_.size(); i < e; ++i ) { //? Worth it to do this for observees of order 2+ triggers only?
+					observees_dv_[ i ] = observees_[ i ]->x1( tN );
 				}
 				fmu_me_->get_directional_derivatives(
-				 dd_observees_v_ref_.data(),
-				 dd_observees_v_ref_.size(),
+				 observees_v_ref_.data(),
+				 observees_v_ref_.size(),
 				 zc_vars_.refs.data(),
 				 zc_vars_.refs.size(),
-				 dd_observees_dv_.data(),
+				 observees_dv_.data(),
 				 zc_vars_.ders_p.data()
 				);
 				for ( size_type i = range2_.b(), e = range_.e(); i < e; ++i ) { // Order 2+ triggers
@@ -347,23 +326,20 @@ public: // Methods
 			}
 			fmu_me_->set_time( t );
 		} else if ( range2_.have() ) {
-			Time tN( t + options::dtND );
+			Time const tN( t + options::dtND );
 			fmu_me_->set_time( tN );
 			for ( Variable * observee : uni_order_ ? observees_ : observees2_ ) {
 				observee->fmu_set_x( tN );
 			}
-			for ( Variable * observee : dd_observees_ ) {
-				observee->fmu_set_x( tN );
-			}
-			for ( size_type i = 0, e = dd_observees_.size(); i < e; ++i ) { //? Worth it to do this for observees of order 2+ triggers only?
-				dd_observees_dv_[ i ] = dd_observees_[ i ]->x1( tN );
+			for ( size_type i = 0, e = observees_.size(); i < e; ++i ) { //? Worth it to do this for observees of order 2+ triggers only?
+				observees_dv_[ i ] = observees_[ i ]->x1( tN );
 			}
 			fmu_me_->get_directional_derivatives(
-			 dd_observees_v_ref_.data(),
-			 dd_observees_v_ref_.size(),
+			 observees_v_ref_.data(),
+			 observees_v_ref_.size(),
 			 zc_vars_.refs.data(),
 			 zc_vars_.refs.size(),
-			 dd_observees_dv_.data(),
+			 observees_dv_.data(),
 			 zc_vars_.ders_p.data()
 			);
 			for ( size_type i = range2_.b(), e = range_.e(); i < e; ++i ) { // Order 2+ triggers
@@ -475,22 +451,19 @@ private: // Data
 
 	// Trigger index specs
 	bool uni_order_{ false }; // Triggers all the same order?
-	Range range_; // Triggers
-	Range range2_; // Triggers of order 2+
-	Range range3_; // Triggers of order 3+
+	Range range_; // Triggers range
+	Range range2_; // Triggers of order 2+ range
+	Range range3_; // Triggers of order 3+ range
 
 	// Observees
 	Variables observees_; // Triggers observees
 	Variables observees2_; // Triggers of order 2+ observees
 	Variables observees3_; // Triggers of order 3+ observees
+	VariableRefs observees_v_ref_; // Triggers observees value references
+	Reals observees_dv_; // Triggers observees derivatives
 
 	// Trigger FMU pooled call data
 	RefsValsDers< Variable > zc_vars_; // Values and derivatives
-
-	// Directional derivative observee lookup seed data
-	Variables dd_observees_; // Triggers directional derivative observees
-	VariableRefs dd_observees_v_ref_; // Triggers directional derivative observees seed value references
-	Reals dd_observees_dv_; // Triggers directional derivative observees seed derivatives
 
 }; // Triggers_ZC
 

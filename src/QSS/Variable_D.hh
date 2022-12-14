@@ -85,35 +85,14 @@ public: // Predicate
 		return true;
 	}
 
+	// D Variable?
+	bool
+	is_D() const override
+	{
+		return true;
+	}
+
 public: // Property
-
-	// Boolean Value
-	Boolean
-	b() const override
-	{
-		return Boolean( x_ );
-	}
-
-	// Boolean Value at Time t
-	Boolean
-	b( Time const ) const override
-	{
-		return Boolean( x_ );
-	}
-
-	// Integer Value
-	Integer
-	i() const override
-	{
-		return Integer( x_ );
-	}
-
-	// Integer Value at Time t
-	Integer
-	i( Time const ) const override
-	{
-		return Integer( x_ );
-	}
 
 	// Real Value
 	Real
@@ -150,14 +129,7 @@ public: // Methods
 	init() override
 	{
 		init_0();
-		init_F();
-	}
-
-	// Initialization to a Value
-	void
-	init( Real const x ) override
-	{
-		init_0( x );
+		init_observers();
 		init_F();
 	}
 
@@ -165,25 +137,15 @@ public: // Methods
 	void
 	init_0() override
 	{
-		init_observers();
 		init_observees();
-		fmu_set_real( x_ = xIni );
-	}
-
-	// Initialization to a Value: Stage 0
-	void
-	init_0( Real const x ) override
-	{
-		init_observers();
-		init_observees();
-		fmu_set_real( x_ = x );
+		x_ = xIni;
+		assert( fmu_get_real() == x_ );
 	}
 
 	// Initialization: Stage Final
 	void
 	init_F() override
 	{
-		init_observers_F();
 		add_handler();
 		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << std::endl;
 	}
@@ -193,11 +155,11 @@ public: // Methods
 	advance_handler( Time const t ) override
 	{
 		assert( tX <= t );
-		tX = tQ = t;
-		x_new_ = r_0();
+		tQ = tX = t;
+		d_ = d_f();
 		shift_handler();
-		if ( x_ != x_new_ ) {
-			x_ = x_new_;
+		if ( x_ != d_ ) {
+			x_ = d_;
 			if ( options::output::d ) std::cout << "*  " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << std::endl;
 			if ( observed() ) advance_observers();
 			if ( connected() ) advance_connections();
@@ -206,20 +168,20 @@ public: // Methods
 
 	// Handler Advance: Stage 0
 	void
-	advance_handler_0( Time const t ) override
+	advance_handler_0( Time const t, Real const x_0 ) override
 	{
 		assert( tX <= t );
-		tX = tQ = t;
-		x_new_ = r_0();
+		d_ = x_0;
 	}
 
 	// Handler Advance: Stage Final
 	void
-	advance_handler_F() override
+	advance_handler_F( Time const t ) override
 	{
+		tQ = tX = t;
 		shift_handler();
-		if ( x_ != x_new_ ) {
-			x_ = x_new_;
+		if ( x_ != d_ ) {
+			x_ = d_;
 			if ( options::output::d ) std::cout << "*= " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << std::endl;
 			if ( connected() ) advance_connections();
 		}
@@ -237,25 +199,29 @@ public: // Methods
 	advance_observer( Time const t ) override
 	{
 		assert( tX <= t );
-		tX = tQ = t;
-		x_new_ = r_0();
-		if ( x_ != x_new_ ) {
-			x_ = x_new_;
-			if ( observed() ) advance_observer_observers();
+		tQ = tX = t;
+		d_ = d_0();
+		if ( x_ != d_ ) {
+			x_ = d_;
 			if ( connected() ) advance_connections_observer();
 		}
 	}
 
-	// Observer Non-State Advance
+	// Observer Advance: Stage 1
 	void
-	advance_observer_ns( Time const t ) override
+	advance_observer_1( Time const t ) override
 	{
 		assert( tX <= t );
-		tX = tQ = t;
-		x_new_ = r_0();
-		if ( x_ != x_new_ ) {
-			x_ = x_new_;
-			if ( observed_ns() ) advance_observer_ns_observers();
+		d_ = d_0( t );
+	}
+
+	// Observer Advance: Stage Final
+	void
+	advance_observer_F( Time const t ) override
+	{
+		tQ = tX = t;
+		if ( x_ != d_ ) {
+			x_ = d_;
 			if ( connected() ) advance_connections_observer();
 		}
 	}
@@ -270,7 +236,7 @@ public: // Methods
 private: // Data
 
 	Real x_{ 0.0 }; // Value
-	Real x_new_{ 0.0 }; // New value
+	Real d_{ 0.0 }; // Deferred value
 
 }; // Variable_D
 

@@ -1,4 +1,4 @@
-// Discrete Input Variable
+// QSS Real Passive Variable
 //
 // Project: QSS Solver
 //
@@ -33,33 +33,32 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_Variable_InpD_hh_INCLUDED
-#define QSS_Variable_InpD_hh_INCLUDED
+#ifndef QSS_Variable_RP_hh_INCLUDED
+#define QSS_Variable_RP_hh_INCLUDED
 
 // QSS Headers
-#include <QSS/Variable_Inp.hh>
+#include <QSS/Variable.hh>
 
 namespace QSS {
 
-// Discrete Input Variable
-class Variable_InpD final : public Variable_Inp
+// QSS Real Passive Variable
+class Variable_RP final : public Variable
 {
 
 public: // Types
 
-	using Super = Variable_Inp;
+	using Super = Variable;
 
 public: // Creation
 
-	// Constructor
-	Variable_InpD(
+	// Name + Value Constructor
+	Variable_RP(
 	 FMU_ME * fmu_me,
 	 std::string const & name,
 	 Real const xIni_ = 0.0,
-	 FMU_Variable const var = FMU_Variable(),
-	 Function f = Function()
+	 FMU_Variable const var = FMU_Variable()
 	) :
-	 Super( fmu_me, 0, name, xIni_, var, f )
+	 Super( fmu_me, 0, name, xIni_, var )
 	{}
 
 public: // Predicate
@@ -71,41 +70,48 @@ public: // Predicate
 		return true;
 	}
 
-	// Discrete Variable?
+	// B|I|D|R Variable?
 	bool
-	is_Discrete() const override
+	is_BIDR() const override
 	{
 		return true;
 	}
 
-public: // Property
-
-	// Real Value
-	Real
-	r() const override
+	// R Variable?
+	bool
+	is_R() const override
 	{
-		return x_;
+		return true;
 	}
+
+	// Active Variable?
+	bool
+	is_Active() const override
+	{
+		return false;
+	}
+
+public: // Property
 
 	// Real Value at Time t
 	Real
-	r( Time const ) const override
+	r( Time const t ) const override
 	{
-		return x_;
+		return r_0( t );
 	}
 
 	// Continuous Value at Time t
 	Real
-	x( Time const ) const override
+	x( Time const t ) const override
 	{
-		return x_;
+		return r_0( t );
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const ) const override
+	q( Time const t ) const override
 	{
-		return x_;
+		return r_0( t );
 	}
 
 public: // Methods
@@ -123,52 +129,18 @@ public: // Methods
 	void
 	init_0() override
 	{
-		assert( f() );
-		assert( observees().empty() );
-		s_ = f_( tQ );
-		fmu_set_real( x_ = s_.x0 );
-		tD = s_.tD;
+		init_observees();
+		assert( fmu_get_real() == xIni );
 	}
 
 	// Initialization: Stage Final
 	void
 	init_F() override
 	{
-		add_discrete( tD );
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << std::endl;
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << r_0( tQ ) << std::noshowpos << std::endl;
 	}
 
-	// Discrete Advance
-	void
-	advance_discrete() override
-	{
-		s_ = f_( tQ = tX = tD );
-		Real const x_new( s_.x0 );
-		tD = s_.tD;
-		shift_discrete( tD );
-		bool const chg( x_ != x_new );
-		x_ = x_new;
-		if ( options::output::d ) std::cout << "|  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << std::endl;
-		if ( chg && observed() ) advance_observers();
-	}
-
-	// Discrete Advance: Simultaneous
-	void
-	advance_discrete_simultaneous() override
-	{
-		s_ = f_( tQ = tX = tD );
-		Real const x_new( s_.x0 );
-		tD = s_.tD;
-		shift_discrete( tD );
-		x_ = x_new;
-		if ( options::output::d ) std::cout << "|= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_ << std::noshowpos << "   tD=" << tD << std::endl;
-	}
-
-private: // Data
-
-	Real x_{ 0.0 }; // Value
-
-}; // Variable_InpD
+}; // Variable_RP
 
 } // QSS
 

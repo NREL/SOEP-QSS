@@ -94,34 +94,6 @@ public: // Property
 		return x_;
 	}
 
-	// Integer Value
-	Integer
-	i() const override
-	{
-		return Integer( x_ );
-	}
-
-	// Integer Value at Time t
-	Integer
-	i( Time const ) const override
-	{
-		return Integer( x_ );
-	}
-
-	// Real Value
-	Real
-	r() const override
-	{
-		return Real( x_ );
-	}
-
-	// Real Value at Time t
-	Real
-	r( Time const ) const override
-	{
-		return Real( x_ );
-	}
-
 	// Continuous Value at Time t
 	Real
 	x( Time const ) const override
@@ -143,6 +115,8 @@ public: // Methods
 	init() override
 	{
 		init_0();
+		init_observers();
+		init_F();
 	}
 
 	// Initialization: Stage 0
@@ -151,7 +125,6 @@ public: // Methods
 	{
 		assert( f() );
 		assert( observees().empty() );
-		init_observers();
 		s_ = f_( tQ );
 		fmu_set_boolean( x_ = ( s_.x0 != 0.0 ) );
 		tD = s_.tD;
@@ -161,7 +134,6 @@ public: // Methods
 	void
 	init_F() override
 	{
-		init_observers_F();
 		add_discrete( tD );
 		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << x_ << "   tD=" << tD << std::endl;
 	}
@@ -170,7 +142,7 @@ public: // Methods
 	void
 	advance_discrete() override
 	{
-		s_ = f_( tX = tQ = tD );
+		s_ = f_( tQ = tX = tD );
 		Boolean const x_new( s_.x0 != 0.0 );
 		tD = s_.tD;
 		shift_discrete( tD );
@@ -182,9 +154,9 @@ public: // Methods
 
 	// Discrete Advance: Simultaneous
 	void
-	advance_discrete_s() override
+	advance_discrete_simultaneous() override
 	{
-		s_ = f_( tX = tQ = tD );
+		s_ = f_( tQ = tX = tD );
 		Boolean const x_new( s_.x0 != 0.0 );
 		tD = s_.tD;
 		shift_discrete( tD );

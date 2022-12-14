@@ -64,6 +64,7 @@ class Target;
 
 // Forward
 class Variable;
+class Variable_ZC;
 template< typename V > class Conditional;
 
 // FMU-ME Class
@@ -282,7 +283,7 @@ public: // Types
 	using Var_Name_Ref = std::unordered_map< std::string, fmi2_value_reference_t >; // Map from variable names to FMU variable value references
 	using Ref_Var = std::unordered_map< fmi2_value_reference_t, Variable * >;
 	using Var_Refs = std::vector< fmi2_value_reference_t >;
-	using Conditionals = std::vector< Conditional< Variable > * >;
+	using Conditionals = std::vector< Conditional< Variable_ZC > * >;
 	using FMU_Variables = std::vector< FMU_Variable >;
 	using FMU_Idxs = std::unordered_map< Index, Variable * >; // Map from FMU variable indexes to QSS Variables
 	using SmoothTokenOutput = Output< SmoothToken >;
@@ -657,6 +658,10 @@ private: // Methods
 	// Event Indicator Observees in Observee Subgraph
 	void
 	subgraph_ei_observees( FMU_Dependencies const & fmu_dependencies, dep::Variable::Observees const & observees, DepIdxSet & nei_observees, DepIdxSet & ei_observees ) const;
+
+	// Mark FMU Variables with Upstream State or Event Indicator Observees
+	void
+	mark_downstream_observees( FMU_Dependencies const & fmu_dependencies, dep::Variable const & dep_var );
 
 private: // Static Methods
 

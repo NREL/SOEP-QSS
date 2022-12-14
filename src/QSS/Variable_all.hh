@@ -49,15 +49,19 @@
 #include <QSS/Variable_ZC2.hh>
 #include <QSS/Variable_ZC3.hh>
 
-// QSS Discrete Variable Headers
+// QSS Active Algebraic Variable Headers
 #include <QSS/Variable_B.hh>
-#include <QSS/Variable_D.hh>
 #include <QSS/Variable_I.hh>
-
-// QSS Real Variable Headers
+#include <QSS/Variable_D.hh>
 #include <QSS/Variable_R1.hh>
 #include <QSS/Variable_R2.hh>
 #include <QSS/Variable_R3.hh>
+
+// QSS Passive Algebraic Variable Headers
+#include <QSS/Variable_BP.hh>
+#include <QSS/Variable_IP.hh>
+#include <QSS/Variable_DP.hh>
+#include <QSS/Variable_RP.hh>
 
 // QSS Input Variable Headers
 #include <QSS/Variable_Inp1.hh>

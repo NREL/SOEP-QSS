@@ -134,8 +134,10 @@ public: // Methods
 	init() override
 	{
 		init_0();
+		init_observers();
 		init_1();
 		init_2();
+		init_F();
 	}
 
 	// Initialization: Stage 0
@@ -144,7 +146,6 @@ public: // Methods
 	{
 		assert( f() );
 		assert( observees().empty() );
-		init_observers();
 		s_ = f_( tQ );
 		x_0_ = s_.x0;
 		fmu_set_real( x_0_ );
@@ -170,7 +171,6 @@ public: // Methods
 	void
 	init_F() override
 	{
-		init_observers_F();
 		set_qTol();
 		set_tE();
 		( tE < tD ) ? add_QSS_Inp( tE ) : add_discrete( tD );
@@ -181,7 +181,7 @@ public: // Methods
 	void
 	advance_discrete() override
 	{
-		s_ = f_( tX = tQ = tD );
+		s_ = f_( tQ = tX = tD );
 		x_0_ = s_.x0;
 		x_1_ = s_.x1;
 		x_2_ = one_half * s_.x2;
@@ -196,9 +196,9 @@ public: // Methods
 
 	// Discrete Advance: Simultaneous
 	void
-	advance_discrete_s() override
+	advance_discrete_simultaneous() override
 	{
-		s_ = f_( tX = tQ = tD );
+		s_ = f_( tQ = tX = tD );
 		x_0_ = s_.x0;
 		x_1_ = s_.x1;
 		x_2_ = one_half * s_.x2;
@@ -214,7 +214,7 @@ public: // Methods
 	void
 	advance_QSS() override
 	{
-		s_ = f_( tX = tQ = tE );
+		s_ = f_( tQ = tX = tE );
 		x_0_ = s_.x0;
 		x_1_ = s_.x1;
 		x_2_ = one_half * s_.x2;

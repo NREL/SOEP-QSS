@@ -73,7 +73,7 @@ struct Variable final
 
 	// Self Observer?
 	bool
-	self_observer()
+	self_observer() const
 	{
 		return has_observee( idx );
 	}
@@ -113,6 +113,14 @@ struct Variable final
 	sort()
 	{
 		std::sort( observees.begin(), observees.end() );
+	}
+
+	// Make Variables Collection Unique and Optionally Shrink-to-Fit
+	void
+	sort_and_uniquify()
+	{
+		std::sort( observees.begin(), observees.end() ); // Sort
+		observees.erase( std::unique( observees.begin(), observees.end() ), observees.end() ); // Remove duplicates
 	}
 
 	// Less Than Comparison for Sorting
@@ -278,11 +286,19 @@ public: // Methods
 		for ( Variables::value_type & idx_variable : variables ) idx_variable.second.sort();
 	}
 
+	// Sort Dependencies by Index
+	void
+	sort_and_uniquify()
+	{
+		for ( Variables::value_type & idx_variable : variables ) idx_variable.second.sort_and_uniquify();
+	}
+
 	// Finalize
 	void
 	finalize()
 	{
-		sort(); // Sort dependencies by index
+		// sort(); // Sort dependencies by index
+		sort_and_uniquify(); // Sort dependencies by index and uniquify: Need uniquify for EI->EI dependency hack
 	}
 
 	// Data

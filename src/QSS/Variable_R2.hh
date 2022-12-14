@@ -91,22 +91,6 @@ public: // Predicate
 
 public: // Property
 
-	// Boolean Value at Time t
-	Boolean
-	b( Time const t ) const override
-	{
-		Time const tDel( t - tX );
-		return Boolean( x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel ) );
-	}
-
-	// Integer Value at Time t
-	Integer
-	i( Time const t ) const override
-	{
-		Time const tDel( t - tX );
-		return Integer( x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel ) );
-	}
-
 	// Real Value at Time t
 	Real
 	r( Time const t ) const override
@@ -166,16 +150,7 @@ public: // Methods
 	init() override
 	{
 		init_0();
-		init_1();
-		init_2();
-		init_F();
-	}
-
-	// Initialization to a Value
-	void
-	init( Real const x ) override
-	{
-		init_0( x );
+		init_observers();
 		init_1();
 		init_2();
 		init_F();
@@ -185,18 +160,9 @@ public: // Methods
 	void
 	init_0() override
 	{
-		init_observers();
 		init_observees();
-		fmu_set_real( x_0_ = xIni );
-	}
-
-	// Initialization to a Value: Stage 0
-	void
-	init_0( Real const x ) override
-	{
-		init_observers();
-		init_observees();
-		fmu_set_real( x_0_ = x );
+		x_0_ = xIni;
+		assert( fmu_get_real() == x_0_ );
 	}
 
 	// Initialization: Stage 1
@@ -217,7 +183,6 @@ public: // Methods
 	void
 	init_F() override
 	{
-		init_observers_F();
 		set_qTol();
 		set_tE();
 		add_QSS_R( tE );
@@ -228,7 +193,7 @@ public: // Methods
 	void
 	advance_QSS() override
 	{
-		tX = tQ = tE;
+		tQ = tX = tE;
 		x_0_ = r_0();
 		x_1_ = n_1();
 		x_2_ = n_2();
@@ -244,7 +209,7 @@ public: // Methods
 	void
 	advance_QSS_0( Real const x_0 ) override
 	{
-		tX = tQ = tE;
+		tQ = tX = tE;
 		x_0_ = x_0;
 	}
 
@@ -292,9 +257,10 @@ public: // Methods
 	advance_handler( Time const t ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		tX = tQ = t;
-		x_0_ = r_0();
+		tQ = tX = t;
+		x_0_ = r_f();
 		x_1_ = n_1();
+		x_2_ = n_2();
 		set_qTol();
 		set_tE();
 		shift_QSS_R( tE );
@@ -305,11 +271,11 @@ public: // Methods
 
 	// Handler Advance: Stage 0
 	void
-	advance_handler_0( Time const t ) override
+	advance_handler_0( Time const t, Real const x_0 ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		tX = tQ = t;
-		x_0_ = r_0();
+		tQ = tX = t;
+		x_0_ = x_0;
 	}
 
 	// Handler Advance: Stage 1
@@ -342,7 +308,7 @@ public: // Methods
 
 	// Handler Advance: Stage Final
 	void
-	advance_handler_F() override
+	advance_handler_F( Time const ) override
 	{
 		set_qTol();
 		set_tE();
@@ -363,30 +329,13 @@ public: // Methods
 	advance_observer( Time const t ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		tX = tQ = t;
+		tQ = tX = t;
 		x_0_ = r_0();
 		x_1_ = n_1();
 		x_2_ = n_2();
 		set_qTol();
 		set_tE();
 		shift_QSS_R( tE );
-		if ( observed() ) advance_observer_observers();
-		if ( connected() ) advance_connections_observer();
-	}
-
-	// Observer Non-State Advance
-	void
-	advance_observer_ns( Time const t ) override
-	{
-		assert( ( tX <= t ) && ( t <= tE ) );
-		tX = tQ = t;
-		x_0_ = r_0();
-		x_1_ = n_1();
-		x_2_ = n_2();
-		set_qTol();
-		set_tE();
-		shift_QSS_R( tE );
-		if ( observed_ns() ) advance_observer_ns_observers();
 		if ( connected() ) advance_connections_observer();
 	}
 
@@ -395,9 +344,8 @@ public: // Methods
 	advance_observer_1( Time const t, Real const x_0, Real const x_1 ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		tX = tQ = t;
-		assert( x_0 == r_0() );
-		assert( x_1 == n_1() );
+		// assert( x_0 == r_0( t ) );
+		tQ = tX = t;
 		x_0_ = x_0;
 		x_1_ = x_1;
 	}
@@ -425,23 +373,11 @@ public: // Methods
 
 	// Observer Advance: Stage Final
 	void
-	advance_observer_F() override
+	advance_observer_F( Time const ) override
 	{
 		set_qTol();
 		set_tE();
 		shift_QSS_R( tE );
-		if ( observed() ) advance_observer_observers();
-		if ( connected() ) advance_connections_observer();
-	}
-
-	// Observer Advance: Stage Final
-	void
-	advance_observer_ns_F() override
-	{
-		set_qTol();
-		set_tE();
-		shift_QSS_R( tE );
-		if ( observed_ns() ) advance_observer_ns_observers();
 		if ( connected() ) advance_connections_observer();
 	}
 
@@ -514,7 +450,7 @@ private: // Methods
 
 private: // Data
 
-	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Trajectory coefficients
 
 }; // Variable_R2
 

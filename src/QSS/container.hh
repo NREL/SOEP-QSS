@@ -147,6 +147,18 @@ sort_by_type_and_order( Variables & variables )
 	}
 }
 
+// Sort Variables by Name
+template< typename Variables >
+inline
+Variables
+sorted_by_name( Variables const & variables )
+{
+	using V = typename std::remove_pointer< typename Variables::value_type >::type;
+	Variables sorted_variables( variables );
+	std::sort( sorted_variables.begin(), sorted_variables.end(), []( V const * v1, V const * v2 ){ return v1->name() < v2->name(); } );
+	return sorted_variables;
+}
+
 // Set up Non-Trigger Observers of Triggers and Sort Both by Order
 template< typename Variables >
 inline

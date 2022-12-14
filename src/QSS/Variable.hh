@@ -39,13 +39,12 @@
 // QSS Headers
 #include <QSS/Variable.fwd.hh>
 #include <QSS/Target.hh>
-#include <QSS/Conditional.hh>
+#include <QSS/container.hh>
 #include <QSS/FMU_ME.hh>
 #include <QSS/FMU_Variable.hh>
-#include <QSS/Observers.hh>
-#include <QSS/container.hh>
 #include <QSS/globals.hh>
 #include <QSS/math.hh>
+#include <QSS/Observers.hh>
 #include <QSS/options.hh>
 #include <QSS/Output.hh>
 #include <QSS/SmoothToken.hh>
@@ -63,6 +62,7 @@
 #include <iterator>
 #include <limits>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 namespace QSS {
@@ -85,6 +85,7 @@ public: // Types
 	using Reals = std::vector< Real >;
 	using EventQ = FMU_ME::EventQ;
 	using Variables = std::vector< Variable * >;
+	using VariablesSet = std::unordered_set< Variable * >;
 	using Variable_Cons = std::vector< Variable_Con * >;
 	using VariableRef = fmi2_value_reference_t;
 	using VariableRefs = std::vector< VariableRef >;
@@ -199,15 +200,6 @@ protected: // Creation
 	 out_x_( name, 'x', false ),
 	 out_q_( name, 'q', false )
 	{}
-
-public: // Creation
-
-	// Destructor
-	virtual
-	~Variable()
-	{
-		if ( conditional != nullptr ) conditional->rem_variable();
-	}
 
 protected: // Assignment
 
@@ -370,18 +362,18 @@ public: // Predicate
 		return !is_ZC();
 	}
 
-	// In Conditional?
-	virtual
-	bool
-	in_conditional() const
-	{
-		return conditional != nullptr;
-	}
-
 	// B|I|D|R Variable?
 	virtual
 	bool
 	is_BIDR() const
+	{
+		return false;
+	}
+
+	// D Variable?
+	virtual
+	bool
+	is_D() const
 	{
 		return false;
 	}
@@ -392,6 +384,21 @@ public: // Predicate
 	is_R() const
 	{
 		return false;
+	}
+
+	// Active Variable?
+	virtual
+	bool
+	is_Active() const
+	{
+		return true;
+	}
+
+	// Passive Variable?
+	bool
+	is_Passive() const
+	{
+		return !is_Active();
 	}
 
 	// Time Variable?
@@ -408,18 +415,18 @@ public: // Predicate
 		return self_observer_;
 	}
 
+	// Self-Observee?
+	bool
+	self_observee() const
+	{
+		return self_observer_; // Self-observer <=> self-observee for QSS purposes
+	}
+
 	// Observed?
 	bool
 	observed() const
 	{
 		return observed_;
-	}
-
-	// Observed by Non-State Variable(s)?
-	bool
-	observed_ns() const
-	{
-		return observed_ns_;
 	}
 
 	// Observes?
@@ -448,7 +455,7 @@ public: // Predicate
 	bool
 	detected_crossing() const
 	{
-		assert( false ); // Missing override
+		assert( false );
 		return false;
 	}
 
@@ -488,7 +495,7 @@ public: // Property
 	Boolean
 	b() const
 	{
-		assert( false ); // Missing override
+		assert( false );
 		return false;
 	}
 
@@ -497,7 +504,7 @@ public: // Property
 	Boolean
 	b( Time const ) const
 	{
-		assert( false ); // Missing override
+		assert( false );
 		return false;
 	}
 
@@ -506,7 +513,7 @@ public: // Property
 	Integer
 	i() const
 	{
-		assert( false ); // Missing override
+		assert( false );
 		return 0;
 	}
 
@@ -515,7 +522,7 @@ public: // Property
 	Integer
 	i( Time const ) const
 	{
-		assert( false ); // Missing override
+		assert( false );
 		return 0;
 	}
 
@@ -524,7 +531,7 @@ public: // Property
 	Real
 	r() const
 	{
-		assert( false ); // Missing override
+		assert( false );
 		return 0.0;
 	}
 
@@ -533,7 +540,7 @@ public: // Property
 	Real
 	r( Time const ) const
 	{
-		assert( false ); // Missing override
+		assert( false );
 		return 0.0;
 	}
 
@@ -542,7 +549,7 @@ public: // Property
 	Real
 	x( Time const ) const
 	{
-		assert( false ); // Missing override
+		assert( false );
 		return 0.0;
 	}
 
@@ -575,7 +582,7 @@ public: // Property
 	Real
 	q( Time const ) const
 	{
-		assert( false ); // Missing override
+		assert( false );
 		return 0.0;
 	}
 
@@ -656,20 +663,6 @@ public: // Property
 	observees()
 	{
 		return observees_;
-	}
-
-	// Directional Derivative Observees
-	Variables const &
-	dd_observees() const
-	{
-		return dd_observees_;
-	}
-
-	// Directional Derivative Observees
-	Variables &
-	dd_observees()
-	{
-		return dd_observees_;
 	}
 
 	// FMU Variable Specs
@@ -753,85 +746,28 @@ public: // Methods
 		self_observer_ = true;
 	}
 
+	// Self-Observe
+	void
+	self_observe_off()
+	{
+		self_observer_ = false;
+	}
+
 	// Add Observee and its Observer
 	void
-	observe( Variable * v )
-	{
-		if ( v == this ) { // Flag as self-observer
-			self_observer_ = true;
-		} else if ( v->is_ZC() ) { // Observing zero-crossing variable means being an observer of its conditional
-			assert( v->in_conditional() );
-			v->conditional->add_observer( this ); // Conditional is not an observee of this variable
-		} else { // Bidirectional observer/observee relationship
-			observees_.push_back( v );
-			v->observers_.add( this );
-		}
-	}
+	observe( Variable * v );
 
-	// Initialize Observers Collection
+	// Initialize Observees
 	void
-	init_observers()
-	{
-		observers_.init();
-		observed_ = observers_.have();
-		observed_ns_ = observers_.have_ns();
-		connected_output_observer = observers_.connected_output_observer();
-	}
+	init_observees();
 
-	// Initialize Observees Collection
+	// Initialize Observers
 	void
-	init_observees()
-	{
-		observes_ = ( !observees_.empty() );
-		if ( observes_ ) uniquify( observees_, true ); // Sort by address and remove duplicates and recover unused memory
+	init_observers();
 
-		// Directional derivative observees setup
-		std::unordered_set< Variable * > observees_checked;
-		std::unordered_set< Variable * > dd_observee_set;
-		for ( Variable * observee : observees_ ) {
-			find_dd_observees( observee, observees_checked, dd_observee_set ); // Note: Looks at other variable observees that aren't necessarily uniquified yet but that is OK: Might be more efficient to make this a separate phase after all are uniquified
-		}
-		assert( dd_observees_.empty() ); // Initialization shouldn't be called twice for a variable
-		if ( !dd_observee_set.empty() ) {
-			dd_observees_.reserve( dd_observee_set.size() );
-			dd_observees_.assign( dd_observee_set.begin(), dd_observee_set.end() ); // Put dd observees in vector
-			if ( options::output::d ) {
-				std::cout << '\n' << name() << " Directional Derivative Observees:" << std::endl;
-				for ( Variable * dd_observee : dd_observees_ ) {
-					std::cout << ' ' << dd_observee->name() << " (index #" << dd_observee->var_.index() << ')' << std::endl;
-				}
-			}
-		}
-
-#ifndef NDEBUG
-		// Check for duplicate value references
-		std::vector< VariableRef > dd_observees_refs;
-		dd_observees_refs.reserve( dd_observees_.size() );
-		for ( Variable * observee : dd_observees_ ) {
-			dd_observees_refs.push_back( observee->var_.ref() );
-		}
-		std::sort( dd_observees_refs.begin(), dd_observees_refs.end() );
-		assert( std::adjacent_find( dd_observees_refs.begin(), dd_observees_refs.end() ) == dd_observees_refs.end() ); // No repeat value references
-#endif
-
-		// FMU directional derivative call argument initialization
-		assert( dd_observees_v_ref_.empty() ); // Initialization shouldn't be called twice for a variable
-		assert( dd_observees_dv_.empty() ); // Initialization shouldn't be called twice for a variable
-		dd_observees_nv_ = dd_observees_.size();
-		dd_observees_v_ref_.reserve( dd_observees_nv_ );
-		dd_observees_dv_.reserve( dd_observees_nv_ );
-		for ( Variable * observee : dd_observees_ ) {
-			dd_observees_v_ref_.push_back( observee->var_.ref() );
-			dd_observees_dv_.push_back( 0.0 ); // Actual values assigned when getting directional derivatives
-		}
-	}
-
-	// Initialize Observers Collection: Final
+	// Finalize Observers
 	void
-	init_observers_F()
-	{
-		observers_.init_F();
-	}
+	finalize_observers();
 
 	// Connect
 	void
@@ -853,22 +789,10 @@ public: // Methods
 	init()
 	{}
 
-	// Initialization to a Value
-	virtual
-	void
-	init( Real const )
-	{}
-
 	// Initialization: Stage 0
 	virtual
 	void
 	init_0()
-	{}
-
-	// Initialization to a Value: Stage 0
-	virtual
-	void
-	init_0( Real const )
 	{}
 
 	// Initialization: Stage 1
@@ -932,7 +856,7 @@ public: // Methods
 	// Discrete Advance: Simultaneous
 	virtual
 	void
-	advance_discrete_s()
+	advance_discrete_simultaneous()
 	{
 		assert( false );
 	}
@@ -1049,7 +973,7 @@ public: // Methods
 		assert( false );
 	}
 
-	// QSS Advance: Stage 2
+	// QSS Advance: Stage 2: Forward ND
 	virtual
 	void
 	advance_QSS_2_forward()
@@ -1081,12 +1005,6 @@ public: // Methods
 		assert( false );
 	}
 
-	// QSS Advance: Stage 2.1
-	virtual
-	void
-	advance_QSS_2_1()
-	{}
-
 	// QSS Advance: Stage 3
 	virtual
 	void
@@ -1095,7 +1013,7 @@ public: // Methods
 		assert( false );
 	}
 
-	// QSS Advance: Stage 3
+	// QSS Advance: Stage 3: Forward ND
 	virtual
 	void
 	advance_QSS_3_forward()
@@ -1183,15 +1101,15 @@ public: // Methods
 	void
 	advance_handler( Time const )
 	{
-		assert( false ); // Not a QSS or discrete variable
+		assert( false );
 	}
 
 	// Handler Advance: Stage 0
 	virtual
 	void
-	advance_handler_0( Time const )
+	advance_handler_0( Time const, Real const )
 	{
-		assert( false ); // Not a QSS or discrete variable
+		assert( false );
 	}
 
 	// Handler Advance: Stage 1
@@ -1199,7 +1117,7 @@ public: // Methods
 	void
 	advance_handler_1( Real const )
 	{
-		assert( false ); // Not a QSS variable
+		assert( false );
 	}
 
 	// Handler Advance: Stage 2
@@ -1207,7 +1125,7 @@ public: // Methods
 	void
 	advance_handler_2( Real const )
 	{
-		assert( false ); // Not a QSS variable
+		assert( false );
 	}
 
 	// Handler Advance: Stage 2
@@ -1215,7 +1133,7 @@ public: // Methods
 	void
 	advance_handler_2( Real const, Real const )
 	{
-		assert( false ); // Not a QSS variable
+		assert( false );
 	}
 
 	// Handler Advance: Stage 2
@@ -1223,37 +1141,31 @@ public: // Methods
 	void
 	advance_handler_2_forward( Real const, Real const )
 	{
-		assert( false ); // Not a QSS variable
+		assert( false );
 	}
-
-	// Handler Advance: Stage 2.1
-	virtual
-	void
-	advance_handler_2_1()
-	{}
 
 	// Handler Advance: Stage 3
 	virtual
 	void
 	advance_handler_3()
 	{
-		assert( false ); // Not a QSS variable
+		assert( false );
 	}
 
-	// Handler Advance: Stage 3
+	// Handler Advance: Stage 3: Forward ND
 	virtual
 	void
 	advance_handler_3_forward()
 	{
-		assert( false ); // Not a QSS variable
+		assert( false );
 	}
 
 	// Handler Advance: Stage Final
 	virtual
 	void
-	advance_handler_F()
+	advance_handler_F( Time const )
 	{
-		assert( false ); // Not a QSS variable
+		assert( false );
 	}
 
 	// Handler No-Advance
@@ -1261,7 +1173,7 @@ public: // Methods
 	void
 	no_advance_handler()
 	{
-		assert( false ); // Not a QSS or discrete variable
+		assert( false );
 	}
 
 	// Advance Connections
@@ -1279,40 +1191,10 @@ public: // Methods
 		observers_.advance( tQ );
 	}
 
-	// Advance Observer Observers
-	void
-	advance_observer_observers()
-	{
-		if ( observed() ) {
-			if ( options::output::O ) observers_.out( tX ); // Pre
-			observers_.advance( tX );
-			if ( options::output::O ) observers_.out( tX ); // Post
-		}
-	}
-
-	// Advance Observer Non-State Observers
-	void
-	advance_observer_ns_observers()
-	{
-		if ( observed_ns() ) {
-			if ( options::output::O ) observers_.out_ns( tX ); // Pre
-			observers_.advance_ns( tX );
-			if ( options::output::O ) observers_.out_ns( tX ); // Post
-		}
-	}
-
 	// Observer Advance
 	virtual
 	void
 	advance_observer( Time const )
-	{
-		assert( false );
-	}
-
-	// Observer Non-State Advance
-	virtual
-	void
-	advance_observer_ns( Time const )
 	{
 		assert( false );
 	}
@@ -1365,7 +1247,7 @@ public: // Methods
 		assert( false );
 	}
 
-	// Observer Advance: Stage 2
+	// Observer Advance: Stage 2: Forward ND
 	virtual
 	void
 	advance_observer_2_forward()
@@ -1405,7 +1287,7 @@ public: // Methods
 		assert( false );
 	}
 
-	// Observer Advance: Stage 3
+	// Observer Advance: Stage 3: Forward ND
 	virtual
 	void
 	advance_observer_3_forward()
@@ -1414,16 +1296,16 @@ public: // Methods
 	}
 
 	// Observer Advance: Stage 3
-	void
 	virtual
+	void
 	advance_observer_3( Real const )
 	{
 		assert( false );
 	}
 
 	// Observer Advance: Stage 3
-	void
 	virtual
+	void
 	advance_observer_3_forward( Real const )
 	{
 		assert( false );
@@ -1432,15 +1314,7 @@ public: // Methods
 	// Observer Advance: Stage Final
 	virtual
 	void
-	advance_observer_F()
-	{
-		assert( false );
-	}
-
-	// Observer Advance: Stage Final
-	virtual
-	void
-	advance_observer_ns_F()
+	advance_observer_F( Time const )
 	{
 		assert( false );
 	}
@@ -1471,43 +1345,11 @@ public: // Methods: Output
 
 	// Decorate Outputs
 	void
-	decorate_out( std::string const & dec = std::string() )
-	{
-		dec_ = dec;
-		if ( out_on_ ) {
-			if ( options::output::X ) out_x_.decorate( dec );
-			if ( options::output::Q ) out_q_.decorate( dec );
-		}
-	}
+	decorate_out( std::string const & dec = std::string() );
 
 	// Initialize Outputs
 	void
-	init_out( std::string const & dir, std::string const & dec = std::string() )
-	{
-		if ( out_on_ ) {
-			if ( options::output::X ) out_x_.init( dir, name(), 'x', dec );
-			if ( options::output::Q ) out_q_.init( dir, name(), 'q', dec );
-			if ( options::output::h ) {
-				if ( var_.is_Real() ) {
-					char const * var_type_char( fmi2_import_get_real_variable_quantity( var_.rvr ) );
-					std::string const var_type( var_type_char == nullptr ? "" : var_type_char );
-					fmi2_import_unit_t * const var_unit_ptr( fmi2_import_get_real_variable_unit( var_.rvr ) );
-					std::string const var_unit( var_unit_ptr == nullptr ? "" : fmi2_import_get_unit_name( var_unit_ptr ) );
-					if ( options::output::X ) out_x_.header( var_type, var_unit );
-					if ( options::output::Q ) out_q_.header( var_type, var_unit );
-				} else if ( var_.is_Integer() ) {
-					char const * var_type_char( fmi2_import_get_integer_variable_quantity( var_.ivr ) );
-					std::string const var_type( var_type_char == nullptr ? "" : var_type_char );
-					// Integer variables have no unit
-					if ( options::output::X ) out_x_.header( var_type );
-					if ( options::output::Q ) out_q_.header( var_type );
-				} else { // Modelica Boolean variables can have a quantity but there is no FMIL API for getting it
-					if ( options::output::X ) out_x_.header();
-					if ( options::output::Q ) out_q_.header();
-				}
-			}
-		}
-	}
+	init_out( std::string const & dir, std::string const & dec = std::string() );
 
 	// Output at Time t
 	void
@@ -1633,6 +1475,7 @@ public: // Methods: FMU
 	fmu_set_real( Real const v ) const
 	{
 		assert( fmu_me_ != nullptr );
+		assert( is_QSS() || is_Input() );
 		fmu_me_->set_real( var_.ref(), v );
 	}
 
@@ -1657,6 +1500,7 @@ public: // Methods: FMU
 	fmu_set_integer( Integer const v ) const
 	{
 		assert( fmu_me_ != nullptr );
+		assert( is_Input() );
 		fmu_me_->set_integer( var_.ref(), v );
 	}
 
@@ -1673,6 +1517,7 @@ public: // Methods: FMU
 	fmu_set_boolean( bool const v ) const
 	{
 		assert( fmu_me_ != nullptr );
+		assert( is_Input() );
 		fmu_me_->set_boolean( var_.ref(), v );
 	}
 
@@ -1699,6 +1544,7 @@ public: // Methods: FMU
 	fmu_set_q( Time const t ) const
 	{
 		assert( fmu_me_ != nullptr );
+//		assert( is_QSS() || is_Input() );
 		fmu_me_->set_real( var_.ref(), q( t ) );
 	}
 
@@ -1708,11 +1554,10 @@ public: // Methods: FMU
 	fmu_set_s( Time const t ) const
 	{
 		assert( fmu_me_ != nullptr );
+//		assert( is_QSS() || is_Input() );
 //		fmu_me_->set_real( var_.ref(), q( t ) ); // Quantized: Traditional QSS
 		fmu_me_->set_real( var_.ref(), x( t ) ); // Continuous: Modified QSS
 	}
-
-protected: // Methods: FMU
 
 	// Set All Observee FMU Variables to Continuous Value at Time t
 	void
@@ -1742,15 +1587,6 @@ protected: // Methods: FMU
 		}
 	}
 
-	// Set All Directional Derivative Observee FMU Variables to Continuous Value at Time t
-	void
-	fmu_set_dd_observees_x( Time const t ) const
-	{
-		for ( auto observee : dd_observees_ ) {
-			observee->fmu_set_x( t );
-		}
-	}
-
 	// Set All Observee FMU Variables to Quantized Value at Time t
 	void
 	fmu_set_observees_q( Time const t ) const
@@ -1770,14 +1606,44 @@ protected: // Methods: FMU
 		}
 	}
 
-	// Boolean Coefficient 0 from FMU at Time tQ: X-Based
+protected: // Methods: FMU
+
+	// Boolean Value from FMU at Time tQ: Don't Set Observees
+	Boolean
+	b_f() const
+	{
+		assert( is_Boolean() );
+		assert( fmu_get_time() == tQ );
+		return fmu_get_boolean();
+	}
+
+	// Boolean Value from FMU at Time tQ: X-Based
 	Boolean
 	b_0() const
 	{
 		assert( is_Boolean() );
+		assert( fmu_get_time() == tQ );
 		fmu_set_observees_x( tQ );
-		if ( self_observer_ ) fmu_set_boolean( b( tQ ) );
 		return fmu_get_boolean();
+	}
+
+	// Boolean Value from FMU at Time t: X-Based
+	Boolean
+	b_0( Time const t ) const
+	{
+		assert( is_Boolean() );
+		assert( fmu_get_time() == t );
+		fmu_set_observees_x( t );
+		return fmu_get_boolean();
+	}
+
+	// Integer Coefficient 0 from FMU at Time tQ: Don't Set Observees
+	Integer
+	i_f() const
+	{
+		assert( is_Integer() );
+		assert( fmu_get_time() == tQ );
+		return fmu_get_integer();
 	}
 
 	// Integer Coefficient 0 from FMU at Time tQ: X-Based
@@ -1785,20 +1651,87 @@ protected: // Methods: FMU
 	i_0() const
 	{
 		assert( is_Integer() );
+		assert( fmu_get_time() == tQ );
 		fmu_set_observees_x( tQ );
-		if ( self_observer_ ) fmu_set_integer( i( tQ ) );
 		return fmu_get_integer();
 	}
 
-	// Coefficient 0 from FMU: Observees Set
-	Real
-	p_0() const
+	// Integer Value from FMU at Time t: X-Based
+	Integer
+	i_0( Time const t ) const
 	{
-		assert( fmu_me_ != nullptr );
+		assert( is_Integer() );
+		assert( fmu_get_time() == t );
+		fmu_set_observees_x( t );
+		return fmu_get_integer();
+	}
+
+	// Discrete Value from FMU at Time tQ: Don't Set Observees
+	Real
+	d_f() const
+	{
+		assert( is_D() );
+		assert( fmu_get_time() == tQ );
 		return fmu_get_real();
 	}
 
-	// Coefficient 0 from FMU at Time tQ: QSS
+	// Discrete Value from FMU at Time tQ: X-Based
+	Real
+	d_0() const
+	{
+		assert( is_D() );
+		assert( fmu_get_time() == tQ );
+		fmu_set_observees_x( tQ );
+		return fmu_get_real();
+	}
+
+	// Discrete Value from FMU at Time t: X-Based
+	Real
+	d_0( Time const t ) const
+	{
+		assert( is_D() );
+		assert( fmu_get_time() == t );
+		fmu_set_observees_x( t );
+		return fmu_get_real();
+	}
+
+	// Real Value from FMU at Time tQ: Don't Set Observees
+	Real
+	r_f() const
+	{
+		assert( is_R() );
+		assert( fmu_get_time() == tQ );
+		return fmu_get_real();
+	}
+
+	// Real Value from FMU at Time tQ: X-Based
+	Real
+	r_0() const
+	{
+		assert( is_R() );
+		assert( fmu_get_time() == tQ );
+		fmu_set_observees_x( tQ );
+		return fmu_get_real();
+	}
+
+	// Real Value from FMU at Time t: X-Based
+	Real
+	r_0( Time const t ) const
+	{
+		assert( is_R() );
+		assert( fmu_get_time() == t );
+		fmu_set_observees_x( t );
+		return fmu_get_real();
+	}
+
+	// Value from FMU: Don't Set Observees
+	Real
+	p_0() const
+	{
+		return fmu_get_real();
+	}
+
+	// Value from FMU at Time tQ: QSS
 	Real
 	c_0() const
 	{
@@ -1809,18 +1742,18 @@ protected: // Methods: FMU
 		return p_0();
 	}
 
-	// Coefficient 0 from FMU at Time tQ: X-Based
+	// Value from FMU at Time t: QSS
 	Real
-	r_0() const
+	c_0( Time const t ) const
 	{
-		assert( is_R() || ( is_Real() && is_Discrete() ) );
-		assert( fmu_get_time() == tQ );
-		fmu_set_observees_x( tQ );
-		if ( self_observer_ ) fmu_set_x( tQ );
+		assert( is_QSS() );
+		assert( fmu_get_time() == t );
+		fmu_set_observees_s( t );
+		if ( self_observer_ ) fmu_set_s( t );
 		return p_0();
 	}
 
-	// Coefficient 0 from FMU at Time tQ: X-Based
+	// Value from FMU at Time tQ: X-Based
 	Real
 	z_0() const
 	{
@@ -1830,7 +1763,7 @@ protected: // Methods: FMU
 		return p_0();
 	}
 
-	// Coefficient 0 from FMU at Time t: X-Based
+	// Value from FMU at Time t: X-Based
 	Real
 	z_0( Time const t ) const
 	{
@@ -1895,17 +1828,18 @@ protected: // Methods: FMU
 	Z_1() const
 	{
 		assert( is_ZC() );
+		assert( !self_observer_ );
+		assert( !observed_ );
 		assert( fmu_me_ != nullptr );
 		assert( fmu_get_time() == tQ );
-		assert( dd_observees_nv_ == dd_observees_v_ref_.size() );
-		assert( dd_observees_nv_ == dd_observees_dv_.size() );
-		assert( dd_observees_nv_ == dd_observees_.size() ); // ZC variables can't be self-observers
+		assert( observees_nv_ == observees_v_ref_.size() );
+		assert( observees_nv_ == observees_dv_.size() );
+		assert( observees_nv_ == observees_.size() ); // ZC variables can't be self-observers
 		fmu_set_observees_x( tQ ); // Modelon indicates that observee state matters for Jacobian computation
-		fmu_set_dd_observees_x( tQ ); // Modelon indicates that observee state matters for Jacobian computation
-		for ( Variables::size_type i = 0, e = dd_observees_.size(); i < e; ++i ) { // Get observee derivatives
-			dd_observees_dv_[ i ] = dd_observees_[ i ]->x1( tQ );
+		for ( Variables::size_type i = 0, e = observees_.size(); i < e; ++i ) { // Get observee derivatives
+			observees_dv_[ i ] = observees_[ i ]->x1( tQ );
 		}
-		return fmu_me_->get_directional_derivative( dd_observees_v_ref_.data(), dd_observees_nv_, var_.ref(), dd_observees_dv_.data() );
+		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var_.ref(), observees_dv_.data() );
 	}
 
 	// Coefficient 1 from FMU at Time t: X-Based ZC with Directional First Derivative
@@ -1913,17 +1847,18 @@ protected: // Methods: FMU
 	Z_1( Time const t ) const
 	{
 		assert( is_ZC() );
+		assert( !self_observer_ );
+		assert( !observed_ );
 		assert( fmu_me_ != nullptr );
 		assert( fmu_get_time() == t );
-		assert( dd_observees_nv_ == dd_observees_v_ref_.size() );
-		assert( dd_observees_nv_ == dd_observees_dv_.size() );
-		assert( dd_observees_nv_ == dd_observees_.size() ); // ZC variables can't be self-observers
+		assert( observees_nv_ == observees_v_ref_.size() );
+		assert( observees_nv_ == observees_dv_.size() );
+		assert( observees_nv_ == observees_.size() ); // ZC variables can't be self-observers
 		fmu_set_observees_x( t ); // Modelon indicates that observee state matters for Jacobian computation
-		fmu_set_dd_observees_x( t ); // Modelon indicates that observee state matters for Jacobian computation
-		for ( Variables::size_type i = 0, e = dd_observees_.size(); i < e; ++i ) { // Get observee derivatives
-			dd_observees_dv_[ i ] = dd_observees_[ i ]->x1( t );
+		for ( Variables::size_type i = 0, e = observees_.size(); i < e; ++i ) { // Get observee derivatives
+			observees_dv_[ i ] = observees_[ i ]->x1( t );
 		}
-		return fmu_me_->get_directional_derivative( dd_observees_v_ref_.data(), dd_observees_nv_, var_.ref(), dd_observees_dv_.data() );
+		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var_.ref(), observees_dv_.data() );
 	}
 
 	// Coefficient 1 from FMU at Time tQ: X-Based with Directional First Derivative
@@ -1931,18 +1866,17 @@ protected: // Methods: FMU
 	R_1() const
 	{
 		assert( is_R() );
+		assert( !self_observer_ );
 		assert( fmu_me_ != nullptr );
 		assert( fmu_get_time() == tQ );
-		assert( dd_observees_nv_ == dd_observees_v_ref_.size() );
-		assert( dd_observees_nv_ == dd_observees_dv_.size() );
-		assert( dd_observees_nv_ == dd_observees_.size() ); // Self-observee not used with directional derivatives
+		assert( observees_nv_ == observees_v_ref_.size() );
+		assert( observees_nv_ == observees_dv_.size() );
+		assert( observees_nv_ == observees_.size() ); // Self-observee not used with directional derivatives
 		fmu_set_observees_x( tQ ); // Modelon indicates that observee state matters for Jacobian computation
-		if ( self_observer_ ) fmu_set_x( tQ );
-		fmu_set_dd_observees_x( tQ ); // Modelon indicates that observee state matters for Jacobian computation
-		for ( Variables::size_type i = 0, e = dd_observees_.size(); i < e; ++i ) { // Get observee derivatives
-			dd_observees_dv_[ i ] = dd_observees_[ i ]->x1( tQ );
+		for ( Variables::size_type i = 0, e = observees_.size(); i < e; ++i ) { // Get observee derivatives
+			observees_dv_[ i ] = observees_[ i ]->x1( tQ );
 		}
-		return fmu_me_->get_directional_derivative( dd_observees_v_ref_.data(), dd_observees_nv_, var_.ref(), dd_observees_dv_.data() );
+		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var_.ref(), observees_dv_.data() );
 	}
 
 	// Coefficient 1 from FMU at Time t: X-Based with Directional First Derivative
@@ -1950,18 +1884,17 @@ protected: // Methods: FMU
 	R_1( Time const t ) const
 	{
 		assert( is_R() );
+		assert( !self_observer_ );
 		assert( fmu_me_ != nullptr );
 		assert( fmu_get_time() == t );
-		assert( dd_observees_nv_ == dd_observees_v_ref_.size() );
-		assert( dd_observees_nv_ == dd_observees_dv_.size() );
-		assert( dd_observees_nv_ == dd_observees_.size() ); // Self-observee not used with directional derivatives
+		assert( observees_nv_ == observees_v_ref_.size() );
+		assert( observees_nv_ == observees_dv_.size() );
+		assert( observees_nv_ == observees_.size() ); // Self-observee not used with directional derivatives
 		fmu_set_observees_x( t ); // Modelon indicates that observee state matters for Jacobian computation
-		if ( self_observer_ ) fmu_set_x( t );
-		fmu_set_dd_observees_x( t ); // Modelon indicates that observee state matters for Jacobian computation
-		for ( Variables::size_type i = 0, e = dd_observees_.size(); i < e; ++i ) { // Get observee derivatives
-			dd_observees_dv_[ i ] = dd_observees_[ i ]->x1( t );
+		for ( Variables::size_type i = 0, e = observees_.size(); i < e; ++i ) { // Get observee derivatives
+			observees_dv_[ i ] = observees_[ i ]->x1( t );
 		}
-		return fmu_me_->get_directional_derivative( dd_observees_v_ref_.data(), dd_observees_nv_, var_.ref(), dd_observees_dv_.data() );
+		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var_.ref(), observees_dv_.data() );
 	}
 
 	// Coefficient 2 from FMU: Given Derivative
@@ -2048,23 +1981,22 @@ protected: // Methods
 
 private: // Methods
 
-	// Find Directional Derivative Seed Observees
+	// Find Short-Circuited Computational State and Input Observees
 	void
-	find_dd_observees(
-	 Variable * observee,
-	 std::unordered_set< Variable * > & observees_checked,
-	 std::unordered_set< Variable * > & dd_observee_set
+	find_computational_observees_of(
+	 Variables & observees,
+	 VariablesSet & observees_checked,
+	 VariablesSet & observees_set
 	)
 	{
-		if ( observees_checked.find( observee ) != observees_checked.end() ) { // Observee already processed
-			// Skip
-		} else if ( ( observee->is_state() ) || ( observee->is_Input() ) ) { // State or input: Can be a directional derivative seed
-			dd_observee_set.insert( observee );
-			observees_checked.insert( observee );
-		} else { // Traverse dependency sub-graph until states or inputs reached
-			observees_checked.insert( observee );
-			for ( Variable * oo : observee->observees_ ) { // Recurse
-				find_dd_observees( oo, observees_checked, dd_observee_set );
+		for ( Variable * observee : observees ) {
+			if ( observees_checked.find( observee ) == observees_checked.end() ) { // Observee not already processed
+				observees_checked.insert( observee );
+				if ( observee->is_state() || observee->is_Input() ) { // State or input => Computational
+					observees_set.insert( observee );
+				} else { // Traverse dependency sub-graph
+					find_computational_observees_of( observee->observees_, observees_checked, observees_set ); // Recurse
+				}
 			}
 		}
 	}
@@ -2087,7 +2019,6 @@ public: // Data
 	Time tD{ infinity }; // Discrete event time: tQ <= tD and tX <= tD
 	Time dt_min{ 0.0 }; // Time step min
 	Time dt_max{ infinity }; // Time step max
-	Conditional< Variable > * conditional{ nullptr }; // Conditional (non-owning)
 	Real x_0_bump{ 0.0 }; // Bumped value
 
 private: // Data
@@ -2097,24 +2028,20 @@ private: // Data
 	mutable Time dt_inf_rlx_{ infinity }; // Relaxed time step inf
 
 	// Observers
-	Observers< Variable > observers_; // Variables dependent on this one
 	bool observed_{ false }; // Has observers?
-	bool observed_ns_{ false }; // Has non-state observers?
 	bool self_observer_{ false }; // Appears in its function/derivative?
+	Observers< Variable > observers_; // Variables dependent on this one
 
 	// Observees
-	Variables observees_; // Variables this one depends on
 	bool observes_{ false }; // Has observees?
-
-	// Observees: Directional Derivatives
-	Variables dd_observees_; // Directional derivative observees: State and input variables only
-	VariableRefs dd_observees_v_ref_; // Observee value references for FMU directional derivative
-	mutable Reals dd_observees_dv_; // Observee derivatives for FMU directional derivative lookup
-	std::size_t dd_observees_nv_{ 0u }; // Observee count for FMU directional derivative lookup
+	Variables observees_; // State and input variable downstream dependencies to set in FMU to get value and directional derivatives
+	VariableRefs observees_v_ref_; // Observee value references for FMU directional derivative lookup
+	mutable Reals observees_dv_; // Observee derivatives for FMU directional derivative lookup
+	std::size_t observees_nv_{ 0u }; // Observee count for FMU directional derivative lookup
 
 	// Connections
-	Variable_Cons connections_; // Input connection variables this one outputs to
 	bool connected_{ false }; // Have connection(s)?
+	Variable_Cons connections_; // Input connection variables this one outputs to
 
 	// FMU
 	FMU_ME * fmu_me_{ nullptr }; // FMU-ME
@@ -2125,8 +2052,8 @@ private: // Data
 	// Outputs
 	bool out_on_{ true }; // Output on?
 	std::string dec_; // Output file name decoration
-	Output<> out_x_; // Continuous rep output
-	Output<> out_q_; // Quantized rep output
+	Output<> out_x_; // Continuous trajectory output
+	Output<> out_q_; // Quantized trajectory output
 
 }; // Variable
 

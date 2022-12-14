@@ -1,6 +1,170 @@
 # Dependencies
 
+## Testing
+- Interdependencies: Eval order for using latest or rhs all "old"
+  - Might have triangular dependency structure s.t. can use only updated inputs but is that what CVode does?
+    - pre() then changes nature of dependency and QSS doesn't know if pre() is present
+  - In Conditional blocks
+    if <condition> then
+      der(s1) = ... s2 ...
+      der(s2) = ... s1 ...
+  - Conditional blocks with reinit()
+    - Does state in reinit need to be in pre() ? (see BB)
+- UpstreamSampler: swi is switching when it shouldn't
+- Case600: Test after observers cascade fix
+- SimpleHouseDiscreteTime: Test after observers cascade fix
+- Firewall example of when discrete firewalls can help
+- Issues with classes of Dependency problems/models
+- Non-state variables with derivatives ???
+
+## Specs
+When performance is verified write up proposed spec changes
+- Dependencies
+  - Direct dependencies only: No s-c, No EI -> EI
+  - Include local variable dependencies (might be active)
+  - Fix algorithms "all dependencies shared" behavior
+- Annotations
+  - Trajectory polynomial order
+  - Dependencies within handler expression sep from elsewhere ?
+
+## Agenda: 2022/11/30
+- Revised QSS is working as hoped
+  - Observees (for setting variable values in FMU) are short-circuited to states and inputs
+  - Observers (for signaling updates) short-circuit around passive variables
+  - Passive variables can be output via sampled output times
+  - Event indicators can depend on other event indicators to handle passive variable short-circuiting (but prefer Dependencies not to s-c)
+  - Discrete intermediate variables can be active (firewall) or passive (short-circuited): Can test to see whether active is worth it in most models
+  - Updates flow through intermediate variables immediately for consistency
+  - Working with current OCT dependencies (at some reduced efficiency)
+  - Not performance optimized yet: A number of efficiency updates deferred
+- Results
+  - Test models are working with current OCT dependencies as planned: Can be more efficient with dependency changes
+  - UpstreamSampler: QSS run seems OK (was broken with previous QSS) but CVode run doesn't show sampler activity! (Doesn't work with Buildings 9) No reference solution to check against
+  - Don't know if (non-event-generating) min/max are an issue for some models
+  - Need to look at handling of non-state real variables with associated derivative variables
+- Issues
+  - Event indicator to event indicator dependencies in modelDescription.xml are used in two different situations, which interferes with QSS's ability to patch around the lack of direct dependencies:
+    1. An intermediate "signaling" variable modified in on EI block that appears in the other EI expression has bee short-circuited out
+    2. Something like the EIs share an expression or dependencies
+    - QSS could temporarily add dependencies for both meanings for an inefficient hack (not tried yet)
+  - Simultaneous events prevent consistent (order-independent) updating with ND
+    - Doing deferred updating of states for now to avoid this but is that ideal?
+    - Event handler blocks are tricky:
+      - State handlers with interdependencies: Capture FMU post-event states in deferred values before overwriting them to do QSS updates/ND
+      - See my DepTestR_ss
+      - ZC "handlers" are really conditional observers due to s-c, not handlers, so they should be using updated handler values
+      - BIDR handlers could be processed after state handlers do deferred updates but should they?
+    - Does FMU/PyFMI do sequential updating in such blocks? Depends on "triangular" dependency structure (excluding pre())?
+      - If QSS needs to do this it would need to know what dependencies are from pre()
+  - Trying x-based observee values for states
+    - A bit more accurate but may cause more ND noise
+    - Enables simpler/faster code since BIDR and ZC variables are naturally X based: Can fully exploit this if we decide to stay with X-based
+  - Zero crossings
+    - Need to set handler observee state before FMU event processing to make sure it sees correct pre() values ?
+    - If ZC event fires FMU actually sets handler state at t_bump, not tZ: Add post-event correction for this ? Pass t_bump also and have it back correct x_0_ to ZC(tZ) ?
+- Proposed OCT/spec changes
+  - Dependencies
+    - Direct dependencies only: No short-circuiting. Handler dependencies don't "look through" event indicators to their dependencies
+    - No extra dependencies (see Issues)
+    - Include those for local variables if practical
+
+## Questions for Modelon
+- Need just direct dependencies of all (state, local, output, continuous, discrete, input) variables in Dependencies? No s-c and no looking into EI ZC functions from "handled" variables
+- How can we detect R vars not marked discrete but that only changing discretely? (when block in equations can chg their functional form to non-constant but we don't know the context of an EI from the XML)
+- Event indicators should no longer depend on other event indicators (directly) in Dependencies:
+  - Need the direct dependencies of EIs on the variables appearing in their z-c functions
+  - Need dependencies on EIs only for variables modified within the if/when block when the event occurs
+- Can QSS assume local variable dependencies are listed in Dependencies? This can allow for more efficient output for a sparse collection of output variables
+
+## New Design
+- FMU Dependencies processing gets direct dependencies and creates graph over FMU_Variable nodes
+- Can we just flag the var type without storing the dependency graph? Will need to traverse it anyway
+- Need to know about dependencies to decide whether active or passive BIDR variable:
+  - BID: Active if it has any upstream (observer path) state or zc variables so it can serve as update firewall, otherwise passive
+  - R: Assume not worth using as firewall for now so passive unless has connections ? Maybe just do all passive for now
+    - If only depends on EI(s) (other than when block in equations) and/or discrete variables then it might be effectively discrete: Refine rules for this
+- EIs depending on EIs
+  - Will want the option to keep active discrete signaling variables but need EI->EI to use/try s-c passive handler variables
+  - Continuous R variables don't need to act as firewall generally unless they are connected so most are probably passive (but maybe they are effectively discrete fairly often?) => Need EI <-> EI deps
+- Observers:
+  - Need to propagate BIDR observer advance out to the BIDR (X-based) observer subgraph (stops when state|input reached): Since these all have only state and input observees doing observer advance on them doesn't affect each other's advance so can do them all as one meta-Obsevers collection: Most efficient to store that as the Observers for BIDR variables
+- Using --passive intermediate variables by default for now since a) doing active right to get firewalling requires phased observer updates with tagging to avoid cycles/repeats, and b) OCT is forcing many/most to passive by short-circuiting them in dependencies
+
+## Issues
+- Handler:
+  - un_bump_time sets ZC's non-handler observees before handler advance to correct for time bump: This is ugly and inefficient: Is this needed and/or can it be done more efficiently?
+  - Is rhs supposed to be updated in top order? Is that always possible in non-singular models? What do PyFMI solvers do? Or should it use "old" values on rhs?
+    - With ND how can QSS get (new) trajectory using new rhs values without also using old rhs values?
+      - Has to set observee state at +/- t_ND so uses all trajectory coefficients and some (state) observees may also be handlers or observers of handlers that are modified in FMU when event fires
+  - QSS can't distinguish pre() dependencies that can break dependency DAG cycle
+- BIDR vars that are self-observers: Shouldn't have self in computational observees
+- Conditional::handler
+  - Can we do the observee FMU value setting inside event loop only if FMU detects a crossing (for efficiency)?
+- Non-state variables with derivatives:
+  - How do these work? Do they have same dependencies or are the deriv's deps implied deps of the base var?
+  - Use derivative in R1|2|3 variables?
+
+## Future
+- Maybe move an Observers member into the Triggers/_R and Handlers classes: Have to assign the triggers/handlers before using the observers for output
+- Why are advance_observer_1 asserts off sometimes?
+- Do computational observees before init_1 since it sets observees (does it need to because ND time bumping?)
+  - Then maybe restore is_QSS or is_Input check to fmu_set_x (but use it for sampled output)
+- Fix for FMU setting handlers at t_bump rather than tZ: Maybe after trajectory is set back up the x_0_ value to what it would be at tZ
+- Outputs:
+  - Passive vars treated like sample-only outputs
+  - Chg local var treatment to use their observees instead of setting all var FMU state
+    - But MW says we mostly dump all outputs so more efficient to set whole FMU state for sampled outputs
+    - Could even store a set of all the local+passive output var's observees
+    - Or maybe set whole mode observee state for each sampled output point (when prob faster than doing redundant observee call for all requested output vars)
+- Refine/add logic for when an R variable is active: connected and/or effectively discrete and has upstream state or zc observer ?
+- More efficient pre-bump ZC logic
+- Observers:
+  - Combine R and ZC collections/updates: Need different index order
+  - Consider sep deriv arrays so could do all advance_observer phases together after all pooled calls
+  - Do observers observers updates as pooled/phased operation: Can we decide when this is more efficient?
+- Handlers:
+  - What if handler is also an observee of a handler? Can be consistent if deferred updates are used for all (state) handlers
+  - Need/use connected_output_handler_ ???
+  - Do QSS, R, and OX advance and advance_F before ZCs to reflect that ZC update is really "after" handlers are changed so should use their modified values
+  - Set up fixed Handlers collection member of Conditional and mechanism to merge Handlers for ad hoc situations where multiple Conditionals are firing at the same time (and add mechanism to detect that) so that not paying the cost to set up the same ad hoc Handlers over and over (assuming individual ZC events are common)
+- Connections: Add support to new design as needed: Handlers need connection updates, ...
+
+## Action
+- Add asserts that we never try to set the value of an EI or var that isn't a state or input with the fmu_set_* calls
+- Support EI -> EI as implying a handler dependency: EIs need handler_advance()
+- Observee now means the vars you set to get the value from the FMU: Only state and input/connection vars: Short circuit out any internal/non-state/algebraic/temporary variables on observee graph paths
+  - This is what we were calling observees in prev version
+- Observer now means the vars that a var propagates change to when it updates/changes
+  - Initially this doesn't s-c any internal vars: Discrete vars are propagation firewall
+  - Add option to s-c discrete vars so we can assess its performance impact
+  - Later can s-c over non-discrete, non-output-connected internal vars
+- Is self-observee now needed and distinct from self-observer ???
+- Since QSS var type (R vs R1|2|3) and s-c behavior can depend on var specs the graph operations should probably happen on a free-standing graph sep from the QSS vars
+  - Maybe add more specs to FMU_Var including observer & observee pointer/index lists ???
+- Enforce that EIs and local vars can't have connections ???
+- Chg results output logic to assume we have deps for local and output vars ? Or if no observees use "assume all" logic for results?
+
+## Plan
+- The simulation value and directional derivative dependency graph is short-circuited to downstream state and input dependencies (observees) as we need since it isn't correct to set the FMU value of internal variables.
+- The update signaling dependency graph is the (not-short-circuited) upstream direct reverse dependencies (observers) so that internal variables can notify connections when they update and can be a firewall when then update but don't change value.
+  - This can be refined to treat some internal variables as passive and short-circuit them out of the signaling graph: specifically, continuous internal variables not connected to another FMU.
+- To make this approach work we need to return to the plan of having the <Dependencies> section give QSS direct dependencies without any short-circuiting (QSS will do the short-circuiting it needs). Specifically, this means:
+  - Variables modified within a conditional block depend on the event indicator but not on variables because they appear in the event indicator's zero-crossing function.
+  - Event indicators depend only on the variables appearing within their zero-crossing function.
+  - Dependencies on (local and output) internal variables are included and not short-circuited to the state and input variables they depend on.
+  - In a scenario like DepTest4 with integer(time) that generates event indicators I think it is still OK to short-circuit out the temporary variable and have dependencies between event indicators.
+- Update the SOEP spec once this is working and confirmed to be the best approach
+
 ## Do
+- Once new design is working refine the event indicator pre-bump logic for more efficiency (don't need to always do the pre-bump):
+  - Do an event indicator pass at startup (currently commented out)
+  - Mark all event indicators that start at zero as need_ei_init
+  - Do a small bump and an event indicator pass when any need_ei_init event indicator has an update that means it will leave zero for the first time
+    - Trajectory has non-zero first derivative
+    - Clear need_ei_init after successful bump event
+    - This may often/usually be just after t_start for most/all such EIs
+  - Alternative: do the pre-bump just before a predicted crossing if the ZC is need_ei_init
+  - ? What about detected (unpredicted) crossings?
 - Check that need to support BIDR var self-observers (in handler assignments not algebraic relations): If not eliminate them during FMU Dependency Processing
 - Initialization has order dependency issue:
   - Vars using dds to get initial state (ZC and R) depend on x1(t0) calls on their observees so those vars have to be initialized first
@@ -10,28 +174,24 @@
   - Idea: initialize in dependency DAG order but we can have loops including self-observers
   - Idea: use non-dd ND method for init in a first pass to have something OK in there and then do real init
   - Idea: repeat init until values don't change ???
-- Also can have order dependency in advance ops!
 - Try phased Observers events for observer advance calls from advance_observer instead of direct calls
   - Allows ad hoc Observers collection for pooled ops and to elim duplication
   - Avoids order dependence of observer updates within each phase
-- Does simultaneous observer update need to defer x rep updates to avoid order dependence?
-  - If r1 and r2 R vars are interdependent and both getting observer updates in the same phase then yes should defer
-    - x_0_ values can be interdependent so 1/2/3 calls aren't enough to avoid order dependency
-    - With ND dependency is more complex
-  - Use advance_observer_F() to do the deferred assignments
-- Should simultaneous requantization also defer all updates (due to ND)?
 - Add rep lookup API for propagation (calls from set observees) (maybe p(t)) that is same as
   - q(t) for state variables (add an #ifdef to build with this as x(t) for x propagation)
   - x(t) for other variables
   - Don't forward calls to avoid an extra virtual call layer unless you do the (static cast?) trick to suppress virtual lookup
   - Reason: R1/2/3 can be observees and have a lower order q rep and requantize so state variable calling fmu_set_observees_q() will get their q reps: For now set their q rep to == x rep so not a problem
-  - Alternative is to make R1/2/3 q(.) calls return full x state or x state w/o highest order term and just use reduced order "q" internally to set next tE value: Did this fo rnow
-  - Can defer for now since state vars use x-based observees
+  - Alternative is to make R1/2/3 q(.) calls return full x state or x state w/o highest order term and just use reduced order "q" internally to set next tE value: Did this for now
+  - Can defer for now since state vars use X-based observees
 - Variable_Con: advance_connection vs advance_connection_observer ?
   - Use advance_connection_observer from BIDR observer advance also?
   - Call advance_observers from advance_connection_observer?
-  - Add advance_ns_observers?
   - Are connection variables acting as state vars or R or ? How do they propagate updates and get propagated updates?
+- Combine Triggers_R and Triggers_ZC into Triggers_DD and (?) do those requants together (need revised sort index)
+- Observers: Combine R and ZC ranges and advance ops into DD (need revised sort index)
+- Observers: Consider sep deriv arrays for each order and do one phase call with all those values: Fewer virtual calls but a lot more array storage (but storage reused for ad hoc Observers)
+- Do Inputs need deferred updates in advance_discrete? Only if non-Inputs (that might have Input observees) can be part of the same discrete event pass
 
 ## Done
 - Add observer advance calls in BIDR observer advance ops
@@ -130,6 +290,9 @@
   - Does this only make sense for state vars?
 
 ## Future
+- Merge ZC and R observers together in Observers for efficiency ?
+  - Adjust or use a custom version of var_sort_index() to put them together
+  - R observers need to call phased observers but ZCs have no observers: An if or virtual call eats up some of the performance benefit so use non-virtual observed() firewall call in front of that
 - R1/2/3 variables don't act as update firewall so they could have bypass (drill-thru) observees added around them and then not do observer advance calls from their observer advance for higher pooling/efficiency
 - Support Event Indicator inAssert=false info: Can EI in an assert alter solution? Like adding event times for those crossings?
 - Exploit XML annotations on real-valued (state or not) variables that are constant, linear, quadratic, cubic, ...
@@ -137,6 +300,3 @@
 - R variable that only depends on when EIs only changes discretely so could use D variable for efficiency and update firewall
   - Even if R is not declared discrete OCT infers that it is discrete in the when block context
 - Add/use x_pre in R vars? Need to trigger observer advance cascade if any (? or just x_0 or x_1?) coeffs chg since x_1 used in dir ders so this may not be worth checking for
-- Merge ZC and R observers together in Observers for efficiency ?
-  - Adjust or use a custom version of var_sort_index() to put them together
-  - R observers need to call phased observers but ZCs have no observers: An if or virtual call eats up some of the performance benefit so use a non-virtual has_observers firewall call in front of that

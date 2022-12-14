@@ -76,19 +76,19 @@ namespace QSS {
 		// Set coefficients based on second derivative signs
 		if ( ( x_2_l_s == -1 ) && ( x_2_u_s == -1 ) ) { // Downward curving trajectory
 			q_0_ = q_l;
-			x_1_ = q_1_ = x_1_l;
+			q_1_ = x_1_ = x_1_l;
 			x_2_ = x_2_l;
 		} else if ( ( x_2_l_s == +1 ) && ( x_2_u_s == +1 ) ) { // Upward curving trajectory
 			q_0_ = q_u;
-			x_1_ = q_1_ = x_1_u;
+			q_1_ = x_1_ = x_1_u;
 			x_2_ = x_2_u;
 		} else if ( ( x_2_l_s == 0 ) && ( x_2_u_s == 0 ) ) { // Non-curving trajectory
 			// Keep q_0_ == q_c_
-			x_1_ = q_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st deriv at q_0_ == q_c_
+			q_1_ = x_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st deriv at q_0_ == q_c_
 			x_2_ = 0.0;
 		} else { // Straight trajectory
 			q_0_ = std::min( std::max( ( ( q_l * x_2_u ) - ( q_u * x_2_l ) ) / ( x_2_u - x_2_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
-			x_1_ = q_1_ = ( ( ( q_u - q_0_ ) * x_1_l ) + ( ( q_0_ - q_l ) * x_1_u ) ) / ( two * qTol ); // Interpolated 1st deriv at q_0_
+			q_1_ = x_1_ = ( ( ( q_u - q_0_ ) * x_1_l ) + ( ( q_0_ - q_l ) * x_1_u ) ) / ( two * qTol ); // Interpolated 1st deriv at q_0_
 			x_2_ = 0.0;
 		}
 	}
@@ -96,7 +96,7 @@ namespace QSS {
 	// Advance Self-Observing Trigger: Simultaneous
 	void
 	Variable_LIQSS2::
-	advance_LIQSS_s()
+	advance_LIQSS_simultaneous()
 	{
 		assert( qTol > 0.0 );
 		assert( self_observer() );
@@ -134,20 +134,20 @@ namespace QSS {
 		// Set coefficients based on second derivative signs
 		if ( ( x_2_l_s == -1 ) && ( x_2_u_s == -1 ) ) { // Downward curving trajectory
 			l_0_ = q_l;
-			x_1_ = x_1_l;
-			x_2_ = x_2_l;
+			d_1_ = x_1_l;
+			d_2_ = x_2_l;
 		} else if ( ( x_2_l_s == +1 ) && ( x_2_u_s == +1 ) ) { // Upward curving trajectory
 			l_0_ = q_u;
-			x_1_ = x_1_u;
-			x_2_ = x_2_u;
+			d_1_ = x_1_u;
+			d_2_ = x_2_u;
 		} else if ( ( x_2_l_s == 0 ) && ( x_2_u_s == 0 ) ) { // Non-curving trajectory
 			l_0_ = q_c_;
-			x_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st deriv at l_0_ == q_c_
-			x_2_ = 0.0;
+			d_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st deriv at l_0_ == q_c_
+			d_2_ = 0.0;
 		} else { // Straight trajectory
 			l_0_ = std::min( std::max( ( ( q_l * x_2_u ) - ( q_u * x_2_l ) ) / ( x_2_u - x_2_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
-			x_1_ = ( ( ( q_u - l_0_ ) * x_1_l ) + ( ( l_0_ - q_l ) * x_1_u ) ) / ( two * qTol ); // Interpolated 1st deriv at l_0_
-			x_2_ = 0.0;
+			d_1_ = ( ( ( q_u - l_0_ ) * x_1_l ) + ( ( l_0_ - q_l ) * x_1_u ) ) / ( two * qTol ); // Interpolated 1st deriv at l_0_
+			d_2_ = 0.0;
 		}
 	}
 

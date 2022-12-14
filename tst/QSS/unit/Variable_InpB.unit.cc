@@ -50,12 +50,10 @@ TEST( Variable_InpBTest, Basic )
 	EXPECT_EQ( 0.0, u.tQ );
 
 	EXPECT_EQ( false, u.b( 0.0 ) );
-	EXPECT_EQ( 0, u.i( 0.0 ) );
 	EXPECT_EQ( 0.0, u.x( 0.0 ) );
 	EXPECT_EQ( 0.0, u.q( 0.0 ) );
 
 	EXPECT_EQ( false, u.b( 1.0 ) );
-	EXPECT_EQ( 0, u.i( 1.0 ) );
 	EXPECT_EQ( 0.0, u.x( 1.0 ) );
 	EXPECT_EQ( 0.0, u.q( 1.0 ) );
 }

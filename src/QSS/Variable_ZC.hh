@@ -38,6 +38,7 @@
 
 // QSS Headers
 #include <QSS/Variable.hh>
+#include <QSS/Conditional.hh>
 
 namespace QSS {
 
@@ -77,6 +78,15 @@ protected: // Creation
 		add_crossings_Dn_Up(); // FMI API doesn't currently expose crossing information
 	}
 
+public: // Creation
+
+	// Destructor
+	virtual
+	~Variable_ZC()
+	{
+		if ( conditional != nullptr ) conditional->rem_variable();
+	}
+
 protected: // Assignment
 
 	// Copy Assignment
@@ -103,6 +113,14 @@ public: // Predicate
 		return true;
 	}
 
+	// In Conditional?
+	virtual
+	bool
+	in_conditional() const
+	{
+		return conditional != nullptr;
+	}
+
 	// Unpredicted Crossing Detected?
 	bool
 	detected_crossing() const override
@@ -121,18 +139,11 @@ protected: // Predicate
 
 public: // Property
 
-	// Boolean Value at Time t
-	Boolean
-	b( Time const t ) const override
+	// t is Last Zero-Crossing Time?
+	bool
+	is_tZ_last( Time const t ) const
 	{
 		return ( t == tZ_last );
-	}
-
-	// Zero-Crossing Time
-	Time
-	tZC() const
-	{
-		return tZ;
 	}
 
 	// Zero-Crossing Bump Time for FMU Detection
@@ -142,11 +153,30 @@ public: // Property
 
 public: // Methods
 
+	// Add an Observer Variable
+	void
+	add_observer( Variable * observer )
+	{
+		assert( in_conditional() );
+		assert( observer != nullptr );
+		conditional->add_observer( observer );
+	}
+
+	// Initialization
+	void
+	init() override
+	{
+		init_observees();
+		init_0();
+	}
+
+public: // Zero-Crossing Methods
+
 	// Bump Time for FMU Zero-Crossing Detection
 	void
 	bump_time( Time const t_bump ) const
 	{
-		fmu_set_x( t_bump );
+//		fmu_set_x( t_bump ); //! Should not need to do this and setting event indicator variable FMU value is not proper
 		fmu_set_observees_x( t_bump );
 		x_0_bump_ = fmu_get_real();
 		if ( conditional != nullptr ) {
@@ -160,7 +190,7 @@ public: // Methods
 	void
 	re_bump_time( Time const t_bump ) const
 	{
-		fmu_set_x( t_bump );
+//		fmu_set_x( t_bump ); //! Should not need to do this and setting event indicator variable FMU value is not proper
 		fmu_set_observees_x( t_bump );
 	}
 
@@ -331,6 +361,7 @@ public: // Data
 	Time tZ_last{ neg_infinity }; // Zero-crossing time of last crossing
 	Crossing crossing{ Crossing::Flat }; // Zero-crossing type
 	Crossing crossing_last{ Crossing::Flat }; // Zero-crossing type of last crossing
+	Conditional< Variable_ZC > * conditional{ nullptr }; // Conditional (non-owning)
 
 protected: // Data
 

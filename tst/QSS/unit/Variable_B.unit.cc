@@ -53,9 +53,7 @@ TEST( Variable_BTest, Basic )
 	EXPECT_EQ( 1.0e-6, b.aTol );
 	EXPECT_EQ( 0.0, b.tX );
 	EXPECT_EQ( 0.0, b.tQ );
-	EXPECT_EQ( true, b.b() );
-	EXPECT_EQ( 1, b.i() );
-	EXPECT_EQ( 1.0, b.r() );
+	EXPECT_EQ( true, b.b( 0.0 ) );
 
 	EXPECT_EQ( 1.0, b.x( 0.0 ) );
 	EXPECT_EQ( 1.0, b.q( 0.0 ) );
@@ -70,13 +68,4 @@ TEST( Variable_BTest, Basic )
 	EXPECT_EQ( 0.0, b.q1( 1.0 ) );
 	EXPECT_EQ( 0.0, b.x2( 1.0 ) );
 	EXPECT_EQ( 0.0, b.q2( 1.0 ) );
-
-//	b.advance_handler( 2.0 );
-//	EXPECT_EQ( 2.0, b.tX );
-//	EXPECT_EQ( 2.0, b.tQ );
-//	EXPECT_EQ( false, b.b() );
-//	EXPECT_EQ( 0, b.i() );
-//	EXPECT_EQ( 0.0, b.r() );
-//	EXPECT_EQ( 0.0, b.x( 2.0 ) );
-//	EXPECT_EQ( 0.0, b.q( 2.0 ) );
 }

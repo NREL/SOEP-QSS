@@ -295,6 +295,8 @@ extern bool cycles; // Report dependency cycles?
 extern bool inflection; // Requantize at inflections?
 extern bool refine; // Refine FMU zero-crossing roots?
 extern bool perfect; // Perfect FMU-ME connection sync?
+extern bool active; // Active intermediate variables preferred?
+extern bool passive; // Passive intermediate variables preferred?
 extern bool stiff; // Stiffness detection/report?
 extern bool steps; // Generate requantization step count file?
 extern LogLevel log; // Logging level

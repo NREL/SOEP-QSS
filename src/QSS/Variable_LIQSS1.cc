@@ -80,7 +80,7 @@ namespace QSS {
 	// Advance Self-Observing Trigger: Simultaneous
 	void
 	Variable_LIQSS1::
-	advance_LIQSS_s()
+	advance_LIQSS_simultaneous()
 	{
 		assert( qTol > 0.0 );
 		assert( self_observer() );
@@ -103,16 +103,16 @@ namespace QSS {
 		// Set coefficients based on derivative signs
 		if ( ( x_1_l_s == -1 ) && ( x_1_u_s == -1 ) ) { // Downward trajectory
 			l_0_ = q_l;
-			x_1_ = x_1_l;
+			d_1_ = x_1_l;
 		} else if ( ( x_1_l_s == +1 ) && ( x_1_u_s == +1 ) ) { // Upward trajectory
 			l_0_ = q_u;
-			x_1_ = x_1_u;
+			d_1_ = x_1_u;
 		} else if ( ( x_1_l_s == 0 ) && ( x_1_u_s == 0 ) ) { // Flat trajectory
 			l_0_ = q_c_;
-			x_1_ = 0.0;
+			d_1_ = 0.0;
 		} else { // Flat trajectory
 			l_0_ = std::min( std::max( ( ( q_l * x_1_u ) - ( q_u * x_1_l ) ) / ( x_1_u - x_1_l ), q_l ), q_u ); // Value where deriv is ~ 0 // Clipped in case of roundoff
-			x_1_ = 0.0;
+			d_1_ = 0.0;
 		}
 	}
 

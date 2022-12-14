@@ -1,4 +1,4 @@
-// Variable Triggers
+// QSS Variable Triggers
 //
 // Project: QSS Solver
 //
@@ -51,7 +51,7 @@
 
 namespace QSS {
 
-// Variable Triggers
+// QSS Variable Triggers
 template< typename V >
 class Triggers final
 {
@@ -203,7 +203,7 @@ public: // Methods
 		}
 	}
 
-	// QSS Advance
+	// QSS Advance Triggers
 	void
 	advance_QSS( Time const t, SuperdenseTime const & s )
 	{
@@ -243,9 +243,6 @@ public: // Methods
 				for ( size_type i = qss2_b, e = range_.e(); i < e; ++i ) { // Order 2+ triggers
 					triggers_[ i ]->advance_QSS_2( qss_ders_.ders_m[ i ], qss_ders_.ders_p[ i ] );
 				}
-				for ( size_type i = qss2_b, e = range_.e(); i < e; ++i ) { // Order 2+ triggers
-					triggers_[ i ]->advance_QSS_2_1();
-				}
 				for ( size_type i = range3_.b(), e = range_.e(); i < e; ++i ) { // Order 3+ triggers
 					triggers_[ i ]->advance_QSS_3();
 				}
@@ -266,16 +263,13 @@ public: // Methods
 				for ( size_type i = qss2_b, e = range_.e(); i < e; ++i ) { // Order 2+ triggers
 					triggers_[ i ]->advance_QSS_2_forward( qss_ders_.ders_m[ i ], qss_ders_.ders_p[ i ] );
 				}
-				for ( size_type i = qss2_b, e = range_.e(); i < e; ++i ) { // Order 2+ triggers
-					triggers_[ i ]->advance_QSS_2_1();
-				}
 				for ( size_type i = range3_.b(), e = range_.e(); i < e; ++i ) { // Order 3+ triggers
 					triggers_[ i ]->advance_QSS_3_forward();
 				}
 			}
 			fmu_me_->set_time( t );
 		} else if ( range2_.have() ) {
-			Time tN( t + options::dtND );
+			Time const tN( t + options::dtND );
 			fmu_me_->set_time( tN );
 			for ( Variable * observee : uni_order_ ? observees_ : observees2_ ) {
 				observee->fmu_set_x( tN );
@@ -284,9 +278,6 @@ public: // Methods
 			fmu_me_->get_reals( range2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
 			for ( size_type i = qss2_b, e = range_.e(); i < e; ++i ) { // Order 2+ triggers
 				triggers_[ i ]->advance_QSS_2( qss_ders_.ders_p[ i ] );
-			}
-			for ( size_type i = qss2_b, e = range_.e(); i < e; ++i ) { // Order 2+ triggers
-				triggers_[ i ]->advance_QSS_2_1();
 			}
 			fmu_me_->set_time( t );
 		}
@@ -379,10 +370,10 @@ private: // Methods
 				}
 			}
 		}
-		size_type const qss_n( range_.n() );
+		size_type const range_n( range_.n() );
 		uni_order_ = (
-		 ( range2_.empty() || range2_.n() == qss_n ) &&
-		 ( range3_.empty() || range3_.n() == qss_n )
+		 ( range2_.empty() || range2_.n() == range_n ) &&
+		 ( range3_.empty() || range3_.n() == range_n )
 		);
 	}
 

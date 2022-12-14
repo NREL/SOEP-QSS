@@ -566,6 +566,7 @@ public: // Data
 	Typ typ{ Typ::None }; // FMU Variable value type
 	Cat cat{ Cat::None }; // FMU Variable value subtype
 	bool is_ei{ false }; // FMU Variable is an event indicator?
+	bool has_upstream_state_or_ei_observer{ false }; // FMU variable has a state or event indicator direct or upstream observer
 	fmi2_import_variable_t * var{ nullptr }; // FMU variable pointer
 	union { // FMU type-specific variable pointer // C++17 std::variant could be used here instead
 		void * vvr{ nullptr }; // FMU unknown type variable pointer

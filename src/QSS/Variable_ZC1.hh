@@ -103,20 +103,18 @@ public: // Property
 
 public: // Methods
 
-	// Initialization
+	// Initialization: Stage 0
 	void
-	init() override
+	init_0() override
 	{
 		assert( !connected() );
 
 		// Check no observers
-		if ( self_observer() || observed() ) {
+		assert( !self_observer() );
+		if ( observed() ) {
 			std::cerr << "Error: Zero-crossing variable has observers: " << name() << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
-
-		// Initialize observees
-		init_observees();
 
 		// Initialize specs
 		detected_crossing_ = false;
@@ -136,7 +134,7 @@ public: // Methods
 	advance_QSS() override
 	{
 		advance_pre( tE );
-		tX = tQ = tE;
+		tQ = tX = tE;
 		x_0_ = z_0();
 		x_1_ = n_1();
 		set_qTol();
@@ -150,7 +148,7 @@ public: // Methods
 	advance_QSS_0( Real const x_0 ) override
 	{
 		advance_pre( tE );
-		tX = tQ = tE;
+		tQ = tX = tE;
 		x_0_ = x_0;
 	}
 
@@ -185,27 +183,62 @@ public: // Methods
 		if ( options::output::d ) std::cout << "Z  " << name() << '(' << tZ_last << ')' << "   tE=" << tE << "   tZ=" << tZ << std::endl;
 	}
 
+	// Handler Advance
+	void
+	advance_handler( Time const t ) override
+	{
+		assert( ( tX <= t ) && ( t <= tE ) );
+		advance_pre( t );
+		tQ = tX = t;
+		x_0_ = z_0();
+		x_1_ = n_1();
+		set_qTol();
+		set_tE();
+		crossing_detect();
+		if ( options::output::d ) std::cout << "*  " << name() << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << std::endl;
+	}
+
+	// Handler Advance: Stage 0
+	void
+	advance_handler_0( Time const t, Real const x_0 ) override
+	{
+		assert( ( tX <= t ) && ( t <= tE ) );
+		advance_pre( t );
+		tQ = tX = t;
+		x_0_ = x_0;
+	}
+
+	// Handler Advance: Stage 1
+	void
+	advance_handler_1( Real const x_1 ) override
+	{
+		x_1_ = x_1;
+	}
+
+	// Handler Advance: Stage Final
+	void
+	advance_handler_F( Time const t ) override
+	{
+		set_qTol();
+		set_tE();
+		crossing_detect();
+		if ( options::output::d ) std::cout << "*= " << name() << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << std::endl;
+	}
+
+	// Handler No-Advance
+	void
+	no_advance_handler() override
+	{
+		crossing_detect();
+	}
+
 	// Observer Advance
 	void
 	advance_observer( Time const t ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		advance_pre( t );
-		tX = tQ = t;
-		x_0_ = ( !handler_modified_ && ( t == tZ_last ) ? 0.0 : z_0() ); // Force exact zero if at zero-crossing time
-		x_1_ = n_1();
-		set_qTol();
-		set_tE();
-		crossing_detect();
-	}
-
-	// Observer Non-State Advance
-	void
-	advance_observer_ns( Time const t ) override
-	{
-		assert( ( tX <= t ) && ( t <= tE ) );
-		advance_pre( t );
-		tX = tQ = t;
+		tQ = tX = t;
 		x_0_ = ( !handler_modified_ && ( t == tZ_last ) ? 0.0 : z_0() ); // Force exact zero if at zero-crossing time
 		x_1_ = n_1();
 		set_qTol();
@@ -219,11 +252,17 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		advance_pre( t );
-		tX = tQ = t;
-		assert( x_0 == p_0() );
-		assert( x_1 == n_1() );
+		tQ = tX = t;
+		// assert( x_0 == p_0() );
+		// assert( x_1 == n_1() );
 		x_0_ = ( !handler_modified_ && ( t == tZ_last ) ? 0.0 : x_0 ); // Force exact zero if at zero-crossing time
 		x_1_ = x_1;
+	}
+
+	// Observer Advance: Stage Final
+	void
+	advance_observer_F( Time const ) override
+	{
 		set_qTol();
 		set_tE();
 		crossing_detect();
@@ -279,17 +318,21 @@ private: // Methods
 	void
 	set_tZ()
 	{
-		// Find root of continuous rep: Only robust for small active segments with continuous rep close to function
+		// Find root of continuous trajectory: Only robust for small active segments with continuous trajectory close to function
 		Time const dt( zc_root_linear( x_1_, x_0_, zTol, x_mag_ ) );
 		assert( dt > 0.0 );
 		if ( dt != infinity ) { // Root exists
 			tZ = tX + dt;
-			Crossing const crossing_check( crossing_type( x_1_ ) );
-			if ( has( crossing_check ) ) { // Crossing type is relevant
-				crossing = crossing_check;
-				if ( options::refine ) refine_root_ZC( tX ); // Refine root: Expensive!
-			} else { // Crossing type not relevant
+			if ( tZ <= tZ_last ) { // Crossing already processed
 				tZ = infinity;
+			} else {
+				Crossing const crossing_check( crossing_type( x_1_ ) );
+				if ( has( crossing_check ) ) { // Crossing type is relevant
+					crossing = crossing_check;
+					if ( options::refine ) refine_root_ZC( tX ); // Refine root: Expensive!
+				} else { // Crossing type not relevant
+					tZ = infinity;
+				}
 			}
 		} else { // Root not found
 			tZ = infinity;
@@ -314,7 +357,7 @@ private: // Methods
 			( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 		} else { // Maybe check for crossing
 			int const sign_new( signum( x_0_ ) );
-			if ( ( !check_crossing_ ) || ( sign_old_ == sign_new ) ) { // Don't check for crossing
+			if ( !check_crossing_ || ( sign_old_ == sign_new ) || ( tX <= tZ_last ) ) { // Don't check for crossing
 				set_tZ();
 				( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 			} else { // Check for crossing
@@ -323,7 +366,7 @@ private: // Methods
 					crossing = crossing_check;
 					detected_crossing_ = true;
 					shift_ZC( tZ = tX );
-				} else {
+				} else { // Crossing type is not relevant
 					set_tZ();
 					( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 				}
@@ -341,7 +384,7 @@ private: // Methods
 
 private: // Data
 
-	Real x_0_{ 0.0 }, x_1_{ 0.0 }; // Coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }; // Trajectory coefficients
 
 }; // Variable_ZC1
 

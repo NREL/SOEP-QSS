@@ -34,9 +34,99 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // QSS Headers
+#include <QSS/Variable.hh>
 #include <QSS/Variable_Con.hh>
+#include <QSS/Variable_ZC.hh>
+
+// C++ Headers
+#include <cassert>
 
 namespace QSS {
+
+	// Add Observee and its Observer
+	void
+	Variable::
+	observe( Variable * v )
+	{
+		assert( v != nullptr );
+		if ( v->is_ZC() ) { // Observing zero-crossing variable means being an observer of (modified within) its conditional
+			Variable_ZC * zc( static_cast< Variable_ZC * >( v ) );
+			zc->add_observer( this ); // Conditional is not an observee of this variable
+		} else if ( v == this ) { // Flag as self-observer
+			self_observer_ = true;
+		} else { // Bidirectional observer/observee relationship
+			observees_.push_back( v );
+			v->observers_.add( this );
+		}
+	}
+
+	// Initialize Observees
+	void
+	Variable::
+	init_observees()
+	{
+		// Observees setup
+		VariablesSet observees_checked;
+		VariablesSet observees_set;
+		find_computational_observees_of( observees_, observees_checked, observees_set ); // Note: Looks at other variable observees that aren't necessarily uniquified yet but that is OK: Might be more efficient to make this a separate phase after all are uniquified
+		observees_.clear();
+		if ( !observees_set.empty() ) observees_.assign( observees_set.begin(), observees_set.end() ); // Swap in the computational observees
+		if ( options::output::d ) {
+			std::cout << '\n' << name() << " Computational Observees:" << std::endl;
+			for ( Variable const * observee : sorted_by_name( observees_ ) ) {
+				std::cout << ' ' << observee->name() << std::endl;
+			}
+		}
+		observes_ = !observees_.empty();
+		if ( observes_ ) uniquify( observees_, true ); // Sort by address and remove duplicates and recover unused memory
+
+#ifndef NDEBUG
+		// Check for duplicate value references
+		std::vector< VariableRef > observees_refs;
+		observees_refs.reserve( observees_.size() );
+		for ( Variable * observee : observees_ ) {
+			observees_refs.push_back( observee->var_.ref() );
+		}
+		std::sort( observees_refs.begin(), observees_refs.end() );
+		assert( std::adjacent_find( observees_refs.begin(), observees_refs.end() ) == observees_refs.end() ); // No repeat value references
+#endif
+
+		// FMU directional derivative call argument initialization
+		assert( observees_v_ref_.empty() ); // Initialization shouldn't be called twice for a variable
+		assert( observees_dv_.empty() ); // Initialization shouldn't be called twice for a variable
+		observees_nv_ = observees_.size();
+		observees_v_ref_.reserve( observees_nv_ );
+		observees_dv_.reserve( observees_nv_ );
+		for ( Variable * observee : observees_ ) {
+			observees_v_ref_.push_back( observee->var_.ref() );
+			observees_dv_.push_back( 0.0 ); // Actual values assigned when getting directional derivatives
+		}
+	}
+
+	// Initialize Observers
+	void
+	Variable::
+	init_observers()
+	{
+		observers_.set_computational_observers();
+	}
+
+	// Finalize Observers
+	void
+	Variable::
+	finalize_observers()
+	{
+		observers_.assign_computational_observers();
+		if ( options::output::d && is_Active() ) { // Passive variable observers are only used for short-circuiting around them so we don't show them here
+			std::cout << '\n' << name() << " Computational Observers:" << std::endl;
+			for ( Variable const * observer : sorted_by_name( observers_ ) ) {
+				std::cout << ' ' << observer->name() << std::endl;
+			}
+		}
+		observers_.init();
+		observed_ = observers_.have();
+		connected_output_observer = observers_.connected_output_observer();
+	}
 
 	// Advance Connections
 	void
@@ -55,6 +145,48 @@ namespace QSS {
 	{
 		for ( Variable_Con * connection : connections_ ) {
 			connection->advance_connection_observer();
+		}
+	}
+
+	// Decorate Outputs
+	void
+	Variable::
+	decorate_out( std::string const & dec )
+	{
+		dec_ = dec;
+		if ( out_on_ ) {
+			if ( options::output::X ) out_x_.decorate( dec );
+			if ( options::output::Q ) out_q_.decorate( dec );
+		}
+	}
+
+	// Initialize Outputs
+	void
+	Variable::
+	init_out( std::string const & dir, std::string const & dec )
+	{
+		if ( out_on_ ) {
+			if ( options::output::X ) out_x_.init( dir, name(), 'x', dec );
+			if ( options::output::Q ) out_q_.init( dir, name(), 'q', dec );
+			if ( options::output::h ) {
+				if ( var_.is_Real() ) {
+					char const * var_type_char( fmi2_import_get_real_variable_quantity( var_.rvr ) );
+					std::string const var_type( var_type_char == nullptr ? "" : var_type_char );
+					fmi2_import_unit_t * const var_unit_ptr( fmi2_import_get_real_variable_unit( var_.rvr ) );
+					std::string const var_unit( var_unit_ptr == nullptr ? "" : fmi2_import_get_unit_name( var_unit_ptr ) );
+					if ( options::output::X ) out_x_.header( var_type, var_unit );
+					if ( options::output::Q ) out_q_.header( var_type, var_unit );
+				} else if ( var_.is_Integer() ) {
+					char const * var_type_char( fmi2_import_get_integer_variable_quantity( var_.ivr ) );
+					std::string const var_type( var_type_char == nullptr ? "" : var_type_char );
+					// Integer variables have no unit
+					if ( options::output::X ) out_x_.header( var_type );
+					if ( options::output::Q ) out_q_.header( var_type );
+				} else { // Modelica Boolean variables can have a quantity but there is no FMIL API for getting it
+					if ( options::output::X ) out_x_.header();
+					if ( options::output::Q ) out_q_.header();
+				}
+			}
 		}
 	}
 

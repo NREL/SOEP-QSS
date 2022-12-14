@@ -208,7 +208,7 @@ The Binned-QSS goes beyond this research by exploiting QSS to dynamically identi
 
 ## FMU Support
 
-Models defined by FMUs following the FMI 2.0 API can be run by this QSS solver using QSS1 or QSS2 solvers. Discrete variables and zero crossing functions are supported. This is currently an initial/demonstration capability that cannot yet handle unit conversions (pure SI models are OK), or algebraic relationships. Some simple test model FMUs and a 50-variable room air thermal model have been simulated successfully.
+Models defined by FMUs following the FMI 2.0 API can be run by this QSS solver using QSS1 or QSS2 solvers. Discrete variables and zero crossing functions are supported. This is currently an initial/demonstration capability that cannot yet handle unit conversions (pure SI models are OK). Some simple test model FMUs and a 50-variable room air thermal model have been simulated successfully.
 
 ### FMU Notes
 

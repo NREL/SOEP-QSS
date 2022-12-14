@@ -69,9 +69,9 @@ public: // Creation
 	 FMU_Variable const der = FMU_Variable()
 	) :
 	 Super( fmu_me, 2, name, rTol_, aTol_, zTol_, xIni_, var, der ),
-	 x_0_( xIni_ ),
 	 q_c_( xIni_ ),
-	 q_0_( xIni_ )
+	 q_0_( xIni_ ),
+	 x_0_( xIni_ )
 	{
 		set_qTol();
 	}
@@ -130,17 +130,7 @@ public: // Methods
 	init() override
 	{
 		init_0();
-		init_1();
-		init_2();
-		init_deferred();
-		init_F();
-	}
-
-	// Initialization to a Value
-	void
-	init( Real const x ) override
-	{
-		init_0( x );
+		init_observers();
 		init_1();
 		init_2();
 		init_deferred();
@@ -151,25 +141,15 @@ public: // Methods
 	void
 	init_0() override
 	{
-		init_observers();
 		init_observees();
-		fmu_set_real( x_0_ = q_c_ = q_0_ = xIni );
-	}
-
-	// Initialization to a Value: Stage 0
-	void
-	init_0( Real const x ) override
-	{
-		init_observers();
-		init_observees();
-		fmu_set_real( x_0_ = q_c_ = q_0_ = x );
+		fmu_set_real( q_c_ = q_0_ = x_0_ = xIni );
 	}
 
 	// Initialization: Stage 1
 	void
 	init_1() override
 	{
-		x_1_ = q_1_ = p_1();
+		q_1_ = x_1_ = p_1();
 	}
 
 	// Initialization: Stage 2
@@ -178,7 +158,9 @@ public: // Methods
 	{
 		set_qTol();
 		if ( self_observer() ) {
-			advance_LIQSS_s();
+			advance_LIQSS_simultaneous();
+			x_1_ = d_1_;
+			x_2_ = d_2_;
 		} else {
 			x_2_ = h_2();
 		}
@@ -200,7 +182,6 @@ public: // Methods
 	void
 	init_F() override
 	{
-		init_observers_F();
 		if ( self_observer() ) {
 			q_0_ = l_0_;
 			q_1_ = x_1_;
@@ -217,13 +198,13 @@ public: // Methods
 	advance_QSS() override
 	{
 		Time const tDel( tE - tX );
-		tX = tQ = tE;
-		x_0_ = q_c_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		tQ = tX = tE;
+		q_c_ = q_0_ = x_0_ += ( x_1_ + ( x_2_ * tDel ) ) * tDel;
 		set_qTol();
 		if ( self_observer() ) {
 			advance_LIQSS();
 		} else {
-			x_1_ = q_1_ = h_1();
+			q_1_ = x_1_ = h_1();
 			x_2_ = h_2();
 			q_0_ += signum( x_2_ ) * qTol;
 		}
@@ -239,15 +220,14 @@ public: // Methods
 	advance_QSS_0() override
 	{
 		Time const tDel( tE - tX );
-		tX = tQ = tE;
-		x_0_ = q_c_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		d_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 	}
 
 	// QSS Advance: Stage 1
 	void
 	advance_QSS_1( Real const x_1 ) override
 	{
-		x_1_ = q_1_ = x_1;
+		d_1_ = x_1;
 	}
 
 	// QSS Advance: Stage 2
@@ -256,9 +236,9 @@ public: // Methods
 	{
 		set_qTol();
 		if ( self_observer() ) {
-			advance_LIQSS_s();
+			advance_LIQSS_simultaneous();
 		} else {
-			x_2_ = n_2( x_1_p );
+			d_2_ = n_2( x_1_p );
 		}
 	}
 
@@ -268,9 +248,9 @@ public: // Methods
 	{
 		set_qTol();
 		if ( self_observer() ) {
-			advance_LIQSS_s();
+			advance_LIQSS_simultaneous();
 		} else {
-			x_2_ = n_2( x_1_m, x_1_p );
+			d_2_ = n_2( x_1_m, x_1_p );
 		}
 	}
 
@@ -280,9 +260,9 @@ public: // Methods
 	{
 		set_qTol();
 		if ( self_observer() ) {
-			advance_LIQSS_s();
+			advance_LIQSS_simultaneous();
 		} else {
-			x_2_ = f_2( x_1_p, x_1_2p );
+			d_2_ = f_2( x_1_p, x_1_2p );
 		}
 	}
 
@@ -290,6 +270,10 @@ public: // Methods
 	void
 	advance_QSS_F() override
 	{
+		tQ = tX = tE;
+		q_c_ = q_0_ = x_0_ = d_0_;
+		q_1_ = x_1_ = d_1_;
+		x_2_ = d_2_;
 		if ( self_observer() ) {
 			q_0_ = l_0_;
 			q_1_ = x_1_;
@@ -306,10 +290,10 @@ public: // Methods
 	void
 	advance_handler( Time const t ) override
 	{
-		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
-		tX = tQ = t;
-		x_0_ = q_c_ = q_0_ = c_0();
-		x_1_ = q_1_ = h_1();
+		assert( ( tQ <= t ) && ( tX <= t ) && ( t <= tE ) );
+		tQ = tX = t;
+		q_c_ = q_0_ = x_0_ = c_0();
+		q_1_ = x_1_ = h_1();
 		x_2_ = c_2();
 		set_qTol();
 		set_tE_aligned();
@@ -321,45 +305,48 @@ public: // Methods
 
 	// Handler Advance: Stage 0
 	void
-	advance_handler_0( Time const t ) override
+	advance_handler_0( Time const t, Real const x_0 ) override
 	{
-		assert( ( tX <= t ) && ( tQ <= t ) && ( t <= tE ) );
-		tX = tQ = t;
-		x_0_ = q_c_ = q_0_ = c_0();
+		assert( ( tQ <= t ) && ( tX <= t ) && ( t <= tE ) );
+		d_0_ = x_0;
 	}
 
 	// Handler Advance: Stage 1
 	void
 	advance_handler_1( Real const x_1 ) override
 	{
-		x_1_ = q_1_ = x_1;
+		d_1_ = x_1;
 	}
 
 	// Handler Advance: Stage 2
 	void
 	advance_handler_2( Real const x_1_p ) override
 	{
-		x_2_ = n_2( x_1_p );
+		d_2_ = n_2( x_1_p );
 	}
 
 	// Handler Advance: Stage 2
 	void
 	advance_handler_2( Real const x_1_m, Real const x_1_p ) override
 	{
-		x_2_ = n_2( x_1_m, x_1_p );
+		d_2_ = n_2( x_1_m, x_1_p );
 	}
 
 	// QSS Advance: Stage 2
 	void
 	advance_handler_2_forward( Real const x_1_p, Real const x_1_2p ) override
 	{
-		x_2_ = f_2( x_1_p, x_1_2p );
+		d_2_ = f_2( x_1_p, x_1_2p );
 	}
 
 	// Handler Advance: Stage Final
 	void
-	advance_handler_F() override
+	advance_handler_F( Time const t ) override
 	{
+		tQ = tX = t;
+		q_c_ = q_0_ = x_0_ = d_0_;
+		q_1_ = x_1_ = d_1_;
+		x_2_ = d_2_;
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -381,12 +368,11 @@ public: // Methods
 		assert( ( tX <= t ) && ( t <= tE ) );
 		Time const tDel( t - tX );
 		tX = t;
-		x_0_ += ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		x_0_ += ( x_1_ + ( x_2_ * tDel ) ) * tDel;
 		x_1_ = c_1( t );
 		x_2_ = c_2( t );
 		set_tE_unaligned();
 		shift_QSS( tE );
-		if ( observed_ns() ) advance_observer_ns_observers();
 		if ( connected() ) advance_connections_observer();
 	}
 
@@ -395,51 +381,43 @@ public: // Methods
 	advance_observer_1( Time const t, Real const x_1 ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		assert( x_1 == p_1() );
+		// assert( x_1 == p_1() );
 		Time const tDel( t - tX );
-		tX = t;
-		x_0_ += ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
-		x_1_ = x_1;
+		d_0_ = x_0_ + ( x_1_ + ( x_2_ * tDel ) ) * tDel;
+		d_1_ = x_1;
 	}
 
 	// Observer Advance: Stage 2
 	void
 	advance_observer_2( Real const x_1_p ) override
 	{
-		x_2_ = n_2( x_1_p );
+		d_2_ = n_2( x_1_p );
 	}
 
 	// Observer Advance: Stage 2
 	void
 	advance_observer_2( Real const x_1_m, Real const x_1_p ) override
 	{
-		x_2_ = n_2( x_1_m, x_1_p );
+		d_2_ = n_2( x_1_m, x_1_p );
 	}
 
 	// Observer Advance: Stage 2
 	void
 	advance_observer_2_forward( Real const x_1_p, Real const x_1_2p ) override
 	{
-		x_2_ = f_2( x_1_p, x_1_2p );
+		d_2_ = f_2( x_1_p, x_1_2p );
 	}
 
 	// Observer Advance: Stage Final
 	void
-	advance_observer_F() override
+	advance_observer_F( Time const t ) override
 	{
+		tX = t;
+		x_0_ = d_0_;
+		x_1_ = d_1_;
+		x_2_ = d_2_;
 		set_tE_unaligned();
 		shift_QSS( tE );
-		if ( observed_ns() ) advance_observer_ns_observers();
-		if ( connected() ) advance_connections_observer();
-	}
-
-	// Observer Advance: Stage Final
-	void
-	advance_observer_ns_F() override
-	{
-		set_tE_unaligned();
-		shift_QSS( tE );
-		if ( observed_ns() ) advance_observer_ns_observers();
 		if ( connected() ) advance_connections_observer();
 	}
 
@@ -505,13 +483,13 @@ private: // Methods
 
 	// Advance Self-Observing Trigger: Simultaneous
 	void
-	advance_LIQSS_s();
+	advance_LIQSS_simultaneous();
 
 	// Coefficient 2 from FMU
 	Real
 	n_2( Real const x_1_p ) const
 	{
-		return options::one_over_two_dtND * ( x_1_p - x_1_ ); //ND Forward Euler
+		return options::one_over_two_dtND * ( x_1_p - d_1_ ); //ND Forward Euler
 	}
 
 	// Coefficient 2 from FMU
@@ -525,7 +503,7 @@ private: // Methods
 	Real
 	f_2( Real const x_1_p, Real const x_1_2p ) const
 	{
-		return options::one_over_four_dtND * ( ( three * ( x_1_p - x_1_ ) ) + ( x_1_p - x_1_2p ) ); //ND Forward 3-point
+		return options::one_over_four_dtND * ( ( three * ( x_1_p - d_1_ ) ) + ( x_1_p - x_1_2p ) ); //ND Forward 3-point
 	}
 
 	// Coefficient 2 from FMU at Time tQ
@@ -551,8 +529,9 @@ private: // Methods
 
 private: // Data
 
-	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous rep coefficients
-	Real q_c_{ 0.0 }, q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized rep coefficients
+	Real q_c_{ 0.0 }, q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized trajectory coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous trajectory coefficients
+	Real d_0_{ 0.0 }, d_1_{ 0.0 }, d_2_{ 0.0 }; // Deferred trajectory coefficients
 	Real l_0_{ 0.0 }; // LIQSS-adjusted coefficient
 
 }; // Variable_LIQSS2

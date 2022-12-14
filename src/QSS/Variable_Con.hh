@@ -166,6 +166,7 @@ public: // Methods
 	init() override
 	{
 		init_0();
+		init_observers();
 		init_F();
 	}
 
@@ -175,14 +176,12 @@ public: // Methods
 	{
 		assert( out_var_ != nullptr );
 		assert( observees().empty() );
-		init_observers();
 	}
 
 	// Initialization: Stage Final
 	void
 	init_F() override
 	{
-		init_observers_F();
 		tQ = out_var_->tQ;
 		tX = out_var_->tX;
 		tE = out_var_->tE;
