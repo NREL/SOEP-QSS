@@ -297,7 +297,7 @@ namespace fmu {
 
 		// Third derivative at +/- qTol
 		dN = options::two_dtND;
-		tN = tQ - dN;
+		tN = tQ + dN;
 		fmu_set_time( tN );
 		fmu_set_observees_q( tN );
 		fmu_set_real( q_l + ( ( x_1_l + ( x_2_l * dN ) ) * dN ) );

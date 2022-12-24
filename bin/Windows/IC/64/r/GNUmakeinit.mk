@@ -5,7 +5,7 @@
 # Platform: Windows/IC/64/r
 
 # Variables
-CXXFLAGS := /nologo /Qstd=c++17 /Zc:__cplusplus /Qcxx-features /Wall /Qdiag-disable:809,1786,2259,3280,10382,11074,11075 /QxHOST /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DWIN32 /DQSS_FMU /DNDEBUG /Qopenmp /O3 /fp:precise /Qprec-div- /Qparallel /Qip /Qinline-factor:225 /MD
+CXXFLAGS := /nologo /Qstd=c++17 /Zc:__cplusplus /Qcxx-features /Wall /Qdiag-disable:809,1786,2259,3280,10382,10441,11074,11075 /QxHOST /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DWIN32 /DQSS_FMU /DNDEBUG /Qopenmp /O3 /fp:precise /Qprec-div- /Qparallel /Qip /Qinline-factor:225 /MD
 # /Qansi-alias removed to work around Intel C++ 19.1 and 2020.1 bug
 # /Qhlo0 can be used to work around Intel C++ bug that breaks std::find that may be better wrt speed than dropping /Qx for Haswell+ CPUs
 # Disabled Warnings:
