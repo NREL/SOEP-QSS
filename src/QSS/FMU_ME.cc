@@ -1470,25 +1470,18 @@ namespace QSS {
 						// continue; // Only look at continuous variables
 					// }
 					std::string const inu_name( fmi2_import_get_variable_name( inu ) );
-std::cerr << "\nInitialUnknown Variable  : " << i << ' ' << n_inu_vars<< std::endl;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-std::cerr << " Name: " << inu_name << std::endl;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 					// std::cout << " Name: " << inu_name << std::endl;
 					std::cout << "\n " << inu_name << ':' << std::endl;
 					fmi2_import_real_variable_t * inu_real( fmi2_import_get_variable_as_real( inu ) );
-std::cerr << " inu_real: " << inu_real << ' ' << fmu_vars.has( inu_real ) << std::endl;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 					if ( fmu_vars.has( inu_real ) ) {
 						FMU_Variable & fmu_inu( fmu_vars[ inu_real ] );
 						size_type const idx( fmu_inu.idx );
-	std::cerr << "  idx " << idx << std::endl;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 						auto const ivar( fmu_idxs.find( idx ) );
-	std::cerr << "  ivar " << ( ivar != fmu_idxs.end() ) << std::endl;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 						if ( ivar != fmu_idxs.end() ) {
 							Variable * var( ivar->second );
 							// std::cout << " Var: " << var->name() << "  Index: " << idx << std::endl;
-	std::cerr << "  startIndex: " << startIndex[ i ] << ' ' << startIndex[ i + 1 ] << std::endl;/////////////////////////////////////////////////////////////////
 							for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
 								size_type const dep_idx( dependency[ j ] );
-	std::cerr << "  Dep Index: " << dep_idx << std::endl;/////////////////////////////////////////////////////////////////
 								// std::cout << "  Dep Index: " << dep_idx << std::endl;
 								// if ( dep_idx == 0u ) { // No info: Depends on all (don't support depends on all for now)
 								// 	std::cerr << "   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
@@ -1509,9 +1502,7 @@ std::cerr << " inu_real: " << inu_real << ' ' << fmu_vars.has( inu_real ) << std
 								// 		std::cout << "   Kind: Num (" << kind << ')' << std::endl;
 								// 	}
 								// }
-	std::cerr << "  Finding dep index " << dep_idx << std::endl;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 								auto idep( fmu_idxs.find( dep_idx ) ); //Do Add support for input variable dependents
-	std::cerr << "  Found dep index " << dep_idx << ' ' << ( idep != fmu_idxs.end() ) << std::endl;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 								if ( idep != fmu_idxs.end() ) {
 									Variable * dep( idep->second );
 									var->observe( dep );
@@ -1524,13 +1515,11 @@ std::cerr << " inu_real: " << inu_real << ' ' << fmu_vars.has( inu_real ) << std
 							//std::cout << "   Note: QSS variable with index " << idx << " for InitialUnknown not found" << std::endl;
 						}
 					}
-std::cerr << " Name: " << inu_name << " DONE" << std::endl;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 				}
 			// } else { // Assume no observers in model (this may not be true: FMI spec says no dependencies => dependent on all)
 			// 	std::cout << "\nNo InitialUknowns dependency info in FMU-ME XML" << std::endl;
 			}
 		}
-std::cerr << "InitialUnknowns DONE" << std::endl;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 		{ // QSS observer setup: Discrete variables
 			size_type * startIndex( nullptr );
