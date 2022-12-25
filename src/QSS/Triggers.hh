@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -219,7 +219,7 @@ public: // Methods
 			trigger->advance_QSS_0();
 		}
 		for ( Variable * observee : observees_ ) {
-			observee->fmu_set_x( t );
+			observee->fmu_set_s( t );
 		}
 		fmu_me_->get_reals( range_.n(), &qss_ders_.refs[ 0 ], &qss_ders_.ders[ 0 ] );
 		for ( size_type i = range_.b(), e = range_.e(); i < e; ++i ) {
@@ -230,14 +230,14 @@ public: // Methods
 			if ( fwd_time( tN ) ) { // Use centered ND formulas
 				fmu_me_->set_time( tN );
 				for ( Variable * observee : uni_order_ ? observees_ : observees2_ ) {
-					observee->fmu_set_x( tN );
+					observee->fmu_set_s( tN );
 				}
 				size_type const qss2_b( range2_.b() );
 				fmu_me_->get_reals( range2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_m[ qss2_b ] );
 				tN = t + options::dtND;
 				fmu_me_->set_time( tN );
 				for ( Variable * observee : uni_order_ ? observees_ : observees2_ ) {
-					observee->fmu_set_x( tN );
+					observee->fmu_set_s( tN );
 				}
 				fmu_me_->get_reals( range2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
 				for ( size_type i = qss2_b, e = range_.e(); i < e; ++i ) { // Order 2+ triggers
@@ -250,14 +250,14 @@ public: // Methods
 				tN = t + options::dtND;
 				fmu_me_->set_time( tN );
 				for ( Variable * observee : uni_order_ ? observees_ : observees2_ ) {
-					observee->fmu_set_x( tN );
+					observee->fmu_set_s( tN );
 				}
 				size_type const qss2_b( range2_.b() );
 				fmu_me_->get_reals( range2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_m[ qss2_b ] );
 				tN = t + options::two_dtND;
 				fmu_me_->set_time( tN );
 				for ( Variable * observee : uni_order_ ? observees_ : observees2_ ) {
-					observee->fmu_set_x( tN );
+					observee->fmu_set_s( tN );
 				}
 				fmu_me_->get_reals( range2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
 				for ( size_type i = qss2_b, e = range_.e(); i < e; ++i ) { // Order 2+ triggers
@@ -272,7 +272,7 @@ public: // Methods
 			Time const tN( t + options::dtND );
 			fmu_me_->set_time( tN );
 			for ( Variable * observee : uni_order_ ? observees_ : observees2_ ) {
-				observee->fmu_set_x( tN );
+				observee->fmu_set_s( tN );
 			}
 			size_type const qss2_b( range2_.b() );
 			fmu_me_->get_reals( range2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );

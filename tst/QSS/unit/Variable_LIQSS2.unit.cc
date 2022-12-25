@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -137,12 +137,12 @@ TEST( Variable_LIQSS2Test, Achilles )
 	EXPECT_EQ( 1.0, x2->aTol );
 	EXPECT_EQ( 0.0, x2->tQ );
 	EXPECT_EQ( 0.0, x2->tX );
-	EXPECT_NEAR( 11.5470053837925, x2->tE, 1e-9 );
+	EXPECT_NEAR( 10.690449676497, x2->tE, 1e-9 );
 	EXPECT_EQ( 2.0, x2->x( 0.0 ) );
 	EXPECT_EQ( -198.0, x2->q( 0.0 ) );
 	EXPECT_EQ( 0.0, x2->x1( 0.0 ) );
 	EXPECT_EQ( 0.0, x2->q1( 0.0 ) );
-	EXPECT_EQ( -3.0, x2->x2( 0.0 ) );
+	EXPECT_EQ( -3.5, x2->x2( 0.0 ) );
 
 	double const x1_tE( x1->tE );
 	fmu.set_time( x1_tE );
@@ -159,8 +159,8 @@ TEST( Variable_LIQSS2Test, Achilles )
 
 	EXPECT_EQ( 0.0, x2->tQ );
 	EXPECT_EQ( x1_tE, x2->tX );
-	EXPECT_NEAR( 2.85856716509514, x2->tE, 1e-9 );
-	EXPECT_NEAR( 0.285714285736392, x2->x( x2->tX ), 1e-9 );
+	EXPECT_NEAR( 2.85913578415831, x2->tE, 1e-9 );
+	EXPECT_NEAR( 2.57909249512522e-11, x2->x( x2->tX ), 1e-9 );
 	EXPECT_EQ( -198.0, x2->q( x2->tQ ) );
 	EXPECT_NEAR( -276.907396061731, x2->x1( x2->tX ), 1e-9 );
 	EXPECT_EQ( 0.0, x2->q1( x2->tQ ) );

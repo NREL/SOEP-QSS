@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -45,15 +45,13 @@ namespace QSS {
 	{
 		assert( qTol > 0.0 );
 		assert( self_observer() );
-		assert( q_c_ == q_0_ );
-		assert( x_0_ == q_0_ );
 
 		// Value at +/- qTol
 		Real const q_l( q_c_ - qTol );
 		Real const q_u( q_c_ + qTol );
 
 		// Derivative at +/- qTol
-		fmu_set_observees_x( tQ );
+		fmu_set_observees_s( tE );
 		fmu_set_real( q_l );
 		Real const x_1_l( p_1() );
 		fmu_set_real( q_u );
@@ -61,130 +59,99 @@ namespace QSS {
 
 		// Second derivative at +/- qTol
 		Time const dN( options::dtND );
-		Time tN( tQ + dN );
+		Time tN( tE + dN );
 		fmu_set_time( tN );
-		fmu_set_observees_x( tN );
-		fmu_set_real( q_l + ( ( x_1_l + ( x_2_ * dN ) ) * dN ) );
+		fmu_set_observees_s( tN );
+#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+		Real const x_2_dN( x_2_ * dN );
+		fmu_set_real( q_l + ( ( x_1_l + x_2_dN ) * dN ) );
+#else
+		Real const x_3_dN( x_3_ * dN );
+		Real const x_2_x_3_dN( ( x_2_ + x_3_dN ) * dN ) ); // Chg x_2_ to x_2_(tE) = x_2_ + x_3_ * ( tE - tX_prev ) ???
+		fmu_set_real( q_l + ( ( x_1_l + x_2_x_3_dN ) * dN ) );
+#endif
 		Real const x_1_p_l( p_1() );
 		Real const x_2_l( options::one_over_two_dtND * ( x_1_p_l - x_1_l ) ); //ND Forward Euler
-		fmu_set_real( q_u + ( ( x_1_u + ( x_2_ * dN ) ) * dN ) );
+#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+		fmu_set_real( q_u + ( ( x_1_u + x_2_dN ) * dN ) );
+#else
+		fmu_set_real( q_u + ( ( x_1_u + x_2_x_3_dN ) * dN ) );
+#endif
 		Real const x_1_p_u( p_1() );
 		Real const x_2_u( options::one_over_two_dtND * ( x_1_p_u - x_1_u ) ); //ND Forward Euler
 
 		// Third derivative at +/- qTol
-		tN = tQ - dN;
-		fmu_set_time( tN );
-		fmu_set_observees_x( tN );
-		fmu_set_real( q_l - ( ( x_1_l - ( x_2_l * dN ) ) * dN ) );
-		Real const x_1m_l( p_1() );
-		Real const x_3_l( options::one_over_six_dtND_squared * ( ( x_1_p_l - x_1_l ) + ( x_1m_l - x_1_l ) ) ); //ND Centered difference
+		Real x_3_l, x_3_u;
+		if ( fwd_time_ND( tE ) ) { // Use centered ND formulas
+			tN = tE - dN;
+			fmu_set_time( tN );
+			fmu_set_observees_s( tN );
+#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+			fmu_set_real( q_l - ( ( x_1_l - ( x_2_l * dN ) ) * dN ) );
+#else
+			fmu_set_real( q_l - ( ( x_1_l - ( ( x_2_l - x_3_dN ) * dN ) ) * dN ) );
+#endif
+			Real const x_1m_l( p_1() );
+			x_3_l = options::one_over_six_dtND_squared * ( ( x_1_p_l - x_1_l ) + ( x_1m_l - x_1_l ) ); //ND Centered difference
+#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+			fmu_set_real( q_u - ( ( x_1_u - ( x_2_u * dN ) ) * dN ) );
+#else
+			fmu_set_real( q_u - ( ( x_1_u - ( ( x_2_u - x_3_dN ) * dN ) ) * dN ) );
+#endif
+			Real const x_1m_u( p_1() );
+			x_3_u = options::one_over_six_dtND_squared * ( ( x_1_p_u - x_1_u ) + ( x_1m_u - x_1_u ) ); //ND Centered difference
+		} else { // Use forward ND formulas
+			Real const dN2( options::two_dtND );
+			tN = tE + dN2;
+			fmu_set_time( tN );
+			fmu_set_observees_s( tN );
+#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+			fmu_set_real( q_l + ( ( x_1_l + ( x_2_l * dN2 ) ) * dN2 ) );
+#else
+			Real const x_3_dN2( x_3_ * dN2 );
+			fmu_set_real( q_l + ( ( x_1_l + ( ( x_2_l + x_3_dN2 ) * dN2 ) ) * dN2 ) );
+#endif
+			Real const x_1_2p_l( p_1() );
+			x_3_l = options::one_over_six_dtND_squared * ( ( x_1_2p_l - x_1_p_l ) + ( x_1_l - x_1_p_l ) ); //ND Forward 3-point formula
+#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+			fmu_set_real( q_u + ( ( x_1_u + ( x_2_u * dN2 ) ) * dN2 ) );
+#else
+			fmu_set_real( q_u + ( ( x_1_u + ( ( x_2_u + x_3_dN2 ) * dN2 ) ) * dN2 ) );
+#endif
+			Real const x_1_2p_u( p_1() );
+			x_3_u = options::one_over_six_dtND_squared * ( ( x_1_2p_u - x_1_p_u ) + ( x_1_u - x_1_p_u ) ); //ND Forward 3-point formula
+		}
 		int const x_3_l_s( signum( x_3_l ) );
-		fmu_set_real( q_u - ( ( x_1_u - ( x_2_u * dN ) ) * dN ) );
-		Real const x_1m_u( p_1() );
-		Real const x_3_u( options::one_over_six_dtND_squared * ( ( x_1_p_u - x_1_u ) + ( x_1m_u - x_1_u ) ) ); //ND Centered difference
 		int const x_3_u_s( signum( x_3_u ) );
 
 		// Reset FMU time
-		fmu_set_time( tQ );
+		fmu_set_time( tE );
 
 		// Set coefficients based on third derivative signs
-		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward curve-changing trajectory
+		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward cubic trajectory
 			q_0_ = q_l;
 			q_1_ = x_1_ = x_1_l;
 			q_2_ = x_2_ = x_2_l;
 			x_3_ = x_3_l;
-		} else if ( ( x_3_l_s == +1 ) && ( x_3_u_s == +1 ) ) { // Upward curve-changing trajectory
+		} else if ( ( x_3_l_s == +1 ) && ( x_3_u_s == +1 ) ) { // Upward cubic trajectory
 			q_0_ = q_u;
 			q_1_ = x_1_ = x_1_u;
 			q_2_ = x_2_ = x_2_u;
 			x_3_ = x_3_u;
-		} else if ( ( x_3_l_s == 0 ) && ( x_3_u_s == 0 ) ) { // Non-curve-changing trajectory
-			// Keep q_0_ == q_c_
+		} else if ( x_3_l_s == x_3_u_s ) { // Quadratic trajectory
+			assert( ( x_3_l_s == 0 ) && ( x_3_u_s == 0 ) );
+			q_0_ = q_c_;
 			q_1_ = x_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st order coefficient at q_0_ == q_c_
 			q_2_ = x_2_ = one_half * ( x_2_l + x_2_u ); // Interpolated 2nd order coefficient at q_0_ == q_c_
 			x_3_ = 0.0;
-		} else { // Quadratic trajectory
+		} else { // Use quadratic trajectory
 			q_0_ = std::min( std::max( ( ( q_l * x_3_u ) - ( q_u * x_3_l ) ) / ( x_3_u - x_3_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
-			q_1_ = x_1_ = ( ( ( q_u - q_0_ ) * x_1_l ) + ( ( q_0_ - q_l ) * x_1_u ) ) / ( two * qTol ); // Interpolated 1st order coefficient at q_0_
-			q_2_ = x_2_ = ( ( ( q_u - q_0_ ) * x_2_l ) + ( ( q_0_ - q_l ) * x_2_u ) ) / ( two * qTol ); // Interpolated 2nd order coefficient at q_0_
+			Real const inv_2_qTol( one / ( two * qTol ) );
+			q_1_ = x_1_ = ( ( ( q_u - q_0_ ) * x_1_l ) + ( ( q_0_ - q_l ) * x_1_u ) ) * inv_2_qTol; // Interpolated 1st order coefficient at q_0_
+			q_2_ = x_2_ = ( ( ( q_u - q_0_ ) * x_2_l ) + ( ( q_0_ - q_l ) * x_2_u ) ) * inv_2_qTol; // Interpolated 2nd order coefficient at q_0_
 			x_3_ = 0.0;
 		}
 	}
-
-	// Advance Self-Observing Trigger: Forward ND
-	void
-	Variable_LIQSS3::
-	advance_LIQSS_forward()
-	{
-		assert( qTol > 0.0 );
-		assert( self_observer() );
-		assert( q_c_ == q_0_ );
-		assert( x_0_ == q_0_ );
-
-		// Value at +/- qTol
-		Real const q_l( q_c_ - qTol );
-		Real const q_u( q_c_ + qTol );
-
-		// Derivative at +/- qTol
-		fmu_set_observees_x( tQ );
-		fmu_set_real( q_l );
-		Real const x_1_l( p_1() );
-		fmu_set_real( q_u );
-		Real const x_1_u( p_1() );
-
-		// Second derivative at +/- qTol
-		Time dN( options::dtND );
-		Time tN( tQ + dN );
-		fmu_set_time( tN );
-		fmu_set_observees_x( tN );
-		fmu_set_real( q_l + ( ( x_1_l + ( x_2_ * dN ) ) * dN ) );
-		Real const x_1_p_l( p_1() );
-		Real const x_2_l( options::one_over_two_dtND * ( x_1_p_l - x_1_l ) ); //ND Forward Euler
-		fmu_set_real( q_u + ( ( x_1_u + ( x_2_ * dN ) ) * dN ) );
-		Real const x_1_p_u( p_1() );
-		Real const x_2_u( options::one_over_two_dtND * ( x_1_p_u - x_1_u ) ); //ND Forward Euler
-
-		// Third derivative at +/- qTol
-		dN = options::two_dtND;
-		tN = tQ + dN;
-		fmu_set_time( tN );
-		fmu_set_observees_x( tN );
-		fmu_set_real( q_l + ( ( x_1_l + ( x_2_l * dN ) ) * dN ) );
-		Real const x_1_2p_l( p_1() );
-		Real const x_3_l( options::one_over_six_dtND_squared * ( ( x_1_2p_l - x_1_p_l ) + ( x_1_l - x_1_p_l ) ) ); //ND 3-point formula
-		int const x_3_l_s( signum( x_3_l ) );
-		fmu_set_real( q_u + ( ( x_1_u + ( x_2_u * dN ) ) * dN ) );
-		Real const x_1_2p_u( p_1() );
-		Real const x_3_u( options::one_over_six_dtND_squared * ( ( x_1_2p_u - x_1_p_u ) + ( x_1_u - x_1_p_u ) ) ); //ND 3-point formula
-		int const x_3_u_s( signum( x_3_u ) );
-
-		// Reset FMU time
-		fmu_set_time( tQ );
-
-		// Set coefficients based on third derivative signs
-		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward curve-changing trajectory
-			q_0_ = q_l;
-			q_1_ = x_1_ = x_1_l;
-			q_2_ = x_2_ = x_2_l;
-			x_3_ = x_3_l;
-		} else if ( ( x_3_l_s == +1 ) && ( x_3_u_s == +1 ) ) { // Upward curve-changing trajectory
-			q_0_ = q_u;
-			q_1_ = x_1_ = x_1_u;
-			q_2_ = x_2_ = x_2_u;
-			x_3_ = x_3_u;
-		} else if ( ( x_3_l_s == 0 ) && ( x_3_u_s == 0 ) ) { // Non-curve-changing trajectory
-			// Keep q_0_ == q_c_
-			q_1_ = x_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st order coefficient at q_0_ == q_c_
-			q_2_ = x_2_ = one_half * ( x_2_l + x_2_u ); // Interpolated 2nd order coefficient at q_0_ == q_c_
-			x_3_ = 0.0;
-		} else { // Quadratic trajectory
-			q_0_ = std::min( std::max( ( ( q_l * x_3_u ) - ( q_u * x_3_l ) ) / ( x_3_u - x_3_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
-			q_1_ = x_1_ = ( ( ( q_u - q_0_ ) * x_1_l ) + ( ( q_0_ - q_l ) * x_1_u ) ) / ( two * qTol ); // Interpolated 1st order coefficient at q_0_
-			q_2_ = x_2_ = ( ( ( q_u - q_0_ ) * x_2_l ) + ( ( q_0_ - q_l ) * x_2_u ) ) / ( two * qTol ); // Interpolated 2nd order coefficient at q_0_
-			x_3_ = 0.0;
-		}
-	}
-
 
 	// Advance Self-Observing Trigger: Simultaneous
 	void
@@ -193,8 +160,6 @@ namespace QSS {
 	{
 		assert( qTol > 0.0 );
 		assert( self_observer() );
-		assert( q_c_ == q_0_ );
-		assert( x_0_ == q_0_ );
 
 		// Value at +/- qTol
 		Real const q_l( q_c_ - qTol );
@@ -208,57 +173,76 @@ namespace QSS {
 
 		// Second derivative at +/- qTol
 		Time const dN( options::dtND );
-		Time tN( tQ + dN );
+		Time tN( tE + dN );
 		fmu_set_time( tN );
-		fmu_set_observees_x( tN );
-		fmu_set_real( q_l + ( ( x_1_l + ( d_2_ * dN ) ) * dN ) );
+		fmu_set_observees_s( tN );
+#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+		Real const x_2_dN( x_2_ * dN );
+		fmu_set_real( q_l + ( ( x_1_l + x_2_dN ) * dN ) );
+#else
+		Real const x_3_dN( x_3_ * dN );
+		Real const x_2_x_3_dN( ( x_2_ + x_3_dN ) * dN ) ); // Chg x_2_ to x_2_(tE) = x_2_ + x_3_ * ( tE - tX_prev ) ???
+		fmu_set_real( q_l + ( ( x_1_l + x_2_x_3_dN ) * dN ) );
+#endif
 		Real const x_1_p_l( p_1() );
 		Real const x_2_l( options::one_over_two_dtND * ( x_1_p_l - x_1_l ) ); //ND Forward Euler
-		fmu_set_real( q_u + ( ( x_1_u + ( d_2_ * dN ) ) * dN ) );
+#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+		fmu_set_real( q_u + ( ( x_1_u + x_2_dN ) * dN ) );
+#else
+		fmu_set_real( q_u + ( ( x_1_u + x_2_x_3_dN ) * dN ) );
+#endif
 		Real const x_1_p_u( p_1() );
 		Real const x_2_u( options::one_over_two_dtND * ( x_1_p_u - x_1_u ) ); //ND Forward Euler
 
 		// Third derivative at +/- qTol
-		tN = tQ - dN;
+		tN = tE - dN;
 		fmu_set_time( tN );
-		fmu_set_observees_x( tN );
+		fmu_set_observees_s( tN );
+#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
 		fmu_set_real( q_l - ( ( x_1_l - ( x_2_l * dN ) ) * dN ) );
+#else
+		fmu_set_real( q_l - ( ( x_1_l - ( ( x_2_l - x_3_dN ) * dN ) ) * dN ) );
+#endif
 		Real const x_1m_l( p_1() );
 		Real const x_3_l( options::one_over_six_dtND_squared * ( ( x_1_p_l - x_1_l ) + ( x_1m_l - x_1_l ) ) ); //ND Centered difference
 		int const x_3_l_s( signum( x_3_l ) );
+#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
 		fmu_set_real( q_u - ( ( x_1_u - ( x_2_u * dN ) ) * dN ) );
+#else
+		fmu_set_real( q_u - ( ( x_1_u - ( ( x_2_u - x_3_dN ) * dN ) ) * dN ) );
+#endif
 		Real const x_1m_u( p_1() );
 		Real const x_3_u( options::one_over_six_dtND_squared * ( ( x_1_p_u - x_1_u ) + ( x_1m_u - x_1_u ) ) ); //ND Centered difference
 		int const x_3_u_s( signum( x_3_u ) );
 
-		// Reset FMU time
-		fmu_set_time( tQ );
-
-		// Reset FMU values
-		fmu_set_observees_x( tQ );
+		// Reset FMU time and values
+		fmu_set_time( tE );
+		fmu_set_observees_s( tE );
 		fmu_set_real( q_c_ );
 
 		// Set coefficients based on third derivative signs
-		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward curve-changing trajectory
+		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward cubic trajectory
 			l_0_ = q_l;
-			d_1_ = x_1_l;
-			d_2_ = x_2_l;
-			d_3_ = x_3_l;
-		} else if ( ( x_3_l_s == +1 ) && ( x_3_u_s == +1 ) ) { // Upward curve-changing trajectory
+			q_1_ = x_1_ = x_1_l;
+			q_2_ = x_2_ = x_2_l;
+			x_3_ = x_3_l;
+		} else if ( ( x_3_l_s == +1 ) && ( x_3_u_s == +1 ) ) { // Upward cubic trajectory
 			l_0_ = q_u;
-			d_1_ = x_1_u;
-			d_2_ = x_2_u;
-			d_3_ = x_3_u;
-		} else if ( ( x_3_l_s == 0 ) && ( x_3_u_s == 0 ) ) { // Non-curve-changing trajectory
+			q_1_ = x_1_ = x_1_u;
+			q_2_ = x_2_ = x_2_u;
+			x_3_ = x_3_u;
+		} else if ( x_3_l_s == x_3_u_s ) { // Quadratic trajectory
+			assert( ( x_3_l_s == 0 ) && ( x_3_u_s == 0 ) );
 			l_0_ = q_c_;
-			d_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st order coefficient at q_0_ == q_c_
-			d_2_ = one_half * ( x_2_l + x_2_u ); // Interpolated 2nd order coefficient at q_0_ == q_c_
-			d_3_ = 0.0;
-		} else { // Quadratic trajectory
+			q_1_ = x_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st order coefficient at l_0_
+			q_2_ = x_2_ = one_half * ( x_2_l + x_2_u ); // Interpolated 2nd order coefficient at l_0_
+			x_3_ = 0.0;
+		} else { // Use quadratic trajectory
 			l_0_ = std::min( std::max( ( ( q_l * x_3_u ) - ( q_u * x_3_l ) ) / ( x_3_u - x_3_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
-			d_1_ = ( ( ( q_u - l_0_ ) * x_1_l ) + ( ( l_0_ - q_l ) * x_1_u ) ) / ( two * qTol ); // Interpolated 1st order coefficient at q_0_
-			d_2_ = ( ( ( q_u - l_0_ ) * x_2_l ) + ( ( l_0_ - q_l ) * x_2_u ) ) / ( two * qTol ); // Interpolated 2nd order coefficient at q_0_
-			d_3_ = 0.0;
+			Real const inv_2_qTol( one / ( two * qTol ) );
+			q_1_ = x_1_ = ( ( ( q_u - l_0_ ) * x_1_l ) + ( ( l_0_ - q_l ) * x_1_u ) ) * inv_2_qTol; // Interpolated 1st order coefficient at l_0_
+			q_2_ = x_2_ = ( ( ( q_u - l_0_ ) * x_2_l ) + ( ( l_0_ - q_l ) * x_2_u ) ) * inv_2_qTol; // Interpolated 2nd order coefficient at l_0_
+			x_3_ = 0.0;
 		}
 	}
 
@@ -269,8 +253,6 @@ namespace QSS {
 	{
 		assert( qTol > 0.0 );
 		assert( self_observer() );
-		assert( q_c_ == q_0_ );
-		assert( x_0_ == q_0_ );
 
 		// Value at +/- qTol
 		Real const q_l( q_c_ - qTol );
@@ -283,59 +265,79 @@ namespace QSS {
 		Real const x_1_u( p_1() );
 
 		// Second derivative at +/- qTol
-		Time dN( options::dtND );
-		Time tN( tQ + dN );
+		Time const dN( options::dtND );
+		Time tN( tE + dN );
 		fmu_set_time( tN );
-		fmu_set_observees_x( tN );
-		fmu_set_real( q_l + ( ( x_1_l + ( d_2_ * dN ) ) * dN ) );
+		fmu_set_observees_s( tN );
+#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+		Real const x_2_dN( x_2_ * dN );
+		fmu_set_real( q_l + ( ( x_1_l + x_2_dN ) * dN ) );
+#else
+		Real const x_3_dN( x_3_ * dN );
+		Real const x_2_x_3_dN( ( x_2_ + x_3_dN ) * dN ) ); // Chg x_2_ to x_2_(tE) = x_2_ + x_3_ * ( tE - tX_prev ) ???
+		fmu_set_real( q_l + ( ( x_1_l + x_2_x_3_dN ) * dN ) );
+#endif
 		Real const x_1_p_l( p_1() );
 		Real const x_2_l( options::one_over_two_dtND * ( x_1_p_l - x_1_l ) ); //ND Forward Euler
-		fmu_set_real( q_u + ( ( x_1_u + ( d_2_ * dN ) ) * dN ) );
+#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+		fmu_set_real( q_u + ( ( x_1_u + x_2_dN ) * dN ) );
+#else
+		fmu_set_real( q_u + ( ( x_1_u + x_2_x_3_dN ) * dN ) );
+#endif
 		Real const x_1_p_u( p_1() );
 		Real const x_2_u( options::one_over_two_dtND * ( x_1_p_u - x_1_u ) ); //ND Forward Euler
 
 		// Third derivative at +/- qTol
-		dN = options::two_dtND;
-		tN = tQ - dN;
+		Real const dN2( options::two_dtND );
+		tN = tE + dN2;
 		fmu_set_time( tN );
-		fmu_set_observees_x( tN );
-		fmu_set_real( q_l + ( ( x_1_l + ( x_2_l * dN ) ) * dN ) );
+		fmu_set_observees_s( tN );
+#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+		fmu_set_real( q_l + ( ( x_1_l + ( x_2_l * dN2 ) ) * dN2 ) );
+#else
+		Real const x_3_dN2( x_3_ * dN2 );
+		fmu_set_real( q_l + ( ( x_1_l + ( ( x_2_l + x_3_dN2 ) * dN2 ) ) * dN2 ) );
+#endif
 		Real const x_1_2p_l( p_1() );
-		Real const x_3_l( options::one_over_six_dtND_squared * ( ( x_1_2p_l - x_1_p_l ) + ( x_1_l - x_1_p_l ) ) ); //ND 3-point formula
+		Real const x_3_l( options::one_over_six_dtND_squared * ( ( x_1_2p_l - x_1_p_l ) + ( x_1_l - x_1_p_l ) ) ); //ND Forward 3-point formula
 		int const x_3_l_s( signum( x_3_l ) );
-		fmu_set_real( q_u + ( ( x_1_u + ( x_2_u * dN ) ) * dN ) );
+#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+		fmu_set_real( q_u + ( ( x_1_u + ( x_2_u * dN2 ) ) * dN2 ) );
+#else
+		fmu_set_real( q_u + ( ( x_1_u + ( ( x_2_u + x_3_dN2 ) * dN2 ) ) * dN2 ) );
+#endif
 		Real const x_1_2p_u( p_1() );
-		Real const x_3_u( options::one_over_six_dtND_squared * ( ( x_1_2p_u - x_1_p_u ) + ( x_1_u - x_1_p_u ) ) ); //ND 3-point formula
+		Real const x_3_u( options::one_over_six_dtND_squared * ( ( x_1_2p_u - x_1_p_u ) + ( x_1_u - x_1_p_u ) ) ); //ND Forward 3-point formula
 		int const x_3_u_s( signum( x_3_u ) );
 
-		// Reset FMU time
-		fmu_set_time( tQ );
-
-		// Reset FMU values
-		fmu_set_observees_x( tQ );
+		// Reset FMU time and values
+		fmu_set_time( tE );
+		fmu_set_observees_s( tE );
 		fmu_set_real( q_c_ );
 
 		// Set coefficients based on third derivative signs
-		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward curve-changing trajectory
+		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward cubic trajectory
 			l_0_ = q_l;
-			d_1_ = x_1_l;
-			d_2_ = x_2_l;
-			d_3_ = x_3_l;
-		} else if ( ( x_3_l_s == +1 ) && ( x_3_u_s == +1 ) ) { // Upward curve-changing trajectory
+			q_1_ = x_1_ = x_1_l;
+			q_2_ = x_2_ = x_2_l;
+			x_3_ = x_3_l;
+		} else if ( ( x_3_l_s == +1 ) && ( x_3_u_s == +1 ) ) { // Upward cubic trajectory
 			l_0_ = q_u;
-			d_1_ = x_1_u;
-			d_2_ = x_2_u;
-			d_3_ = x_3_u;
-		} else if ( ( x_3_l_s == 0 ) && ( x_3_u_s == 0 ) ) { // Non-curve-changing trajectory
+			q_1_ = x_1_ = x_1_u;
+			q_2_ = x_2_ = x_2_u;
+			x_3_ = x_3_u;
+		} else if ( x_3_l_s == x_3_u_s ) { // Quadratic trajectory
+			assert( ( x_3_l_s == 0 ) && ( x_3_u_s == 0 ) );
 			l_0_ = q_c_;
-			d_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st order coefficient at q_0_ == q_c_
-			d_2_ = one_half * ( x_2_l + x_2_u ); // Interpolated 2nd order coefficient at q_0_ == q_c_
-			d_3_ = 0.0;
-		} else { // Quadratic trajectory
+			q_1_ = x_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st order coefficient at l_0_
+			q_2_ = x_2_ = one_half * ( x_2_l + x_2_u ); // Interpolated 2nd order coefficient at l_0_
+			x_3_ = 0.0;
+		} else { // Use quadratic trajectory
 			l_0_ = std::min( std::max( ( ( q_l * x_3_u ) - ( q_u * x_3_l ) ) / ( x_3_u - x_3_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
-			d_1_ = ( ( ( q_u - l_0_ ) * x_1_l ) + ( ( l_0_ - q_l ) * x_1_u ) ) / ( two * qTol ); // Interpolated 1st order coefficient at q_0_
-			d_2_ = ( ( ( q_u - l_0_ ) * x_2_l ) + ( ( l_0_ - q_l ) * x_2_u ) ) / ( two * qTol ); // Interpolated 2nd order coefficient at q_0_
-			d_3_ = 0.0;
+			Real const inv_2_qTol( one / ( two * qTol ) );
+			q_1_ = x_1_ = ( ( ( q_u - l_0_ ) * x_1_l ) + ( ( l_0_ - q_l ) * x_1_u ) ) * inv_2_qTol; // Interpolated 1st order coefficient at l_0_
+			q_2_ = x_2_ = ( ( ( q_u - l_0_ ) * x_2_l ) + ( ( l_0_ - q_l ) * x_2_u ) ) * inv_2_qTol; // Interpolated 2nd order coefficient at l_0_
+			x_3_ = 0.0;
 		}
 	}
 

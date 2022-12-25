@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -45,33 +45,41 @@ namespace QSS {
 	{
 		assert( qTol > 0.0 );
 		assert( self_observer() );
-		assert( q_c_ == q_0_ );
-		assert( x_0_ == q_0_ );
 
 		// Value at +/- qTol
 		Real const q_l( q_c_ - qTol );
 		Real const q_u( q_c_ + qTol );
 
 		// Derivative at +/- qTol
-		fmu_set_observees_x( tQ );
+		fmu_set_observees_s( tE );
 		fmu_set_real( q_l );
 		Real const x_1_l( p_1() );
 		fmu_set_real( q_u );
 		Real const x_1_u( p_1() );
 
 		// Second derivative at +/- qTol
-		Time const tN( tQ + options::dtND );
+		Time const dN( options::dtND );
+		Time const tN( tE + dN );
 		fmu_set_time( tN );
-		fmu_set_observees_x( tN );
-		fmu_set_real( q_l + ( x_1_l * options::dtND ) );
+		fmu_set_observees_s( tN );
+#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+		fmu_set_real( q_l + ( x_1_l * dN ) );
+#else
+		Real const x_2_dN( x_2_ * dN );
+		fmu_set_real( q_l + ( x_1_l + x_2_dN ) * dN );
+#endif
 		Real const x_2_l( options::one_over_two_dtND * ( p_1() - x_1_l ) ); //ND Forward Euler
 		int const x_2_l_s( signum( x_2_l ) );
-		fmu_set_real( q_u + ( x_1_u * options::dtND ) );
+#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+		fmu_set_real( q_u + ( x_1_u * dN ) );
+#else
+		fmu_set_real( q_u + ( x_1_u + x_2_dN ) * dN );
+#endif
 		Real const x_2_u( options::one_over_two_dtND * ( p_1() - x_1_u ) ); //ND Forward Euler
 		int const x_2_u_s( signum( x_2_u ) );
 
 		// Reset FMU time
-		fmu_set_time( tQ );
+		fmu_set_time( tE );
 
 		// Set coefficients based on second derivative signs
 		if ( ( x_2_l_s == -1 ) && ( x_2_u_s == -1 ) ) { // Downward curving trajectory
@@ -82,15 +90,24 @@ namespace QSS {
 			q_0_ = q_u;
 			q_1_ = x_1_ = x_1_u;
 			x_2_ = x_2_u;
-		} else if ( ( x_2_l_s == 0 ) && ( x_2_u_s == 0 ) ) { // Non-curving trajectory
-			// Keep q_0_ == q_c_
+		} else if ( x_2_l_s == x_2_u_s ) { // Linear trajectory
+			assert( ( x_2_l_s == 0 ) && ( x_2_u_s == 0 ) );
+			q_0_ = q_c_;
 			q_1_ = x_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st deriv at q_0_ == q_c_
 			x_2_ = 0.0;
-		} else { // Straight trajectory
+		} else { // Use linear trajectory
 			q_0_ = std::min( std::max( ( ( q_l * x_2_u ) - ( q_u * x_2_l ) ) / ( x_2_u - x_2_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
 			q_1_ = x_1_ = ( ( ( q_u - q_0_ ) * x_1_l ) + ( ( q_0_ - q_l ) * x_1_u ) ) / ( two * qTol ); // Interpolated 1st deriv at q_0_
 			x_2_ = 0.0;
 		}
+
+		// if ( x_2_l != x_2_u ) { // Set additional requantization criterion: Estimated value when x_2 == 0
+		// 	Real const qE( q_l - ( x_2_l * ( ( q_u - q_l ) / ( x_2_u - x_2_l ) ) ) );
+			// Then need to find root where x(t) = qE and use that instead of tE if sooner
+			// What about after an observer update? Recompute this time again? Then should do it in set_tE method
+			// This adds $$$ root finding so maybe should be enabled by an option for production
+			// Experiment to see if this is worth it in practice
+		// }
 	}
 
 	// Advance Self-Observing Trigger: Simultaneous
@@ -100,8 +117,6 @@ namespace QSS {
 	{
 		assert( qTol > 0.0 );
 		assert( self_observer() );
-		assert( q_c_ == q_0_ );
-		assert( x_0_ == q_0_ );
 
 		// Value at +/- qTol
 		Real const q_l( q_c_ - qTol );
@@ -114,41 +129,58 @@ namespace QSS {
 		Real const x_1_u( p_1() );
 
 		// Second derivative at +/- qTol
-		Time const tN( tQ + options::dtND );
+		Time const dN( options::dtND );
+		Time const tN( tE + dN );
 		fmu_set_time( tN );
-		fmu_set_observees_x( tN );
-		fmu_set_real( q_l + ( x_1_l * options::dtND ) );
+		fmu_set_observees_s( tN );
+#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+		fmu_set_real( q_l + ( x_1_l * dN ) );
+#else
+		Real const x_2_dN( x_2_ * dN );
+		fmu_set_real( q_l + ( x_1_l + x_2_dN ) * dN );
+#endif
 		Real const x_2_l( options::one_over_two_dtND * ( p_1() - x_1_l ) ); //ND Forward Euler
 		int const x_2_l_s( signum( x_2_l ) );
-		fmu_set_real( q_u + ( x_1_u * options::dtND ) );
+#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+		fmu_set_real( q_u + ( x_1_u * dN ) );
+#else
+		fmu_set_real( q_u + ( x_1_u + x_2_dN ) * dN );
+#endif
 		Real const x_2_u( options::one_over_two_dtND * ( p_1() - x_1_u ) ); //ND Forward Euler
 		int const x_2_u_s( signum( x_2_u ) );
 
-		// Reset FMU time
-		fmu_set_time( tQ );
-
-		// Reset FMU values
-		fmu_set_observees_x( tQ );
+		// Reset FMU time and values
+		fmu_set_time( tE );
+		fmu_set_observees_s( tE );
 		fmu_set_real( q_c_ );
 
 		// Set coefficients based on second derivative signs
 		if ( ( x_2_l_s == -1 ) && ( x_2_u_s == -1 ) ) { // Downward curving trajectory
 			l_0_ = q_l;
-			d_1_ = x_1_l;
-			d_2_ = x_2_l;
+			q_1_ = x_1_ = x_1_l;
+			x_2_ = x_2_l;
 		} else if ( ( x_2_l_s == +1 ) && ( x_2_u_s == +1 ) ) { // Upward curving trajectory
 			l_0_ = q_u;
-			d_1_ = x_1_u;
-			d_2_ = x_2_u;
-		} else if ( ( x_2_l_s == 0 ) && ( x_2_u_s == 0 ) ) { // Non-curving trajectory
+			q_1_ = x_1_ = x_1_u;
+			x_2_ = x_2_u;
+		} else if ( x_2_l_s == x_2_u_s ) { // Linear trajectory
+			assert( ( x_2_l_s == 0 ) && ( x_2_u_s == 0 ) );
 			l_0_ = q_c_;
-			d_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st deriv at l_0_ == q_c_
-			d_2_ = 0.0;
-		} else { // Straight trajectory
+			q_1_ = x_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st deriv at l_0_
+			x_2_ = 0.0;
+		} else { // Use linear trajectory
 			l_0_ = std::min( std::max( ( ( q_l * x_2_u ) - ( q_u * x_2_l ) ) / ( x_2_u - x_2_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
-			d_1_ = ( ( ( q_u - l_0_ ) * x_1_l ) + ( ( l_0_ - q_l ) * x_1_u ) ) / ( two * qTol ); // Interpolated 1st deriv at l_0_
-			d_2_ = 0.0;
+			q_1_ = x_1_ = ( ( ( q_u - l_0_ ) * x_1_l ) + ( ( l_0_ - q_l ) * x_1_u ) ) / ( two * qTol ); // Interpolated 1st deriv at l_0_
+			x_2_ = 0.0;
 		}
+
+		// if ( x_2_l != x_2_u ) { // Set additional requantization criterion: Estimated value when x_2 == 0
+		// 	Real const qE( q_l - ( x_2_l * ( ( q_u - q_l ) / ( x_2_u - x_2_l ) ) ) );
+			// Then need to find root where x(t) = qE and use that instead of tE if sooner
+			// What about after an observer update? Recompute this time again? Then should do it in set_tE method
+			// This adds $$$ root finding so maybe should be enabled by an option for production
+			// Experiment to see if this is worth it in practice
+		// }
 	}
 
 } // QSS

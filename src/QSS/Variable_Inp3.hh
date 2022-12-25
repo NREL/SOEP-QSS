@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -110,21 +110,29 @@ public: // Property
 	q( Time const t ) const override
 	{
 		Time const tDel( t - tQ );
-		return x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		return x_0_ + ( ( x_1_ + ( ( x_2_ + ( x_3_ * tDel ) ) * tDel ) ) * tDel );
 	}
 
 	// Quantized First Derivative at Time t
 	Real
 	q1( Time const t ) const override
 	{
-		return x_1_ + ( two * x_2_ * ( t - tQ ) );
+		Time const tDel( t - tQ );
+		return x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_ * tDel ) ) * tDel );
 	}
 
 	// Quantized Second Derivative at Time t
 	Real
-	q2( Time const ) const override
+	q2( Time const t ) const override
 	{
-		return two * x_2_;
+		return ( two * x_2_ ) + ( six * x_3_ * ( t - tQ ) );
+	}
+
+	// Quantized Third Derivative at Time t
+	Real
+	q3( Time const ) const override
+	{
+		return six * x_3_;
 	}
 
 public: // Methods

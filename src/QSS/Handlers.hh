@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -924,7 +924,7 @@ private: // Methods
 	advance_QSS_F( Time const t )
 	{
 		for ( size_type i = 0, e = qss_.e(); i < e; ++i ) {
-			handlers_[ i ]->advance_handler_F( t );
+			handlers_[ i ]->advance_handler_F();
 		}
 	}
 
@@ -933,7 +933,7 @@ private: // Methods
 	advance_R_F( Time const t )
 	{
 		for ( size_type i = r_.b(), e = r_.e(); i < e; ++i ) {
-			handlers_[ i ]->advance_handler_F( t );
+			handlers_[ i ]->advance_handler_F();
 		}
 	}
 
@@ -942,7 +942,7 @@ private: // Methods
 	advance_OX_F( Time const t )
 	{
 		for ( size_type i = ox_.b(), e = ox_.e(); i < e; ++i ) {
-			handlers_[ i ]->advance_handler_F( t );
+			handlers_[ i ]->advance_handler_F();
 		}
 	}
 
@@ -951,7 +951,7 @@ private: // Methods
 	advance_ZC_F( Time const t )
 	{
 		for ( size_type i = zc_.b(), e = zc_.e(); i < e; ++i ) {
-			handlers_[ i ]->advance_handler_F( t );
+			handlers_[ i ]->advance_handler_F();
 		}
 	}
 
@@ -960,7 +960,7 @@ private: // Methods
 	advance_F( Time const t )
 	{
 		for ( Variable * handler : handlers_ ) {
-			handler->advance_handler_F( t );
+			handler->advance_handler_F();
 		}
 	}
 

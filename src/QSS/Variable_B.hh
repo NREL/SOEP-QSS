@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -149,14 +149,14 @@ public: // Methods
 	{
 		assert( tX <= t );
 		tQ = tX = t;
-		d_ = b_f();
-		shift_handler();
-		if ( x_ != d_ ) {
-			x_ = d_;
+		Boolean const x_new( b_f() );
+		if ( x_ != x_new ) {
+			x_ = x_new;
 			if ( options::output::d ) std::cout << "*  " << name() << '(' << tX << ')' << " = " << x_ << std::endl;
 			if ( observed() ) advance_observers();
 			if ( connected() ) advance_connections();
 		}
+		shift_handler();
 	}
 
 	// Handler Advance: Stage 0
@@ -164,20 +164,21 @@ public: // Methods
 	advance_handler_0( Time const t, Real const x_0 ) override
 	{
 		assert( tX <= t );
-		d_ = Boolean( x_0 );
+		tQ = tX = t;
+		Boolean const x_new( static_cast< const Boolean >( x_0 ) );
+		x_chg_ = ( x_ != x_new );
+		if ( x_chg_ ) x_ = x_new;
 	}
 
 	// Handler Advance: Stage Final
 	void
-	advance_handler_F( Time const t ) override
+	advance_handler_F() override
 	{
-		tQ = tX = t;
-		shift_handler();
-		if ( x_ != d_ ) {
-			x_ = d_;
+		if ( x_chg_ ) {
 			if ( options::output::d ) std::cout << "*= " << name() << '(' << tX << ')' << " = " << x_ << std::endl;
 			if ( connected() ) advance_connections();
 		}
+		shift_handler();
 	}
 
 	// Handler No-Advance
@@ -187,34 +188,22 @@ public: // Methods
 		shift_handler();
 	}
 
-	// Observer Advance
-	void
-	advance_observer( Time const t ) override
-	{
-		assert( tX <= t );
-		tQ = tX = t;
-		d_ = b_0();
-		if ( x_ != d_ ) {
-			x_ = d_;
-			if ( connected() ) advance_connections_observer();
-		}
-	}
-
 	// Observer Advance: Stage 1
 	void
 	advance_observer_1( Time const t ) override
 	{
 		assert( tX <= t );
-		d_ = b_0( t );
+		tQ = tX = t;
+		Boolean const x_new( b_0( t ) );
+		x_chg_ = ( x_ != x_new );
+		if ( x_chg_ ) x_ = x_new;
 	}
 
 	// Observer Advance: Stage Final
 	void
-	advance_observer_F( Time const t ) override
+	advance_observer_F() override
 	{
-		tQ = tX = t;
-		if ( x_ != d_ ) {
-			x_ = d_;
+		if ( x_chg_ ) {
 			if ( connected() ) advance_connections_observer();
 		}
 	}
@@ -226,10 +215,31 @@ public: // Methods
 		std::cout << " ^ " << name() << '(' << tX << ')' << " = " << x_ << std::endl;
 	}
 
+	// Set FMU Variable to Continuous Value at Time t
+	void
+	fmu_set_x( Time const ) const override
+	{
+		fmu_set_boolean( x_ );
+	}
+
+	// Set FMU Variable to Quantized Value at Time t
+	void
+	fmu_set_q( Time const ) const override
+	{
+		fmu_set_boolean( x_ );
+	}
+
+	// Set FMU Variable to Appropriate Value at Time t
+	void
+	fmu_set_s( Time const ) const override
+	{
+		fmu_set_boolean( x_ );
+	}
+
 private: // Data
 
+	bool x_chg_{ false }; // Value changed?
 	Boolean x_{ false }; // Value
-	Boolean d_{ false }; // Deferred value
 
 }; // Variable_B
 

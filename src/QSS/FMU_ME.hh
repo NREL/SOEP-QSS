@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -398,10 +398,6 @@ public: // Simulation Methods
 	void
 	init_3_1();
 
-	// Initialization: Stage Deferred
-	void
-	init_deferred();
-
 	// Initialization: Stage ZC
 	void
 	init_ZC();
@@ -736,6 +732,7 @@ public: // Data
 	FMU_Variables fmu_variables; // FMU variables
 	FMUVarLookup fmu_vars; // FMU variables lookup
 	FMUVarLookup fmu_outs; // FMU output variables lookup
+	FMUVarLookup fmu_dvrs; // FMU derivative to variable lookup
 	FMU_Idxs fmu_idxs; // FMU variable index to QSS variable lookup
 	Ref_Var qss_var_of_ref;
 	Var_Refs out_var_refs;

@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -257,7 +257,7 @@ public: // Methods
 		x_2_ = n_2( x_1_m, x_1_p );
 	}
 
-	// QSS Advance: Stage 2
+	// QSS Advance: Stage 2: Forward ND
 	void
 	advance_QSS_2_forward( Real const x_1_p, Real const x_1_2p ) override
 	{
@@ -335,7 +335,7 @@ public: // Methods
 		x_2_ = n_2( x_1_m, x_1_p );
 	}
 
-	// QSS Advance: Stage 2
+	// QSS Advance: Stage 2: Forward ND
 	void
 	advance_handler_2_forward( Real const x_1_p, Real const x_1_2p ) override
 	{
@@ -358,7 +358,7 @@ public: // Methods
 
 	// Handler Advance: Stage Final
 	void
-	advance_handler_F( Time const ) override
+	advance_handler_F() override
 	{
 		set_qTol();
 		set_tE();
@@ -374,30 +374,12 @@ public: // Methods
 		shift_QSS_R( tE );
 	}
 
-	// Observer Advance
-	void
-	advance_observer( Time const t ) override
-	{
-		assert( ( tX <= t ) && ( t <= tE ) );
-		tQ = tX = t;
-		x_0_ = r_0();
-		x_1_ = n_1();
-		x_2_ = n_2();
-		x_3_ = n_3();
-		set_qTol();
-		set_tE();
-		shift_QSS_R( tE );
-		if ( connected() ) advance_connections_observer();
-	}
-
 	// Observer Advance: Stage 1
 	void
 	advance_observer_1( Time const t, Real const x_0, Real const x_1 ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		tQ = tX = t;
-		// assert( x_0 == r_0() );
-		// assert( x_1 == n_1() );
 		x_0_ = x_0;
 		x_1_ = x_1;
 	}
@@ -432,7 +414,7 @@ public: // Methods
 
 	// Observer Advance: Stage Final
 	void
-	advance_observer_F( Time const ) override
+	advance_observer_F() override
 	{
 		set_qTol();
 		set_tE();

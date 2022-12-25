@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -110,7 +110,7 @@ public: // Property
 	size_type
 	rec_bin_size() const
 	{
-		static size_type const one( 1u );
+		static size_type const size_one( 1u );
 		size_type bin_size;
 		if ( valid() ) {
 			if ( m_.velocity > interp( l_, u_, m_.bin_size ) ) { // Choose parabolic max bin size
@@ -122,25 +122,25 @@ public: // Property
 				double const r3( u_.velocity / static_cast< Velocity >( ( x3 - x2 ) * ( x3 - x1 ) ) );
 				double const r_sum( r1 + r2 + r3 );
 				double const opt_bin_size( r_sum != 0.0 ? ( ( r1 * ( x2 + x3 ) ) + ( r2 * ( x1 + x3 ) ) + ( r3 * ( x1 + x2 ) ) ) / ( 2.0 * r_sum ) : static_cast< double >( m_.bin_size ) ); // Bin size at velocity parabola max
-				bin_size = std::min( std::max( std::min( static_cast< size_type >( opt_bin_size + 0.5 ), max_bin_size_ ), one ), max_bin_size_ );
+				bin_size = std::min( std::max( std::min( static_cast< size_type >( opt_bin_size + 0.5 ), max_bin_size_ ), size_one ), max_bin_size_ );
 			} else { // Recommend bin size in direction likely to give better velocity
 				if ( ( l_.velocity <= m_.velocity ) && ( m_.velocity <= u_.velocity ) ) { // Velocity increasing with bin size
-					bin_size = std::min( std::max( static_cast< size_type >( ( u_.bin_size * bin_fac ) + 0.5 ), u_.bin_size + one ), max_bin_size_ );
+					bin_size = std::min( std::max( static_cast< size_type >( ( u_.bin_size * bin_fac ) + 0.5 ), u_.bin_size + size_one ), max_bin_size_ );
 				} else if ( ( l_.velocity >= m_.velocity ) && ( m_.velocity >= u_.velocity ) ) { // Velocity decreasing with bin size
-					bin_size = std::max( std::min( static_cast< size_type >( ( l_.bin_size / bin_fac ) + 0.5 ), l_.bin_size - one ), one );
+					bin_size = std::max( std::min( static_cast< size_type >( ( l_.bin_size / bin_fac ) + 0.5 ), l_.bin_size - size_one ), size_one );
 				} else if ( ( u_.bin_size - m_.bin_size > m_.bin_size - l_.bin_size ) && ( l_.bin_size > 1u ) ) { // Recommend smaller bin size
-					bin_size = std::max( std::min( static_cast< size_type >( ( l_.bin_size / bin_fac ) + 0.5 ), l_.bin_size - one ), one );
+					bin_size = std::max( std::min( static_cast< size_type >( ( l_.bin_size / bin_fac ) + 0.5 ), l_.bin_size - size_one ), size_one );
 				} else { // Recommend larger bin size
-					bin_size = std::min( std::max( static_cast< size_type >( ( u_.bin_size * bin_fac ) + 0.5 ), u_.bin_size + one ), max_bin_size_ );
+					bin_size = std::min( std::max( static_cast< size_type >( ( u_.bin_size * bin_fac ) + 0.5 ), u_.bin_size + size_one ), max_bin_size_ );
 				}
 			}
 		} else { // Not valid yet: Rec higher bin size
-			bin_size = std::min( std::max( static_cast< size_type >( ( u_.bin_size * bin_fac ) + 0.5 ), u_.bin_size + one ), max_bin_size_ );
+			bin_size = std::min( std::max( static_cast< size_type >( ( u_.bin_size * bin_fac ) + 0.5 ), u_.bin_size + size_one ), max_bin_size_ );
 		}
 		if ( ( bin_size == 1u ) && ( min_bin_size_rep_ >= 5u ) ) { // Try larger bin
 			bin_size = std::min( static_cast< size_type >( 5u ), max_bin_size_ );
 		} else if ( ( bin_size == max_bin_size_ ) && ( max_bin_size_rep_ >= 5 ) ) { // Try smaller bin
-			bin_size = std::max( static_cast< size_type >( max_bin_size_ * 0.8 ), one );
+			bin_size = std::max( static_cast< size_type >( max_bin_size_ * 0.8 ), size_one );
 		}
 		return bin_size;
 	}
@@ -185,13 +185,13 @@ public: // Methods
 		}
 
 		// Update min/max bin size repeat counts
-		static size_type const one( 1u );
+		static size_type const size_one( 1u );
 		static size_type const big( 1000u );
 		if ( bin_size == 1u ) {
-			min_bin_size_rep_ = std::min( min_bin_size_rep_ + one, big ); // Prevent overflow
+			min_bin_size_rep_ = std::min( min_bin_size_rep_ + size_one, big ); // Prevent overflow
 			max_bin_size_rep_ = 0u;
 		} else if ( bin_size == max_bin_size_ ) {
-			max_bin_size_rep_ = std::min( max_bin_size_rep_ + one, big ); // Prevent overflow
+			max_bin_size_rep_ = std::min( max_bin_size_rep_ + size_one, big ); // Prevent overflow
 			min_bin_size_rep_ = 0u;
 		} else {
 			min_bin_size_rep_ =  max_bin_size_rep_ = 0u;

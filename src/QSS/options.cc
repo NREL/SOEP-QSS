@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -214,33 +214,6 @@ help_display()
 	std::cout << " --csv  Output CSV results file" << '\n';
 	std::cout << " --tLoc=TIME1:TIME2  FMU local variable full output time range (s)" << '\n';
 	std::cout << " --var=FILE  Variable output spec file" << '\n';
-	std::cout << '\n';
-	std::cout << "Code-Defined Models:" << "\n\n";
-	std::cout << "  <model>.fmu : FMU-ME (FMU for Model Exchange)" << '\n';
-	std::cout << "  <model>_QSS.fmu : FMU-QSS (FMU wrapping an FMU-ME and QSS)" << '\n';
-	std::cout << "  achilles : Achilles and the Tortoise" << '\n';
-	std::cout << "  achilles2 : Adds symmetry for simultaneous triggering" << '\n';
-	std::cout << "  achillesc : Custom functions demo " << '\n';
-	std::cout << "  achilles_ND : Numeric differentiation" << '\n';
-	std::cout << "  bball : Bouncing ball (discrete events)" << '\n';
-	std::cout << "  exponential_decay : Exponential decay" << '\n';
-	std::cout << "  exponential_decay_sine : Adds sine input function" << '\n';
-	std::cout << "  exponential_decay_sine_ND : Numeric differentiation" << '\n';
-	std::cout << "  exponential_decay_step : Adds step input function" << '\n';
-	std::cout << "  nonlinear : Nonlinear derivative demo" << '\n';
-	std::cout << "  nonlinear_ND : Numeric differentiation" << '\n';
-	std::cout << "  observers : Observers" << '\n';
-	std::cout << "  StateEvent6 : Zero-crossing model (use --dtInf)" << '\n';
-	std::cout << "  stiff : Stiff system from literature" << '\n';
-	std::cout << "  xy : Simple 2 variable model" << '\n';
-	std::cout << "  xyz : Simple 3 variable model" << '\n';
-	std::cout << "  gen:nQSS,nZC,SEED : Generated model with optional specs:" << '\n';
-	std::cout << "      nQSS            Number of QSS variables  [9]" << '\n';
-	std::cout << "           nZC        Number of zero-crossing variables  [3]" << '\n';
-	std::cout << "               SEED   Random generator seed (T|F|#)  [F]" << '\n';
-	std::cout << "                       T: Use current time as seed" << '\n';
-	std::cout << "                       F: Use default (deterministic) seed" << '\n';
-	std::cout << "                       #: Integer to use as seed" << '\n';
 	std::cout << '\n';
 }
 

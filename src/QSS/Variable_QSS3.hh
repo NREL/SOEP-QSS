@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -138,7 +138,6 @@ public: // Methods
 		init_observers();
 		init_1();
 		init_2();
-		init_2_1();
 		init_3();
 		init_F();
 	}
@@ -162,21 +161,14 @@ public: // Methods
 	void
 	init_2() override
 	{
-		x_2_ = s_2();
-	}
-
-	// Initialization: Stage 2.1
-	void
-	init_2_1() override
-	{
-		q_2_ = x_2_; //ND Deferred
+		q_2_ = x_2_ = c_2( tQ, x_1_ );
 	}
 
 	// Initialization: Stage 3
 	void
 	init_3() override
 	{
-		x_3_ = F_3();
+		x_3_ = f_3( tQ, x_1_ );
 	}
 
 	// Initialization: Stage Final
@@ -196,13 +188,13 @@ public: // Methods
 		if ( options::stiff ) liqss_qss_ratio_pass();
 		Time const tDel( tE - tX );
 		tQ = tX = tE;
-		q_0_ = x_0_ += ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel;
+		q_0_ = x_0_ += ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
 		q_1_ = x_1_ = c_1( tE, x_0_ );
 		if ( fwd_time_ND( tE ) ) { // Use centered ND formulas
-			q_2_ = x_2_ = c_2();
+			q_2_ = x_2_ = c_2( tE );
 			x_3_ = n_3();
 		} else { // Use forward ND formulas
-			q_2_ = x_2_ = f_2();
+			q_2_ = x_2_ = f_2( tE );
 			x_3_ = f_3();
 		}
 		set_qTol();
@@ -219,53 +211,49 @@ public: // Methods
 	{
 		if ( options::stiff ) liqss_qss_ratio_pass();
 		Time const tDel( tE - tX );
-		d_0_ = x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
+		tQ = tX = tE;
+		q_0_ = x_0_ += ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
 	}
 
 	// QSS Advance: Stage 1
 	void
 	advance_QSS_1( Real const x_1 ) override
 	{
-		d_1_ = x_1;
+		q_1_ = x_1_ = x_1;
 	}
 
 	// QSS Advance: Stage 2
 	void
 	advance_QSS_2( Real const x_1_m, Real const x_1_p ) override
 	{
-		d_2_ = n_2( x_1_m, x_1_p );
+		q_2_ = x_2_ = n_2( x_1_m, x_1_p );
 	}
 
 	// QSS Advance: Stage 2: Forward ND
 	void
 	advance_QSS_2_forward( Real const x_1_p, Real const x_1_2p ) override
 	{
-		d_2_ = f_2( x_1_p, x_1_2p );
+		q_2_ = x_2_ = f_2( x_1_p, x_1_2p );
 	}
 
 	// QSS Advance: Stage 3
 	void
 	advance_QSS_3() override
 	{
-		d_3_ = nd_3();
+		x_3_ = n_3();
 	}
 
 	// QSS Advance: Stage 3: Forward ND
 	void
 	advance_QSS_3_forward() override
 	{
-		d_3_ = fd_3();
+		x_3_ = f_3();
 	}
 
 	// QSS Advance: Stage Final
 	void
 	advance_QSS_F() override
 	{
-		tQ = tX = tE;
-		q_0_ = x_0_ = d_0_;
-		q_1_ = x_1_ = d_1_;
-		q_2_ = x_2_ = d_2_;
-		x_3_ = d_3_;
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -275,110 +263,7 @@ public: // Methods
 
 	// QSS Advance LIQSS/QSS Step Ratio
 	Real
-	advance_LIQSS_QSS_step_ratio() override
-	{
-		if ( !self_observer() ) return 1.0; // Same step size
-
-		Time const t_fmu( fmu_get_time() ); // Save FMU time
-
-		Time const tDel( tE - tX );
-		Real const x_0( x_0_ + ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel ) );
-		Real const q( std::max( rTol * std::abs( x_0 ), aTol ) );
-		Real x_1, x_2, x_3;
-
-		fmu_set_time( tE );
-
-		// QSS
-		x_1 = c_1( tE, x_0 );
-		if ( fwd_time_ND( tQ ) ) { // Use centered ND formulas
-			Time tN( tE - options::dtND );
-			fmu_set_time( tN );
-			Real const x_1_m( c_1( tN ) );
-			tN = tE + options::dtND;
-			fmu_set_time( tN );
-			Real const x_1_p( c_1( tN ) );
-			fmu_set_time( tE );
-			x_2 = options::one_over_four_dtND * ( x_1_p - x_1_m );
-			x_3 = options::one_over_six_dtND_squared * ( ( x_1_p - x_1 ) + ( x_1_m - x_1 ) );
-		} else { // Use forward ND formulas
-			Time tN( tE + options::dtND );
-			fmu_set_time( tN );
-			Real const x_1_p( c_1( tN ) );
-			tN = tE + options::two_dtND;
-			fmu_set_time( tN );
-			Real const x_1_2p( c_1( tN ) );
-			fmu_set_time( tE );
-			x_2 = options::one_over_four_dtND * ( ( three * ( x_1_p - x_1 ) ) + ( x_1_p - x_1_2p ) );
-			x_3 = options::one_over_six_dtND_squared * ( ( x_1_2p - x_1_p ) + ( x_1 - x_1_p ) );
-		}
-		Time const dt_QSS( x_3 != 0.0 ? std::cbrt( qTol / std::abs( x_3 ) ) : infinity );
-
-		// LIQSS /////
-
-		// Value at +/- q
-		Real const q_l( x_0 - q );
-		Real const q_u( x_0 + q );
-
-		// Derivative at +/- q
-		fmu_set_observees_x( tE );
-		fmu_set_real( q_l );
-		Real const x_1_l( p_1() );
-		fmu_set_real( q_u );
-		Real const x_1_u( p_1() );
-
-		// Second derivative at +/- q
-		Time dN( options::dtND );
-		Time tN( tE + dN );
-		fmu_set_time( tN );
-		fmu_set_observees_x( tN );
-		fmu_set_real( q_l + ( ( x_1_l + ( x_2_ * dN ) ) * dN ) );
-		Real const x_1_p_l( p_1() );
-		Real const x_2_l( options::one_over_two_dtND * ( x_1_p_l - x_1_l ) );
-		fmu_set_real( q_u + ( ( x_1_u + ( x_2_ * dN ) ) * dN ) );
-		Real const x_1_p_u( p_1() );
-		Real const x_2_u( options::one_over_two_dtND * ( x_1_p_u - x_1_u ) );
-
-		// Third derivative at +/- q
-		Real x_3_l, x_3_u;
-		if ( fwd_time_ND( tQ ) ) { // Use centered ND formulas
-			tN = tE - dN;
-			fmu_set_time( tN );
-			fmu_set_observees_x( tN );
-			fmu_set_real( q_l - ( ( x_1_l - ( x_2_l * dN ) ) * dN ) );
-			Real const x_1m_l( p_1() );
-			x_3_l = options::one_over_six_dtND_squared * ( ( x_1_p_l - x_1_l ) + ( x_1m_l - x_1_l ) );
-			fmu_set_real( q_u - ( ( x_1_u - ( x_2_u * dN ) ) * dN ) );
-			Real const x_1m_u( p_1() );
-			x_3_u = options::one_over_six_dtND_squared * ( ( x_1_p_u - x_1_u ) + ( x_1m_u - x_1_u ) );
-		} else { // Use forward ND formulas
-			dN = options::two_dtND;
-			tN = tE + dN;
-			fmu_set_time( tN );
-			fmu_set_observees_x( tN );
-			fmu_set_real( q_l + ( ( x_1_l + ( x_2_l * dN ) ) * dN ) );
-			Real const x_1_2p_l( p_1() );
-			x_3_l = options::one_over_six_dtND_squared * ( ( x_1_2p_l - x_1_p_l ) + ( x_1_l - x_1_p_l ) );
-			fmu_set_real( q_u + ( ( x_1_u + ( x_2_u * dN ) ) * dN ) );
-			Real const x_1_2p_u( p_1() );
-			x_3_u = options::one_over_six_dtND_squared * ( ( x_1_2p_u - x_1_p_u ) + ( x_1_u - x_1_p_u ) );
-		}
-		int const x_3_l_s( signum( x_3_l ) );
-		int const x_3_u_s( signum( x_3_u ) );
-
-		// Set coefficients based on third derivative signs
-		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward curve-changing trajectory
-			x_3 = x_3_l;
-		} else if ( ( x_3_l_s == +1 ) && ( x_3_u_s == +1 ) ) { // Upward curve-changing trajectory
-			x_3 = x_3_u;
-		} else { // Non-curve-changing or quadratic trajectory
-			x_3 = 0.0;
-		}
-		Time const dt_LIQSS( x_3 != 0.0 ? std::cbrt( qTol / std::abs( x_3 ) ) : infinity );
-
-		fmu_set_time( t_fmu ); // Restore FMU time
-
-		return ( dt_QSS > 0.0 ? dt_LIQSS / dt_QSS : ( dt_LIQSS > 0.0 ? infinity : 1.0 ) );
-	}
+	advance_LIQSS_QSS_step_ratio() override;
 
 	// Handler Advance
 	void
@@ -386,13 +271,13 @@ public: // Methods
 	{
 		assert( ( tQ <= t ) && ( tX <= t ) && ( t <= tE ) );
 		tQ = tX = t;
-		q_0_ = x_0_ = c_0();
-		q_1_ = x_1_ = h_1();
-		if ( fwd_time_ND( tQ ) ) { // Use centered ND formulas
-			q_2_ = x_2_ = c_2();
+		q_0_ = x_0_ = p_0();
+		q_1_ = x_1_ = h_1( t );
+		if ( fwd_time_ND( t ) ) { // Use centered ND formulas
+			q_2_ = x_2_ = c_2( t );
 			x_3_ = n_3();
 		} else { // Use forward ND formulas
-			q_2_ = x_2_ = f_2();
+			q_2_ = x_2_ = f_2( t );
 			x_3_ = f_3();
 		}
 		set_qTol();
@@ -408,53 +293,49 @@ public: // Methods
 	advance_handler_0( Time const t, Real const x_0 ) override
 	{
 		assert( ( tQ <= t ) && ( tX <= t ) && ( t <= tE ) );
-		d_0_ = x_0;
+		tQ = tX = t;
+		x_0_ = q_0_ = x_0;
 	}
 
 	// Handler Advance: Stage 1
 	void
 	advance_handler_1( Real const x_1 ) override
 	{
-		d_1_ = x_1;
+		x_1_ = q_1_ = x_1;
 	}
 
 	// Handler Advance: Stage 2
 	void
 	advance_handler_2( Real const x_1_m, Real const x_1_p ) override
 	{
-		d_2_ = n_2( x_1_m, x_1_p );
+		q_2_ = x_2_ = n_2( x_1_m, x_1_p );
 	}
 
-	// QSS Advance: Stage 2
+	// QSS Advance: Stage 2: Forward ND
 	void
 	advance_handler_2_forward( Real const x_1_p, Real const x_1_2p ) override
 	{
-		d_2_ = f_2( x_1_p, x_1_2p );
+		q_2_ = x_2_ = f_2( x_1_p, x_1_2p );
 	}
 
 	// Handler Advance: Stage 3
 	void
 	advance_handler_3() override
 	{
-		d_3_ = nd_3();
+		x_3_ = n_3();
 	}
 
 	// Handler Advance: Stage 3: Forward ND
 	void
 	advance_handler_3_forward() override
 	{
-		d_3_ = fd_3();
+		x_3_ = f_3();
 	}
 
 	// Handler Advance: Stage Final
 	void
-	advance_handler_F( Time const t ) override
+	advance_handler_F() override
 	{
-		tQ = tX = t;
-		q_0_ = x_0_ = d_0_;
-		q_1_ = x_1_ = d_1_;
-		q_2_ = x_2_ = d_2_;
-		x_3_ = d_3_;
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -469,70 +350,49 @@ public: // Methods
 		shift_QSS( tE );
 	}
 
-	// Observer Advance
-	void
-	advance_observer( Time const t ) override
-	{
-		assert( ( tX <= t ) && ( t <= tE ) );
-		Time const tDel( t - tX );
-		tX = t;
-		x_0_ += ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel;
-		x_1_ = c_1( t );
-		x_2_ = c_2( t );
-		x_3_ = n_3();
-		set_tE_unaligned();
-		shift_QSS( tE );
-		if ( connected() ) advance_connections_observer();
-	}
-
 	// Observer Advance: Stage 1
 	void
 	advance_observer_1( Time const t, Real const x_1 ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
-		// assert( x_1 == p_1() );
 		Time const tDel( t - tX );
-		d_0_ = x_0_ + ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel;
-		d_1_ = x_1;
+		tX = t;
+		x_0_ += ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel;
+		x_1_ = x_1;
 	}
 
 	// Observer Advance: Stage 2
 	void
 	advance_observer_2( Real const x_1_m, Real const x_1_p ) override
 	{
-		d_2_ = n_2( x_1_m, x_1_p );
+		x_2_ = n_2( x_1_m, x_1_p );
 	}
 
 	// Observer Advance: Stage 2: Forward ND
 	void
 	advance_observer_2_forward( Real const x_1_p, Real const x_1_2p ) override
 	{
-		d_2_ = f_2( x_1_p, x_1_2p );
+		x_2_ = f_2( x_1_p, x_1_2p );
 	}
 
 	// Observer Advance: Stage 3
 	void
 	advance_observer_3() override
 	{
-		d_3_ = nd_3();
+		x_3_ = n_3();
 	}
 
 	// Observer Advance: Stage 3: Forward ND
 	void
 	advance_observer_3_forward() override
 	{
-		d_3_ = fd_3();
+		x_3_ = f_3();
 	}
 
 	// Observer Advance: Stage Final
 	void
-	advance_observer_F( Time const t ) override
+	advance_observer_F() override
 	{
-		tX = t;
-		x_0_ = d_0_;
-		x_1_ = d_1_;
-		x_2_ = d_2_;
-		x_3_ = d_3_;
 		set_tE_unaligned();
 		shift_QSS( tE );
 		if ( connected() ) advance_connections_observer();
@@ -603,13 +463,6 @@ private: // Methods
 		return options::one_over_four_dtND * ( ( x_1_p_ = x_1_p ) - ( x_1_m_ = x_1_m ) ); //ND Centered difference
 	}
 
-	// Coefficient 2 from FMU at Time tQ
-	Real
-	c_2() const
-	{
-		return c_2( tQ );
-	}
-
 	// Coefficient 2 from FMU at Time t
 	Real
 	c_2( Time const t ) const
@@ -626,15 +479,15 @@ private: // Methods
 
 	// Coefficient 2 from FMU at Time tQ
 	Real
-	f_2() const
+	f_2( Time const t ) const
 	{
-		Time tN( tQ + options::dtND );
+		Time tN( t + options::dtND );
 		fmu_set_time( tN );
 		x_1_p_ = c_1( tN );
-		tN = tQ + options::two_dtND;
+		tN = t + options::two_dtND;
 		fmu_set_time( tN );
 		x_1_2p_ = c_1( tN );
-		fmu_set_time( tQ );
+		fmu_set_time( t );
 		return options::one_over_four_dtND * ( ( three * ( x_1_p_ - x_1_ ) ) + ( x_1_p_ - x_1_2p_ ) ); //ND Forward 3-point
 	}
 
@@ -642,14 +495,7 @@ private: // Methods
 	Real
 	f_2( Real const x_1_p, Real const x_1_2p ) const
 	{
-		return options::one_over_four_dtND * ( ( three * ( ( x_1_p_ = x_1_p ) - d_1_ ) ) + ( x_1_p - ( x_1_2p_ = x_1_2p ) ) ); //ND Forward 3-point
-	}
-
-	// Coefficient 2 from FMU at Time tQ
-	Real
-	s_2() const
-	{
-		return c_2( tQ, x_1_ );
+		return options::one_over_four_dtND * ( ( three * ( ( x_1_p_ = x_1_p ) - x_1_ ) ) + ( x_1_p - ( x_1_2p_ = x_1_2p ) ) ); //ND Forward 3-point
 	}
 
 	// Coefficient 3 from FMU
@@ -661,37 +507,15 @@ private: // Methods
 
 	// Coefficient 3 from FMU
 	Real
-	nd_3() const
-	{
-		return options::one_over_six_dtND_squared * ( ( x_1_p_ - d_1_ ) + ( x_1_m_ - d_1_ ) ); //ND Centered difference
-	}
-
-	// Coefficient 3 from FMU
-	Real
 	f_3() const
 	{
 		return options::one_over_six_dtND_squared * ( ( x_1_2p_ - x_1_p_ ) + ( x_1_ - x_1_p_ ) ); //ND Forward 3-point
-	}
-
-	// Coefficient 3 from FMU
-	Real
-	fd_3() const
-	{
-		return options::one_over_six_dtND_squared * ( ( x_1_2p_ - x_1_p_ ) + ( d_1_ - x_1_p_ ) ); //ND Forward 3-point
-	}
-
-	// Coefficient 3 from FMU
-	Real
-	F_3() const
-	{
-		return f_3( tQ, x_1_ );
 	}
 
 private: // Data
 
 	Real q_0_{ 0.0 }, q_1_{ 0.0 }, q_2_{ 0.0 }; // Quantized trajectory coefficients
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Continuous trajectory coefficients
-	Real d_0_{ 0.0 }, d_1_{ 0.0 }, d_2_{ 0.0 }, d_3_{ 0.0 }; // Deferred trajectory coefficients
 	mutable Real x_1_m_{ 0.0 }, x_1_p_{ 0.0 }, x_1_2p_{ 0.0 }; // Trajectory coefficient 1 at numeric differentiation time offsets
 
 }; // Variable_QSS3

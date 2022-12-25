@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -421,7 +421,7 @@ public: // Methods
 		if ( r_.have() ) advance_R( t ); // Real variables
 		if ( ox_.have() ) advance_OX( t ); // Other X-based variables
 		if ( zc_.have() ) advance_ZC( t ); // Zero-crossing variables
-		advance_F( t );
+		advance_F();
 		if ( options::output::d ) advance_d();
 	}
 
@@ -1032,10 +1032,10 @@ private: // Methods
 
 	// Advance: Stage Final
 	void
-	advance_F( Time const t )
+	advance_F()
 	{
 		for ( Variable * observer : observers_ ) {
-			observer->advance_observer_F( t );
+			observer->advance_observer_F();
 		}
 	}
 

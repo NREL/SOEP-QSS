@@ -1,5 +1,22 @@
 # Dependencies
 
+## Notes
+- BIDR do deferred updating: Eliminate that? Save old in Defer
+- Inputs currently have a q rep that is lower order than the x: Should they be the same x rep ??? Inputs don't do observer updates so all changes to them propagate immediately
+- Triggers use fmu_set_x: To restore the option for q-based state rep propagation need to do fmu_set_s for states and fmu_set_x for inputs (but for inputs q and x state should be the same so fmu_set_s should work for both types of observees)
+- Use QSS# instead of LIQSS# for non-self-observer var's???
+  - Prove same behavior
+  - Simplify LIQSS code: Assume self-observer
+  - Verify behavior on stiff/other models
+  - Pooled operations for LIQSS should eventually be separate since they need different input info and don't use some of the pool computed values currently
+    - They could do pooling for each q_l/u deriv call but it might not be more efficient
+- Deferred updating degraded some accuracy and performance so dropping it
+  - With q-based state propagation it is not an issue in QSS1|2 but QSS3+ will have order-dependent solutions with ND
+- State initialization has order dependency with ND: Ideas:
+  - Use deferred x_2_ and above for states
+  - Cycle with previous phase x_2_ + values a few times ?
+  - Note: States initialized first and these are computational observees so non-states should not have order dependencies
+
 ## Testing
 - Interdependencies: Eval order for using latest or rhs all "old"
   - Might have triangular dependency structure s.t. can use only updated inputs but is that what CVode does?
@@ -26,47 +43,6 @@ When performance is verified write up proposed spec changes
 - Annotations
   - Trajectory polynomial order
   - Dependencies within handler expression sep from elsewhere ?
-
-## Agenda: 2022/11/30
-- Revised QSS is working as hoped
-  - Observees (for setting variable values in FMU) are short-circuited to states and inputs
-  - Observers (for signaling updates) short-circuit around passive variables
-  - Passive variables can be output via sampled output times
-  - Event indicators can depend on other event indicators to handle passive variable short-circuiting (but prefer Dependencies not to s-c)
-  - Discrete intermediate variables can be active (firewall) or passive (short-circuited): Can test to see whether active is worth it in most models
-  - Updates flow through intermediate variables immediately for consistency
-  - Working with current OCT dependencies (at some reduced efficiency)
-  - Not performance optimized yet: A number of efficiency updates deferred
-- Results
-  - Test models are working with current OCT dependencies as planned: Can be more efficient with dependency changes
-  - UpstreamSampler: QSS run seems OK (was broken with previous QSS) but CVode run doesn't show sampler activity! (Doesn't work with Buildings 9) No reference solution to check against
-  - Don't know if (non-event-generating) min/max are an issue for some models
-  - Need to look at handling of non-state real variables with associated derivative variables
-- Issues
-  - Event indicator to event indicator dependencies in modelDescription.xml are used in two different situations, which interferes with QSS's ability to patch around the lack of direct dependencies:
-    1. An intermediate "signaling" variable modified in on EI block that appears in the other EI expression has bee short-circuited out
-    2. Something like the EIs share an expression or dependencies
-    - QSS could temporarily add dependencies for both meanings for an inefficient hack (not tried yet)
-  - Simultaneous events prevent consistent (order-independent) updating with ND
-    - Doing deferred updating of states for now to avoid this but is that ideal?
-    - Event handler blocks are tricky:
-      - State handlers with interdependencies: Capture FMU post-event states in deferred values before overwriting them to do QSS updates/ND
-      - See my DepTestR_ss
-      - ZC "handlers" are really conditional observers due to s-c, not handlers, so they should be using updated handler values
-      - BIDR handlers could be processed after state handlers do deferred updates but should they?
-    - Does FMU/PyFMI do sequential updating in such blocks? Depends on "triangular" dependency structure (excluding pre())?
-      - If QSS needs to do this it would need to know what dependencies are from pre()
-  - Trying x-based observee values for states
-    - A bit more accurate but may cause more ND noise
-    - Enables simpler/faster code since BIDR and ZC variables are naturally X based: Can fully exploit this if we decide to stay with X-based
-  - Zero crossings
-    - Need to set handler observee state before FMU event processing to make sure it sees correct pre() values ?
-    - If ZC event fires FMU actually sets handler state at t_bump, not tZ: Add post-event correction for this ? Pass t_bump also and have it back correct x_0_ to ZC(tZ) ?
-- Proposed OCT/spec changes
-  - Dependencies
-    - Direct dependencies only: No short-circuiting. Handler dependencies don't "look through" event indicators to their dependencies
-    - No extra dependencies (see Issues)
-    - Include those for local variables if practical
 
 ## Questions for Modelon
 - Need just direct dependencies of all (state, local, output, continuous, discrete, input) variables in Dependencies? No s-c and no looking into EI ZC functions from "handled" variables
@@ -105,6 +81,9 @@ When performance is verified write up proposed spec changes
   - Use derivative in R1|2|3 variables?
 
 ## Future
+- dtInf on by default? Any way to compute a good model/variable-specific value?
+- Add std::isinf and/or std::isnan checks on coefficients with sim failure reporting: Maybe optional with flag or build macro since will be expensive
+- Conditional::handler pre-sets handlers' observees to x state but some handlers may be non-state: Probably need to separate Handlers objects for state and non-state and do them as separate event phases to avoid this issue ???  Or re-work the design to set observees just before "handling" but without overwriting the FMU-just-set handlers' FMU values !!!
 - Maybe move an Observers member into the Triggers/_R and Handlers classes: Have to assign the triggers/handlers before using the observers for output
 - Why are advance_observer_1 asserts off sometimes?
 - Do computational observees before init_1 since it sets observees (does it need to because ND time bumping?)
@@ -143,6 +122,7 @@ When performance is verified write up proposed spec changes
   - Maybe add more specs to FMU_Var including observer & observee pointer/index lists ???
 - Enforce that EIs and local vars can't have connections ???
 - Chg results output logic to assume we have deps for local and output vars ? Or if no observees use "assume all" logic for results?
+- Look at LIQSS/QSS Step Size Ratio: Ratios seem too small compared to difference in # requantizations (eg, stiff_Robertson LI|QSS2)
 
 ## Plan
 - The simulation value and directional derivative dependency graph is short-circuited to downstream state and input dependencies (observees) as we need since it isn't correct to set the FMU value of internal variables.

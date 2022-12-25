@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -145,14 +145,14 @@ TEST( Variable_ZC3Test, BouncingBall )
 	EXPECT_EQ( 1.0, z->qTol );
 	EXPECT_EQ( 0.0, z->tQ );
 	EXPECT_EQ( 0.0, z->tX );
-	//EXPECT_EQ( infinity, z->tE ); // Numeric differentiation => Imprecise
+	EXPECT_EQ( infinity, z->tE );
 	EXPECT_EQ( 1.0, z->x( 0.0 ) );
 	EXPECT_EQ( 1.0, z->q( 0.0 ) );
 	EXPECT_EQ( 0.0, z->x1( 0.0 ) );
 	EXPECT_EQ( 0.0, z->q1( 0.0 ) );
 	EXPECT_NEAR( -9.80665, z->x2( 0.0 ), 3e-4 );
 	EXPECT_NEAR( -9.80665, z->q2( 0.0 ), 3e-4 );
-	//EXPECT_EQ( 0.0, z->x3( 0.0 ) ); // Numeric differentiation => Imprecise
+	EXPECT_EQ( 0.0, z->x3( 0.0 ) );
 
 	h->tE = 0.1; // Choose a requantization time
 	double const h_tE( h->tE );
@@ -165,7 +165,7 @@ TEST( Variable_ZC3Test, BouncingBall )
 	EXPECT_NEAR( 1.0 - ( 0.5 * 9.80665 ) * square( h_tE ), h->q( h->tQ ), 1e-12 );
 
 	EXPECT_EQ( 0.0, v->tQ );
-	EXPECT_EQ( h_tE, v->tX );
+	EXPECT_EQ( 0.0, v->tX );
 
 	EXPECT_EQ( h_tE, z->tQ );
 	EXPECT_EQ( h_tE, z->tX );

@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -333,15 +333,12 @@ fmi2EnterInitializationMode( fmi2Component c )
 		fmu_me.init_3_1();
 		return fmi2OK;
 	case 7:
-		fmu_me.init_deferred();
-		return fmi2OK;
-	case 8:
 		fmu_me.init_ZC();
 		return fmi2OK;
-	case 9:
+	case 8:
 		fmu_me.init_F();
 		return fmi2OK;
-	case 10:
+	case 9:
 		fmu_me.init_t0();
 		fmu_me.init_pre_simulate();
 		return (fmi2Status)fmi2_import_enter_initialization_mode( fmu_qss.fmu_me.fmu );

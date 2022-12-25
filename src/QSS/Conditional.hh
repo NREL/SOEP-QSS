@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -204,6 +204,7 @@ public: // Methods
 	{
 		for ( Variable * observer : observers_ ) {
 			// Set observers's observee FMU values so FMU event handler computes correct new observer value
+			//! Setting state observees to x-based value: Observees may overlap: Would need to split state and non-state handlers for ideal solution
 			observer->fmu_set_observees_x( t );
 			if ( observer->self_observer() ) observer->fmu_set_x( t );
 

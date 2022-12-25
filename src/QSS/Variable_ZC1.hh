@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -190,7 +190,7 @@ public: // Methods
 		assert( ( tX <= t ) && ( t <= tE ) );
 		advance_pre( t );
 		tQ = tX = t;
-		x_0_ = z_0();
+		x_0_ = p_0();
 		x_1_ = n_1();
 		set_qTol();
 		set_tE();
@@ -217,7 +217,7 @@ public: // Methods
 
 	// Handler Advance: Stage Final
 	void
-	advance_handler_F( Time const t ) override
+	advance_handler_F() override
 	{
 		set_qTol();
 		set_tE();
@@ -232,20 +232,6 @@ public: // Methods
 		crossing_detect();
 	}
 
-	// Observer Advance
-	void
-	advance_observer( Time const t ) override
-	{
-		assert( ( tX <= t ) && ( t <= tE ) );
-		advance_pre( t );
-		tQ = tX = t;
-		x_0_ = ( !handler_modified_ && ( t == tZ_last ) ? 0.0 : z_0() ); // Force exact zero if at zero-crossing time
-		x_1_ = n_1();
-		set_qTol();
-		set_tE();
-		crossing_detect();
-	}
-
 	// Observer Advance: Stage 1
 	void
 	advance_observer_1( Time const t, Real const x_0, Real const x_1 ) override
@@ -253,15 +239,13 @@ public: // Methods
 		assert( ( tX <= t ) && ( t <= tE ) );
 		advance_pre( t );
 		tQ = tX = t;
-		// assert( x_0 == p_0() );
-		// assert( x_1 == n_1() );
 		x_0_ = ( !handler_modified_ && ( t == tZ_last ) ? 0.0 : x_0 ); // Force exact zero if at zero-crossing time
 		x_1_ = x_1;
 	}
 
 	// Observer Advance: Stage Final
 	void
-	advance_observer_F( Time const ) override
+	advance_observer_F() override
 	{
 		set_qTol();
 		set_tE();

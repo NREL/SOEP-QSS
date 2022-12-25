@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -807,22 +807,10 @@ public: // Methods
 	init_2()
 	{}
 
-	// Initialization: Stage 2.1
-	virtual
-	void
-	init_2_1()
-	{}
-
 	// Initialization: Stage 3
 	virtual
 	void
 	init_3()
-	{}
-
-	// Initialization: Stage Deferred
-	virtual
-	void
-	init_deferred()
 	{}
 
 	// Initialization: Stage Final
@@ -997,7 +985,7 @@ public: // Methods
 		assert( false );
 	}
 
-	// QSS Advance: Stage 2
+	// QSS Advance: Stage 2: Forward ND
 	virtual
 	void
 	advance_QSS_2_forward( Real const, Real const )
@@ -1029,7 +1017,7 @@ public: // Methods
 		assert( false );
 	}
 
-	// QSS Advance: Stage 3
+	// QSS Advance: Stage 3: Forward ND
 	virtual
 	void
 	advance_QSS_3_forward( Real const )
@@ -1136,7 +1124,7 @@ public: // Methods
 		assert( false );
 	}
 
-	// Handler Advance: Stage 2
+	// Handler Advance: Stage 2: Forward ND
 	virtual
 	void
 	advance_handler_2_forward( Real const, Real const )
@@ -1163,7 +1151,7 @@ public: // Methods
 	// Handler Advance: Stage Final
 	virtual
 	void
-	advance_handler_F( Time const )
+	advance_handler_F()
 	{
 		assert( false );
 	}
@@ -1189,14 +1177,6 @@ public: // Methods
 	advance_observers()
 	{
 		observers_.advance( tQ );
-	}
-
-	// Observer Advance
-	virtual
-	void
-	advance_observer( Time const )
-	{
-		assert( false );
 	}
 
 	// Observer Advance: Stage 1
@@ -1314,7 +1294,7 @@ public: // Methods
 	// Observer Advance: Stage Final
 	virtual
 	void
-	advance_observer_F( Time const )
+	advance_observer_F()
 	{
 		assert( false );
 	}
@@ -1544,7 +1524,6 @@ public: // Methods: FMU
 	fmu_set_q( Time const t ) const
 	{
 		assert( fmu_me_ != nullptr );
-//		assert( is_QSS() || is_Input() );
 		fmu_me_->set_real( var_.ref(), q( t ) );
 	}
 
@@ -1554,9 +1533,11 @@ public: // Methods: FMU
 	fmu_set_s( Time const t ) const
 	{
 		assert( fmu_me_ != nullptr );
-//		assert( is_QSS() || is_Input() );
-//		fmu_me_->set_real( var_.ref(), q( t ) ); // Quantized: Traditional QSS
+#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+		fmu_me_->set_real( var_.ref(), q( t ) ); // Quantized: Traditional QSS
+#else
 		fmu_me_->set_real( var_.ref(), x( t ) ); // Continuous: Modified QSS
+#endif
 	}
 
 	// Set All Observee FMU Variables to Continuous Value at Time t

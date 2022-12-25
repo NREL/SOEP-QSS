@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -45,15 +45,13 @@ namespace QSS {
 	{
 		assert( qTol > 0.0 );
 		assert( self_observer() );
-		assert( q_c_ == q_0_ );
-		assert( x_0_ == q_0_ );
 
 		// Value at +/- qTol
 		Real const q_l( q_c_ - qTol );
 		Real const q_u( q_c_ + qTol );
 
 		// Derivative at +/- qTol
-		fmu_set_observees_x( tQ );
+		fmu_set_observees_s( tE );
 		fmu_set_real( q_l );
 		Real const x_1_l( p_1() );
 		int const x_1_l_s( signum( x_1_l ) );
@@ -68,10 +66,11 @@ namespace QSS {
 		} else if ( ( x_1_l_s == +1 ) && ( x_1_u_s == +1 ) ) { // Upward trajectory
 			q_0_ = q_u;
 			x_1_ = x_1_u;
-		} else if ( ( x_1_l_s == 0 ) && ( x_1_u_s == 0 ) ) { // Flat trajectory
-			// Keep q_0_ == q_c_
+		} else if ( x_1_l_s == x_1_u_s ) { // Constant trajectory
+			assert( ( x_1_l_s == 0 ) && ( x_1_u_s == 0 ) );
+			q_0_ = q_c_;
 			x_1_ = 0.0;
-		} else { // Flat trajectory
+		} else { // Use constant trajectory
 			q_0_ = std::min( std::max( ( ( q_l * x_1_u ) - ( q_u * x_1_l ) ) / ( x_1_u - x_1_l ), q_l ), q_u ); // Value where deriv is ~ 0 // Clipped in case of roundoff
 			x_1_ = 0.0;
 		}
@@ -84,8 +83,6 @@ namespace QSS {
 	{
 		assert( qTol > 0.0 );
 		assert( self_observer() );
-		assert( q_c_ == q_0_ );
-		assert( x_0_ == q_0_ );
 
 		// Value at +/- qTol
 		Real const q_l( q_c_ - qTol );
@@ -98,21 +95,24 @@ namespace QSS {
 		fmu_set_real( q_u );
 		Real const x_1_u( p_1() );
 		int const x_1_u_s( signum( x_1_u ) );
+
+		// Reset FMU values
 		fmu_set_real( q_c_ );
 
 		// Set coefficients based on derivative signs
 		if ( ( x_1_l_s == -1 ) && ( x_1_u_s == -1 ) ) { // Downward trajectory
 			l_0_ = q_l;
-			d_1_ = x_1_l;
+			x_1_ = x_1_l;
 		} else if ( ( x_1_l_s == +1 ) && ( x_1_u_s == +1 ) ) { // Upward trajectory
 			l_0_ = q_u;
-			d_1_ = x_1_u;
-		} else if ( ( x_1_l_s == 0 ) && ( x_1_u_s == 0 ) ) { // Flat trajectory
+			x_1_ = x_1_u;
+		} else if ( x_1_l_s == x_1_u_s ) { // Constant trajectory
+			assert( ( x_1_l_s == 0 ) && ( x_1_u_s == 0 ) );
 			l_0_ = q_c_;
-			d_1_ = 0.0;
-		} else { // Flat trajectory
+			x_1_ = 0.0;
+		} else { // Use constant trajectory
 			l_0_ = std::min( std::max( ( ( q_l * x_1_u ) - ( q_u * x_1_l ) ) / ( x_1_u - x_1_l ), q_l ), q_u ); // Value where deriv is ~ 0 // Clipped in case of roundoff
-			d_1_ = 0.0;
+			x_1_ = 0.0;
 		}
 	}
 

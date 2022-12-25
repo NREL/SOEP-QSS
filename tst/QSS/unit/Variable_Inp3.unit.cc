@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -140,7 +140,7 @@ TEST( Variable_Inp3Test, InputFunction )
 	EXPECT_EQ( 0.0, u->x2( 0.0 ) );
 	EXPECT_EQ( 0.0, u->q2( 0.0 ) );
 	EXPECT_EQ( -1.0, u->x3( 0.0 ) );
-	EXPECT_EQ( 0.0, u->q3( 0.0 ) );
+	EXPECT_EQ( -1.0, u->q3( 0.0 ) );
 
 	double const x_tE( x->tE );
 	fmu.set_time( x->tE );
@@ -159,5 +159,5 @@ TEST( Variable_Inp3Test, InputFunction )
 	EXPECT_EQ( 0.0, u->x2( 0.0 ) );
 	EXPECT_EQ( 0.0, u->q2( 0.0 ) );
 	EXPECT_EQ( -1.0, u->x3( 0.0 ) );
-	EXPECT_EQ( 0.0, u->q3( 0.0 ) );
+	EXPECT_EQ( -1.0, u->q3( 0.0 ) );
 }
