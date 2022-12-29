@@ -70,9 +70,18 @@ namespace QSS {
 		VariablesSet observees_set;
 		find_computational_observees_of( observees_, observees_checked, observees_set ); // Note: Looks at other variable observees that aren't necessarily uniquified yet but that is OK: Might be more efficient to make this a separate phase after all are uniquified
 		observees_.clear();
-		if ( !observees_set.empty() ) observees_.assign( observees_set.begin(), observees_set.end() ); // Swap in the computational observees
+		if ( !observees_set.empty() ) {
+			for ( Variable * observee : observees_set ) {
+				if ( observee == this ) {
+					self_observer_ = true;
+				} else {
+					observees_.push_back( observee );
+				}
+			}
+		}
 		if ( options::output::d ) {
 			std::cout << '\n' << name() << " Computational Observees:" << std::endl;
+			if ( self_observer_ ) std::cout << ' ' << name() << std::endl;
 			for ( Variable const * observee : sorted_by_name( observees_ ) ) {
 				std::cout << ' ' << observee->name() << std::endl;
 			}

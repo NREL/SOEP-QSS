@@ -301,7 +301,7 @@ public: // Methods
 	void
 	advance_handler_1( Real const x_1 ) override
 	{
-		x_1_ = q_1_ = x_1;
+		q_1_ = x_1_ = x_1;
 	}
 
 	// Handler Advance: Stage 2

@@ -49,11 +49,6 @@ public: // Types
 
 	using Super = Variable_QSS;
 
-private: // Types
-
-	using Super::c_1;
-	using Super::c_2;
-
 public: // Creation
 
 	// Constructor
@@ -144,7 +139,7 @@ public: // Methods
 	void
 	init_2() override
 	{
-		x_2_ = c_2();
+		x_2_ = c_2( tQ, x_1_ );
 	}
 
 	// Initialization: Stage Final
@@ -164,9 +159,9 @@ public: // Methods
 		if ( options::stiff ) liqss_qss_ratio_pass();
 		Time const tDel( tE - tX );
 		tX = tQ = tE;
-		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
-		x_1_ = q_1_ = c_1();
-		x_2_ = c_2();
+		q_0_ = x_0_ += ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		q_1_ = x_1_ = c_1( tE, x_0_ );
+		x_2_ = c_2( tE, x_1_ );
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -182,14 +177,14 @@ public: // Methods
 		if ( options::stiff ) liqss_qss_ratio_pass();
 		Time const tDel( tE - tX );
 		tX = tQ = tE;
-		x_0_ = q_0_ = x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		q_0_ = x_0_ += ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 	}
 
 	// QSS Advance: Stage 1
 	void
 	advance_QSS_1( Real const x_1 ) override
 	{
-		x_1_ = q_1_ = x_1;
+		q_1_ = x_1_ = x_1;
 	}
 
 	// QSS Advance: Stage 2
@@ -235,8 +230,8 @@ public: // Methods
 		assert( ( tQ <= t ) && ( tX <= t ) && ( t <= tE ) );
 		tX = tQ = t;
 		x_0_ = q_0_ = p_0();
-		x_1_ = q_1_ = h_1();
-		x_2_ = c_2();
+		q_1_ = x_1_ = h_1();
+		x_2_ = c_2( t, x_1_ );
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -258,7 +253,7 @@ public: // Methods
 	void
 	advance_handler_1( Real const x_1 ) override
 	{
-		x_1_ = q_1_ = x_1;
+		q_1_ = x_1_ = x_1;
 	}
 
 	// Handler Advance: Stage 2
@@ -397,13 +392,6 @@ private: // Methods
 		}
 	}
 
-	// Coefficient 1 from FMU at Time tQ
-	Real
-	c_1() const
-	{
-		return c_1( tQ, x_0_ );
-	}
-
 	// Coefficient 2 from FMU
 	Real
 	n_2( Real const x_1_p ) const
@@ -423,13 +411,6 @@ private: // Methods
 	f_2( Real const x_1_p, Real const x_1_2p ) const
 	{
 		return options::one_over_four_dtND * ( ( three * ( x_1_p - x_1_ ) ) + ( x_1_p - x_1_2p ) ); //ND Forward 3-point
-	}
-
-	// Coefficient 2 from FMU at Time tQ
-	Real
-	c_2() const
-	{
-		return c_2( tQ, x_1_ );
 	}
 
 private: // Data

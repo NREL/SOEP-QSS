@@ -51,7 +51,6 @@ public: // Types
 
 private: // Types
 
-	using Super::c_1;
 	using Super::c_2;
 	using Super::f_3;
 

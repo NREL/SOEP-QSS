@@ -49,12 +49,6 @@ public: // Types
 
 	using Super = Variable_QSS;
 
-private: // Types
-
-	using Super::c_1;
-	using Super::c_2;
-	using Super::h_2;
-
 public: // Creation
 
 	// Constructor
@@ -159,7 +153,7 @@ public: // Methods
 		if ( self_observer() ) {
 			advance_LIQSS_simultaneous();
 		} else {
-			x_2_ = h_2();
+			x_2_ = h_2( tQ, x_1_ );
 			l_0_ = q_c_ + ( signum( x_2_ ) * qTol );
 		}
 	}
@@ -270,7 +264,7 @@ public: // Methods
 		tQ = tX = t;
 		q_c_ = q_0_ = x_0_ = p_0();
 		q_1_ = x_1_ = h_1();
-		x_2_ = c_2();
+		x_2_ = c_2( t, x_1_ );
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -458,27 +452,6 @@ private: // Methods
 	f_2( Real const x_1_p, Real const x_1_2p ) const
 	{
 		return options::one_over_four_dtND * ( ( three * ( x_1_p - x_1_ ) ) + ( x_1_p - x_1_2p ) ); //ND Forward 3-point
-	}
-
-	// Coefficient 2 from FMU at Time tQ
-	Real
-	c_2() const
-	{
-		return c_2( tQ );
-	}
-
-	// Coefficient 2 from FMU at Time t
-	Real
-	c_2( Time const t ) const
-	{
-		return c_2( t, x_1_ );
-	}
-
-	// Coefficient 2 from FMU at Time tQ
-	Real
-	h_2() const
-	{
-		return h_2( tQ, x_1_ );
 	}
 
 private: // Data

@@ -79,10 +79,20 @@ public: // Types
 
 public: // Creation
 
-	// Constructor
+	// FMU-ME Constructor
 	explicit
-	Observers( FMU_ME * fmu_me = nullptr ) :
+	Observers( FMU_ME * fmu_me ) :
 	 fmu_me_( fmu_me )
+	{}
+
+	// FMU-ME + Trigger Constructor
+	explicit
+	Observers(
+	 FMU_ME * fmu_me,
+	 Variable * trigger
+	) :
+	 fmu_me_( fmu_me ),
+	 trigger_( trigger )
 	{}
 
 public: // Conversion
@@ -181,11 +191,12 @@ public: // Methods
 	void
 	set_computational_observers()
 	{
+		assert( trigger_ != nullptr );
 		computational_observers_.clear();
 		if ( observers_.empty() ) return; // Nothing to do
 		VariablesSet observers_checked;
 		VariablesSet observers_set;
-		find_computational_observers_of( observers_, observers_checked, observers_set ); // Note: Looks at other variable observers that aren't necessarily uniquified yet but that is OK: Might be more efficient to make this a separate phase after all are uniquified
+		find_computational_observers( observers_, observers_checked, observers_set ); // Note: Looks at other variable observers that aren't necessarily uniquified yet but that is OK: Might be more efficient to make this a separate phase after all are uniquified
 		computational_observers_.assign( observers_set.begin(), observers_set.end() ); // Swap in the computational observers
 	}
 
@@ -209,7 +220,7 @@ public: // Methods
 	void
 	assign( Variables & triggers )
 	{
-		// Combine all non-trigger observers
+		// Combine all non-trigger observers (they are already be computational observers)
 		observers_.clear();
 		if ( triggers.size() < 16 ) { // Linear search
 			for ( Variable * trigger : triggers ) {
@@ -283,6 +294,7 @@ public: // Methods
 				qss2_observees_.clear();
 				for ( size_type i = qss2_.b(), e = qss_.e(); i < e; ++i ) { // Order 2+ observers
 					Variable * observer( observers_[ i ] );
+					assert( observer->order() >= 2 );
 					if ( observer->self_observee() ) qss2_observees_.push_back( observer );
 					for ( auto observee : observer->observees() ) {
 						qss2_observees_.push_back( observee );
@@ -293,6 +305,7 @@ public: // Methods
 					qss3_observees_.clear();
 					for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ observers
 						Variable * observer( observers_[ i ] );
+						assert( observer->order() >= 3 );
 						if ( observer->self_observee() ) qss3_observees_.push_back( observer );
 						for ( auto observee : observer->observees() ) {
 							qss3_observees_.push_back( observee );
@@ -319,6 +332,7 @@ public: // Methods
 				r2_observees_.clear();
 				for ( size_type i = r2_.b(), e = r_.e(); i < e; ++i ) { // Order 2+ observers
 					Variable * observer( observers_[ i ] );
+					assert( observer->order() >= 2 );
 					assert( !observer->self_observee() );
 					for ( auto observee : observer->observees() ) {
 						r2_observees_.push_back( observee );
@@ -329,6 +343,7 @@ public: // Methods
 					r3_observees_.clear();
 					for ( size_type i = r3_.b(), e = r_.e(); i < e; ++i ) { // Order 3+ observers
 						Variable * observer( observers_[ i ] );
+						assert( observer->order() >= 3 );
 						assert( !observer->self_observee() );
 						for ( auto observee : observer->observees() ) {
 							r3_observees_.push_back( observee );
@@ -368,6 +383,7 @@ public: // Methods
 				zc2_observees_.clear();
 				for ( size_type i = zc2_.b(), e = zc_.e(); i < e; ++i ) { // Order 2+ observers
 					Variable * observer( observers_[ i ] );
+					assert( observer->order() >= 2 );
 					assert( !observer->self_observee() );
 					for ( auto observee : observer->observees() ) {
 						zc2_observees_.push_back( observee );
@@ -378,6 +394,7 @@ public: // Methods
 					zc3_observees_.clear();
 					for ( size_type i = zc3_.b(), e = zc_.e(); i < e; ++i ) { // Order 3+ observers
 						Variable * observer( observers_[ i ] );
+						assert( observer->order() >= 3 );
 						assert( !observer->self_observee() );
 						for ( auto observee : observer->observees() ) {
 							zc3_observees_.push_back( observee );
@@ -493,20 +510,22 @@ private: // Methods
 
 	// Find Extended Computational Observers
 	void
-	find_computational_observers_of(
+	find_computational_observers(
 	 Variables & observers,
 	 VariablesSet & observers_checked,
 	 VariablesSet & observers_set
 	)
 	{
+		assert( trigger_ != nullptr );
 		for ( Variable * observer : observers ) {
 			if ( observers_checked.find( observer ) == observers_checked.end() ) { // Observer not already processed
 				observers_checked.insert( observer );
+				if ( observer == trigger_ ) continue;
 				if ( observer->is_Active() ) observers_set.insert( observer ); // Active => Computational
 				if ( observer->is_QSS() ) { // Extend with its X-based observers
-					find_computational_X_observers_of( observer->observers(), observers_checked, observers_set );
+					find_computational_X_observers( observer->observers(), observers_checked, observers_set );
 				} else if ( observer->not_ZC() ) { // Extend with its observers
-					find_computational_observers_of( observer->observers(), observers_checked, observers_set ); // Recurse
+					find_computational_observers( observer->observers(), observers_checked, observers_set ); // Recurse
 				}
 			}
 		}
@@ -514,18 +533,20 @@ private: // Methods
 
 	// Find Extended X-Based Computational Observers
 	void
-	find_computational_X_observers_of(
+	find_computational_X_observers(
 	 Variables & observers,
 	 VariablesSet & observers_checked,
 	 VariablesSet & observers_set
 	)
 	{
+		assert( trigger_ != nullptr );
 		for ( Variable * observer : observers ) {
 			if ( observer->not_State() ) { // X-based
 				if ( observers_checked.find( observer ) == observers_checked.end() ) { // Observer not already processed
 					observers_checked.insert( observer );
+					assert( observer != trigger_ );
 					if ( observer->is_Active() ) observers_set.insert( observer ); // Active => Computational
-					find_computational_X_observers_of( observer->observers(), observers_checked, observers_set ); // Recurse
+					find_computational_X_observers( observer->observers(), observers_checked, observers_set ); // Recurse
 				}
 			}
 		}
@@ -1052,6 +1073,8 @@ private: // Methods
 private: // Data
 
 	FMU_ME * fmu_me_{ nullptr }; // FMU-ME (non-owning) pointer
+
+	Variable * trigger_{ nullptr }; // Trigger variable
 
 	Variables observers_; // Observers
 	Variables computational_observers_; // Computational observers
