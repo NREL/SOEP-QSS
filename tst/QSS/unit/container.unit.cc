@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -38,31 +38,30 @@
 
 // QSS Headers
 #include <QSS/container.hh>
-#include <QSS/cod/Variable_QSS1.hh>
-#include <QSS/cod/Variable_QSS2.hh>
-#include <QSS/cod/Variable_ZC1.hh>
-#include <QSS/cod/Variable_ZC2.hh>
-#include <QSS/cod/mdl/Function_LTI.hh>
+#include <QSS/Variable_QSS1.hh>
+#include <QSS/Variable_QSS2.hh>
+#include <QSS/Variable_ZC1.hh>
+#include <QSS/Variable_ZC2.hh>
 
 // C++ Headers
 #include <map>
+#include <vector>
 
 using namespace QSS;
-using namespace QSS::cod;
-using namespace QSS::cod::mdl;
 using Variables = Variable::Variables;
 using size_type = Variables::size_type;
-using QSS1 = Variable_QSS1< Function_LTI >;
-using QSS2 = Variable_QSS2< Function_LTI >;
-using ZC1 = Variable_ZC1< Function_LTI >;
-using ZC2 = Variable_ZC2< Function_LTI >;
+using QSS1 = Variable_QSS1;
+using QSS2 = Variable_QSS2;
+using ZC1 = Variable_ZC1;
+using ZC2 = Variable_ZC2;
 
 TEST( ContainerTest, SortByOrder )
 {
-	ZC2 zc2( "ZC2" );
-	ZC1 zc1( "ZC1" );
-	QSS2 qss2( "QSS2" );
-	QSS1 qss1( "QSS1" );
+	FMU_ME fmu;
+	ZC2 zc2( &fmu, "ZC2" );
+	ZC1 zc1( &fmu, "ZC1" );
+	QSS2 qss2( &fmu, "QSS2" );
+	QSS1 qss1( &fmu, "QSS1" );
 
 	Variables variables;
 
@@ -83,10 +82,11 @@ TEST( ContainerTest, SortByOrder )
 
 TEST( ContainerTest, SortByTypeAndORder )
 {
-	ZC2 zc2( "ZC2" );
-	ZC1 zc1( "ZC1" );
-	QSS2 qss2( "QSS2" );
-	QSS1 qss1( "QSS1" );
+	FMU_ME fmu;
+	ZC2 zc2( &fmu, "ZC2" );
+	ZC1 zc1( &fmu, "ZC1" );
+	QSS2 qss2( &fmu, "QSS2" );
+	QSS1 qss1( &fmu, "QSS1" );
 
 	Variables variables;
 
@@ -102,27 +102,29 @@ TEST( ContainerTest, SortByTypeAndORder )
 
 TEST( ContainerTest, BeginOrderIndex )
 {
+	FMU_ME fmu;
 	Variables variables;
-	variables.push_back( new ZC1( "ZC1" ) );
-	variables.push_back( new ZC1( "ZC1" ) );
-	variables.push_back( new ZC1( "ZC1" ) );
-	variables.push_back( new QSS1( "QSS1" ) );
-	variables.push_back( new QSS1( "QSS1" ) );
-	variables.push_back( new QSS2( "QSS2" ) );
-	variables.push_back( new QSS2( "QSS2" ) );
-	variables.push_back( new ZC2( "ZC2" ) );
-	variables.push_back( new ZC2( "ZC2" ) );
-	variables.push_back( new ZC2( "ZC2" ) );
+	variables.push_back( new ZC1( &fmu, "ZC1" ) );
+	variables.push_back( new ZC1( &fmu, "ZC1" ) );
+	variables.push_back( new ZC1( &fmu, "ZC1" ) );
+	variables.push_back( new QSS1( &fmu, "QSS1" ) );
+	variables.push_back( new QSS1( &fmu, "QSS1" ) );
+	variables.push_back( new QSS2( &fmu, "QSS2" ) );
+	variables.push_back( new QSS2( &fmu, "QSS2" ) );
+	variables.push_back( new ZC2( &fmu, "ZC2" ) );
+	variables.push_back( new ZC2( &fmu, "ZC2" ) );
+	variables.push_back( new ZC2( &fmu, "ZC2" ) );
 	EXPECT_EQ( 5u, begin_order_index( variables, 2 ) );
 	for ( Variable * var : variables ) delete var; // Clean up
 }
 
 TEST( ContainerTest, Uniquify )
 {
-	ZC2 zc2( "ZC2" );
-	ZC1 zc1( "ZC1" );
-	QSS2 qss2( "QSS2" );
-	QSS1 qss1( "QSS1" );
+	FMU_ME fmu;
+	ZC2 zc2( &fmu, "ZC2" );
+	ZC1 zc1( &fmu, "ZC1" );
+	QSS2 qss2( &fmu, "QSS2" );
+	QSS1 qss1( &fmu, "QSS1" );
 
 	Variables variables;
 
@@ -143,9 +145,10 @@ TEST( ContainerTest, Uniquify )
 
 TEST( ContainerTest, VariablesObservers )
 {
-	QSS2 v( "v" );
-	QSS2 h( "h" );
-	QSS2 z( "z" );
+	FMU_ME fmu;
+	QSS2 v( &fmu, "v" );
+	QSS2 h( &fmu, "h" );
+	QSS2 z( &fmu, "z" );
 
 	h.observers().push_back( &v );
 	h.observers().push_back( &z );

@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -46,13 +46,9 @@
 #include <QSS/math.hh>
 #include <QSS/SuperdenseTime.hh>
 
-// Allocator Headers
-//#include <Allocator/Allocator.h>
-
 // C++ Headers
 #include <cassert>
 #include <cstddef>
-//#include <functional>
 #include <iostream>
 #include <map>
 #include <vector>
@@ -69,6 +65,7 @@ public: // Types
 	using EventT = Event< T >;
 	using Type = typename EventT::Type;
 	using Real = typename EventT::Real;
+	using Off = typename EventT::Off;
 	using Time = SuperdenseTime::Time;
 	using Index = SuperdenseTime::Index;
 	using Offset = SuperdenseTime::Offset;
@@ -77,7 +74,6 @@ public: // Types
 	using Events = std::vector< EventT >;
 
 	using EventMap = std::multimap< SuperdenseTime, EventT >; // C++ allocator
-//	using EventMap = std::multimap< SuperdenseTime, EventT, std::less< SuperdenseTime >, Moya::Allocator< std::pair< SuperdenseTime const, EventT > > >; // Moya allocator // Default 1024 grow size was best // Fastest but gives access violation in unit tests
 	using value_type = typename EventMap::value_type;
 	using size_type = typename EventMap::size_type;
 	using const_iterator = typename EventMap::const_iterator;
@@ -86,17 +82,6 @@ public: // Types
 	using pointer = typename EventMap::pointer;
 	using const_reference = typename EventMap::const_reference;
 	using reference = typename EventMap::reference;
-
-	// Event Type SuperdenseTime Offsets
-	struct Off final {
-		static SuperdenseTime::Offset const Discrete{ 0 };
-		static SuperdenseTime::Offset const ZC{ 1 };
-		static SuperdenseTime::Offset const Conditional{ 2 };
-		static SuperdenseTime::Offset const Handler{ 3 };
-		static SuperdenseTime::Offset const QSS{ 4 };
-		static SuperdenseTime::Offset const QSS_ZC{ 5 };
-		static SuperdenseTime::Offset const QSS_Inp{ 6 };
-	};
 
 public: // Predicate
 
@@ -546,6 +531,35 @@ public: // Methods
 		}
 	}
 
+	// QSS R Requantization Bin Subtypes at Front of Queue
+	template< typename S >
+	void
+	bin_QSS_R( size_type const bin_size, double const bin_frac, std::vector< S * > & subs )
+	{
+		subs.clear();
+		if ( !m_.empty() ) {
+			iterator i( m_.begin() );
+			iterator const e( m_.end() );
+			SuperdenseTime const & s( i->first );
+			while ( ( i != e ) && ( i->first == s ) ) { // First get the simultaneous events
+				subs.push_back( i->second.template sub< S >() );
+				++i;
+			}
+			Time const t_top( s.t );
+			size_type j( 0u ); // Loop counter (non-simultaneous events)
+			while ( ( i != e ) && ( ++j < 5 * bin_size ) && ( subs.size() < bin_size ) ) { // Bin events
+				if ( i->second.is_QSS_R() ) { // QSS R requantization event
+					S * sub( i->second.template sub< S >() );
+					double const sub_frac( ( t_top - sub->tQ ) / ( sub->tE - sub->tQ ) );
+					if ( sub_frac >= bin_frac ) { // Time step fraction is acceptable
+						subs.push_back( sub );
+					}
+				}
+				++i;
+			}
+		}
+	}
+
 	// Set Active Time
 	void
 	set_active_time()
@@ -721,6 +735,33 @@ public: // QSS Event Methods
 		Target * tar( i->second.tar() );
 		m_.erase( i );
 		return m_.emplace( SuperdenseTime( t, idx, Off::QSS ), EventT( Type::QSS, tar ) );
+	}
+
+public: // QSS R Event Methods
+
+	// Add QSS R Event
+	iterator
+	add_QSS_R(
+	 Time const t,
+	 Target * tar
+	)
+	{
+		return m_.emplace( SuperdenseTime( t, 0, Off::QSS_R ), EventT( Type::QSS_R, tar ) );
+	}
+
+	// Shift QSS R Event
+	iterator
+	shift_QSS_R(
+	 Time const t,
+	 iterator const i
+	)
+	{
+		assert( t_ == s_.t );
+		assert( t >= t_ );
+		Index const idx( t == t_ ? ( s_.o < Off::QSS_R ? s_.i : s_.i + 1u ) : Index( 0 ) );
+		Target * tar( i->second.tar() );
+		m_.erase( i );
+		return m_.emplace( SuperdenseTime( t, idx, Off::QSS_R ), EventT( Type::QSS_R, tar ) );
 	}
 
 public: // QSS ZC Event Methods

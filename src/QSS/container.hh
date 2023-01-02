@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -100,7 +100,20 @@ void
 uniquify( Variables & variables, bool const shrink = false )
 {
 	if ( !variables.empty() ) {
-		std::sort( variables.begin(), variables.end() ); // Sort by address
+		std::sort( variables.begin(), variables.end() ); // Sort
+		variables.erase( std::unique( variables.begin(), variables.end() ), variables.end() ); // Remove duplicates
+		if ( shrink ) variables.shrink_to_fit();
+	}
+}
+
+// Make Sorted Variables Collection Unique and Optionally Shrink-to-Fit
+template< typename Variables >
+inline
+void
+uniquify_sorted( Variables & variables, bool const shrink = false )
+{
+	if ( !variables.empty() ) {
+		assert( std::is_sorted( variables.begin(), variables.end() ) ); // Precondition: Sorted
 		variables.erase( std::unique( variables.begin(), variables.end() ), variables.end() ); // Remove duplicates
 		if ( shrink ) variables.shrink_to_fit();
 	}
@@ -128,10 +141,22 @@ sort_by_type_and_order( Variables & variables )
 {
 	using V = typename std::remove_pointer< typename Variables::value_type >::type;
 	if ( options::output::d ) { // Also sort by name for deterministic diagnostic output
-		std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return ( v1->state_order() < v2->state_order() ) || ( ( v1->state_order() == v2->state_order() ) && ( v1->name() < v2->name() ) ); } );
+		std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return ( v1->var_sort_index() < v2->var_sort_index() ) || ( ( v1->var_sort_index() == v2->var_sort_index() ) && ( v1->name() < v2->name() ) ); } );
 	} else { // Just sort by type and order (faster)
-		std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->state_order() < v2->state_order(); } );
+		std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->var_sort_index() < v2->var_sort_index(); } );
 	}
+}
+
+// Sort Variables by Name
+template< typename Variables >
+inline
+Variables
+sorted_by_name( Variables const & variables )
+{
+	using V = typename std::remove_pointer< typename Variables::value_type >::type;
+	Variables sorted_variables( variables );
+	std::sort( sorted_variables.begin(), sorted_variables.end(), []( V const * v1, V const * v2 ){ return v1->name() < v2->name(); } );
+	return sorted_variables;
 }
 
 // Set up Non-Trigger Observers of Triggers and Sort Both by Order
@@ -171,7 +196,15 @@ variables_observers( Variables & triggers, Variables & observers )
 	sort_by_order( triggers );
 }
 
-// Remove Elements of a Container with a Value
+// Vector Has a Value?
+template< typename T >
+bool
+vector_has( std::vector< T > const & c, T const & t )
+{
+	return std::find( c.begin(), c.end(), t ) != c.end();
+}
+
+// Remove Elements of a Vector with a Value
 template< typename T >
 void
 vector_remove_value( std::vector< T > & c, T const & t )
@@ -180,7 +213,7 @@ vector_remove_value( std::vector< T > & c, T const & t )
 	if ( i != c.end() ) c.erase( i );
 }
 
-// Nullify Elements of a Container with a Value
+// Nullify Elements of a Vector with a Value
 template< typename T >
 void
 vector_nullify_value( std::vector< T > & c, T const & t )
@@ -189,7 +222,7 @@ vector_nullify_value( std::vector< T > & c, T const & t )
 	if ( i != c.end() ) *i = nullptr;
 }
 
-// Remove Elements of a Container with a Value
+// Remove Elements of a Vector with a Value
 template< class C, typename T >
 void
 map_remove_value( C & c, T const & t )

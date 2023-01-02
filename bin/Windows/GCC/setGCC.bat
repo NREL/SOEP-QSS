@@ -2,7 +2,7 @@
 :: GCC Setup
 :: Put a custom version first in your PATH to adapt to your system
 
-set Path=%Path%;C:\GCC\bin
+set Path=%Path%;C:\MinGW\bin
 
 if  "%CPATH%" == "" (
   set CPATH=.

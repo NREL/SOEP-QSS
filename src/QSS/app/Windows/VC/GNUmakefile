@@ -14,16 +14,13 @@ TST_PATH := $(QSS)\tst\QSS\unit
 include $(QSS_bin)/GNUmakeinit.mk
 
 # Variables
-QSS_SRC := $(SRC_PATH)/app/QSS.cc
+QSS_SRC := $(SRC_PATH)\app\QSS.cc
 QSS_DEP := QSS.d
 QSS_OBJ := QSS.obj
-PyQSS_SRC := $(SRC_PATH)/app/PyQSS.cc
+PyQSS_SRC := $(SRC_PATH)\app\PyQSS.cc
 PyQSS_DEP := PyQSS.d
 PyQSS_OBJ := PyQSS.obj
 SRC := $(notdir $(wildcard $(SRC_PATH)/*.cc))
-SRC += $(notdir $(wildcard $(SRC_PATH)/cod/*.cc))
-SRC += $(notdir $(wildcard $(SRC_PATH)/cod/mdl/*.cc))
-SRC += $(notdir $(wildcard $(SRC_PATH)/fmu/*.cc))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .obj,$(basename $(SRC)))
 SLB := $(BIN_PATH)\libQSS.lib

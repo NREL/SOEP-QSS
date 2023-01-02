@@ -14,16 +14,13 @@ TST_PATH := $(QSS)\tst\QSS\unit
 include $(QSS_bin)/GNUmakeinit.mk
 
 # Variables
-QSS_SRC := $(SRC_PATH)/app/QSS.cc
+QSS_SRC := $(SRC_PATH)\app\QSS.cc
 QSS_DEP := QSS.d
 QSS_OBJ := QSS.obj
-PyQSS_SRC := $(SRC_PATH)/app/PyQSS.cc
+PyQSS_SRC := $(SRC_PATH)\app\PyQSS.cc
 PyQSS_DEP := PyQSS.d
 PyQSS_OBJ := PyQSS.obj
 SRC := $(notdir $(wildcard $(SRC_PATH)/*.cc))
-SRC += $(notdir $(wildcard $(SRC_PATH)/cod/*.cc))
-SRC += $(notdir $(wildcard $(SRC_PATH)/cod/mdl/*.cc))
-SRC += $(notdir $(wildcard $(SRC_PATH)/fmu/*.cc))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .obj,$(basename $(SRC)))
 SLB := $(BIN_PATH)\libQSS.lib
@@ -80,7 +77,7 @@ $(PyQSS_OBJ) : $(PyQSS_SRC)
 $(EXE) : $(SLB) $(QSS_OBJ)
 	$(CXX) $(CXXLINKFLAGS) $(PGO) /Fe:$@ $(QSS_OBJ) $(LINKFLAGS) $(SLB) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib expat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
 # xilink needed with /Qipo interprocedural optimization
-#	$(LD) /OUT:$@ /NOLOGO /SUBSYSTEM:CONSOLE /MACHINE:X64 /STACK:8388608 $(QSS_OBJ) $(OBJ) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib expat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
+#	$(LD) /OUT:$@ /NOLOGO /SUBSYSTEM:CONSOLE /MACHINE:X64 /STACK:16777216 $(QSS_OBJ) $(OBJ) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib expat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
 	@-DEL $(BIN_PATH)\QSS.exp $(BIN_PATH)\QSS.ilk $(BIN_PATH)\QSS.lib >nul 2>&1
 
 $(PYD) : $(SLB) $(PyQSS_OBJ)

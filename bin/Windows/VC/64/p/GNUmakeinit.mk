@@ -5,7 +5,7 @@
 # Platform: Windows/VC/64/p
 
 # Variables
-CXXFLAGS := /nologo /std:c++17 /Zc:__cplusplus /TP /EHsc /W4 /wd4068 /wd4996 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DWIN32 /DQSS_FMU /DNDEBUG /arch:AVX2 /openmp /O2 /fp:precise /Qpar /GS- /Z7 /MD
+CXXFLAGS := /nologo /std:c++20 /Zc:__cplusplus /TP /EHsc /W4 /wd4068 /wd4996 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DWIN32 /DNDEBUG /arch:AVX2 /openmp /O2 /fp:precise /Qpar /GS- /Z7 /MD
 CXXFLAGS += /wd4100 /wd4505 # For FMIL
 # Disabled Warnings:
 #  4068 Unknown pragma
@@ -16,6 +16,6 @@ CXXFLAGS += /wd4100 /wd4505 # For FMIL
 # Notes:
 #  /D_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1 /D_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1 enables secure template overloads
 CXXLINKFLAGS := /nologo
-LINKFLAGS := /link /nologo /SUBSYSTEM:CONSOLE /STACK:8388608 /DEBUG /PROFILE
+LINKFLAGS := /link /nologo /SUBSYSTEM:CONSOLE /STACK:16777216 /DEBUG /PROFILE
 
 include $(QSS_bin)\..\GNUmakeinit.mk

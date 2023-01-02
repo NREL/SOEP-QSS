@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -51,16 +51,32 @@ public: // Types
 
 	using Target = T;
 	using Real = double;
+	using Offset = std::size_t;
 
 	// Event Type
 	enum class Type : std::size_t {
+	 Observer,
 	 Discrete,
 	 ZC,
 	 Conditional,
 	 Handler,
 	 QSS,
+	 QSS_R,
 	 QSS_ZC,
 	 QSS_Inp
+	};
+
+	// Event Type SuperdenseTime Offsets
+	struct Off final {
+		static Offset const Observer{ static_cast< Offset >( Type::Observer ) };
+		static Offset const Discrete{ static_cast< Offset >( Type::Discrete ) };
+		static Offset const ZC{ static_cast< Offset >( Type::ZC ) };
+		static Offset const Conditional{ static_cast< Offset >( Type::Conditional ) };
+		static Offset const Handler{ static_cast< Offset >( Type::Handler ) };
+		static Offset const QSS{ static_cast< Offset >( Type::QSS ) };
+		static Offset const QSS_R{ static_cast< Offset >( Type::QSS_R ) };
+		static Offset const QSS_ZC{ static_cast< Offset >( Type::QSS_ZC ) };
+		static Offset const QSS_Inp{ static_cast< Offset >( Type::QSS_Inp ) };
 	};
 
 public: // Creation
@@ -120,11 +136,25 @@ public: // Predicate
 		return ( typ_ == Type::QSS_ZC );
 	}
 
+	// QSS R Event?
+	bool
+	is_QSS_R() const
+	{
+		return ( typ_ == Type::QSS_R );
+	}
+
 	// QSS Input Event?
 	bool
 	is_QSS_Inp() const
 	{
 		return ( typ_ == Type::QSS_Inp );
+	}
+
+	// Observer Event?
+	bool
+	is_observer() const
+	{
+		return ( typ_ == Type::Observer );
 	}
 
 public: // Property

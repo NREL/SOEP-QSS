@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -57,6 +57,7 @@ namespace QSS {
 
 // Globals
 extern double const zero;
+extern double const one;
 extern double const two;
 extern double const three;
 extern double const four;
@@ -298,6 +299,17 @@ T
 positive_or_infinity( T const r )
 {
 	return ( r > T( 0 ) ? r : inf< T >() );
+}
+
+// x == y Within Specified Relative or Absolute Tolerances?
+template< typename T >
+inline
+bool
+eq_tol( T const & x, T const & y, T const & r_tol, T const & a_tol = T( 0 ) )
+{
+	assert( r_tol >= T( 0 ) );
+	assert( a_tol >= T( 0 ) );
+	return ( std::abs( x - y ) <= std::max( r_tol * std::max( std::abs( x ), std::abs( y ) ), a_tol ) );
 }
 
 // Sorted Array of 3 Values Making Non-Positive Values Infinity

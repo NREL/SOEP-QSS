@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -104,6 +104,8 @@ public: // Predicate
 	operator ()( std::string const & var_name ) const
 	{
 		if ( var_name == "time" ) return false; // Omit time variable
+		if ( has_prefix( var_name, "der(" ) && has_suffix( var_name, ")" ) ) return false; // Omit derivatives
+		if ( ( var_name[ 0 ] == '_' ) && !has_prefix( var_name, "_eventIndicator_" ) ) return false; // Omit internals except for event indicators
 		if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
 		if ( filters_.empty() ) return true;
 		for ( auto const & filter : filters_ ) { // Check if name matches filter
@@ -117,6 +119,8 @@ public: // Predicate
 	qss( std::string const & var_name ) const
 	{
 		if ( var_name == "time" ) return false; // Omit time variable
+		if ( has_prefix( var_name, "der(" ) && has_suffix( var_name, ")" ) ) return false; // Omit derivatives
+		if ( ( var_name[ 0 ] == '_' ) && !has_prefix( var_name, "_eventIndicator_" ) ) return false; // Omit internals except for event indicators
 		if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
 		if ( filters_.empty() ) return true;
 		for ( auto const & filter : filters_ ) { // Check if name matches filter
@@ -131,6 +135,7 @@ public: // Predicate
 	{
 		if ( var_name == "time" ) return false; // Omit time variable
 		if ( has_prefix( var_name, "der(" ) && has_suffix( var_name, ")" ) ) return false; // Omit derivatives
+		if ( ( var_name[ 0 ] == '_' ) && !has_prefix( var_name, "_eventIndicator_" ) ) return false; // Omit internals except for event indicators
 		if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
 		if ( filters_.empty() ) return true;
 		for ( auto const & filter : filters_ ) { // Check if name matches filter

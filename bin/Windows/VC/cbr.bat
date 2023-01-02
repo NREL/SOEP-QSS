@@ -9,6 +9,6 @@ if exist %1.ii  set CxxSource=%1.ii
 if not (%CxxSource%)==() shift
 
 :Build
-cl /nologo /std:c++17 /Zc:__cplusplus /TP /EHsc /W4 /wd4068 /wd4100 /wd4127 /wd4505 /wd4996 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DNDEBUG /arch:AVX2 /O2 /fp:precise /Qpar /GS- %CxxSource% %1 %2 %3 %4 %5 %6 %7 %8 %9
+cl /nologo /std:c++20 /Zc:__cplusplus /TP /EHsc /W4 /wd4068 /wd4100 /wd4127 /wd4505 /wd4996 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DNDEBUG /arch:AVX2 /O2 /fp:precise /Qpar /GS- %CxxSource% %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 set CxxSource=

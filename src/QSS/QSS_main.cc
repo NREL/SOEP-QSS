@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -38,14 +38,11 @@
 #include <QSS/options.hh>
 #include <QSS/path.hh>
 #include <QSS/version.hh>
-#include <QSS/cod/simulate_cod.hh>
-#ifdef QSS_FMU
-#include <QSS/fmu/simulate_fmu_me.hh>
-#include <QSS/fmu/simulate_fmu_me_con.hh>
-#include <QSS/fmu/simulate_fmu_me_con_perfect.hh>
-#include <QSS/fmu/simulate_fmu_qss.hh>
-#include <QSS/fmu/simulate_fmu_qss_con.hh>
-#endif
+#include <QSS/simulate_fmu_me.hh>
+#include <QSS/simulate_fmu_me_con.hh>
+#include <QSS/simulate_fmu_me_con_perfect.hh>
+#include <QSS/simulate_fmu_qss.hh>
+#include <QSS/simulate_fmu_qss_con.hh>
 
 // C++ Headers
 #include <algorithm>
@@ -70,8 +67,8 @@ model_type_of( std::string const & model )
 			std::cerr << "Error: FMU model file name invalid: " + model << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
-	} else { // Code-defined model
-		return ModelType::COD;
+	} else {
+		return ModelType::UNK;
 	}
 }
 
@@ -87,7 +84,7 @@ QSS_main( std::vector< std::string > const & args )
 	std::clog << std::setprecision( 15 ) << std::boolalpha;
 
 	// Startup banner
-	std::cout << "\nLBNL/DOE  SOEP-QSS  Quantized State System Solver  Version: " << version() << '\n';
+	std::cout << "LBNL/DOE  SOEP-QSS  Quantized State System Solver  Version: " << version() << '\n';
 
 	// Process command line arguments
 	options::process_args( args );
@@ -124,65 +121,39 @@ QSS_main( std::vector< std::string > const & args )
 		model_type = model_type_of( options::models[ 0 ] );
 	}
 
-#ifndef QSS_FMU
-	// Check for FMU models if not supported in this build
-	if ( ( model_type == ModelType::FMU_ME ) || ( model_type == ModelType::FMU_QSS ) ) {
-		std::cerr << "Error: FMU models not supported in this build" << std::endl;
-		std::exit( EXIT_FAILURE );
-	}
-#endif
-
-	// Run FMU-QSS, FMU-ME, or code-defined model simulation
+	// Run FMU-ME or FMU-QSS model simulation
 	if ( options::have_multiple_models() && options::connected() ) { // Synched simulations
-		if ( model_type == ModelType::COD ) { // Code-defined model
-			std::cerr << "Error: Code-defined models with input:output connections not yet supported" << std::endl;
-			std::exit( EXIT_FAILURE );
-		} else if ( model_type == ModelType::FMU_ME ) { // FMU-ME
-#ifdef QSS_FMU
+		if ( model_type == ModelType::FMU_ME ) { // FMU-ME
 			if ( options::perfect ) {
-				fmu::simulate_fmu_me_con_perfect( options::models );
+				simulate_fmu_me_con_perfect( options::models );
 			} else {
-				fmu::simulate_fmu_me_con( options::models );
+				simulate_fmu_me_con( options::models );
 			}
-#endif
 		} else if ( model_type == ModelType::FMU_QSS ) { // FMU-QSS
-#ifdef QSS_FMU
 			if ( options::perfect ) {
 				std::cerr << "Error: Perfect sync only supported for FMU-ME, not FMU-QSS" << std::endl;
 				std::exit( EXIT_FAILURE );
 			}
-			fmu::simulate_fmu_qss_con( options::models );
-#endif
+			simulate_fmu_qss_con( options::models );
 		} else {
 			assert( false );
 		}
 	} else { // Independent simulations
 		std::int64_t const n_models( options::models.size() );
-		if ( model_type == ModelType::COD ) { // Code-defined model
-			// Can parallelize if global event queue is eliminated
-			for ( std::int64_t i = 0; i < n_models; ++i ) {
-				std::string const & model( options::models[ i ] );
-				std::cout << '\n' + path::base( model ) + " Simulation =====" << std::endl;
-				cod::simulate( model );
-			}
-		} else if ( model_type == ModelType::FMU_ME ) { // FMU-ME
-#ifdef QSS_FMU
+		if ( model_type == ModelType::FMU_ME ) { // FMU-ME
 			#pragma omp parallel for schedule(dynamic) if ( n_models > 1 )
 			for ( std::int64_t i = 0; i < n_models; ++i ) {
 				std::string const & model( options::models[ i ] );
 				std::cout << '\n' + path::base( model ) + " Simulation =====" << std::endl;
-				fmu::simulate_fmu_me( model );
+				simulate_fmu_me( model );
 			}
-#endif
 		} else if ( model_type == ModelType::FMU_QSS ) { // FMU-QSS
-#ifdef QSS_FMU
 			#pragma omp parallel for schedule(dynamic) if ( n_models > 1 )
 			for ( std::int64_t i = 0; i < n_models; ++i ) {
 				std::string const & model( options::models[ i ] );
 				std::cout << '\n' + path::base( model ) + " Simulation =====" << std::endl;
-				fmu::simulate_fmu_qss( model );
+				simulate_fmu_qss( model );
 			}
-#endif
 		} else {
 			assert( false );
 		}

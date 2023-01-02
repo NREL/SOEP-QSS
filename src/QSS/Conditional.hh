@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2022 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -38,18 +38,26 @@
 
 // QSS Headers
 #include <QSS/Target.hh>
+#include <QSS/Variable.hh>
 
 namespace QSS {
 
-// Conditional Abstract Base Class
-class Conditional : public Target
+// Conditional Class Template
+template< typename Variable_ZC >
+class Conditional final : public Target
 {
 
 public: // Types
 
 	using Super = Target;
+	using Variables = Variable::Variables;
+	using VariablesSet = Variable::VariablesSet;
+	using Time = Variable::Time;
+	using Real = Variable::Real;
+	using size_type = Variables::size_type;
+	using EventQ = EventQueue< Target >;
 
-protected: // Creation
+public: // Creation
 
 	// Default Constructor
 	Conditional() = default;
@@ -60,13 +68,29 @@ protected: // Creation
 	// Move Constructor
 	Conditional( Conditional && ) noexcept = default;
 
-	// Name Constructor
-	explicit
-	Conditional( std::string const & name ) :
-	 Target( name )
-	{}
+	// Name + Variable_ZC + Event Queue Constructor
+	Conditional(
+	 std::string const & name,
+	 Variable_ZC * var,
+	 EventQ * eventq
+	) :
+	 Target( name ),
+	 var_( var ),
+	 eventq_( eventq )
+	{
+		assert( var_ != nullptr );
+		assert( eventq_ != nullptr );
+		var_->conditional = this;
+		add_conditional();
+	}
 
-protected: // Assignment
+	// Destructor
+	~Conditional()
+	{
+		if ( var_ != nullptr ) var_->conditional = nullptr;
+	}
+
+public: // Assignment
 
 	// Copy Assignment
 	Conditional &
@@ -76,12 +100,206 @@ protected: // Assignment
 	Conditional &
 	operator =( Conditional && ) noexcept = default;
 
+public: // Predicate
+
+	// Empty?
+	bool
+	empty() const
+	{
+		return false;
+	}
+
+	// Valid?
+	bool
+	valid() const
+	{
+		return true;
+	}
+
+public: // Property
+
+	// Size
+	size_type
+	size() const
+	{
+		return 1u;
+	}
+
+	// Variable_ZC
+	Variable_ZC const *
+	var() const
+	{
+		return var_;
+	}
+
+	// Variable_ZC
+	Variable_ZC * &
+	var()
+	{
+		return var_;
+	}
+
+	// Handler-Modified (Observer) Variables
+	Variables const &
+	observers() const
+	{
+		return observers_;
+	}
+
+	// Handler-Modified (Observer) Variables
+	Variables &
+	observers()
+	{
+		return observers_;
+	}
+
 public: // Methods
 
-	// Run Handler of Highest Priority Active Clause
-	virtual
+	// Add an Observer Variable
 	void
-	advance_conditional() = 0;
+	add_observer( Variable * observer )
+	{
+		assert( observer != nullptr );
+		if ( observer->is_Input() ) {
+			std::cerr << "\nError: Input variable " << observer->name() << " is modified in conditional clause of " << var_->name() << std::endl;
+			std::exit( EXIT_FAILURE );
+		}
+		observers_.push_back( observer );
+	}
+
+	// Initialize Observers Collection
+	void
+	init_observers()
+	{
+		// Short-circuit passive observers
+		short_circuit_passive_observers();
+		if ( options::output::d ) {
+			assert( var_ != nullptr );
+			std::cout << '\n' << var_->name() << " Conditional Computational Observers:" << std::endl;
+			for ( Variable const * observer : sorted_by_name( observers_ ) ) {
+				std::cout << ' ' << observer->name() << std::endl;
+			}
+		}
+
+		// Flag if output connection observers
+		connected_output_observer = false;
+		for ( auto const observer : observers_ ) {
+			if ( observer->connected_output ) {
+				connected_output_observer = true;
+				break;
+			}
+		}
+	}
+
+	// Activity Notifier
+	void
+	activity( Time const t )
+	{
+		shift_conditional( t );
+	}
+
+	// Set Observer FMU Value and Shift Handler Event
+	void
+	handler( Time const t )
+	{
+		for ( Variable * observer : observers_ ) {
+			// Set observers's observee FMU values so FMU event handler computes correct new observer value
+			//! Setting state observees to x-based value: Observees may overlap: Would need to split state and non-state handlers for ideal solution
+			observer->fmu_set_observees_x( t );
+			if ( observer->self_observer() ) observer->fmu_set_x( t );
+
+			observer->shift_handler( t ); // Set observer's handler event
+		}
+	}
+
+	// Add Event at Time Infinity
+	void
+	add_conditional()
+	{
+		assert( eventq_ != nullptr );
+		event_ = eventq_->add_conditional( this );
+	}
+
+	// Shift Event to Time Infinity
+	void
+	shift_conditional()
+	{
+		assert( eventq_ != nullptr );
+		event_ = eventq_->shift_conditional( event_ );
+	}
+
+	// Shift Event to Time t
+	void
+	shift_conditional( Time const t )
+	{
+		assert( eventq_ != nullptr );
+		event_ = eventq_->shift_conditional( t, event_ );
+	}
+
+	// Run Handler
+	void
+	advance_conditional()
+	{
+		assert( var_ != nullptr );
+		if ( var_->is_tZ_last( st.t ) ) handler( st.t );
+		shift_conditional();
+	}
+
+	// Remove Associated Zero-Crossing Variable
+	void
+	rem_variable()
+	{
+		var_ = nullptr;
+	}
+
+private: // Methods
+
+	// Short-Circuit Passive Observers
+	void
+	short_circuit_passive_observers()
+	{
+		if ( ! observers_.empty() ) {
+			VariablesSet observers_checked;
+			VariablesSet observers_set;
+			for ( Variable * observer : observers_ ) {
+				if ( observer->is_Active() ) { // Keep it
+					observers_set.insert( observer );
+					observers_checked.insert( observer );
+				} else { // Short-circuit it
+					assert( observer->is_Passive() );
+					find_computational_observers( observer, observers_checked, observers_set ); // Note: Looks at other variable observers that aren't necessarily uniquified yet but that is OK: Might be more efficient to make this a separate phase after all are uniquified
+				}
+			}
+			observers_.assign( observers_set.begin(), observers_set.end() ); // Swap in the computational observers
+		}
+		if ( observers_.empty() ) observers_.push_back( var_ ); // No active handler variables: Enable zero-crossing event processing with self-observation
+	}
+
+	// Find Short-Circuited Computational Observers
+	void
+	find_computational_observers(
+	 Variable * observer,
+	 VariablesSet & observers_checked,
+	 VariablesSet & observers_set
+	)
+	{
+		if ( observers_checked.find( observer ) == observers_checked.end() ) { // Observer not already processed
+			observers_checked.insert( observer );
+			if ( observer->is_Active() ) { // Active => Computational
+				observers_set.insert( observer );
+			} else { // Traverse dependency sub-graph
+				for ( Variable * oo : observer->observers() ) { // Recurse
+					find_computational_observers( oo, observers_checked, observers_set );
+				}
+			}
+		}
+	}
+
+private: // Data
+
+	Variable_ZC * var_{ nullptr }; // Event indicator variable
+	Variables observers_; // Variables dependent on this one (modified by handler)
+	EventQ * eventq_{ nullptr }; // Event queue
 
 }; // Conditional
 
