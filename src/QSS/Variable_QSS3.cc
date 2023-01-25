@@ -50,10 +50,10 @@ namespace QSS {
 		Time const tDel( tE - tX );
 		Real const x_0( x_0_ + ( ( x_1_ + ( ( x_2_ + ( x_3_ * tDel ) ) * tDel ) ) * tDel ) );
 		Real const q( std::max( rTol * std::abs( x_0 ), aTol ) );
-		Real x_1, x_2, x_3;
 
 		// QSS
-		x_1 = c_1( tE, x_0 );
+		Real const x_1( c_1( tE, x_0 ) );
+		Real x_3;
 		if ( fwd_time_ND( tQ ) ) { // Use centered ND formulas
 			Time tN( tE - options::dtND );
 			fmu_set_time( tN );
@@ -61,7 +61,6 @@ namespace QSS {
 			tN = tE + options::dtND;
 			fmu_set_time( tN );
 			Real const x_1_p( c_1( tN ) );
-			x_2 = options::one_over_four_dtND * ( x_1_p - x_1_m );
 			x_3 = options::one_over_six_dtND_squared * ( ( x_1_p - x_1 ) + ( x_1_m - x_1 ) );
 		} else { // Use forward ND formulas
 			Time tN( tE + options::dtND );
@@ -70,7 +69,6 @@ namespace QSS {
 			tN = tE + options::two_dtND;
 			fmu_set_time( tN );
 			Real const x_1_2p( c_1( tN ) );
-			x_2 = options::one_over_four_dtND * ( ( three * ( x_1_p - x_1 ) ) + ( x_1_p - x_1_2p ) );
 			x_3 = options::one_over_six_dtND_squared * ( ( x_1_2p - x_1_p ) + ( x_1 - x_1_p ) );
 		}
 		Time const dt_QSS( x_3 != 0.0 ? std::cbrt( qTol / std::abs( x_3 ) ) : infinity );

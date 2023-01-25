@@ -60,7 +60,7 @@ def fmu_qss_gen():
     # Process arguments
     parser = argparse.ArgumentParser()
     parser.add_argument( 'ME', help = 'FMU-ME fmu or xml file', default = 'modelDescription.xml' )
-    parser.add_argument( '--qss', help = 'QSS method  (x)(LI)QSS(1|2|3)  [QSS2]', default = 'QSS2' )
+    parser.add_argument( '--qss', help = 'QSS method  (LI)QSS(1|2|3)  [QSS2]', default = 'QSS2' )
     parser.add_argument( '--rTol', help = 'relative tolerance  [FMU]', type = float )
     parser.add_argument( '--aTol', help = 'absolute tolerance  [1e-6]', type = float, default = 1.0e-6 )
     parser.add_argument( '--tEnd', help = 'simulation end time  [FMU]', type = float )
@@ -162,6 +162,7 @@ def fmu_qss_gen():
         QSS_option_file.write( '#ifndef FMU_QSS_options_hh_INCLUDED\n' )
         QSS_option_file.write( '#define FMU_QSS_options_hh_INCLUDED\n' )
         QSS_option_file.write( 'QSS::options::QSS const fmu_qss_qss( QSS::options::QSS::' + args.qss + ' );\n' )
+        QSS_option_file.write( 'int const fmu_qss_order( ' + args.qss[ -1 ] + ' );\n' )
         if args.rTol is not None:
             QSS_option_file.write( 'double const fmu_qss_rTol( ' + "{:.16f}".format( args.rTol ) + ' );\n' )
         else:

@@ -259,6 +259,7 @@ fmi2SetupExperiment(
 	// Merge any command line options specified with FMU-QSS QSS options
 	if ( !options::specified::qss ) {
 		options::qss = fmu_qss_qss;
+		options::order = fmu_qss_order;
 		options::specified::qss = true;
 	}
 	if ( toleranceDefined ) {

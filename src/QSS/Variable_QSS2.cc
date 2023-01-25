@@ -50,13 +50,12 @@ namespace QSS {
 		Time const tDel( tE - tX );
 		Real const x_0( x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel ) );
 		Real const q( std::max( rTol * std::abs( x_0 ), aTol ) );
-		Real x_1, x_2;
 
 		fmu_set_time( tE );
 
 		// QSS
-		x_1 = c_1( tE, x_0 );
-		x_2 = c_2( tE, x_1 );
+		Real const x_1( c_1( tE, x_0 ) );
+		Real x_2( c_2( tE, x_1 ) );
 		Time const dt_QSS( x_2 != 0.0 ? std::sqrt( q / std::abs( x_2 ) ) : infinity );
 
 		// LIQSS /////

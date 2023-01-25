@@ -59,13 +59,7 @@ enum class QSS {
  QSS3,
  LIQSS1,
  LIQSS2,
- LIQSS3,
- xQSS1,
- xQSS2,
- xQSS3,
- xLIQSS1,
- xLIQSS2,
- xLIQSS3
+ LIQSS3
 };
 
 // Logging Level Enumerator
@@ -258,7 +252,8 @@ private: // Data
 
 }; // DepSpecs
 
-extern QSS qss; // QSS method: (x)(LI)QSS(1|2|3)
+extern QSS qss; // QSS method: (LI)QSS(1|2|3)
+extern int order; // QSS method order: (1|2|3)
 extern double rTol; // Relative tolerance
 extern double aTol; // Absolute tolerance
 extern double aFac; // Absolute tolerance factor

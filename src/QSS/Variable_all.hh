@@ -43,6 +43,7 @@
 #include <QSS/Variable_LIQSS1.hh>
 #include <QSS/Variable_LIQSS2.hh>
 #include <QSS/Variable_LIQSS3.hh>
+#include <QSS/Variable_time.hh>
 
 // QSS Zero-Crossing Variable Headers
 #include <QSS/Variable_ZC1.hh>

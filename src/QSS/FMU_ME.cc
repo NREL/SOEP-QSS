@@ -963,7 +963,9 @@ namespace QSS {
 						}
 						Variable_QSS * qss_var( nullptr );
 						Real const var_aTol( std::max( options::specified::aTol ? options::aTol : options::rTol * options::aFac * var_nominal, std::numeric_limits< Real >::min() ) ); // Use variable nominal value to set the absolute tolerance unless aTol specified
-						if ( options::qss == options::QSS::QSS1 ) {
+						if ( var_name == "time" ) {
+							qss_var = new Variable_time( this, options::order, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+						} else if ( options::qss == options::QSS::QSS1 ) {
 							qss_var = new Variable_QSS1( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
 						} else if ( options::qss == options::QSS::QSS2 ) {
 							qss_var = new Variable_QSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );

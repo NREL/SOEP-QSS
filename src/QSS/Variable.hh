@@ -132,9 +132,9 @@ protected: // Creation
 	 aTol( std::max( aTol_, std::numeric_limits< Real >::min() ) ),
 	 zTol( std::max( zTol_, 0.0 ) ),
 	 xIni( xIni_ ),
-	 dt_min( is_time_ ? 0.0 : options::dtMin ),
-	 dt_max( is_time_ ? infinity : options::dtMax ),
-	 dt_inf_( is_time_ ? infinity : options::dtInf ),
+	 dt_min( options::dtMin ),
+	 dt_max( options::dtMax ),
+	 dt_inf_( options::dtInf ),
 	 dt_inf_rlx_( dt_inf_ == infinity ? infinity : 0.5 * dt_inf_ ),
 	 observers_( fmu_me, this ),
 	 fmu_me_( fmu_me ),
@@ -162,9 +162,9 @@ protected: // Creation
 	 rTol( std::max( rTol_, 0.0 ) ),
 	 aTol( std::max( aTol_, std::numeric_limits< Real >::min() ) ),
 	 xIni( xIni_ ),
-	 dt_min( is_time_ ? 0.0 : options::dtMin ),
-	 dt_max( is_time_ ? infinity : options::dtMax ),
-	 dt_inf_( is_time_ ? infinity : options::dtInf ),
+	 dt_min( options::dtMin ),
+	 dt_max( options::dtMax ),
+	 dt_inf_( options::dtInf ),
 	 dt_inf_rlx_( dt_inf_ == infinity ? infinity : 0.5 * dt_inf_ ),
 	 observers_( fmu_me, this ),
 	 fmu_me_( fmu_me ),
@@ -188,9 +188,9 @@ protected: // Creation
 	 order_( order ),
 	 is_time_( name == "time" ),
 	 xIni( xIni_ ),
-	 dt_min( is_time_ ? 0.0 : options::dtMin ),
-	 dt_max( is_time_ ? infinity : options::dtMax ),
-	 dt_inf_( is_time_ ? infinity : options::dtInf ),
+	 dt_min( options::dtMin ),
+	 dt_max( options::dtMax ),
+	 dt_inf_( options::dtInf ),
 	 dt_inf_rlx_( dt_inf_ == infinity ? infinity : 0.5 * dt_inf_ ),
 	 observers_( fmu_me, this ),
 	 fmu_me_( fmu_me ),
@@ -1951,7 +1951,7 @@ protected: // Methods
 	Time
 	dt_infinity( Time const dt ) const
 	{
-		if ( ( dt_inf_ == infinity ) || is_time_ ) return dt; // Deactivation control is not enabled
+		if ( dt_inf_ == infinity ) return dt; // Deactivation control is not enabled
 		if ( dt >= dt_inf_ ) { // Apply deactivation control
 			return ( dt_inf_rlx_ < half_infinity ? std::min( dt_inf_rlx_ *= 2.0, dt ) : dt ); // Use min of relaxed deactivation time step and dt
 		} else { // Reset relaxed deactivation time step

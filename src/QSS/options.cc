@@ -48,7 +48,8 @@
 namespace QSS {
 namespace options {
 
-QSS qss( QSS::QSS2 ); // QSS method: (x)(LI)QSS(1|2|3)
+QSS qss( QSS::QSS2 ); // QSS method: (LI)QSS(1|2|3)
+int order( 2 ); // QSS method order: (1|2|3)
 double rTol( 1.0e-4 ); // Relative tolerance
 double aTol( 1.0e-6 ); // Absolute tolerance
 double aFac( 0.01 ); // Absolute tolerance factor
@@ -242,28 +243,22 @@ process_args( Args const & args )
 			std::string const qss_name( uppercased( arg_value( arg ) ) );
 			if ( qss_name == "QSS1" ) {
 				qss = QSS::QSS1;
+				order = 1;
 			} else if ( qss_name == "QSS2" ) {
 				qss = QSS::QSS2;
+				order = 2;
 			} else if ( qss_name == "QSS3" ) {
 				qss = QSS::QSS3;
+				order = 3;
 			} else if ( qss_name == "LIQSS1" ) {
 				qss = QSS::LIQSS1;
+				order = 1;
 			} else if ( qss_name == "LIQSS2" ) {
 				qss = QSS::LIQSS2;
+				order = 2;
 			} else if ( qss_name == "LIQSS3" ) {
 				qss = QSS::LIQSS3;
-			} else if ( qss_name == "XQSS1" ) {
-				qss = QSS::xQSS1;
-			} else if ( qss_name == "XQSS2" ) {
-				qss = QSS::xQSS2;
-			} else if ( qss_name == "XQSS3" ) {
-				qss = QSS::xQSS3;
-			} else if ( qss_name == "XLIQSS1" ) {
-				qss = QSS::xLIQSS1;
-			} else if ( qss_name == "XLIQSS2" ) {
-				qss = QSS::xLIQSS2;
-			} else if ( qss_name == "XLIQSS3" ) {
-				qss = QSS::xLIQSS3;
+				order = 3;
 			} else {
 				std::cerr << "\nError: Unsupported QSS method: " << qss_name << std::endl;
 				fatal = true;
