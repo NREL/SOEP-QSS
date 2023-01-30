@@ -188,7 +188,7 @@ public: // Methods
 		if ( options::stiff ) liqss_qss_ratio_pass();
 		Time const tDel( tE - tX );
 		tQ = tX = tE;
-		q_0_ = x_0_ += ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
+		q_0_ = x_0_ += ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel;
 		q_1_ = x_1_ = c_1( tE, x_0_ );
 		if ( fwd_time_ND( tE ) ) { // Use centered ND formulas
 			q_2_ = x_2_ = c_2( tE );
@@ -212,7 +212,7 @@ public: // Methods
 		if ( options::stiff ) liqss_qss_ratio_pass();
 		Time const tDel( tE - tX );
 		tQ = tX = tE;
-		q_0_ = x_0_ += ( ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel );
+		q_0_ = x_0_ += ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel;
 	}
 
 	// QSS Advance: Stage 1

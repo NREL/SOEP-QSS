@@ -159,7 +159,7 @@ public: // Methods
 		if ( options::stiff ) liqss_qss_ratio_pass();
 		Time const tDel( tE - tX );
 		tX = tQ = tE;
-		q_0_ = x_0_ += ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		q_0_ = x_0_ += ( x_1_ + ( x_2_ * tDel ) ) * tDel;
 		q_1_ = x_1_ = c_1( tE, x_0_ );
 		x_2_ = c_2( tE, x_1_ );
 		set_qTol();
@@ -177,7 +177,7 @@ public: // Methods
 		if ( options::stiff ) liqss_qss_ratio_pass();
 		Time const tDel( tE - tX );
 		tX = tQ = tE;
-		q_0_ = x_0_ += ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		q_0_ = x_0_ += ( x_1_ + ( x_2_ * tDel ) ) * tDel;
 	}
 
 	// QSS Advance: Stage 1
@@ -302,7 +302,7 @@ public: // Methods
 		assert( ( tX <= t ) && ( t <= tE ) );
 		Time const tDel( t - tX );
 		tX = t;
-		x_0_ += ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		x_0_ += ( x_1_ + ( x_2_ * tDel ) ) * tDel;
 		x_1_ = x_1;
 	}
 
