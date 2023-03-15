@@ -757,6 +757,10 @@ public: // Methods
 	void
 	observe( Variable * v );
 
+	// Uniquify Observees
+	void
+	uniquify_observees();
+
 	// Initialize Observees
 	void
 	init_observees();
@@ -1955,7 +1959,7 @@ protected: // Methods
 		if ( dt >= dt_inf_ ) { // Apply deactivation control
 			return ( dt_inf_rlx_ < half_infinity ? std::min( dt_inf_rlx_ *= 2.0, dt ) : dt ); // Use min of relaxed deactivation time step and dt
 		} else { // Reset relaxed deactivation time step
-			dt_inf_rlx_ = dt_inf_;
+			dt_inf_rlx_ = 0.5 * dt_inf_;
 			return dt;
 		}
 	}

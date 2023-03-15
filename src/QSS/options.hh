@@ -298,8 +298,9 @@ extern LogLevel log; // Logging level
 extern InpFxn fxn; // Map from input variables to function specs
 extern InpOut con; // Map from input variables to output variables
 extern DepSpecs dep; // Additional forward dependencies
-extern std::string out; // Outputs: r, a, s, x, q, f
+extern std::string out; // Outputs
 extern bool csv; // CSV results file?
+extern std::string dot; // Dot graph outputs
 extern std::pair< double, double > tLoc; // Local output time range (s)
 extern std::string var; // Variable output filter file
 extern Models models; // Name of model(s) or FMU(s)
@@ -315,6 +316,7 @@ extern bool dtOut; // Sampled output time step specified?
 extern bool tEnd; // End time specified?
 extern bool tLoc; // Local output time range specified?
 extern bool bin; // Bin controls specified?
+extern bool dot; // Dot output specified
 
 } // specified
 
@@ -336,6 +338,14 @@ extern bool L; // FMU local variables?
 extern bool K; // FMU-QSS smooth tokens?
 
 } // output
+
+namespace dot_graph { // Dot graph selections
+
+extern bool d; // Dependency graph?
+extern bool r; // Computational Observer graph?
+extern bool e; // Computational Observee graph?
+
+} // dot_graph
 
 // Process command line arguments
 void

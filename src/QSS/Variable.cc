@@ -60,6 +60,15 @@ namespace QSS {
 		}
 	}
 
+	// Uniquify Observees
+	void
+	Variable::
+	uniquify_observees()
+	{
+		observes_ = !observees_.empty();
+		if ( observes_ ) uniquify( observees_ ); // Sort by address and remove duplicates
+	}
+
 	// Initialize Observees
 	void
 	Variable::

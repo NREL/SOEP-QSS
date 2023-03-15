@@ -96,6 +96,7 @@ InpOut con; // Map from input variables to output variables
 DepSpecs dep; // Additional forward dependencies
 std::string out; // Outputs
 bool csv( false ); // CSV results file?
+std::string dot; // Dot graph outputs
 std::pair< double, double > tLoc( 0.0, 0.0 ); // Local output time range (s)
 std::string var; // Variable output filter file
 Models models; // Name of model(s) or FMU(s)
@@ -111,6 +112,7 @@ bool dtOut( false ); // Sampled output time step specified?
 bool tEnd( false ); // End time specified?
 bool tLoc( false ); // Local output time range specified?
 bool bin( false ); // Bin controls specified?
+bool dot( false ); // Dot output specified
 
 } // specified
 
@@ -132,6 +134,14 @@ bool L( false ); // FMU local variables?
 bool K( false ); // FMU-QSS smooth tokens?
 
 } // output
+
+namespace dot_graph { // Dot graph selections
+
+bool d( false ); // Dependency graph?
+bool r( false ); // Computational Observer graph?
+bool e( false ); // Computational Observee graph?
+
+} // dot_graph
 
 // Help Display
 void
@@ -213,6 +223,10 @@ help_display()
 	std::cout << "       L  Local variables" << '\n';
 	std::cout << "       K  FMU-QSS smooth tokens" << '\n';
 	std::cout << " --csv  Output CSV results file" << '\n';
+	std::cout << " --dot=GRAPHS  Outputs  [dre]" << '\n';
+	std::cout << "       d  Dependency graph" << '\n';
+	std::cout << "       r  Computational Observer graph" << '\n';
+	std::cout << "       e  Computational Observee graph" << '\n';
 	std::cout << " --tLoc=TIME1:TIME2  FMU local variable full output time range (s)" << '\n';
 	std::cout << " --var=FILE  Variable output spec file" << '\n';
 	std::cout << '\n';
@@ -803,6 +817,22 @@ process_args( Args const & args )
 			output::K = has( out, 'K' );
 		} else if ( has_option( arg, "csv" ) ) {
 			csv = true;
+		} else if ( has_option( arg, "dot" ) || has_value_option( arg, "dot" ) ) {
+			specified::dot = true;
+			static std::string const dot_flags( "dre" );
+			out = arg_value( arg );
+			if ( out.empty() ) { // Default to all dot graphs if --dot specified with no argument
+				dot_graph::d = true;
+				dot_graph::r = true;
+				dot_graph::e = true;
+			} else if ( has_any_not_of( out, dot_flags ) ) {
+				std::cerr << "\nError: Dot graph option has flag not in " << dot_flags << ": " << out << std::endl;
+				fatal = true;
+			} else {
+				dot_graph::d = has( dot, 'd' );
+				dot_graph::r = has( dot, 'r' );
+				dot_graph::e = has( dot, 'e' );
+			}
 		} else if ( has_value_option( arg, "tLoc" ) ) {
 			specified::tLoc = true;
 			std::string const tLoc_str( arg_value( arg ) );

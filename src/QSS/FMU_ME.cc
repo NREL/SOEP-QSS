@@ -1755,11 +1755,12 @@ namespace QSS {
 		}
 
 		// Generate Direct Dependency Graph
-		if ( options::output::d ) {
+		if ( ( options::specified::dot ) && ( options::dot_graph::d ) ) {
 			std::ofstream dependency_graph( name + ".Dependency.gv", std::ios_base::binary | std::ios_base::out );
 			dependency_graph << "digraph " << name << " {\n";
 			dependency_graph << "  label=\"" << name << " Direct Dependency Graph" << "\"; labelloc=\"t\"\n";
 			for ( auto var : sorted_by_name( vars ) ) { // Variable dependencies
+				var->uniquify_observees();
 				if ( var->self_observer() ) {
 					dependency_graph << "  \"" << var->name() << "\" -> \"" << var->name() << "\"\n";
 				}
@@ -2152,7 +2153,7 @@ namespace QSS {
 		}
 
 		// Generate Computational Observee Graph
-		if ( options::output::d ) {
+		if ( ( options::specified::dot ) && ( options::dot_graph::e ) ) {
 			std::ofstream observee_graph( name + ".Observee.gv", std::ios_base::binary | std::ios_base::out );
 			observee_graph << "digraph " << name << " {\n";
 			observee_graph << "  label=\"" << name << " Computational Observee Graph" << "\"; labelloc=\"t\"\n";
@@ -2173,8 +2174,8 @@ namespace QSS {
 			observee_graph.close();
 		}
 
-		if ( options::output::d ) {
-			// Generate Computational Observer Graph
+		// Generate Computational Observer Graph
+		if ( ( options::specified::dot ) && ( options::dot_graph::r ) ) {
 			std::ofstream observer_graph( name + ".Observer.gv", std::ios_base::binary | std::ios_base::out );
 			observer_graph << "digraph " << name << " {\n";
 			observer_graph << "  label=\"" << name << " Computational Observer Graph" << "\"; labelloc=\"t\"\n";

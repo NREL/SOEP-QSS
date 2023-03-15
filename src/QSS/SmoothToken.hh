@@ -176,7 +176,7 @@ public: // Creation
 		return SmoothToken( x0, x1, x2, x3, tD );
 	}
 
-public: // Property
+public: // Predicate
 
 	// Has a Discrete Event?
 	bool
@@ -184,6 +184,8 @@ public: // Property
 	{
 		return tD < infinity;
 	}
+
+public: // Property
 
 	// String Representation
 	std::string
