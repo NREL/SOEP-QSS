@@ -1973,7 +1973,7 @@ private: // Methods
 
 	// Find Short-Circuited Computational State and Input Observees
 	void
-	find_computational_observees_of(
+	find_computational_observees(
 	 Variables & observees,
 	 VariablesSet & observees_checked,
 	 VariablesSet & observees_set
@@ -1985,7 +1985,7 @@ private: // Methods
 				if ( observee->is_state() || observee->is_Input() ) { // State or input => Computational
 					observees_set.insert( observee );
 				} else { // Traverse dependency sub-graph
-					find_computational_observees_of( observee->observees_, observees_checked, observees_set ); // Recurse
+					find_computational_observees( observee->observees_, observees_checked, observees_set ); // Recurse
 				}
 			}
 		}

@@ -544,7 +544,7 @@ private: // Methods
 			if ( observer->not_State() ) { // X-based
 				if ( observers_checked.find( observer ) == observers_checked.end() ) { // Observer not already processed
 					observers_checked.insert( observer );
-					assert( observer != trigger_ );
+					if ( observer == trigger_ ) continue;
 					if ( observer->is_Active() ) observers_set.insert( observer ); // Active => Computational
 					find_computational_X_observers( observer->observers(), observers_checked, observers_set ); // Recurse
 				}

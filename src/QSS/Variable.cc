@@ -77,7 +77,7 @@ namespace QSS {
 		// Observees setup
 		VariablesSet observees_checked;
 		VariablesSet observees_set;
-		find_computational_observees_of( observees_, observees_checked, observees_set ); // Note: Looks at other variable observees that aren't necessarily uniquified yet but that is OK: Might be more efficient to make this a separate phase after all are uniquified
+		find_computational_observees( observees_, observees_checked, observees_set ); // Note: Looks at other variable observees that aren't necessarily uniquified yet but that is OK: Might be more efficient to make this a separate phase after all are uniquified
 		observees_.clear();
 		if ( !observees_set.empty() ) {
 			for ( Variable * observee : observees_set ) {

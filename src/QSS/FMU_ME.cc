@@ -632,9 +632,12 @@ namespace QSS {
 						assert( dep_var.idx != ide ); // OCT removes derivative self-dependencies
 						derivative_observees = true;
 						dep_var_observees.erase( std::next( dep_var_observees.begin(), ioe ) ); // Remove the derivative observee
-						dep::Variable::Observees const & der_var_observees( fmu_dependencies[ ide ].observees );
-						assert( !std::binary_search( der_var_observees.begin(), der_var_observees.end(), ide ) ); // OCT removes derivative self-dependencies
-						for ( dep::Variable::Index const der_var_observee_idx : der_var_observees ) new_dep_var_observees.push_back( der_var_observee_idx );
+						FMU_Dependencies::iterator i_ide( fmu_dependencies.find( ide ) );
+						if ( i_ide != fmu_dependencies.end() ) { // Derivative has dependencies
+							dep::Variable::Observees const & der_var_observees( i_ide->second.observees );
+							assert( !std::binary_search( der_var_observees.begin(), der_var_observees.end(), ide ) ); // OCT removes derivative self-dependencies
+							for ( dep::Variable::Index const der_var_observee_idx : der_var_observees ) new_dep_var_observees.push_back( der_var_observee_idx );
+						}
 					}
 				}
 				if ( !new_dep_var_observees.empty() ) { // Merge in derivative dependencies
