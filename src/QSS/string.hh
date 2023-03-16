@@ -39,7 +39,6 @@
 // C++ Headers
 #include <cstdlib>
 #include <cstddef>
-#include <cstring>
 #include <limits>
 #include <string>
 #include <vector>
@@ -90,9 +89,9 @@ is_double( std::string const & s )
 	return ( ( end != str ) && is_tail( end ) );
 }
 
-// char is in a cstring?
+// char is in a string?
 bool
-is_any_of( char const c, char const * const s );
+is_any_of( char const c, std::string const & s );
 
 // Has a Character?
 bool
@@ -106,13 +105,9 @@ HAS( std::string const & s, char const c );
 bool
 has_any_not_of( std::string const & s, std::string const & t );
 
-// Has a Prefix Case-Optionally?
-bool
-has_prefix( std::string const & s, std::string const & pre );
-
 // Has a Prefix?
 bool
-has_prefix( std::string const & s, char const * const pre );
+has_prefix( std::string const & s, std::string const & pre );
 
 // Has a Suffix Case-Optionally?
 bool
@@ -120,15 +115,15 @@ has_suffix( std::string const & s, std::string const & suf );
 
 // Has a Suffix?
 bool
-has_suffix( std::string const & s, char const * const suf );
+has_suffix( std::string const & s, std::string const & suf );
 
-// Has an Option (Case-Insensitive)?
+// Has an Option Without a Value (Case-Insensitive)?
 bool
-has_option( std::string const & s, char const * const option );
+has_option( std::string const & s, std::string const & option );
 
-// Has a Value Option (Case-Insensitive)?
+// Has an Option With a Value (Case-Insensitive)?
 bool
-has_value_option( std::string const & s, char const * const option );
+has_option_value( std::string const & s, std::string const & option );
 
 // int of a string
 inline
@@ -170,14 +165,13 @@ split( std::string const & str, char del = ' ' );
 std::string &
 strip( std::string & s );
 
-// Argument Value
-inline
+// Option Separator
+char
+option_sep( std::string const & s, std::string const & option );
+
+// Option Value
 std::string
-arg_value( std::string const & arg )
-{
-	std::string::size_type const i( arg.find_first_of( "=:" ) );
-	return ( i != std::string::npos ? arg.substr( i + 1 ) : std::string() );
-}
+option_value( std::string const & arg, std::string const & option );
 
 } // QSS
 

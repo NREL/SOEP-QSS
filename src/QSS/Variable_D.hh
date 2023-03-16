@@ -155,6 +155,7 @@ public: // Methods
 	advance_handler( Time const t ) override
 	{
 		assert( tX <= t );
+		tS = t - tQ;
 		tQ = tX = t;
 		Real const x_new( d_f() );
 		if ( x_ != x_new ) {
@@ -171,6 +172,7 @@ public: // Methods
 	advance_handler_0( Time const t, Real const x_0 ) override
 	{
 		assert( tX <= t );
+		tS = t - tQ;
 		tQ = tX = t;
 		x_chg_ = ( x_ != x_0 );
 		if ( x_chg_ ) x_ = x_0;
@@ -199,6 +201,7 @@ public: // Methods
 	advance_observer_1( Time const t ) override
 	{
 		assert( tX <= t );
+		tS = t - tQ;
 		tQ = tX = t;
 		Real const x_new( d_0( t ) );
 		x_chg_ = ( x_ != x_new );

@@ -97,11 +97,11 @@ TEST( StringTest, Predicate )
 	EXPECT_FALSE( has_option( "-run", "run" ) );
 	EXPECT_FALSE( has_option( "--yes", "run" ) );
 
-	EXPECT_TRUE( has_value_option( "--run=now", "run" ) );
-	EXPECT_TRUE( has_value_option( "--run:now", "run" ) );
-	EXPECT_TRUE( has_value_option( "--run=", "run" ) );
-	EXPECT_FALSE( has_value_option( "--run", "run" ) );
-	EXPECT_FALSE( has_value_option( "--opt=val", "run" ) );
+	EXPECT_TRUE( has_option_value( "--run=now", "run" ) );
+	EXPECT_TRUE( has_option_value( "--run:now", "run" ) );
+	EXPECT_TRUE( has_option_value( "--run=", "run" ) );
+	EXPECT_FALSE( has_option_value( "--run", "run" ) );
+	EXPECT_FALSE( has_option_value( "--opt=val", "run" ) );
 }
 
 TEST( StringTest, ConversionTo )

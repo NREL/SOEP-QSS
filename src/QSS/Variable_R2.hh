@@ -193,6 +193,7 @@ public: // Methods
 	void
 	advance_QSS() override
 	{
+		tS = tE - tQ;
 		tQ = tX = tE;
 		x_0_ = r_0();
 		x_1_ = n_1();
@@ -209,6 +210,7 @@ public: // Methods
 	void
 	advance_QSS_0( Real const x_0 ) override
 	{
+		tS = tE - tQ;
 		tQ = tX = tE;
 		x_0_ = x_0;
 	}
@@ -257,6 +259,7 @@ public: // Methods
 	advance_handler( Time const t ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
+		tS = t - tQ;
 		tQ = tX = t;
 		x_0_ = r_f();
 		x_1_ = n_1();
@@ -274,6 +277,7 @@ public: // Methods
 	advance_handler_0( Time const t, Real const x_0 ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
+		tS = t - tQ;
 		tQ = tX = t;
 		x_0_ = x_0;
 	}
@@ -329,6 +333,7 @@ public: // Methods
 	advance_observer_1( Time const t, Real const x_0, Real const x_1 ) override
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
+		tS = t - tQ;
 		tQ = tX = t;
 		x_0_ = x_0;
 		x_1_ = x_1;

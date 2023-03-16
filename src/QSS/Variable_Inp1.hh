@@ -148,6 +148,7 @@ public: // Methods
 	void
 	advance_discrete() override
 	{
+		tS = tD - tQ;
 		s_ = f_( tQ = tX = tD );
 		x_0_ = s_.x0;
 		x_1_ = s_.x1;
@@ -163,6 +164,7 @@ public: // Methods
 	void
 	advance_discrete_simultaneous() override
 	{
+		tS = tD - tQ;
 		s_ = f_( tQ = tX = tD );
 		x_0_ = s_.x0;
 		x_1_ = s_.x1;

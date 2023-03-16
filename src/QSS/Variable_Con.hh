@@ -185,6 +185,7 @@ public: // Methods
 		tQ = out_var_->tQ;
 		tX = out_var_->tX;
 		tE = out_var_->tE;
+		tS = out_var_->tS;
 		Real const x_0( out_var_->x( tQ ) );
 		fmu_set_real( x_0 );
 		if ( options::output::d ) {
@@ -205,6 +206,7 @@ public: // Methods
 		tQ = out_var_->tQ;
 		tX = out_var_->tX;
 		tE = out_var_->tE;
+		tS = out_var_->tS;
 		Real const x_( out_var_->x( t ) );
 		fmu_set_time( t ); // Different FMU-ME than trigger
 		fmu_set_real( x_ );
@@ -219,6 +221,7 @@ public: // Methods
 		assert( out_var_ != nullptr );
 		tX = out_var_->tX;
 		tE = out_var_->tE;
+		tS = out_var_->tS;
 	}
 
 private: // Data

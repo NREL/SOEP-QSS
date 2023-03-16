@@ -142,6 +142,7 @@ public: // Methods
 	void
 	advance_discrete() override
 	{
+		tS = tD - tQ;
 		s_ = f_( tQ = tX = tD );
 		Integer const x_new( static_cast< Integer >( s_.x0 ) );
 		tD = s_.tD;
@@ -156,6 +157,7 @@ public: // Methods
 	void
 	advance_discrete_simultaneous() override
 	{
+		tS = tD - tQ;
 		s_ = f_( tQ = tX = tD );
 		Integer const x_new( static_cast< Integer >( s_.x0 ) );
 		tD = s_.tD;

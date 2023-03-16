@@ -59,11 +59,11 @@ is_tail( char const * end )
 	return ( *end == '\0' );
 }
 
-// char is in a cstring?
+// char is in a string?
 bool
-is_any_of( char const c, char const * const s )
+is_any_of( char const c, std::string const & s )
 {
-	for ( std::size_t i = 0, e = std::strlen( s ); i < e; ++i ) {
+	for ( std::size_t i = 0, e = s.length(); i < e; ++i ) {
 		if ( c == s[ i ] ) return true;
 	}
 	return false;
@@ -117,26 +117,6 @@ has_prefix( std::string const & s, std::string const & pre )
 	}
 }
 
-// Has a Prefix?
-bool
-has_prefix( std::string const & s, char const * const pre )
-{
-	std::string::size_type const pre_len( std::strlen( pre ) );
-	if ( pre_len == 0 ) {
-		return false;
-	} else {
-		std::string::size_type const s_len( s.length() );
-		if ( s_len < pre_len ) {
-			return false;
-		} else {
-			for ( std::string::size_type i = 0; i < pre_len; ++i ) {
-				if ( s[ i ] != pre[ i ] ) return false;
-			}
-			return true;
-		}
-	}
-}
-
 // Has a Suffix?
 bool
 has_suffix( std::string const & s, std::string const & suf )
@@ -158,56 +138,37 @@ has_suffix( std::string const & s, std::string const & suf )
 	}
 }
 
-// Has a Suffix?
+// Has an Option Without a Value (Case-Insensitive)?
 bool
-has_suffix( std::string const & s, char const * const suf )
+has_option( std::string const & s, std::string const & option )
 {
-	std::string::size_type const suf_len( std::strlen( suf ) );
-	if ( suf_len == 0 ) {
+	std::string::size_type const option_len( option.length() );
+	if ( s.length() != option_len + 2u ) {
+		return false;
+	} else if ( ( s[ 0 ] != '-' ) || ( s[ 1 ] != '-' ) ) {
 		return false;
 	} else {
-		std::string::size_type const s_len( s.length() );
-		if ( s_len < suf_len ) {
-			return false;
-		} else {
-			std::string::size_type const del_len( s_len - suf_len );
-			for ( std::string::size_type i = 0; i < suf_len; ++i ) {
-				if ( s[ del_len + i ] != suf[ i ] ) return false;
-			}
-			return true;
-		}
-	}
-}
-
-// Has an Option (Case-Insensitive)?
-bool
-has_option( std::string const & s, char const * const option )
-{
-	std::string const opt( "--" + std::string( option ) );
-	std::string::size_type const opt_len( opt.length() );
-	if ( s.length() != opt_len ) {
-		return false;
-	} else {
-		for ( std::string::size_type i = 0; i < opt_len; ++i ) {
-			if ( std::tolower( s[ i ] ) != std::tolower( opt[ i ] ) ) return false;
+		for ( std::string::size_type i = 0; i < option_len; ++i ) {
+			if ( std::tolower( s[ i + 2 ] ) != std::tolower( option[ i ] ) ) return false;
 		}
 		return true;
 	}
 }
 
-// Has a Value Option (Case-Insensitive)?
+// Has an Option With a Value (Case-Insensitive)?
 bool
-has_value_option( std::string const & s, char const * const option )
+has_option_value( std::string const & s, std::string const & option )
 {
-	std::string const opt( "--" + std::string( option ) );
-	std::string::size_type const opt_len( opt.length() );
-	if ( s.length() <= opt_len ) {
+	std::string::size_type const option_len( option.length() );
+	if ( s.length() <= option_len + 2u ) {
+		return false;
+	} else if ( ( s[ 0 ] != '-' ) || ( s[ 1 ] != '-' ) ) {
 		return false;
 	} else {
-		for ( std::string::size_type i = 0; i < opt_len; ++i ) {
-			if ( std::tolower( s[ i ] ) != std::tolower( opt[ i ] ) ) return false;
+		for ( std::string::size_type i = 0; i < option_len; ++i ) {
+			if ( std::tolower( s[ i + 2 ] ) != std::tolower( option[ i ] ) ) return false;
 		}
-		return ( s[ opt_len ] == '=' ) || ( s[ opt_len ] == ':' );
+		return is_any_of( s[ option_len + 2u ], "=:+-" );
 	}
 }
 
@@ -262,6 +223,32 @@ strip( std::string & s )
 		}
 	}
 	return s;
+}
+
+// Option Separator
+char
+option_sep( std::string const & s, std::string const & option )
+{
+	assert( has_option_value( s, option ) );
+	std::string::size_type const option_len( option.length() );
+	if ( s.length() > option_len + 3u ) { // Has value
+		return s[ option.length() + 2u ];
+	} else { // No value
+		return ' ';
+	}
+}
+
+// Option Value
+std::string
+option_value( std::string const & s, std::string const & option )
+{
+	assert( has_option_value( s, option ) );
+	std::string::size_type const option_len( option.length() );
+	if ( s.length() > option_len + 3u ) { // Has value
+		return s.substr( option.length() + 3u );
+	} else { // No value
+		return std::string();
+	}
 }
 
 } // QSS

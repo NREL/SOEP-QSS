@@ -202,6 +202,7 @@ public: // Methods
 	advance_QSS() override
 	{
 		Time const tDel( tE - tX );
+		tS = tE - tQ;
 		tQ = tX = tE;
 		q_c_ = x_0_ += ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel;
 		set_qTol();
@@ -230,6 +231,7 @@ public: // Methods
 	advance_QSS_0() override
 	{
 		Time const tDel( tE - tX );
+		tS = tE - tQ;
 		tQ = tX = tE;
 		q_c_ = q_0_ = x_0_ += ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel;
 	}
@@ -297,6 +299,7 @@ public: // Methods
 	advance_handler( Time const t ) override
 	{
 		assert( ( tQ <= t ) && ( tX <= t ) && ( t <= tE ) );
+		tS = t - tQ;
 		tQ = tX = t;
 		q_c_ = q_0_ = x_0_ = p_0();
 		q_1_ = x_1_ = h_1();
@@ -320,6 +323,7 @@ public: // Methods
 	advance_handler_0( Time const t, Real const x_0 ) override
 	{
 		assert( ( tQ <= t ) && ( tX <= t ) && ( t <= tE ) );
+		tS = t - tQ;
 		tQ = tX = t;
 		q_c_ = q_0_ = x_0_ = x_0;
 	}

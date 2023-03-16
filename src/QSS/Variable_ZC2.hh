@@ -160,6 +160,7 @@ public: // Methods
 	advance_QSS() override
 	{
 		advance_pre( tE );
+		tS = tE - tQ;
 		tQ = tX = tE;
 		x_0_ = z_0();
 		x_1_ = n_1();
@@ -175,6 +176,7 @@ public: // Methods
 	advance_QSS_0( Real const x_0 ) override
 	{
 		advance_pre( tE );
+		tS = tE - tQ;
 		tQ = tX = tE;
 		x_0_ = x_0;
 	}
@@ -237,6 +239,7 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		advance_pre( t );
+		tS = t - tQ;
 		tQ = tX = t;
 		x_0_ = p_0();
 		x_1_ = n_1();
@@ -253,6 +256,7 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		advance_pre( t );
+		tS = t - tQ;
 		tQ = tX = t;
 		x_0_ = x_0;
 	}
@@ -308,6 +312,7 @@ public: // Methods
 	{
 		assert( ( tX <= t ) && ( t <= tE ) );
 		advance_pre( t );
+		tS = t - tQ;
 		tQ = tX = t;
 		x_0_ = ( !handler_modified_ && ( t == tZ_last ) ? 0.0 : x_0 ); // Force exact zero if at zero-crossing time
 		x_1_ = x_1;

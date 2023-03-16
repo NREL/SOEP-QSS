@@ -94,9 +94,7 @@ LogLevel log( LogLevel::warning ); // Logging level
 InpFxn fxn; // Map from input variables to function specs
 InpOut con; // Map from input variables to output variables
 DepSpecs dep; // Additional forward dependencies
-std::string out; // Outputs
 bool csv( false ); // CSV results file?
-std::string dot; // Dot graph outputs
 std::pair< double, double > tLoc( 0.0, 0.0 ); // Local output time range (s)
 std::string var; // Variable output filter file
 Models models; // Name of model(s) or FMU(s)
@@ -112,7 +110,6 @@ bool dtOut( false ); // Sampled output time step specified?
 bool tEnd( false ); // End time specified?
 bool tLoc( false ); // Local output time range specified?
 bool bin( false ); // Bin controls specified?
-bool dot( false ); // Dot output specified
 
 } // specified
 
@@ -128,6 +125,7 @@ bool D( true ); // Discrete events?
 bool S( false ); // Sampled?
 bool X( true ); // Continuous trajectories?
 bool Q( false ); // Quantized trajectories?
+bool T( false ); // Time step?
 bool A( false ); // All variables?
 bool F( false ); // FMU output variables?
 bool L( false ); // FMU local variables?
@@ -217,6 +215,7 @@ help_display()
 	std::cout << "       S  Sampled (@ dtOut)" << '\n';
 	std::cout << "       X  Continuous trajectories" << '\n';
 	std::cout << "       Q  Quantized trajectories" << '\n';
+	std::cout << "       T  Time steps" << '\n';
 	std::cout << "       A  All variables at every event" << '\n';
 	std::cout << "     FMU Variables (sampled @ dtOut):" << '\n';
 	std::cout << "       F  Ouput variables" << '\n';
@@ -252,9 +251,9 @@ process_args( Args const & args )
 		} else if ( ( arg == "--version" ) || ( arg == "-v" ) ) { // Show version
 			std::cout << "\nSOEP-QSS " << version() << '\n';
 			version_arg = true;
-		} else if ( has_value_option( arg, "qss" ) ) {
+		} else if ( has_option_value( arg, "qss" ) ) {
 			specified::qss = true;
-			std::string const qss_name( uppercased( arg_value( arg ) ) );
+			std::string const qss_name( uppercased( option_value( arg, "qss" ) ) );
 			if ( qss_name == "QSS1" ) {
 				qss = QSS::QSS1;
 				order = 1;
@@ -299,8 +298,8 @@ process_args( Args const & args )
 			steps = true;
 		} else if ( has_option( arg, "stiff" ) || has_option( arg, "stiffness" ) ) {
 			stiff = true;
-		} else if ( has_value_option( arg, "log" ) ) { // Accept PyFMI numeric logging levels for scripting convenience
-			std::string const log_str( lowercased( arg_value( arg ) ) );
+		} else if ( has_option_value( arg, "log" ) ) { // Accept PyFMI numeric logging levels for scripting convenience
+			std::string const log_str( lowercased( option_value( arg, "log" ) ) );
 			if ( ( log_str == "fatal" ) || ( log_str == "f" ) || ( log_str == "0" ) ) {
 				log = LogLevel::fatal;
 			} else if ( ( log_str == "error" ) || ( log_str == "e" ) || ( log_str == "1" ) ) {
@@ -319,9 +318,9 @@ process_args( Args const & args )
 				std::cerr << "\nError: Unrecognized log level: " << log_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "rTol" ) ) {
+		} else if ( has_option_value( arg, "rTol" ) ) {
 			specified::rTol = true;
-			std::string const rTol_str( arg_value( arg ) );
+			std::string const rTol_str( option_value( arg, "rTol" ) );
 			if ( is_double( rTol_str ) ) {
 				rTol = double_of( rTol_str );
 				if ( rTol < 0.0 ) {
@@ -335,9 +334,9 @@ process_args( Args const & args )
 			if ( rTol >= 1.0 ) {
 				std::cerr << "\nWarning: rTol >= 1: " << rTol << std::endl;
 			}
-		} else if ( has_value_option( arg, "aTol" ) ) {
+		} else if ( has_option_value( arg, "aTol" ) ) {
 			specified::aTol = true;
-			std::string const aTol_str( arg_value( arg ) );
+			std::string const aTol_str( option_value( arg, "aTol" ) );
 			if ( is_double( aTol_str ) ) {
 				aTol = double_of( aTol_str );
 				if ( aTol == 0.0 ) {
@@ -351,8 +350,8 @@ process_args( Args const & args )
 				std::cerr << "\nError: Nonnumeric aTol: " << aTol_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "aFac" ) ) {
-			std::string const aFac_str( arg_value( arg ) );
+		} else if ( has_option_value( arg, "aFac" ) ) {
+			std::string const aFac_str( option_value( arg, "aFac" ) );
 			if ( is_double( aFac_str ) ) {
 				aFac = double_of( aFac_str );
 				if ( aFac <= 0.0 ) {
@@ -363,9 +362,9 @@ process_args( Args const & args )
 				std::cerr << "\nError: Nonnumeric aFac: " << aFac_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "zTol" ) ) {
+		} else if ( has_option_value( arg, "zTol" ) ) {
 			specified::zTol = true;
-			std::string const zTol_str( arg_value( arg ) );
+			std::string const zTol_str( option_value( arg, "zTol" ) );
 			if ( is_double( zTol_str ) ) {
 				zTol = double_of( zTol_str );
 				if ( zTol < 0.0 ) {
@@ -376,8 +375,8 @@ process_args( Args const & args )
 				std::cerr << "\nError: Nonnumeric zTol: " << zTol_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "zMul" ) ) {
-			std::string const zMul_str( arg_value( arg ) );
+		} else if ( has_option_value( arg, "zMul" ) ) {
+			std::string const zMul_str( option_value( arg, "zMul" ) );
 			if ( is_double( zMul_str ) ) {
 				zMul = double_of( zMul_str );
 				if ( zMul <= 0.0 ) {
@@ -388,8 +387,8 @@ process_args( Args const & args )
 				std::cerr << "\nError: Nonnumeric zMul: " << zMul_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "zFac" ) ) {
-			std::string const zFac_str( arg_value( arg ) );
+		} else if ( has_option_value( arg, "zFac" ) ) {
+			std::string const zFac_str( option_value( arg, "zFac" ) );
 			if ( is_double( zFac_str ) ) {
 				zFac = double_of( zFac_str );
 				if ( zFac <= 0.0 ) {
@@ -400,8 +399,8 @@ process_args( Args const & args )
 				std::cerr << "\nError: Nonnumeric zFac: " << zFac_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "zrFac" ) ) {
-			std::string const zrFac_str( arg_value( arg ) );
+		} else if ( has_option_value( arg, "zrFac" ) ) {
+			std::string const zrFac_str( option_value( arg, "zrFac" ) );
 			if ( is_double( zrFac_str ) ) {
 				zrFac = double_of( zrFac_str );
 				if ( zrFac <= 0.0 ) {
@@ -412,8 +411,8 @@ process_args( Args const & args )
 				std::cerr << "\nError: Nonnumeric zrFac: " << zrFac_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "zaFac" ) ) {
-			std::string const zaFac_str( arg_value( arg ) );
+		} else if ( has_option_value( arg, "zaFac" ) ) {
+			std::string const zaFac_str( option_value( arg, "zaFac" ) );
 			if ( is_double( zaFac_str ) ) {
 				zaFac = double_of( zaFac_str );
 				if ( zaFac <= 0.0 ) {
@@ -424,8 +423,8 @@ process_args( Args const & args )
 				std::cerr << "\nError: Nonnumeric zaFac: " << zaFac_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "dtMin" ) ) {
-			std::string const dtMin_str( arg_value( arg ) );
+		} else if ( has_option_value( arg, "dtMin" ) ) {
+			std::string const dtMin_str( option_value( arg, "dtMin" ) );
 			if ( is_double( dtMin_str ) ) {
 				dtMin = double_of( dtMin_str );
 				if ( dtMin < 0.0 ) {
@@ -436,8 +435,8 @@ process_args( Args const & args )
 				std::cerr << "\nError: Nonnumeric dtMin: " << dtMin_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "dtMax" ) ) {
-			std::string const dtMax_str( arg_value( arg ) );
+		} else if ( has_option_value( arg, "dtMax" ) ) {
+			std::string const dtMax_str( option_value( arg, "dtMax" ) );
 			if ( is_double( dtMax_str ) ) {
 				dtMax = double_of( dtMax_str );
 				if ( dtMax < 0.0 ) {
@@ -448,8 +447,8 @@ process_args( Args const & args )
 				std::cerr << "\nError: Nonnumeric dtMax: " << dtMax_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "dtInf" ) ) {
-			std::string const dtInf_str( arg_value( arg ) );
+		} else if ( has_option_value( arg, "dtInf" ) ) {
+			std::string const dtInf_str( option_value( arg, "dtInf" ) );
 			if ( is_double( dtInf_str ) ) {
 				dtInf = double_of( dtInf_str );
 				if ( dtInf < 0.0 ) {
@@ -460,8 +459,8 @@ process_args( Args const & args )
 				std::cerr << "\nError: Nonnumeric dtInf: " << dtInf_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "dtZMax" ) ) {
-			std::string const dtZMax_str( arg_value( arg ) );
+		} else if ( has_option_value( arg, "dtZMax" ) ) {
+			std::string const dtZMax_str( option_value( arg, "dtZMax" ) );
 			if ( is_double( dtZMax_str ) ) {
 				dtZMax = double_of( dtZMax_str );
 				if ( dtZMax < 0.0 ) {
@@ -472,9 +471,9 @@ process_args( Args const & args )
 				std::cerr << "\nError: Nonnumeric dtZMax: " << dtZMax_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "dtZC" ) ) {
+		} else if ( has_option_value( arg, "dtZC" ) ) {
 			specified::dtZC = true;
-			std::string const dtZC_str( arg_value( arg ) );
+			std::string const dtZC_str( option_value( arg, "dtZC" ) );
 			if ( is_double( dtZC_str ) ) {
 				dtZC = double_of( dtZC_str );
 				if ( dtZC < 0.0 ) {
@@ -485,8 +484,8 @@ process_args( Args const & args )
 				std::cerr << "\nError: Nonnumeric dtZC: " << dtZC_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "dtND" ) || has_value_option( arg, "dtNum" ) ) { // dtNum was prior name for dtND
-			std::vector< std::string > const dtND_args( split( arg_value( arg ), ':' ) );
+		} else if ( has_option_value( arg, "dtND" ) ) {
+			std::vector< std::string > const dtND_args( split( option_value( arg, "dtND" ), ':' ) );
 			std::string const dtND_str( dtND_args[ 0 ] );
 			if ( is_double( dtND_str ) ) {
 				dtND_set( double_of( dtND_str ) );
@@ -524,11 +523,11 @@ process_args( Args const & args )
 				}
 			}
 			if ( dtND_optimizer ) dtND_max = std::max( 4.0 * dtND, dtND_max );
-		} else if ( has_option( arg, "dtND" ) || has_option( arg, "dtNum" ) ) { // dtNum was prior name for dtND
+		} else if ( has_option( arg, "dtND" ) ) {
 			dtND_optimizer = true;
 			dtND_max = std::max( 4.0 * dtND, dtND_max );
-		} else if ( has_value_option( arg, "dtCon" ) ) {
-			std::string const dtCon_str( arg_value( arg ) );
+		} else if ( has_option_value( arg, "dtCon" ) ) {
+			std::string const dtCon_str( option_value( arg, "dtCon" ) );
 			if ( is_double( dtCon_str ) ) {
 				dtCon = double_of( dtCon_str );
 				if ( dtCon < 0.0 ) {
@@ -539,9 +538,9 @@ process_args( Args const & args )
 				std::cerr << "\nError: Nonnumeric dtCon: " << dtCon_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "dtOut" ) ) {
+		} else if ( has_option_value( arg, "dtOut" ) ) {
 			specified::dtOut = true;
-			std::string const dtOut_str( arg_value( arg ) );
+			std::string const dtOut_str( option_value( arg, "dtOut" ) );
 			if ( is_double( dtOut_str ) ) {
 				dtOut = double_of( dtOut_str );
 				if ( dtOut < 0.0 ) {
@@ -552,9 +551,9 @@ process_args( Args const & args )
 				std::cerr << "\nError: Nonnumeric dtOut: " << dtOut_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "tEnd" ) ) {
+		} else if ( has_option_value( arg, "tEnd" ) ) {
 			specified::tEnd = true;
-			std::string const tEnd_str( arg_value( arg ) );
+			std::string const tEnd_str( option_value( arg, "tEnd" ) );
 			if ( is_double( tEnd_str ) ) {
 				tEnd = double_of( tEnd_str );
 				if ( tEnd < 0.0 ) {
@@ -565,9 +564,9 @@ process_args( Args const & args )
 				std::cerr << "\nError: Nonnumeric tEnd: " << tEnd_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_option( arg, "bin" ) || has_value_option( arg, "bin" ) ) {
+		} else if ( has_option( arg, "bin" ) || has_option_value( arg, "bin" ) ) {
 			specified::bin = true;
-			std::string const bin_str( arg_value( arg ) );
+			std::string const bin_str( option_value( arg, "bin" ) );
 			std::vector< std::string > const bin_args( split( bin_str, ':' ) );
 			if ( bin_args.size() > 1u ) { // : separated entries present
 
@@ -628,8 +627,8 @@ process_args( Args const & args )
 				bin_frac = 0.25;
 				bin_auto = false;
 			}
-		} else if ( has_value_option( arg, "pass" ) ) {
-			std::string const pass_str( arg_value( arg ) );
+		} else if ( has_option_value( arg, "pass" ) ) {
+			std::string const pass_str( option_value( arg, "pass" ) );
 			if ( is_size( pass_str ) ) {
 				pass = size_of( pass_str );
 				if ( pass < 1 ) {
@@ -640,8 +639,8 @@ process_args( Args const & args )
 				std::cerr << "\nError: Nonintegral pass option: " << pass_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "fxn" ) ) {
-			std::string const var_fxn( arg_value( arg ) );
+		} else if ( has_option_value( arg, "fxn" ) ) {
+			std::string const var_fxn( option_value( arg, "fxn" ) );
 			std::string var_name;
 			std::string fxn_spec;
 			if ( var_fxn[ 0 ] == '"' ) { // Quoted variable name
@@ -671,8 +670,8 @@ process_args( Args const & args )
 					fatal = true;
 				}
 			}
-		} else if ( has_value_option( arg, "con" ) ) {
-			std::string const inp_out( arg_value( arg ) );
+		} else if ( has_option_value( arg, "con" ) ) {
+			std::string const inp_out( option_value( arg, "con" ) );
 			std::string inp_name;
 			std::string out_name;
 			if ( inp_out[ 0 ] == '"' ) { // Quoted input variable name
@@ -710,8 +709,8 @@ process_args( Args const & args )
 				}
 			}
 			con[ inp_name ] = out_name;
-		} else if ( has_option( arg, "dep" ) || has_value_option( arg, "dep" ) ) {
-			std::string const var_deps( arg_value( arg ) );
+		} else if ( has_option( arg, "dep" ) || has_option_value( arg, "dep" ) ) {
+			std::string const var_deps( option_value( arg, "dep" ) );
 			std::string var_spec;
 			std::string deps_spec;
 			if ( var_deps.empty() ) { // Implied all
@@ -794,48 +793,167 @@ process_args( Args const & args )
 				}
 			}
 			dep.add( var_regex, deps_regex );
-		} else if ( has_option( arg, "out" ) || has_value_option( arg, "out" ) ) {
-			static std::string const out_flags( "dshROZDSXQAFLK" );
-			out = arg_value( arg );
+		} else if ( has_option_value( arg, "out" ) ) {
+			static std::string const out_flags( "dshROZDSXQTAFLK" );
+			char const sep( option_sep( arg, "out" ) );
+			std::string const out( option_value( arg, "out" ) );
 			if ( has_any_not_of( out, out_flags ) ) {
 				std::cerr << "\nError: Output option has flag not in " << out_flags << ": " << out << std::endl;
 				fatal = true;
 			}
-			output::d = has( out, 'd' );
-			output::s = has( out, 's' );
-			output::h = has( out, 'h' );
-			output::R = has( out, 'R' );
-			output::O = has( out, 'O' );
-			output::Z = has( out, 'Z' );
-			output::D = has( out, 'D' );
-			output::S = has( out, 'S' );
-			output::X = has( out, 'X' );
-			output::Q = has( out, 'Q' );
-			output::A = has( out, 'A' );
-			output::F = has( out, 'F' );
-			output::L = has( out, 'L' );
-			output::K = has( out, 'K' );
+			if ( is_any_of( sep, "=:" ) ) {
+				output::d = has( out, 'd' );
+				output::s = has( out, 's' );
+				output::h = has( out, 'h' );
+				output::R = has( out, 'R' );
+				output::O = has( out, 'O' );
+				output::Z = has( out, 'Z' );
+				output::D = has( out, 'D' );
+				output::S = has( out, 'S' );
+				output::X = has( out, 'X' );
+				output::Q = has( out, 'Q' );
+				output::T = has( out, 'T' );
+				output::A = has( out, 'A' );
+				output::F = has( out, 'F' );
+				output::L = has( out, 'L' );
+				output::K = has( out, 'K' );
+			} else if ( sep == '+' ) { // Add specified outputs
+				for ( char c : out ) {
+					switch ( c ) {
+					case 'd':
+						output::d = true;
+						break;
+					case 's':
+						output::s = true;
+						break;
+					case 'h':
+						output::h = true;
+						break;
+					case 'R':
+						output::R = true;
+						break;
+					case 'O':
+						output::O = true;
+						break;
+					case 'Z':
+						output::Z = true;
+						break;
+					case 'D':
+						output::D = true;
+						break;
+					case 'S':
+						output::S = true;
+						break;
+					case 'X':
+						output::X = true;
+						break;
+					case 'Q':
+						output::Q = true;
+						break;
+					case 'T':
+						output::T = true;
+						break;
+					case 'A':
+						output::A = true;
+						break;
+					case 'F':
+						output::F = true;
+						break;
+					case 'L':
+						output::L = true;
+						break;
+					case 'K':
+						output::K = true;
+						break;
+					}
+				}
+			} else if ( sep == '-' ) { // Remove specified outputs
+				for ( char c : out ) {
+					switch ( c ) {
+					case 'd':
+						output::d = false;
+						break;
+					case 's':
+						output::s = false;
+						break;
+					case 'h':
+						output::h = false;
+						break;
+					case 'R':
+						output::R = false;
+						break;
+					case 'O':
+						output::O = false;
+						break;
+					case 'Z':
+						output::Z = false;
+						break;
+					case 'D':
+						output::D = false;
+						break;
+					case 'S':
+						output::S = false;
+						break;
+					case 'X':
+						output::X = false;
+						break;
+					case 'Q':
+						output::Q = false;
+						break;
+					case 'T':
+						output::T = false;
+						break;
+					case 'A':
+						output::A = false;
+						break;
+					case 'F':
+						output::F = false;
+						break;
+					case 'L':
+						output::L = false;
+						break;
+					case 'K':
+						output::K = false;
+						break;
+					}
+				}
+			}
+		} else if ( has_option( arg, "out" ) ) {
+			output::d = false;
+			output::s = false;
+			output::h = false;
+			output::R = false;
+			output::O = false;
+			output::Z = false;
+			output::D = false;
+			output::S = false;
+			output::X = false;
+			output::Q = false;
+			output::T = false;
+			output::A = false;
+			output::F = false;
+			output::L = false;
+			output::K = false;
 		} else if ( has_option( arg, "csv" ) ) {
 			csv = true;
-		} else if ( has_option( arg, "dot" ) || has_value_option( arg, "dot" ) ) {
-			specified::dot = true;
+		} else if ( has_option( arg, "dot" ) || has_option_value( arg, "dot" ) ) {
 			static std::string const dot_flags( "dre" );
-			out = arg_value( arg );
-			if ( out.empty() ) { // Default to all dot graphs if --dot specified with no argument
+			std::string const dot( option_value( arg, "dot" ) );
+			if ( dot.empty() ) { // Default to all dot graphs if --dot specified with no argument
 				dot_graph::d = true;
 				dot_graph::r = true;
 				dot_graph::e = true;
-			} else if ( has_any_not_of( out, dot_flags ) ) {
-				std::cerr << "\nError: Dot graph option has flag not in " << dot_flags << ": " << out << std::endl;
+			} else if ( has_any_not_of( dot, dot_flags ) ) {
+				std::cerr << "\nError: Dot graph option has flag not in " << dot_flags << ": " << dot << std::endl;
 				fatal = true;
 			} else {
 				dot_graph::d = has( dot, 'd' );
 				dot_graph::r = has( dot, 'r' );
 				dot_graph::e = has( dot, 'e' );
 			}
-		} else if ( has_value_option( arg, "tLoc" ) ) {
+		} else if ( has_option_value( arg, "tLoc" ) ) {
 			specified::tLoc = true;
-			std::string const tLoc_str( arg_value( arg ) );
+			std::string const tLoc_str( option_value( arg, "tLoc" ) );
 			std::vector< std::string > const tLoc_tokens( split( tLoc_str, ':' ) );
 			if ( tLoc_tokens.size() == 2 ) { // Process/check time range
 
@@ -875,8 +993,8 @@ process_args( Args const & args )
 				std::cerr << "\nError: tLoc not in TIME1:TIME2 format: " << tLoc_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_value_option( arg, "var" ) ) {
-			var = arg_value( arg );
+		} else if ( has_option_value( arg, "var" ) ) {
+			var = option_value( arg, "var" );
 			if ( !path::is_file( var ) ) {
 				std::cerr << "\nError: File specified in --var option not found: " << var << ": Output filtering disabled" << std::endl;
 			}

@@ -1755,7 +1755,7 @@ namespace QSS {
 		}
 
 		// Generate Direct Dependency Graph
-		if ( ( options::specified::dot ) && ( options::dot_graph::d ) ) {
+		if ( options::dot_graph::d ) {
 			std::ofstream dependency_graph( name + ".Dependency.gv", std::ios_base::binary | std::ios_base::out );
 			dependency_graph << "digraph " << name << " {\n";
 			dependency_graph << "  label=\"" << name << " Direct Dependency Graph" << "\"; labelloc=\"t\"\n";
@@ -2153,7 +2153,7 @@ namespace QSS {
 		}
 
 		// Generate Computational Observee Graph
-		if ( ( options::specified::dot ) && ( options::dot_graph::e ) ) {
+		if ( options::dot_graph::e ) {
 			std::ofstream observee_graph( name + ".Observee.gv", std::ios_base::binary | std::ios_base::out );
 			observee_graph << "digraph " << name << " {\n";
 			observee_graph << "  label=\"" << name << " Computational Observee Graph" << "\"; labelloc=\"t\"\n";
@@ -2175,7 +2175,7 @@ namespace QSS {
 		}
 
 		// Generate Computational Observer Graph
-		if ( ( options::specified::dot ) && ( options::dot_graph::r ) ) {
+		if ( options::dot_graph::r ) {
 			std::ofstream observer_graph( name + ".Observer.gv", std::ios_base::binary | std::ios_base::out );
 			observer_graph << "digraph " << name << " {\n";
 			observer_graph << "  label=\"" << name << " Computational Observer Graph" << "\"; labelloc=\"t\"\n";
@@ -2211,9 +2211,9 @@ namespace QSS {
 			}
 			n_fmu_qss_qss_outs = fmu_qss_qss_outs.size();
 		}
-		doROut = ( options::output::R && ( options::output::X || options::output::Q ) );
-		doZOut = ( options::output::Z && ( options::output::X || options::output::Q ) );
-		doDOut = ( options::output::D && ( options::output::X || options::output::Q ) );
+		doROut = ( options::output::R && ( options::output::X || options::output::Q || options::output::T ) );
+		doZOut = ( options::output::Z && ( options::output::X || options::output::Q || options::output::T ) );
+		doDOut = ( options::output::D && ( options::output::X || options::output::Q || options::output::T ) );
 		doSOut = (
 		 ( options::output::S && ( options::output::X || options::output::Q ) ) ||
 		 ( options::output::F && ( n_f_outs > 0u ) ) ||
@@ -2223,7 +2223,7 @@ namespace QSS {
 		);
 		doKOut = options::output::K && ( out_var_refs.size() > 0u );
 		std::string const output_dir( options::have_multiple_models() ? name : std::string() );
-		if ( ( options::output::R || options::output::Z || options::output::D || options::output::S ) && ( options::output::X || options::output::Q ) ) { // QSS t0 outputs
+		if ( ( ( options::output::R || options::output::Z || options::output::D || options::output::S ) && ( options::output::X || options::output::Q ) ) || options::output::T ) { // QSS t0 outputs
 #ifdef _WIN32
 			name_decorate( vars );
 #endif
@@ -2839,7 +2839,7 @@ namespace QSS {
 						++c_QSS_events[ trigger ];
 
 						if ( doROut ) { // Requantization output: pre
-							trigger->out( t );
+							trigger->out_q( t ); // Quantized-only: State requantization has no x discontinuity
 							trigger->observers_out_pre( t );
 						}
 
@@ -2851,7 +2851,7 @@ namespace QSS {
 									var->out( t );
 								}
 							} else { // Trigger and observers
-								trigger->out_q( t ); // Quantized-only: State requantization has no discontinuity
+								trigger->out( t ); // Quantized-only: State requantization has no x discontinuity
 								trigger->observers_out_post( t );
 							}
 						}
@@ -2866,7 +2866,7 @@ namespace QSS {
 
 						if ( doROut ) { // Requantization output: pre
 							for ( Variable * trigger : triggers ) { // Triggers
-								trigger->out( t );
+								trigger->out_q( t ); // Quantized-only: State requantization has no x discontinuity
 							}
 							if ( options::output::O ) { // Observers
 								for ( Variable * observer : observers_s ) {
@@ -2886,7 +2886,7 @@ namespace QSS {
 								}
 							} else { // Triggers and observers
 								for ( Variable * trigger : triggers ) { // Triggers
-									trigger->out_q( t ); // Quantized-only: State requantization has no discontinuity
+									trigger->out( t );
 								}
 								if ( options::output::O ) { // Observers
 									for ( Variable * observer : observers_s ) {
@@ -3294,7 +3294,7 @@ namespace QSS {
 	{
 		// End time outputs
 		set_time( tE );
-		if ( ( options::output::R || options::output::Z || options::output::D || options::output::S ) && ( options::output::X || options::output::Q ) ) { // QSS tE outputs
+		if ( ( ( options::output::R || options::output::Z || options::output::D || options::output::S ) && ( options::output::X || options::output::Q ) ) || options::output::T ) { // QSS tE outputs
 			for ( auto var : vars ) {
 				if ( var->tQ < tE ) var->out( tE );
 				var->flush_out();

@@ -135,6 +135,7 @@ public: // Methods
 	{
 		if ( options::stiff ) liqss_qss_ratio_pass();
 		q_0_ = x_0_ += x_1_ * ( tE - tX );
+		tS = tE - tQ;
 		tQ = tX = tE;
 		x_1_ = c_1( tE, x_0_ );
 		set_qTol();
@@ -151,6 +152,7 @@ public: // Methods
 	{
 		if ( options::stiff ) liqss_qss_ratio_pass();
 		q_0_ = x_0_ += x_1_ * ( tE - tX );
+		tS = tE - tQ;
 		tQ = tX = tE;
 	}
 
@@ -181,6 +183,7 @@ public: // Methods
 	advance_handler( Time const t ) override
 	{
 		assert( ( tQ <= t ) && ( tX <= t ) && ( t <= tE ) );
+		tS = t - tQ;
 		tQ = tX = t;
 		q_0_ = x_0_ = p_0();
 		x_1_ = h_1();
@@ -197,6 +200,7 @@ public: // Methods
 	advance_handler_0( Time const t, Real const x_0 ) override
 	{
 		assert( ( tQ <= t ) && ( tX <= t ) && ( t <= tE ) );
+		tS = t - tQ;
 		tQ = tX = t;
 		q_0_ = x_0_ = x_0;
 	}

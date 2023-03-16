@@ -142,7 +142,8 @@ protected: // Creation
 	 der_( der ),
 	 eventq_( fmu_me->eventq ),
 	 out_x_( name, 'x', false ),
-	 out_q_( name, 'q', false )
+	 out_q_( name, 'q', false ),
+	 out_t_( name, 't', false )
 	{}
 
 	// Name + Tolerance + Value Constructor
@@ -172,7 +173,8 @@ protected: // Creation
 	 der_( der ),
 	 eventq_( fmu_me->eventq ),
 	 out_x_( name, 'x', false ),
-	 out_q_( name, 'q', false )
+	 out_q_( name, 'q', false ),
+	 out_t_( name, 't', false )
 	{}
 
 	// Name + Value Constructor
@@ -198,7 +200,8 @@ protected: // Creation
 	 der_( der ),
 	 eventq_( fmu_me->eventq ),
 	 out_x_( name, 'x', false ),
-	 out_q_( name, 'q', false )
+	 out_q_( name, 'q', false ),
+	 out_t_( name, 't', false )
 	{}
 
 protected: // Assignment
@@ -785,6 +788,7 @@ public: // Methods
 	init_time( Time const t )
 	{
 		tQ = tX = tE = t;
+		tS = 0.0;
 	}
 
 	// Initialization
@@ -1342,6 +1346,7 @@ public: // Methods: Output
 		if ( out_on_ ) {
 			if ( options::output::X ) out_x_.append( t, x( t ) );
 			if ( options::output::Q ) out_q_.append( t, q( t ) );
+			if ( options::output::T ) out_t_.append( t, tS );
 		}
 		if ( connected_ ) connections_out( t );
 	}
@@ -2002,6 +2007,7 @@ public: // Data
 	Time tX{ 0.0 }; // Continuous time range begin
 	Time tE{ 0.0 }; // Time range end: tQ <= tE and tX <= tE
 	Time tD{ infinity }; // Discrete event time: tQ <= tD and tX <= tD
+	Time tS{ 0.0 }; // Time step
 	Time dt_min{ 0.0 }; // Time step min
 	Time dt_max{ infinity }; // Time step max
 	Real x_0_bump{ 0.0 }; // Bumped value
@@ -2039,6 +2045,7 @@ private: // Data
 	std::string dec_; // Output file name decoration
 	Output<> out_x_; // Continuous trajectory output
 	Output<> out_q_; // Quantized trajectory output
+	Output<> out_t_; // Time step output
 
 }; // Variable
 
