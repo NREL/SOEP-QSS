@@ -936,10 +936,10 @@ process_args( Args const & args )
 			output::K = false;
 		} else if ( has_option( arg, "csv" ) ) {
 			csv = true;
-		} else if ( has_option( arg, "dot" ) || has_option_value( arg, "dot" ) ) {
+		} else if ( has_option_value( arg, "dot" ) ) {
 			static std::string const dot_flags( "dre" );
 			std::string const dot( option_value( arg, "dot" ) );
-			if ( dot.empty() ) { // Default to all dot graphs if --dot specified with no argument
+			if ( dot.empty() ) { // Default to all dot graphs if --dot= specified with no argument
 				dot_graph::d = true;
 				dot_graph::r = true;
 				dot_graph::e = true;
@@ -951,6 +951,10 @@ process_args( Args const & args )
 				dot_graph::r = has( dot, 'r' );
 				dot_graph::e = has( dot, 'e' );
 			}
+		} else if ( has_option( arg, "dot" ) ) {
+			dot_graph::d = true;
+			dot_graph::r = true;
+			dot_graph::e = true;
 		} else if ( has_option_value( arg, "tLoc" ) ) {
 			specified::tLoc = true;
 			std::string const tLoc_str( option_value( arg, "tLoc" ) );
