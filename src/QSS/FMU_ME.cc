@@ -761,7 +761,7 @@ namespace QSS {
 				std::cout << " Type: Real" << std::endl;
 				{
 				fmi2_import_real_variable_t * var_real( fmu_var.rvr );
-				Real const var_start( get_real( fmu_var.ref() ) );
+				Real var_start( get_real( fmu_var.ref() ) ); // Make this const if/when time work-around removed
 				std::cout << " Start: " << var_start << std::endl;
 				Real const xml_start( fmi2_import_get_real_variable_start( var_real ) );
 				if ( var_has_xml_start ) {
@@ -774,6 +774,10 @@ namespace QSS {
 							std::cerr << "  Info: Specified approximate start value differs from initial FMU value" << std::endl;
 						} else if ( fmu_var.initial_calculated() ) {
 							std::cerr << "  Info: Specified calculated start value differs from initial FMU value" << std::endl;
+						}
+						if ( var_name == "time" ) { // Work-around for strange initial time behavior seen in OCT
+							var_start = xml_start;
+							std::cerr << "  Info: Using specified initial time instead of FMU value as temporary OCT work-around" << std::endl;
 						}
 					}
 				}
