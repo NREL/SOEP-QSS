@@ -761,7 +761,7 @@ namespace QSS {
 				std::cout << " Type: Real" << std::endl;
 				{
 				fmi2_import_real_variable_t * var_real( fmu_var.rvr );
-				Real var_start( get_real( fmu_var.ref() ) ); // Make this const if/when time work-around removed
+				Real const var_start( get_real( fmu_var.ref() ) );
 				std::cout << " Start: " << var_start << std::endl;
 				Real const xml_start( fmi2_import_get_real_variable_start( var_real ) );
 				if ( var_has_xml_start ) {
@@ -774,10 +774,6 @@ namespace QSS {
 							std::cerr << "  Info: Specified approximate start value differs from initial FMU value" << std::endl;
 						} else if ( fmu_var.initial_calculated() ) {
 							std::cerr << "  Info: Specified calculated start value differs from initial FMU value" << std::endl;
-						}
-						if ( var_name == "time" ) { // Work-around for strange initial time behavior seen in OCT
-							var_start = xml_start;
-							std::cerr << "  Info: Using specified initial time instead of FMU value as temporary OCT work-around" << std::endl;
 						}
 					}
 				}
@@ -964,9 +960,13 @@ namespace QSS {
 					} else if ( fmu_var.is_State() ) { // State
 						std::cout << " Type: Real: Continuous: State" << std::endl;
 						FMU_Variable const & fmu_der( fmu_variables[ fmu_var.idd - 1 ] );
-						Real const state_start( states[ fmu_var.isa ] ); // Initial value from fmi2_import_get_continuous_states()
+						Real state_start( states[ fmu_var.isa ] ); // Initial value from fmi2_import_get_continuous_states() // Make this const once time work-around no longer needed
 						if ( var_start != state_start ) {
 							std::cerr << "  Warning: Start value differs from initial FMU state value: " << state_start << std::endl;
+						}
+						if ( ( xml_start != state_start ) && ( var_name == "time" ) ) { // Work-around for strange initial time behavior seen in OCT
+							state_start = xml_start;
+							std::cerr << "  Info: Using specified initial time instead of initial FMU state value as temporary OCT work-around" << std::endl;
 						}
 						Variable_QSS * qss_var( nullptr );
 						Real const var_aTol( std::max( options::specified::aTol ? options::aTol : options::rTol * options::aFac * var_nominal, std::numeric_limits< Real >::min() ) ); // Use variable nominal value to set the absolute tolerance unless aTol specified
