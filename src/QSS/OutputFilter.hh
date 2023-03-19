@@ -103,11 +103,13 @@ public: // Predicate
 	bool
 	operator ()( std::string const & var_name ) const
 	{
-		if ( var_name == "time" ) return false; // Omit time variable
-		if ( has_prefix( var_name, "der(" ) && has_suffix( var_name, ")" ) ) return false; // Omit derivatives
-		if ( ( var_name[ 0 ] == '_' ) && !has_prefix( var_name, "_eventIndicator_" ) ) return false; // Omit internals except for event indicators
-		if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
-		if ( filters_.empty() ) return true;
+		if ( filters_.empty() ) { // Default filtering
+			if ( var_name == "time" ) return false; // Omit time variable
+			if ( has_prefix( var_name, "der(" ) && has_suffix( var_name, ")" ) ) return false; // Omit derivatives
+			if ( ( var_name[ 0 ] == '_' ) && !has_prefix( var_name, "_eventIndicator_" ) ) return false; // Omit internals except for event indicators
+			if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
+			return true;
+		}
 		for ( auto const & filter : filters_ ) { // Check if name matches filter
 			if ( std::regex_match( var_name, filter ) ) return true;
 		}
@@ -118,11 +120,13 @@ public: // Predicate
 	bool
 	qss( std::string const & var_name ) const
 	{
-		if ( var_name == "time" ) return false; // Omit time variable
-		if ( has_prefix( var_name, "der(" ) && has_suffix( var_name, ")" ) ) return false; // Omit derivatives
-		if ( ( var_name[ 0 ] == '_' ) && !has_prefix( var_name, "_eventIndicator_" ) ) return false; // Omit internals except for event indicators
-		if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
-		if ( filters_.empty() ) return true;
+		if ( filters_.empty() ) { // Default filtering
+			if ( var_name == "time" ) return false; // Omit time variable
+			if ( has_prefix( var_name, "der(" ) && has_suffix( var_name, ")" ) ) return false; // Omit derivatives
+			if ( ( var_name[ 0 ] == '_' ) && !has_prefix( var_name, "_eventIndicator_" ) ) return false; // Omit internals except for event indicators
+			if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
+			return true;
+		}
 		for ( auto const & filter : filters_ ) { // Check if name matches filter
 			if ( std::regex_match( var_name, filter ) ) return true;
 		}
@@ -133,11 +137,13 @@ public: // Predicate
 	bool
 	fmu( std::string const & var_name ) const
 	{
-		if ( var_name == "time" ) return false; // Omit time variable
-		if ( has_prefix( var_name, "der(" ) && has_suffix( var_name, ")" ) ) return false; // Omit derivatives
-		if ( ( var_name[ 0 ] == '_' ) && !has_prefix( var_name, "_eventIndicator_" ) ) return false; // Omit internals except for event indicators
-		if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
-		if ( filters_.empty() ) return true;
+		if ( filters_.empty() ) { // Default filtering
+			if ( var_name == "time" ) return false; // Omit time variable
+			if ( has_prefix( var_name, "der(" ) && has_suffix( var_name, ")" ) ) return false; // Omit derivatives
+			if ( ( var_name[ 0 ] == '_' ) && !has_prefix( var_name, "_eventIndicator_" ) ) return false; // Omit internals except for event indicators
+			if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
+			return true;
+		}
 		for ( auto const & filter : filters_ ) { // Check if name matches filter
 			if ( std::regex_match( var_name, filter ) ) return true;
 		}
@@ -148,7 +154,7 @@ public: // Predicate
 	bool
 	res( std::string const & var_name ) const
 	{
-		if ( filters_.empty() ) return true;
+		if ( filters_.empty() ) return true; // Default to all signals
 		if ( var_name == "time" ) return true; // Always include time in results outputs
 		for ( auto const & filter : filters_ ) { // Check if name matches filter
 			if ( std::regex_match( var_name, filter ) ) return true;
