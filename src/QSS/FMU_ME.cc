@@ -1460,75 +1460,75 @@ namespace QSS {
 			}
 		}
 
-		{ // QSS observer setup: Continuous variables: InitialUnknowns
-			size_type * startIndex( nullptr );
-			size_type * dependency( nullptr );
-			char * factorKind( nullptr );
-			fmi2_import_variable_list_t * inu_list( fmi2_import_get_initial_unknowns_list( fmu ) ); // InitialUnknowns variables
-			size_type const n_inu_vars( fmi2_import_get_variable_list_size( inu_list ) );
-			// std::cout << n_inu_vars << " variables found in InitialUnknowns" << std::endl;
-			fmi2_import_get_initial_unknowns_dependencies( fmu, &startIndex, &dependency, &factorKind );
-			if ( startIndex != nullptr ) { // InitialUnknowns dependency info present in XML
-				std::cout << "\n<InitialUnknowns> =====" << std::endl;
-				// fmi2_value_reference_t const * inu_vrs( fmi2_import_get_value_referece_list( inu_list ) ); // reference is spelled wrong in FMIL API
-				for ( size_type i = 0; i < n_inu_vars; ++i ) {
-					// std::cout << "\nInitialUnknown Variable  Ref: " << inu_vrs[ i ] << std::endl;
-					fmi2_import_variable_t * inu( fmi2_import_get_variable( inu_list, i ) );
-					// if ( fmi2_import_get_variability( inu ) != fmi2_variability_enu_continuous ) {
-						// std::cout << " Skipping: Not continuous variable" << std::endl;
-						// continue; // Only look at continuous variables
-					// }
-					std::string const inu_name( fmi2_import_get_variable_name( inu ) );
-					// std::cout << " Name: " << inu_name << std::endl;
-					std::cout << "\n " << inu_name << ':' << std::endl;
-					fmi2_import_real_variable_t * inu_real( fmi2_import_get_variable_as_real( inu ) );
-					if ( fmu_vars.has( inu_real ) ) {
-						FMU_Variable & fmu_inu( fmu_vars[ inu_real ] );
-						size_type const idx( fmu_inu.idx );
-						auto const ivar( fmu_idxs.find( idx ) );
-						if ( ivar != fmu_idxs.end() ) {
-							Variable * var( ivar->second );
-							// std::cout << " Var: " << var->name() << "  Index: " << idx << std::endl;
-							for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
-								size_type const dep_idx( dependency[ j ] );
-								// std::cout << "  Dep Index: " << dep_idx << std::endl;
-								// if ( dep_idx == 0u ) { // No info: Depends on all (don't support depends on all for now)
-								// 	std::cerr << "   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
-								// 	// std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes
-								// } else { // Process based on kind of dependent
-								// 	fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
-								// 	if ( kind == fmi2_dependency_factor_kind_dependent ) {
-								// 		std::cout << "   Kind: Dependent (" << kind << ')' << std::endl;
-								// 	} else if ( kind == fmi2_dependency_factor_kind_constant ) {
-								// 		std::cout << "   Kind: Constant (" << kind << ')' << std::endl;
-								// 	} else if ( kind == fmi2_dependency_factor_kind_fixed ) {
-								// 		std::cout << "   Kind: Fixed (" << kind << ')' << std::endl;
-								// 	} else if ( kind == fmi2_dependency_factor_kind_tunable ) {
-								// 		std::cout << "   Kind: Tunable (" << kind << ')' << std::endl;
-								// 	} else if ( kind == fmi2_dependency_factor_kind_discrete ) {
-								// 		std::cout << "   Kind: Discrete (" << kind << ')' << std::endl;
-								// 	} else if ( kind == fmi2_dependency_factor_kind_num ) {
-								// 		std::cout << "   Kind: Num (" << kind << ')' << std::endl;
-								// 	}
-								// }
-								auto idep( fmu_idxs.find( dep_idx ) ); //Do Add support for input variable dependents
-								if ( idep != fmu_idxs.end() ) {
-									Variable * dep( idep->second );
-									var->observe( dep );
-									std::cout << "  " << dep->name() << std::endl;
-								// } else {
-									//std::cout << "   Note: FMU-ME InitialUnknown " << inu_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
-								}
-							}
-						// } else {
-							//std::cout << "   Note: QSS variable with index " << idx << " for InitialUnknown not found" << std::endl;
-						}
-					}
-				}
-			// } else { // Assume no observers in model (this may not be true: FMI spec says no dependencies => dependent on all)
-			// 	std::cout << "\nNo InitialUknowns dependency info in FMU-ME XML" << std::endl;
-			}
-		}
+		// { // QSS observer setup: Continuous variables: InitialUnknowns // QSS should not need initialization dependencies since it gets initial values from the FMU
+		// 	size_type * startIndex( nullptr );
+		// 	size_type * dependency( nullptr );
+		// 	char * factorKind( nullptr );
+		// 	fmi2_import_variable_list_t * inu_list( fmi2_import_get_initial_unknowns_list( fmu ) ); // InitialUnknowns variables
+		// 	size_type const n_inu_vars( fmi2_import_get_variable_list_size( inu_list ) );
+		// 	// std::cout << n_inu_vars << " variables found in InitialUnknowns" << std::endl;
+		// 	fmi2_import_get_initial_unknowns_dependencies( fmu, &startIndex, &dependency, &factorKind );
+		// 	if ( startIndex != nullptr ) { // InitialUnknowns dependency info present in XML
+		// 		std::cout << "\n<InitialUnknowns> =====" << std::endl;
+		// 		// fmi2_value_reference_t const * inu_vrs( fmi2_import_get_value_referece_list( inu_list ) ); // reference is spelled wrong in FMIL API
+		// 		for ( size_type i = 0; i < n_inu_vars; ++i ) {
+		// 			// std::cout << "\nInitialUnknown Variable  Ref: " << inu_vrs[ i ] << std::endl;
+		// 			fmi2_import_variable_t * inu( fmi2_import_get_variable( inu_list, i ) );
+		// 			// if ( fmi2_import_get_variability( inu ) != fmi2_variability_enu_continuous ) {
+		// 				// std::cout << " Skipping: Not continuous variable" << std::endl;
+		// 				// continue; // Only look at continuous variables
+		// 			// }
+		// 			std::string const inu_name( fmi2_import_get_variable_name( inu ) );
+		// 			// std::cout << " Name: " << inu_name << std::endl;
+		// 			std::cout << "\n " << inu_name << ':' << std::endl;
+		// 			fmi2_import_real_variable_t * inu_real( fmi2_import_get_variable_as_real( inu ) );
+		// 			if ( fmu_vars.has( inu_real ) ) {
+		// 				FMU_Variable & fmu_inu( fmu_vars[ inu_real ] );
+		// 				size_type const idx( fmu_inu.idx );
+		// 				auto const ivar( fmu_idxs.find( idx ) );
+		// 				if ( ivar != fmu_idxs.end() ) {
+		// 					Variable * var( ivar->second );
+		// 					// std::cout << " Var: " << var->name() << "  Index: " << idx << std::endl;
+		// 					for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
+		// 						size_type const dep_idx( dependency[ j ] );
+		// 						// std::cout << "  Dep Index: " << dep_idx << std::endl;
+		// 						// if ( dep_idx == 0u ) { // No info: Depends on all (don't support depends on all for now)
+		// 						// 	std::cerr << "   Error: No dependency information provided: Depends-on-all not currently supported" << std::endl;
+		// 						// 	// std::exit( EXIT_FAILURE ); //OCT Let run proceed while waiting for OCT fixes
+		// 						// } else { // Process based on kind of dependent
+		// 						// 	fmi2_dependency_factor_kind_enu_t const kind( (fmi2_dependency_factor_kind_enu_t)( factorKind[ j ] ) );
+		// 						// 	if ( kind == fmi2_dependency_factor_kind_dependent ) {
+		// 						// 		std::cout << "   Kind: Dependent (" << kind << ')' << std::endl;
+		// 						// 	} else if ( kind == fmi2_dependency_factor_kind_constant ) {
+		// 						// 		std::cout << "   Kind: Constant (" << kind << ')' << std::endl;
+		// 						// 	} else if ( kind == fmi2_dependency_factor_kind_fixed ) {
+		// 						// 		std::cout << "   Kind: Fixed (" << kind << ')' << std::endl;
+		// 						// 	} else if ( kind == fmi2_dependency_factor_kind_tunable ) {
+		// 						// 		std::cout << "   Kind: Tunable (" << kind << ')' << std::endl;
+		// 						// 	} else if ( kind == fmi2_dependency_factor_kind_discrete ) {
+		// 						// 		std::cout << "   Kind: Discrete (" << kind << ')' << std::endl;
+		// 						// 	} else if ( kind == fmi2_dependency_factor_kind_num ) {
+		// 						// 		std::cout << "   Kind: Num (" << kind << ')' << std::endl;
+		// 						// 	}
+		// 						// }
+		// 						auto idep( fmu_idxs.find( dep_idx ) ); //Do Add support for input variable dependents
+		// 						if ( idep != fmu_idxs.end() ) {
+		// 							Variable * dep( idep->second );
+		// 							var->observe( dep );
+		// 							std::cout << "  " << dep->name() << std::endl;
+		// 						// } else {
+		// 							//std::cout << "   Note: FMU-ME InitialUnknown " << inu_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
+		// 						}
+		// 					}
+		// 				// } else {
+		// 					//std::cout << "   Note: QSS variable with index " << idx << " for InitialUnknown not found" << std::endl;
+		// 				}
+		// 			}
+		// 		}
+		// 	// } else { // Assume no observers in model (this may not be true: FMI spec says no dependencies => dependent on all)
+		// 	// 	std::cout << "\nNo InitialUknowns dependency info in FMU-ME XML" << std::endl;
+		// 	}
+		// }
 
 		{ // QSS observer setup: Discrete variables
 			size_type * startIndex( nullptr );
