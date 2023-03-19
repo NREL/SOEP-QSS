@@ -90,12 +90,10 @@ namespace QSS {
 		}
 		observes_ = !observees_.empty();
 		if ( observes_ ) uniquify( observees_, true ); // Sort by address and remove duplicates and recover unused memory
-		if ( options::output::d ) {
-			std::cout << '\n' << name() << " Computational Observees:" << std::endl;
-			if ( self_observer_ ) std::cout << ' ' << name() << std::endl;
-			for ( Variable const * observee : sorted_by_name( observees_ ) ) {
-				std::cout << ' ' << observee->name() << std::endl;
-			}
+		std::cout << '\n' << name() << " Computational Observees:" << std::endl;
+		if ( self_observer_ ) std::cout << ' ' << name() << std::endl;
+		for ( Variable const * observee : sorted_by_name( observees_ ) ) {
+			std::cout << ' ' << observee->name() << std::endl;
 		}
 
 #ifndef NDEBUG
@@ -135,7 +133,7 @@ namespace QSS {
 	finalize_observers()
 	{
 		observers_.assign_computational_observers();
-		if ( options::output::d && is_Active() ) { // Passive variable observers are only used for short-circuiting around them so we don't show them here
+		if ( is_Active() ) { // Passive variable observers are only used for short-circuiting around them so we don't show them here
 			std::cout << '\n' << name() << " Computational Observers:" << std::endl;
 			for ( Variable const * observer : sorted_by_name( observers_ ) ) {
 				std::cout << ' ' << observer->name() << std::endl;

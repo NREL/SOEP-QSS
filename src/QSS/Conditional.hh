@@ -173,12 +173,10 @@ public: // Methods
 	{
 		// Short-circuit passive observers
 		short_circuit_passive_observers();
-		if ( options::output::d ) {
-			assert( var_ != nullptr );
-			std::cout << '\n' << var_->name() << " Conditional Computational Observers:" << std::endl;
-			for ( Variable const * observer : sorted_by_name( observers_ ) ) {
-				std::cout << ' ' << observer->name() << std::endl;
-			}
+		assert( var_ != nullptr );
+		std::cout << '\n' << var_->name() << " Conditional Computational Observers:" << std::endl;
+		for ( Variable const * observer : sorted_by_name( observers_ ) ) {
+			std::cout << ' ' << observer->name() << std::endl;
 		}
 
 		// Flag if output connection observers
