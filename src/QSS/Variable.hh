@@ -1346,7 +1346,6 @@ public: // Methods: Output
 		if ( out_on_ ) {
 			if ( options::output::X ) out_x_.append( t, x( t ) );
 			if ( options::output::Q ) out_q_.append( t, q( t ) );
-			if ( options::output::T ) out_t_.append( t, tS );
 		}
 		if ( connected_ ) connections_out( t );
 	}
@@ -1359,6 +1358,15 @@ public: // Methods: Output
 			if ( options::output::Q ) out_q_.append( t, q( t ) );
 		}
 		if ( connected_ ) connections_out_q( t );
+	}
+
+	// Output Time Step at Time t
+	void
+	out_t( Time const t )
+	{
+		if ( out_on_ ) {
+			if ( options::output::T ) out_t_.append( t, tS );
+		}
 	}
 
 	// Pre-Event Observer Output at Time t

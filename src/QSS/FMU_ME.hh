@@ -748,6 +748,7 @@ public: // Data
 	bool doROut{ false }; // Requantizations
 	bool doZOut{ false }; // Zero crossings
 	bool doDOut{ false }; // Discrete events
+	bool doTOut{ false }; // Time Steps
 	bool doSOut{ false }; // Sampled
 	bool doKOut{ false }; // Smooth token
 

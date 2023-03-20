@@ -2218,9 +2218,10 @@ namespace QSS {
 			}
 			n_fmu_qss_qss_outs = fmu_qss_qss_outs.size();
 		}
-		doROut = ( options::output::R && ( options::output::X || options::output::Q || options::output::T ) );
-		doZOut = ( options::output::Z && ( options::output::X || options::output::Q || options::output::T ) );
-		doDOut = ( options::output::D && ( options::output::X || options::output::Q || options::output::T ) );
+		doROut = ( options::output::R && ( options::output::X || options::output::Q ) );
+		doZOut = ( options::output::Z && ( options::output::X || options::output::Q ) );
+		doDOut = ( options::output::D && ( options::output::X || options::output::Q ) );
+		doTOut = options::output::T;
 		doSOut = (
 		 ( options::output::S && ( options::output::X || options::output::Q ) ) ||
 		 ( options::output::F && ( n_f_outs > 0u ) ) ||
@@ -2237,7 +2238,8 @@ namespace QSS {
 			for ( auto var : vars ) {
 				if ( output_filter.fmu( var->name() ) ) {
 					var->init_out( output_dir );
-					var->out( t );
+					if ( doROut || doZOut || doDOut || doSOut ) var->out( t );
+					if ( doTOut ) var->out_t( t );
 				}
 			}
 		}
@@ -2858,9 +2860,12 @@ namespace QSS {
 									var->out( t );
 								}
 							} else { // Trigger and observers
-								trigger->out( t ); // Quantized-only: State requantization has no x discontinuity
+								trigger->out( t );
 								trigger->observers_out_post( t );
 							}
+						}
+						if ( doTOut ) { // Time step output
+							trigger->out_t( t );
 						}
 					} else { // Simultaneous/binned triggers
 						if ( options::output::s || options::steps ) { // Statistics or steps file
@@ -2900,6 +2905,11 @@ namespace QSS {
 										observer->observer_out_post( t );
 									}
 								}
+							}
+						}
+						if ( doTOut ) { // Time step output
+							for ( Variable * trigger : triggers ) { // Triggers
+								trigger->out_t( t );
 							}
 						}
 					}
@@ -2969,6 +2979,9 @@ namespace QSS {
 								trigger->out( t );
 							}
 						}
+						if ( doTOut ) { // Time step output
+							trigger->out_t( t );
+						}
 					} else { // Simultaneous/binned triggers
 						if ( options::output::s || options::steps ) { // Statistics or steps file
 							for ( Variable * trigger : triggers ) {
@@ -2995,6 +3008,11 @@ namespace QSS {
 								for ( Variable * trigger : triggers ) {
 									trigger->out( t );
 								}
+							}
+						}
+						if ( doTOut ) { // Time step output
+							for ( Variable * trigger : triggers ) { // Triggers
+								trigger->out_t( t );
 							}
 						}
 					}
@@ -3067,6 +3085,9 @@ namespace QSS {
 								trigger->observers_out_post( t );
 							}
 						}
+						if ( doTOut ) { // Time step output
+							trigger->out_t( t );
+						}
 					} else { // Simultaneous/binned triggers
 						if ( options::output::s || options::steps ) { // Statistics or steps file
 							for ( Variable * trigger : triggers ) {
@@ -3107,6 +3128,11 @@ namespace QSS {
 								}
 							}
 						}
+						if ( doTOut ) { // Time step output
+							for ( Variable * trigger : triggers ) { // Triggers
+								trigger->out_t( t );
+							}
+						}
 					}
 
 				} else if ( event.is_QSS_Inp() ) { // QSS Input requantization event(s)
@@ -3133,6 +3159,9 @@ namespace QSS {
 							trigger->out( t );
 							trigger->observers_out_post( t );
 						}
+					}
+					if ( doTOut ) { // Time step output
+						trigger->out_t( t );
 					}
 				} else { // Unsupported event
 					assert( false );
@@ -3303,7 +3332,10 @@ namespace QSS {
 		set_time( tE );
 		if ( ( ( options::output::R || options::output::Z || options::output::D || options::output::S ) && ( options::output::X || options::output::Q ) ) || options::output::T ) { // QSS tE outputs
 			for ( auto var : vars ) {
-				if ( var->tQ < tE ) var->out( tE );
+				if ( var->tQ < tE ) {
+					if ( doROut || doZOut || doDOut || doSOut ) var->out( tE );
+					if ( doTOut ) var->out_t( tE );
+				}
 				var->flush_out();
 			}
 		}
