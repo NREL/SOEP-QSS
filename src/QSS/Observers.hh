@@ -86,7 +86,6 @@ public: // Creation
 	{}
 
 	// FMU-ME + Trigger Constructor
-	explicit
 	Observers(
 	 FMU_ME * fmu_me,
 	 Variable * trigger
