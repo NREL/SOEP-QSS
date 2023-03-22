@@ -9,7 +9,7 @@ call setIC.64.bat
 set CC=icl
 set CXX=icl
 set FMIL_SRC_DIR=%~dp0..\..\custom
-set FMIL_INS_DIR=C:\FMIL.IC.r
+set FMIL_INS_DIR=C:\FMIL.VC.r
 if exist "%FMIL_INS_DIR%" rd /S /Q "%FMIL_INS_DIR%" >nul 2>nul
 del CMakeCache.txt >nul 2>nul
 
@@ -22,7 +22,7 @@ make -j%NUMBER_OF_PROCESSORS% VERBOSE=1 install
 :: C:\CMake\bin\cmake.exe --build . --config MinSizeRel --target install
 
 :: IC++ 2019 with VC++ 2017 Generator
-:: C:\CMake\bin\cmake.exe -G "Visual Studio 15 2017" -A x64 -T "Intel C++ Compiler 19.0" -DFMILIB_INSTALL_PREFIX=%FMIL_INS_DIR% %FMIL_SRC_DIR% -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS_RELEASE="/nologo /Wall /QxHOST /Qansi-alias /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DNDEBUG /O3 /fp:fast=2 /Qprec-div- /Qip /Qinline-factor:225 /MD"
+:: C:\CMake\bin\cmake.exe -G "Visual Studio 15 2017" -A x64 -T "Intel C++ Compiler 19.0" -DFMILIB_INSTALL_PREFIX=%FMIL_INS_DIR% %FMIL_SRC_DIR% -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS_RELEASE="/nologo /Wall /QxHOST /Qansi-alias /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DNDEBUG /O3 /fp:fast=2 /Qprec-div- /Qip /Qinline-factor:225 /Qvc14.1 /MD"
 :: C:\CMake\bin\cmake.exe --build . --config MinSizeRel --target install
 
 call "%~dp0\hdr.bat" "%FMIL_INS_DIR%"

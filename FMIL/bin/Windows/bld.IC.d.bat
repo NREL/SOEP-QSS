@@ -9,7 +9,7 @@ call setIC.64.bat
 set CC=icl
 set CXX=icl
 set FMIL_SRC_DIR=%~dp0..\..\custom
-set FMIL_INS_DIR=C:\FMIL.IC.d
+set FMIL_INS_DIR=C:\FMIL.VC.d
 if exist "%FMIL_INS_DIR%" rd /S /Q "%FMIL_INS_DIR%" >nul 2>nul
 del CMakeCache.txt >nul 2>nul
 
@@ -23,7 +23,7 @@ ren %FMIL_INS_DIR%\lib\zlibd.lib zlib.lib >nul 2>nul
 :: C:\CMake\bin\cmake.exe --build . --config MinSizeRel --target install
 
 :: IC++ 2019 with VC++ 2017 Generator
-:: C:\CMake\bin\cmake.exe -G "Visual Studio 15 2017" -A x64 -T "Intel C++ Compiler 19.0" -DFMILIB_INSTALL_PREFIX=%FMIL_INS_DIR% %FMIL_SRC_DIR% -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS_DEBUG="/nologo /Wall /DNOMINMAX /DWIN32_LEAN_AND_MEAN /fp:source /Qtrapuv /check:stack,uninit /Gs0 /GS /Qfp-stack-check /traceback /Od /Z7 /MDd"
+:: C:\CMake\bin\cmake.exe -G "Visual Studio 15 2017" -A x64 -T "Intel C++ Compiler 19.0" -DFMILIB_INSTALL_PREFIX=%FMIL_INS_DIR% %FMIL_SRC_DIR% -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS_DEBUG="/nologo /Wall /DNOMINMAX /DWIN32_LEAN_AND_MEAN /fp:source /Qtrapuv /check:stack,uninit /Gs0 /GS /Qfp-stack-check /traceback /Od /Z7 /Qvc14.1 /MDd"
 :: C:\CMake\bin\cmake.exe --build . --config MinSizeRel --target install
 
 call "%~dp0\hdr.bat" "%FMIL_INS_DIR%"

@@ -9,7 +9,7 @@ call setIC.64.bat
 set CC=icl
 set CXX=icl
 set FMIL_SRC_DIR=%~dp0..\..\custom
-set FMIL_INS_DIR=C:\FMIL.IC.p
+set FMIL_INS_DIR=C:\FMIL.VC.p
 if exist "%FMIL_INS_DIR%" rd /S /Q "%FMIL_INS_DIR%" >nul 2>nul
 del CMakeCache.txt >nul 2>nul
 
