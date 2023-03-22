@@ -44,11 +44,11 @@ check :
 
 .PHONY : clear
 clear :
-	-DEL *.d *.obj
+	-DEL *.d *.obj *.pdb
 
 .PHONY : clean
 clean :
-	-DEL *.d *.obj $(DLB)
+	-DEL *.d *.obj *.pdb $(DLB)
 
 $(DLB) : $(OBJ)
 	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F

@@ -55,11 +55,11 @@ check :
 
 .PHONY : clear
 clear :
-	-DEL *.d *.obj
+	-DEL *.d *.obj *.pdb
 
 .PHONY : clean
 clean :
-	-DEL *.d *.obj $(SLB) $(EXE) $(PYD) $(BIN_PATH)\QSS.* $(BIN_PATH)\PyQSS.*
+	-DEL *.d *.obj *.pdb $(SLB) $(EXE) $(PYD) $(BIN_PATH)\QSS.* $(BIN_PATH)\PyQSS.*
 
 $(SLB) : $(OBJ)
 	@-FOR %%F in ($(filter-out $(DEP) $(QSS_DEP) $(PyQSS_DEP),$(wildcard *.d))) DO DEL %%F

@@ -60,11 +60,11 @@ check :
 
 .PHONY : clear
 clear :
-	-DEL *.d *.obj
+	-DEL *.d *.obj *.pdb
 
 .PHONY : clean
 clean :
-	-DEL *.d *.obj $(BIN_PATH)\$(TAR).unit.*
+	-DEL *.d *.obj *.pdb $(BIN_PATH)\$(TAR).unit.*
 
 .PHONY : run
 run : $(EXE)

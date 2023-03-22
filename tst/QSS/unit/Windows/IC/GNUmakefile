@@ -21,7 +21,7 @@ OBJ := $(addsuffix .obj,$(basename $(SRC)))
 APP_OBJ := $(filter-out $(QSS)/src/QSS/app/$(PlatformFull)/QSS.obj,$(wildcard $(QSS)/src/QSS/app/$(PlatformFull)/*.obj))
 EXE := $(BIN_PATH)\$(TAR).unit.exe
 PATH_LIBS := $(BIN_PATH)\lib$(TAR).lib
-#CXXFLAGS += /Qdiag-disable:1684 # 1684 fires on gtest code
+CXXFLAGS += /Qdiag-disable:4137 # gtest triggers remark #4137: this feature-test macro is ignored
 
 # Extensions
 .SUFFIXES: .h
@@ -61,11 +61,11 @@ check :
 
 .PHONY : clear
 clear :
-	-DEL *.d *.obj
+	-DEL *.d *.obj *.pdb
 
 .PHONY : clean
 clean :
-	-DEL *.d *.obj $(BIN_PATH)\$(TAR).unit.*
+	-DEL *.d *.obj *.pdb $(BIN_PATH)\$(TAR).unit.*
 
 .PHONY : run
 run : $(EXE)
