@@ -75,11 +75,11 @@ $(PyQSS_OBJ) : $(PyQSS_SRC)
 	$(CXX) $(CXXFLAGS) /c $(subst /,\,$<)
 
 $(EXE) : $(SLB) $(QSS_OBJ)
-	$(CXX) $(CXXLINKFLAGS) $(PGO) /Fe:$@ $(QSS_OBJ) $(LINKFLAGS) $(SLB) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib expat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
+	$(CXX) $(CXXLINKFLAGS) $(PGO) /Fe:$@ $(QSS_OBJ) $(LINKFLAGS) $(SLB) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
 	@-DEL $(BIN_PATH)\QSS.exp $(BIN_PATH)\QSS.ilk $(BIN_PATH)\QSS.lib >nul 2>&1
 
 $(PYD) : $(SLB) $(PyQSS_OBJ)
-	$(CXX) /LD $(CXXLINKFLAGS) $(PGO) /Fe:$@ $(PyQSS_OBJ) $(LINKFLAGS) $(SLB) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib expat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
+	$(CXX) /LD $(CXXLINKFLAGS) $(PGO) /Fe:$@ $(PyQSS_OBJ) $(LINKFLAGS) $(SLB) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
 	@-DEL $(BIN_PATH)\PyQSS.exp $(BIN_PATH)\PyQSS.ilk $(BIN_PATH)\PyQSS.lib >nul 2>&1
 
 # Dependencies

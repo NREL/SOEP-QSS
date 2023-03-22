@@ -53,7 +53,7 @@ clean :
 $(DLB) : $(OBJ)
 	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F
 	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.obj))) DO DEL %%F
-	$(CXX) $(CXXLINKFLAGS) $(PGO) $^ $(LINKFLAGS) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib expat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib /out:$@ /dll
+	$(CXX) $(CXXLINKFLAGS) $(PGO) $^ $(LINKFLAGS) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib /out:$@ /dll
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)

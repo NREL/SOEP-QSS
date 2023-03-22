@@ -76,14 +76,14 @@ run : $(EXE)
 #$(EXE) : $(OBJ) $(PATH_LIBS)
 #	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F
 #	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.obj))) DO DEL %%F
-#	$(LD) $(LDFLAGS) /out:$(subst \,/,$@) $^ /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib expat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib $(GTEST_BIN)\gtest.lib
+#	$(LD) $(LDFLAGS) /out:$(subst \,/,$@) $^ /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib $(GTEST_BIN)\gtest.lib
 #	@-DEL $(BIN_PATH)\$(TAR).unit.exp $(BIN_PATH)\$(TAR).unit.ilk $(BIN_PATH)\$(TAR).unit.lib $(BIN_PATH)\$(TAR).unit.pdb
 
 # Executable from objects
 $(EXE) : $(OBJ) $(APP_OBJ)
 	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F
 	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.obj))) DO DEL %%F
-	$(LD) $(LDFLAGS) /out:$(subst \,/,$@) $^ /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib expat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib $(GTEST_BIN)\gtest.lib
+	$(LD) $(LDFLAGS) /out:$(subst \,/,$@) $^ /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib $(GTEST_BIN)\gtest.lib
 	@-DEL $(BIN_PATH)\$(TAR).unit.exp $(BIN_PATH)\$(TAR).unit.ilk $(BIN_PATH)\$(TAR).unit.lib $(BIN_PATH)\$(TAR).unit.pdb
 
 .PRECIOUS : $(EXE)
