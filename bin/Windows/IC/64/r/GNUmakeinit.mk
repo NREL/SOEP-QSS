@@ -8,6 +8,7 @@
 CXXFLAGS := /nologo /Qstd=c++20 /Zc:__cplusplus /Qcxx-features /Wall /Qdiag-disable:809,1786,2259,3280,10382,10441,11074,11075 /QxHOST /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DWIN32 /DNDEBUG /Qopenmp /O3 /fp:precise /Qprec-div- /Qparallel /Qip /Qinline-factor:225 /MD
 # /Qansi-alias removed to work around Intel C++ 19.1 and 2020.1 bug
 # /Qhlo0 can be used to work around Intel C++ bug that breaks std::find that may be better wrt speed than dropping /Qx for Haswell+ CPUs
+#CXXFLAGS += /DQSS_STATE_PROPAGATE_CONTINUOUS # For continuous (x-trajectory) propagation
 # Disabled Warnings:
 #   869 Parameter never referenced
 #  1786 Use of deprecated items

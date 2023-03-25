@@ -7,6 +7,7 @@
 # Variables
 CXXFLAGS := /nologo /std:c++20 /Zc:__cplusplus /TP /EHsc /W4 /wd4068 /wd4996 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DWIN32 /DNDEBUG /arch:AVX2 /openmp /O2 /fp:precise /Qpar /GS- /Z7 /MD
 CXXFLAGS += /wd4100 /wd4505 # For FMIL
+#CXXFLAGS += /DQSS_STATE_PROPAGATE_CONTINUOUS # For continuous (x-trajectory) propagation
 # Disabled Warnings:
 #  4068 Unknown pragma
 #  4100 Unreferenced formal parameter
