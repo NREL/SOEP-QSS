@@ -376,17 +376,17 @@ FMIL:
   * `sudo cp <path>/FMIL/trunk/ThirdParty/Expat/expat-2.1.0/lib/expat*.h /opt/FMIL.<Compiler>.<Build>/include`
 
 Googletest:
-* The unit tests use googletest. The `setGTest` scripts under `bin` set up the necessary environment variables to find googletest when you run the `setProject` script for your compiler: put a custom version of `setGTest` in your `PATH` to adapt it to your system.
+* The unit tests use googletest. The `setGTest` scripts under `bin` set up the necessary environment variables to find googletest when you run the `setQSS` script for your compiler: put a custom version of `setGTest` in your `PATH` to adapt it to your system.
 
 To build the QSS application on Linux:
 * `cd <repository_directory>`
-* `source bin/Linux/GCC/64/r/setProject` for release builds or `source bin/Linux/GCC/64/d/setProject` for debug builds
+* `source bin/Linux/GCC/64/r/setQSS` for release builds or `source bin/Linux/GCC/64/d/setQSS` for debug builds
 * `cd src/QSS/app`
 * `mak` (add a -j*N* make argument to override the number of parallel compile jobs)
 * Note that `-fPIC` is used to compile with GCC on Linux to share the build configuration with the FMU-QSS shared/dynamic library generation: this may add a small performance penalty for the QSS application and should not be used for production application builds.
 
 To run the QSS application:
-* `QSS` from any directory with a console configured with `setProject`
+* `QSS` from any directory with a console configured with `setQSS`
 * `QSS --help` will show the command line usage/options.
 
 To build and run the unit tests on Linux:
@@ -412,16 +412,16 @@ FMIL:
   * `copy \Projects\FMIL\trunk\src\XML\include\FMI2\*.h C:\FMIL.<Compiler>.<Build>\include\FMI2`
 
 Googletest:
-* The unit tests use googletest. The `setGTest` scripts under `bin` set up the necessary environment variables to find googletest when you run the `setProject` script for your compiler: put a custom version of `setGTest.bat` in your `PATH` to adapt it to your system.
+* The unit tests use googletest. The `setGTest` scripts under `bin` set up the necessary environment variables to find googletest when you run the `setQSS` script for your compiler: put a custom version of `setGTest.bat` in your `PATH` to adapt it to your system.
 
 To build the QSS application on Windows:
 * `cd <repository_directory>`
-* `bin\Windows\VC\64\r\setProject` for VC++ release builds or `bin\Windows\VC\64\d\setProject` for VC++ debug builds (or similarly with GCC or with IC for Intel C++)
+* `bin\Windows\VC\64\r\setQSS` for VC++ release builds or `bin\Windows\VC\64\d\setQSS` for VC++ debug builds (or similarly with GCC or with IC for Intel C++)
 * `cd src\QSS\app`
 * `mak` (add a -j*N* make argument to override the number of parallel compile jobs)
 
 To run the QSS application:
-* `QSS` from any directory with a console configured with `setProject`
+* `QSS` from any directory with a console configured with `setQSS`
 * `QSS --help` will show the command line usage/options.
 
 To build and run the unit tests on Windows:
@@ -454,9 +454,9 @@ Run `QSS --help` to see the command line usage.
 
 Instructions for building an FMU-QSS from an FMU-ME (FMU for Model Exchange) follows.
 * The [fmu-uuid](https://github.com/viproma/fmu-uuid) application must be on your PATH to generate and FMU-QSS with GUID checking.
-* The same FMIL setup and `setProject` console configuration as for the QSS application is assumed.
+* The same FMIL setup and `setQSS` console configuration as for the QSS application is assumed.
 * The `FMU-QSS.gen.py` (Python 2.7 or 3.x) script generates the FMU-QSS from an FMU-ME adapted for QSS use.
-* From a console configured with `setProject` move to an empty working directory and copy in the FMU-ME .fmu file.
+* From a console configured with `setQSS` move to an empty working directory and copy in the FMU-ME .fmu file.
 * Run `FMU-QSS.gen.py <FMU-ME_name>.fmu` to start the generation process.
   * Additional options can be seen by running `FMU-QSS.gen.py --help`.
 * This will generate the FMU-QSS `modelDescription.xml` file, build the FMU-QSS shared/dynamic library, and zip the FMU-QSS into a file with a name of the form `<FMU=ME_name>_QSS.fmu`. The FMU-ME fmu is embedded in the `resources` folder within the FMU-QSS .fmu zip file.

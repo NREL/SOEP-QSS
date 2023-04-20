@@ -14,4 +14,4 @@ export CPATH=.:$QSS/src:$FMIL_HOME/include:$FMIL_HOME/include/FMI:$FMIL_HOME/inc
 
 source setGTest
 
-source $QSS/bin/Linux/setProject
+source $QSS/bin/Linux/setQSS

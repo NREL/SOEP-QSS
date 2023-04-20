@@ -12,4 +12,4 @@ set Path=%Path%;%QSS%\bin\%PlatformBits%
 
 call setGTest.bat
 
-%~dp0..\setProject.bat
+%~dp0..\setQSS.bat

@@ -13,4 +13,4 @@ set LIB=%LIB%;%QSS_bin%
 
 call setFMIL.bat
 
-%~dp0..\setProject.bat
+%~dp0..\setQSS.bat
