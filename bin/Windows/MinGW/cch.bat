@@ -1,5 +1,5 @@
 @echo off
-rem MinGW C++ Compile Header Syntax-Check
+:: MinGW C++ Compile Header Syntax-Check
 
 if exist %1     set HeaderSource=%1
 if exist %1.h   set HeaderSource=%1.h

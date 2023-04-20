@@ -1,5 +1,5 @@
 @echo off
-rem Visual C++ Build Release
+:: Visual C++ Build Release
 
 if exist %1.cc (
   set CxxMainSource=%1.cc

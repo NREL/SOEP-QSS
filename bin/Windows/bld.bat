@@ -1,24 +1,23 @@
 @echo off
 
-rem Build QSS
-rem Usage: bld [<compiler> <build> [make args]]
-rem Example: bld GCC r
+:: Build QSS
+:: Usage: bld [<compiler> <build> [make args]]
+:: Example: bld GCC r
 
 setlocal
 
-rem Set build
+:: Check QSS env var is set
+if "%QSS%" == "" (
+  echo QSS environment variable is not set
+  exit /B 1
+)
+
+:: Set up build environment
 if not "%2" == "" (
   call %QSS%\bin\Windows\%1\64\%2\setProject.bat
 )
 
-rem Build QSS
-cd %QSS%\src\QSS\app
-call mak.bat %3 %4 %5 %6 %7 %8 %9
-if "%2" == "d" (
-  if not "%3" == "clean" (
-    cd %QSS%\tst\QSS\unit
-    call mak.bat %3 %4 %5 %6 %7 %8 %9 run
-  )
-)
+:: Build QSS
+cd %QSS%\src\QSS\app && call mak.bat
 
 endlocal

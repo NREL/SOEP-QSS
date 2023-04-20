@@ -1,6 +1,6 @@
 @echo off
-rem OCT MinGW Compiler Setup
-rem Put a custom version first in your PATH to adapt to your system
+:: OCT MinGW Compiler Setup
+:: Put a custom version first in your PATH to adapt to your system
 
 set Path=%Path%;C:\OCT\MinGW\bin
 
