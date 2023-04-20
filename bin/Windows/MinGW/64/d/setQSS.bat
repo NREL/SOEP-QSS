@@ -15,4 +15,4 @@ set LD_LIBRARY_PATH=%QSS_bin%;%LD_LIBRARY_PATH%
 
 call setFMIL.bat
 
-%~dp0..\setProject.bat
+%~dp0..\setQSS.bat

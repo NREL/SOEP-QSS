@@ -14,4 +14,4 @@ call %~dp0..\..\setProgramFiles32.bat
 call setVC.64.bat
 call setGTest.bat
 
-%~dp0..\setProject.bat
+%~dp0..\setQSS.bat

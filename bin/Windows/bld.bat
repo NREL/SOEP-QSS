@@ -14,7 +14,7 @@ if "%QSS%" == "" (
 
 :: Set up build environment
 if not "%2" == "" (
-  call %QSS%\bin\Windows\%1\64\%2\setProject.bat
+  call %QSS%\bin\Windows\%1\64\%2\setQSS.bat
 )
 
 :: Build QSS
