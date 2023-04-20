@@ -1,5 +1,5 @@
 #!/bin/bash
-if [ -f $PlatformCompiler/GNUmakefile ]; then
+if [ -f $PlatformOSCompiler/GNUmakefile ]; then
   if [ ! -d $PlatformFull ]; then
     mkdir -p $PlatformFull
   fi
@@ -12,5 +12,5 @@ if [ -f $PlatformCompiler/GNUmakefile ]; then
   make -O -j${ntask} --makefile=../../GNUmakefile $*
   cd ../../../..
 else
-  echo $PlatformCompiler/GNUmakefile not found
+  echo $PlatformOSCompiler/GNUmakefile not found
 fi
