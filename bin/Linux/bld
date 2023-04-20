@@ -6,7 +6,7 @@
 
 # Set build
 if [ "$1" != "" ] && [ "$2" != "" ]; then
-  source $QSS/bin/Linux/$1/64/$2/setProject
+  source $QSS/bin/Linux/$1/64/$2/setQSS
 fi
 
 # Build QSS

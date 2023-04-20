@@ -9,4 +9,4 @@ export PlatformBits=Linux/Clang/64
 
 export PATH=$PATH:$QSS/bin/$PlatformBits
 
-source $QSS/bin/Linux/Clang/setProject
+source $QSS/bin/Linux/Clang/setQSS

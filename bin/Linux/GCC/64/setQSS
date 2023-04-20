@@ -9,4 +9,4 @@ export PlatformBits=Linux/GCC/64
 
 export PATH=$PATH:$QSS/bin/$PlatformBits
 
-source $QSS/bin/Linux/GCC/setProject
+source $QSS/bin/Linux/GCC/setQSS

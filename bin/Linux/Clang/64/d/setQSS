@@ -17,4 +17,4 @@ export LD_LIBRARY_PATH=$QSS_bin:$LD_LIBRARY_PATH
 
 source setFMIL
 
-source $QSS/bin/Linux/Clang/64/setProject
+source $QSS/bin/Linux/Clang/64/setQSS

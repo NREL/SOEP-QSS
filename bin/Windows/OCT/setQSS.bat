@@ -16,4 +16,4 @@ if not (%FMIL_HOME%) == () set CPATH=%CPATH%;%FMIL_HOME%\include;%FMIL_HOME%\inc
 
 call setOCT.bat
 
-%~dp0..\setProject.bat
+%~dp0..\setQSS.bat
