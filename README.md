@@ -380,7 +380,7 @@ Googletest:
 
 To build the QSS application on Linux:
 * `cd <repository_directory>`
-* `source bin/Linux/GCC/64/r/setQSS` for release builds or `source bin/Linux/GCC/64/d/setQSS` for debug builds
+* `source bin/Linux/GCC/r/setQSS` for release builds or `source bin/Linux/GCC/d/setQSS` for debug builds
 * `cd src/QSS/app`
 * `mak` (add a -j*N* make argument to override the number of parallel compile jobs)
 * Note that `-fPIC` is used to compile with GCC on Linux to share the build configuration with the FMU-QSS shared/dynamic library generation: this may add a small performance penalty for the QSS application and should not be used for production application builds.
@@ -392,7 +392,7 @@ To run the QSS application:
 To build and run the unit tests on Linux:
 * The unit tests are in the `tst/QSS/unit` directory and can be built and run with the command `mak run`.
 
-To run the tests that exercise an FMU place a binary compatible build of the tested FMUs in the `unit/Linux/<compiler>/64/d` directory before running the unit tests.
+To run the tests that exercise an FMU place a binary compatible build of the tested FMUs in the `unit/Linux/<compiler>/d` directory before running the unit tests.
 At this time an Achilles.fmu FMU built from Achilles.mo in the SOEP-QSS-Test repository can be used by the tests.
 
 ### Windows
@@ -416,7 +416,7 @@ Googletest:
 
 To build the QSS application on Windows:
 * `cd <repository_directory>`
-* `bin\Windows\VC\64\r\setQSS` for VC++ release builds or `bin\Windows\VC\64\d\setQSS` for VC++ debug builds (or similarly with GCC or with IC for Intel C++)
+* `bin\Windows\VC\r\setQSS` for VC++ release builds or `bin\Windows\VC\d\setQSS` for VC++ debug builds (or similarly with GCC or with IC for Intel C++)
 * `cd src\QSS\app`
 * `mak` (add a -j*N* make argument to override the number of parallel compile jobs)
 
@@ -427,7 +427,7 @@ To run the QSS application:
 To build and run the unit tests on Windows:
 * The unit tests are in the `tst\QSS\unit` directory and can be built and run with the command `mak run`.
 
-To run the tests that exercise an FMU place a binary compatible build of the tested FMUs in the `unit\Windows\<compiler>\64\d` directory before running the unit tests.
+To run the tests that exercise an FMU place a binary compatible build of the tested FMUs in the `unit\Windows\<compiler>\d` directory before running the unit tests.
 At this time an Achilles.fmu FMU built from Achilles.mo in the SOEP-QSS-Test repository can be used by the tests.
 
 ## Running QSS

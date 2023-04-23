@@ -306,7 +306,7 @@ public: // Creation
 	FMU_ME( std::string const & path );
 
 	// FMU-ME Path + Event Queue Constructor
-	FMU_ME( std::string const & path, EventQ * eventq );
+	FMU_ME( std::string const & path, EventQ * eventq_ );
 
 	// Destructor
 	~FMU_ME();

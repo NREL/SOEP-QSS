@@ -1,0 +1,10 @@
+#!/bin/bash
+# Intel C++ Build Release
+
+if [ -f $1.cc ]; then
+  CxxSource=$1.cc
+  OutputSpec="-o $1"
+  shift
+fi
+
+icpc -std=c++20 -ansi-alias -qopenmp -xHOST -Wall -diag-disable=10382,10441,11074,11075 -DNDEBUG -O3 -fp-model=precise -ip -inline-factor=225 $CxxSource $@ $OutputSpec

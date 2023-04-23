@@ -7,7 +7,8 @@ set QSS=%QSS:~0,-17%
 :Step2
 
 set PlatformOS=Windows
-set PlatformOSCompiler=Windows\OCT
+set PlatformCompiler=OCT
+set PlatformOSCompiler=%PlatformOS%\%PlatformCompiler%
 
 set Path=%Path%;%QSS%\bin\%PlatformOSCompiler%
 

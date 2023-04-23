@@ -1,15 +1,15 @@
 #!/bin/bash
 # Clang C/C++ Wrapped Header Compile for Syntax-Checking
 
-if   [ -f $1     ]; then
-  case $1 in
-  *.h)
-    CHeader=$1
-    ;;
-  *)
-    CxxHeader=$1
-    ;;
-  esac
+if [ -f $1 ]; then
+	case $1 in
+	*.c)
+		CHeader=$1
+		;;
+	*)
+		CxxHeader=$1
+		;;
+	esac
 elif [ -f $1.h   ]; then CHeader=$1.h
 elif [ -f $1.hh  ]; then CxxHeader=$1.hh
 elif [ -f $1.hpp ]; then CxxHeader=$1.hpp
@@ -18,19 +18,19 @@ elif [ -f $1.ii  ]; then CxxHeader=$1.ii
 fi
 
 if [[ $CxxHeader ]]; then
-  cchHeader=$CxxHeader
-  cchSource=$CxxHeader.cc
+	cchHeader=$CxxHeader
+	cchSource=$CxxHeader.cc
 elif [[ $CHeader ]]; then
-  cchHeader=$CHeader
-  cchSource=$CHeader.c
+	cchHeader=$CHeader
+	cchSource=$CHeader.c
 else
-  echo ERROR: Header file with that name not found
-  exit 1
+	echo ERROR: Header file with that name not found
+	exit 1
 fi
 
 if [ -f $cchSource ]; then
-  echo ERROR: Target source file exists: $cchSource
-  exit 1
+	echo ERROR: Target source file exists: $cchSource
+	exit 1
 fi
 
 echo -e \#include \"$cchHeader\" > $cchSource

@@ -21,7 +21,7 @@ OBJ := $(addsuffix .obj,$(basename $(SRC)))
 APP_OBJ := $(filter-out $(QSS)/src/QSS/app/$(PlatformFull)/QSS.obj,$(wildcard $(QSS)/src/QSS/app/$(PlatformFull)/*.obj))
 EXE := $(BIN_PATH)\$(TAR).unit.exe
 PATH_LIBS := $(BIN_PATH)\lib$(TAR).lib
-CXXFLAGS += /Qdiag-disable:4137 # gtest triggers remark #4137: this feature-test macro is ignored
+CXXFLAGS += /Qdiag-disable:1684,4137 # These fire on gtest code
 
 # Extensions
 .SUFFIXES: .h
@@ -35,7 +35,7 @@ vpath %.h   $(GTEST_INC)
 
 %.obj : %.cc
 	@$(MAKEDEPEND) $<
-	$(CXX) $(CXXFLAGS) /I$(TST_PATH) /I$(GTEST_INC) /c /object:$@ $(subst /,\,$<)
+	$(CXX) $(CXXFLAGS) /I$(TST_PATH) /I$(GTEST_INC) /c /Fo:"$@"" $(subst /,\,$<)
 
 # Rules
 
@@ -61,11 +61,11 @@ check :
 
 .PHONY : clear
 clear :
-	-DEL *.d *.obj *.pdb
+	@-DEL *.d *.obj *.pdb >nul 2>&1
 
 .PHONY : clean
 clean :
-	-DEL *.d *.obj *.pdb $(BIN_PATH)\$(TAR).unit.*
+	@-DEL *.d *.obj *.pdb $(BIN_PATH)\$(TAR).unit.* >nul 2>&1
 
 .PHONY : run
 run : $(EXE)
@@ -74,17 +74,17 @@ run : $(EXE)
 
 # Executable from libraries
 #$(EXE) : $(OBJ) $(PATH_LIBS)
-#	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F
-#	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.obj))) DO DEL %%F
+#	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F >nul 2>&1
+#	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.obj))) DO DEL %%F >nul 2>&1
 #	$(LD) $(LDFLAGS) /out:$(subst \,/,$@) $^ /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib $(GTEST_BIN)\gtest.lib
-#	@-DEL $(BIN_PATH)\$(TAR).unit.exp $(BIN_PATH)\$(TAR).unit.ilk $(BIN_PATH)\$(TAR).unit.lib $(BIN_PATH)\$(TAR).unit.pdb
+#	@-DEL $(BIN_PATH)\$(TAR).unit.exp $(BIN_PATH)\$(TAR).unit.ilk $(BIN_PATH)\$(TAR).unit.lib $(BIN_PATH)\$(TAR).unit.pdb >nul 2>&1
 
 # Executable from objects
 $(EXE) : $(OBJ) $(APP_OBJ)
-	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F
-	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.obj))) DO DEL %%F
+	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F >nul 2>&1
+	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.obj))) DO DEL %%F >nul 2>&1
 	$(LD) $(LDFLAGS) /out:$(subst \,/,$@) $^ /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib $(GTEST_BIN)\gtest.lib
-	@-DEL $(BIN_PATH)\$(TAR).unit.exp $(BIN_PATH)\$(TAR).unit.ilk $(BIN_PATH)\$(TAR).unit.lib $(BIN_PATH)\$(TAR).unit.pdb
+	@-DEL $(BIN_PATH)\$(TAR).unit.exp $(BIN_PATH)\$(TAR).unit.ilk $(BIN_PATH)\$(TAR).unit.lib $(BIN_PATH)\$(TAR).unit.pdb >nul 2>&1
 
 .PRECIOUS : $(EXE)
 

@@ -1,3 +1,3 @@
 @echo off
 :: Intel C++ Compile Debug
-icl /nologo /Qstd=c++20 /Zc:__cplusplus /Qcxx-features /Wall /Qdiag-disable:809,1786,2259,3280,10382,10441,11074,11075 /QxHOST /Qansi-alias /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DWIN32 /fp:source /Qtrapuv /check:stack,uninit /Gs0 /GS /Qfp-stack-check /traceback /Od /Z7 /MD /c %*
+icl /nologo /Qstd:c++20 /Qansi-alias /Qopenmp /EHsc /QxHOST /Zc:__cplusplus /Wall /Qdiag-disable:10382,10441,11074,11075 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DWIN32 /Od /fp:strict /Qtrapuv /RTCsu /check:stack,uninit /GS /Gs0 /Qfp-stack-check /Qcheck-pointers:rw /Qcheck-pointers-dangling:all /traceback /Z7 /MDd /c %*

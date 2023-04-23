@@ -1,3 +1,0 @@
-#!/bin/bash
-# GCC C++ Compile Release
-g++ -pipe -std=c++20 -pedantic -Wall -Wextra -Winline -Wno-unknown-pragmas -m64 -march=native -DNDEBUG -O3 -fno-stack-protector -finline-limit=2000 -s -c $@

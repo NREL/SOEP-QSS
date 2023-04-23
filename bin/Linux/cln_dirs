@@ -1,0 +1,2 @@
+#!/bin/bash
+rm -rf $PlatformFull >/dev/null 2>&1

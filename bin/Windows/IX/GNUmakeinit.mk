@@ -13,10 +13,10 @@ ARFLAGS := /nologo
 
 # Commands
 CXX := icx
+CC := icx-cc
 AR := lib
 LD := link
 MAKEDEPEND := makedep.py --inc=INCLUDE
-rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2)$(filter $(subst *,%,$2),$d))
 
 # Paths
 OBJ_PATH := .
@@ -49,22 +49,22 @@ vpath %.dll $(BIN_PATH)
 
 %.obj : %.cc
 	@$(MAKEDEPEND) $<
-	$(CXX) $(CXXFLAGS) /c /Fo:$@ $(subst /,\,$<)
+	$(CXX) $(CXXFLAGS) /c /Fo:"$@" $(subst /,\,$<)
 
 %.obj : %.cpp
 	@$(MAKEDEPEND) $<
-	$(CXX) $(CXXFLAGS) /c /Fo:$@ $(subst /,\,$<)
+	$(CXX) $(CXXFLAGS) /c /Fo:"$@" $(subst /,\,$<)
 
 %.obj : %.c
 	@$(MAKEDEPEND) $<
-	$(CXX) $(CFLAGS) /c /Fo:$@ $(subst /,\,$<)
+	$(CC) $(CFLAGS) /c /Fo:"$@" $(subst /,\,$<)
 
 # Library from objects: Rebuild whole library ($^ instead of $?): Could do remove then add but fails for new lib
 %.lib : %.obj
 	$(AR) $(ARFLAGS) /out:$@ $^
 
 %.dll : %.obj
-	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) /dll $@  $(subst /,\,$^)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) /dll $@  $(subst /,\,$^)
 
 # Directives
 .DELETE_ON_ERROR : # Delete a target if error occurs during command execution

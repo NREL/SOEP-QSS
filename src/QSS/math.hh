@@ -43,6 +43,7 @@
 #include <cstddef>
 #include <cmath>
 #include <limits>
+//#include <numbers> //C++20
 #include <type_traits>
 #include <utility>
 
@@ -56,37 +57,35 @@ namespace QSS {
 // - Halley iterative methods were not seen to be faster in testing so far but this can be revisited.
 
 // Globals
-extern double const zero;
-extern double const one;
-extern double const two;
-extern double const three;
-extern double const four;
-extern double const six;
-extern double const one_half;
-extern double const one_third;
-extern double const one_fourth;
-extern double const one_sixth;
-extern double const one_ninth;
-extern double const two_thirds;
-extern double const pi;
-extern double const infinity;
-extern double const half_infinity;
-extern double const neg_infinity;
+double constexpr zero{ 0.0 };
+double constexpr one{ 1.0 };
+double constexpr two{ 2.0 };
+double constexpr three{ 3.0 };
+double constexpr four{ 4.0 };
+double constexpr six{ 6.0 };
+double constexpr one_half{ 0.5 };
+double constexpr one_third{ 1.0 / 3.0 };
+double constexpr one_fourth{ 0.25 };
+double constexpr one_sixth{ 1.0 / 6.0 };
+double constexpr one_ninth{ 1.0 / 9.0 };
+double constexpr two_thirds{ 2.0 / 3.0 };
+double constexpr pi{ 3.141592653589793115997963 }; //C++20 double constexpr pi{ std::numbers::pi };  Not working with Intel Classic C++ as of version 2021.9.0 on Windows
+double constexpr infinity{ std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() };
+double constexpr neg_infinity{ std::numeric_limits< double >::has_infinity && std::numeric_limits<double>::is_iec559 ? -std::numeric_limits< double >::infinity() : std::numeric_limits< double >::lowest() };
+double constexpr half_infinity{ 0.5 * infinity };
 
 // General
 
 // Sign: Returns Passed Type as Boolean
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 bool
 bool_sign( T const x )
 {
 	return ( x < T( 0 ) ? false : true );
 }
 
-// Sign: Returns Passed Type as Boolean
+// Sign: Returns Passed Type as Integer
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 int
 int_sign( T const x )
 {
@@ -95,7 +94,6 @@ int_sign( T const x )
 
 // Sign: Returns Passed Type
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 sign( T const x )
 {
@@ -104,7 +102,6 @@ sign( T const x )
 
 // Signs of 2 Values Same?
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 bool
 signs_same( T const x, T const y )
 {
@@ -113,16 +110,22 @@ signs_same( T const x, T const y )
 
 // Signs of 2 Values Differ?
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 bool
 signs_differ( T const x, T const y )
 {
 	return ( sign( x ) != sign( y ) );
 }
 
+// Signs of 2 Values Same and Values are Non-Zero?
+template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
+bool
+nonzero_and_signs_same( T const x, T const y )
+{
+	return ( ( ( x < T( 0 ) ) && ( y < T( 0 ) ) ) || ( ( x > T( 0 ) ) && ( y > T( 0 ) ) ) );
+}
+
 // Signs of 2 Values Differ and Values are Non-Zero?
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 bool
 nonzero_and_signs_differ( T const x, T const y )
 {
@@ -131,7 +134,6 @@ nonzero_and_signs_differ( T const x, T const y )
 
 // Signum: Returns Passed Type
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 sgn( T const x )
 {
@@ -140,7 +142,6 @@ sgn( T const x )
 
 // Signum: Returns int
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 int
 signum( T const x )
 {
@@ -149,7 +150,6 @@ signum( T const x )
 
 // Square
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 square( T const x )
 {
@@ -158,7 +158,6 @@ square( T const x )
 
 // Cube
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 cube( T const x )
 {
@@ -167,7 +166,6 @@ cube( T const x )
 
 // Quad (4th Power)
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 quad( T const x )
 {
@@ -176,7 +174,6 @@ quad( T const x )
 
 // Value Clipped to Legal Arc Cosine Range
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 acos_clipped( T const x )
 {
@@ -185,7 +182,6 @@ acos_clipped( T const x )
 
 // Infinity
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 inf()
 {
@@ -197,7 +193,6 @@ using std::min;
 
 // Min of 3 Values
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 min( T const x, T const y, T const z )
 {
@@ -206,7 +201,6 @@ min( T const x, T const y, T const z )
 
 // Min of 4+ Values
 template< typename T, typename... Ts, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 min( T const a, T const b, T const c, T const d, Ts const... o )
 {
@@ -215,7 +209,6 @@ min( T const a, T const b, T const c, T const d, Ts const... o )
 
 // Min Nonnegative of 2 Values or Zero
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 min_nonnegative_or_zero( T const x, T const y )
 {
@@ -224,7 +217,6 @@ min_nonnegative_or_zero( T const x, T const y )
 
 // Min Positive of 2 Values or Zero
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 min_positive_or_zero( T const x, T const y )
 {
@@ -233,7 +225,6 @@ min_positive_or_zero( T const x, T const y )
 
 // Min Positive of 3 Values or Zero
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 min_positive_or_zero( T const x, T const y, T const z )
 {
@@ -244,7 +235,6 @@ min_positive_or_zero( T const x, T const y, T const z )
 
 // Min Positive of 2 Values or Infinity
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 min_positive_or_infinity( T const x, T const y )
 {
@@ -253,7 +243,6 @@ min_positive_or_infinity( T const x, T const y )
 
 // Min Positive of 3 Values or Infinity
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 min_positive_or_infinity( T const x, T const y, T const z )
 {
@@ -267,7 +256,6 @@ using std::max;
 
 // Max of 3 Values
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 max( T const x, T const y, T const z )
 {
@@ -276,7 +264,6 @@ max( T const x, T const y, T const z )
 
 // Max of 4+ Values
 template< typename T, typename... Ts, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 max( T const a, T const b, T const c, T const & d, Ts const... o )
 {
@@ -285,7 +272,6 @@ max( T const a, T const b, T const c, T const & d, Ts const... o )
 
 // Value if Positive or Zero
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 nonnegative( T const r )
 {
@@ -294,7 +280,6 @@ nonnegative( T const r )
 
 // Value if Positive or Infinity
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 positive_or_infinity( T const r )
 {
@@ -303,7 +288,6 @@ positive_or_infinity( T const r )
 
 // x == y Within Specified Relative or Absolute Tolerances?
 template< typename T >
-inline
 bool
 eq_tol( T const & x, T const & y, T const & r_tol, T const & a_tol = T( 0 ) )
 {
@@ -314,7 +298,6 @@ eq_tol( T const & x, T const & y, T const & r_tol, T const & a_tol = T( 0 ) )
 
 // Sorted Array of 3 Values Making Non-Positive Values Infinity
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 std::array< T, 3 >
 sorted_positive( T x, T y, T z )
 {
@@ -329,7 +312,6 @@ sorted_positive( T x, T y, T z )
 
 // Zero-Crossing Root if Given Value Meets Anti-Chatter Zero Crossing Tolerance or Infinity
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 zc_root_cull( T const root, T const val, T const zMag = T( 1e-6 ) )
 {
@@ -339,7 +321,6 @@ zc_root_cull( T const root, T const val, T const zMag = T( 1e-6 ) )
 
 // Zero-Crossing Root if Given Magnitude Meets Anti-Chatter Zero Crossing Tolerance or Infinity
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 zc_root_cull_mag( T const root, T const mag, T const zMag = T( 1e-6 ) )
 {
@@ -396,7 +377,6 @@ struct Root
 
 // Zero-Crossing Root of Linear Equation a x + b
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 zc_root_linear( T const a, T const b, T const zTol = T( 1e-6 ), T const xMag = T( 0 ) )
 {
@@ -418,7 +398,6 @@ zc_root_linear( T const a, T const b, T const zTol = T( 1e-6 ), T const xMag = T
 
 // Newton Iterative Positive Root Near Given Guess of Quadratic Equation a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 Root< T >
 newton_positive_root_quadratic( T const a, T b, T c, T x, T zTol = T( 1e-6 ) )
 {
@@ -462,7 +441,6 @@ newton_positive_root_quadratic( T const a, T b, T c, T x, T zTol = T( 1e-6 ) )
 
 // Halley Iterative Positive Root Near Given Guess of Quadratic Equation a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 Root< T >
 halley_positive_root_quadratic( T const a, T b, T c, T x, T zTol = T( 1e-6 ) )
 {
@@ -507,7 +485,6 @@ halley_positive_root_quadratic( T const a, T b, T c, T x, T zTol = T( 1e-6 ) )
 
 // Iterative Positive Root Near Given Guess of Quadratic Equation a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 Root< T >
 iterative_positive_root_quadratic( T const a, T b, T c, T x, T const zTol = T( 1e-6 ) )
 {
@@ -517,7 +494,6 @@ iterative_positive_root_quadratic( T const a, T b, T c, T x, T const zTol = T( 1
 
 // Max Critical Point Magnitude of Quadratic Equation a x^2 + b x + c on x in (0,t)
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 critical_point_magnitude_quadratic( T const a, T const b, T const c, T const t )
 {
@@ -537,7 +513,6 @@ critical_point_magnitude_quadratic( T const a, T const b, T const c, T const t )
 
 // Zero-Crossing Root of Quadratic Equation a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 zc_root_quadratic( T const a, T const b, T const c, T const zTol = T( 1e-6 ), T const xMag = T( 0 ) )
 {
@@ -619,7 +594,6 @@ zc_root_quadratic( T const a, T const b, T const c, T const zTol = T( 1e-6 ), T 
 
 // Min Nonnegative Root of Lower Boundary Quadratic Equation a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 min_root_quadratic_lower( T const a, T const b, T const c )
 {
@@ -657,7 +631,6 @@ min_root_quadratic_lower( T const a, T const b, T const c )
 
 // Min Nonnegative Root of Upper Boundary Quadratic Equation a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 min_root_quadratic_upper( T const a, T const b, T const c )
 {
@@ -695,7 +668,6 @@ min_root_quadratic_upper( T const a, T const b, T const c )
 
 // Min Nonnegative Root of Both Boundary Quadratic Equations a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 min_root_quadratic_both( T const a, T const b, T const cl, T const cu )
 {
@@ -769,7 +741,6 @@ min_root_quadratic_both( T const a, T const b, T const cl, T const cu )
 
 // Min Nonnegative Root of Both Boundary Quadratic Equations a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 std::pair< T, T >
 min_root_quadratic_both_c( T const a, T const b, T const cl, T const cu )
 {
@@ -857,7 +828,6 @@ min_root_quadratic_both_c( T const a, T const b, T const cl, T const cu )
 
 // Value of Cubic Equation a x^3 + b x^2 + c x + d
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 cubic( T const a, T const b, T const c, T const d, T const x )
 {
@@ -866,7 +836,6 @@ cubic( T const a, T const b, T const c, T const d, T const x )
 
 // Value of Monic Cubic Equation x^3 + a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 cubic_monic( T const a, T const b, T const c, T const x )
 {
@@ -875,7 +844,6 @@ cubic_monic( T const a, T const b, T const c, T const x )
 
 // Root of Monic Cubic Equation x^3 + a x^2 + b x + c if it is Positive and Crosses Outward or Zero
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 cubic_cull( T const a, T const b, T const r )
 {
@@ -884,7 +852,6 @@ cubic_cull( T const a, T const b, T const r )
 
 // Root of Monic Cubic Equation x^3 + a x^2 + b x + c if it is Positive and Crosses Downward or Zero
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 cubic_cull_lower( T const a, T const b, T const r )
 {
@@ -893,7 +860,6 @@ cubic_cull_lower( T const a, T const b, T const r )
 
 // Root of Monic Cubic Equation x^3 + a x^2 + b x + c if it is Positive and Crosses Upward or Zero
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 cubic_cull_upper( T const a, T const b, T const r )
 {
@@ -902,7 +868,6 @@ cubic_cull_upper( T const a, T const b, T const r )
 
 // Newton Iterative Positive Root Near x=0 of Monic Cubic Equation x^3 + a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 Root< T >
 newton_small_positive_root_cubic_monic( T const a, T const b, T const c, T const zTol = T( 1e-6 ) )
 {
@@ -950,7 +915,6 @@ newton_small_positive_root_cubic_monic( T const a, T const b, T const c, T const
 
 // Halley Iterative Positive Root Near x=0 of Monic Cubic Equation x^3 + a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 Root< T >
 halley_small_positive_root_cubic_monic( T const a, T const b, T const c, T const zTol = T( 1e-6 ) )
 {
@@ -1001,7 +965,6 @@ halley_small_positive_root_cubic_monic( T const a, T const b, T const c, T const
 
 // Iterative Positive Root Near x=0 of Monic Cubic Equation x^3 + a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 Root< T >
 iterative_small_positive_root_cubic_monic( T const a, T const b, T const c, T const zTol = T( 1e-6 ) )
 {
@@ -1011,7 +974,6 @@ iterative_small_positive_root_cubic_monic( T const a, T const b, T const c, T co
 
 // Newton Iterative Positive Root Near Given Guess of Monic Cubic Equation x^3 + a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 Root< T >
 newton_positive_root_cubic_monic( T const a, T const b, T const c, T x, T const zTol = T( 1e-6 ) )
 {
@@ -1042,7 +1004,6 @@ newton_positive_root_cubic_monic( T const a, T const b, T const c, T x, T const 
 
 // Halley Iterative Positive Root Near Given Guess of Monic Cubic Equation x^3 + a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 Root< T >
 halley_positive_root_cubic_monic( T const a, T const b, T const c, T x, T const zTol = T( 1e-6 ) )
 {
@@ -1076,7 +1037,6 @@ halley_positive_root_cubic_monic( T const a, T const b, T const c, T x, T const 
 
 // Iterative Positive Root Near Given Guess of Monic Cubic Equation x^3 + a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 Root< T >
 iterative_positive_root_cubic_monic( T const a, T const b, T const c, T x, T const zTol = T( 1e-6 ) )
 {
@@ -1086,7 +1046,6 @@ iterative_positive_root_cubic_monic( T const a, T const b, T const c, T x, T con
 
 // Max Critical Point Magnitude of Cubic Equation a x^3 + b x^2 + c x + d on x in (0,t)
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 critical_point_magnitude_cubic( T const a, T const b, T const c, T const d, T const t )
 {
@@ -1145,7 +1104,6 @@ critical_point_magnitude_cubic( T const a, T const b, T const c, T const d, T co
 
 // Max Critical Point Magnitude of Monic Cubic Equation x^3 + a x^2 + b x + c on x in (0,t)
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 critical_point_magnitude_cubic_monic( T const a, T const b, T const c, T const t )
 {
@@ -1200,7 +1158,6 @@ critical_point_magnitude_cubic_monic( T const a, T const b, T const c, T const t
 
 // Cull Zero-Crossing Root of Monic Cubic Equation x^3 + a x^2 + b x + c on x in (0,t) Considering Prior Magnitude and Extrema
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 zc_root_cull_cubic_monic( T const a, T const b, T const c, T const root, T const val, T const zMag )
 {
@@ -1214,7 +1171,6 @@ zc_root_cull_cubic_monic( T const a, T const b, T const c, T const root, T const
 
 // Cull Zero-Crossing Root of Monic Cubic Equation x^3 + a x^2 + b x + c on x in (0,t) Considering Prior Magnitude and Extrema
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 zc_positive_root_cull_cubic_monic( T const a, T const b, T const c, T const root, T const val, T const zMag )
 {
@@ -1230,7 +1186,6 @@ zc_positive_root_cull_cubic_monic( T const a, T const b, T const c, T const root
 
 // Zero-Crossing Root of Cubic Equation a x^3 + b x^2 + c x + d
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 zc_root_cubic( T a, T b, T c, T const d, T zTol = T( 1e-6 ), T xMag = T( 0 ) )
 {
@@ -1340,7 +1295,6 @@ zc_root_cubic( T a, T b, T c, T const d, T zTol = T( 1e-6 ), T xMag = T( 0 ) )
 
 // Min Nonnegative Analytical Root of Monic Cubic Equation x^3 + a x^2 + b x + c
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 min_root_cubic_monic_boundary_analytical( T const a, T const b, T const c, T const zTol = T( 1e-6 ) )
 {
@@ -1405,7 +1359,6 @@ min_root_cubic_monic_boundary_analytical( T const a, T const b, T const c, T con
 
 // Min Nonnegative Root of Lower Boundary Cubic Equation a x^3 + b x^2 + c x + d
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 min_root_cubic_lower( T a, T b, T c, T const d, T zTol = T( 1e-6 ) )
 {
@@ -1448,7 +1401,6 @@ min_root_cubic_lower( T a, T b, T c, T const d, T zTol = T( 1e-6 ) )
 
 // Min Nonnegative Root of Upper Boundary Cubic Equation a x^3 + b x^2 + c x + d
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 min_root_cubic_upper( T a, T b, T c, T const d, T zTol = T( 1e-6 ) )
 {
@@ -1491,7 +1443,6 @@ min_root_cubic_upper( T a, T b, T c, T const d, T zTol = T( 1e-6 ) )
 
 // Min Nonnegative Root of Both Boundary Cubic Equations a x^3 + b x^2 + c x + d
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
-inline
 T
 min_root_cubic_both( T a, T b, T const c, T const dl, T const du, T zTol = T( 1e-6 ) )
 {

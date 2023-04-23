@@ -44,16 +44,16 @@ check :
 
 .PHONY : clear
 clear :
-	-rm -f *.d *.o
+	@-rm -f *.d *.o >/dev/null 2>&1
 
 .PHONY : clean
 clean :
-	-rm -f *.d *.o $(DLB)
+	@-rm -f *.d *.o $(DLB) >/dev/null 2>&1
 
 $(DLB) : $(OBJ)
-	@-rm -f $(filter-out $(DEP),$(wildcard *.d))
-	@-rm -f $(filter-out $(OBJ),$(wildcard *.o))
-	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) -shared -o $@ $^ -L$(FMIL_HOME)/lib -lfmilib -lpthread -ldl $(LDLIBS)
+	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) >/dev/null 2>&1
+	@-rm -f $(filter-out $(OBJ),$(wildcard *.o)) >/dev/null 2>&1
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ $^ -L$(FMIL_HOME)/lib -lfmilib -lpthread -ldl $(LDLIBS)
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)

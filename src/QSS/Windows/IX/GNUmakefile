@@ -44,16 +44,16 @@ check :
 
 .PHONY : clear
 clear :
-	-DEL *.d *.obj *.pdb
+	@-DEL *.d *.obj *.pdb >nul 2>&1
 
 .PHONY : clean
 clean :
-	-DEL *.d *.obj *.pdb $(DLB)
+	@-DEL *.d *.obj *.pdb $(DLB) >nul 2>&1
 
 $(DLB) : $(OBJ)
-	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F
-	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.obj))) DO DEL %%F
-	$(CXX) $(CXXFLAGS) $(PGO) $^ $(LINKFLAGS) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib /out:$@ /dll
+	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F >nul 2>&1
+	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.obj))) DO DEL %%F >nul 2>&1
+	$(CXX) $(CXXFLAGS) $^ $(LINKFLAGS) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib /out:$@ /dll
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)

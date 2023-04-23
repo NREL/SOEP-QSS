@@ -13,10 +13,9 @@ ARFLAGS := rD
 
 # Commands
 CXX := g++
-C := gcc
+CC := gcc
 AR := gcc-ar
 MAKEDEPEND := makedep.py --ext=o
-rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2)$(filter $(subst *,%,$2),$d))
 
 # Paths
 OBJ_PATH := .
@@ -58,13 +57,13 @@ vpath %.dll $(BIN_PATH)
 
 %.o : %.c
 	@$(MAKEDEPEND) $<
-	$(C) $(CFLAGS) -c -o $@ $(subst /,\,$<)
+	$(CC) $(CFLAGS) -c -o $@ $(subst /,\,$<)
 
 %.lib : %.o
 	$(AR) $(ARFLAGS) $@ $?
 
 %.dll : %.o
-	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) -shared -o $@ $^
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ $^
 
 # Directives
 .DELETE_ON_ERROR : # Delete a target if error occurs during command execution

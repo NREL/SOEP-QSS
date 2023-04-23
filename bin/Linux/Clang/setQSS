@@ -2,11 +2,12 @@
 # QSS Linux Clang Setup
 
 if [ -z "$QSS" ]; then
-  export QSS=$(dirname $(dirname $(dirname $(dirname $(readlink -m "${BASH_SOURCE[0]}")))))
+	export QSS=$(dirname $(dirname $(dirname $(dirname $(readlink -m "${BASH_SOURCE[0]}")))))
 fi
 
 export PlatformOS=Linux
-export PlatformOSCompiler=Linux/Clang
+export PlatformCompiler=Clang
+export PlatformOSCompiler=$PlatformOS/$PlatformCompiler
 
 export PATH=$PATH:$QSS/bin/$PlatformOSCompiler
 

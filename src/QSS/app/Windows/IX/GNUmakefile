@@ -55,15 +55,15 @@ check :
 
 .PHONY : clear
 clear :
-	-DEL *.d *.obj *.pdb
+	@-DEL *.d *.obj *.pdb >nul 2>&1
 
 .PHONY : clean
 clean :
-	-DEL *.d *.obj *.pdb $(SLB) $(EXE) $(PYD) $(BIN_PATH)\QSS.* $(BIN_PATH)\PyQSS.*
+	@-DEL *.d *.obj *.pdb $(SLB) $(EXE) $(PYD) $(BIN_PATH)\QSS.* $(BIN_PATH)\PyQSS.* >nul 2>&1
 
 $(SLB) : $(OBJ)
-	@-FOR %%F in ($(filter-out $(DEP) $(QSS_DEP) $(PyQSS_DEP),$(wildcard *.d))) DO DEL %%F
-	@-FOR %%F in ($(filter-out $(OBJ) $(QSS_OBJ) $(PyQSS_OBJ),$(wildcard *.obj))) DO DEL %%F
+	@-FOR %%F in ($(filter-out $(DEP) $(QSS_DEP) $(PyQSS_DEP),$(wildcard *.d))) DO DEL %%F >nul 2>&1
+	@-FOR %%F in ($(filter-out $(OBJ) $(QSS_OBJ) $(PyQSS_OBJ),$(wildcard *.obj))) DO DEL %%F >nul 2>&1
 	$(AR) $(ARFLAGS) /out:$@ $^
 
 $(QSS_OBJ) : $(QSS_SRC)
@@ -75,13 +75,13 @@ $(PyQSS_OBJ) : $(PyQSS_SRC)
 	$(CXX) $(CXXFLAGS) /c $(subst /,\,$<)
 
 $(EXE) : $(SLB) $(QSS_OBJ)
-	$(CXX) $(CXXLINKFLAGS) $(PGO) /Fe:$@ $(QSS_OBJ) $(LINKFLAGS) $(SLB) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
+	$(CXX) $(CXXLINKFLAGS) /Fe:"$@" $(QSS_OBJ) $(LINKFLAGS) $(SLB) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
 # xilink needed with /Qipo interprocedural optimization
-#	$(LD) /OUT:$@ /NOLOGO /SUBSYSTEM:CONSOLE /MACHINE:X64 /STACK:16777216 $(QSS_OBJ) $(OBJ) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
+#	$(LD) /OUT:$@ /NOLOGO /STACK:16777216 $(QSS_OBJ) $(OBJ) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
 	@-DEL $(BIN_PATH)\QSS.exp $(BIN_PATH)\QSS.ilk $(BIN_PATH)\QSS.lib >nul 2>&1
 
 $(PYD) : $(SLB) $(PyQSS_OBJ)
-	$(CXX) /LD $(CXXLINKFLAGS) $(PGO) /Fe:$@ $(PyQSS_OBJ) $(LINKFLAGS) $(SLB) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
+	$(CXX) /LD $(CXXLINKFLAGS) /Fe:"$@" $(PyQSS_OBJ) $(LINKFLAGS) $(SLB) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
 	@-DEL $(BIN_PATH)\PyQSS.exp $(BIN_PATH)\PyQSS.ilk $(BIN_PATH)\PyQSS.lib >nul 2>&1
 
 # Dependencies

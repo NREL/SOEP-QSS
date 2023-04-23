@@ -1,3 +1,0 @@
-#!/bin/bash
-# GCC C++ Compile Debug
-g++ -pipe -std=c++20 -pedantic -Wall -Wextra -Wno-unknown-pragmas -m64 -march=native -ffloat-store -fsignaling-nans -fsanitize=undefined -fno-omit-frame-pointer -O0 -ggdb -c $@

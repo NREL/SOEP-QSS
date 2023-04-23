@@ -55,15 +55,15 @@ check :
 
 .PHONY : clear
 clear :
-	-DEL *.d *.o
+	@-DEL *.d *.o >nul 2>&1
 
 .PHONY : clean
 clean :
-	-DEL *.d *.o $(SLB) $(EXE) $(PYD) $(BIN_PATH)\QSS.* $(BIN_PATH)\PyQSS.*
+	@-DEL *.d *.o $(SLB) $(EXE) $(PYD) $(BIN_PATH)\QSS.* $(BIN_PATH)\PyQSS.* >nul 2>&1
 
 $(SLB) : $(OBJ)
-	@-FOR %%F in ($(filter-out $(DEP) $(QSS_DEP) $(PyQSS_DEP),$(wildcard *.d))) DO DEL %%F
-	@-FOR %%F in ($(filter-out $(OBJ) $(QSS_OBJ) $(PyQSS_OBJ),$(wildcard *.o))) DO DEL %%F
+	@-FOR %%F in ($(filter-out $(DEP) $(QSS_DEP) $(PyQSS_DEP),$(wildcard *.d))) DO DEL %%F >nul 2>&1
+	@-FOR %%F in ($(filter-out $(OBJ) $(QSS_OBJ) $(PyQSS_OBJ),$(wildcard *.o))) DO DEL %%F >nul 2>&1
 	$(AR) $(ARFLAGS) $@ $?
 
 $(QSS_OBJ) : $(QSS_SRC)
@@ -75,10 +75,10 @@ $(PyQSS_OBJ) : $(PyQSS_SRC)
 	$(CXX) $(CXXFLAGS) -c -o $@ $(subst /,\,$<)
 
 $(EXE) : $(SLB) $(QSS_OBJ)
-	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) -o $@ $(QSS_OBJ) -L$(QSS_bin) -lQSS -L$(FMIL_HOME)\lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -lshlwapi
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(QSS_OBJ) -L$(QSS_bin) -lQSS -L$(FMIL_HOME)\lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -lshlwapi
 
 $(PYD) : $(SLB) $(PyQSS_OBJ)
-	$(CXX) $(CXXFLAGS) -shared -fPIC $(PGO) $(LDFLAGS) -o $@ $(PyQSS_OBJ) -L$(QSS_bin) -lQSS -L$(FMIL_HOME)\lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -lshlwapi
+	$(CXX) $(CXXFLAGS) -shared -fPIC $(LDFLAGS) -o $@ $(PyQSS_OBJ) -L$(QSS_bin) -lQSS -L$(FMIL_HOME)\lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -lshlwapi
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)

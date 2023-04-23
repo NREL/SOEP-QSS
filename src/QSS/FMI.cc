@@ -116,7 +116,6 @@ using component_ptr_t = component_t *;
 
 } // <unnamed>
 
-inline
 void
 simulate( FMU_QSS & fmu_qss )
 {

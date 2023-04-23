@@ -1,10 +1,12 @@
 #!/bin/bash
-# Google Test Linux GCC Setup
+# Google Test Linux Clang Setup
+
+# Customize if Google Test is not installed on standard system paths
 
 # Custom build location
 #export GTEST_BIN=/opt/gtest/bin/GCC
 #export GTEST_INC=/opt/gtest/include
 
 # Fedora package locations
-export GTEST_BIN=/usr/lib64
-export GTEST_INC=/usr/include
+#export GTEST_BIN=/usr/lib64
+#export GTEST_INC=/usr/include

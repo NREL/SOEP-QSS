@@ -46,7 +46,6 @@ namespace QSS {
 
 // QSS Dependency Cycle Detection
 template< typename Variable, typename Variable_ZC >
-inline
 void
 cycles( typename Variable::Variables const & vars )
 {

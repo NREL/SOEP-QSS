@@ -60,19 +60,19 @@ check :
 
 .PHONY : clear
 clear :
-	-rm -f *.d *.o
+	@-rm -f *.d *.o >/dev/null 2>&1
 
 .PHONY : clean
 clean :
-	-rm -f *.d *.o $(EXE)
+	@-rm -f *.d *.o $(EXE) >/dev/null 2>&1
 
 .PHONY : run
 run : $(EXE)
 	@echo Running $(TAR) unit tests: Intel C++ && $(EXE)
 
 $(EXE) : $(OBJ) $(PATH_LIBS)
-	@-rm -f $(filter-out $(DEP),$(wildcard *.d))
-	@-rm -f $(filter-out $(OBJ),$(wildcard *.o))
+	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) >/dev/null 2>&1
+	@-rm -f $(filter-out $(OBJ),$(wildcard *.o)) >/dev/null 2>&1
 	$(CXX) $(LDFLAGS) -o $@ $^ $(LINK_LIBS) -L$(FMIL_HOME)/lib -lfmilib -L$(GTEST_BIN) -lgtest -lpthread -ldl
 
 .PRECIOUS : $(EXE)

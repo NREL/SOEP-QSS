@@ -1,0 +1,10 @@
+#!/bin/bash
+# Intel C++ Build Debug
+
+if [ -f $1.cc ]; then
+  CxxSource=$1.cc
+  OutputSpec="-o $1"
+  shift
+fi
+
+icpx -std=c++20 -ansi-alias -fiopenmp -xHOST -Wall -O0 -fp-model=strict -ftrapuv -fstack-security-check -traceback -g $CxxSource $@ $OutputSpec

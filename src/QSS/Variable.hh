@@ -135,7 +135,7 @@ protected: // Creation
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
 	 dt_inf_( options::dtInf ),
-	 dt_inf_rlx_( dt_inf_ == infinity ? infinity : 0.5 * dt_inf_ ),
+	 dt_inf_rlx_( dt_inf_ == infinity ? infinity : dt_inf_ ),
 	 observers_( fmu_me, this ),
 	 fmu_me_( fmu_me ),
 	 var_( var ),
@@ -166,7 +166,7 @@ protected: // Creation
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
 	 dt_inf_( options::dtInf ),
-	 dt_inf_rlx_( dt_inf_ == infinity ? infinity : 0.5 * dt_inf_ ),
+	 dt_inf_rlx_( dt_inf_ == infinity ? infinity : dt_inf_ ),
 	 observers_( fmu_me, this ),
 	 fmu_me_( fmu_me ),
 	 var_( var ),
@@ -193,7 +193,7 @@ protected: // Creation
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
 	 dt_inf_( options::dtInf ),
-	 dt_inf_rlx_( dt_inf_ == infinity ? infinity : 0.5 * dt_inf_ ),
+	 dt_inf_rlx_( dt_inf_ == infinity ? infinity : dt_inf_ ),
 	 observers_( fmu_me, this ),
 	 fmu_me_( fmu_me ),
 	 var_( var ),
@@ -1345,7 +1345,9 @@ public: // Methods: Output
 	{
 		if ( out_on_ ) {
 			if ( options::output::X ) out_x_.append( t, x( t ) );
-			if ( options::output::Q ) out_q_.append( t, q( t ) );
+			if ( is_Active() ) {
+				if ( options::output::Q ) out_q_.append( t, q( t ) );
+			}
 		}
 		if ( connected_ ) connections_out( t );
 	}
@@ -1355,7 +1357,9 @@ public: // Methods: Output
 	out_q( Time const t )
 	{
 		if ( out_on_ ) {
-			if ( options::output::Q ) out_q_.append( t, q( t ) );
+			if ( is_Active() ) {
+				if ( options::output::Q ) out_q_.append( t, q( t ) );
+			}
 		}
 		if ( connected_ ) connections_out_q( t );
 	}
@@ -1365,7 +1369,9 @@ public: // Methods: Output
 	out_t( Time const t )
 	{
 		if ( out_on_ ) {
-			if ( options::output::T ) out_t_.append( t, tS );
+			if ( is_Active() ) {
+				if ( options::output::T ) out_t_.append( t, tS );
+			}
 		}
 	}
 
@@ -1375,7 +1381,9 @@ public: // Methods: Output
 	{
 		if ( out_on_ ) {
 			if ( options::output::X ) out_x_.append( t, x( t ) );
-			if ( options::output::Q ) out_q_.append( t, q( t ) );
+			if ( is_Active() ) {
+				if ( options::output::Q ) out_q_.append( t, q( t ) );
+			}
 		}
 		if ( connected_ ) connections_observer_out_pre( t );
 	}
@@ -1387,7 +1395,9 @@ public: // Methods: Output
 		if ( not_state() ) { // State observers derivative may change but not value
 			if ( out_on_ ) {
 				if ( options::output::X ) out_x_.append( t, x( t ) );
-				if ( options::output::Q ) out_q_.append( t, q( t ) );
+				if ( is_Active() ) {
+					if ( options::output::Q ) out_q_.append( t, q( t ) );
+				}
 			}
 			if ( connected_ ) connections_observer_out_post( t );
 		}
@@ -1437,7 +1447,9 @@ public: // Methods: Output
 	{
 		if ( out_on_ ) {
 			if ( options::output::X ) out_x_.flush();
-			if ( options::output::Q ) out_q_.flush();
+			if ( is_Active() ) {
+				if ( options::output::Q ) out_q_.flush();
+			}
 		}
 	}
 
@@ -1966,15 +1978,28 @@ protected: // Methods
 
 	// Infinite Aligned Time Step Processing
 	Time
-	dt_infinity( Time const dt ) const
+	dt_infinity( Time dt ) const
 	{
-		if ( dt_inf_ == infinity ) return dt; // Deactivation control is not enabled
-		if ( dt >= dt_inf_ ) { // Apply deactivation control
-			return ( dt_inf_rlx_ < half_infinity ? std::min( dt_inf_rlx_ *= 2.0, dt ) : dt ); // Use min of relaxed deactivation time step and dt
-		} else { // Reset relaxed deactivation time step
-			dt_inf_rlx_ = 0.5 * dt_inf_;
-			return dt;
+		if ( dt_inf_ == infinity ) return dt; // Deactivation control is disabled
+		if ( dt <= dt_inf_ ) { // Keep step
+			dt_inf_rlx_ = std::max( 0.5 * dt_inf_rlx_, dt_inf_ ); // Reduce relaxation step (side effect)
+		} else if ( dt <= dt_inf_rlx_ ) { // Keep step
+			dt_inf_rlx_ = std::max( 0.5 * dt_inf_rlx_, dt ); // Reduce relaxation step (side effect)
+		} else { // Apply deactivation control
+			dt = dt_inf_rlx_; // Limit step to relaxation step
+			dt_inf_rlx_ = ( dt_inf_rlx_ < half_infinity ? std::min( 2.0 * dt_inf_rlx_, dt ) : dt ); // Increase relaxation step (side effect)
 		}
+		return dt;
+	}
+
+	// Infinite Aligned Time Step Processing
+	Time
+	dt_infinity_of_infinity() const
+	{
+		if ( dt_inf_ == infinity ) return infinity; // Deactivation control is disabled
+		Time const dt( dt_inf_rlx_ );// Apply deactivation control: Limit step to relaxation step
+		dt_inf_rlx_ = ( dt_inf_rlx_ < half_infinity ? 2.0 * dt_inf_rlx_ : infinity ); // Increase relaxation step (side effect)
+		return dt;
 	}
 
 private: // Methods

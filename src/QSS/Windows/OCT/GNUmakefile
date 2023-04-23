@@ -44,16 +44,16 @@ check :
 
 .PHONY : clear
 clear :
-	-DEL *.d *.o
+	@-DEL *.d *.o >nul 2>&1
 
 .PHONY : clean
 clean :
-	-DEL *.d *.o $(DLB)
+	@-DEL *.d *.o $(DLB) >nul 2>&1
 
 $(DLB) : $(OBJ)
-	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F
-	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.o))) DO DEL %%F
-	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) -shared -o $@ $^ $(FMIL_HOME)\lib\libfmilib_shared.dll.a # libfmilib.a gives undefined references
+	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F >nul 2>&1
+	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.o))) DO DEL %%F >nul 2>&1
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ $^ $(FMIL_HOME)\lib\libfmilib_shared.dll.a # libfmilib.a gives undefined references
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)

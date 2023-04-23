@@ -55,15 +55,15 @@ check :
 
 .PHONY : clear
 clear :
-	-rm -f *.d *.o
+	@-rm -f *.d *.o >/dev/null 2>&1
 
 .PHONY : clean
 clean :
-	-rm -f *.d *.o $(SLB) $(EXE) $(PYD)
+	@-rm -f *.d *.o $(SLB) $(EXE) $(PYD) >/dev/null 2>&1
 
 $(SLB) : $(OBJ)
-	@-rm -f $(filter-out $(DEP) $(QSS_DEP) $(PyQSS_DEP),$(wildcard *.d))
-	@-rm -f $(filter-out $(OBJ) $(QSS_OBJ) $(PyQSS_OBJ),$(wildcard *.o))
+	@-rm -f $(filter-out $(DEP) $(QSS_DEP) $(PyQSS_DEP),$(wildcard *.d)) >/dev/null 2>&1
+	@-rm -f $(filter-out $(OBJ) $(QSS_OBJ) $(PyQSS_OBJ),$(wildcard *.o)) >/dev/null 2>&1
 	$(AR) $(ARFLAGS) $@ $?
 
 $(QSS_OBJ) : $(QSS_SRC)
@@ -76,10 +76,10 @@ $(PyQSS_OBJ) : $(PyQSS_SRC)
 
 $(EXE) : $(SLB) $(QSS_OBJ)
 #	$(LD) $(LDFLAGS) /out:$@ $^
-	$(CXX) $(CXXFLAGS) $(PGO) -o $@ $(QSS_OBJ) -L$(QSS_bin) -lQSS -L$(FMIL_HOME)/lib -lfmilib -lpthread -ldl $(LDLIBS)
+	$(CXX) $(CXXFLAGS) -o $@ $(QSS_OBJ) -L$(QSS_bin) -lQSS -L$(FMIL_HOME)/lib -lfmilib -lpthread -ldl $(LDLIBS)
 
 $(PYD) : $(SLB) $(PyQSS_OBJ)
-	$(CXX) -shared -fPIC $(CXXFLAGS) $(PGO) -o $@ $(PyQSS_OBJ) -L$(QSS_bin) -lQSS -L$(FMIL_HOME)/lib -lfmilib -lpthread -ldl $(LDLIBS)
+	$(CXX) -shared -fPIC $(CXXFLAGS) -o $@ $(PyQSS_OBJ) -L$(QSS_bin) -lQSS -L$(FMIL_HOME)/lib -lfmilib -lpthread -ldl $(LDLIBS)
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)

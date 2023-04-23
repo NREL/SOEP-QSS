@@ -98,8 +98,8 @@ namespace QSS {
 
 	// FMU-ME Path + Event Queue Constructor
 	FMU_ME::
-	FMU_ME( std::string const & path, EventQ * eventq ) :
-	 eventq( eventq ),
+	FMU_ME( std::string const & path, EventQ * eventq_ ) :
+	 eventq( eventq_ ),
 	 eventq_own( false )
 	{
 		initialize( path, false );
@@ -2022,7 +2022,7 @@ namespace QSS {
 				var->init_time( t0 );
 			}
 		}
-		for ( auto var : vars_NC ) {
+		for ( auto var : sorted_by_name( vars_NC ) ) {
 			var->init_0();
 		}
 	}
@@ -2033,16 +2033,16 @@ namespace QSS {
 	init_0_2()
 	{
 		std::cout << '\n' + name + " Initialization: Stage 0.2 =====" << std::endl;
-		for ( auto var : vars_CI ) {
+		for ( auto var : sorted_by_name( vars_CI ) ) {
 			var->init_0();
 		}
-		for ( auto var : vars_ZC ) { // Initialize zero-crossing variable observees
+		for ( auto var : sorted_by_name( vars_ZC ) ) { // Initialize zero-crossing variable observees
 			var->init_observees();
 		}
 		for ( auto var : vars_NZ ) { // Initialize observers: all variable observees must be initialized first
 			var->init_observers();
 		}
-		for ( auto var : vars_NZ ) { // Assign computational observers after all are computed and finish initialization
+		for ( auto var : sorted_by_name( vars_NZ ) ) { // Assign computational observers after all are computed and finish initialization
 			var->finalize_observers();
 		}
 	}
@@ -2115,7 +2115,7 @@ namespace QSS {
 	init_ZC()
 	{
 		std::cout << '\n' + name + " Initialization: Stage ZC =====" << std::endl;
-		for ( auto var : vars_ZC ) {
+		for ( auto var : sorted_by_name( vars_ZC ) ) {
 			var->init_0();
 		}
 	}
@@ -2155,7 +2155,7 @@ namespace QSS {
 	init_pre_simulate()
 	{
 		// Initialize Conditional observers
-		for ( Conditional< Variable_ZC > * con : cons ) {
+		for ( Conditional< Variable_ZC > * con : sorted_by_name( cons ) ) {
 			con->init_observers();
 		}
 

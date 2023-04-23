@@ -52,7 +52,6 @@ namespace QSS {
 
 // Variables Sorted by Order?
 template< typename Variables >
-inline
 bool
 is_sorted_by_order( Variables & variables )
 {
@@ -62,7 +61,6 @@ is_sorted_by_order( Variables & variables )
 
 // Variables Collection Unique?
 template< typename Variables >
-inline
 bool
 is_unique( Variables const & variables )
 {
@@ -84,7 +82,6 @@ is_unique( Variables const & variables )
 
 // Variables Begin Index of Given Order or Greater
 template< typename Variables >
-inline
 typename Variables::size_type
 begin_order_index( Variables const & variables, int const order )
 {
@@ -95,7 +92,6 @@ begin_order_index( Variables const & variables, int const order )
 
 // Make Variables Collection Unique and Optionally Shrink-to-Fit
 template< typename Variables >
-inline
 void
 uniquify( Variables & variables, bool const shrink = false )
 {
@@ -108,7 +104,6 @@ uniquify( Variables & variables, bool const shrink = false )
 
 // Make Sorted Variables Collection Unique and Optionally Shrink-to-Fit
 template< typename Variables >
-inline
 void
 uniquify_sorted( Variables & variables, bool const shrink = false )
 {
@@ -121,7 +116,6 @@ uniquify_sorted( Variables & variables, bool const shrink = false )
 
 // Sort Variables by Order
 template< typename Variables >
-inline
 void
 sort_by_order( Variables & variables )
 {
@@ -135,7 +129,6 @@ sort_by_order( Variables & variables )
 
 // Sort Variables by Type (State First) and Order
 template< typename Variables >
-inline
 void
 sort_by_type_and_order( Variables & variables )
 {
@@ -149,7 +142,6 @@ sort_by_type_and_order( Variables & variables )
 
 // Sort Variables by Name
 template< typename Variables >
-inline
 Variables
 sorted_by_name( Variables const & variables )
 {
@@ -161,7 +153,6 @@ sorted_by_name( Variables const & variables )
 
 // Set up Non-Trigger Observers of Triggers and Sort Both by Order
 template< typename Variables >
-inline
 void
 variables_observers( Variables & triggers, Variables & observers )
 {

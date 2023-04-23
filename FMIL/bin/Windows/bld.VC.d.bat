@@ -10,19 +10,19 @@ set CC=cl
 set CXX=cl
 set FMIL_SRC_DIR=%~dp0..\..\custom
 set FMIL_INS_DIR=C:\FMIL.VC.d
-if exist "%FMIL_INS_DIR%" rd /S /Q "%FMIL_INS_DIR%" >nul 2>nul
-del CMakeCache.txt >nul 2>nul
+if exist "%FMIL_INS_DIR%" rd /S /Q "%FMIL_INS_DIR%" >nul 2>&1
+del CMakeCache.txt >nul 2>&1
 
 :: VC++
 C:\CMake\bin\cmake.exe -G "MinGW Makefiles" -DFMILIB_INSTALL_PREFIX=%FMIL_INS_DIR% %FMIL_SRC_DIR% -DCMAKE_BUILD_TYPE=Debug
 make -j%NUMBER_OF_PROCESSORS% VERBOSE=1 install
-ren %FMIL_INS_DIR%\lib\zlibd.lib zlib.lib >nul 2>nul
+ren %FMIL_INS_DIR%\lib\zlibd.lib zlib.lib >nul 2>&1
 
-:: VC++ 2019: This builds with /MD instead of /MDd
+:: VC++ 2019
 :: C:\CMake\bin\cmake.exe -G "Visual Studio 16 2019" -A x64 -DFMILIB_INSTALL_PREFIX=%FMIL_INS_DIR% %FMIL_SRC_DIR% -DCMAKE_BUILD_TYPE=Debug
 :: C:\CMake\bin\cmake.exe --build . --config MinSizeRel --target install
 
-:: VC++ 2017: This builds with /MD instead of /MDd
+:: VC++ 2017
 :: C:\CMake\bin\cmake.exe -G "Visual Studio 15 2017" -A x64 -DFMILIB_INSTALL_PREFIX=%FMIL_INS_DIR% %FMIL_SRC_DIR% -DCMAKE_BUILD_TYPE=Debug
 :: C:\CMake\bin\cmake.exe --build . --config MinSizeRel --target install
 

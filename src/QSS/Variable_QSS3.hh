@@ -423,14 +423,21 @@ private: // Methods
 	void
 	set_tE_aligned()
 	{
-		assert( tX <= tQ );
+		assert( tQ == tX );
 		assert( dt_min <= dt_max );
-		Time dt( x_3_ != 0.0 ? std::cbrt( qTol / std::abs( x_3_ ) ) : infinity );
-		dt = std::min( std::max( dt_infinity( dt ), dt_min ), dt_max );
-		tE = ( dt != infinity ? tQ + dt : infinity );
-		if ( ( options::inflection ) && ( x_3_ != 0.0 ) && ( signum( x_2_ ) != signum( x_3_ ) ) ) {
-			Time const tI( tX - ( x_2_ / ( three * x_3_ ) ) );
-			if ( tQ < tI ) tE = std::min( tE, tI );
+		if ( x_3_ != 0.0 ) {
+			Real const x_3_inv( one / x_3_ );
+			Time dt( std::cbrt( qTol * std::abs( x_3_inv ) ) );
+			dt = std::min( std::max( dt_infinity( dt ), dt_min ), dt_max );
+			assert( dt != infinity );
+			tE = tQ + dt;
+			if ( options::inflection && nonzero_and_signs_differ( x_2_, x_3_ ) ) { // Inflection point
+				Time const tI( tQ - ( x_2_ * ( one_third * x_3_inv ) ) );
+				if ( tQ < tI ) tE = std::min( tE, tI ); // Possible that dtI > 0 but tQ + dtI == tQ
+			}
+		} else {
+			Time const dt( std::min( std::max( dt_infinity_of_infinity(), dt_min ), dt_max ) );
+			tE = ( dt != infinity ? tQ + dt : infinity );
 		}
 	}
 
@@ -454,7 +461,7 @@ private: // Methods
 		}
 		dt = std::min( std::max( dt_infinity( dt ), dt_min ), dt_max );
 		tE = ( dt != infinity ? tX + dt : infinity );
-		if ( ( options::inflection ) && ( x_3_ != 0.0 ) && ( signum( x_2_ ) != signum( x_3_ ) ) && ( signum( x_2_ ) == signum( q_2_ ) ) ) {
+		if ( options::inflection && nonzero_and_signs_differ( x_2_, x_3_ ) ) { // Inflection point
 			Time const tI( tX - ( x_2_ / ( three * x_3_ ) ) );
 			if ( tX < tI ) tE = std::min( tE, tI );
 		}

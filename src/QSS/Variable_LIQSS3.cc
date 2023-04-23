@@ -67,7 +67,7 @@ namespace QSS {
 		fmu_set_real( q_l + ( ( x_1_l + x_2_dN ) * dN ) );
 #else
 		Real const x_3_dN( x_3_ * dN );
-		Real const x_2_x_3_dN( ( x_2_ + x_3_dN ) * dN ) ); // Chg x_2_ to x_2_(tE) = x_2_ + x_3_ * ( tE - tX_prev ) ???
+		Real const x_2_x_3_dN( ( x_2_ + x_3_dN ) * dN ); // Chg x_2_ to x_2_(tE) = x_2_ + x_3_ * ( tE - tX_prev ) ???
 		fmu_set_real( q_l + ( ( x_1_l + x_2_x_3_dN ) * dN ) );
 #endif
 		Real const x_1_p_l( p_1() );
@@ -181,7 +181,7 @@ namespace QSS {
 		fmu_set_real( q_l + ( ( x_1_l + x_2_dN ) * dN ) );
 #else
 		Real const x_3_dN( x_3_ * dN );
-		Real const x_2_x_3_dN( ( x_2_ + x_3_dN ) * dN ) ); // Chg x_2_ to x_2_(tE) = x_2_ + x_3_ * ( tE - tX_prev ) ???
+		Real const x_2_x_3_dN( ( x_2_ + x_3_dN ) * dN ); // Chg x_2_ to x_2_(tE) = x_2_ + x_3_ * ( tE - tX_prev ) ???
 		fmu_set_real( q_l + ( ( x_1_l + x_2_x_3_dN ) * dN ) );
 #endif
 		Real const x_1_p_l( p_1() );
@@ -274,7 +274,7 @@ namespace QSS {
 		fmu_set_real( q_l + ( ( x_1_l + x_2_dN ) * dN ) );
 #else
 		Real const x_3_dN( x_3_ * dN );
-		Real const x_2_x_3_dN( ( x_2_ + x_3_dN ) * dN ) ); // Chg x_2_ to x_2_(tE) = x_2_ + x_3_ * ( tE - tX_prev ) ???
+		Real const x_2_x_3_dN( ( x_2_ + x_3_dN ) * dN ); // Chg x_2_ to x_2_(tE) = x_2_ + x_3_ * ( tE - tX_prev ) ???
 		fmu_set_real( q_l + ( ( x_1_l + x_2_x_3_dN ) * dN ) );
 #endif
 		Real const x_1_p_l( p_1() );

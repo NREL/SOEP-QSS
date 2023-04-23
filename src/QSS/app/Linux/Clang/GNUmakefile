@@ -55,15 +55,15 @@ check :
 
 .PHONY : clear
 clear :
-	-rm -f *.d *.o
+	@-rm -f *.d *.o >/dev/null 2>&1
 
 .PHONY : clean
 clean :
-	-rm -f *.d *.o $(SLB) $(EXE) $(PYD)
+	@-rm -f *.d *.o $(SLB) $(EXE) $(PYD) >/dev/null 2>&1
 
 $(SLB) : $(OBJ)
-	@-rm -f $(filter-out $(DEP) $(QSS_DEP) $(PyQSS_DEP),$(wildcard *.d))
-	@-rm -f $(filter-out $(OBJ) $(QSS_OBJ) $(PyQSS_OBJ),$(wildcard *.o))
+	@-rm -f $(filter-out $(DEP) $(QSS_DEP) $(PyQSS_DEP),$(wildcard *.d)) >/dev/null 2>&1
+	@-rm -f $(filter-out $(OBJ) $(QSS_OBJ) $(PyQSS_OBJ),$(wildcard *.o)) >/dev/null 2>&1
 	$(AR) $(ARFLAGS) $@ $?
 
 $(QSS_OBJ) : $(QSS_SRC)
@@ -75,10 +75,10 @@ $(PyQSS_OBJ) : $(PyQSS_SRC)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 $(EXE) : $(SLB) $(QSS_OBJ)
-	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) -o $@ $(QSS_OBJ) -L$(QSS_bin) -lQSS -L$(FMIL_HOME)/lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -ldl
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(QSS_OBJ) -L$(QSS_bin) -lQSS -L$(FMIL_HOME)/lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -ldl
 
 $(PYD) : $(SLB) $(PyQSS_OBJ)
-	$(CXX) $(CXXFLAGS) -shared -fPIC $(PGO) $(LDFLAGS) -o $@ $(PyQSS_OBJ) -L$(QSS_bin) -lQSS -L$(FMIL_HOME)/lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -ldl
+	$(CXX) $(CXXFLAGS) -shared -fPIC $(LDFLAGS) -o $@ $(PyQSS_OBJ) -L$(QSS_bin) -lQSS -L$(FMIL_HOME)/lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -ldl
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)

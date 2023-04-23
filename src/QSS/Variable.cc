@@ -172,8 +172,10 @@ namespace QSS {
 		dec_ = dec;
 		if ( out_on_ ) {
 			if ( options::output::X ) out_x_.decorate( dec );
-			if ( options::output::Q ) out_q_.decorate( dec );
-			if ( options::output::T ) out_t_.decorate( dec );
+			if ( is_Active() ) {
+				if ( options::output::Q ) out_q_.decorate( dec );
+				if ( options::output::T ) out_t_.decorate( dec );
+			}
 		}
 	}
 
@@ -184,8 +186,10 @@ namespace QSS {
 	{
 		if ( out_on_ ) {
 			if ( options::output::X ) out_x_.init( dir, name(), 'x', dec );
-			if ( options::output::Q ) out_q_.init( dir, name(), 'q', dec );
-			if ( options::output::T ) out_t_.init( dir, name(), 't', dec );
+			if ( is_Active() ) {
+				if ( options::output::Q ) out_q_.init( dir, name(), 'q', dec );
+				if ( options::output::T ) out_t_.init( dir, name(), 't', dec );
+			}
 			if ( options::output::h ) {
 				if ( var_.is_Real() ) {
 					char const * var_type_char( fmi2_import_get_real_variable_quantity( var_.rvr ) );
@@ -193,16 +197,22 @@ namespace QSS {
 					fmi2_import_unit_t * const var_unit_ptr( fmi2_import_get_real_variable_unit( var_.rvr ) );
 					std::string const var_unit( var_unit_ptr == nullptr ? "" : fmi2_import_get_unit_name( var_unit_ptr ) );
 					if ( options::output::X ) out_x_.header( var_type, var_unit );
-					if ( options::output::Q ) out_q_.header( var_type, var_unit );
-					if ( options::output::T ) out_t_.header( "Time", "s" );
+					if ( is_Active() ) {
+						if ( options::output::Q ) out_q_.header( var_type, var_unit );
+						if ( options::output::T ) out_t_.header( "Time", "s" );
+					}
 				} else if ( var_.is_Integer() ) { // Integer variables have no unit
 					char const * var_type_char( fmi2_import_get_integer_variable_quantity( var_.ivr ) );
 					std::string const var_type( var_type_char == nullptr ? "" : var_type_char );
 					if ( options::output::X ) out_x_.header( var_type );
-					if ( options::output::Q ) out_q_.header( var_type );
+					if ( is_Active() ) {
+						if ( options::output::Q ) out_q_.header( var_type );
+					}
 				} else { // Modelica Boolean variables can have a quantity but there is no FMIL API for getting it
 					if ( options::output::X ) out_x_.header();
-					if ( options::output::Q ) out_q_.header();
+					if ( is_Active() ) {
+						if ( options::output::Q ) out_q_.header();
+					}
 				}
 			}
 		}

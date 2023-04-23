@@ -1,5 +1,18 @@
 #!/bin/bash
-for ext in d o exe a so
+
+# Check environment
+if [ -z "$QSS" ]; then
+	echo "QSS environment variable is not set"
+	exit 1
+fi
+
+# Clean objects
+cd $QSS/src/QSS/app && mak clean && cln_dirs
+cd $QSS/tst/QSS/unit && mak clean && cln_dirs
+
+
+# Clean binaries
+for ext in a exe pyd so
 do
-  find . -name "*.$ext" | xargs rm -f
+	rm -f $QSS_bin/*QSS.$ext
 done

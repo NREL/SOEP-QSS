@@ -4,17 +4,23 @@
 # Usage: bld [<compiler> <build> [make args]]
 # Example: bld GCC r
 
+# Check environment
+if [ -z "$QSS" ]; then
+	echo "QSS environment variable is not set"
+	exit 1
+fi
+
 # Set build
 if [ "$1" != "" ] && [ "$2" != "" ]; then
-  source $QSS/bin/Linux/$1/64/$2/setQSS
+	source $QSS/bin/Linux/$1/$2/setQSS
 fi
 
 # Build QSS
 cd $QSS/src/QSS/app
 mak $3 $4 $5 $6 $7 $8 $9
 if [ "$2" = "d" ]; then
-  if [ "$3" != "clean" ]; then
-    cd $QSS/tst/QSS/unit
-    mak $3 $4 $5 $6 $7 $8 $9 run
-  fi
+	if [ "$3" != "clean" ]; then
+		cd $QSS/tst/QSS/unit
+		mak $3 $4 $5 $6 $7 $8 $9 run
+	fi
 fi

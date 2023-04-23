@@ -1,4 +1,0 @@
-#!/bin/bash
-git push
-git push box
-git gc

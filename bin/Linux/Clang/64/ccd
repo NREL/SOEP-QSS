@@ -1,3 +1,0 @@
-#!/bin/bash
-# Clang C++ Compile Debug
-clang++ -pipe -std=c++20 -pedantic -Wall -Wextra -Wno-unknown-pragmas -m64 -march=native -fsanitize=undefined -fno-omit-frame-pointer -O0 -ggdb -c $@

@@ -1,0 +1,26 @@
+#!/bin/bash
+# Intel C++ Compile Syntax
+
+if [ -f $1 ]; then
+	case $1 in
+	*.c)
+		CSource=$1
+		;;
+	*)
+		CxxSource=$1
+		;;
+	esac
+elif [ -f $1.c   ]; then CSource=$1.c
+elif [ -f $1.cc  ]; then CxxSource=$1.cc
+elif [ -f $1.cpp ]; then CxxSource=$1.cpp
+elif [ -f $1.cxx ]; then CxxSource=$1.cxx
+elif [ -f $1.ii  ]; then CxxSource=$1.ii
+fi
+
+if [[ $CxxSource ]]; then
+	shift
+	icpx -std=c++20 -ansi-alias -fiopenmp -Wall -fsyntax-only -x c++ -c $@ $CxxSource
+elif [[ $CSource ]]; then
+	shift
+	icpx -std=c2x -ansi-alias -Wall -fsyntax-only -x c -c $@ $CSource
+fi

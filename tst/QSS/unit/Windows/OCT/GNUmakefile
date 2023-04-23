@@ -62,11 +62,11 @@ check :
 
 .PHONY : clear
 clear :
-	-DEL *.d *.o
+	@-DEL *.d *.o >nul 2>&1
 
 .PHONY : clean
 clean :
-	-DEL *.d *.o $(EXE)
+	@-DEL *.d *.o $(EXE) >nul 2>&1
 
 .PHONY : run
 run : $(EXE)
@@ -75,14 +75,14 @@ run : $(EXE)
 
 # Executable from libraries
 #$(EXE) : $(OBJ) $(PATH_LIBS)
-#	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F
-#	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.o))) DO DEL %%F
+#	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F >nul 2>&1
+#	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.o))) DO DEL %%F >nul 2>&1
 #	$(CXX) $(LDFLAGS) -o $@ $(filter-out *.a,$^) -L$(QSS_bin) -l$(TAR) -L$(FMIL_HOME)\lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -lshlwapi -L$(GTEST_BIN) -lgtest
 
 # Executable from objects
 $(EXE) : $(OBJ) $(APP_OBJ)
-	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F
-	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.o))) DO DEL %%F
+	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F >nul 2>&1
+	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.o))) DO DEL %%F >nul 2>&1
 	$(CXX) $(LDFLAGS) -o $@ $^ -L$(FMIL_HOME)\lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -lshlwapi -L$(GTEST_BIN) -lgtest
 
 .PRECIOUS : $(EXE)

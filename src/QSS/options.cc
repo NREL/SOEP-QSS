@@ -43,7 +43,7 @@
 // C++ Headers
 #include <iostream>
 #include <limits>
-#include <regex>
+#include <string_view>
 
 namespace QSS {
 namespace options {
@@ -641,15 +641,13 @@ process_args( Args const & args )
 			}
 		} else if ( has_option_value( arg, "fxn" ) ) {
 			std::string const var_fxn( option_value( arg, "fxn" ) );
-			std::string var_name;
-			std::string fxn_spec;
 			if ( var_fxn[ 0 ] == '"' ) { // Quoted variable name
 				std::string::size_type const qe( var_fxn.find( '"', 1u ) );
 				if ( qe != std::string::npos ) {
-					var_name = var_fxn.substr( 1u, qe - 1u );
 					std::string::size_type const isep( var_fxn.find( ':', qe ) );
 					if ( isep != std::string::npos ) {
-						fxn_spec = var_fxn.substr( isep + 1u );
+						std::string const var_name( var_fxn.substr( 1u, qe - 1u ) );
+						std::string const fxn_spec( var_fxn.substr( isep + 1u ) );
 						fxn[ var_name ] = fxn_spec;
 					} else {
 						std::cerr << "\nError: Input function spec not in variable:function format: " << var_fxn << std::endl;
@@ -662,8 +660,8 @@ process_args( Args const & args )
 			} else {
 				std::string::size_type const isep( var_fxn.find( ':' ) );
 				if ( isep != std::string::npos ) {
-					var_name = var_fxn.substr( 0u, isep );
-					fxn_spec = var_fxn.substr( isep + 1u );
+					std::string const var_name( var_fxn.substr( 0u, isep ) );
+					std::string const fxn_spec( var_fxn.substr( isep + 1u ) );
 					fxn[ var_name ] = fxn_spec;
 				} else {
 					std::cerr << "\nError: Input variable function spec not in variable:function format: " << var_fxn << std::endl;
@@ -677,10 +675,10 @@ process_args( Args const & args )
 			if ( inp_out[ 0 ] == '"' ) { // Quoted input variable name
 				std::string::size_type const qe( inp_out.find( '"', 1u ) );
 				if ( qe != std::string::npos ) {
-					inp_name = inp_out.substr( 1u, qe - 1u );
+					inp_name = std::string_view( inp_out ).substr( 1u, qe - 1u );
 					std::string::size_type const isep( inp_out.find( ':', qe ) );
 					if ( isep != std::string::npos ) {
-						out_name = inp_out.substr( isep + 1u );
+						out_name = std::string_view( inp_out ).substr( isep + 1u );
 					} else {
 						std::cerr << "\nError: Input-output connection spec not in input:output format: " << inp_out << std::endl;
 						fatal = true;
@@ -692,8 +690,8 @@ process_args( Args const & args )
 			} else {
 				std::string::size_type const isep( inp_out.find( ':' ) );
 				if ( isep != std::string::npos ) {
-					inp_name = inp_out.substr( 0u, isep );
-					out_name = inp_out.substr( isep + 1u );
+					inp_name = std::string_view( inp_out ).substr( 0u, isep );
+					out_name = std::string_view( inp_out ).substr( isep + 1u );
 				} else {
 					std::cerr << "\nError: Input-output connection spec not in input:output format: " << inp_out << std::endl;
 					fatal = true;
@@ -702,7 +700,7 @@ process_args( Args const & args )
 			if ( out_name[ 0 ] == '"' ) { // Quoted output variable name
 				std::string::size_type const qe( inp_out.find( '"', 1u ) );
 				if ( qe != std::string::npos ) {
-					out_name = out_name.substr( 1u, qe - 1u );
+					out_name = std::string_view( out_name ).substr( 1u, qe - 1u );
 				} else {
 					std::cerr << "\nError: Input-output connection spec quoted output variable name missing end quote: " << inp_out << std::endl;
 					fatal = true;
@@ -718,10 +716,10 @@ process_args( Args const & args )
 			} else if ( var_deps[ 0 ] == '"' ) { // Quoted input variable name
 				std::string::size_type const qe( var_deps.find( '"', 1u ) );
 				if ( qe != std::string::npos ) {
-					var_spec = var_deps.substr( 1u, qe - 1u );
+					var_spec = std::string_view( var_deps ).substr( 1u, qe - 1u );
 					std::string::size_type const isep( var_deps.find( ':', qe ) );
 					if ( isep != std::string::npos ) {
-						deps_spec = var_deps.substr( isep + 1u );
+						deps_spec = std::string_view( var_deps ).substr( isep + 1u );
 					} else {
 						deps_spec = '*'; // Implied all
 					}
@@ -732,8 +730,8 @@ process_args( Args const & args )
 			} else {
 				std::string::size_type const isep( var_deps.find( ':' ) );
 				if ( isep != std::string::npos ) {
-					var_spec = var_deps.substr( 0u, isep );
-					deps_spec = var_deps.substr( isep + 1u );
+					var_spec = std::string_view( var_deps ).substr( 0u, isep );
+					deps_spec = std::string_view( var_deps ).substr( isep + 1u );
 				} else {
 					var_spec = var_deps;
 					deps_spec = '*'; // Implied all

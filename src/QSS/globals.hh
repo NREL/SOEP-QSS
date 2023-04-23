@@ -39,7 +39,7 @@
 namespace QSS {
 
 // QSS Globals
-extern int const max_rep_order; // Max representation order
+int constexpr max_rep_order{ 3 }; // Max representation order
 
 } // QSS
 

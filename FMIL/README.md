@@ -22,7 +22,7 @@ Building from the latest FMIL git master (if stable) or release code is generall
 * Merge code being used into the custom directory
 * Update custom.*Platform* for changes in FMIL code base
 * Merge custom.*Platform* into custom source directory
-* Do builds in a directory outside the source tree
+* Do builds in a build directory next to the custom directory
 
 ### Linux
 * Run the desired build script from the bld directory: `../bin/Linux/bld.`_compiler_`.`_build_`.sh`
@@ -64,12 +64,13 @@ The build scripts install these extra/internal FMIL headers on Linux (analogous 
   * OCT ships with TDM GCC 5.1 that works (you may see some warnings)
 
 ### Visual C++
-* Visual C++ 2017 and 2019 work
+* Visual C++ 2017 and 2019 and 2022 work
 * CMake uses /MD instead of /MDd for debug builds for some reason
+  * Doesn't seem to be true with FMIL 2.4.1 with VC++ 2022
 * Get some warnings: Seem mostly like harmless 64-bit portability warnings (size_t conversion to int, ...)
 
 ### Intel C++
-* Intel C++ oneAPI (2021), 19 (2019), and 19.1 (2020) work
+* Intel C++ oneAPI (2021+), 19 (2019), and 19.1 (2020) work
 * IX builds use Clang-based icx compiler
 
 ## Linking

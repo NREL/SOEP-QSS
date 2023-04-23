@@ -1,16 +1,16 @@
 #!/bin/bash
 if [ -f $PlatformOSCompiler/GNUmakefile ]; then
-  if [ ! -d $PlatformFull ]; then
-    mkdir -p $PlatformFull
-  fi
-  cd $PlatformFull
-  if [[ -f /usr/bin/nproc ]]; then
-     ntask=$(/usr/bin/nproc)
-  else
-     ntask=8
-  fi
-  make -O -j${ntask} --makefile=../../GNUmakefile $*
-  cd ../../../..
+	if [ ! -d $PlatformFull ]; then
+		mkdir -p $PlatformFull
+	fi
+	cd $PlatformFull
+	if [[ -f /usr/bin/nproc ]]; then
+		ntask=$(/usr/bin/nproc)
+	else
+		ntask=8
+	fi
+	make -O -j${ntask} --makefile=../GNUmakefile $*
+	cd ../../..
 else
-  echo $PlatformOSCompiler/GNUmakefile not found
+	echo $PlatformOSCompiler/GNUmakefile not found
 fi

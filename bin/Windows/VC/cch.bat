@@ -11,7 +11,7 @@ if (%HeaderSource%)==() goto NoSourceError
 
 echo #include "%HeaderSource%" > %HeaderSource%.cc
 call ccs %HeaderSource%.cc %2 %3 %4 %5 %6 %7 %8 %9
-del %HeaderSource%.cc
+del %HeaderSource%.cc >nul 2>&1
 goto Exit
 
 :NoSourceError

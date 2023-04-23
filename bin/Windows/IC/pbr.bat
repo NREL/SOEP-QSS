@@ -9,8 +9,7 @@ if exist %1.ii  set CxxSource=%1.ii
 if not (%CxxSource%)==() shift
 
 :Build
-icl /nologo /Qstd=c++20 /QxHOST /Zc:__cplusplus /Qcxx-features /Wall /Qdiag-disable:809,1786,2259,3280,10382,10441,11074,11075 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DWIN32 /DNDEBUG /Qopenmp /O3 /fp:precise /Qprec-div- /Qparallel /Qip /Qinline-factor:225 /LD %CxxSource% /Fe:%CxxName%.pyd %1 %2 %3 %4 %5 %6 %7 %8 %9
-:: /Qansi-alias removed to work-around Intel C++ 19.1 and 2020.1 bug
+icl /nologo /Qstd:c++20 /Qansi-alias /Qopenmp /EHsc /QxHOST /Zc:__cplusplus /Wall /Qdiag-disable:10382,10441,11074,11075 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DWIN32 /DNDEBUG /O3 /fp:precise /Qip /Qinline-factor:2000 /LD %CxxSource% /Fe:%CxxName%.pyd %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 set CxxName=
 set CxxSource=

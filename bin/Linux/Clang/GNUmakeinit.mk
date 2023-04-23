@@ -13,9 +13,8 @@ ARFLAGS := rD
 
 # Commands
 CXX := clang++
-C := clang
+CC := clang
 MAKEDEPEND := makedep.py
-rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2)$(filter $(subst *,%,$2),$d))
 
 # Paths
 OBJ_PATH := .
@@ -47,21 +46,21 @@ vpath %.so  $(BIN_PATH)
 
 %.o : %.cc
 	@$(MAKEDEPEND) $<
-	$(CXX) $(CXXFLAGS) $(PGO) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 %.o : %.cpp
 	@$(MAKEDEPEND) $<
-	$(CXX) $(CXXFLAGS) $(PGO) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 %.o : %.c
 	@$(MAKEDEPEND) $<
-	$(C) $(CFLAGS) $(PGO) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 %.a : %.o
 	$(AR) $(ARFLAGS) $@ $?
 
 %.so : %.o
-	$(CXX) $(CXXFLAGS) $(PGO) $(LDFLAGS) -shared -o $@ $^
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ $^
 
 # Directives
 .DELETE_ON_ERROR : # Delete a target if error occurs during command execution

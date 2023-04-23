@@ -64,8 +64,20 @@ namespace path {
 
 // Globals
 #ifdef _WIN32
+
+std::string
+get_tmp_dir()
+{
+	char * buf;
+	std::size_t sz;
+	errno_t const err( _dupenv_s( &buf, &sz, "TEMP" ) );
+	std::string const tmp_dir( ( err == 0 ) && ( buf != nullptr ) ? buf : "." );
+	free( buf );
+	return tmp_dir;
+}
+
 char const sep( '\\' );
-std::string const tmp( std::getenv( "TEMP" ) != nullptr ? std::getenv( "TEMP" ) : "." );
+std::string const tmp( get_tmp_dir() );
 #else
 char const sep( '/' );
 std::string const tmp( "/tmp" );
