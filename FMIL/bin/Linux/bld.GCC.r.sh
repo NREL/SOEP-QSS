@@ -4,7 +4,7 @@
 FMIL_SRC_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/../../custom
 FMIL_INS_DIR=/opt/FMIL.GCC.r
 
-# -DCMAKE_C_FLAGS_RELEASE="-march=native -DNDEBUG -O3 -fno-stack-protector"
+# -DCMAKE_C_FLAGS_RELEASE="-march=native -DNDEBUG -O3 -ffloat-store -fno-stack-protector -finline-limit=2000"
 sudo cmake -DCMAKE_BUILD_TYPE=Release -DFMILIB_INSTALL_PREFIX=$FMIL_INS_DIR $FMIL_SRC_DIR
 sudo make -j8 VERBOSE=1 install
 

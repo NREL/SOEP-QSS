@@ -13,7 +13,7 @@ set PlatformOSCompiler=%PlatformOS%\%PlatformCompiler%
 set Path=%Path%;%QSS%\bin\%PlatformOSCompiler%
 
 set INCLUDE=.;%INCLUDE%;%QSS%\src
-if not (%FMIL_HOME%) == () set INCLUDE=%INCLUDE%;%FMIL_HOME%\include;%FMIL_HOME%\include\FMI;%FMIL_HOME%\include\FMI1;%FMIL_HOME%\include\FMI2;;%FMIL_HOME%\include\JM
+if not (%FMIL_HOME%) == () set INCLUDE=%INCLUDE%;%FMIL_HOME%\include;%FMIL_HOME%\include\FMI;%FMIL_HOME%\include\FMI1;%FMIL_HOME%\include\FMI2;%FMIL_HOME%\include\JM
 
 call setVC.bat
 call setGTest.bat

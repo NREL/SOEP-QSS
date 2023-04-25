@@ -7,4 +7,4 @@ if [ -f $1.cc ]; then
   shift
 fi
 
-icpc -std=c++20 -ansi-alias -qopenmp -xHOST -Wall -diag-disable=10382,10441,11074,11075 -DNDEBUG -O3 -fp-model=precise -ip -inline-factor=225 $CxxSource $@ $OutputSpec
+icpc -std=c++20 -ansi-alias -qopenmp -xHOST -Wall -diag-disable=10382,10441,11074,11075 -DNDEBUG -O3 -fp-model=precise -ip -inline-factor=2000 $CxxSource $@ $OutputSpec

@@ -167,7 +167,7 @@ public: // Methods
 		assert( tX <= t );
 		tS = t - tQ;
 		tQ = tX = t;
-		Boolean const x_new( static_cast< const Boolean >( x_0 ) );
+		Boolean const x_new( static_cast< Boolean >( x_0 ) );
 		x_chg_ = ( x_ != x_new );
 		if ( x_chg_ ) x_ = x_new;
 	}
