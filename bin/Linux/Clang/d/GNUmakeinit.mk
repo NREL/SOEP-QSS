@@ -5,7 +5,7 @@
 # Platform: Linux/Clang/d
 
 # Variables
-CXXFLAGS := -pipe -std=c++20 -pedantic -fopenmp=libomp -march=native -Wall -Wextra -Wno-unknown-pragmas -Wimplicit-fallthrough -pthread -fPIC -O0 -ffp-model=strict -fsignaling-math -ftrapv -fsanitize=undefined -fsanitize=address -ggdb
+CXXFLAGS := -pipe -std=c++20 -pedantic -fopenmp=libomp -march=native -Wall -Wextra -Wno-unknown-pragmas -Wimplicit-fallthrough -pthread -fPIC -O0 -ffp-model=strict -ftrapv -fsanitize=undefined -fsanitize=address -ggdb
 CXXFLAGS += -Wno-unused-function -Wno-unused-parameter # For FMIL
 CXXFLAGS += -Wno-unused-local-typedef # Suppress false-positive warnings
 #CXXFLAGS += -DQSS_STATE_PROPAGATE_CONTINUOUS # For continuous (x-trajectory) propagation
