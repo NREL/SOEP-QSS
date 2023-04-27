@@ -45,15 +45,8 @@ The build scripts will install FMIL to directories of this form:
 
 ### Headers
 
-The build scripts install these extra/internal FMIL headers on Linux (analogous on Windows):
-* `sudo cp ~/Projects/FMIL/custom/src/CAPI/include/FMI2/fmi2_capi.h /opt/FMIL.<Compiler>.<Build>/include/FMI2`
-* `sudo cp ~/Projects/FMIL/custom/src/CAPI/src/FMI2/fmi2_capi_impl.h /opt/FMIL.<Compiler>.<Build>/include/src/FMI2`
-* `sudo cp ~/Projects/FMIL/custom/src/Import/src/FMI/fmi_import_context_impl.h /opt/FMIL.<Compiler>.<Build>/include/FMI`
-* `sudo cp ~/Projects/FMIL/custom/src/Import/src/FMI2/fmi2_import_impl.h /opt/FMIL.<Compiler>.<Build>/include/FMI2`
-* `sudo cp ~/Projects/FMIL/custom/src/XML/include/FMI/*.h /opt/FMIL.<Compiler>.<Build>/include/FMI`
-* `sudo cp ~/Projects/FMIL/custom/src/XML/include/FMI1/*.h /opt/FMIL.<Compiler>.<Build>/include/FMI1`
-* `sudo cp ~/Projects/FMIL/custom/src/XML/include/FMI2/*.h /opt/FMIL.<Compiler>.<Build>/include/FMI2`
-* `sudo cp ~/Projects/FMIL/custom/ThirdParty/Expat/expat-2.1.0/lib/expat*.h /opt/FMIL.<Compiler>.<Build>/include`
+The build scripts call a hdr script to install extra/internal FMIL headers that QSS needs into the include directory of the FMIL install directory.
+The hdr scripts must be maintained as FMIL changes, such as extra headers QSS needs or expat version updates.
 
 ## Compilers
 

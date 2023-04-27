@@ -8,9 +8,15 @@ if (%1) == () (
 
 set FMIL_SRC_DIR=%~dp0..\..\custom
 set FMIL_INS_DIR=%1
+
+mkdir %FMIL_INS_DIR%\include\FMI >nul 2>&1
+mkdir %FMIL_INS_DIR%\include\FMI1 >nul 2>&1
+mkdir %FMIL_INS_DIR%\include\FMI2 >nul 2>&1
+mkdir %FMIL_INS_DIR%\include\JM >nul 2>&1
 mkdir %FMIL_INS_DIR%\include\src >nul 2>&1
 mkdir %FMIL_INS_DIR%\include\src\FMI >nul 2>&1
 mkdir %FMIL_INS_DIR%\include\src\FMI2 >nul 2>&1
+
 copy /Y %FMIL_SRC_DIR%\src\CAPI\include\FMI2\fmi2_capi.h %FMIL_INS_DIR%\include\FMI2 >nul 2>&1
 copy /Y %FMIL_SRC_DIR%\src\CAPI\src\FMI2\fmi2_capi_impl.h %FMIL_INS_DIR%\include\src\FMI2 >nul 2>&1
 copy /Y %FMIL_SRC_DIR%\src\Import\src\FMI\fmi_import_context_impl.h %FMIL_INS_DIR%\include\FMI >nul 2>&1
