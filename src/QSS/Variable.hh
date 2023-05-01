@@ -1986,8 +1986,9 @@ protected: // Methods
 		} else if ( dt <= dt_inf_rlx_ ) { // Keep step
 			dt_inf_rlx_ = std::max( 0.5 * dt_inf_rlx_, dt ); // Reduce relaxation step (side effect)
 		} else { // Apply deactivation control
-			dt = dt_inf_rlx_; // Limit step to relaxation step
+			Time const dt_rlx( dt_inf_rlx_ ); // Relaxation step
 			dt_inf_rlx_ = ( dt_inf_rlx_ < half_infinity ? std::min( 2.0 * dt_inf_rlx_, dt ) : dt ); // Increase relaxation step (side effect)
+			dt = dt_rlx;
 		}
 		return dt;
 	}

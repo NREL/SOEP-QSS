@@ -67,14 +67,9 @@ double dtND( 1.0e-6 ); // Numeric differentiation time step (s)
 double dtND_max( 1.0 ); // Numeric differentiation time step max (s)
 bool dtND_optimizer( false ); // Optimize FMU numeric differentiation time step?
 double two_dtND( 2.0e-6 ); // 2 * dtND
-double three_dtND( 3.0e-6 ); // 3 * dtND
-double one_over_dtND( 1.0e6 ); // 1 / dtND
 double one_over_two_dtND( 5.0e5 ); // 1 / ( 2 * dtND )
-double one_over_two_dtND_squared( 5.0e11 ); // 1 / ( 2 * dtND^2 )
 double one_over_four_dtND( 2.5e5 ); // 1 / ( 4 * dtND )
-double one_over_six_dtND( 1.0e6 / 6.0 ); // 1 / ( 6 * dtND )
 double one_over_six_dtND_squared( 1.0e12 / 6.0 ); // 1 / ( 6 * dtND^2 )
-double one_over_six_dtND_cubed( 1.0e18 / 6.0 ); // 1 / ( 6 * dtND^3 )
 double dtCon( 0.0 ); // FMU connection sync time step (s)
 double dtOut( 1.0e-3 ); // Sampled output time step (s)
 double tEnd( 1.0 ); // End time (s)  [1|FMU]
@@ -162,7 +157,7 @@ help_display()
 	std::cout << " --dtZMax=STEP      Max time step before zero-crossing (s)  (0 => Off)  [" << dtZMax << ']' << '\n';
 	std::cout << " --dtZC=STEP        FMU zero-crossing time step (s)  [" << dtZC << ']' << '\n';
 	std::cout << " --dtND=STEP[:Y|U]  Numeric differentiation time step specs" << '\n';
-	std::cout << "        STEP        Time step (s)" << '\n';
+	std::cout << "        STEP        Time step (s)  [1e-6]" << '\n';
 	std::cout << "              Y     Use automatic time step" << '\n';
 	std::cout << "              U     Upper time step for automatic scan (s)  [" << dtND_max << ']' << '\n';
 	std::cout << " --dtCon=STEP       FMU connection sync time step (s)  [0]" << '\n';
@@ -1052,14 +1047,9 @@ dtND_set( double const dt )
 {
 	dtND = dt;
 	two_dtND = 2.0 * dtND;
-	three_dtND = 3.0 * dtND;
-	one_over_dtND = 1.0 / dtND;
 	one_over_two_dtND = 1.0 / ( 2.0 * dtND );
-	one_over_two_dtND_squared = 1.0 / ( 2.0 * ( dtND * dtND ) );
 	one_over_four_dtND = 1.0 / ( 4.0 * dtND );
-	one_over_six_dtND = 1.0 / ( 6.0 * dtND );
 	one_over_six_dtND_squared = 1.0 / ( 6.0 * ( dtND * dtND ) );
-	one_over_six_dtND_cubed = 1.0 / ( 6.0 * ( dtND * dtND * dtND ) );
 }
 
 } // options

@@ -271,14 +271,9 @@ extern double dtND; // Numeric differentiation time step (s)
 extern double dtND_max; // Numeric differentiation time step max (s)
 extern bool dtND_optimizer; // Optimize FMU numeric differentiation time step?
 extern double two_dtND; // 2 * dtND
-extern double three_dtND; // 3 * dtND
-extern double one_over_dtND; // 1 / dtND
 extern double one_over_two_dtND; // 1 / ( 2 * dtND )
-extern double one_over_two_dtND_squared; // 1 / ( 2 * dtND^2 )
 extern double one_over_four_dtND; // 1 / ( 4 * dtND )
-extern double one_over_six_dtND; // 1 / ( 6 * dtND )
 extern double one_over_six_dtND_squared; // 1 / ( 6 * dtND^2 )
-extern double one_over_six_dtND_cubed; // 1 / ( 6 * dtND^3 )
 extern double dtCon; // FMU connection sync time step (s)
 extern double dtOut; // Sampled output time step (s)
 extern double tEnd; // End time (s)
