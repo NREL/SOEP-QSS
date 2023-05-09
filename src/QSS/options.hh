@@ -286,6 +286,7 @@ extern bool bin_auto; // Bin size automaically optimized?
 extern std::size_t pass; // Pass count limit
 extern bool cycles; // Report dependency cycles?
 extern bool inflection; // Requantize at inflections?
+extern double inflectionFrac; // Inflection step fraction min
 extern bool refine; // Refine FMU zero-crossing roots?
 extern bool perfect; // Perfect FMU-ME connection sync?
 extern bool active; // Active intermediate variables preferred?

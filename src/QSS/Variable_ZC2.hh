@@ -401,7 +401,7 @@ private: // Methods
 			assert( dt != infinity );
 			if ( options::inflection && nonzero_and_signs_differ( x_1_, x_2_ ) ) { // Inflection point
 				Time const dtI( -( x_1_ * ( one_half * x_2_inv ) ) );
-				dt = ( ( dtI < dt ) && ( dt < 100.0 * dtI ) ? dtI : dt );
+				dt = ( ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ? dtI : dt );
 			}
 			dt = std::min( std::max( dt, dt_min ), dt_max );
 			tE = tQ + dt;

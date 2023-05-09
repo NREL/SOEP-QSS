@@ -79,6 +79,7 @@ bool bin_auto( false ); // Bin size automaically optimized?
 std::size_t pass( 20 ); // Pass count limit
 bool cycles( false ); // Report dependency cycles?
 bool inflection( false ); // Requantize at inflections?
+double inflectionFrac( 0.02 ); // Inflection step fraction min
 bool refine( false ); // Refine FMU zero-crossing roots?
 bool perfect( false ); // Perfect FMU-ME connection sync?
 bool active( false ); // Active intermediate variables preferred?
@@ -166,6 +167,7 @@ help_display()
 	std::cout << " --pass=COUNT       Pass count limit  [" << pass << ']' << '\n';
 	std::cout << " --cycles           Report dependency cycles" << '\n';
 	std::cout << " --inflection       Requantize at inflections" << '\n';
+	std::cout << " --inflectionFrac   Inflection step fraction min  [" << inflectionFrac << ']' << '\n';
 	std::cout << " --refine           Refine FMU zero-crossing roots" << '\n';
 	std::cout << " --perfect          Perfect FMU-ME connection sync" << '\n';
 	std::cout << " --active           Active intermediate variables preferred  [Off]" << '\n';
@@ -288,6 +290,22 @@ process_args( Args const & args )
 			cycles = true;
 		} else if ( has_option( arg, "inflection" ) ) {
 			inflection = true;
+		} else if ( has_option_value( arg, "inflectionFrac" ) ) {
+			std::string const inflectionFrac_str( option_value( arg, "inflectionFrac" ) );
+			if ( is_double( inflectionFrac_str ) ) {
+				inflectionFrac = double_of( inflectionFrac_str );
+				if ( inflectionFrac < 0.0 ) {
+					std::cerr << "\nError: Negative inflectionFrac: " << inflectionFrac_str << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::cerr << "\nError: Nonnumeric inflectionFrac: " << inflectionFrac_str << std::endl;
+				fatal = true;
+			}
+			if ( inflectionFrac > 1.0 ) {
+				std::cerr << "\nWarning: inflectionFrac " << inflectionFrac << " > 1: Clipped to 1" << std::endl;
+				inflectionFrac = 1.0;
+			}
 		} else if ( has_option( arg, "refine" ) ) {
 			refine = true;
 		} else if ( has_option( arg, "perfect" ) ) {
