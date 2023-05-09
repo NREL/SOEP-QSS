@@ -242,7 +242,7 @@ public: // Methods
 		assert( t_.size() <= capacity_ );
 		if ( t_.size() == 0u ) return;
 		std::ofstream s( file_, std::ios_base::binary | std::ios_base::out | std::ios_base::app );
-		s << std::setprecision( 15 );
+		s << std::setprecision( 16 );
 		for ( size_type i = 0, e = t_.size(); i < e; ++i ) {
 			s << t_[ i ] << ' ' << v_[ i ] << '\n';
 		}
@@ -266,7 +266,7 @@ private: // Static Functions
 		if ( x_res.ec == std::errc{} ) return num_string; // Fall through on error
 #endif
 		std::ostringstream num_stream;
-		num_stream << std::right << std::uppercase << std::scientific << std::setprecision( 15 ) << std::setw( 23 ) << num;
+		num_stream << std::right << std::uppercase << std::scientific << std::setprecision( 16 ) << std::setw( 23 ) << num;
 		return num_stream.str();
 	}
 

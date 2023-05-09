@@ -93,6 +93,7 @@ TEST( Variable_Inp3Test, InputFunction )
 
 	std::streambuf * coutBuf( std::cout.rdbuf() ); std::ostringstream strCout; std::cout.rdbuf( strCout.rdbuf() ); // Redirect cout
 	all_eventindicators.clear();
+	all_dependencies.clear();
 	FMU_ME fmu( model );
 	fmu.instantiate();
 	fmu.pre_simulate();
@@ -106,11 +107,7 @@ TEST( Variable_Inp3Test, InputFunction )
 		return;
 	}
 
-	if ( dynamic_cast< Variable_QSS3 * >( fmu.var_named( "time" ) ) == nullptr ) {
-		EXPECT_EQ( 2u, fmu.eventq->size() );
-	} else {
-		EXPECT_EQ( 3u, fmu.eventq->size() );
-	}
+	EXPECT_EQ( 3u, fmu.eventq->size() );
 
 	EXPECT_EQ( 100.0, x->rTol );
 	EXPECT_EQ( 1.0, x->aTol );
@@ -140,7 +137,7 @@ TEST( Variable_Inp3Test, InputFunction )
 	EXPECT_EQ( 0.0, u->x2( 0.0 ) );
 	EXPECT_EQ( 0.0, u->q2( 0.0 ) );
 	EXPECT_EQ( -1.0, u->x3( 0.0 ) );
-	EXPECT_EQ( -1.0, u->q3( 0.0 ) );
+	EXPECT_EQ( 0.0, u->q3( 0.0 ) );
 
 	double const x_tE( x->tE );
 	fmu.set_time( x->tE );
@@ -159,5 +156,5 @@ TEST( Variable_Inp3Test, InputFunction )
 	EXPECT_EQ( 0.0, u->x2( 0.0 ) );
 	EXPECT_EQ( 0.0, u->q2( 0.0 ) );
 	EXPECT_EQ( -1.0, u->x3( 0.0 ) );
-	EXPECT_EQ( -1.0, u->q3( 0.0 ) );
+	EXPECT_EQ( 0.0, u->q3( 0.0 ) );
 }

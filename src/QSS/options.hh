@@ -59,7 +59,10 @@ enum class QSS {
  QSS3,
  LIQSS1,
  LIQSS2,
- LIQSS3
+ LIQSS3,
+ xQSS1,
+ xQSS2,
+ xQSS3
 };
 
 // Logging Level Enumerator

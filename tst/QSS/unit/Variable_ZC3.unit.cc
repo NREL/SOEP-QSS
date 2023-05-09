@@ -98,6 +98,7 @@ TEST( Variable_ZC3Test, BouncingBall )
 
 	std::streambuf * coutBuf( std::cout.rdbuf() ); std::ostringstream strCout; std::cout.rdbuf( strCout.rdbuf() ); // Redirect cout
 	all_eventindicators.clear();
+	all_dependencies.clear();
 	FMU_ME fmu( model );
 	fmu.instantiate();
 	fmu.pre_simulate();
@@ -156,7 +157,7 @@ TEST( Variable_ZC3Test, BouncingBall )
 
 	h->tE = 0.1; // Choose a requantization time
 	double const h_tE( h->tE );
-	fmu.set_time( h->tE );
+	fmu.set_time( h_tE );
 	h->advance_QSS();
 
 	EXPECT_EQ( h_tE, h->tQ );

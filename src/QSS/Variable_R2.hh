@@ -393,19 +393,24 @@ private: // Methods
 	{
 		assert( tQ == tX );
 		assert( dt_min <= dt_max );
+		Time dt;
 		if ( x_2_ != 0.0 ) {
 			Real const x_2_inv( one / x_2_ );
-			Time dt( std::sqrt( qTol * std::abs( x_2_inv ) ) );
-			dt = std::min( std::max( dt_infinity( dt ), dt_min ), dt_max );
+			dt = dt_infinity( std::sqrt( qTol * std::abs( x_2_inv ) ) );
 			assert( dt != infinity );
-			tE = tQ + dt;
 			if ( options::inflection && nonzero_and_signs_differ( x_1_, x_2_ ) ) { // Inflection point
-				Time const tI( tQ - ( x_1_ * ( one_half * x_2_inv ) ) );
-				if ( tQ < tI ) tE = std::min( tE, tI ); // Possible that dtI > 0 but tQ + dtI == tQ
+				Time const dtI( -( x_1_ * ( one_half * x_2_inv ) ) );
+				dt = ( ( dtI < dt ) && ( dt < 100.0 * dtI ) ? dtI : dt );
 			}
+			dt = std::min( std::max( dt, dt_min ), dt_max );
+			tE = tQ + dt;
 		} else {
-			Time const dt( std::min( std::max( dt_infinity_of_infinity(), dt_min ), dt_max ) );
+			dt = std::min( std::max( dt_infinity_of_infinity(), dt_min ), dt_max );
 			tE = ( dt != infinity ? tQ + dt : infinity );
+		}
+		if ( tQ == tE ) {
+			tE = std::nextafter( tE, infinity );
+			dt = tE - tQ;
 		}
 	}
 

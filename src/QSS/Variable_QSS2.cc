@@ -76,7 +76,7 @@ namespace QSS {
 		Time const tN( tE + dN );
 		fmu_set_time( tN );
 		fmu_set_observees_s( tN );
-#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+#ifndef QSS_PROPAGATE_CONTINUOUS
 		fmu_set_real( q_l + ( x_1_l * dN ) );
 #else
 		Real const x_2_dN( x_2_ * dN );
@@ -84,7 +84,7 @@ namespace QSS {
 #endif
 		Real const x_2_l( options::one_over_two_dtND * ( p_1() - x_1_l ) ); //ND Forward Euler
 		int const x_2_l_s( signum( x_2_l ) );
-#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+#ifndef QSS_PROPAGATE_CONTINUOUS
 		fmu_set_real( q_u + ( x_1_u * dN ) );
 #else
 		fmu_set_real( q_u + ( x_1_u + x_2_dN ) * dN );

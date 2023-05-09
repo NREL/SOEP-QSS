@@ -101,22 +101,14 @@ public: // Property
 	Real
 	q( Time const t ) const override
 	{
-		Time const tDel( t - tQ );
-		return x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
+		return x_0_ + ( x_1_ * ( t - tQ ) );
 	}
 
 	// Quantized First Derivative at Time t
 	Real
-	q1( Time const t ) const override
+	q1( Time const ) const override
 	{
-		return x_1_ + ( two * x_2_ * ( t - tQ ) );
-	}
-
-	// Quantized Second Derivative at Time t
-	Real
-	q2( Time const ) const override
-	{
-		return two * x_2_;
+		return x_1_;
 	}
 
 public: // Methods

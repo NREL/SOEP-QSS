@@ -219,7 +219,7 @@ public: // Methods
 	void
 	assign( Variables & triggers )
 	{
-		// Combine all non-trigger observers (they are already be computational observers)
+		// Combine all non-trigger observers
 		observers_.clear();
 		if ( triggers.size() < 16 ) { // Linear search
 			for ( Variable * trigger : triggers ) {

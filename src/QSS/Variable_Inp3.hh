@@ -110,29 +110,21 @@ public: // Property
 	q( Time const t ) const override
 	{
 		Time const tDel( t - tQ );
-		return x_0_ + ( ( x_1_ + ( ( x_2_ + ( x_3_ * tDel ) ) * tDel ) ) * tDel );
+		return x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 	}
 
 	// Quantized First Derivative at Time t
 	Real
 	q1( Time const t ) const override
 	{
-		Time const tDel( t - tQ );
-		return x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_ * tDel ) ) * tDel );
+		return x_1_ + ( two * x_2_ * ( t - tQ ) );
 	}
 
 	// Quantized Second Derivative at Time t
 	Real
-	q2( Time const t ) const override
+	q2( Time const ) const override
 	{
-		return ( two * x_2_ ) + ( six * x_3_ * ( t - tQ ) );
-	}
-
-	// Quantized Third Derivative at Time t
-	Real
-	q3( Time const ) const override
-	{
-		return six * x_3_;
+		return two * x_2_;
 	}
 
 public: // Methods

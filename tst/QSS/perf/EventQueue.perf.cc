@@ -84,5 +84,5 @@ main()
 		events.shift_QSS( i->first + ( 0.5 * ( 10.0 - i->first ) ), i ); // Move halfway to tE
 	}
 	double const time_end = (double)clock()/CLOCKS_PER_SEC;
-	cout << std::setprecision( 15 ) << time_end - time_beg << " (s) " << events.top_time() << ' ' << N << ' ' << R << endl << endl;
+	cout << std::setprecision( 16 ) << time_end - time_beg << " (s) " << events.top_time() << ' ' << N << ' ' << R << endl << endl;
 }

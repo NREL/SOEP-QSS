@@ -91,7 +91,7 @@ namespace QSS {
 		Time tN( tE + dN );
 		fmu_set_time( tN );
 		fmu_set_observees_s( tN );
-#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+#ifndef QSS_PROPAGATE_CONTINUOUS
 		Real const x_2_dN( x_2_ * dN );
 		fmu_set_real( q_l + ( ( x_1_l + x_2_dN ) * dN ) );
 #else
@@ -101,7 +101,7 @@ namespace QSS {
 #endif
 		Real const x_1_p_l( p_1() );
 		Real const x_2_l( options::one_over_two_dtND * ( x_1_p_l - x_1_l ) );
-#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+#ifndef QSS_PROPAGATE_CONTINUOUS
 		fmu_set_real( q_u + ( ( x_1_u + x_2_dN ) * dN ) );
 #else
 		fmu_set_real( q_u + ( ( x_1_u + x_2_x_3_dN ) * dN ) );
@@ -115,14 +115,14 @@ namespace QSS {
 			tN = tE - dN;
 			fmu_set_time( tN );
 			fmu_set_observees_s( tN );
-#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+#ifndef QSS_PROPAGATE_CONTINUOUS
 			fmu_set_real( q_l - ( ( x_1_l - ( x_2_l * dN ) ) * dN ) );
 #else
 			fmu_set_real( q_l - ( ( x_1_l - ( ( x_2_l - x_3_dN ) * dN ) ) * dN ) );
 #endif
 			Real const x_1m_l( p_1() );
 			x_3_l = options::one_over_six_dtND_squared * ( ( x_1_p_l - x_1_l ) + ( x_1m_l - x_1_l ) ); //ND Centered difference
-#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+#ifndef QSS_PROPAGATE_CONTINUOUS
 			fmu_set_real( q_u - ( ( x_1_u - ( x_2_u * dN ) ) * dN ) );
 #else
 			fmu_set_real( q_u - ( ( x_1_u - ( ( x_2_u - x_3_dN ) * dN ) ) * dN ) );
@@ -134,7 +134,7 @@ namespace QSS {
 			tN = tE + dN2;
 			fmu_set_time( tN );
 			fmu_set_observees_s( tN );
-#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+#ifndef QSS_PROPAGATE_CONTINUOUS
 			fmu_set_real( q_l + ( ( x_1_l + ( x_2_l * dN2 ) ) * dN2 ) );
 #else
 			Real const x_3_dN2( x_3_ * dN2 );
@@ -142,7 +142,7 @@ namespace QSS {
 #endif
 			Real const x_1_2p_l( p_1() );
 			x_3_l = options::one_over_six_dtND_squared * ( ( x_1_2p_l - x_1_p_l ) + ( x_1_l - x_1_p_l ) ); //ND Forward 3-point formula
-#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+#ifndef QSS_PROPAGATE_CONTINUOUS
 			fmu_set_real( q_u + ( ( x_1_u + ( x_2_u * dN2 ) ) * dN2 ) );
 #else
 			fmu_set_real( q_u + ( ( x_1_u + ( ( x_2_u + x_3_dN2 ) * dN2 ) ) * dN2 ) );

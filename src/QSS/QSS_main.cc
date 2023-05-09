@@ -79,9 +79,9 @@ QSS_main( std::vector< std::string > const & args )
 	using namespace QSS;
 
 	// I/o setup
-	std::cout << std::setprecision( 15 ) << std::boolalpha;
-	std::cerr << std::setprecision( 15 ) << std::boolalpha;
-	std::clog << std::setprecision( 15 ) << std::boolalpha;
+	std::cout << std::setprecision( 16 ) << std::boolalpha;
+	std::cerr << std::setprecision( 16 ) << std::boolalpha;
+	std::clog << std::setprecision( 16 ) << std::boolalpha;
 
 	// Startup banner
 	std::cout << "LBNL/DOE  SOEP-QSS  Quantized State System Solver  Version: " << version() << '\n';

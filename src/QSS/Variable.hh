@@ -726,22 +726,6 @@ public: // Property
 
 public: // Methods
 
-	// Set Max Time Step
-	void
-	set_dt_min( Time const dt )
-	{
-		assert( dt >= 0.0 );
-		dt_min = dt;
-	}
-
-	// Set Max Time Step
-	void
-	set_dt_max( Time const dt )
-	{
-		assert( dt > 0.0 );
-		dt_max = dt;
-	}
-
 	// Self-Observe
 	void
 	self_observe()
@@ -1562,7 +1546,7 @@ public: // Methods: FMU
 	fmu_set_s( Time const t ) const
 	{
 		assert( fmu_me_ != nullptr );
-#ifndef QSS_STATE_PROPAGATE_CONTINUOUS
+#ifndef QSS_PROPAGATE_CONTINUOUS
 		fmu_me_->set_real( var_.ref(), q( t ) ); // Quantized: Traditional QSS
 #else
 		fmu_me_->set_real( var_.ref(), x( t ) ); // Continuous: Modified QSS

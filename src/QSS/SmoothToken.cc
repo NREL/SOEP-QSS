@@ -49,7 +49,7 @@ namespace QSS {
 	rep() const
 	{
 		std::ostringstream stream;
-		stream << std::setprecision( 15 ) << x0;
+		stream << std::setprecision( 16 ) << x0;
 		if ( order >= 1 ) {
 			stream << ' ' << x1;
 			if ( order >= 2 ) {
@@ -65,7 +65,7 @@ namespace QSS {
 	std::ostream &
 	operator <<( std::ostream & stream, SmoothToken const & s )
 	{
-		stream << std::setprecision( 15 ) << s.x0;
+		stream << std::setprecision( 16 ) << s.x0;
 		if ( s.order >= 1 ) {
 			stream << '\t' << s.x1;
 			if ( s.order >= 2 ) {

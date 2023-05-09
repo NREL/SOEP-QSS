@@ -90,6 +90,7 @@ TEST( Variable_ZC1Test, BouncingBall )
 
 	std::streambuf * coutBuf( std::cout.rdbuf() ); std::ostringstream strCout; std::cout.rdbuf( strCout.rdbuf() ); // Redirect cout
 	all_eventindicators.clear();
+	all_dependencies.clear();
 	FMU_ME fmu( model );
 	fmu.instantiate();
 	fmu.pre_simulate();

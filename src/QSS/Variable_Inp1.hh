@@ -91,16 +91,9 @@ public: // Property
 
 	// Quantized Value at Time t
 	Real
-	q( Time const t ) const override
+	q( Time const ) const override
 	{
-		return x_0_ + ( x_1_ * ( t - tQ ) );
-	}
-
-	// Quantized First Derivative at Time t
-	Real
-	q1( Time const ) const override
-	{
-		return x_1_;
+		return x_0_;
 	}
 
 public: // Methods

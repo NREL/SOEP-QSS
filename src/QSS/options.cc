@@ -248,7 +248,7 @@ process_args( Args const & args )
 			version_arg = true;
 		} else if ( has_option_value( arg, "qss" ) ) {
 			specified::qss = true;
-			std::string const qss_name( uppercased( option_value( arg, "qss" ) ) );
+			std::string const qss_name( option_value( arg, "qss" ) );
 			if ( qss_name == "QSS1" ) {
 				qss = QSS::QSS1;
 				order = 1;
@@ -266,6 +266,15 @@ process_args( Args const & args )
 				order = 2;
 			} else if ( qss_name == "LIQSS3" ) {
 				qss = QSS::LIQSS3;
+				order = 3;
+			} else if ( qss_name == "xQSS1" ) {
+				qss = QSS::xQSS1;
+				order = 1;
+			} else if ( qss_name == "xQSS2" ) {
+				qss = QSS::xQSS2;
+				order = 2;
+			} else if ( qss_name == "xQSS3" ) {
+				qss = QSS::xQSS3;
 				order = 3;
 			} else {
 				std::cerr << "\nError: Unsupported QSS method: " << qss_name << std::endl;
@@ -434,8 +443,8 @@ process_args( Args const & args )
 			std::string const dtMax_str( option_value( arg, "dtMax" ) );
 			if ( is_double( dtMax_str ) ) {
 				dtMax = double_of( dtMax_str );
-				if ( dtMax < 0.0 ) {
-					std::cerr << "\nError: Negative dtMax: " << dtMax_str << std::endl;
+				if ( dtMax <= 0.0 ) {
+					std::cerr << "\nError: Nonpositive dtMax: " << dtMax_str << std::endl;
 					fatal = true;
 				}
 			} else {
@@ -1006,7 +1015,7 @@ process_args( Args const & args )
 
 	// Inter-option checks
 	if ( specified::rTol && ( rTol * zFac * zrFac >= 1.0 ) ) {
-		std::cerr << "\nWarning: Zero-crossing relative tolerance: rTol * zFac * zrFac >= 1: " << rTol * zFac * zrFac << std::endl;
+		std::cerr << "\nWarning: Zero-crossing relative tolerance: rTol * zFac * zrFac = " << rTol * zFac * zrFac << " >= 1" << std::endl;
 	}
 
 	if ( help ) std::exit( EXIT_SUCCESS );

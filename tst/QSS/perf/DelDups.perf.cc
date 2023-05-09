@@ -86,7 +86,7 @@ main()
 			v.shrink_to_fit();
 		}
 		double const time_end = (double)clock()/CLOCKS_PER_SEC;
-		std::cout << std::setprecision( 15 ) << "sort+unique" << time_end - time_beg << " (s)  " << v.size() << ' ' << v.front() << ' ' << v.back() << ' ' << std::endl;
+		std::cout << std::setprecision( 16 ) << "sort+unique" << time_end - time_beg << " (s)  " << v.size() << ' ' << v.front() << ' ' << v.back() << ' ' << std::endl;
 	}
 
 	{ // Unordered set
@@ -107,6 +107,6 @@ main()
 			//v.shrink_to_fit(); // Instead of clear() and reserve(): Not sig faster
 		}
 		double const time_end = (double)clock()/CLOCKS_PER_SEC;
-		std::cout << std::setprecision( 15 ) << "unordered_set " << time_end - time_beg << " (s)  " << v.size() << ' ' << v.front() << ' ' << v.back() << ' ' << std::endl;
+		std::cout << std::setprecision( 16 ) << "unordered_set " << time_end - time_beg << " (s)  " << v.size() << ' ' << v.front() << ' ' << v.back() << ' ' << std::endl;
 	}
 }

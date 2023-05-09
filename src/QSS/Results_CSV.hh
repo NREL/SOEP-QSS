@@ -137,7 +137,7 @@ public: // Methods
 	values( Values const & values )
 	{
 		if ( values.empty() ) return;
-		csv_stream_ << std::setprecision( 15 );
+		csv_stream_ << std::setprecision( 16 );
 		csv_stream_ << values[ 0 ];
 		for ( size_type i = 1, n = values.size(); i < n; ++i ) csv_stream_ << ',' << values[ i ];
 		csv_stream_ << '\n';
@@ -158,7 +158,7 @@ private: // Static Functions
 		if ( x_res.ec == std::errc{} ) return num_string; // Fall through on error
 #endif
 		std::ostringstream num_stream;
-		num_stream << std::right << std::uppercase << std::scientific << std::setprecision( 15 ) << std::setw( 23 ) << num;
+		num_stream << std::right << std::uppercase << std::scientific << std::setprecision( 16 ) << std::setw( 23 ) << num;
 		return num_stream.str();
 	}
 
