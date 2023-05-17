@@ -143,38 +143,38 @@ help_display()
 {
 	std::cout << '\n' << "QSS [options] [model [model ...]]" << "\n\n";
 	std::cout << "Options:" << "\n\n";
-	std::cout << " --qss=QSS          QSS method: (x)(LI)QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
-	std::cout << " --rTol=TOL         Relative tolerance  [" << rTol << "|FMU]" << '\n';
-	std::cout << " --aTol=TOL         Absolute tolerance  [rTol*aFac*nominal]" << '\n';
-	std::cout << " --aFac=FAC         Absolute tolerance factor  [" << aFac << ']' << '\n';
-	std::cout << " --zTol=TOL         Zero-crossing/root tolerance  [" << zTol << "|FMU]" << '\n';
-	std::cout << " --zMul=MUL         Zero-crossing tolerance bump multiplier  [" << zMul << ']' << '\n';
-	std::cout << " --zFac=FAC         Zero-crossing tolerance factor  [" << zFac << ']' << '\n';
-	std::cout << " --zrFac=FAC        Zero-crossing relative tolerance factor  [" << zrFac << ']' << '\n';
-	std::cout << " --zaFac=FAC        Zero-crossing absolute tolerance factor  [" << zaFac << ']' << '\n';
-	std::cout << " --dtMin=STEP       Min time step (s)  [0]" << '\n';
-	std::cout << " --dtMax=STEP       Max time step (s)  [infinity]" << '\n';
-	std::cout << " --dtInf=STEP       Deactivation control time step (s)  [infinity]" << '\n';
-	std::cout << " --dtZMax=STEP      Max time step before zero-crossing (s)  (0 => Off)  [" << dtZMax << ']' << '\n';
-	std::cout << " --dtZC=STEP        FMU zero-crossing time step (s)  [" << dtZC << ']' << '\n';
-	std::cout << " --dtND=STEP[:Y|U]  Numeric differentiation time step specs" << '\n';
-	std::cout << "        STEP        Time step (s)  [1e-6]" << '\n';
-	std::cout << "              Y     Use automatic time step" << '\n';
-	std::cout << "              U     Upper time step for automatic scan (s)  [" << dtND_max << ']' << '\n';
-	std::cout << " --dtCon=STEP       FMU connection sync time step (s)  [0]" << '\n';
-	std::cout << " --dtOut=STEP       Sampled output time step (s)  [computed]" << '\n';
-	std::cout << " --tEnd=TIME        End time (s)  [1|FMU]" << '\n';
-	std::cout << " --pass=COUNT       Pass count limit  [" << pass << ']' << '\n';
-	std::cout << " --cycles           Report dependency cycles" << '\n';
-	std::cout << " --inflection       Requantize at inflections" << '\n';
-	std::cout << " --inflectionFrac   Inflection step fraction min  [" << inflectionFrac << ']' << '\n';
-	std::cout << " --refine           Refine FMU zero-crossing roots" << '\n';
-	std::cout << " --perfect          Perfect FMU-ME connection sync" << '\n';
-	std::cout << " --active           Active intermediate variables preferred  [Off]" << '\n';
-	std::cout << " --passive          Passive intermediate variables preferred  [On]" << '\n';
-	std::cout << " --stiff            Stiffness detection/report for FMU" << '\n';
-	std::cout << " --steps            Generate step count file for FMU" << '\n';
-	std::cout << " --log=LEVEL        Logging level  [warning]" << '\n';
+	std::cout << " --qss=QSS              QSS method: (x)(LI)QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
+	std::cout << " --rTol=TOL             Relative tolerance  [" << rTol << "|FMU]" << '\n';
+	std::cout << " --aTol=TOL             Absolute tolerance  [rTol*aFac*nominal]" << '\n';
+	std::cout << " --aFac=FAC             Absolute tolerance factor  [" << aFac << ']' << '\n';
+	std::cout << " --zTol=TOL             Zero-crossing/root tolerance  [" << zTol << "|FMU]" << '\n';
+	std::cout << " --zMul=MUL             Zero-crossing tolerance bump multiplier  [" << zMul << ']' << '\n';
+	std::cout << " --zFac=FAC             Zero-crossing tolerance factor  [" << zFac << ']' << '\n';
+	std::cout << " --zrFac=FAC            Zero-crossing relative tolerance factor  [" << zrFac << ']' << '\n';
+	std::cout << " --zaFac=FAC            Zero-crossing absolute tolerance factor  [" << zaFac << ']' << '\n';
+	std::cout << " --dtMin=STEP           Min time step (s)  [0]" << '\n';
+	std::cout << " --dtMax=STEP           Max time step (s)  [infinity]" << '\n';
+	std::cout << " --dtInf=STEP           Deactivation control time step (s)  [infinity]" << '\n';
+	std::cout << " --dtZMax=STEP          Max time step before zero-crossing (s)  (0 => Off)  [" << dtZMax << ']' << '\n';
+	std::cout << " --dtZC=STEP            FMU zero-crossing time step (s)  [" << dtZC << ']' << '\n';
+	std::cout << " --dtND=STEP[:Y|U]      Numeric differentiation time step specs" << '\n';
+	std::cout << "        STEP            Time step (s)  [1e-6]" << '\n';
+	std::cout << "              Y         Use automatic time step" << '\n';
+	std::cout << "              U         Upper time step for automatic scan (s)  [" << dtND_max << ']' << '\n';
+	std::cout << " --dtCon=STEP           FMU connection sync time step (s)  [0]" << '\n';
+	std::cout << " --dtOut=STEP           Sampled output time step (s)  [computed]" << '\n';
+	std::cout << " --tEnd=TIME            End time (s)  [1|FMU]" << '\n';
+	std::cout << " --pass=COUNT           Pass count limit  [" << pass << ']' << '\n';
+	std::cout << " --cycles               Report dependency cycles" << '\n';
+	std::cout << " --inflection           Requantize at inflections" << '\n';
+	std::cout << " --inflectionFrac=FRAC  Inflection step fraction min  [" << inflectionFrac << ']' << '\n';
+	std::cout << " --refine               Refine FMU zero-crossing roots" << '\n';
+	std::cout << " --perfect              Perfect FMU-ME connection sync" << '\n';
+	std::cout << " --active               Active intermediate variables preferred  [Off]" << '\n';
+	std::cout << " --passive              Passive intermediate variables preferred  [On]" << '\n';
+	std::cout << " --stiff                Stiffness detection/report for FMU" << '\n';
+	std::cout << " --steps                Generate step count file for FMU" << '\n';
+	std::cout << " --log=LEVEL            Logging level  [warning]" << '\n';
 	std::cout << "       fatal" << '\n';
 	std::cout << "       error" << '\n';
 	std::cout << "       warning" << '\n';
@@ -282,10 +282,6 @@ process_args( Args const & args )
 				std::cerr << "\nError: Unsupported QSS method: " << qss_name << std::endl;
 				fatal = true;
 			}
-		} else if ( has_option( arg, "eidd" ) ) {
-			// Ignore obsolete option
-		} else if ( ( has_option( arg, "no-eidd" ) ) || ( has_option( arg, "noeidd" ) ) ) {
-			// Ignore obsolete option
 		} else if ( has_option( arg, "cycles" ) ) {
 			cycles = true;
 		} else if ( has_option( arg, "inflection" ) ) {
@@ -937,6 +933,22 @@ process_args( Args const & args )
 						break;
 					}
 				}
+			} else if ( sep == ' ' ) { // Remove all outputs
+				output::d = false;
+				output::s = false;
+				output::h = false;
+				output::R = false;
+				output::O = false;
+				output::Z = false;
+				output::D = false;
+				output::S = false;
+				output::X = false;
+				output::Q = false;
+				output::T = false;
+				output::A = false;
+				output::F = false;
+				output::L = false;
+				output::K = false;
 			}
 		} else if ( has_option( arg, "out" ) ) {
 			output::d = false;

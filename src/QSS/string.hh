@@ -93,6 +93,14 @@ is_double( std::string const & s )
 bool
 is_any_of( char const c, std::string const & s );
 
+// char is not in a string?
+inline
+bool
+not_any_of( char const c, std::string const & s )
+{
+	return !is_any_of( c, s );
+}
+
 // Has a Character?
 bool
 has( std::string const & s, char const c );
