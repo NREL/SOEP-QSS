@@ -396,7 +396,7 @@ public: // Methods
 		x_2_ = n_2( x_1_m, x_1_p );
 	}
 
-	// Observer Advance: Stage 2
+	// Observer Advance: Stage 2: Forward ND
 	void
 	advance_observer_2_forward( Real const x_1_p, Real const x_1_2p ) override
 	{

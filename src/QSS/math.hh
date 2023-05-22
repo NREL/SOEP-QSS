@@ -105,7 +105,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 bool
 signs_same( T const x, T const y )
 {
-	return ( ( x >= T( 0 ) ) == ( y >= T( 0 ) ) );
+	return ( sign( x ) == sign( y ) );
 }
 
 // Signs of 2 Values Differ?
@@ -146,6 +146,22 @@ int
 signum( T const x )
 {
 	return ( x < T( 0 ) ? -1 : ( x > T( 0 ) ? +1 : 0 ) );
+}
+
+// Signums of 2 Values Same?
+template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
+bool
+signums_same( T const x, T const y )
+{
+	return ( signum( x ) == signum( y ) );
+}
+
+// Signums of 2 Values Differ?
+template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
+bool
+signums_differ( T const x, T const y )
+{
+	return ( signum( x ) != signum( y ) );
 }
 
 // Square

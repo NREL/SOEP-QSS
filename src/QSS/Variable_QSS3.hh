@@ -298,7 +298,7 @@ public: // Methods
 		assert( ( tQ <= t ) && ( tX <= t ) && ( t <= tE ) );
 		tS = t - tQ;
 		tQ = tX = t;
-		x_0_ = q_0_ = x_0;
+		q_0_ = x_0_ = x_0;
 	}
 
 	// Handler Advance: Stage 1

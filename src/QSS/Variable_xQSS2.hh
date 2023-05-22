@@ -240,7 +240,7 @@ public: // Methods
 		assert( ( tQ <= t ) && ( tX <= t ) && ( t <= tE ) );
 		tS = t - tQ;
 		tQ = tX = t;
-		x_0_ = q_0_ = p_0();
+		q_0_ = x_0_ = p_0();
 		q_1_ = x_1_ = h_1();
 		q_2_ = x_2_ = c_2( t, x_1_ );
 		set_qTol();
@@ -258,7 +258,7 @@ public: // Methods
 		assert( ( tQ <= t ) && ( tX <= t ) && ( t <= tE ) );
 		tS = t - tQ;
 		tQ = tX = t;
-		x_0_ = q_0_ = x_0;
+		q_0_ = x_0_ = x_0;
 	}
 
 	// Handler Advance: Stage 1

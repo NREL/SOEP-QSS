@@ -1203,14 +1203,6 @@ public: // Methods
 		assert( false );
 	}
 
-	// Observer Advance: Stage 1
-	virtual
-	void
-	advance_observer_1_forward( Time const, Real const, Real const, Real const )
-	{
-		assert( false );
-	}
-
 	// Observer Advance: Stage 2
 	virtual
 	void
@@ -1243,7 +1235,7 @@ public: // Methods
 		assert( false );
 	}
 
-	// Observer Advance: Stage 2
+	// Observer Advance: Stage 2: Forward ND
 	virtual
 	void
 	advance_observer_2_forward( Real const, Real const )
@@ -1275,7 +1267,7 @@ public: // Methods
 		assert( false );
 	}
 
-	// Observer Advance: Stage 3
+	// Observer Advance: Stage 3: Forward ND
 	virtual
 	void
 	advance_observer_3_forward( Real const )
