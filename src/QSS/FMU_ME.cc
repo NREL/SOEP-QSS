@@ -987,19 +987,31 @@ namespace QSS {
 						} else if ( options::qss == options::QSS::QSS1 ) {
 							qss_var = new Variable_QSS1( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
 						} else if ( options::qss == options::QSS::QSS2 ) {
-							qss_var = new Variable_QSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+							if ( options::relax ) { // Relaxation
+								qss_var = new Variable_rQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+							} else {
+								qss_var = new Variable_QSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+							}
 						} else if ( options::qss == options::QSS::QSS3 ) {
 							qss_var = new Variable_QSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
 						} else if ( options::qss == options::QSS::LIQSS1 ) {
 							qss_var = new Variable_LIQSS1( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
 						} else if ( options::qss == options::QSS::LIQSS2 ) {
-							qss_var = new Variable_LIQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+							if ( options::relax ) { // Relaxation
+								qss_var = new Variable_rLIQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+							} else {
+								qss_var = new Variable_LIQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+							}
 						} else if ( options::qss == options::QSS::LIQSS3 ) {
 							qss_var = new Variable_LIQSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
 						} else if ( options::qss == options::QSS::xQSS1 ) {
 							qss_var = new Variable_xQSS1( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
 						} else if ( options::qss == options::QSS::xQSS2 ) {
-							qss_var = new Variable_xQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+							if ( options::relax ) { // Relaxation
+								qss_var = new Variable_rxQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+							} else {
+								qss_var = new Variable_xQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+							}
 						} else if ( options::qss == options::QSS::xQSS3 ) {
 							qss_var = new Variable_xQSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
 						} else {

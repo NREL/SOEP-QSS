@@ -96,7 +96,7 @@ namespace QSS {
 		Real const x_1_u( p_1() );
 		int const x_1_u_s( signum( x_1_u ) );
 
-		// Reset FMU values
+		// Reset FMU value
 		fmu_set_real( q_c_ );
 
 		// Set coefficients based on derivative signs

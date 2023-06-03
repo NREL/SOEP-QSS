@@ -80,6 +80,7 @@ std::size_t pass( 20 ); // Pass count limit
 bool cycles( false ); // Report dependency cycles?
 bool inflection( false ); // Requantize at inflections?
 double inflectionFrac( 0.02 ); // Inflection step fraction min
+bool relax( false ); // Relaxation for derivative sensitivity?
 bool refine( false ); // Refine FMU zero-crossing roots?
 bool perfect( false ); // Perfect FMU-ME connection sync?
 bool active( false ); // Active intermediate variables preferred?
@@ -168,6 +169,7 @@ help_display()
 	std::cout << " --cycles               Report dependency cycles" << '\n';
 	std::cout << " --inflection           Requantize at inflections" << '\n';
 	std::cout << " --inflectionFrac=FRAC  Inflection step fraction min  [" << inflectionFrac << ']' << '\n';
+	std::cout << " --relax[=Y|N]          Relaxation for derivative sensitivity  [N]" << '\n';
 	std::cout << " --refine               Refine FMU zero-crossing roots" << '\n';
 	std::cout << " --perfect              Perfect FMU-ME connection sync" << '\n';
 	std::cout << " --active               Active intermediate variables preferred  [Off]" << '\n';
@@ -302,6 +304,20 @@ process_args( Args const & args )
 				std::cerr << "\nWarning: inflectionFrac " << inflectionFrac << " > 1: Clipped to 1" << std::endl;
 				inflectionFrac = 1.0;
 			}
+		} else if ( has_option_value( arg, "relax" ) ) {
+			static std::string const rlx_flags( "YNTF" );
+			char const rlx( uppercased( option_value( arg, "relax" ) )[ 0 ] );
+			if ( not_any_of( rlx, rlx_flags ) ) {
+				std::cerr << "\nError: Relax option has flag not in " << rlx_flags << ": " << rlx << std::endl;
+				fatal = true;
+			}
+			if ( is_any_of( rlx, "YT" ) ) {
+				relax = true;
+			} else {
+				relax = false;
+			}
+		} else if ( has_option( arg, "relax" ) ) {
+			relax = true;
 		} else if ( has_option( arg, "refine" ) ) {
 			refine = true;
 		} else if ( has_option( arg, "perfect" ) ) {

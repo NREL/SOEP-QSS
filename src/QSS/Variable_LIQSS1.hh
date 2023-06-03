@@ -324,7 +324,7 @@ private: // Data
 
 	Real q_c_{ 0.0 }, q_0_{ 0.0 }; // Quantized trajectory coefficients
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous trajectory coefficients
-	Real l_0_{ 0.0 }; // LIQSS-adjusted coefficient
+	Real l_0_{ 0.0 }; // LIQSS-adjusted coefficient (deferred updates not needed with LIQSS1 if we don't allow mixed order solvers)
 
 }; // Variable_LIQSS1
 

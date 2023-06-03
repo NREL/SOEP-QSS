@@ -1,4 +1,4 @@
-// LIQSS2 Variable
+// Relaxation LIQSS2 Variable
 //
 // Project: QSS Solver
 //
@@ -34,13 +34,13 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // QSS Headers
-#include <QSS/Variable_LIQSS2.hh>
+#include <QSS/Variable_rLIQSS2.hh>
 
 namespace QSS {
 
 	// Advance Self-Observing Trigger
 	void
-	Variable_LIQSS2::
+	Variable_rLIQSS2::
 	advance_LIQSS()
 	{
 		assert( qTol > 0.0 );
@@ -126,7 +126,7 @@ namespace QSS {
 
 	// Advance Self-Observing Trigger: Simultaneous
 	void
-	Variable_LIQSS2::
+	Variable_rLIQSS2::
 	advance_LIQSS_simultaneous()
 	{
 		assert( qTol > 0.0 );

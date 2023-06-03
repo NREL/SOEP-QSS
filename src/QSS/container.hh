@@ -120,11 +120,11 @@ void
 sort_by_order( Variables & variables )
 {
 	using V = typename std::remove_pointer< typename Variables::value_type >::type;
-	if ( options::output::d ) { // Also sort by name for deterministic diagnostic output
+	// if ( options::output::d ) { // Also sort by name for deterministic diagnostic output and order-dependent results
 		std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return ( v1->order() < v2->order() ) || ( ( v1->order() == v2->order() ) && ( v1->name() < v2->name() ) ); } );
-	} else { // Just sort by order (faster)
-		std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->order() < v2->order(); } );
-	}
+	// } else { // Just sort by order (faster)
+	// 	std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->order() < v2->order(); } );
+	// }
 }
 
 // Sort Variables by Type (State First) and Order
@@ -133,11 +133,11 @@ void
 sort_by_type_and_order( Variables & variables )
 {
 	using V = typename std::remove_pointer< typename Variables::value_type >::type;
-	if ( options::output::d ) { // Also sort by name for deterministic diagnostic output
+	// if ( options::output::d ) { // Also sort by name for deterministic diagnostic output and order-dependent results
 		std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return ( v1->var_sort_index() < v2->var_sort_index() ) || ( ( v1->var_sort_index() == v2->var_sort_index() ) && ( v1->name() < v2->name() ) ); } );
-	} else { // Just sort by type and order (faster)
-		std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->var_sort_index() < v2->var_sort_index(); } );
-	}
+	// } else { // Just sort by type and order (faster)
+	// 	std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->var_sort_index() < v2->var_sort_index(); } );
+	// }
 }
 
 // Sort Variables by Name
