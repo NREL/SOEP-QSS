@@ -2393,9 +2393,11 @@ namespace QSS {
 #endif
 
 		// Binning setup
-		size_type bin_size( std::min( options::bin_size, vars.size() ) ); // Initial bin size: Bin optimizer will adjust it during the run in auto mode
+		size_type max_bin_size( 1u ); // Max bin size used since last bin optimizer pass
+		size_type bin_size( std::min( options::bin_size, max( state_vars.size(), vars_ZC.size(), vars.size() - state_vars.size() - vars_ZC.size() ) ) ); // Initial bin size: Bin optimizer will adjust it during the run in auto mode
 		Real const bin_frac( options::bin_frac ); // Min time step fraction for a binned variable
-		std::pair< size_type, size_type > bin_size_auto( bin_size, 1u ); // Automatic bin size total and count for reporting average
+		std::pair< size_type, size_type > bin_size_auto( 0u, 0u ); // Automatic bin size total and count for reporting average
+		Time const bin_performance_dt_max( tSim / 5.0 ); // Max solution time span for checking performance
 		Time bin_performance_dt( 0.0 ); // Min solution time span for checking performance: adjusted on the fly
 		timers::Performance bin_performance( tPass ); // Solution performance "stopwatch"
 		BinOptimizer bin_optimizer( state_vars.size() ); // Bin size optimizer
@@ -2942,6 +2944,7 @@ namespace QSS {
 								trigger->out_t( t );
 							}
 						}
+						max_bin_size = std::max( max_bin_size, triggers.size() );
 					}
 				} else if ( event.is_QSS_ZC() ) { // QSS ZC requantization event(s)
 					++n_QSS_events;
@@ -3045,6 +3048,7 @@ namespace QSS {
 								trigger->out_t( t );
 							}
 						}
+						max_bin_size = std::max( max_bin_size, triggers.size() );
 					}
 
 				} else if ( event.is_QSS_R() ) { // QSS R requantization event(s)
@@ -3163,6 +3167,7 @@ namespace QSS {
 								trigger->out_t( t );
 							}
 						}
+						max_bin_size = std::max( max_bin_size, triggers.size() );
 					}
 
 				} else if ( event.is_QSS_Inp() ) { // QSS Input requantization event(s)
@@ -3214,25 +3219,24 @@ namespace QSS {
 
 				// Bin optimization
 				if ( bin_auto ) { // Bin optimization active
-					if ( t >= bin_performance.tb() + bin_performance_dt ) { // Enough simulation time to check elapased CPU time
+					if ( t >= bin_performance.tb() + bin_performance_dt ) { // Enough simulation time to check elapsed CPU time
 						Time const cpu_time_elapsed( bin_performance.elapsed() );
-						if ( cpu_time_elapsed >= 1.0 ) { // Enough elapsed CPU time to give useful metrics without much overhead
+						if ( ( cpu_time_elapsed >= 1.0 ) || ( t >= bin_performance.tb() + bin_performance_dt_max ) ) { // Compute bin size metrics
 							timers::Performance::Velocity const bin_velocity( bin_performance( t, cpu_time_elapsed ) );
 							bin_performance_dt = std::max( bin_performance_dt, t - bin_performance.tb() ); // Tune simulation time until next check
-							//std::cerr << "\nBining Performance: " << t << ' ' << cpu_time_elapsed << ' ' << bin_velocity << ' ' << bin_performance_dt << ' ' << bin_size << std::endl; //Diag
+							// std::cerr << "\nBining Performance: " << t << ' ' << cpu_time_elapsed << ' ' << bin_size << ' ' << max_bin_size << ' ' << bin_velocity << ' ' << bin_performance_dt << std::endl; //Diagnostic
 							size_type const bin_size_old( bin_size );
-							bin_optimizer.add( bin_size, bin_velocity );
+							bin_optimizer.add( max_bin_size, bin_velocity );
 							bin_size = bin_optimizer.rec_bin_size();
 							bin_size_auto.first += bin_size;
 							++bin_size_auto.second;
 							if ( options::output::d ) {
 								if ( bin_size != bin_size_old ) {
 									std::cout << "\nBin size adjusted to: " << bin_size << std::endl;
-//								} else {
-//									std::cout << "\nBin size kept at: " << bin_size << std::endl;
 								}
 							}
 							bin_performance.start( t );
+							max_bin_size = 1u;
 						}
 					}
 				}

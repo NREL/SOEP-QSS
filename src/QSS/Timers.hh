@@ -95,7 +95,7 @@ public: // Method
 
 private: // Data
 
-	Time cb_{ 0.0 }; // Begin CPU time
+	Time cb_{ 0.0 }; // CPU begin time
 
 }; // CPU
 
@@ -177,8 +177,8 @@ public: // Method
 
 private: // Data
 
-	Time cb_{ 0.0 }; // Begin CPU time
-	Time tb_{ 0.0 }; // Begin time
+	Time cb_{ 0.0 }; // CPU begin time
+	Time tb_{ 0.0 }; // Simulation begin time
 
 }; // Performance
 
