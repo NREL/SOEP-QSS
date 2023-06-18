@@ -14,5 +14,6 @@ CXXFLAGS := /nologo /Qstd:c++20 /Qansi-alias /Qopenmp /EHsc /QxHOST /Zc:__cplusp
 # 11075 Inlining report message
 CXXLINKFLAGS := /nologo
 LINKFLAGS := /link /nologo /LIBPATH:$(QSS_bin) /STACK:16777216
+LDFLAGS := /NOLOGO /STACK:16777216
 
 include $(QSS_bin)\..\GNUmakeinit.mk

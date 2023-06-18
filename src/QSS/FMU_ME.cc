@@ -3297,8 +3297,14 @@ namespace QSS {
 			}
 			if ( options::output::s ) { // Statistics
 				if ( n_QSS_events > 0 ) {
-					std::cout << "\nQSS Requantization Events:" << std::endl;
+					std::cout << "\nQSS Requantization Events: By Name" << std::endl;
 					for ( Variable const * var : vars ) {
+						if ( c_QSS_events[ var ] > 0u ) std::cout << ' ' << var->name() << ' ' << c_QSS_events[ var ] << " (" <<  100u * c_QSS_events[ var ] / n_QSS_events << "%)" << std::endl;
+					}
+					std::cout << "\nQSS Requantization Events: By Number" << std::endl;
+					Variables vars_by_requants( vars );
+					std::stable_sort( vars_by_requants.begin(), vars_by_requants.end(), [this]( Variable const * v1, Variable const * v2 ){ return c_QSS_events[ v1 ] > c_QSS_events[ v2 ]; } );
+					for ( Variable const * var : vars_by_requants ) {
 						if ( c_QSS_events[ var ] > 0u ) std::cout << ' ' << var->name() << ' ' << c_QSS_events[ var ] << " (" <<  100u * c_QSS_events[ var ] / n_QSS_events << "%)" << std::endl;
 					}
 				}

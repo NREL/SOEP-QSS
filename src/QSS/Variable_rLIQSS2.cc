@@ -180,13 +180,13 @@ namespace QSS {
 		} else { // Use near-linear trajectory
 			l_0_ = std::min( std::max( ( ( q_l * x_2_u ) - ( q_u * x_2_l ) ) / ( x_2_u - x_2_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
 
-			// Derivative at q_0_
+			// Derivative at l_0_
 			fmu_set_time( tE );
 			fmu_set_observees_s( tE );
 			fmu_set_real( l_0_ );
 			q_1_ = x_1_ = p_1();
 
-			// Second derivative at q_0_
+			// Second derivative at l_0_
 			fmu_set_time( tN );
 			fmu_set_observees_s( tN );
 #ifndef QSS_PROPAGATE_CONTINUOUS
