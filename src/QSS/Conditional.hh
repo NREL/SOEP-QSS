@@ -171,7 +171,7 @@ public: // Methods
 	void
 	init_observers()
 	{
-		// Short-circuit passive observers
+		uniquify( observers_ );
 		short_circuit_passive_observers();
 		assert( var_ != nullptr );
 		std::cout << '\n' << var_->name() << " Conditional Computational Observers:" << std::endl;
@@ -265,7 +265,7 @@ private: // Methods
 					observers_checked.insert( observer );
 				} else { // Short-circuit it
 					assert( observer->is_Passive() );
-					find_computational_observers( observer, observers_checked, observers_set ); // Note: Looks at other variable observers that aren't necessarily uniquified yet but that is OK: Might be more efficient to make this a separate phase after all are uniquified
+					find_computational_observers( observer, observers_checked, observers_set );
 				}
 			}
 			observers_.assign( observers_set.begin(), observers_set.end() ); // Swap in the computational observers

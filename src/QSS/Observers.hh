@@ -195,7 +195,7 @@ public: // Methods
 		if ( observers_.empty() ) return; // Nothing to do
 		VariablesSet observers_checked;
 		VariablesSet observers_set;
-		find_computational_observers( observers_, observers_checked, observers_set ); // Note: Looks at other variable observers that aren't necessarily uniquified yet but that is OK: Might be more efficient to make this a separate phase after all are uniquified
+		find_computational_observers( observers_, observers_checked, observers_set );
 		computational_observers_.assign( observers_set.begin(), observers_set.end() ); // Swap in the computational observers
 	}
 
@@ -506,6 +506,13 @@ public: // Subscript
 	}
 
 private: // Methods
+
+	// Make Observers Collection Unique and Optionally Shrink-to-Fit
+	void
+	uniquify_observers( bool const shrink = false )
+	{
+		uniquify( observers_, shrink );
+	}
 
 	// Find Extended Computational Observers
 	void

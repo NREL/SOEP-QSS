@@ -160,6 +160,9 @@ simulate_fmu_me_con( std::vector< std::string > const & paths )
 
 	// Initialize models
 	for ( size_type i = 0; i < n_models; ++i ) {
+		fmu_mes[ i ]->init_0_0();
+	}
+	for ( size_type i = 0; i < n_models; ++i ) {
 		fmu_mes[ i ]->init_0_1();
 	}
 	for ( size_type i = 0; i < n_models; ++i ) {

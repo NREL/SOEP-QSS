@@ -77,7 +77,7 @@ namespace QSS {
 		// Observees setup
 		VariablesSet observees_checked;
 		VariablesSet observees_set;
-		find_computational_observees( observees_, observees_checked, observees_set ); // Note: Looks at other variable observees that aren't necessarily uniquified yet but that is OK: Might be more efficient to make this a separate phase after all are uniquified
+		find_computational_observees( observees_, observees_checked, observees_set );
 		observees_.clear();
 		if ( !observees_set.empty() ) {
 			for ( Variable * observee : observees_set ) {
@@ -117,6 +117,14 @@ namespace QSS {
 			observees_v_ref_.push_back( observee->var_.ref() );
 			observees_dv_.push_back( 0.0 ); // Actual values assigned when getting directional derivatives
 		}
+	}
+
+	// Uniquify Observers
+	void
+	Variable::
+	uniquify_observers()
+	{
+		if ( observed_ ) uniquify_observers(); // Sort by address and remove duplicates
 	}
 
 	// Initialize Observers

@@ -80,7 +80,7 @@ simulate_fmu_qss( std::string const & path )
 		std::cerr << "\nError: fmi2SetupExperiment failed: " << std::endl;
 		std::exit( EXIT_FAILURE );
 	}
-	for ( size_type k = 0; k <= 9u; ++k ) { // Initialization stages
+	for ( size_type k = 0; k <= 10u; ++k ) { // Initialization stages
 		if ( fmi2EnterInitializationMode( c ) != fmi2OK ) {
 			std::cerr << "\nError: fmi2EnterInitializationMode failed: " << std::endl;
 			std::exit( EXIT_FAILURE );

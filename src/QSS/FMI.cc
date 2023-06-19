@@ -312,33 +312,36 @@ fmi2EnterInitializationMode( fmi2Component c )
 	}
 	switch ( stage[ c ] ) {
 	case 0:
-		fmu_me.init_0_1();
+		fmu_me.init_0_0();
 		return fmi2OK;
 	case 1:
-		fmu_me.init_0_2();
+		fmu_me.init_0_1();
 		return fmi2OK;
 	case 2:
-		fmu_me.init_1_1();
+		fmu_me.init_0_2();
 		return fmi2OK;
 	case 3:
-		fmu_me.init_1_2();
+		fmu_me.init_1_1();
 		return fmi2OK;
 	case 4:
-		fmu_me.init_2_1();
+		fmu_me.init_1_2();
 		return fmi2OK;
 	case 5:
-		fmu_me.init_2_2();
+		fmu_me.init_2_1();
 		return fmi2OK;
 	case 6:
-		fmu_me.init_3_1();
+		fmu_me.init_2_2();
 		return fmi2OK;
 	case 7:
-		fmu_me.init_ZC();
+		fmu_me.init_3_1();
 		return fmi2OK;
 	case 8:
-		fmu_me.init_F();
+		fmu_me.init_ZC();
 		return fmi2OK;
 	case 9:
+		fmu_me.init_F();
+		return fmi2OK;
+	case 10:
 		fmu_me.init_t0();
 		fmu_me.init_pre_simulate();
 		return (fmi2Status)fmi2_import_enter_initialization_mode( fmu_qss.fmu_me.fmu );

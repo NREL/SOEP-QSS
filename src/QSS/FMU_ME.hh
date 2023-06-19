@@ -370,6 +370,10 @@ public: // Simulation Methods
 	void
 	init();
 
+	// Initialization: Stage 0.0
+	void
+	init_0_0();
+
 	// Initialization: Stage 0.1
 	void
 	init_0_1();

@@ -2025,6 +2025,7 @@ namespace QSS {
 			options::dtND = dtND_min;
 			std::cout << "\nNumeric differentiation time step raised for compatibility with time range and double precision epsilon: " << options::dtND << std::endl;
 		}
+		init_0_0();
 		init_0_1();
 		init_0_2();
 		init_1_1();
@@ -2037,6 +2038,20 @@ namespace QSS {
 		init_F();
 		init_t0();
 		init_pre_simulate();
+	}
+
+	// Initialization: Stage 0.0
+	void
+	FMU_ME::
+	init_0_0()
+	{
+		//std::cout << '\n' + name + " Initialization: Stage 0.0 =====" << std::endl;
+		for ( auto var : vars ) { // Uniquify variable observees
+			var->uniquify_observees();
+		}
+		for ( auto var : vars_NZ ) { // Uniquify variable observers
+			var->uniquify_observers();
+		}
 	}
 
 	// Initialization: Stage 0.1
