@@ -462,6 +462,14 @@ public: // Predicate
 		return false;
 	}
 
+	// Yo-yoing?
+	virtual
+	bool
+	yoyoing() const
+	{
+		return false;
+	}
+
 public: // Property
 
 	// Order

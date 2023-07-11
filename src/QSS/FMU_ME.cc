@@ -37,6 +37,7 @@
 #include <QSS/FMU_ME.hh>
 #include <QSS/annotation.hh>
 #include <QSS/BinOptimizer.hh>
+#include <QSS/clusters.hh>
 #include <QSS/Conditional.hh>
 #include <QSS/container.hh>
 #include <QSS/cpu_time.hh>
@@ -2251,6 +2252,15 @@ namespace QSS {
 		// Dependency cycle detection: After observers set up
 		if ( options::cycles ) cycles< Variable, Variable_ZC >( vars );
 
+		// Find continuous state variable self-dependency cycles (clusters): After computational observees set up
+		if ( options::cluster ) {
+			std::cout << '\n' + name + " Clustering =====" << std::endl;
+			clusters< Variable, Variable_QSS >( state_vars );
+			for ( Variable_QSS * var : state_vars ) {
+				var->uniquify_cluster();
+			}
+		}
+
 		// Output initialization
 		if ( options::output::K && ( out_var_refs.size() > 0u ) ) { // FMU t0 smooth token outputs
 			for ( auto const & var_ref : out_var_refs ) {
@@ -2421,6 +2431,7 @@ namespace QSS {
 
 		// Simulation loop
 		Variables triggers; // Reusable triggers container
+		Variables cluster_triggers; // Reusable cluster triggers container
 		Variables handlers; // Reusable handlers container
 		Variable_ZCs var_ZCs; // Last zero-crossing trigger variables
 		Handlers< Variable > handlers_s( this ); // Simultaneous handlers
@@ -2855,42 +2866,70 @@ namespace QSS {
 							for ( Variable * trigger : triggers ) std::cout << "   " << trigger->name() << "  tQ-tE: " << trigger->tQ << '-' << trigger->tE << '\n';
 							std::cout << std::endl;
 						}
-						if ( triggers.size() == 1u ) {
-							trigger1 = triggers[ 0 ]; // Use single trigger processing
-						} else {
-							if ( connected ) { // Check if next event(s) will modify a connected output
-								if ( options::perfect ) { // Flag whether next event(s) will modify a connected output
-									if ( !connected_output_event ) {
-										for ( Variable const * trigger : triggers ) {
-											if ( trigger->connected_output || trigger->connected_output_observer ) {
-												connected_output_event = true;
-												break;
-											}
-										}
-									}
-								} else if ( t > tPass ) { // Stop if beyond pass start time and next event(s) will modify a connected output
-									bool connected_output_next( false );
-									for ( Variable const * trigger : triggers ) {
-										if ( trigger->connected_output || trigger->connected_output_observer ) {
-											connected_output_next = true;
-											break;
-										}
-									}
-									if ( connected_output_next ) break; // Exit t loop
+						if ( triggers.size() == 1u ) trigger1 = triggers[ 0 ]; // Use single trigger processing
+					} else if ( eventq->single() ) { // Single trigger
+						trigger1 = event.sub< Variable >();
+						triggers.clear();
+						triggers.push_back( trigger1 ); // For coding convenience below
+					} else { // Simultaneous triggers
+						eventq->top_subs< Variable >( triggers );
+					}
+
+#ifndef NDEBUG
+					// Assert that triggers are continuous state (QSS) variables
+					for ( Variable const * trigger : triggers ) {
+						assert( trigger->is_QSS() );
+					}
+#endif
+
+					// Clustering
+					if ( options::cluster ) {
+						cluster_triggers.clear();
+						for ( Variable * trigger : triggers ) {
+							if ( trigger->yoyoing() ) { // Yo-yoing
+								Variable_QSS * trigger_QSS( dynamic_cast< Variable_QSS * >( trigger ) );
+								if ( trigger_QSS->has_cluster() ) { // Use cluster
+									for ( Variable_QSS * var : trigger_QSS->cluster ) {
+										cluster_triggers.push_back( var );
+								}
 								}
 							}
 						}
-					} else if ( eventq->single() ) { // Single trigger
-						trigger1 = event.sub< Variable >();
-					} else { // Simultaneous triggers
-						eventq->top_subs< Variable >( triggers );
+						if ( !cluster_triggers.empty() ) {
+							uniquify( cluster_triggers );
+							triggers.insert( triggers.end(), cluster_triggers.begin(), cluster_triggers.end() ); // Merge in the cluster triggers
+							uniquify( triggers );
+							if ( triggers.size() > 1u ) trigger1 = nullptr;
+						}
+					}
+
+					// Connected
+					if ( connected ) { // Check if next event(s) will modify a connected output
+						if ( options::perfect ) { // Flag whether next event(s) will modify a connected output
+							if ( !connected_output_event ) {
+								for ( Variable const * trigger : triggers ) {
+									if ( trigger->connected_output || trigger->connected_output_observer ) {
+										connected_output_event = true;
+										break;
+									}
+								}
+							}
+						} else if ( t > tPass ) { // Stop if beyond pass start time and next event(s) will modify a connected output
+							bool connected_output_next( false );
+							for ( Variable const * trigger : triggers ) {
+								if ( trigger->connected_output || trigger->connected_output_observer ) {
+									connected_output_next = true;
+									break;
+								}
+							}
+							if ( connected_output_next ) break; // Exit t loop
+						}
 					}
 
 					// Requantize
 					if ( trigger1 != nullptr ) { // Single trigger
 						Variable * trigger( trigger1 );
 						assert( trigger->tE == t );
-						assert( trigger->is_QSS() ); // QSS trigger
 						trigger->st = s; // Set trigger superdense time
 						++c_QSS_events[ trigger ];
 
@@ -2973,35 +3012,43 @@ namespace QSS {
 							for ( Variable * trigger : triggers ) std::cout << "   " << trigger->name() << "  tQ-tE: " << trigger->tQ << '-' << trigger->tE << '\n';
 							std::cout << std::endl;
 						}
-						if ( triggers.size() == 1u ) {
-							trigger1 = triggers[ 0 ]; // Use single trigger processing
-						} else {
-							if ( connected ) { // Check if next event(s) will modify a connected output
-								if ( options::perfect ) { // Flag whether next event(s) will modify a connected output
-									if ( !connected_output_event ) {
-										for ( Variable const * trigger : triggers ) {
-											if ( trigger->connected_output || trigger->connected_output_observer ) {
-												connected_output_event = true;
-												break;
-											}
-										}
-									}
-								} else if ( t > tPass ) { // Stop if beyond pass start time and next event(s) will modify a connected output
-									bool connected_output_next( false );
-									for ( Variable const * trigger : triggers ) {
-										if ( trigger->connected_output || trigger->connected_output_observer ) {
-											connected_output_next = true;
-											break;
-										}
-									}
-									if ( connected_output_next ) break; // Exit t loop
-								}
-							}
-						}
+						if ( triggers.size() == 1u ) trigger1 = triggers[ 0 ]; // Use single trigger processing
 					} else if ( eventq->single() ) { // Single trigger
 						trigger1 = event.sub< Variable >();
+						triggers.clear();
+						triggers.push_back( trigger1 ); // For coding convenience below
 					} else { // Simultaneous triggers
 						eventq->top_subs< Variable >( triggers );
+					}
+
+#ifndef NDEBUG
+					// Assert that triggers are zero-crossing variables
+					for ( Variable const * trigger : triggers ) {
+						assert( trigger->is_ZC() );
+					}
+#endif
+
+					// Connected
+					if ( connected ) { // Check if next event(s) will modify a connected output
+						if ( options::perfect ) { // Flag whether next event(s) will modify a connected output
+							if ( !connected_output_event ) {
+								for ( Variable const * trigger : triggers ) {
+									if ( trigger->connected_output || trigger->connected_output_observer ) {
+										connected_output_event = true;
+										break;
+									}
+								}
+							}
+						} else if ( t > tPass ) { // Stop if beyond pass start time and next event(s) will modify a connected output
+							bool connected_output_next( false );
+							for ( Variable const * trigger : triggers ) {
+								if ( trigger->connected_output || trigger->connected_output_observer ) {
+									connected_output_next = true;
+									break;
+								}
+							}
+							if ( connected_output_next ) break; // Exit t loop
+						}
 					}
 
 					// Requantize
@@ -3078,35 +3125,41 @@ namespace QSS {
 							for ( Variable * trigger : triggers ) std::cout << "   " << trigger->name() << "  tQ-tE: " << trigger->tQ << '-' << trigger->tE << '\n';
 							std::cout << std::endl;
 						}
-						if ( triggers.size() == 1u ) {
-							trigger1 = triggers[ 0 ]; // Use single trigger processing
-						} else {
-							if ( connected ) { // Check if next event(s) will modify a connected output
-								if ( options::perfect ) { // Flag whether next event(s) will modify a connected output
-									if ( !connected_output_event ) {
-										for ( Variable const * trigger : triggers ) {
-											if ( trigger->connected_output || trigger->connected_output_observer ) {
-												connected_output_event = true;
-												break;
-											}
-										}
-									}
-								} else if ( t > tPass ) { // Stop if beyond pass start time and next event(s) will modify a connected output
-									bool connected_output_next( false );
-									for ( Variable const * trigger : triggers ) {
-										if ( trigger->connected_output || trigger->connected_output_observer ) {
-											connected_output_next = true;
-											break;
-										}
-									}
-									if ( connected_output_next ) break; // Exit t loop
-								}
-							}
-						}
+						if ( triggers.size() == 1u ) trigger1 = triggers[ 0 ]; // Use single trigger processing
 					} else if ( eventq->single() ) { // Single trigger
 						trigger1 = event.sub< Variable >();
 					} else { // Simultaneous triggers
 						eventq->top_subs< Variable >( triggers );
+					}
+
+#ifndef NDEBUG
+					// Assert that triggers are zero-crossing variables
+					for ( Variable const * trigger : triggers ) {
+						assert( trigger->is_R() );
+					}
+#endif
+
+					// Connected
+					if ( connected ) { // Check if next event(s) will modify a connected output
+						if ( options::perfect ) { // Flag whether next event(s) will modify a connected output
+							if ( !connected_output_event ) {
+								for ( Variable const * trigger : triggers ) {
+									if ( trigger->connected_output || trigger->connected_output_observer ) {
+										connected_output_event = true;
+										break;
+									}
+								}
+							}
+						} else if ( t > tPass ) { // Stop if beyond pass start time and next event(s) will modify a connected output
+							bool connected_output_next( false );
+							for ( Variable const * trigger : triggers ) {
+								if ( trigger->connected_output || trigger->connected_output_observer ) {
+									connected_output_next = true;
+									break;
+								}
+							}
+							if ( connected_output_next ) break; // Exit t loop
+						}
 					}
 
 					// Requantize
@@ -3316,7 +3369,7 @@ namespace QSS {
 					for ( Variable const * var : vars ) {
 						if ( c_QSS_events[ var ] > 0u ) std::cout << ' ' << var->name() << ' ' << c_QSS_events[ var ] << " (" <<  100u * c_QSS_events[ var ] / n_QSS_events << "%)" << std::endl;
 					}
-					std::cout << "\nQSS Requantization Events: By Number" << std::endl;
+					std::cout << "\nQSS Requantization Events: By Count" << std::endl;
 					Variables vars_by_requants( vars );
 					std::stable_sort( vars_by_requants.begin(), vars_by_requants.end(), [this]( Variable const * v1, Variable const * v2 ){ return c_QSS_events[ v1 ] > c_QSS_events[ v2 ]; } );
 					for ( Variable const * var : vars_by_requants ) {

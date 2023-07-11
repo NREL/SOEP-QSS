@@ -81,6 +81,7 @@ bool cycles( false ); // Report dependency cycles?
 bool inflection( false ); // Requantize at inflections?
 double inflectionFrac( 0.02 ); // Inflection step fraction min
 bool relax( false ); // Relaxation for derivative sensitivity?
+bool cluster( false ); // Clustering with relaxation?
 bool refine( false ); // Refine FMU zero-crossing roots?
 bool perfect( false ); // Perfect FMU-ME connection sync?
 bool active( false ); // Active intermediate variables preferred?
@@ -170,6 +171,7 @@ help_display()
 	std::cout << " --inflection           Requantize at inflections" << '\n';
 	std::cout << " --inflectionFrac=FRAC  Inflection step fraction min  [" << inflectionFrac << ']' << '\n';
 	std::cout << " --relax[=Y|N]          Relaxation for derivative sensitivity  [N]" << '\n';
+	std::cout << " --cluster              Clustering with relaxation  [Off]" << '\n';
 	std::cout << " --refine               Refine FMU zero-crossing roots" << '\n';
 	std::cout << " --perfect              Perfect FMU-ME connection sync" << '\n';
 	std::cout << " --active               Active intermediate variables preferred  [Off]" << '\n';
@@ -318,6 +320,8 @@ process_args( Args const & args )
 			}
 		} else if ( has_option( arg, "relax" ) ) {
 			relax = true;
+		} else if ( has_option( arg, "cluster" ) ) {
+			cluster = true;
 		} else if ( has_option( arg, "refine" ) ) {
 			refine = true;
 		} else if ( has_option( arg, "perfect" ) ) {

@@ -69,6 +69,15 @@ public: // Creation
 		set_qTol();
 	}
 
+public: // Predicate
+
+	// Yo-yoing?
+	bool
+	yoyoing() const override
+	{
+		return yoyo_;
+	}
+
 public: // Property
 
 	// Continuous Value at Time t
@@ -184,6 +193,7 @@ public: // Methods
 				x_1_dif_sign_ = x_1_dif_sign;
 				yoyo_ = ( ++n_yoyo_ >= m_yoyo_ );
 				q_2_ = x_2_ = ( yoyo_ ? x_2_rlx_ * ( x_2_QSS_ = x_2_ ) : x_2_ );
+				if ( yoyo_ && options::output::d ) std::cout << name() << " advance_QSS yoyo on " << tE << std::endl;
 			} else {
 				n_yoyo_ = 0u;
 			}
@@ -524,6 +534,7 @@ private: // Methods
 			x_1_dif_sign_ = x_1_dif_sign;
 			yoyo_ = ( ++n_yoyo_ >= m_yoyo_ );
 			q_2_ = x_2_ = ( yoyo_ ? x_2_rlx_ * ( x_2_QSS_ = x_2_ ) : x_2_ );
+			if ( yoyo_ && options::output::d ) std::cout << name() << " advance_QSS yoyo on " << tE << std::endl;
 		} else {
 			n_yoyo_ = 0u;
 		}

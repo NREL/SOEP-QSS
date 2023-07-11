@@ -50,6 +50,9 @@ public: // Types
 
 	using Super = Variable;
 
+	using Variables_QSS = std::vector< Variable_QSS * >;
+	using Cluster = Variables_QSS;
+
 protected: // Creation
 
 	// Copy Constructor
@@ -99,6 +102,13 @@ public: // Predicate
 		return true;
 	}
 
+	// Has a Cluster?
+	bool
+	has_cluster() const
+	{
+		return !cluster.empty();
+	}
+
 public: // Methods
 
 	// LIQSS/QSS Step Ratio Pass
@@ -111,9 +121,25 @@ public: // Methods
 		}
 	}
 
+	// Add a Cluster Variable
+	void
+	add_to_cluster( Variable_QSS * var )
+	{
+		if ( var != this ) cluster.push_back( var );
+	}
+
+	// Uniquify Cluster
+	void
+	uniquify_cluster()
+	{
+		uniquify( cluster, true );
+	}
+
 public: // Data
 
 	LIQSS_QSS_Step_Ratio liqss_qss_step_ratio; // LIQSS/QSS step size ratio metric
+
+	Cluster cluster; // QSS variables in dependency cycles with this variable
 
 }; // Variable_QSS
 

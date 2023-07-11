@@ -64,6 +64,7 @@ class Target;
 
 // Forward
 class Variable;
+class Variable_QSS;
 class Variable_ZC;
 template< typename V > class Conditional;
 
@@ -278,6 +279,7 @@ public: // Types
 	using Boolean = bool;
 	using EventQ = EventQueue< Target >;
 	using Variables = std::vector< Variable * >;
+	using Variables_QSS = std::vector< Variable_QSS * >;
 	using Var_Indexes = std::vector< Index >;
 	using Var_Name_Var = std::unordered_map< std::string, Variable * >; // Map from variable names to variables
 	using Var_Name_Ref = std::unordered_map< std::string, fmi2_value_reference_t >; // Map from variable names to FMU variable value references
@@ -727,7 +729,7 @@ public: // Data
 	Variables vars_NZ; // Non-zero-crossing variables
 	Variables vars_CI; // Connection input variables
 	Variables vars_NC; // Non-zero-crossing non-connection variables
-	Variables state_vars; // State variables
+	Variables_QSS state_vars; // State variables
 	Variables f_outs_vars; // Output QSS variables
 	Variables fmu_qss_qss_outs; // FMU-QSS output QSS variables
 	Var_Name_Ref var_name_ref; // Map from variable names to FMU variable value references

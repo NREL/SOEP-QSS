@@ -79,6 +79,13 @@ public: // Predicate
 		return true;
 	}
 
+	// Yo-yoing?
+	bool
+	yoyoing() const override
+	{
+		return yoyo_;
+	}
+
 public: // Property
 
 	// Continuous Value at Time t
