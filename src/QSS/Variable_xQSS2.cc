@@ -54,7 +54,7 @@ namespace QSS {
 		fmu_set_time( tE );
 
 		// QSS
-		Real const x_1( c_1( tE, x_0 ) );
+		Real const x_1( c_1( tE ) );
 		Real x_2( c_2( tE, x_1 ) );
 		Time const dt_QSS( x_2 != 0.0 ? std::sqrt( q / std::abs( x_2 ) ) : infinity );
 

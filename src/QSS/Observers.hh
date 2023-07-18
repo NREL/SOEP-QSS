@@ -526,7 +526,7 @@ private: // Methods
 		for ( Variable * observer : observers ) {
 			if ( observers_checked.find( observer ) == observers_checked.end() ) { // Observer not already processed
 				observers_checked.insert( observer );
-				if ( observer == trigger_ ) continue;
+				if ( observer == trigger_ ) continue; // Trigger isn't a computational observer: Don't need to signal it when it updates
 				if ( observer->is_Active() ) observers_set.insert( observer ); // Active => Computational
 				if ( observer->is_QSS() ) { // Extend with its X-based observers
 					find_computational_X_observers( observer->observers(), observers_checked, observers_set );
@@ -550,7 +550,7 @@ private: // Methods
 			if ( observer->not_State() ) { // X-based
 				if ( observers_checked.find( observer ) == observers_checked.end() ) { // Observer not already processed
 					observers_checked.insert( observer );
-					if ( observer == trigger_ ) continue;
+					if ( observer == trigger_ ) continue; // Trigger isn't a computational observer: Don't need to signal it when it updates
 					if ( observer->is_Active() ) observers_set.insert( observer ); // Active => Computational
 					find_computational_X_observers( observer->observers(), observers_checked, observers_set ); // Recurse
 				}
@@ -1111,7 +1111,7 @@ private: // Data
 	RefsValsDers< Variable > r_vars_; // Real non-state values and derivatives
 	RefsValsDers< Variable > zc_vars_; // Zero-crossing values and derivatives
 
-	// QSS state observers observees (including self-observers)
+	// QSS state observers observees
 	Variables qss_observees_; // Observers observees
 	Variables qss2_observees_; // Observers of order 2+ observees
 	Variables qss3_observees_; // Observers of order 3+ observees

@@ -54,7 +54,7 @@ namespace QSS {
 		fmu_set_time( tE );
 
 		// QSS
-		Real x_1( c_1( tE, x_0 ) );
+		Real x_1( c_1( tE ) );
 		Time const dt_QSS( x_1 != 0.0 ? q / std::abs( x_1 ) : infinity );
 
 		// LIQSS /////

@@ -1799,9 +1799,6 @@ namespace QSS {
 			dependency_graph << "  label=\"" << name << " Direct Dependency Graph" << "\"; labelloc=\"t\"\n";
 			for ( auto var : sorted_by_name( vars ) ) { // Variable dependencies
 				var->uniquify_observees();
-				if ( var->self_observer() ) {
-					dependency_graph << "  \"" << var->name() << "\" -> \"" << var->name() << "\"\n";
-				}
 				for ( auto o : sorted_by_name( var->observees() ) ) {
 					dependency_graph << "  \"" << var->name() << "\" -> \"" << o->name() << "\"\n";
 				}
@@ -2211,9 +2208,6 @@ namespace QSS {
 			observee_graph << "digraph " << name << " {\n";
 			observee_graph << "  label=\"" << name << " Computational Observee Graph" << "\"; labelloc=\"t\"\n";
 			for ( auto var : sorted_by_name( vars ) ) { // Variable dependencies
-				if ( var->self_observer() ) {
-					observee_graph << "  \"" << var->name() << "\" -> \"" << var->name() << "\"\n";
-				}
 				for ( auto o : sorted_by_name( var->observees() ) ) {
 					observee_graph << "  \"" << var->name() << "\" -> \"" << o->name() << "\"\n";
 				}
@@ -2233,9 +2227,6 @@ namespace QSS {
 			observer_graph << "digraph " << name << " {\n";
 			observer_graph << "  label=\"" << name << " Computational Observer Graph" << "\"; labelloc=\"t\"\n";
 			for ( auto var : sorted_by_name( vars ) ) { // Variable dependencies
-				// if ( var->self_observer() ) { // Self-observer dependency is not relevant for observers (upstream change signaling)
-				// 	observer_graph << "  \"" << var->name() << "\" -> \"" << var->name() << "\"\n";
-				// }
 				for ( auto o : sorted_by_name( var->observers() ) ) {
 					observer_graph << "  \"" << o->name() << "\" -> \"" << var->name() << "\"\n";
 				}

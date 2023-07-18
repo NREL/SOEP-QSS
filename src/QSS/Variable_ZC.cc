@@ -53,7 +53,7 @@ namespace QSS {
 		std::size_t i( 0u );
 		std::size_t const n( 10u ); // Max iterations
 		while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
-			Real const d( Z_1( t ) );
+			Real const d( X_1( t ) );
 			if ( d == 0.0 ) break;
 			t -= m * ( v / d );
 			fmu_set_time( t );

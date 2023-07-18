@@ -998,7 +998,7 @@ private: // Data
 	RefsVals< Variable > ox_vars_; // Other X-based values
 	RefsValsDers< Variable > zc_vars_; // Zero-crossing values and derivatives
 
-	// QSS state handlers observees (including self-observers)
+	// QSS state handlers observees
 	Variables qss_observees_; // Handlers observees
 	Variables qss2_observees_; // Handlers of order 2+ observees
 	Variables qss3_observees_; // Handlers of order 3+ observees

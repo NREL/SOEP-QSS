@@ -137,7 +137,7 @@ public: // Methods
 		q_0_ = x_0_ += x_1_ * ( tE - tX );
 		tS = tE - tQ;
 		tQ = tX = tE;
-		x_1_ = c_1( tE, x_0_ );
+		x_1_ = c_1( tE );
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );

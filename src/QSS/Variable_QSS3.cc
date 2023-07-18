@@ -52,7 +52,7 @@ namespace QSS {
 		Real const q( std::max( rTol * std::abs( x_0 ), aTol ) );
 
 		// QSS
-		Real const x_1( c_1( tE, x_0 ) );
+		Real const x_1( c_1( tE ) );
 		Real x_3;
 		if ( fwd_time_ND( tQ ) ) { // Use centered ND formulas
 			Time tN( tE - options::dtND );

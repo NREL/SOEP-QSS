@@ -180,12 +180,12 @@ public: // Methods
 		x_2_tDel_ = x_2_ * tDel;
 		q_0_ = x_0_ += ( x_1_ + x_2_tDel_ ) * tDel;
 		if ( yoyo_ ) { // Yo-yo mode
-			q_1_ = x_1_ = c_1( tE, x_0_ );
+			q_1_ = x_1_ = c_1( tE );
 			q_2_ = x_2_ = x_2_rlx_ * ( x_2_QSS_ = c_2( tE, x_1_ ) );
 		} else { // QSS mode
 			Real const x_1_in( x_1_ + ( two * x_2_tDel_ ) ); // Incoming slope
 			q_1_pre_ = q_1_;
-			q_1_ = x_1_ = c_1( tE, x_0_ );
+			q_1_ = x_1_ = c_1( tE );
 			q_2_ = x_2_ = c_2( tE, x_1_ );
 			Real const x_1_dif( x_1_ - x_1_in );
 			bool const x_1_dif_sign( bool_sign( x_1_dif ) );

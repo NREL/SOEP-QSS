@@ -169,7 +169,7 @@ public: // Methods
 		tS = tE - tQ;
 		tQ = tX = tE;
 		q_0_ = x_0_ += ( x_1_ + ( x_2_ * tDel ) ) * tDel;
-		q_1_ = x_1_ = c_1( tE, x_0_ );
+		q_1_ = x_1_ = c_1( tE );
 		q_2_ = x_2_ = c_2( tE, x_1_ );
 		set_qTol();
 		set_tE_aligned();

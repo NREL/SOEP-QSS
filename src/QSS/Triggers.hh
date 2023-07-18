@@ -172,7 +172,6 @@ public: // Methods
 		// Observees set up
 		observees_.clear();
 		for ( Variable * trigger : triggers_ ) {
-			if ( trigger->self_observer() ) observees_.push_back( trigger );
 			for ( auto observee : trigger->observees() ) {
 				observees_.push_back( observee );
 			}
@@ -183,7 +182,6 @@ public: // Methods
 			observees2_.clear();
 			for ( size_type i = range2_.b(), e = range_.e(); i < e; ++i ) { // Order 2+ triggers
 				Variable * trigger( triggers_[ i ] );
-				if ( trigger->self_observer() ) observees2_.push_back( trigger );
 				for ( auto observee : trigger->observees() ) {
 					observees2_.push_back( observee );
 				}
@@ -193,7 +191,6 @@ public: // Methods
 				observees3_.clear();
 				for ( size_type i = range3_.b(), e = range_.e(); i < e; ++i ) { // Order 3+ triggers
 					Variable * trigger( triggers_[ i ] );
-					if ( trigger->self_observer() ) observees3_.push_back( trigger );
 					for ( auto observee : trigger->observees() ) {
 						observees3_.push_back( observee );
 					}
@@ -389,7 +386,7 @@ private: // Data
 	Range range2_; // Triggers of order 2+ range
 	Range range3_; // Triggers of order 3+ range
 
-	// Observees (including self-observers)
+	// Observees
 	Variables observees_; // Triggers observees
 	Variables observees2_; // Triggers of order 2+ observees
 	Variables observees3_; // Triggers of order 3+ observees

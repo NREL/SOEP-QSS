@@ -198,7 +198,7 @@ public: // Methods
 		tS = tE - tQ;
 		tQ = tX = tE;
 		q_0_ = x_0_ += ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel;
-		q_1_ = x_1_ = c_1( tE, x_0_ );
+		q_1_ = x_1_ = c_1( tE );
 		if ( fwd_time_ND( tE ) ) { // Use centered ND formulas
 			q_2_ = x_2_ = c_2( tE );
 			q_3_ = x_3_ = n_3();

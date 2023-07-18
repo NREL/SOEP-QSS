@@ -52,9 +52,8 @@ namespace QSS {
 		if ( v->is_ZC() ) { // Observing zero-crossing variable means being an observer of (modified within) its conditional
 			Variable_ZC * zc( static_cast< Variable_ZC * >( v ) );
 			zc->add_observer( this ); // Conditional is not an observee of this variable
-		} else if ( v == this ) { // Flag as self-observer
-			self_observer_ = true;
 		} else { // Bidirectional observer/observee relationship
+			if ( v == this ) self_observer_ = true; // Flag as self-observer
 			observees_.push_back( v );
 			v->observers_.add( this );
 		}
@@ -81,17 +80,13 @@ namespace QSS {
 		observees_.clear();
 		if ( !observees_set.empty() ) {
 			for ( Variable * observee : observees_set ) {
-				if ( observee == this ) {
-					self_observer_ = true;
-				} else {
-					observees_.push_back( observee );
-				}
+				if ( observee == this ) self_observer_ = true;
+				observees_.push_back( observee );
 			}
 		}
 		observes_ = !observees_.empty();
 		if ( observes_ ) uniquify( observees_, true ); // Sort by address and remove duplicates and recover unused memory
 		std::cout << '\n' << name() << " Computational Observees:" << std::endl;
-		if ( self_observer_ ) std::cout << ' ' << name() << std::endl;
 		for ( Variable const * observee : sorted_by_name( observees_ ) ) {
 			std::cout << ' ' << observee->name() << std::endl;
 		}

@@ -501,7 +501,7 @@ private: // Methods
 	Real
 	n_1() const
 	{
-		return Z_1();
+		return X_1();
 	}
 
 	// Coefficient 2 from FMU at Time tQ

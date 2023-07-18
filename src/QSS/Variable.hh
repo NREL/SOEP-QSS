@@ -1736,7 +1736,6 @@ protected: // Methods: FMU
 		assert( is_QSS() );
 		assert( fmu_get_time() == tQ );
 		fmu_set_observees_s( tQ );
-		if ( self_observer_ ) fmu_set_s( tQ );
 		return p_0();
 	}
 
@@ -1747,7 +1746,6 @@ protected: // Methods: FMU
 		assert( is_QSS() );
 		assert( fmu_get_time() == t );
 		fmu_set_observees_s( t );
-		if ( self_observer_ ) fmu_set_s( t );
 		return p_0();
 	}
 
@@ -1786,18 +1784,6 @@ protected: // Methods: FMU
 		assert( is_QSS() );
 		assert( fmu_get_time() == t );
 		fmu_set_observees_s( t );
-		if ( self_observer_ ) fmu_set_s( t );
-		return p_1();
-	}
-
-	// Coefficient 1 from FMU at Time t: QSS
-	Real
-	c_1( Time const t, Real const x_0 ) const
-	{
-		assert( is_QSS() );
-		assert( fmu_get_time() == t );
-		fmu_set_observees_s( t );
-		if ( self_observer_ ) fmu_set_real( x_0 );
 		return p_1();
 	}
 
@@ -1821,18 +1807,17 @@ protected: // Methods: FMU
 		return p_1();
 	}
 
-	// Coefficient 1 from FMU at Time tQ: X-Based ZC with Directional First Derivative
+	// Coefficient 1 from FMU at Time tQ: X-Based R or ZC Variable with Directional First Derivative
 	Real
-	Z_1() const
+	X_1() const
 	{
 		assert( is_ZC() );
 		assert( !self_observer_ );
-		assert( !observed_ );
 		assert( fmu_me_ != nullptr );
 		assert( fmu_get_time() == tQ );
 		assert( observees_nv_ == observees_v_ref_.size() );
 		assert( observees_nv_ == observees_dv_.size() );
-		assert( observees_nv_ == observees_.size() ); // ZC variables can't be self-observers
+		assert( observees_nv_ == observees_.size() );
 		fmu_set_observees_x( tQ ); // Modelon indicates that observee state matters for Jacobian computation
 		for ( Variables::size_type i = 0, e = observees_.size(); i < e; ++i ) { // Get observee derivatives
 			observees_dv_[ i ] = observees_[ i ]->x1( tQ );
@@ -1840,54 +1825,17 @@ protected: // Methods: FMU
 		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var_.ref(), observees_dv_.data() );
 	}
 
-	// Coefficient 1 from FMU at Time t: X-Based ZC with Directional First Derivative
+	// Coefficient 1 from FMU at Time t: X-Based R or ZC Variable with Directional First Derivative
 	Real
-	Z_1( Time const t ) const
+	X_1( Time const t ) const
 	{
 		assert( is_ZC() );
 		assert( !self_observer_ );
-		assert( !observed_ );
 		assert( fmu_me_ != nullptr );
 		assert( fmu_get_time() == t );
 		assert( observees_nv_ == observees_v_ref_.size() );
 		assert( observees_nv_ == observees_dv_.size() );
-		assert( observees_nv_ == observees_.size() ); // ZC variables can't be self-observers
-		fmu_set_observees_x( t ); // Modelon indicates that observee state matters for Jacobian computation
-		for ( Variables::size_type i = 0, e = observees_.size(); i < e; ++i ) { // Get observee derivatives
-			observees_dv_[ i ] = observees_[ i ]->x1( t );
-		}
-		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var_.ref(), observees_dv_.data() );
-	}
-
-	// Coefficient 1 from FMU at Time tQ: X-Based with Directional First Derivative
-	Real
-	R_1() const
-	{
-		assert( is_R() );
-		assert( !self_observer_ );
-		assert( fmu_me_ != nullptr );
-		assert( fmu_get_time() == tQ );
-		assert( observees_nv_ == observees_v_ref_.size() );
-		assert( observees_nv_ == observees_dv_.size() );
-		assert( observees_nv_ == observees_.size() ); // Self-observee not used with directional derivatives
-		fmu_set_observees_x( tQ ); // Modelon indicates that observee state matters for Jacobian computation
-		for ( Variables::size_type i = 0, e = observees_.size(); i < e; ++i ) { // Get observee derivatives
-			observees_dv_[ i ] = observees_[ i ]->x1( tQ );
-		}
-		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var_.ref(), observees_dv_.data() );
-	}
-
-	// Coefficient 1 from FMU at Time t: X-Based with Directional First Derivative
-	Real
-	R_1( Time const t ) const
-	{
-		assert( is_R() );
-		assert( !self_observer_ );
-		assert( fmu_me_ != nullptr );
-		assert( fmu_get_time() == t );
-		assert( observees_nv_ == observees_v_ref_.size() );
-		assert( observees_nv_ == observees_dv_.size() );
-		assert( observees_nv_ == observees_.size() ); // Self-observee not used with directional derivatives
+		assert( observees_nv_ == observees_.size() );
 		fmu_set_observees_x( t ); // Modelon indicates that observee state matters for Jacobian computation
 		for ( Variables::size_type i = 0, e = observees_.size(); i < e; ++i ) { // Get observee derivatives
 			observees_dv_[ i ] = observees_[ i ]->x1( t );
@@ -1931,7 +1879,7 @@ protected: // Methods: FMU
 		assert( is_ZC() );
 		Time const tN( tQ + options::dtND );
 		fmu_set_time( tN );
-		Real const x_2( options::one_over_two_dtND * ( Z_1( tN ) - x_1 ) ); //ND Forward Euler
+		Real const x_2( options::one_over_two_dtND * ( X_1( tN ) - x_1 ) ); //ND Forward Euler
 		fmu_set_time( tQ );
 		return x_2;
 	}
@@ -1943,7 +1891,7 @@ protected: // Methods: FMU
 		assert( is_R() );
 		Time const tN( tQ + options::dtND );
 		fmu_set_time( tN );
-		Real const x_2( options::one_over_two_dtND * ( R_1( tN ) - x_1 ) ); //ND Forward Euler
+		Real const x_2( options::one_over_two_dtND * ( X_1( tN ) - x_1 ) ); //ND Forward Euler
 		fmu_set_time( tQ );
 		return x_2;
 	}

@@ -204,7 +204,6 @@ public: // Methods
 			// Set observers's observee FMU values so FMU event handler computes correct new observer value
 			//! Setting state observees to x-based value: Observees may overlap: Would need to split state and non-state handlers for ideal solution
 			observer->fmu_set_observees_x( t );
-			if ( observer->self_observer() ) observer->fmu_set_x( t );
 
 			observer->shift_handler( t ); // Set observer's handler event
 		}

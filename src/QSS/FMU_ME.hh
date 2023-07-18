@@ -525,8 +525,8 @@ public: // FMU Methods
 	Real
 	get_directional_derivative(
 	 fmi2_value_reference_t const v_ref[], // Seed value references
-	 std::size_t const nv, // Seed size
-	 fmi2_value_reference_t const z_ref, // Derivative value reference
+	 std::size_t const nv, // Seed count
+	 fmi2_value_reference_t const z_ref, // Variable value reference
 	 fmi2_real_t const dv[] // Seed values
 	) const
 	{
@@ -543,9 +543,9 @@ public: // FMU Methods
 	void
 	get_directional_derivatives(
 	 fmi2_value_reference_t const v_ref[], // Seed value references
-	 std::size_t const nv, // Seed size
-	 fmi2_value_reference_t const z_ref[], // Derivative value references
-	 std::size_t const nz, // Derivative size
+	 std::size_t const nv, // Seed count
+	 fmi2_value_reference_t const z_ref[], // Variable value references
+	 std::size_t const nz, // Variable count
 	 fmi2_real_t const dv[], // Seed values
 	 fmi2_real_t dz[] // Derivatives
 	) const

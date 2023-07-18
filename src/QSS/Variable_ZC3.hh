@@ -550,7 +550,7 @@ private: // Methods
 	Real
 	n_1() const
 	{
-		return Z_1();
+		return X_1();
 	}
 
 	// Coefficient 2 from FMU at Time tQ
@@ -559,10 +559,10 @@ private: // Methods
 	{
 		Time tN( tQ - options::dtND );
 		fmu_set_time( tN );
-		x_1_m_ = Z_1( tN );
+		x_1_m_ = X_1( tN );
 		tN = tQ + options::dtND;
 		fmu_set_time( tN );
-		x_1_p_ = Z_1( tN );
+		x_1_p_ = X_1( tN );
 		fmu_set_time( tQ );
 		return options::one_over_four_dtND * ( x_1_p_ - x_1_m_ ); //ND Centered difference
 	}
@@ -573,10 +573,10 @@ private: // Methods
 	{
 		Time tN( tQ + options::dtND );
 		fmu_set_time( tN );
-		x_1_p_ = Z_1( tN );
+		x_1_p_ = X_1( tN );
 		tN = tQ + options::two_dtND;
 		fmu_set_time( tN );
-		x_1_2p_ = Z_1( tN );
+		x_1_2p_ = X_1( tN );
 		fmu_set_time( tQ );
 		return options::one_over_four_dtND * ( ( three * ( x_1_p_ - x_1_ ) ) + ( x_1_p_ - x_1_2p_ ) ); //ND Forward 3-point
 	}
