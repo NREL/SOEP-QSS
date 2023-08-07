@@ -472,14 +472,14 @@ private: // Methods
 		}
 	}
 
-	// Coefficient 1 from FMU at Time tQ
+	// Coefficient 1 at Time tQ
 	Real
 	n_1() const
 	{
 		return X_1();
 	}
 
-	// Coefficient 2 from FMU at Time tQ
+	// Coefficient 2 at Time tQ
 	Real
 	n_2() const
 	{
@@ -493,7 +493,7 @@ private: // Methods
 		return options::one_over_four_dtND * ( x_1_p_ - x_1_m_ ); //ND Centered difference
 	}
 
-	// Coefficient 2 from FMU at Time tQ
+	// Coefficient 2 at Time tQ
 	Real
 	f_2() const
 	{
@@ -507,28 +507,28 @@ private: // Methods
 		return options::one_over_four_dtND * ( ( three * ( x_1_p_ - x_1_ ) ) + ( x_1_p_ - x_1_2p_ ) ); //ND Forward 3-point
 	}
 
-	// Coefficient 2 from FMU
+	// Coefficient 2
 	Real
 	n_2( Real const x_1_m, Real const x_1_p ) const
 	{
 		return options::one_over_four_dtND * ( ( x_1_p_ = x_1_p ) - ( x_1_m_ = x_1_m ) ); //ND Centered difference
 	}
 
-	// Coefficient 2 from FMU
+	// Coefficient 2
 	Real
 	f_2( Real const x_1_p, Real const x_1_2p ) const
 	{
 		return options::one_over_four_dtND * ( ( three * ( ( x_1_p_ = x_1_p ) - x_1_ ) ) + ( x_1_p - ( x_1_2p_ = x_1_2p ) ) ); //ND Forward 3-point
 	}
 
-	// Coefficient 3 from FMU
+	// Coefficient 3
 	Real
 	n_3() const
 	{
 		return options::one_over_six_dtND_squared * ( ( x_1_p_ - x_1_ ) + ( x_1_m_ - x_1_ ) ); //ND Centered difference
 	}
 
-	// Coefficient 3 from FMU
+	// Coefficient 3
 	Real
 	f_3() const
 	{

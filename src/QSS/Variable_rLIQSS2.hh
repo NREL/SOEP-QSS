@@ -63,9 +63,9 @@ public: // Creation
 	 FMU_Variable const der = FMU_Variable()
 	) :
 	 Super( fmu_me, 2, name, rTol_, aTol_, zTol_, xIni_, var, der ),
+	 x_0_( xIni_ ),
 	 q_c_( xIni_ ),
-	 q_0_( xIni_ ),
-	 x_0_( xIni_ )
+	 q_0_( xIni_ )
 	{
 		set_qTol();
 	}
@@ -160,7 +160,7 @@ public: // Methods
 		if ( self_observer() ) {
 			advance_LIQSS_simultaneous();
 		} else {
-			x_2_ = h_2( tQ, x_1_ );
+			x_2_ = c_2( tQ, x_1_ );
 			fmu_set_observees_x( t0() );
 			l_0_ = q_c_ + ( signum( x_2_ ) * qTol );
 		}
@@ -189,7 +189,7 @@ public: // Methods
 		if ( self_observer() ) {
 			if ( yoyo_ ) { // Yo-yo mode
 				advance_LIQSS();
-				x_2_ = x_2_rlx_ * x_2_;
+				x_2_ *= x_2_rlx_;
 			} else { // QSS mode
 				Real const x_1_in( x_1_ + ( two * x_2_tDel_ ) ); // Incoming slope
 				q_1_pre_ = q_1_;
@@ -200,16 +200,16 @@ public: // Methods
 					x_1_dif_sign_ = x_1_dif_sign;
 					yoyo_ = ( ++n_yoyo_ >= m_yoyo_ );
 					x_2_ = ( yoyo_ ? x_2_rlx_ * x_2_ : x_2_ );
-if ( yoyo_ ) std::cerr << name() << " advance_QSS s-o yoyo on " << tE << std::endl;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+					if ( yoyo_ && options::output::d ) std::cout << name() << " advance_QSS yoyo on " << tE << std::endl;
 				} else {
 					n_yoyo_ = 0u;
 				}
 			}
 		} else {
-			q_1_ = x_1_ = h_1( tE );
-			x_2_ = h_2( tE, x_1_ );
+			q_1_ = x_1_ = c_1();
+			x_2_ = c_2( tE, x_1_ );
 			if ( yoyo_ ) { // Yo-yo mode
-				x_2_ = x_2_rlx_ * x_2_;
+				x_2_ *= x_2_rlx_;
 			} else { // QSS mode
 				Real const x_1_in( x_1_pre_ + ( two * x_2_tDel_ ) ); // Incoming slope
 				Real const x_1_dif( x_1_ - x_1_in );
@@ -218,7 +218,7 @@ if ( yoyo_ ) std::cerr << name() << " advance_QSS s-o yoyo on " << tE << std::en
 					x_1_dif_sign_ = x_1_dif_sign;
 					yoyo_ = ( ++n_yoyo_ >= m_yoyo_ );
 					x_2_ = ( yoyo_ ? x_2_rlx_ * x_2_ : x_2_ );
-if ( yoyo_ ) std::cerr << name() << " advance_QSS non-s-o yoyo on " << tE << std::endl;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+					if ( yoyo_ && options::output::d ) std::cout << name() << " advance_QSS yoyo on " << tE << std::endl;
 				} else {
 					n_yoyo_ = 0u;
 				}
@@ -331,7 +331,7 @@ if ( yoyo_ ) std::cerr << name() << " advance_QSS non-s-o yoyo on " << tE << std
 		tS = t - tQ;
 		tQ = tX = t;
 		q_c_ = q_0_ = x_0_ = p_0();
-		q_1_ = x_1_ = h_1();
+		q_1_ = x_1_ = c_1();
 		x_2_ = c_2( t, x_1_ );
 		set_qTol();
 		set_tE_aligned();
@@ -567,7 +567,7 @@ private: // Methods
 	advance_QSS_2_relax_self_observer_yoyo()
 	{
 		advance_LIQSS_simultaneous();
-		x_2_ = x_2_rlx_ * x_2_;
+		x_2_ *= x_2_rlx_;
 	}
 
 	// QSS Advance: Stage 2: Relaxation: Yoyo
@@ -590,7 +590,7 @@ private: // Methods
 			x_1_dif_sign_ = x_1_dif_sign;
 			yoyo_ = ( ++n_yoyo_ >= m_yoyo_ );
 			x_2_ = ( yoyo_ ? x_2_rlx_ * x_2_ : x_2_ );
-if ( yoyo_ ) std::cerr << name() << " advance_QSS_2_relax_self_observer_QSS (s-o) yoyo on " << tE << std::endl;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			if ( yoyo_ && options::output::d ) std::cout << name() << " advance_QSS yoyo on " << tE << std::endl;
 		} else {
 			n_yoyo_ = 0u;
 		}
@@ -609,7 +609,7 @@ if ( yoyo_ ) std::cerr << name() << " advance_QSS_2_relax_self_observer_QSS (s-o
 			x_1_dif_sign_ = x_1_dif_sign;
 			yoyo_ = ( ++n_yoyo_ >= m_yoyo_ );
 			x_2_ = ( yoyo_ ? x_2_rlx_ * x_2_ : x_2_ );
-if ( yoyo_ ) std::cerr << name() << " advance_QSS_2_relax_QSS (non-s-o) yoyo on " << tE << std::endl;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+			if ( yoyo_ && options::output::d ) std::cout << name() << " advance_QSS yoyo on " << tE << std::endl;
 		} else {
 			n_yoyo_ = 0u;
 		}
@@ -623,21 +623,21 @@ if ( yoyo_ ) std::cerr << name() << " advance_QSS_2_relax_QSS (non-s-o) yoyo on 
 		yoyo_ = false;
 	}
 
-	// Coefficient 2 from FMU
+	// Coefficient 2
 	Real
 	n_2( Real const x_1_p ) const
 	{
 		return options::one_over_two_dtND * ( x_1_p - x_1_ ); //ND Forward Euler
 	}
 
-	// Coefficient 2 from FMU
+	// Coefficient 2
 	Real
 	n_2( Real const x_1_m, Real const x_1_p ) const
 	{
 		return options::one_over_four_dtND * ( x_1_p - x_1_m ); //ND Centered difference
 	}
 
-	// Coefficient 2 from FMU
+	// Coefficient 2
 	Real
 	f_2( Real const x_1_p, Real const x_1_2p ) const
 	{
@@ -646,8 +646,8 @@ if ( yoyo_ ) std::cerr << name() << " advance_QSS_2_relax_QSS (non-s-o) yoyo on 
 
 private: // Data
 
-	Real q_c_{ 0.0 }, q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized trajectory coefficients
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous trajectory coefficients
+	Real q_c_{ 0.0 }, q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized trajectory coefficients
 	Real l_0_{ 0.0 }; // LIQSS-adjusted coefficient
 
 	Real q_1_pre_{ 0.0 }; // Previous 1st order quantized trajectory coefficient

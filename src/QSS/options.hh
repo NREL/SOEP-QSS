@@ -275,6 +275,7 @@ extern double dtND_max; // Numeric differentiation time step max (s)
 extern bool dtND_optimizer; // Optimize FMU numeric differentiation time step?
 extern double two_dtND; // 2 * dtND
 extern double one_over_two_dtND; // 1 / ( 2 * dtND )
+extern double one_over_three_dtND; // 1 / ( 3.0 * dtND )
 extern double one_over_four_dtND; // 1 / ( 4 * dtND )
 extern double one_over_six_dtND_squared; // 1 / ( 6 * dtND^2 )
 extern double dtCon; // FMU connection sync time step (s)

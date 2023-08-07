@@ -68,7 +68,7 @@ clean :
 
 .PHONY : run
 run : $(EXE)
-	@echo Running $(TAR) unit tests: Intel C++ && $(EXE)
+	@echo Running $(TAR) unit tests: Intel C++ && cd $(TST_PATH) && $(EXE)
 
 $(EXE) : $(OBJ) $(PATH_LIBS)
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) >/dev/null 2>&1

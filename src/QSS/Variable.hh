@@ -1598,7 +1598,7 @@ public: // Methods: FMU
 
 protected: // Methods: FMU
 
-	// Boolean Value from FMU at Time tQ: Don't Set Observees
+	// Boolean Value at Time tQ: Don't Set Observees
 	Boolean
 	b_f() const
 	{
@@ -1607,7 +1607,7 @@ protected: // Methods: FMU
 		return fmu_get_boolean();
 	}
 
-	// Boolean Value from FMU at Time tQ: X-Based
+	// Boolean Value at Time tQ: X-Based
 	Boolean
 	b_0() const
 	{
@@ -1617,7 +1617,7 @@ protected: // Methods: FMU
 		return fmu_get_boolean();
 	}
 
-	// Boolean Value from FMU at Time t: X-Based
+	// Boolean Value at Time t: X-Based
 	Boolean
 	b_0( Time const t ) const
 	{
@@ -1627,7 +1627,7 @@ protected: // Methods: FMU
 		return fmu_get_boolean();
 	}
 
-	// Integer Coefficient 0 from FMU at Time tQ: Don't Set Observees
+	// Integer Coefficient 0 at Time tQ: Don't Set Observees
 	Integer
 	i_f() const
 	{
@@ -1636,7 +1636,7 @@ protected: // Methods: FMU
 		return fmu_get_integer();
 	}
 
-	// Integer Coefficient 0 from FMU at Time tQ: X-Based
+	// Integer Coefficient 0 at Time tQ: X-Based
 	Integer
 	i_0() const
 	{
@@ -1646,7 +1646,7 @@ protected: // Methods: FMU
 		return fmu_get_integer();
 	}
 
-	// Integer Value from FMU at Time t: X-Based
+	// Integer Value at Time t: X-Based
 	Integer
 	i_0( Time const t ) const
 	{
@@ -1656,7 +1656,7 @@ protected: // Methods: FMU
 		return fmu_get_integer();
 	}
 
-	// Discrete Value from FMU at Time tQ: Don't Set Observees
+	// Discrete Value at Time tQ: Don't Set Observees
 	Real
 	d_f() const
 	{
@@ -1665,7 +1665,7 @@ protected: // Methods: FMU
 		return fmu_get_real();
 	}
 
-	// Discrete Value from FMU at Time tQ: X-Based
+	// Discrete Value at Time tQ: X-Based
 	Real
 	d_0() const
 	{
@@ -1675,7 +1675,7 @@ protected: // Methods: FMU
 		return fmu_get_real();
 	}
 
-	// Discrete Value from FMU at Time t: X-Based
+	// Discrete Value at Time t: X-Based
 	Real
 	d_0( Time const t ) const
 	{
@@ -1685,7 +1685,7 @@ protected: // Methods: FMU
 		return fmu_get_real();
 	}
 
-	// Real Value from FMU at Time tQ: Don't Set Observees
+	// Real Value at Time tQ: Don't Set Observees
 	Real
 	r_f() const
 	{
@@ -1694,7 +1694,7 @@ protected: // Methods: FMU
 		return fmu_get_real();
 	}
 
-	// Real Value from FMU at Time tQ: X-Based
+	// Real Value at Time tQ: X-Based
 	Real
 	r_0() const
 	{
@@ -1704,7 +1704,7 @@ protected: // Methods: FMU
 		return fmu_get_real();
 	}
 
-	// Real Value from FMU at Time t: X-Based
+	// Real Value at Time t: X-Based
 	Real
 	r_0( Time const t ) const
 	{
@@ -1714,14 +1714,14 @@ protected: // Methods: FMU
 		return fmu_get_real();
 	}
 
-	// Value from FMU: Don't Set Observees
+	// Value: Don't Set Observees
 	Real
 	p_0() const
 	{
 		return fmu_get_real();
 	}
 
-	// Value from FMU at Time tQ: QSS
+	// Value at Time tQ: QSS
 	Real
 	c_0() const
 	{
@@ -1731,7 +1731,7 @@ protected: // Methods: FMU
 		return p_0();
 	}
 
-	// Value from FMU at Time t: QSS
+	// Value at Time t: QSS
 	Real
 	c_0( Time const t ) const
 	{
@@ -1741,7 +1741,7 @@ protected: // Methods: FMU
 		return p_0();
 	}
 
-	// Value from FMU at Time tQ: X-Based
+	// Value at Time tQ: X-Based
 	Real
 	z_0() const
 	{
@@ -1751,7 +1751,7 @@ protected: // Methods: FMU
 		return p_0();
 	}
 
-	// Value from FMU at Time t: X-Based
+	// Value at Time t: X-Based
 	Real
 	z_0( Time const t ) const
 	{
@@ -1761,7 +1761,7 @@ protected: // Methods: FMU
 		return p_0();
 	}
 
-	// Coefficient 1 from FMU: Observees Set
+	// Coefficient 1: Observees Set
 	Real
 	p_1() const
 	{
@@ -1769,7 +1769,17 @@ protected: // Methods: FMU
 		return fmu_me_->get_real( der_.ref() );
 	}
 
-	// Coefficient 1 from FMU at Time t: QSS
+	// Coefficient 1 at Time tQ: QSS
+	Real
+	c_1() const
+	{
+		assert( is_QSS() );
+		assert( fmu_get_time() == tQ );
+		fmu_set_observees_s( tQ );
+		return p_1();
+	}
+
+	// Coefficient 1 at Time t: QSS
 	Real
 	c_1( Time const t ) const
 	{
@@ -1779,27 +1789,7 @@ protected: // Methods: FMU
 		return p_1();
 	}
 
-	// Coefficient 1 from FMU at Time tQ: QSS: No Self-Observer Assignment
-	Real
-	h_1() const
-	{
-		assert( is_QSS() );
-		assert( fmu_get_time() == tQ );
-		fmu_set_observees_s( tQ );
-		return p_1();
-	}
-
-	// Coefficient 1 from FMU at Time t: QSS: No Self-Observer Assignment
-	Real
-	h_1( Time const t ) const
-	{
-		assert( is_QSS() );
-		assert( fmu_get_time() == t );
-		fmu_set_observees_s( t );
-		return p_1();
-	}
-
-	// Coefficient 1 from FMU at Time tQ: X-Based R or ZC Variable with Directional First Derivative
+	// Coefficient 1 at Time tQ: X-Based R or ZC Variable with Directional First Derivative
 	Real
 	X_1() const
 	{
@@ -1817,7 +1807,7 @@ protected: // Methods: FMU
 		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var_.ref(), observees_dv_.data() );
 	}
 
-	// Coefficient 1 from FMU at Time t: X-Based R or ZC Variable with Directional First Derivative
+	// Coefficient 1 at Time t: X-Based R or ZC Variable
 	Real
 	X_1( Time const t ) const
 	{
@@ -1835,14 +1825,14 @@ protected: // Methods: FMU
 		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var_.ref(), observees_dv_.data() );
 	}
 
-	// Coefficient 2 from FMU: Given Derivative
+	// Coefficient 2: Given Derivative
 	Real
 	p_2( Real const x_1, Real const x_1_p ) const
 	{
 		return options::one_over_two_dtND * ( x_1_p - x_1 ); //ND Forward Euler
 	}
 
-	// Coefficient 2 from FMU at Time t
+	// Coefficient 2 at Time t
 	Real
 	c_2( Time const t, Real const x_1 ) const
 	{
@@ -1853,22 +1843,11 @@ protected: // Methods: FMU
 		return x_2;
 	}
 
-	// Coefficient 2 from FMU at Time t: No Self-Observer Check/Set
+	// Coefficient 2 at Time tQ: X-Based R or ZC Variable
 	Real
-	h_2( Time const t, Real const x_1 ) const
+	X_2( Real const x_1 ) const
 	{
-		Time const tN( t + options::dtND );
-		fmu_set_time( tN );
-		Real const x_2( options::one_over_two_dtND * ( h_1( tN ) - x_1 ) ); //ND Forward Euler
-		fmu_set_time( t );
-		return x_2;
-	}
-
-	// Coefficient 2 from FMU at Time tQ: X-Based ZC with Directional First Derivative
-	Real
-	Z_2( Real const x_1 ) const
-	{
-		assert( is_ZC() );
+		assert( is_R() || is_ZC() );
 		Time const tN( tQ + options::dtND );
 		fmu_set_time( tN );
 		Real const x_2( options::one_over_two_dtND * ( X_1( tN ) - x_1 ) ); //ND Forward Euler
@@ -1876,19 +1855,7 @@ protected: // Methods: FMU
 		return x_2;
 	}
 
-	// Coefficient 2 from FMU at Time tQ: X-Based with Directional First Derivative
-	Real
-	R_2( Real const x_1 ) const
-	{
-		assert( is_R() );
-		Time const tN( tQ + options::dtND );
-		fmu_set_time( tN );
-		Real const x_2( options::one_over_two_dtND * ( X_1( tN ) - x_1 ) ); //ND Forward Euler
-		fmu_set_time( tQ );
-		return x_2;
-	}
-
-	// Coefficient 3 from FMU at Time t
+	// Coefficient 3 at Time t
 	Real
 	f_3( Time const t, Real const x_1 ) const
 	{
@@ -1899,7 +1866,7 @@ protected: // Methods: FMU
 		fmu_set_time( tN );
 		Real const x_1_2p( c_1( tN ) );
 		fmu_set_time( tQ );
-		return options::one_over_six_dtND_squared * ( ( x_1_2p - x_1_p ) + ( x_1 - x_1_p ) ); //ND 3-point formula
+		return options::one_over_six_dtND_squared * ( ( x_1_2p - x_1_p ) + ( x_1 - x_1_p ) ); //ND Forward 3-point
 	}
 
 protected: // Methods

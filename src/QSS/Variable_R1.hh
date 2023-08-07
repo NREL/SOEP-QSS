@@ -308,7 +308,7 @@ private: // Methods
 		tE = ( dt != infinity ? tQ + dt : infinity );
 	}
 
-	// Coefficient 1 from FMU at Time tQ
+	// Coefficient 1 at Time tQ
 	Real
 	n_1() const
 	{

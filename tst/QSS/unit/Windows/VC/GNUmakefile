@@ -69,7 +69,7 @@ clean :
 .PHONY : run
 run : $(EXE)
 	@echo Running $(TAR) unit tests: Visual C++
-	@$(EXE)
+	@cd $(TST_PATH) && $(EXE)
 
 # Executable from libraries
 #$(EXE) : $(OBJ) $(PATH_LIBS)

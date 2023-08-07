@@ -63,8 +63,8 @@ public: // Creation
 	 FMU_Variable const der = FMU_Variable()
 	) :
 	 Super( fmu_me, 1, name, rTol_, aTol_, zTol_, xIni_, var, der ),
-	 q_0_( xIni_ ),
-	 x_0_( xIni_ )
+	 x_0_( xIni_ ),
+	 q_0_( xIni_ )
 	{
 		set_qTol();
 	}
@@ -136,7 +136,7 @@ public: // Methods
 		q_0_ = x_0_ += x_1_ * ( tE - tX );
 		tS = tE - tQ;
 		tQ = tX = tE;
-		x_1_ = c_1( tE );
+		x_1_ = c_1();
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -180,7 +180,7 @@ public: // Methods
 		tS = t - tQ;
 		tQ = tX = t;
 		q_0_ = x_0_ = p_0();
-		x_1_ = h_1();
+		x_1_ = c_1();
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -287,8 +287,8 @@ private: // Methods
 
 private: // Data
 
-	Real q_0_{ 0.0 }; // Quantized trajectory coefficients
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous trajectory coefficients
+	Real q_0_{ 0.0 }; // Quantized trajectory coefficients
 
 }; // Variable_QSS1
 

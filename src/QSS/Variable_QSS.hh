@@ -37,7 +37,6 @@
 #define QSS_Variable_QSS_hh_INCLUDED
 
 // QSS Headers
-#include <QSS/LIQSS_QSS_Step_Ratio.hh>
 #include <QSS/Variable.hh>
 
 namespace QSS {

@@ -71,7 +71,7 @@ clean :
 .PHONY : run
 run : $(EXE)
 	@echo Running $(TAR) unit tests: GCC
-	@$(EXE)
+	@cd $(TST_PATH) && $(EXE)
 
 # Executable from libraries
 #$(EXE) : $(OBJ) $(PATH_LIBS)

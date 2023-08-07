@@ -415,35 +415,35 @@ private: // Methods
 		}
 	}
 
-	// Coefficient 1 from FMU at Time tQ
+	// Coefficient 1 at Time tQ
 	Real
 	n_1() const
 	{
 		return X_1();
 	}
 
-	// Coefficient 2 from FMU at Time tQ
+	// Coefficient 2 at Time tQ
 	Real
 	n_2() const
 	{
-		return R_2( x_1_ );
+		return X_2( x_1_ );
 	}
 
-	// Coefficient 2 from FMU
+	// Coefficient 2
 	Real
 	n_2( Real const x_1_p ) const
 	{
 		return options::one_over_two_dtND * ( x_1_p - x_1_ ); //ND Forward Euler
 	}
 
-	// Coefficient 2 from FMU
+	// Coefficient 2
 	Real
 	n_2( Real const x_1_m, Real const x_1_p ) const
 	{
 		return options::one_over_four_dtND * ( x_1_p - x_1_m ); //ND Centered difference
 	}
 
-	// Coefficient 2 from FMU
+	// Coefficient 2
 	Real
 	f_2( Real const x_1_p, Real const x_1_2p ) const
 	{

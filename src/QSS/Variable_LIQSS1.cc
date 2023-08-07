@@ -46,15 +46,17 @@ namespace QSS {
 		assert( qTol > 0.0 );
 		assert( self_observer() );
 
-		// Value at +/- qTol
-		Real const q_l( q_c_ - qTol );
-		Real const q_u( q_c_ + qTol );
-
-		// Derivative at +/- qTol
+		// Set observee FMU values at q_c_
 		fmu_set_observees_s( tE );
+
+		// Evaluate at -qTol
+		Real const q_l( q_c_ - qTol );
 		fmu_set_real( q_l );
 		Real const x_1_l( p_1() );
 		int const x_1_l_s( signum( x_1_l ) );
+
+		// Evaluate at +qTol
+		Real const q_u( q_c_ + qTol );
 		fmu_set_real( q_u );
 		Real const x_1_u( p_1() );
 		int const x_1_u_s( signum( x_1_u ) );
@@ -70,9 +72,15 @@ namespace QSS {
 			assert( ( x_1_l_s == 0 ) && ( x_1_u_s == 0 ) );
 			q_0_ = q_c_;
 			x_1_ = 0.0;
-		} else { // Use constant trajectory
-			q_0_ = std::min( std::max( ( ( q_l * x_1_u ) - ( q_u * x_1_l ) ) / ( x_1_u - x_1_l ), q_l ), q_u ); // Value where deriv is ~ 0 // Clipped in case of roundoff
-			x_1_ = 0.0;
+		} else { // Use near-constant trajectory
+			q_0_ = std::min( std::max( ( ( q_l * x_1_u ) - ( q_u * x_1_l ) ) / ( x_1_u - x_1_l ), q_l ), q_u ); // Value where derivative is ~ 0 // Clipped in case of roundoff
+
+			// Standard QSS derivative: Zero
+			// x_1_ = 0.0;
+
+			// Modified QSS derivative: Computed
+			fmu_set_real( q_0_ );
+			x_1_ = p_1();
 		}
 	}
 
@@ -84,20 +92,17 @@ namespace QSS {
 		assert( qTol > 0.0 );
 		assert( self_observer() );
 
-		// Value at +/- qTol
+		// Evaluate at -qTol
 		Real const q_l( q_c_ - qTol );
-		Real const q_u( q_c_ + qTol );
-
-		// Derivative at +/- qTol
 		fmu_set_real( q_l );
 		Real const x_1_l( p_1() );
 		int const x_1_l_s( signum( x_1_l ) );
+
+		// Evaluate at +qTol
+		Real const q_u( q_c_ + qTol );
 		fmu_set_real( q_u );
 		Real const x_1_u( p_1() );
 		int const x_1_u_s( signum( x_1_u ) );
-
-		// Reset FMU value
-		fmu_set_real( q_c_ );
 
 		// Set coefficients based on derivative signs
 		if ( ( x_1_l_s == -1 ) && ( x_1_u_s == -1 ) ) { // Downward trajectory
@@ -110,10 +115,19 @@ namespace QSS {
 			assert( ( x_1_l_s == 0 ) && ( x_1_u_s == 0 ) );
 			l_0_ = q_c_;
 			x_1_ = 0.0;
-		} else { // Use constant trajectory
-			l_0_ = std::min( std::max( ( ( q_l * x_1_u ) - ( q_u * x_1_l ) ) / ( x_1_u - x_1_l ), q_l ), q_u ); // Value where deriv is ~ 0 // Clipped in case of roundoff
-			x_1_ = 0.0;
+		} else { // Use near-constant trajectory
+			l_0_ = std::min( std::max( ( ( q_l * x_1_u ) - ( q_u * x_1_l ) ) / ( x_1_u - x_1_l ), q_l ), q_u ); // Value where derivative is ~ 0 // Clipped in case of roundoff
+
+			// Standard QSS derivative: Zero
+			// x_1_ = 0.0;
+
+			// Modified QSS derivative: Computed
+			fmu_set_real( l_0_ );
+			x_1_ = p_1();
 		}
+
+		// Reset FMU value
+		fmu_set_real( q_c_ );
 	}
 
 } // QSS

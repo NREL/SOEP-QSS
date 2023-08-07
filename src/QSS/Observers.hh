@@ -39,7 +39,6 @@
 // QSS Headers
 #include <QSS/FMU_ME.hh>
 #include <QSS/RefsDers.hh>
-#include <QSS/RefsVals.hh>
 #include <QSS/RefsValsDers.hh>
 #include <QSS/container.hh>
 #include <QSS/math.hh>
@@ -259,18 +258,21 @@ public: // Methods
 		if ( qss_.have() ) { // State variables
 			qss_ders_.clear(); qss_ders_.reserve( qss_.n() );
 			for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
+				assert( observers_[ i ]->is_QSS() );
 				qss_ders_.push_back( observers_[ i ]->der().ref() );
 			}
 		}
 		if ( r_.have() ) { // R variables
 			r_vars_.clear(); r_vars_.reserve( r_.n() );
 			for ( size_type i = r_.b(), e = r_.e(); i < e; ++i ) {
+				assert( observers_[ i ]->is_R() );
 				r_vars_.push_back( observers_[ i ]->var().ref() );
 			}
 		}
 		if ( zc_.have() ) { // Zero-crossing variables
 			zc_vars_.clear(); zc_vars_.reserve( zc_.n() );
 			for ( size_type i = zc_.b(), e = zc_.e(); i < e; ++i ) {
+				assert( observers_[ i ]->is_ZC() );
 				zc_vars_.push_back( observers_[ i ]->var().ref() );
 			}
 		}

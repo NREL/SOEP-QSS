@@ -38,8 +38,6 @@
 
 // QSS Headers
 #include <QSS/FMU_ME.hh>
-#include <QSS/RefsDers.hh>
-#include <QSS/RefsVals.hh>
 #include <QSS/RefsValsDers.hh>
 #include <QSS/container.hh>
 #include <QSS/math.hh>

@@ -68,9 +68,9 @@ public: // Creation
 	 FMU_Variable const der = FMU_Variable()
 	) :
 	 Super( fmu_me, 3, name, rTol_, aTol_, zTol_, xIni_, var, der ),
+	 x_0_( xIni_ ),
 	 q_c_( xIni_ ),
-	 q_0_( xIni_ ),
-	 x_0_( xIni_ )
+	 q_0_( xIni_ )
 	{
 		set_qTol();
 	}
@@ -211,12 +211,12 @@ public: // Methods
 		if ( self_observer() ) {
 			advance_LIQSS();
 		} else {
-			q_1_ = x_1_ = h_1();
+			q_1_ = x_1_ = c_1();
 			if ( fwd_time_ND( tQ ) ) { // Use centered ND formulas
-				q_2_ = x_2_ = h_2();
+				q_2_ = x_2_ = c_2();
 				x_3_ = n_3();
 			} else { // Use forward ND formulas
-				q_2_ = x_2_ = fh_2();
+				q_2_ = x_2_ = f_2();
 				x_3_ = f_3();
 			}
 			q_0_ = q_c_ + ( signum( x_3_ ) * qTol );
@@ -304,7 +304,7 @@ public: // Methods
 		tS = t - tQ;
 		tQ = tX = t;
 		q_c_ = q_0_ = x_0_ = p_0();
-		q_1_ = x_1_ = h_1();
+		q_1_ = x_1_ = c_1();
 		if ( fwd_time_ND( tQ ) ) { // Use centered ND formulas
 			q_2_ = x_2_ = c_2();
 			x_3_ = n_3();
@@ -519,14 +519,14 @@ private: // Methods
 	void
 	advance_LIQSS_simultaneous_forward();
 
-	// Coefficient 2 from FMU
+	// Coefficient 2
 	Real
 	n_2( Real const x_1_m, Real const x_1_p ) const
 	{
 		return options::one_over_four_dtND * ( ( x_1_p_ = x_1_p ) - ( x_1_m_ = x_1_m ) ); //ND Centered difference
 	}
 
-	// Coefficient 2 from FMU at Time tQ
+	// Coefficient 2 at Time tQ
 	Real
 	c_2() const
 	{
@@ -540,7 +540,7 @@ private: // Methods
 		return options::one_over_four_dtND * ( x_1_p_ - x_1_m_ ); //ND Centered difference
 	}
 
-	// Coefficient 2 from FMU at Time tQ
+	// Coefficient 2 at Time tQ
 	Real
 	f_2() const
 	{
@@ -554,49 +554,21 @@ private: // Methods
 		return options::one_over_four_dtND * ( ( three * ( x_1_p_ - x_1_ ) ) + ( x_1_p_ - x_1_2p_ ) ); //ND Forward 3-point
 	}
 
-	// Coefficient 2 from FMU
+	// Coefficient 2
 	Real
 	f_2( Real const x_1_p, Real const x_1_2p ) const
 	{
 		return options::one_over_four_dtND * ( ( three * ( ( x_1_p_ = x_1_p ) - x_1_ ) ) + ( x_1_p - ( x_1_2p_ = x_1_2p ) ) ); //ND Forward 3-point
 	}
 
-	// Coefficient 2 from FMU at Time tQ
-	Real
-	fh_2() const
-	{
-		Time tN( tQ + options::dtND );
-		fmu_set_time( tN );
-		x_1_p_ = h_1( tN );
-		tN = tQ + options::two_dtND;
-		fmu_set_time( tN );
-		x_1_2p_ = h_1( tN );
-		fmu_set_time( tQ );
-		return options::one_over_four_dtND * ( ( three * ( x_1_p_ - x_1_ ) ) + ( x_1_p_ - x_1_2p_ ) ); //ND Forward 3-point
-	}
-
-	// Coefficient 2 from FMU at Time tQ
-	Real
-	h_2() const
-	{
-		Time tN( tQ - options::dtND );
-		fmu_set_time( tN );
-		x_1_m_ = h_1( tN );
-		tN = tQ + options::dtND;
-		fmu_set_time( tN );
-		x_1_p_ = h_1( tN );
-		fmu_set_time( tQ );
-		return options::one_over_four_dtND * ( x_1_p_ - x_1_m_ ); //ND Centered difference
-	}
-
-	// Coefficient 3 from FMU
+	// Coefficient 3
 	Real
 	n_3() const
 	{
 		return options::one_over_six_dtND_squared * ( ( x_1_p_ - x_1_ ) + ( x_1_m_ - x_1_ ) ); //ND Centered difference
 	}
 
-	// Coefficient 3 from FMU
+	// Coefficient 3
 	Real
 	f_3() const
 	{
@@ -605,8 +577,8 @@ private: // Methods
 
 private: // Data
 
-	Real q_c_{ 0.0 }, q_0_{ 0.0 }, q_1_{ 0.0 }, q_2_{ 0.0 }; // Quantized trajectory coefficients
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Continuous trajectory coefficients
+	Real q_c_{ 0.0 }, q_0_{ 0.0 }, q_1_{ 0.0 }, q_2_{ 0.0 }; // Quantized trajectory coefficients
 	Real l_0_{ 0.0 }; // LIQSS-adjusted coefficient
 	mutable Real x_1_m_{ 0.0 }, x_1_p_{ 0.0 }, x_1_2p_{ 0.0 }; // Trajectory coefficient 1 at numeric differentiation time offsets
 

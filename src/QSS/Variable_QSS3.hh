@@ -68,8 +68,8 @@ public: // Creation
 	 FMU_Variable const der = FMU_Variable()
 	) :
 	 Super( fmu_me, 3, name, rTol_, aTol_, zTol_, xIni_, var, der ),
-	 q_0_( xIni_ ),
-	 x_0_( xIni_ )
+	 x_0_( xIni_ ),
+	 q_0_( xIni_ )
 	{
 		set_qTol();
 	}
@@ -191,7 +191,7 @@ public: // Methods
 		tS = tE - tQ;
 		tQ = tX = tE;
 		q_0_ = x_0_ += ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel;
-		q_1_ = x_1_ = c_1( tE );
+		q_1_ = x_1_ = c_1();
 		if ( fwd_time_ND( tE ) ) { // Use centered ND formulas
 			q_2_ = x_2_ = c_2( tE );
 			x_3_ = n_3();
@@ -271,7 +271,7 @@ public: // Methods
 		tS = t - tQ;
 		tQ = tX = t;
 		q_0_ = x_0_ = p_0();
-		q_1_ = x_1_ = h_1( t );
+		q_1_ = x_1_ = c_1();
 		if ( fwd_time_ND( t ) ) { // Use centered ND formulas
 			q_2_ = x_2_ = c_2( t );
 			x_3_ = n_3();
@@ -474,14 +474,14 @@ private: // Methods
 		}
 	}
 
-	// Coefficient 2 from FMU
+	// Coefficient 2
 	Real
 	n_2( Real const x_1_m, Real const x_1_p ) const
 	{
 		return options::one_over_four_dtND * ( ( x_1_p_ = x_1_p ) - ( x_1_m_ = x_1_m ) ); //ND Centered difference
 	}
 
-	// Coefficient 2 from FMU at Time t
+	// Coefficient 2 at Time t
 	Real
 	c_2( Time const t ) const
 	{
@@ -495,7 +495,7 @@ private: // Methods
 		return options::one_over_four_dtND * ( x_1_p_ - x_1_m_ ); //ND Centered difference
 	}
 
-	// Coefficient 2 from FMU at Time tQ
+	// Coefficient 2 at Time tQ
 	Real
 	f_2( Time const t ) const
 	{
@@ -509,21 +509,21 @@ private: // Methods
 		return options::one_over_four_dtND * ( ( three * ( x_1_p_ - x_1_ ) ) + ( x_1_p_ - x_1_2p_ ) ); //ND Forward 3-point
 	}
 
-	// Coefficient 2 from FMU
+	// Coefficient 2
 	Real
 	f_2( Real const x_1_p, Real const x_1_2p ) const
 	{
 		return options::one_over_four_dtND * ( ( three * ( ( x_1_p_ = x_1_p ) - x_1_ ) ) + ( x_1_p - ( x_1_2p_ = x_1_2p ) ) ); //ND Forward 3-point
 	}
 
-	// Coefficient 3 from FMU
+	// Coefficient 3
 	Real
 	n_3() const
 	{
 		return options::one_over_six_dtND_squared * ( ( x_1_p_ - x_1_ ) + ( x_1_m_ - x_1_ ) ); //ND Centered difference
 	}
 
-	// Coefficient 3 from FMU
+	// Coefficient 3
 	Real
 	f_3() const
 	{
@@ -532,8 +532,8 @@ private: // Methods
 
 private: // Data
 
-	Real q_0_{ 0.0 }, q_1_{ 0.0 }, q_2_{ 0.0 }; // Quantized trajectory coefficients
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Continuous trajectory coefficients
+	Real q_0_{ 0.0 }, q_1_{ 0.0 }, q_2_{ 0.0 }; // Quantized trajectory coefficients
 	mutable Real x_1_m_{ 0.0 }, x_1_p_{ 0.0 }, x_1_2p_{ 0.0 }; // Trajectory coefficient 1 at numeric differentiation time offsets
 
 }; // Variable_QSS3

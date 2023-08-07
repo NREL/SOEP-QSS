@@ -66,10 +66,11 @@ double dtZC( 1.0e-9 ); // FMU zero-crossing time step (s)
 double dtND( 1.0e-6 ); // Numeric differentiation time step (s)
 double dtND_max( 1.0 ); // Numeric differentiation time step max (s)
 bool dtND_optimizer( false ); // Optimize FMU numeric differentiation time step?
-double two_dtND( 2.0e-6 ); // 2 * dtND
-double one_over_two_dtND( 5.0e5 ); // 1 / ( 2 * dtND )
-double one_over_four_dtND( 2.5e5 ); // 1 / ( 4 * dtND )
-double one_over_six_dtND_squared( 1.0e12 / 6.0 ); // 1 / ( 6 * dtND^2 )
+double two_dtND( 2.0 * dtND );
+double one_over_two_dtND( 1.0 / ( 2.0 * dtND ) );
+double one_over_three_dtND( 1.0 / ( 3.0 * dtND ) );
+double one_over_four_dtND( 1.0 / ( 4.0 * dtND ) );
+double one_over_six_dtND_squared( 1.0 / ( 6.0 * ( dtND * dtND ) ) );
 double dtCon( 0.0 ); // FMU connection sync time step (s)
 double dtOut( 1.0e-3 ); // Sampled output time step (s)
 double tEnd( 1.0 ); // End time (s)  [1|FMU]
@@ -1103,6 +1104,7 @@ dtND_set( double const dt )
 	dtND = dt;
 	two_dtND = 2.0 * dtND;
 	one_over_two_dtND = 1.0 / ( 2.0 * dtND );
+	one_over_three_dtND = 1.0 / ( 3.0 * dtND );
 	one_over_four_dtND = 1.0 / ( 4.0 * dtND );
 	one_over_six_dtND_squared = 1.0 / ( 6.0 * ( dtND * dtND ) );
 }

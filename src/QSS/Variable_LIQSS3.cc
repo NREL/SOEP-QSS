@@ -145,7 +145,7 @@ namespace QSS {
 			q_2_ = x_2_ = one_half * ( x_2_l + x_2_u ); // Interpolated 2nd order coefficient at q_0_ == q_c_
 			x_3_ = 0.0;
 		} else { // Use quadratic trajectory
-			q_0_ = std::min( std::max( ( ( q_l * x_3_u ) - ( q_u * x_3_l ) ) / ( x_3_u - x_3_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
+			q_0_ = std::min( std::max( ( ( q_l * x_3_u ) - ( q_u * x_3_l ) ) / ( x_3_u - x_3_l ), q_l ), q_u ); // Value where 2nd derivative is ~ 0 // Clipped in case of roundoff
 			Real const inv_2_qTol( one / ( two * qTol ) );
 			q_1_ = x_1_ = ( ( ( q_u - q_0_ ) * x_1_l ) + ( ( q_0_ - q_l ) * x_1_u ) ) * inv_2_qTol; // Interpolated 1st order coefficient at q_0_
 			q_2_ = x_2_ = ( ( ( q_u - q_0_ ) * x_2_l ) + ( ( q_0_ - q_l ) * x_2_u ) ) * inv_2_qTol; // Interpolated 2nd order coefficient at q_0_
@@ -238,7 +238,7 @@ namespace QSS {
 			q_2_ = x_2_ = one_half * ( x_2_l + x_2_u ); // Interpolated 2nd order coefficient at l_0_
 			x_3_ = 0.0;
 		} else { // Use quadratic trajectory
-			l_0_ = std::min( std::max( ( ( q_l * x_3_u ) - ( q_u * x_3_l ) ) / ( x_3_u - x_3_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
+			l_0_ = std::min( std::max( ( ( q_l * x_3_u ) - ( q_u * x_3_l ) ) / ( x_3_u - x_3_l ), q_l ), q_u ); // Value where 2nd derivative is ~ 0 // Clipped in case of roundoff
 			Real const inv_2_qTol( one / ( two * qTol ) );
 			q_1_ = x_1_ = ( ( ( q_u - l_0_ ) * x_1_l ) + ( ( l_0_ - q_l ) * x_1_u ) ) * inv_2_qTol; // Interpolated 1st order coefficient at l_0_
 			q_2_ = x_2_ = ( ( ( q_u - l_0_ ) * x_2_l ) + ( ( l_0_ - q_l ) * x_2_u ) ) * inv_2_qTol; // Interpolated 2nd order coefficient at l_0_
@@ -333,7 +333,7 @@ namespace QSS {
 			q_2_ = x_2_ = one_half * ( x_2_l + x_2_u ); // Interpolated 2nd order coefficient at l_0_
 			x_3_ = 0.0;
 		} else { // Use quadratic trajectory
-			l_0_ = std::min( std::max( ( ( q_l * x_3_u ) - ( q_u * x_3_l ) ) / ( x_3_u - x_3_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
+			l_0_ = std::min( std::max( ( ( q_l * x_3_u ) - ( q_u * x_3_l ) ) / ( x_3_u - x_3_l ), q_l ), q_u ); // Value where 2nd derivative is ~ 0 // Clipped in case of roundoff
 			Real const inv_2_qTol( one / ( two * qTol ) );
 			q_1_ = x_1_ = ( ( ( q_u - l_0_ ) * x_1_l ) + ( ( l_0_ - q_l ) * x_1_u ) ) * inv_2_qTol; // Interpolated 1st order coefficient at l_0_
 			q_2_ = x_2_ = ( ( ( q_u - l_0_ ) * x_2_l ) + ( ( l_0_ - q_l ) * x_2_u ) ) * inv_2_qTol; // Interpolated 2nd order coefficient at l_0_

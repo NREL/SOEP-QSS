@@ -63,8 +63,8 @@ public: // Creation
 	 FMU_Variable const der = FMU_Variable()
 	) :
 	 Super( fmu_me, 2, name, rTol_, aTol_, zTol_, xIni_, var, der ),
-	 q_0_( xIni_ ),
-	 x_0_( xIni_ )
+	 x_0_( xIni_ ),
+	 q_0_( xIni_ )
 	{
 		set_qTol();
 	}
@@ -169,7 +169,7 @@ public: // Methods
 		tS = tE - tQ;
 		tQ = tX = tE;
 		q_0_ = x_0_ += ( x_1_ + ( x_2_ * tDel ) ) * tDel;
-		q_1_ = x_1_ = c_1( tE );
+		q_1_ = x_1_ = c_1();
 		q_2_ = x_2_ = c_2( tE, x_1_ );
 		set_qTol();
 		set_tE_aligned();
@@ -236,7 +236,7 @@ public: // Methods
 		tS = t - tQ;
 		tQ = tX = t;
 		q_0_ = x_0_ = p_0();
-		q_1_ = x_1_ = h_1();
+		q_1_ = x_1_ = c_1();
 		q_2_ = x_2_ = c_2( t, x_1_ );
 		set_qTol();
 		set_tE_aligned();
@@ -417,21 +417,21 @@ private: // Methods
 		}
 	}
 
-	// Coefficient 2 from FMU
+	// Coefficient 2
 	Real
 	n_2( Real const x_1_p ) const
 	{
 		return options::one_over_two_dtND * ( x_1_p - x_1_ ); //ND Forward Euler
 	}
 
-	// Coefficient 2 from FMU
+	// Coefficient 2
 	Real
 	n_2( Real const x_1_m, Real const x_1_p ) const
 	{
 		return options::one_over_four_dtND * ( x_1_p - x_1_m ); //ND Centered difference
 	}
 
-	// Coefficient 2 from FMU
+	// Coefficient 2
 	Real
 	f_2( Real const x_1_p, Real const x_1_2p ) const
 	{
@@ -440,8 +440,8 @@ private: // Methods
 
 private: // Data
 
-	Real q_0_{ 0.0 }, q_1_{ 0.0 }, q_2_{ 0.0 }; // Quantized trajectory coefficients
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous trajectory coefficients
+	Real q_0_{ 0.0 }, q_1_{ 0.0 }, q_2_{ 0.0 }; // Quantized trajectory coefficients
 
 }; // Variable_xQSS2
 
