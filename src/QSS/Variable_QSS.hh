@@ -111,16 +111,6 @@ public: // Predicate
 
 public: // Methods
 
-	// LIQSS/QSS Step Ratio Pass
-	void
-	liqss_qss_ratio_pass()
-	{
-		assert( !is_LIQSS() );
-		if ( liqss_qss_step_ratio.check_ratio() ) {
-			liqss_qss_step_ratio.add( advance_LIQSS_QSS_step_ratio() );
-		}
-	}
-
 	// Add a Cluster Variable
 	void
 	add_to_cluster( Variable_QSS * var )
@@ -136,8 +126,6 @@ public: // Methods
 	}
 
 public: // Data
-
-	LIQSS_QSS_Step_Ratio liqss_qss_step_ratio; // LIQSS/QSS step size ratio metric
 
 	Cluster cluster; // QSS variables in dependency cycles with this variable
 

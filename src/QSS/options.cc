@@ -86,7 +86,6 @@ bool refine( false ); // Refine FMU zero-crossing roots?
 bool perfect( false ); // Perfect FMU-ME connection sync?
 bool active( false ); // Active intermediate variables preferred?
 bool passive( true ); // Passive intermediate variables preferred?
-bool stiff( false ); // Stiffness detection/report?
 bool steps( false ); // Generate requantization step count file?
 LogLevel log( LogLevel::warning ); // Logging level
 InpFxn fxn; // Map from input variables to function specs
@@ -176,7 +175,6 @@ help_display()
 	std::cout << " --perfect              Perfect FMU-ME connection sync" << '\n';
 	std::cout << " --active               Active intermediate variables preferred  [Off]" << '\n';
 	std::cout << " --passive              Passive intermediate variables preferred  [On]" << '\n';
-	std::cout << " --stiff                Stiffness detection/report for FMU" << '\n';
 	std::cout << " --steps                Generate step count file for FMU" << '\n';
 	std::cout << " --log=LEVEL            Logging level  [warning]" << '\n';
 	std::cout << "       fatal" << '\n';
@@ -334,8 +332,6 @@ process_args( Args const & args )
 			passive = true;
 		} else if ( has_option( arg, "steps" ) ) {
 			steps = true;
-		} else if ( has_option( arg, "stiff" ) || has_option( arg, "stiffness" ) ) {
-			stiff = true;
 		} else if ( has_option_value( arg, "log" ) ) { // Accept PyFMI numeric logging levels for scripting convenience
 			std::string const log_str( lowercased( option_value( arg, "log" ) ) );
 			if ( ( log_str == "fatal" ) || ( log_str == "f" ) || ( log_str == "0" ) ) {

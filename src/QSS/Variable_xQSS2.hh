@@ -164,7 +164,6 @@ public: // Methods
 	void
 	advance_QSS() override
 	{
-		if ( options::stiff ) liqss_qss_ratio_pass();
 		Time const tDel( tE - tX );
 		tS = tE - tQ;
 		tQ = tX = tE;
@@ -183,7 +182,6 @@ public: // Methods
 	void
 	advance_QSS_0() override
 	{
-		if ( options::stiff ) liqss_qss_ratio_pass();
 		Time const tDel( tE - tX );
 		tS = tE - tQ;
 		tQ = tX = tE;
@@ -228,10 +226,6 @@ public: // Methods
 		if ( options::output::d ) std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 		if ( connected() ) advance_connections();
 	}
-
-	// QSS Advance LIQSS/QSS Step Ratio
-	Real
-	advance_LIQSS_QSS_step_ratio() override;
 
 	// Handler Advance
 	void

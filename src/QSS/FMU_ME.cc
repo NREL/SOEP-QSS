@@ -3382,18 +3382,6 @@ namespace QSS {
 					}
 				}
 			}
-			if ( options::stiff ) { // Stiffness report
-				std::cout << "\nQSS State Variables Average LIQSS/QSS Step Size Ratio:" << std::endl;
-				for ( Variable const * var : state_vars ) {
-					if ( ( !var->is_LIQSS() ) && ( !var->is_time() ) ) {
-						size_type const avg_ratio( static_cast< size_type >( std::round( static_cast< Variable_QSS const * >( var )->liqss_qss_step_ratio.ratio() ) ) );
-						size_type const percent_finite( static_cast< size_type >( std::round( 100.0 - static_cast< Variable_QSS const * >( var )->liqss_qss_step_ratio.ratio_inf_percent() ) ) );
-						std::cout << ' ' << var->name() << ' ' << avg_ratio;
-						if ( percent_finite < 100u ) std::cout << " (" << percent_finite << "% steps finite)";
-						std::cout << std::endl;
-					}
-				}
-			}
 			if ( options::steps ) { // Steps file
 				std::ofstream step_stream( name + ".stp", std::ios_base::binary | std::ios_base::out );
 				if ( step_stream.is_open() ) {

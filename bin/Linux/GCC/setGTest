@@ -1,5 +1,5 @@
 #!/bin/bash
-# Google Test Linux Clang Setup
+# Google Test Linux GCC Setup
 
 # Customize if Google Test is not installed on standard system paths
 

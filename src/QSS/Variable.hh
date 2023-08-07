@@ -1037,14 +1037,6 @@ public: // Methods
 		assert( false );
 	}
 
-	// QSS Advance LIQSS/QSS Step Ratio
-	virtual
-	Real
-	advance_LIQSS_QSS_step_ratio()
-	{
-		return 1.0;
-	}
-
 	// Zero-Crossing Add Event
 	void
 	add_ZC( Time const t )
@@ -1811,7 +1803,7 @@ protected: // Methods: FMU
 	Real
 	X_1() const
 	{
-		assert( is_ZC() );
+		assert( is_R() || is_ZC() );
 		assert( !self_observer_ );
 		assert( fmu_me_ != nullptr );
 		assert( fmu_get_time() == tQ );
@@ -1829,7 +1821,7 @@ protected: // Methods: FMU
 	Real
 	X_1( Time const t ) const
 	{
-		assert( is_ZC() );
+		assert( is_R() || is_ZC() );
 		assert( !self_observer_ );
 		assert( fmu_me_ != nullptr );
 		assert( fmu_get_time() == t );
