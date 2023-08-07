@@ -162,6 +162,7 @@ public: // Methods
 	init_2() override
 	{
 		q_2_ = x_2_ = c_2( tQ, x_1_ );
+		fmu_set_observees_x( t0() );
 	}
 
 	// Initialization: Stage 3
@@ -169,6 +170,7 @@ public: // Methods
 	init_3() override
 	{
 		x_3_ = f_3( tQ, x_1_ );
+		fmu_set_observees_x( t0() );
 	}
 
 	// Initialization: Stage Final

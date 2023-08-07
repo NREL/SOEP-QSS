@@ -172,6 +172,7 @@ public: // Methods
 	init_2() override
 	{
 		q_2_ = x_2_ = c_2( tQ, x_1_ );
+		fmu_set_observees_x( t0() );
 	}
 
 	// Initialization: Stage 3
@@ -183,6 +184,7 @@ public: // Methods
 			advance_LIQSS_simultaneous_forward();
 		} else {
 			x_3_ = f_3( tQ, x_1_ );
+			fmu_set_observees_x( t0() );
 			l_0_ = q_c_ + ( signum( x_3_ ) * qTol );
 		}
 	}

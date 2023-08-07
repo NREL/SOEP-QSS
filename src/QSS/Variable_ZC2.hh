@@ -147,6 +147,7 @@ public: // Methods
 		x_0_ = z_0();
 		x_1_ = n_1();
 		x_2_ = n_2();
+		fmu_set_observees_x( t0() );
 		set_qTol();
 		set_tE();
 		set_tZ();

@@ -177,6 +177,7 @@ public: // Methods
 	init_2() override
 	{
 		x_2_ = n_2();
+		fmu_set_observees_x( t0() );
 	}
 
 	// Initialization: Stage Final

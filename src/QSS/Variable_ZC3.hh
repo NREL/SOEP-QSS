@@ -167,6 +167,7 @@ public: // Methods
 		x_mag_ = std::abs( x_0_ );
 		x_1_ = n_1();
 		x_2_ = f_2();
+		fmu_set_observees_x( t0() );
 		x_3_ = f_3();
 		set_qTol();
 		set_tE();

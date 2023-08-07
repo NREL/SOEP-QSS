@@ -154,6 +154,7 @@ public: // Methods
 			advance_LIQSS_simultaneous();
 		} else {
 			x_2_ = h_2( tQ, x_1_ );
+			fmu_set_observees_x( t0() );
 			l_0_ = q_c_ + ( signum( x_2_ ) * qTol );
 		}
 	}
