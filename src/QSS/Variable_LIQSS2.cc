@@ -137,6 +137,7 @@ namespace QSS {
 		Real const q_u( q_c_ + qTol );
 
 		// Derivative at +/- qTol
+		fmu_set_observees_s( tE );
 		fmu_set_real( q_l );
 		Real const x_1_l( p_1() );
 		fmu_set_real( q_u );
@@ -208,7 +209,6 @@ namespace QSS {
 		// Reset FMU time and values
 		fmu_set_time( tE );
 		fmu_set_observees_s( tE );
-		fmu_set_real( q_c_ );
 	}
 
 } // QSS

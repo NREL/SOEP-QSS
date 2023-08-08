@@ -166,6 +166,7 @@ namespace QSS {
 		Real const q_u( q_c_ + qTol );
 
 		// Derivative at +/- qTol
+		fmu_set_observees_s( tE );
 		fmu_set_real( q_l );
 		Real const x_1_l( p_1() );
 		fmu_set_real( q_u );
@@ -218,7 +219,6 @@ namespace QSS {
 		// Reset FMU time and values
 		fmu_set_time( tE );
 		fmu_set_observees_s( tE );
-		fmu_set_real( q_c_ );
 
 		// Set coefficients based on third derivative signs
 		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward cubic trajectory
@@ -259,6 +259,7 @@ namespace QSS {
 		Real const q_u( q_c_ + qTol );
 
 		// Derivative at +/- qTol
+		fmu_set_observees_s( tE );
 		fmu_set_real( q_l );
 		Real const x_1_l( p_1() );
 		fmu_set_real( q_u );
@@ -313,7 +314,6 @@ namespace QSS {
 		// Reset FMU time and values
 		fmu_set_time( tE );
 		fmu_set_observees_s( tE );
-		fmu_set_real( q_c_ );
 
 		// Set coefficients based on third derivative signs
 		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward cubic trajectory
