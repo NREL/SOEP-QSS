@@ -46,12 +46,14 @@ namespace QSS {
 		assert( qTol > 0.0 );
 		assert( self_observer() );
 
+		// Set observee FMU values at q_c_
+		fmu_set_observees_s( tE );
+
 		// Value at +/- qTol
 		Real const q_l( q_c_ - qTol );
 		Real const q_u( q_c_ + qTol );
 
 		// Derivative at +/- qTol
-		fmu_set_observees_s( tE );
 		fmu_set_real( q_l );
 		Real const x_1_l( p_1() );
 		fmu_set_real( q_u );
@@ -132,12 +134,14 @@ namespace QSS {
 		assert( qTol > 0.0 );
 		assert( self_observer() );
 
+		// Set observee FMU values at q_c_
+		fmu_set_observees_s( tE );
+
 		// Value at +/- qTol
 		Real const q_l( q_c_ - qTol );
 		Real const q_u( q_c_ + qTol );
 
 		// Derivative at +/- qTol
-		fmu_set_observees_s( tE );
 		fmu_set_real( q_l );
 		Real const x_1_l( p_1() );
 		fmu_set_real( q_u );

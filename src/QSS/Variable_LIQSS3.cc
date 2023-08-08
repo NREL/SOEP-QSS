@@ -46,12 +46,14 @@ namespace QSS {
 		assert( qTol > 0.0 );
 		assert( self_observer() );
 
+		// Set observee FMU values at q_c_
+		fmu_set_observees_s( tE );
+
 		// Value at +/- qTol
 		Real const q_l( q_c_ - qTol );
 		Real const q_u( q_c_ + qTol );
 
 		// Derivative at +/- qTol
-		fmu_set_observees_s( tE );
 		fmu_set_real( q_l );
 		Real const x_1_l( p_1() );
 		fmu_set_real( q_u );
@@ -124,9 +126,6 @@ namespace QSS {
 		int const x_3_l_s( signum( x_3_l ) );
 		int const x_3_u_s( signum( x_3_u ) );
 
-		// Reset FMU time
-		fmu_set_time( tE );
-
 		// Set coefficients based on third derivative signs
 		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward cubic trajectory
 			q_0_ = q_l;
@@ -151,6 +150,9 @@ namespace QSS {
 			q_2_ = x_2_ = ( ( ( q_u - q_0_ ) * x_2_l ) + ( ( q_0_ - q_l ) * x_2_u ) ) * inv_2_qTol; // Interpolated 2nd order coefficient at q_0_
 			x_3_ = 0.0;
 		}
+
+		// Reset FMU time
+		fmu_set_time( tE );
 	}
 
 	// Advance Self-Observing Trigger: Simultaneous
@@ -161,12 +163,14 @@ namespace QSS {
 		assert( qTol > 0.0 );
 		assert( self_observer() );
 
+		// Set observee FMU values at q_c_
+		fmu_set_observees_s( tE );
+
 		// Value at +/- qTol
 		Real const q_l( q_c_ - qTol );
 		Real const q_u( q_c_ + qTol );
 
 		// Derivative at +/- qTol
-		fmu_set_observees_s( tE );
 		fmu_set_real( q_l );
 		Real const x_1_l( p_1() );
 		fmu_set_real( q_u );
@@ -216,10 +220,6 @@ namespace QSS {
 		Real const x_3_u( options::one_over_six_dtND_squared * ( ( x_1_p_u - x_1_u ) + ( x_1m_u - x_1_u ) ) ); //ND Centered difference
 		int const x_3_u_s( signum( x_3_u ) );
 
-		// Reset FMU time and values
-		fmu_set_time( tE );
-		fmu_set_observees_s( tE );
-
 		// Set coefficients based on third derivative signs
 		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward cubic trajectory
 			l_0_ = q_l;
@@ -244,6 +244,10 @@ namespace QSS {
 			q_2_ = x_2_ = ( ( ( q_u - l_0_ ) * x_2_l ) + ( ( l_0_ - q_l ) * x_2_u ) ) * inv_2_qTol; // Interpolated 2nd order coefficient at l_0_
 			x_3_ = 0.0;
 		}
+
+		// Reset FMU time and values
+		fmu_set_time( tE );
+		fmu_set_observees_s( tE );
 	}
 
 	// Advance Self-Observing Trigger: Simultaneous: Forward ND
@@ -254,12 +258,14 @@ namespace QSS {
 		assert( qTol > 0.0 );
 		assert( self_observer() );
 
+		// Set observee FMU values at q_c_
+		fmu_set_observees_s( tE );
+
 		// Value at +/- qTol
 		Real const q_l( q_c_ - qTol );
 		Real const q_u( q_c_ + qTol );
 
 		// Derivative at +/- qTol
-		fmu_set_observees_s( tE );
 		fmu_set_real( q_l );
 		Real const x_1_l( p_1() );
 		fmu_set_real( q_u );
@@ -311,10 +317,6 @@ namespace QSS {
 		Real const x_3_u( options::one_over_six_dtND_squared * ( ( x_1_2p_u - x_1_p_u ) + ( x_1_u - x_1_p_u ) ) ); //ND Forward 3-point formula
 		int const x_3_u_s( signum( x_3_u ) );
 
-		// Reset FMU time and values
-		fmu_set_time( tE );
-		fmu_set_observees_s( tE );
-
 		// Set coefficients based on third derivative signs
 		if ( ( x_3_l_s == -1 ) && ( x_3_u_s == -1 ) ) { // Downward cubic trajectory
 			l_0_ = q_l;
@@ -339,6 +341,10 @@ namespace QSS {
 			q_2_ = x_2_ = ( ( ( q_u - l_0_ ) * x_2_l ) + ( ( l_0_ - q_l ) * x_2_u ) ) * inv_2_qTol; // Interpolated 2nd order coefficient at l_0_
 			x_3_ = 0.0;
 		}
+
+		// Reset FMU time and values
+		fmu_set_time( tE );
+		fmu_set_observees_s( tE );
 	}
 
 } // QSS
