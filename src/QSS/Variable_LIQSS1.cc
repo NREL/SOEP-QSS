@@ -72,15 +72,14 @@ namespace QSS {
 			assert( ( x_1_l_s == 0 ) && ( x_1_u_s == 0 ) );
 			q_0_ = q_c_;
 			x_1_ = 0.0;
-		} else { // Use near-constant trajectory
-			q_0_ = std::min( std::max( ( ( q_l * x_1_u ) - ( q_u * x_1_l ) ) / ( x_1_u - x_1_l ), q_l ), q_u ); // Value where derivative is ~ 0 // Clipped in case of roundoff
-
-			// Standard QSS derivative: Zero
-			// x_1_ = 0.0;
-
-			// Modified QSS derivative: Computed
+		} else { // Interpolated trajectory
+			q_0_ = std::min( std::max( ( ( q_l * x_1_u ) - ( q_u * x_1_l ) ) / ( x_1_u - x_1_l ), q_l ), q_u ); // Interpolated value where derivative is ~ 0 // Clipped in case of roundoff
+#ifdef QSS_LIQSS_Interpolate // Standard QSS
+			x_1_ = 0.0;
+#else // Compute
 			fmu_set_real( q_0_ );
 			x_1_ = p_1();
+#endif
 		}
 	}
 
@@ -115,15 +114,14 @@ namespace QSS {
 			assert( ( x_1_l_s == 0 ) && ( x_1_u_s == 0 ) );
 			l_0_ = q_c_;
 			x_1_ = 0.0;
-		} else { // Use near-constant trajectory
-			l_0_ = std::min( std::max( ( ( q_l * x_1_u ) - ( q_u * x_1_l ) ) / ( x_1_u - x_1_l ), q_l ), q_u ); // Value where derivative is ~ 0 // Clipped in case of roundoff
-
-			// Standard QSS derivative: Zero
-			// x_1_ = 0.0;
-
-			// Modified QSS derivative: Computed
+		} else { // Interpolated trajectory
+			l_0_ = std::min( std::max( ( ( q_l * x_1_u ) - ( q_u * x_1_l ) ) / ( x_1_u - x_1_l ), q_l ), q_u ); // Interpolated value where derivative is ~ 0 // Clipped in case of roundoff
+#ifdef QSS_LIQSS_Interpolate // Standard QSS
+			x_1_ = 0.0;
+#else // Compute
 			fmu_set_real( l_0_ );
 			x_1_ = p_1();
+#endif
 		}
 
 		// Reset FMU value

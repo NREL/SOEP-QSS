@@ -92,11 +92,19 @@ namespace QSS {
 		} else if ( x_2_l_s == x_2_u_s ) { // Linear trajectory
 			assert( ( x_2_l_s == 0 ) && ( x_2_u_s == 0 ) );
 			q_0_ = q_c_;
-			q_1_ = x_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st deriv at q_0_ == q_c_
+#ifdef QSS_LIQSS_Interpolate // Standard QSS
+			q_1_ = x_1_ = one_half * ( x_1_l + x_1_u );
+#else // Compute
+			fmu_set_real( q_c_ );
+			q_1_ = x_1_ = p_1(); // 1st derivative at q_0_ == q_c_
+#endif
 			x_2_ = 0.0;
-		} else { // Use near-linear trajectory
-			q_0_ = std::min( std::max( ( ( q_l * x_2_u ) - ( q_u * x_2_l ) ) / ( x_2_u - x_2_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
-
+		} else { // Interpolated trajectory
+			q_0_ = std::min( std::max( ( ( q_l * x_2_u ) - ( q_u * x_2_l ) ) / ( x_2_u - x_2_l ), q_l ), q_u ); // Interpolated value where 2nd derivative is ~ 0 // Clipped in case of roundoff
+#ifdef QSS_LIQSS_Interpolate // Standard QSS
+			q_1_ = x_1_ = ( ( ( q_u - q_0_ ) * x_1_l ) + ( ( q_0_ - q_l ) * x_1_u ) ) / ( two * qTol );
+			x_2_ = 0.0;
+#else // Compute
 			// Derivative at q_0_
 			fmu_set_time( tE );
 			fmu_set_observees_s( tE );
@@ -112,6 +120,7 @@ namespace QSS {
 			fmu_set_real( q_0_ + ( x_1_ + x_2_dN ) * dN );
 #endif
 			x_2_ = options::one_over_two_dtND * ( p_1() - x_1_ ); //ND Forward Euler
+#endif
 		}
 
 		// if ( x_2_l != x_2_u ) { // Set additional requantization criterion: Estimated value when x_2 == 0
@@ -180,11 +189,18 @@ namespace QSS {
 		} else if ( x_2_l_s == x_2_u_s ) { // Linear trajectory
 			assert( ( x_2_l_s == 0 ) && ( x_2_u_s == 0 ) );
 			l_0_ = q_c_;
-			q_1_ = x_1_ = one_half * ( x_1_l + x_1_u ); // Interpolated 1st deriv at l_0_
+#ifdef QSS_LIQSS_Interpolate // Standard QSS
+			q_1_ = x_1_ = one_half * ( x_1_l + x_1_u );
+#else // Compute
+			// Computed in simultaneous Stage 1
+#endif
 			x_2_ = 0.0;
-		} else { // Use near-linear trajectory
-			l_0_ = std::min( std::max( ( ( q_l * x_2_u ) - ( q_u * x_2_l ) ) / ( x_2_u - x_2_l ), q_l ), q_u ); // Value where 2nd deriv is ~ 0 // Clipped in case of roundoff
-
+		} else { // Interpolated trajectory
+			l_0_ = std::min( std::max( ( ( q_l * x_2_u ) - ( q_u * x_2_l ) ) / ( x_2_u - x_2_l ), q_l ), q_u ); // Interpolated value where 2nd derivative is ~ 0 // Clipped in case of roundoff
+#ifdef QSS_LIQSS_Interpolate // Standard QSS
+			q_1_ = x_1_ = ( ( ( q_u - l_0_ ) * x_1_l ) + ( ( l_0_ - q_l ) * x_1_u ) ) / ( two * qTol );
+			x_2_ = 0.0;
+#else // Compute
 			// Derivative at l_0_
 			fmu_set_time( tE );
 			fmu_set_observees_s( tE );
@@ -200,6 +216,7 @@ namespace QSS {
 			fmu_set_real( l_0_ + ( x_1_ + x_2_dN ) * dN );
 #endif
 			x_2_ = options::one_over_two_dtND * ( p_1() - x_1_ ); //ND Forward Euler
+#endif
 		}
 
 		// if ( x_2_l != x_2_u ) { // Set additional requantization criterion: Estimated value when x_2 == 0
