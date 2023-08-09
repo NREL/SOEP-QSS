@@ -412,18 +412,17 @@ def fmu_qss_gen():
             PlatformOSCompiler = os.environ.get( 'PlatformOSCompiler' )
             if QSS and QSS_bin and PlatformOSCompiler: # Configured for building
                 QSS_src = os.path.join( QSS, 'src', 'QSS' )
-                fmu_src =  os.path.join( QSS_src, 'fmu' )
                 if os.path.exists( 'src' ):
                     if os.path.isdir( 'src' ):
                         shutil.rmtree( 'src' )
                     elif os.path.isfile( 'src' ):
                         os.remove( 'src' )
                 src_bld = 'src'
-                fmu_bld = os.path.join( 'src', 'QSS', 'fmu' )
+                fmu_bld = os.path.join( 'src', 'QSS' )
                 os.makedirs( fmu_bld )
                 shutil.copy( 'FMU_QSS_defines.hh', fmu_bld )
                 shutil.copy( 'FMU_QSS_GUID.hh', fmu_bld )
-                shutil.copy( os.path.join( fmu_src, PlatformOSCompiler, 'GNUmakefile' ), src_bld )
+                shutil.copy( os.path.join( QSS_src, PlatformOSCompiler, 'GNUmakefile' ), src_bld )
                 cwd = os.getcwd()
                 os.chdir( src_bld )
                 with open( 'GNUmakefile', 'r' ) as sources:
