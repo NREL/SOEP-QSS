@@ -137,7 +137,7 @@ TEST( Variable_LIQSS3Test, Achilles )
 	EXPECT_EQ( 3.5, x1->x1( 0.0 ) );
 	EXPECT_EQ( 3.5, x1->q1( 0.0 ) );
 	EXPECT_NEAR( 2 * -0.875000937483605, x1->x2( 0.0 ), 1e-9 );
-	EXPECT_NEAR( 2 * -0.875000937483605, x1->x2( 0.0 ), 1e-9 );
+	EXPECT_NEAR( 2 * -0.875000937483605, x1->q2( 0.0 ), 1e-9 );
 	EXPECT_NEAR( 6 * -0.583311177138057, x1->x3( 0.0 ), 1e-9 );
 
 	EXPECT_EQ( 100.0, x2->rTol );
@@ -153,12 +153,12 @@ TEST( Variable_LIQSS3Test, Achilles )
 	EXPECT_NEAR( 2 * -1.499999625, x2->q2( 0.0 ), 1e-9 );
 	EXPECT_NEAR( 6 * 0.291666979185759, x2->x3( 0.0 ), 1e-9 );
 
-	double const x1_tE( x1->tE );
-	fmu.set_time( x1_tE );
+	double const tE( x1->tE );
+	fmu.set_time( tE );
 	x1->advance_QSS();
 
-	EXPECT_EQ( x1_tE, x1->tQ );
-	EXPECT_EQ( x1_tE, x1->tX );
+	EXPECT_EQ( tE, x1->tQ );
+	EXPECT_EQ( tE, x1->tX );
 	EXPECT_NEAR( 4.916424449972305, x1->tE, 1e-6 );
 	EXPECT_NEAR( 1.935554835791697, x1->x( x1->tX ), 1e-9 );
 	EXPECT_NEAR( 195.4910384149613, x1->q( x1->tQ ), 1e-9 );
@@ -169,7 +169,7 @@ TEST( Variable_LIQSS3Test, Achilles )
 	EXPECT_NEAR( 6 * 3.761139547956797, x1->x3( x1->tX ), 1e-7 );
 
 	EXPECT_EQ( 0.0, x2->tQ );
-	EXPECT_EQ( x1_tE, x2->tX );
+	EXPECT_EQ( tE, x2->tX );
 	EXPECT_NEAR( 1.972662255339731, x2->tE, 1e-9 );
 	EXPECT_NEAR( 0.3514094007224436, x2->x( x2->tX ), 1e-9 );
 	EXPECT_EQ( 202.0, x2->q( x2->tQ ) );

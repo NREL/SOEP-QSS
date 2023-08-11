@@ -156,20 +156,20 @@ TEST( Variable_ZC3Test, BouncingBall )
 	EXPECT_EQ( 0.0, z->x3( 0.0 ) );
 
 	h->tE = 0.1; // Choose a requantization time
-	double const h_tE( h->tE );
-	fmu.set_time( h_tE );
+	double const tE( h->tE );
+	fmu.set_time( tE );
 	h->advance_QSS();
 
-	EXPECT_EQ( h_tE, h->tQ );
-	EXPECT_EQ( h_tE, h->tX );
-	EXPECT_NEAR( 1.0 - ( 0.5 * 9.80665 ) * square( h_tE ), h->x( h->tX ), 1e-12 );
-	EXPECT_NEAR( 1.0 - ( 0.5 * 9.80665 ) * square( h_tE ), h->q( h->tQ ), 1e-12 );
+	EXPECT_EQ( tE, h->tQ );
+	EXPECT_EQ( tE, h->tX );
+	EXPECT_NEAR( 1.0 - ( 0.5 * 9.80665 ) * square( tE ), h->x( h->tX ), 1e-12 );
+	EXPECT_NEAR( 1.0 - ( 0.5 * 9.80665 ) * square( tE ), h->q( h->tQ ), 1e-12 );
 
 	EXPECT_EQ( 0.0, v->tQ );
 	EXPECT_EQ( 0.0, v->tX );
 
-	EXPECT_EQ( h_tE, z->tQ );
-	EXPECT_EQ( h_tE, z->tX );
-	EXPECT_NEAR( 1.0 - ( 0.5 * 9.80665 ) * square( h_tE ), z->x( z->tX ), 1e-1 );
-	EXPECT_NEAR( 1.0 - ( 0.5 * 9.80665 ) * square( h_tE ), z->q( z->tQ ), 1e-1 );
+	EXPECT_EQ( tE, z->tQ );
+	EXPECT_EQ( tE, z->tX );
+	EXPECT_NEAR( 1.0 - ( 0.5 * 9.80665 ) * square( tE ), z->x( z->tX ), 1e-1 );
+	EXPECT_NEAR( 1.0 - ( 0.5 * 9.80665 ) * square( tE ), z->q( z->tQ ), 1e-1 );
 }

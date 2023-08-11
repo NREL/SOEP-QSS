@@ -139,12 +139,12 @@ TEST( Variable_Inp3Test, InputFunction )
 	EXPECT_EQ( -1.0, u->x3( 0.0 ) );
 	EXPECT_EQ( 0.0, u->q3( 0.0 ) );
 
-	double const x_tE( x->tE );
-	fmu.set_time( x->tE );
+	double const tE( x->tE );
+	fmu.set_time( tE );
 	x->advance_QSS();
 
-	EXPECT_EQ( x_tE, x->tQ );
-	EXPECT_EQ( x_tE, x->tX );
+	EXPECT_EQ( tE, x->tQ );
+	EXPECT_EQ( tE, x->tX );
 
 	EXPECT_EQ( 0.0, u->tQ );
 	EXPECT_EQ( 0.0, u->tX );

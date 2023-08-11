@@ -129,19 +129,19 @@ TEST( Variable_LIQSS1Test, Achilles )
 	EXPECT_EQ( 2.0, x2->q( 0.0 ) );
 	EXPECT_EQ( 0.0, x2->x1( 0.0 ) );
 
-	double const x1_tE( x1->tE );
-	fmu.set_time( x1_tE );
+	double const tE( x1->tE );
+	fmu.set_time( tE );
 	x1->advance_QSS();
 
-	EXPECT_EQ( x1_tE, x1->tQ );
-	EXPECT_EQ( x1_tE, x1->tX );
+	EXPECT_EQ( tE, x1->tQ );
+	EXPECT_EQ( tE, x1->tX );
 	EXPECT_EQ( infinity, x1->tE );
 	EXPECT_DOUBLE_EQ( 1.0, x1->x( x1->tX ) );
 	EXPECT_DOUBLE_EQ( 6.0, x1->q( x1->tQ ) );
 	EXPECT_DOUBLE_EQ( 0.0, x1->x1( x1->tX ) );
 
 	EXPECT_EQ( 0.0, x2->tQ );
-	EXPECT_EQ( x1_tE, x2->tX );
+	EXPECT_EQ( tE, x2->tX );
 	EXPECT_DOUBLE_EQ( 33.7333333333333333, x2->tE );
 	EXPECT_EQ( 2.0, x2->x( x2->tX ) );
 	EXPECT_EQ( 2.0, x2->q( x2->tQ ) );

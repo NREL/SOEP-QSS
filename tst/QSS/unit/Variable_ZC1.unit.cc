@@ -135,22 +135,22 @@ TEST( Variable_ZC1Test, BouncingBall )
 	EXPECT_EQ( 1.0, z->q( 0.0 ) );
 	EXPECT_EQ( 0.0, z->x1( 0.0 ) );
 
-	double const v_tE( v->tE );
+	double const tE( v->tE );
 	fmu.set_time( v->tE );
 	v->advance_QSS();
 
 	EXPECT_EQ( 0.0, h->tQ );
-	EXPECT_EQ( v_tE, h->tX );
+	EXPECT_EQ( tE, h->tX );
 	EXPECT_EQ( 1.0, h->x( h->tX ) );
 	EXPECT_EQ( -1.0, h->x1( h->tX ) );
 
-	EXPECT_EQ( v_tE, v->tQ );
-	EXPECT_EQ( v_tE, v->tX );
+	EXPECT_EQ( tE, v->tQ );
+	EXPECT_EQ( tE, v->tX );
 	EXPECT_EQ( -1.0, v->x( v->tX ) );
 	EXPECT_EQ( -1.0, v->q( v->tX ) );
 
-	EXPECT_EQ( v_tE, z->tQ );
-	EXPECT_EQ( v_tE, z->tX );
+	EXPECT_EQ( tE, z->tQ );
+	EXPECT_EQ( tE, z->tX );
 	EXPECT_EQ( 1.0, z->x( z->tX ) );
 	EXPECT_NEAR( -1.0, z->x1( z->tX ), 1e-9 );
 }
