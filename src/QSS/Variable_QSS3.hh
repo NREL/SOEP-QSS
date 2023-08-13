@@ -49,11 +49,6 @@ public: // Types
 
 	using Super = Variable_QSS;
 
-private: // Types
-
-	using Super::c_2;
-	using Super::f_3;
-
 public: // Creation
 
 	// Constructor
@@ -161,15 +156,14 @@ public: // Methods
 	void
 	init_2() override
 	{
-		q_2_ = x_2_ = c_2( tQ, x_1_ );
-		fmu_set_observees_x( t0() );
+		q_2_ = x_2_ = dd_2();
 	}
 
 	// Initialization: Stage 3
 	void
 	init_3() override
 	{
-		x_3_ = f_3( tQ, x_1_ );
+		x_3_ = n_3();
 		fmu_set_observees_x( t0() );
 	}
 
@@ -192,13 +186,8 @@ public: // Methods
 		tQ = tX = tE;
 		q_0_ = x_0_ += ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel;
 		q_1_ = x_1_ = c_1();
-		if ( fwd_time_ND( tE ) ) { // Use centered ND formulas
-			q_2_ = x_2_ = c_2( tE );
-			x_3_ = n_3();
-		} else { // Use forward ND formulas
-			q_2_ = x_2_ = f_2( tE );
-			x_3_ = f_3();
-		}
+		q_2_ = x_2_ = dd_2();
+		x_3_ = n_3();
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -224,32 +213,18 @@ public: // Methods
 		q_1_ = x_1_ = x_1;
 	}
 
-	// QSS Advance: Stage 2
+	// QSS Advance: Stage 2: Directional 2nd Derivative
 	void
-	advance_QSS_2( Real const x_1_m, Real const x_1_p ) override
+	advance_QSS_2_dd2( Real const dd2 ) override
 	{
-		q_2_ = x_2_ = n_2( x_1_m, x_1_p );
+		q_2_ = x_2_ = one_half * dd2;
 	}
 
-	// QSS Advance: Stage 2: Forward ND
+	// QSS Advance: Stage 3: Directional 2nd Derivative
 	void
-	advance_QSS_2_forward( Real const x_1_p, Real const x_1_2p ) override
+	advance_QSS_3_dd2( Real const dd2_p ) override
 	{
-		q_2_ = x_2_ = f_2( x_1_p, x_1_2p );
-	}
-
-	// QSS Advance: Stage 3
-	void
-	advance_QSS_3() override
-	{
-		x_3_ = n_3();
-	}
-
-	// QSS Advance: Stage 3: Forward ND
-	void
-	advance_QSS_3_forward() override
-	{
-		x_3_ = f_3();
+		x_3_ = n_3( one_half * dd2_p );
 	}
 
 	// QSS Advance: Stage Final
@@ -272,13 +247,8 @@ public: // Methods
 		tQ = tX = t;
 		q_0_ = x_0_ = p_0();
 		q_1_ = x_1_ = c_1();
-		if ( fwd_time_ND( t ) ) { // Use centered ND formulas
-			q_2_ = x_2_ = c_2( t );
-			x_3_ = n_3();
-		} else { // Use forward ND formulas
-			q_2_ = x_2_ = f_2( t );
-			x_3_ = f_3();
-		}
+		q_2_ = x_2_ = dd_2();
+		x_3_ = n_3();
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -304,32 +274,18 @@ public: // Methods
 		q_1_ = x_1_ = x_1;
 	}
 
-	// Handler Advance: Stage 2
+	// Handler Advance: Stage 2: Directional 2nd Derivative
 	void
-	advance_handler_2( Real const x_1_m, Real const x_1_p ) override
+	advance_handler_2_dd2( Real const dd2 ) override
 	{
-		q_2_ = x_2_ = n_2( x_1_m, x_1_p );
+		q_2_ = x_2_ = one_half * dd2;
 	}
 
-	// QSS Advance: Stage 2: Forward ND
+	// Handler Advance: Stage 3: Directional 2nd Derivative
 	void
-	advance_handler_2_forward( Real const x_1_p, Real const x_1_2p ) override
+	advance_handler_3_dd2( Real const dd2_p ) override
 	{
-		q_2_ = x_2_ = f_2( x_1_p, x_1_2p );
-	}
-
-	// Handler Advance: Stage 3
-	void
-	advance_handler_3() override
-	{
-		x_3_ = n_3();
-	}
-
-	// Handler Advance: Stage 3: Forward ND
-	void
-	advance_handler_3_forward() override
-	{
-		x_3_ = f_3();
+		x_3_ = n_3( one_half * dd2_p );
 	}
 
 	// Handler Advance: Stage Final
@@ -361,32 +317,18 @@ public: // Methods
 		x_1_ = x_1;
 	}
 
-	// Observer Advance: Stage 2
+	// Observer Advance: Stage 2: Directional 2nd Derivative
 	void
-	advance_observer_2( Real const x_1_m, Real const x_1_p ) override
+	advance_observer_2_dd2( Real const dd2 ) override
 	{
-		x_2_ = n_2( x_1_m, x_1_p );
+		x_2_ = one_half * dd2;
 	}
 
-	// Observer Advance: Stage 2: Forward ND
+	// Observer Advance: Stage 3: Directional 2nd Derivative
 	void
-	advance_observer_2_forward( Real const x_1_p, Real const x_1_2p ) override
+	advance_observer_3_dd2( Real const dd2_p ) override
 	{
-		x_2_ = f_2( x_1_p, x_1_2p );
-	}
-
-	// Observer Advance: Stage 3
-	void
-	advance_observer_3() override
-	{
-		x_3_ = n_3();
-	}
-
-	// Observer Advance: Stage 3: Forward ND
-	void
-	advance_observer_3_forward() override
-	{
-		x_3_ = f_3();
+		x_3_ = n_3( one_half * dd2_p );
 	}
 
 	// Observer Advance: Stage Final
@@ -474,67 +416,29 @@ private: // Methods
 		}
 	}
 
-	// Coefficient 2
-	Real
-	n_2( Real const x_1_m, Real const x_1_p ) const
-	{
-		return options::one_over_four_dtND * ( ( x_1_p_ = x_1_p ) - ( x_1_m_ = x_1_m ) ); //ND Centered difference
-	}
-
-	// Coefficient 2 at Time t
-	Real
-	c_2( Time const t ) const
-	{
-		Time tN( t - options::dtND );
-		fmu_set_time( tN );
-		x_1_m_ = c_1( tN );
-		tN = t + options::dtND;
-		fmu_set_time( tN );
-		x_1_p_ = c_1( tN );
-		fmu_set_time( t );
-		return options::one_over_four_dtND * ( x_1_p_ - x_1_m_ ); //ND Centered difference
-	}
-
-	// Coefficient 2 at Time tQ
-	Real
-	f_2( Time const t ) const
-	{
-		Time tN( t + options::dtND );
-		fmu_set_time( tN );
-		x_1_p_ = c_1( tN );
-		tN = t + options::two_dtND;
-		fmu_set_time( tN );
-		x_1_2p_ = c_1( tN );
-		fmu_set_time( t );
-		return options::one_over_four_dtND * ( ( three * ( x_1_p_ - x_1_ ) ) + ( x_1_p_ - x_1_2p_ ) ); //ND Forward 3-point
-	}
-
-	// Coefficient 2
-	Real
-	f_2( Real const x_1_p, Real const x_1_2p ) const
-	{
-		return options::one_over_four_dtND * ( ( three * ( ( x_1_p_ = x_1_p ) - x_1_ ) ) + ( x_1_p - ( x_1_2p_ = x_1_2p ) ) ); //ND Forward 3-point
-	}
-
 	// Coefficient 3
 	Real
 	n_3() const
 	{
-		return options::one_over_six_dtND_squared * ( ( x_1_p_ - x_1_ ) + ( x_1_m_ - x_1_ ) ); //ND Centered difference
+		Time const tN( tX + options::dtND );
+		fmu_set_time( tN );
+		fmu_set_observees_s( tN );
+		Real const x_2_p( dd_2( tN ) );
+		fmu_set_time( tX );
+		return options::one_over_three_dtND * ( x_2_p - x_2_ ); //ND Forward Euler
 	}
 
-	// Coefficient 3
+	// Coefficient 3: From Coefficient 2 at +dtND
 	Real
-	f_3() const
+	n_3( Real const x_2_p ) const
 	{
-		return options::one_over_six_dtND_squared * ( ( x_1_2p_ - x_1_p_ ) + ( x_1_ - x_1_p_ ) ); //ND Forward 3-point
+		return options::one_over_three_dtND * ( x_2_p - x_2_ ); //ND Forward Euler
 	}
 
 private: // Data
 
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Continuous trajectory coefficients
 	Real q_0_{ 0.0 }, q_1_{ 0.0 }, q_2_{ 0.0 }; // Quantized trajectory coefficients
-	mutable Real x_1_m_{ 0.0 }, x_1_p_{ 0.0 }, x_1_2p_{ 0.0 }; // Trajectory coefficient 1 at numeric differentiation time offsets
 
 }; // Variable_QSS3
 

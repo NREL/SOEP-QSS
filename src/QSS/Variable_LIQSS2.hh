@@ -153,8 +153,7 @@ public: // Methods
 		if ( self_observer() ) {
 			advance_LIQSS_simultaneous();
 		} else {
-			x_2_ = c_2( tQ, x_1_ );
-			fmu_set_observees_x( t0() );
+			x_2_ = dd_2();
 			l_0_ = q_c_ + ( signum( x_2_ ) * qTol );
 		}
 	}
@@ -182,7 +181,7 @@ public: // Methods
 			advance_LIQSS();
 		} else {
 			q_1_ = x_1_ = c_1();
-			x_2_ = c_2( tE, x_1_ );
+			x_2_ = dd_2();
 			q_0_ = q_c_ + ( signum( x_2_ ) * qTol );
 		}
 		set_tE_aligned();
@@ -209,41 +208,15 @@ public: // Methods
 		q_1_ = x_1_ = x_1;
 	}
 
-	// QSS Advance: Stage 2
+	// QSS Advance: Stage 2: Directional 2nd Derivative
 	void
-	advance_QSS_2( Real const x_1_p ) override
+	advance_QSS_2_dd2( Real const dd2 ) override
 	{
 		set_qTol();
 		if ( self_observer() ) {
 			advance_LIQSS_simultaneous();
 		} else {
-			x_2_ = n_2( x_1_p );
-			l_0_ = q_c_ + ( signum( x_2_ ) * qTol );
-		}
-	}
-
-	// QSS Advance: Stage 2
-	void
-	advance_QSS_2( Real const x_1_m, Real const x_1_p ) override
-	{
-		set_qTol();
-		if ( self_observer() ) {
-			advance_LIQSS_simultaneous();
-		} else {
-			x_2_ = n_2( x_1_m, x_1_p );
-			l_0_ = q_c_ + ( signum( x_2_ ) * qTol );
-		}
-	}
-
-	// QSS Advance: Stage 2: Forward ND
-	void
-	advance_QSS_2_forward( Real const x_1_p, Real const x_1_2p ) override
-	{
-		set_qTol();
-		if ( self_observer() ) {
-			advance_LIQSS_simultaneous();
-		} else {
-			x_2_ = f_2( x_1_p, x_1_2p );
+			x_2_ = one_half * dd2;
 			l_0_ = q_c_ + ( signum( x_2_ ) * qTol );
 		}
 	}
@@ -268,7 +241,7 @@ public: // Methods
 		tQ = tX = t;
 		q_c_ = q_0_ = x_0_ = p_0();
 		q_1_ = x_1_ = c_1();
-		x_2_ = c_2( t, x_1_ );
+		x_2_ = dd_2();
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -294,25 +267,11 @@ public: // Methods
 		q_1_ = x_1_ = x_1;
 	}
 
-	// Handler Advance: Stage 2
+	// Handler Advance: Stage 2: Directional 2nd Derivative
 	void
-	advance_handler_2( Real const x_1_p ) override
+	advance_handler_2_dd2( Real const dd2 ) override
 	{
-		x_2_ = n_2( x_1_p );
-	}
-
-	// Handler Advance: Stage 2
-	void
-	advance_handler_2( Real const x_1_m, Real const x_1_p ) override
-	{
-		x_2_ = n_2( x_1_m, x_1_p );
-	}
-
-	// QSS Advance: Stage 2: Forward ND
-	void
-	advance_handler_2_forward( Real const x_1_p, Real const x_1_2p ) override
-	{
-		x_2_ = f_2( x_1_p, x_1_2p );
+		x_2_ = one_half * dd2;
 	}
 
 	// Handler Advance: Stage Final
@@ -344,25 +303,11 @@ public: // Methods
 		x_1_ = x_1;
 	}
 
-	// Observer Advance: Stage 2
+	// Observer Advance: Stage 2: Directional 2nd Derivative
 	void
-	advance_observer_2( Real const x_1_p ) override
+	advance_observer_2_dd2( Real const dd2 ) override
 	{
-		x_2_ = n_2( x_1_p );
-	}
-
-	// Observer Advance: Stage 2
-	void
-	advance_observer_2( Real const x_1_m, Real const x_1_p ) override
-	{
-		x_2_ = n_2( x_1_m, x_1_p );
-	}
-
-	// Observer Advance: Stage 2: Forward ND
-	void
-	advance_observer_2_forward( Real const x_1_p, Real const x_1_2p ) override
-	{
-		x_2_ = f_2( x_1_p, x_1_2p );
+		x_2_ = one_half * dd2;
 	}
 
 	// Observer Advance: Stage Final
@@ -455,27 +400,6 @@ private: // Methods
 	// Advance Self-Observing Trigger: Simultaneous
 	void
 	advance_LIQSS_simultaneous();
-
-	// Coefficient 2
-	Real
-	n_2( Real const x_1_p ) const
-	{
-		return options::one_over_two_dtND * ( x_1_p - x_1_ ); //ND Forward Euler
-	}
-
-	// Coefficient 2
-	Real
-	n_2( Real const x_1_m, Real const x_1_p ) const
-	{
-		return options::one_over_four_dtND * ( x_1_p - x_1_m ); //ND Centered difference
-	}
-
-	// Coefficient 2
-	Real
-	f_2( Real const x_1_p, Real const x_1_2p ) const
-	{
-		return options::one_over_four_dtND * ( ( three * ( x_1_p - x_1_ ) ) + ( x_1_p - x_1_2p ) ); //ND Forward 3-point
-	}
 
 private: // Data
 

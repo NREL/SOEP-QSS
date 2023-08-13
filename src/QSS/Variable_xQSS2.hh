@@ -147,8 +147,7 @@ public: // Methods
 	void
 	init_2() override
 	{
-		q_2_ = x_2_ = c_2( tQ, x_1_ );
-		fmu_set_observees_x( t0() );
+		q_2_ = x_2_ = dd_2();
 	}
 
 	// Initialization: Stage Final
@@ -170,7 +169,7 @@ public: // Methods
 		tQ = tX = tE;
 		q_0_ = x_0_ += ( x_1_ + ( x_2_ * tDel ) ) * tDel;
 		q_1_ = x_1_ = c_1();
-		q_2_ = x_2_ = c_2( tE, x_1_ );
+		q_2_ = x_2_ = dd_2();
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -196,25 +195,11 @@ public: // Methods
 		q_1_ = x_1_ = x_1;
 	}
 
-	// QSS Advance: Stage 2
+	// QSS Advance: Stage 2: Directional 2nd Derivative
 	void
-	advance_QSS_2( Real const x_1_p ) override
+	advance_QSS_2_dd2( Real const dd2 ) override
 	{
-		q_2_ = x_2_ = n_2( x_1_p );
-	}
-
-	// QSS Advance: Stage 2
-	void
-	advance_QSS_2( Real const x_1_m, Real const x_1_p ) override
-	{
-		q_2_ = x_2_ = n_2( x_1_m, x_1_p );
-	}
-
-	// QSS Advance: Stage 2: Forward ND
-	void
-	advance_QSS_2_forward( Real const x_1_p, Real const x_1_2p ) override
-	{
-		q_2_ = x_2_ = f_2( x_1_p, x_1_2p );
+		q_2_ = x_2_ = one_half * dd2;
 	}
 
 	// QSS Advance: Stage Final
@@ -237,7 +222,7 @@ public: // Methods
 		tQ = tX = t;
 		q_0_ = x_0_ = p_0();
 		q_1_ = x_1_ = c_1();
-		q_2_ = x_2_ = c_2( t, x_1_ );
+		q_2_ = x_2_ = dd_2();
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -263,25 +248,11 @@ public: // Methods
 		q_1_ = x_1_ = x_1;
 	}
 
-	// Handler Advance: Stage 2
+	// Handler Advance: Stage 2: Directional 2nd Derivative
 	void
-	advance_handler_2( Real const x_1_p ) override
+	advance_handler_2_dd2( Real const dd2 ) override
 	{
-		q_2_ = x_2_ = n_2( x_1_p );
-	}
-
-	// Handler Advance: Stage 2
-	void
-	advance_handler_2( Real const x_1_m, Real const x_1_p ) override
-	{
-		q_2_ = x_2_ = n_2( x_1_m, x_1_p );
-	}
-
-	// QSS Advance: Stage 2: Forward ND
-	void
-	advance_handler_2_forward( Real const x_1_p, Real const x_1_2p ) override
-	{
-		q_2_ = x_2_ = f_2( x_1_p, x_1_2p );
+		q_2_ = x_2_ = one_half * dd2;
 	}
 
 	// Handler Advance: Stage Final
@@ -313,25 +284,11 @@ public: // Methods
 		x_1_ = x_1;
 	}
 
-	// Observer Advance: Stage 2
+	// Observer Advance: Stage 2: Directional 2nd Derivative
 	void
-	advance_observer_2( Real const x_1_p ) override
+	advance_observer_2_dd2( Real const dd2 ) override
 	{
-		x_2_ = n_2( x_1_p );
-	}
-
-	// Observer Advance: Stage 2
-	void
-	advance_observer_2( Real const x_1_m, Real const x_1_p ) override
-	{
-		x_2_ = n_2( x_1_m, x_1_p );
-	}
-
-	// Observer Advance: Stage 2: Forward ND
-	void
-	advance_observer_2_forward( Real const x_1_p, Real const x_1_2p ) override
-	{
-		x_2_ = f_2( x_1_p, x_1_2p );
+		x_2_ = one_half * dd2;
 	}
 
 	// Observer Advance: Stage Final
@@ -415,27 +372,6 @@ private: // Methods
 			tE = std::nextafter( tE, infinity );
 			dt = tE - tX;
 		}
-	}
-
-	// Coefficient 2
-	Real
-	n_2( Real const x_1_p ) const
-	{
-		return options::one_over_two_dtND * ( x_1_p - x_1_ ); //ND Forward Euler
-	}
-
-	// Coefficient 2
-	Real
-	n_2( Real const x_1_m, Real const x_1_p ) const
-	{
-		return options::one_over_four_dtND * ( x_1_p - x_1_m ); //ND Centered difference
-	}
-
-	// Coefficient 2
-	Real
-	f_2( Real const x_1_p, Real const x_1_2p ) const
-	{
-		return options::one_over_four_dtND * ( ( three * ( x_1_p - x_1_ ) ) + ( x_1_p - x_1_2p ) ); //ND Forward 3-point
 	}
 
 private: // Data

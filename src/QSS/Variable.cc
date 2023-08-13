@@ -85,7 +85,18 @@ namespace QSS {
 			}
 		}
 		observes_ = !observees_.empty();
-		if ( observes_ ) uniquify( observees_, true ); // Sort by address and remove duplicates and recover unused memory
+		if ( observes_ ) {
+			uniquify( observees_, true ); // Sort by address and remove duplicates and recover unused memory
+			if ( self_observer_ ) { // Set self-observee index
+				for ( size_type i = 0, e = observees_.size(); i < e; ++i ) {
+					Variable * observee( observees_[ i ] );
+					if ( observee == this ) {
+						i_self_observee_ = i;
+						break;
+					}
+				}
+			}
+		}
 		std::cout << '\n' << name() << " Computational Observees:" << std::endl;
 		for ( Variable const * observee : sorted_by_name( observees_ ) ) {
 			std::cout << ' ' << observee->name() << std::endl;

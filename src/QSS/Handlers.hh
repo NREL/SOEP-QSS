@@ -38,7 +38,7 @@
 
 // QSS Headers
 #include <QSS/FMU_ME.hh>
-#include <QSS/RefsDers.hh>
+#include <QSS/RefsDirDers.hh>
 #include <QSS/RefsVals.hh>
 #include <QSS/RefsValsDers.hh>
 #include <QSS/container.hh>
@@ -316,6 +316,16 @@ public: // Methods
 
 		// Set up handlers observees pooled directional derivative seed data /////
 
+		// QSS handlers
+		if ( qss_.have() ) {
+			qss_observees_v_ref_.clear();
+			qss_observees_dv_.clear();
+			for ( auto observee : qss_observees_ ) {
+				qss_observees_v_ref_.push_back( observee->var().ref() );
+				qss_observees_dv_.push_back( 0.0 ); // Actual values assigned when getting directional derivatives
+			}
+		}
+
 		// Real handlers
 		if ( r_.have() ) {
 			r_observees_v_ref_.clear();
@@ -565,68 +575,46 @@ private: // Methods
 			handlers_[ i ]->advance_handler_0( t, qss_vars_.vals[ i ] );
 		}
 
-		fmu_me_->get_reals( qss_.n(), &qss_ders_.refs[ 0 ], &qss_ders_.ders[ 0 ] );
+		fmu_me_->get_reals( qss_.n(), qss_ders_.refs.data(), qss_ders_.ders.data() );
 		for ( size_type i = 0, e = qss_.e(); i < e; ++i ) {
 			assert( handlers_[ i ]->is_Active() );
 			assert( handlers_[ i ]->is_QSS() );
 			handlers_[ i ]->advance_handler_1( qss_ders_.ders[ i ] );
 		}
 
-		if ( qss3_.have() ) {
-			Time tN( t - options::dtND );
-			if ( fwd_time( tN ) ) { // Use centered ND formulas
+		if ( qss2_.have() ) { //! Could limit this to order 2+ handlers (or disallow mixed order runs)
+			set_qss_observees_dv( t );
+			fmu_me_->get_directional_derivatives( // Get directional 2nd derivatives
+			 qss_observees_v_ref_.data(),
+			 qss_observees_v_ref_.size(),
+			 qss_ders_.refs.data(),
+			 qss_ders_.refs.size(),
+			 qss_observees_dv_.data(),
+			 qss_ders_.ders.data()
+			);
+			for ( size_type i = qss2_.b(), e = qss_.e(); i < e; ++i ) { // Order 2+ handlers
+				handlers_[ i ]->advance_handler_2_dd2( qss_ders_.ders[ i ] );
+			}
+			if ( qss3_.have() ) { //! Could limit this to order 3+ handlers (or disallow mixed order runs)
+				Time const tN( t + options::dtND );
 				fmu_me_->set_time( tN );
-				for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss2_observees_ ) {
+				for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss3_observees_ ) {
 					observee->fmu_set_s( tN );
 				}
-				size_type const qss2_b( qss2_.b() );
-				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_m[ qss2_b ] );
-				tN = t + options::dtND;
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss2_observees_ ) {
-					observee->fmu_set_s( tN );
-				}
-				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
-				for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ handlers
-					handlers_[ i ]->advance_handler_2( qss_ders_.ders_m[ i ], qss_ders_.ders_p[ i ] );
-				}
+				set_qss_observees_dv( tN );
+				fmu_me_->get_directional_derivatives( // Get directional 2nd derivatives at t + dtND
+				 qss_observees_v_ref_.data(),
+				 qss_observees_v_ref_.size(),
+				 qss_ders_.refs.data(),
+				 qss_ders_.refs.size(),
+				 qss_observees_dv_.data(),
+				 qss_ders_.ders.data()
+				);
 				for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ handlers
-					handlers_[ i ]->advance_handler_3();
+					handlers_[ i ]->advance_handler_3_dd2( qss_ders_.ders[ i ] );
 				}
-			} else { // Use forward ND formulas
-				tN = t + options::dtND;
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss2_observees_ ) {
-					observee->fmu_set_s( tN );
-				}
-				size_type const qss2_b( qss2_.b() );
-				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_m[ qss2_b ] );
-				tN = t + options::two_dtND;
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss2_observees_ ) {
-					observee->fmu_set_s( tN );
-				}
-				fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
-				for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ handlers
-					handlers_[ i ]->advance_handler_2_forward( qss_ders_.ders_m[ i ], qss_ders_.ders_p[ i ] );
-				}
-				for ( size_type i = qss3_.b(), e = qss_.e(); i < e; ++i ) { // Order 3+ handlers
-					handlers_[ i ]->advance_handler_3_forward();
-				}
+				fmu_me_->set_time( t );
 			}
-			fmu_me_->set_time( t );
-		} else if ( qss2_.have() ) {
-			Time const tN( t + options::dtND );
-			fmu_me_->set_time( tN );
-			for ( Variable * observee : qss_uni_order_ ? qss_observees_ : qss2_observees_ ) {
-				observee->fmu_set_s( tN );
-			}
-			size_type const qss2_b( qss2_.b() );
-			fmu_me_->get_reals( qss2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
-			for ( size_type i = qss2_b, e = qss_.e(); i < e; ++i ) { // Order 2+ handlers
-				handlers_[ i ]->advance_handler_2( qss_ders_.ders_p[ i ] );
-			}
-			fmu_me_->set_time( t );
 		}
 	}
 
@@ -966,6 +954,19 @@ private: // Methods
 		}
 	}
 
+	// Set Observees Directional Derivative Vector at Time t: QSS
+	void
+	set_qss_observees_dv( Time const t )
+	{
+		for ( Variables::size_type i = 0, e = qss_observees_.size(); i < e; ++i ) { // Set observee directional derivative vector
+#ifndef QSS_PROPAGATE_CONTINUOUS
+			qss_observees_dv_[ i ] = qss_observees_[ i ]->q1( t ); // Quantized: Traditional QSS
+#else
+			qss_observees_dv_[ i ] = qss_observees_[ i ]->x1( t ); // Continuous: Modified QSS
+#endif
+		}
+	}
+
 private: // Data
 
 	FMU_ME * fmu_me_{ nullptr }; // FMU-ME (non-owning) pointer
@@ -995,7 +996,7 @@ private: // Data
 
 	// Handler FMU pooled call data
 	RefsVals< Variable > qss_vars_; // QSS values
-	RefsDers< Variable > qss_ders_; // QSS derivatives
+	RefsDirDers< Variable > qss_ders_; // QSS derivatives
 	RefsValsDers< Variable > r_vars_; // Real non-state values and derivatives
 	RefsVals< Variable > ox_vars_; // Other X-based values
 	RefsValsDers< Variable > zc_vars_; // Zero-crossing values and derivatives
@@ -1004,6 +1005,8 @@ private: // Data
 	Variables qss_observees_; // Handlers observees
 	Variables qss2_observees_; // Handlers of order 2+ observees
 	Variables qss3_observees_; // Handlers of order 3+ observees
+	VariableRefs qss_observees_v_ref_; // Handlers observees value references
+	Reals qss_observees_dv_; // Handlers observees derivatives
 
 	// Real handlers observees
 	Variables r_observees_; // Handlers observees

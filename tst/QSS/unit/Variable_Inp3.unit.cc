@@ -114,7 +114,8 @@ TEST( Variable_Inp3Test, InputFunction )
 	EXPECT_EQ( 1.0, x->qTol );
 	EXPECT_EQ( 0.0, x->tQ );
 	EXPECT_EQ( 0.0, x->tX );
-	EXPECT_NEAR( std::cbrt( x->qTol * 6.0 / std::abs( x->x3( 0.0 ) ) ), x->tE, 1e-9 );
+	EXPECT_EQ( 0.0, x->x3( 0.0 ) );
+	EXPECT_EQ( infinity, x->tE );
 	EXPECT_EQ( 0.0, x->x( 0.0 ) );
 	EXPECT_EQ( 0.0, x->q( 0.0 ) );
 	EXPECT_EQ( 1.0, x->x1( 0.0 ) );
@@ -139,22 +140,16 @@ TEST( Variable_Inp3Test, InputFunction )
 	EXPECT_EQ( -1.0, u->x3( 0.0 ) );
 	EXPECT_EQ( 0.0, u->q3( 0.0 ) );
 
-	double const tE( x->tE );
+	double const tE( u->tE );
 	fmu.set_time( tE );
-	x->advance_QSS();
+	u->advance_QSS();
 
-	EXPECT_EQ( tE, x->tQ );
+	EXPECT_EQ( tE, u->tQ );
+	EXPECT_EQ( tE, u->tX );
 	EXPECT_EQ( tE, x->tX );
-
-	EXPECT_EQ( 0.0, u->tQ );
-	EXPECT_EQ( 0.0, u->tX );
-	EXPECT_EQ( std::cbrt( u->qTol * 6.0 / std::abs( u->x3( 0.0 ) ) ), u->tE );
-	EXPECT_EQ( 1.0, u->x( u->tX ) );
-	EXPECT_EQ( 1.0, u->q( u->tQ ) );
-	EXPECT_EQ( 1.0, u->x1( 0.0 ) );
-	EXPECT_EQ( 1.0, u->q1( 0.0 ) );
-	EXPECT_EQ( 0.0, u->x2( 0.0 ) );
-	EXPECT_EQ( 0.0, u->q2( 0.0 ) );
-	EXPECT_EQ( -1.0, u->x3( 0.0 ) );
-	EXPECT_EQ( 0.0, u->q3( 0.0 ) );
+	EXPECT_EQ( 0.0, x->tQ );
+	EXPECT_DOUBLE_EQ( std::cbrt( u->qTol * 6.0 / std::abs( u->x3( 0.0 ) ) ), u->tE - u->tQ );
+	EXPECT_EQ( 0.0, x->q( x->tQ ) );
+	EXPECT_EQ( 1.0, x->q1( x->tQ ) );
+	EXPECT_EQ( 1.0, x->q2( x->tQ ) );
 }

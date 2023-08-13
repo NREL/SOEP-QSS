@@ -3,7 +3,7 @@
 
 set QSS_bin=%~dp0
 set QSS_bin=%QSS_bin:~0,-1%
-if (%QSS%) == () set QSS=%QSS_bin:~0,-21%
+if (%QSS%) == () set QSS=%QSS_bin:~0,-18%
 
 set PlatformBuild=d
 set PlatformFull=Windows\OCT\%PlatformBuild%

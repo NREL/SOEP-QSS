@@ -12,7 +12,7 @@ Currently the code has:
 * Input variables/functions.
 * Discrete-valued variables.
 * Numeric differentiation support with specified or automatic ND time step.
-* Zero-crossing event support via OCT event indicator variables or explicit zero crossing variables.
+* Zero-crossing event support via OCT event indicator variables.
 * Conditional if and when block framework.
 * A simple "baseline" event queue built on `std::multimap`.
 * Simultaneous event support that produces deterministic (non-order-dependent) results.
@@ -26,8 +26,7 @@ Currently the code has:
 * Experimental Python wrapping with Pybind11.
 
 ### Notes
-* Modelica input file processing is not provided: test cases are code-defined or loaded from Modelica-generated FMUs.
-* The QSS solver provides two approaches to obtaining the dependencies of Modelica models with zero-crossing function (see Zero-Crossing Functions below).
+* Modelica input file processing is not provided: test cases are loaded from Optimica Toolkit (OCT) generated FMUs.
 
 ## Plan
 
@@ -35,7 +34,7 @@ Planned development in anticipated sequence order are:
 * FMU support extensions: Modelica annotations, OCT/FMIL API migration, higher derivatives, ...
 * Algebraic relationship/loop support.
 * Extended precision time handling for large time span simulation.
-* Performance refinements possibly including a higher performance event queue.
+* Performance improvements.
 * Parallelization and vectorization.
 
 ## Goals
@@ -60,6 +59,7 @@ The design concepts are still emerging. The basic constituents of a fast QSS sol
 * Algebraic relationships between variables including handling of algebraic loops.
 
 ### Notes
+
 * For efficiency variables handle their own integration and quantization operations so we don't consider those as separate entities.
 * Parallel updating of observer variables on trigger variable events has the potential for performance benefits.
 * Priority queues with good concurrency and cache efficiency is a wide research topic: if the event queue is found to be a bottleneck experiments with advanced concepts are planned.
@@ -111,6 +111,12 @@ At startup and simultaneous requantization trigger events the LIQSS approach def
 * Single pass in arbitrary order: Leaves different representations of the same variable in the system and thus has a processing order dependency so results are dependent on the (arbitrary) order of variables in their containers.
 * Multiple passes hoping for a fixed point: May not find a consistent fixed point and is still potentially order-dependent.
 * Use derivatives based on a stable LIQSS state at these events to eliminate the order dependency. This is the approach chosen and a "simultaneous" representation is used that contains the stable coefficients determined for each order pass of the algorithm, without the updates made by the highest-order LIQSS pass. This approach has the potential for solution value and derivative discontinuities at transitions between simultaneous and non-simultaneous events but no clearly better alternative is apparent.
+
+#### LIQSS3
+
+The LIQSS3 solver now uses directional second derivatives for continuous state variables. While this has accuracy and performance benefits for QSS3, for LIQSS3 there is a significant performance loss due to the use of extra per-variable directional derivative calls at the variable value +/- the quantum. These extra derivative computations that LIQSS requires are not amenable to the FMU call pooling used elsewhere to amortize the high FMU call overhead.
+
+An option to avoid some of the directional derivative calls via interpolation of the second derivative will be explored in the future.
 
 ### xQSS Variant
 
@@ -218,16 +224,16 @@ The Binned-QSS goes beyond this research by exploiting QSS to dynamically identi
 
 ## FMU Support
 
-Models defined by FMUs following the FMI 2.0 API can be run by this QSS solver using QSS1 or QSS2 solvers. Discrete variables and zero crossing functions are supported. This is currently an initial/demonstration capability that cannot yet handle unit conversions (pure SI models are OK). Some simple test model FMUs and a 50-variable room air thermal model have been simulated successfully.
+Models defined by FMUs following the FMI 2.0 API and built by OCT can be run by this QSS solver. Constraints on the models that are currently supported include:
+- Pure SI unit system models are assumed: QSS does not perform any unit conversions that could be needed such as between a state variable and its derivative variable that are in incompatible units.
 
 ### FMU Notes
 
 * Mixing QSS methods in an FMU simulation is not yet supported and will require a Modelica annotation to indicate QSS methods on a per-variable basis.
 * The FMU support is performance-limited by the FMI 2.0 API, which requires expensive get-all-derivatives calls where QSS needs individual derivatives.
-* QSS2+ performance is limited by the use of numeric differentiation: the FMI ME 2.0 API doesn't provide higher derivatives but they may become available via FMI extensions.
+* Performance is limited by the use of numeric differentiation: the FMI ME 2.0 API doesn't provide higher derivatives but they may become available via FMI extensions.
 * Zero crossings are problematic because the FMI spec doesn't expose the dependency of variables that are modified when each zero crossing occurs. Our initial approach was to add the zero crossing variables to the Modelica models and to add their dependencies to the FMU's modelDescription.xml file. Additionally, we now support the OCT event indicator system that defines the zero crossing variables and their dependencies.
   * The OCT event indicator system is under ongoing development to refine the treatment of dependencies and reverse (handler) dependencies, such as when to short-circuit non-state variables from the dependencies.
-* QSS3 and LIQSS3 solvers can be added when they become more practical with the planned FMI Library FMI 2.0 API extensions with higher derivative support.
 * Input function evaluations will be provided by OCT when QSS is integrated. For stand-alone QSS testing purposes a few input functions are provided for use with FMUs.
 * Only SI units are supported in FMUs at this time as per LBNL specifications. Support for other units could be added in the future.
 
@@ -254,12 +260,11 @@ The test code is in `tst/QSS` and the unit tests are in `unit`.
 
 ### Numeric Differentiation
 
-Second order and higher derivatives are needed for QSS2+ methods. For FMUs we currently use numeric differentiation:
-* Directional derivatives can provide one additional higher order derivative for state variable derivatives and zero-crossing functions without an explicit time dependence.
-  * The current OCT directional derivative implementation may not be scalable for QSS atomic operations but is used for zero-crossing first derivatives with careful operation pooling to minimize the performance impact since no derivatives are currently provided for them in the FMUs.
-* OCT event indicator variables do not currently have a derivative variable so numeric differentiation is used for the first as well as higher derivatives.
+Second order and higher derivatives are needed for QSS2+ methods. For FMUs we currently must use some numeric differentiation:
+* Continuous state variable second derivatives are obtained using FMU directional derivative calls and third derivatives are computed numerically.
+* Zero-crossing and (non-state) real-valued variable first derivatives are obtained using FMU directional derivative calls and second and third derivatives are computed numerically.
 
-At variable initialization and other simultaneous requantization or zero-crossing handler events, the numeric differentiation currently required for QSS3+ and xQSS2+ variables has an order dependency problem: the derivative evaluations at time step offsets used to compute the numeric derivatives can depend on QSS trajectory coefficients being computed in other variables being updated, so the results can depend on the order in which variables are processed. SOEP QSS addresses this issue by deferring applying updates to the quantized trajectory coefficients until after the update pass for each coefficient order. To avoid these issues, QSS is best implemented with non-numeric higher derivatives: automatic differentiation support is being considered for future OCT releases.
+At variable initialization and other simultaneous requantization or zero-crossing handler events, the numeric differentiation currently required for QSS3 solvers has an order dependency problem: the derivative evaluations at time step offsets used to compute the numeric derivatives can depend on QSS trajectory coefficients being computed in other variables being updated, so the results can depend on the order in which variables are processed. Deferring variable trajectory updates until after all such computations can eliminate the order dependency but was found to significantly hurt solution accuracy and performance. To avoid these issues, QSS is best implemented with non-numeric higher derivatives: automatic differentiation support is being considered for future OCT releases.
 
 ### Numeric Bulletproofing
 

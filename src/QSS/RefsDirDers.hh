@@ -1,4 +1,4 @@
-// QSS Version
+// FMU References + Directional Derivatives
 //
 // Project: QSS Solver
 //
@@ -33,17 +33,72 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// QSS Headers
-#include <QSS/version.hh>
+#ifndef QSS_RefsDirDers_hh_INCLUDED
+#define QSS_RefsDirDers_hh_INCLUDED
+
+// C++ Headers
+#include <cassert>
 
 namespace QSS {
 
-// QSS Version
-std::string const &
-version()
+// FMU References + Directional Derivatives
+template< typename V >
+struct RefsDirDers final
 {
-	static std::string const version_( "0.4.0" );
-	return version_;
-}
+
+public: // Types
+
+	using Variable = V;
+	using Variables = typename Variable::Variables;
+	using Ref = typename Variable::VariableRef;
+	using Refs = typename Variable::VariableRefs;
+	using Der = typename Variable::Real;
+	using Ders = typename Variable::Reals;
+	using size_type = typename Variables::size_type;
+
+public: // Property
+
+	// Size
+	size_type
+	size() const
+	{
+		assert( refs.size() == ders.size() );
+		return refs.size();
+	}
+
+public: // Methods
+
+	// Clear
+	void
+	clear()
+	{
+		refs.clear();
+		ders.clear();
+	}
+
+	// Reserve
+	void
+	reserve( size_type const n )
+	{
+		refs.reserve( n );
+		ders.reserve( n );
+	}
+
+	// Push Back
+	void
+	push_back( Ref const & ref )
+	{
+		refs.push_back( ref );
+		ders.push_back( 0.0 );
+	}
+
+public: // Data
+
+	Refs refs; // FMU value reference array
+	Ders ders; // FMU derivative array
+
+}; // RefsDirDers
 
 } // QSS
+
+#endif

@@ -38,7 +38,7 @@
 
 // QSS Headers
 #include <QSS/FMU_ME.hh>
-#include <QSS/RefsDers.hh>
+#include <QSS/RefsDirDers.hh>
 #include <QSS/container.hh>
 #include <QSS/math.hh>
 #include <QSS/options.hh>
@@ -198,6 +198,14 @@ public: // Methods
 				uniquify( observees3_ );
 			}
 		}
+
+		// Directional derivative observee seed array set up
+		observees_v_ref_.clear();
+		observees_dv_.clear();
+		for ( auto observee : observees_ ) {
+			observees_v_ref_.push_back( observee->var().ref() );
+			observees_dv_.push_back( 0.0 ); // Actual values assigned when getting directional derivatives
+		}
 	}
 
 	// QSS Advance Triggers
@@ -218,65 +226,45 @@ public: // Methods
 		for ( Variable * observee : observees_ ) {
 			observee->fmu_set_s( t );
 		}
-		fmu_me_->get_reals( range_.n(), &qss_ders_.refs[ 0 ], &qss_ders_.ders[ 0 ] );
+
+		fmu_me_->get_reals( range_.n(), qss_ders_.refs.data(), qss_ders_.ders.data() );
 		for ( size_type i = range_.b(), e = range_.e(); i < e; ++i ) {
 			triggers_[ i ]->advance_QSS_1( qss_ders_.ders[ i ] );
 		}
-		if ( range3_.have() ) {
-			Time tN( t - options::dtND );
-			if ( fwd_time( tN ) ) { // Use centered ND formulas
+
+		if ( range2_.have() ) { //! Could limit this to order 2+ triggers (or disallow mixed order runs)
+			set_observees_dv( t );
+			fmu_me_->get_directional_derivatives( // Get directional 2nd derivatives
+			 observees_v_ref_.data(),
+			 observees_v_ref_.size(),
+			 qss_ders_.refs.data(),
+			 qss_ders_.refs.size(),
+			 observees_dv_.data(),
+			 qss_ders_.ders.data()
+			);
+			for ( size_type i = range2_.b(), e = range_.e(); i < e; ++i ) { // Order 2+ triggers
+				triggers_[ i ]->advance_QSS_2_dd2( qss_ders_.ders[ i ] );
+			}
+			if ( range3_.have() ) { //! Could limit this to order 3+ triggers (or disallow mixed order runs)
+				Time const tN( t + options::dtND );
 				fmu_me_->set_time( tN );
-				for ( Variable * observee : uni_order_ ? observees_ : observees2_ ) {
+				for ( Variable * observee : uni_order_ ? observees_ : observees3_ ) {
 					observee->fmu_set_s( tN );
 				}
-				size_type const qss2_b( range2_.b() );
-				fmu_me_->get_reals( range2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_m[ qss2_b ] );
-				tN = t + options::dtND;
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : uni_order_ ? observees_ : observees2_ ) {
-					observee->fmu_set_s( tN );
-				}
-				fmu_me_->get_reals( range2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
-				for ( size_type i = qss2_b, e = range_.e(); i < e; ++i ) { // Order 2+ triggers
-					triggers_[ i ]->advance_QSS_2( qss_ders_.ders_m[ i ], qss_ders_.ders_p[ i ] );
-				}
+				set_observees_dv( tN );
+				fmu_me_->get_directional_derivatives( // Get directional 2nd derivatives at t + dtND
+				 observees_v_ref_.data(),
+				 observees_v_ref_.size(),
+				 qss_ders_.refs.data(),
+				 qss_ders_.refs.size(),
+				 observees_dv_.data(),
+				 qss_ders_.ders.data()
+				);
 				for ( size_type i = range3_.b(), e = range_.e(); i < e; ++i ) { // Order 3+ triggers
-					triggers_[ i ]->advance_QSS_3();
+					triggers_[ i ]->advance_QSS_3_dd2( qss_ders_.ders[ i ] );
 				}
-			} else { // Use forward ND formulas
-				tN = t + options::dtND;
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : uni_order_ ? observees_ : observees2_ ) {
-					observee->fmu_set_s( tN );
-				}
-				size_type const qss2_b( range2_.b() );
-				fmu_me_->get_reals( range2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_m[ qss2_b ] );
-				tN = t + options::two_dtND;
-				fmu_me_->set_time( tN );
-				for ( Variable * observee : uni_order_ ? observees_ : observees2_ ) {
-					observee->fmu_set_s( tN );
-				}
-				fmu_me_->get_reals( range2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
-				for ( size_type i = qss2_b, e = range_.e(); i < e; ++i ) { // Order 2+ triggers
-					triggers_[ i ]->advance_QSS_2_forward( qss_ders_.ders_m[ i ], qss_ders_.ders_p[ i ] );
-				}
-				for ( size_type i = range3_.b(), e = range_.e(); i < e; ++i ) { // Order 3+ triggers
-					triggers_[ i ]->advance_QSS_3_forward();
-				}
+				fmu_me_->set_time( t );
 			}
-			fmu_me_->set_time( t );
-		} else if ( range2_.have() ) {
-			Time const tN( t + options::dtND );
-			fmu_me_->set_time( tN );
-			for ( Variable * observee : uni_order_ ? observees_ : observees2_ ) {
-				observee->fmu_set_s( tN );
-			}
-			size_type const qss2_b( range2_.b() );
-			fmu_me_->get_reals( range2_.n(), &qss_ders_.refs[ qss2_b ], &qss_ders_.ders_p[ qss2_b ] );
-			for ( size_type i = qss2_b, e = range_.e(); i < e; ++i ) { // Order 2+ triggers
-				triggers_[ i ]->advance_QSS_2( qss_ders_.ders_p[ i ] );
-			}
-			fmu_me_->set_time( t );
 		}
 		for ( Variable * trigger : triggers_ ) {
 			trigger->advance_QSS_F();
@@ -374,6 +362,19 @@ private: // Methods
 		);
 	}
 
+	// Set Observees Directional Derivative Vector at Time t: QSS
+	void
+	set_observees_dv( Time const t )
+	{
+		for ( Variables::size_type i = 0, e = observees_.size(); i < e; ++i ) { // Set observee directional derivative vector
+#ifndef QSS_PROPAGATE_CONTINUOUS
+			observees_dv_[ i ] = observees_[ i ]->q1( t ); // Quantized: Traditional QSS
+#else
+			observees_dv_[ i ] = observees_[ i ]->x1( t ); // Continuous: Modified QSS
+#endif
+		}
+	}
+
 private: // Data
 
 	FMU_ME * fmu_me_{ nullptr }; // FMU-ME (non-owning) pointer
@@ -390,9 +391,11 @@ private: // Data
 	Variables observees_; // Triggers observees
 	Variables observees2_; // Triggers of order 2+ observees
 	Variables observees3_; // Triggers of order 3+ observees
+	VariableRefs observees_v_ref_; // Triggers observees value references
+	Reals observees_dv_; // Triggers observees derivatives
 
 	// Trigger FMU pooled call data
-	RefsDers< Variable > qss_ders_; // Derivatives
+	RefsDirDers< Variable > qss_ders_; // Derivatives
 
 }; // Triggers
 
