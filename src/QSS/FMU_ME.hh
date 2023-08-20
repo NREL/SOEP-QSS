@@ -643,6 +643,11 @@ public: // FMU Methods
 		eventInfo.terminateSimulation = fmi2_false;
 		while ( eventInfo.newDiscreteStatesNeeded && !eventInfo.terminateSimulation ) {
 			fmi2_import_new_discrete_states( fmu, &eventInfo );
+			// fmi2_status_t const status( fmi2_import_new_discrete_states( fmu, &eventInfo ) );
+			// if ( !status_ok( status ) ) {
+			// 	// status_check( status, "fmi2_import_new_discrete_states" ); // Report status
+			// 	if ( !status_continue( status ) ) break;
+			// }
 		}
 	}
 
@@ -666,6 +671,34 @@ private: // Methods
 	mark_downstream_observees( FMU_Dependencies const & fmu_dependencies, dep::Variable const & dep_var );
 
 private: // Static Methods
+
+	// FMI Status OK Check
+	static
+	bool
+	status_ok( fmi2_status_t const status )
+	{
+		switch ( status ) {
+		case fmi2_status_ok:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	// FMI Status Continue Check
+	static
+	bool
+	status_continue( fmi2_status_t const status )
+	{
+		switch ( status ) {
+		case fmi2_status_ok:
+			return true;
+		case fmi2_status_warning:
+			return true;
+		default:
+			return false;
+		}
+	}
 
 	// FMI Status Check/Report
 	static
