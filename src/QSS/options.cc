@@ -199,7 +199,7 @@ help_display()
 	std::cout << "            No VAR => All variables" << '\n';
 	std::cout << "            DEP  Dependency variable (name or glob/regex)" << '\n';
 	std::cout << "                 No DEP => All variables" << '\n';
-	std::cout << " --bin=SIZE:FRAC:AUTO  FMU requantization binning controls  [1:0.5:N]" << '\n';
+	std::cout << " --bin=SIZE:FRAC:AUTO  FMU requantization binning controls  [1:0.25:N]" << '\n';
 	std::cout << "       SIZE  Bin size  (Size or U for Unlimited)  [U]" << '\n';
 	std::cout << "            FRAC  Min time step fraction  (0-1]  [0.25]" << '\n';
 	std::cout << "                 AUTO  Automatic bin size optimization?  (Y|N)  [N]" << '\n';
@@ -599,7 +599,12 @@ process_args( Args const & args )
 				std::cerr << "\nError: Nonnumeric tEnd: " << tEnd_str << std::endl;
 				fatal = true;
 			}
-		} else if ( has_option( arg, "bin" ) || has_option_value( arg, "bin" ) ) {
+		} else if ( has_option( arg, "bin" ) ) {
+			specified::bin = true;
+			bin_size = std::numeric_limits< std::size_t >::max();
+			bin_frac = 0.25;
+			bin_auto = false;
+		} else if ( has_option_value( arg, "bin" ) ) {
 			specified::bin = true;
 			std::string const bin_str( option_value( arg, "bin" ) );
 			std::vector< std::string > const bin_args( split( bin_str, ':' ) );
@@ -657,10 +662,6 @@ process_args( Args const & args )
 					std::cerr << "\nError: bin size is not valid: " << bin_str << std::endl;
 					fatal = true;
 				}
-			} else { // Use bin defaults
-				bin_size = std::numeric_limits< std::size_t >::max();
-				bin_frac = 0.25;
-				bin_auto = false;
 			}
 		} else if ( has_option_value( arg, "pass" ) ) {
 			std::string const pass_str( option_value( arg, "pass" ) );
@@ -743,36 +744,40 @@ process_args( Args const & args )
 			}
 			con[ inp_name ] = out_name;
 		} else if ( has_option( arg, "dep" ) || has_option_value( arg, "dep" ) ) {
-			std::string const var_deps( option_value( arg, "dep" ) );
 			std::string var_spec;
 			std::string deps_spec;
-			if ( var_deps.empty() ) { // Implied all
+			if ( has_option( arg, "dep" ) ) {
 				var_spec = deps_spec = '*';
-			} else if ( var_deps[ 0 ] == '"' ) { // Quoted input variable name
-				std::string::size_type const qe( var_deps.find( '"', 1u ) );
-				if ( qe != std::string::npos ) {
-					var_spec = std::string_view( var_deps ).substr( 1u, qe - 1u );
-					std::string::size_type const isep( var_deps.find( ':', qe ) );
-					if ( isep != std::string::npos ) {
-						deps_spec = std::string_view( var_deps ).substr( isep + 1u );
+			} else {
+				std::string const var_deps( option_value( arg, "dep" ) );
+				if ( var_deps.empty() ) { // Implied all
+					var_spec = deps_spec = '*';
+				} else if ( var_deps[ 0 ] == '"' ) { // Quoted input variable name
+					std::string::size_type const qe( var_deps.find( '"', 1u ) );
+					if ( qe != std::string::npos ) {
+						var_spec = std::string_view( var_deps ).substr( 1u, qe - 1u );
+						std::string::size_type const isep( var_deps.find( ':', qe ) );
+						if ( isep != std::string::npos ) {
+							deps_spec = std::string_view( var_deps ).substr( isep + 1u );
+						} else {
+							deps_spec = '*'; // Implied all
+						}
 					} else {
-						deps_spec = '*'; // Implied all
+						std::cerr << "\nError: Dependencies spec quoted input variable spec missing end quote: " << var_deps << std::endl;
+						fatal = true;
 					}
 				} else {
-					std::cerr << "\nError: Dependencies spec quoted input variable spec missing end quote: " << var_deps << std::endl;
-					fatal = true;
+					std::string::size_type const isep( var_deps.find( ':' ) );
+					if ( isep != std::string::npos ) {
+						var_spec = std::string_view( var_deps ).substr( 0u, isep );
+						deps_spec = std::string_view( var_deps ).substr( isep + 1u );
+					} else {
+						var_spec = var_deps;
+						deps_spec = '*'; // Implied all
+					}
 				}
-			} else {
-				std::string::size_type const isep( var_deps.find( ':' ) );
-				if ( isep != std::string::npos ) {
-					var_spec = std::string_view( var_deps ).substr( 0u, isep );
-					deps_spec = std::string_view( var_deps ).substr( isep + 1u );
-				} else {
-					var_spec = var_deps;
-					deps_spec = '*'; // Implied all
-				}
+				if ( var_spec.empty() ) var_spec = '*'; // Implied all
 			}
-			if ( var_spec.empty() ) var_spec = '*'; // Implied all
 			std::vector< std::string > dep_specs;
 			{ // Scope
 			std::string dep_spec;

@@ -50,13 +50,18 @@
 
 namespace QSS {
 
-// Variables Sorted by Order?
+// Variables All the Same Order?
 template< typename Variables >
 bool
-is_sorted_by_order( Variables & variables )
+all_same_order( Variables const & variables )
 {
 	using V = typename std::remove_pointer< typename Variables::value_type >::type;
-	return std::is_sorted( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->order() < v2->order(); } );
+	if ( variables.empty() ) {
+		return true;
+	} else {
+		int order( variables[ 0 ]->order() );
+		return std::all_of( variables.begin(), variables.end(), [ order ]( V const * v ){ return v->order() == order; } );
+	}
 }
 
 // Variables Collection Unique?
@@ -80,16 +85,6 @@ is_unique( Variables const & variables )
 	}
 }
 
-// Variables Begin Index of Given Order or Greater
-template< typename Variables >
-typename Variables::size_type
-begin_order_index( Variables const & variables, int const order )
-{
-	using V = typename std::remove_pointer< typename Variables::value_type >::type;
-	assert( is_sorted_by_order( variables ) ); // Require sorted by order
-	return static_cast< typename Variables::size_type >( std::distance( variables.begin(), std::lower_bound( variables.begin(), variables.end(), order, []( V const * v, int const o ){ return v->order() < o; } ) ) );
-}
-
 // Make Variables Collection Unique and Optionally Shrink-to-Fit
 template< typename Variables >
 void
@@ -102,45 +97,32 @@ uniquify( Variables & variables, bool const shrink = false )
 	}
 }
 
-// Make Sorted Variables Collection Unique and Optionally Shrink-to-Fit
+// Sort Variables by Type
 template< typename Variables >
 void
-uniquify_sorted( Variables & variables, bool const shrink = false )
-{
-	if ( !variables.empty() ) {
-		assert( std::is_sorted( variables.begin(), variables.end() ) ); // Precondition: Sorted
-		variables.erase( std::unique( variables.begin(), variables.end() ), variables.end() ); // Remove duplicates
-		if ( shrink ) variables.shrink_to_fit();
-	}
-}
-
-// Sort Variables by Order
-template< typename Variables >
-void
-sort_by_order( Variables & variables )
+sort_by_type( Variables & variables )
 {
 	using V = typename std::remove_pointer< typename Variables::value_type >::type;
-	// if ( options::output::d ) { // Also sort by name for deterministic diagnostic output and order-dependent results
-		std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return ( v1->order() < v2->order() ) || ( ( v1->order() == v2->order() ) && ( v1->name() < v2->name() ) ); } );
-	// } else { // Just sort by order (faster)
-	// 	std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->order() < v2->order(); } );
-	// }
-}
-
-// Sort Variables by Type (State First) and Order
-template< typename Variables >
-void
-sort_by_type_and_order( Variables & variables )
-{
-	using V = typename std::remove_pointer< typename Variables::value_type >::type;
-	// if ( options::output::d ) { // Also sort by name for deterministic diagnostic output and order-dependent results
-		std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return ( v1->var_sort_index() < v2->var_sort_index() ) || ( ( v1->var_sort_index() == v2->var_sort_index() ) && ( v1->name() < v2->name() ) ); } );
-	// } else { // Just sort by type and order (faster)
-	// 	std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->var_sort_index() < v2->var_sort_index(); } );
-	// }
+	std::sort( variables.begin(), variables.end(),
+	 []( V const * v1, V const * v2 ){
+		int const v1_i( v1->var_sort_index() );
+		int const v2_i( v2->var_sort_index() );
+//		return ( v1_i < v2_i ); // Don't sort by name => Non-deterministic order-dependent results
+//		return ( v1_i < v2_i ) || ( ( v1_i == v2_i ) && ( v1 < v2 ) ); // Also sort by address for deterministic order-dependent results: Faster than sorting by name
+		return ( v1_i < v2_i ) || ( ( v1_i == v2_i ) && ( v1->name() < v2->name() ) ); // Also sort by name for deterministic output and order-dependent results
+	} );
 }
 
 // Sort Variables by Name
+template< typename Variables >
+void
+sort_by_name( Variables & variables )
+{
+	using V = typename std::remove_pointer< typename Variables::value_type >::type;
+	std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return ( v1->name() < v2->name() ); } );
+}
+
+// Copy of Variables Sorted by Name
 template< typename Variables >
 Variables
 sorted_by_name( Variables const & variables )
@@ -151,7 +133,7 @@ sorted_by_name( Variables const & variables )
 	return sorted_variables;
 }
 
-// Set up Non-Trigger Observers of Triggers and Sort Both by Order
+// Set up Non-Trigger Observers of Triggers
 template< typename Variables >
 void
 variables_observers( Variables & triggers, Variables & observers )
@@ -175,16 +157,12 @@ variables_observers( Variables & triggers, Variables & observers )
 		}
 	}
 
-	// Remove duplicates and sort by type and order
+	// Remove duplicates and sort by type
 	if ( !observers.empty() ) {
 		std::sort( observers.begin(), observers.end() ); // Sort by address
 		observers.erase( std::unique( observers.begin(), observers.end() ), observers.end() ); // Remove duplicates
-		//if ( shrink ) observers.shrink_to_fit(); // Since we always reuse these containers we don't need a shrink option
-		if ( !observers.empty() ) sort_by_type_and_order( observers );
+		if ( !observers.empty() ) sort_by_type( observers );
 	}
-
-	// Sort triggers by order
-	sort_by_order( triggers );
 }
 
 // Vector Has a Value?

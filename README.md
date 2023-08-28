@@ -18,45 +18,35 @@ Currently the code has:
 * Simultaneous event support that produces deterministic (non-order-dependent) results.
 * Numeric bulletproofing of root solvers.
 * A master algorithm with sampling and diagnostic output controls.
-* A few simple code-defined example cases.
 * FMU for Model Exchange simulation support.
 * FMU-QSS generation and simulation support.
 * Connected FMU-ME and FMU-QSS simulation support.
 * Binned-QSS support.
 * Experimental Python wrapping with Pybind11.
 
-### Notes
-* Modelica input file processing is not provided: test cases are loaded from Optimica Toolkit (OCT) generated FMUs.
-
 ## Plan
 
 Planned development in anticipated sequence order are:
+* Relaxation solver development to improve performance on models with highly sensitive derivatives.
 * FMU support extensions: Modelica annotations, OCT/FMIL API migration, higher derivatives, ...
-* Algebraic relationship/loop support.
 * Extended precision time handling for large time span simulation.
 * Performance improvements.
 * Parallelization and vectorization.
 
 ## Goals
 
-* High-performance QSS solver.
-* Modular, object-oriented code.
-* API suitable for OCT integration.
-* Define FMI extensions for efficient QSS support.
-* FMU simulation support.
-* FMU-QSS generation and simulation of FMU-ME.
+* High-performance QSS-over-FMU solver.
 * Support a mix of different QSS solvers.
-* Support for traditional discrete-time solvers.
+* Modular, object-oriented code.
+* Define FMI extensions for efficient QSS support.
 
 ## Design
 
 The design concepts are still emerging. The basic constituents of a fast QSS solver seem to be:
 * Variables for each QSS method (QSS1/2/3, LIQSS1/2/3, ...).
-* Functions for derivative representation: linear and nonlinear.
 * Event queue to find the next "trigger" variable to advance.
 * Input variables/functions.
 * Continuous and discrete valued variables.
-* Algebraic relationships between variables including handling of algebraic loops.
 
 ### Notes
 
@@ -70,12 +60,8 @@ The design concepts are still emerging. The basic constituents of a fast QSS sol
 * Integration and quantization are handled internally to avoid the cost of calls to other objects and passing of data packets between them.
 * Holds the iterator of its entry in the event queue to save one _O_( log N ) lookup.
 * Supports mix of different QSS method variables in the same model.
-* Flags whether its derivative depends on its own value (self-observer) and uses that for efficiency:
-  * If not a self-observer the continuous representation trajectory doesn't change at requantization events. While the continuous representation could be advanced to re-sync segment start times with the requantized representation some efficiency is gained by not doing so. There are different precision impacts of each approach but with bulletproofing against small negative time steps due to finite precision there is probably no benefit to shifting the continuous representation when the trajectory doesn't change.
-* Handles self-observer continuous representation updates specially instead of as part of general observer updates for efficiency:
-  * Assigns continuous representation coefficients from the corresponding quantized representation during requantization instead of recomputing them.
-* Input variable classes fit under the Variable hierarchy so that they can be processed along with QSS state variables.
-* FMU variables that work through the FMI 2.0 API to get derivatives.
+* Input, zero-crossing, and other non-continuous-state variable classes fit under the Variable hierarchy so that they can be processed along with QSS continuous-state variables.
+* Variables use the FMI 2.0 API to get derivatives.
 
 ### Time Steps
 
@@ -242,7 +228,7 @@ Models defined by FMUs following the FMI 2.0 API and built by OCT can be run by 
 In preparation for anticipated FMI API extensions to OCT's FMI Library a NextGen branch of this repository has been developed.
 NextGen assumes that the FMU can provide higher derivatives directly for a variable when its observee variables are set to their values at the evaluation time.
 This significantly simplifies the QSS code and makes it more practical to implement 3rd order QSS methods.
-It will also eliminate the cyclic dependency flaw with QSS3+ and xQSS2+ methods.
+It will also eliminate the order dependency flaw with QSS3+ and xQSS2+ methods.
 The purpose of the NextGen branch is to show approximately how the code will look when this advanced support becomes available and to simplify migration at that time.
 Using placeholder calls to current the FMI API enables this NextGen branch code to compile and run.
 
@@ -297,6 +283,7 @@ The OCT addresses this by generating event indicator variables that are document
 * Zero-crossing root refinement is expensive due to the overhead of FMU operations so it is disabled by default (the `--refine` option enables it). Once atomic FMU variable get/set operations are provided the overhead will be lower.
 
 #### Notes
+
 * Zero-crossing variables should not need and are required to have no observers (but they do have reverse dependents: the variables modified by their handlers).
 * Zero-crossing variables must initialize and advance after other variables because their zero-order coefficients come from their function evaluation that depends on the zero-order coefficients of other variables being advanced.
 * Zero-crossing variables use the continuous, not quantized, representations of variables appearing in their functions, in contrast with the QSS literature, to provide more accurate and full order representations.
@@ -338,19 +325,6 @@ Conditional handler functions can cause variable changes that cause other (zero-
 Performance assessments are ongoing as larger-scale models become available. Preliminary profiling, tuning, and parallelization findings are described here.
 
 ### Performance Findings
-
-#### Code-Defined Model Performance
-
-The code-defined model simulation provides a good platform for looking at the QSS performance without the additional overhead and complexity required to run FMU-based models with the current FMI API support.
-
-A scalable, algorithmically generated model was developed to allow assessment of performance on large-scale models with varying levels of coupling between variables. This `gen` model can be specified with numbers of QSS and zero-crossing variables and an optional random generator seed value. The dependency out-degree range and value ranges are currently hard-coded but easily altered. These `gen` models with up to 5000 QSS variables were used to profile and experiment with performance improvements, some of which are now incorporated into the QSS code. The core findings are:
-* The hot spot operations are mostly in tight code that does not have much room for optimization.
-* Virtual calls appear for processing different types of Variables. It would be possible to avoid these virtual calls through Variable type groupings but the code complexity is unlikely to be worth the small performance gains.
-* The `advance_observers` operations are good candidates for parallelization since they can be significant hot spots and, other than event queue updates and diagnostic output, they are decoupled.
-* The initial OpenMP parallelization of the `advance_observers` operation yields a 27% speedup for a large-scale (5,000 QSS variable) generated (`gen`) model. Some experimentation was used to tune the OpenMP thread count and schedule controls: further experimentation on many-core systems is recommended to improve scalability.
-* Parallelization of additional operations is worth exploring.
-* Event queue operations are not dominant but can be significant for performance such that incorporation of a faster, concurrent queue could be worth exploring.
-* Keeping event queue operations out of the parallel loops incurs some complexity cost but trying to mutex lock the queue is not likely to be beneficial.
 
 #### FMU Model Performance
 
@@ -504,6 +478,7 @@ To run QSS from the Python front end use:
 * `QSS.py <arguments> [options]`
 
 ### Notes
+
 * Pybind11 does not work with the Windows MinGW GCC compilers with the stock Python binary distribution that is built with Visual C++.
 * To use `PyQSS` with PyFMI it must be built with the same Python version that PyFMI runs under.
   To support this usage the Windows environment setup uses the OCT Python installation, if present, in favor of the primary system Python.

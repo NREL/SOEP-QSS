@@ -164,7 +164,7 @@ public: // Methods
 	init_3() override
 	{
 		x_3_ = n_3();
-		fmu_set_observees_x( t0() );
+		fmu_set_observees_s( t0() );
 	}
 
 	// Initialization: Stage Final
@@ -416,7 +416,7 @@ private: // Methods
 		}
 	}
 
-	// Coefficient 3
+	// Coefficient 3 at Time tX
 	Real
 	n_3() const
 	{

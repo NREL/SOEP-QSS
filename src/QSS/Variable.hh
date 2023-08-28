@@ -479,12 +479,11 @@ public: // Property
 		return order_;
 	}
 
-	// Variable Type + Order Sorting Index
+	// Variable Sorting Index
 	int
 	var_sort_index() const
 	{
-		// Indexes with max_rep_order == 3:  State:1-3  R:4-6  Discrete:7  ZC:8-10
-		return order_ + ( is_state() ? 0 : max_rep_order + ( is_R() ? 0 : max_rep_order + 1 ) ); // Order: State -> R -> Discrete -> ZC
+		return ( is_state() ? 0 : ( is_R() && is_Active() ? 1 : ( is_ZC() ? 3 : 2 ) ) ); // Order: State -> active R -> Passive|Boolean|Integer|Discrete|Input -> ZC
 	}
 
 	// State Sorting Index
@@ -1553,9 +1552,10 @@ public: // Methods: FMU
 	void
 	fmu_set_observees_x( Time const t ) const
 	{
-		for ( auto observee : observees_ ) {
-			observee->fmu_set_x( t );
+		for ( size_type i = 0; i < n_observees_; ++i ) { // Set observee value vector
+			observees_v_[ i ] = observees_[ i ]->x( t );
 		}
+		fmu_me_->set_reals( n_observees_, observees_v_ref_.data(), observees_v_.data() ); // Set observees FMU values
 	}
 
 	// Set All Observee FMU Variables to Continuous Value at Time t Except for Specified Variable
@@ -1577,23 +1577,19 @@ public: // Methods: FMU
 		}
 	}
 
-	// Set All Observee FMU Variables to Quantized Value at Time t
-	void
-	fmu_set_observees_q( Time const t ) const
-	{
-		for ( auto observee : observees_ ) {
-			observee->fmu_set_q( t );
-		}
-	}
-
 	// Set All Observee FMU Variables to Appropriate Value at Time t
 	void
 	fmu_set_observees_s( Time const t ) const
 	{
 		assert( is_QSS() );
-		for ( auto observee : observees_ ) {
-			observee->fmu_set_s( t );
+		for ( size_type i = 0; i < n_observees_; ++i ) { // Set observee value vector
+#ifndef QSS_PROPAGATE_CONTINUOUS
+			observees_v_[ i ] = observees_[ i ]->q( t ); // Quantized: Traditional QSS
+#else
+			observees_v_[ i ] = observees_[ i ]->x( t ); // Continuous: Modified QSS
+#endif
 		}
+		fmu_me_->set_reals( n_observees_, observees_v_ref_.data(), observees_v_.data() ); // Set observees FMU values
 	}
 
 protected: // Methods: FMU
@@ -1787,14 +1783,12 @@ protected: // Methods: FMU
 		assert( !self_observer_ );
 		assert( fmu_me_ != nullptr );
 		assert( fmu_get_time() == tQ );
-		assert( observees_nv_ == observees_v_ref_.size() );
-		assert( observees_nv_ == observees_dv_.size() );
-		assert( observees_nv_ == observees_.size() );
+		assert( n_observees_ == observees_v_ref_.size() );
+		assert( n_observees_ == observees_dv_.size() );
+		assert( n_observees_ == observees_.size() );
 		fmu_set_observees_x( tQ ); // Modelon indicates that observee state matters for Jacobian computation
-		for ( Variables::size_type i = 0, e = observees_.size(); i < e; ++i ) { // Get observee derivatives
-			observees_dv_[ i ] = observees_[ i ]->x1( tQ );
-		}
-		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var_.ref(), observees_dv_.data() );
+		set_observees_dv_x( tQ );
+		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), n_observees_, var_.ref(), observees_dv_.data() );
 	}
 
 	// Coefficient 1 at Time t: X-Based R or ZC Variable
@@ -1805,14 +1799,12 @@ protected: // Methods: FMU
 		assert( !self_observer_ );
 		assert( fmu_me_ != nullptr );
 		assert( fmu_get_time() == t );
-		assert( observees_nv_ == observees_v_ref_.size() );
-		assert( observees_nv_ == observees_dv_.size() );
-		assert( observees_nv_ == observees_.size() );
+		assert( n_observees_ == observees_v_ref_.size() );
+		assert( n_observees_ == observees_dv_.size() );
+		assert( n_observees_ == observees_.size() );
 		fmu_set_observees_x( t ); // Modelon indicates that observee state matters for Jacobian computation
-		for ( Variables::size_type i = 0, e = observees_.size(); i < e; ++i ) { // Get observee derivatives
-			observees_dv_[ i ] = observees_[ i ]->x1( t );
-		}
-		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), observees_nv_, var_.ref(), observees_dv_.data() );
+		set_observees_dv_x( t );
+		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), n_observees_, var_.ref(), observees_dv_.data() );
 	}
 
 	// Coefficient 2: Given Derivative
@@ -1828,14 +1820,8 @@ protected: // Methods: FMU
 	{
 		assert( is_QSS() );
 		assert( fmu_get_time() == tQ );
-		for ( Variables::size_type i = 0, e = observees_.size(); i < e; ++i ) { // Set observee directional derivative vector
-#ifndef QSS_PROPAGATE_CONTINUOUS
-			observees_dv_[ i ] = observees_[ i ]->q1( tQ ); // Quantized: Traditional QSS
-#else
-			observees_dv_[ i ] = observees_[ i ]->x1( tQ ); // Continuous: Modified QSS
-#endif
-		}
-		return one_half * fmu_me_->get_directional_derivative( observees_v_ref_.data(), observees_nv_, der_.ref(), observees_dv_.data() ); // Precondition: Observees already set to value at tQ
+		set_observees_dv( tQ );
+		return one_half * fmu_me_->get_directional_derivative( observees_v_ref_.data(), n_observees_, der_.ref(), observees_dv_.data() ); // Precondition: Observees already set to value at tQ
 	}
 
 	// Coefficient 2 Directional Derivative at Time t
@@ -1844,14 +1830,8 @@ protected: // Methods: FMU
 	{
 		assert( is_QSS() );
 		assert( fmu_get_time() == t );
-		for ( Variables::size_type i = 0, e = observees_.size(); i < e; ++i ) { // Set observee directional derivative vector
-#ifndef QSS_PROPAGATE_CONTINUOUS
-			observees_dv_[ i ] = observees_[ i ]->q1( t ); // Quantized: Traditional QSS
-#else
-			observees_dv_[ i ] = observees_[ i ]->x1( t ); // Continuous: Modified QSS
-#endif
-		}
-		return one_half * fmu_me_->get_directional_derivative( observees_v_ref_.data(), observees_nv_, der_.ref(), observees_dv_.data() ); // Precondition: Observees values set
+		set_observees_dv( t );
+		return one_half * fmu_me_->get_directional_derivative( observees_v_ref_.data(), n_observees_, der_.ref(), observees_dv_.data() ); // Precondition: Observees values set
 	}
 
 	// Coefficient 2 Directional Derivative: Use Seed Vector
@@ -1859,7 +1839,7 @@ protected: // Methods: FMU
 	dd_2_use_seed() const
 	{
 		assert( is_QSS() );
-		return one_half * fmu_me_->get_directional_derivative( observees_v_ref_.data(), observees_nv_, der_.ref(), observees_dv_.data() ); // Precondition: Observee values set
+		return one_half * fmu_me_->get_directional_derivative( observees_v_ref_.data(), n_observees_, der_.ref(), observees_dv_.data() ); // Precondition: Observee values set
 	}
 
 	// Coefficient 2 at Time tQ: X-Based R or ZC Variable
@@ -1903,12 +1883,12 @@ protected: // Methods
 		return dt;
 	}
 
-	// Set Observees Directional Derivative Vector at Time t: QSS
+	// Set Observees Derivative Vector at Time t
 	void
-	set_observees_dv( Time const t )
+	set_observees_dv( Time const t ) const
 	{
 		assert( is_QSS() );
-		for ( Variables::size_type i = 0, e = observees_.size(); i < e; ++i ) { // Set observee directional derivative vector
+		for ( size_type i = 0u; i < n_observees_; ++i ) {
 #ifndef QSS_PROPAGATE_CONTINUOUS
 			observees_dv_[ i ] = observees_[ i ]->q1( t ); // Quantized: Traditional QSS
 #else
@@ -1917,7 +1897,17 @@ protected: // Methods
 		}
 	}
 
-	// Set Self-Observee Directional Derivative Vector Entry: QSS
+	// Set Observees Derivative Vector at Time t: X-Based
+	void
+	set_observees_dv_x( Time const t ) const
+	{
+		assert( is_R() || is_ZC() );
+		for ( size_type i = 0u; i < n_observees_; ++i ) {
+			observees_dv_[ i ] = observees_[ i ]->x1( t );
+		}
+	}
+
+	// Set Self-Observee Derivative Vector Entry
 	void
 	set_self_observees_dv( Real const x_1 )
 	{
@@ -1983,8 +1973,9 @@ private: // Data
 	bool observes_{ false }; // Has observees?
 	Variables observees_; // State and input variable downstream dependencies to set in FMU to get value and directional derivatives
 	VariableRefs observees_v_ref_; // Observee value references for FMU directional derivative lookup
+	mutable Reals observees_v_; // Observee values for FMU derivative lookup
 	mutable Reals observees_dv_; // Observee derivatives for FMU directional derivative lookup
-	std::size_t observees_nv_{ 0u }; // Observee count for FMU directional derivative lookup
+	std::size_t n_observees_{ 0u }; // Observee count for FMU derivative lookup
 	std::size_t i_self_observee_{ 0u }; // Observee index of this variable if self-observee
 
 	// Connections

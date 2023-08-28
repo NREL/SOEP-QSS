@@ -66,7 +66,6 @@ public: // Property
 	{
 		assert( refs.size() == vals.size() );
 		assert( ders.empty() || ( refs.size() == ders.size() ) );
-		assert( ders_m.empty() || ( refs.size() == ders_m.size() ) );
 		assert( ders_p.empty() || ( refs.size() == ders_p.size() ) );
 		return refs.size();
 	}
@@ -80,7 +79,6 @@ public: // Methods
 		refs.clear();
 		vals.clear();
 		ders.clear();
-		ders_m.clear();
 		ders_p.clear();
 	}
 
@@ -89,10 +87,9 @@ public: // Methods
 	reserve( size_type const n )
 	{
 		refs.reserve( n );
-		vals.reserve( n );
-		ders.reserve( n );
-		ders_m.reserve( n );
-		ders_p.reserve( n );
+		vals.resize( n );
+		ders.resize( n );
+		ders_p.resize( n );
 	}
 
 	// Push Back
@@ -100,10 +97,6 @@ public: // Methods
 	push_back( Ref const & ref )
 	{
 		refs.push_back( ref );
-		vals.push_back( 0.0 );
-		ders.push_back( 0.0 );
-		ders_m.push_back( 0.0 );
-		ders_p.push_back( 0.0 );
 	}
 
 public: // Data
@@ -111,8 +104,7 @@ public: // Data
 	Refs refs; // FMU value reference array
 	Vals vals; // FMU value array
 	Ders ders; // FMU derivative array
-	Ders ders_m; // FMU derivative at -dtND array
-	Ders ders_p; // FMU derivative at +dtND array
+	Ders ders_p; // FMU derivative array at positive ND step
 
 }; // RefsValsDers
 

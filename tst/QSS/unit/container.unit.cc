@@ -55,7 +55,7 @@ using QSS2 = Variable_QSS2;
 using ZC1 = Variable_ZC1;
 using ZC2 = Variable_ZC2;
 
-TEST( ContainerTest, SortByOrder )
+TEST( ContainerTest, SortByType )
 {
 	FMU_ME fmu;
 	ZC2 zc2( &fmu, "ZC2" );
@@ -63,59 +63,29 @@ TEST( ContainerTest, SortByOrder )
 	QSS2 qss2( &fmu, "QSS2" );
 	QSS1 qss1( &fmu, "QSS1" );
 
-	Variables variables;
+	Variables variables( { &zc2, &zc1, &qss2, &qss1 } );
 
-	variables.push_back( &zc2 );
-	variables.push_back( &zc1 );
-	variables.push_back( &qss2 );
-	variables.push_back( &qss1 );
-
-	EXPECT_FALSE( std::is_sorted( variables.begin(), variables.end(), []( Variable const * v1, Variable const * v2 ){ return v1->order() < v2->order(); } ) );
-	sort_by_order( variables );
-	EXPECT_TRUE( is_sorted_by_order( variables ) );
-	EXPECT_TRUE( std::is_sorted( variables.begin(), variables.end(), []( Variable const * v1, Variable const * v2 ){ return v1->order() < v2->order(); } ) );
-
-	EXPECT_EQ( 0u, begin_order_index( variables, 1 ) );
-	EXPECT_EQ( 2u, begin_order_index( variables, 2 ) );
-	EXPECT_EQ( 4u, begin_order_index( variables, 3 ) );
-}
-
-TEST( ContainerTest, SortByTypeAndORder )
-{
-	FMU_ME fmu;
-	ZC2 zc2( &fmu, "ZC2" );
-	ZC1 zc1( &fmu, "ZC1" );
-	QSS2 qss2( &fmu, "QSS2" );
-	QSS1 qss1( &fmu, "QSS1" );
-
-	Variables variables;
-
-	variables.push_back( &zc2 );
-	variables.push_back( &zc1 );
-	variables.push_back( &qss2 );
-	variables.push_back( &qss1 );
-
-	EXPECT_FALSE( std::is_sorted( variables.begin(), variables.end(), []( Variable const * v1, Variable const * v2 ){ return v1->not_ZC() && v2->is_ZC(); } ) );
-	sort_by_type_and_order( variables );
+	sort_by_type( variables );
 	EXPECT_TRUE( std::is_sorted( variables.begin(), variables.end(), []( Variable const * v1, Variable const * v2 ){ return v1->not_ZC() && v2->is_ZC(); } ) );
+	EXPECT_TRUE( variables[ 0 ]->is_QSS() );
+	EXPECT_TRUE( variables[ 1 ]->is_QSS() );
+	EXPECT_TRUE( variables[ 2 ]->is_ZC() );
+	EXPECT_TRUE( variables[ 3 ]->is_ZC() );
 }
 
-TEST( ContainerTest, BeginOrderIndex )
+TEST( ContainerTest, SortByName )
 {
 	FMU_ME fmu;
-	Variables variables;
-	variables.push_back( new ZC1( &fmu, "ZC1" ) );
-	variables.push_back( new ZC1( &fmu, "ZC1" ) );
-	variables.push_back( new ZC1( &fmu, "ZC1" ) );
-	variables.push_back( new QSS1( &fmu, "QSS1" ) );
-	variables.push_back( new QSS1( &fmu, "QSS1" ) );
-	variables.push_back( new QSS2( &fmu, "QSS2" ) );
-	variables.push_back( new QSS2( &fmu, "QSS2" ) );
-	variables.push_back( new ZC2( &fmu, "ZC2" ) );
-	variables.push_back( new ZC2( &fmu, "ZC2" ) );
-	variables.push_back( new ZC2( &fmu, "ZC2" ) );
-	EXPECT_EQ( 5u, begin_order_index( variables, 2 ) );
-	for ( Variable * var : variables ) delete var; // Clean up
+	ZC2 zc2( &fmu, "ZC2" );
+	ZC1 zc1( &fmu, "ZC1" );
+	QSS2 qss2( &fmu, "QSS2" );
+	QSS1 qss1( &fmu, "QSS1" );
+
+	Variables variables( { &zc2, &zc1, &qss2, &qss1 } );
+
+	EXPECT_FALSE( std::is_sorted( variables.begin(), variables.end(), []( Variable const * v1, Variable const * v2 ){ return v1->name() < v2->name(); } ) );
+	sort_by_name( variables );
+	EXPECT_TRUE( std::is_sorted( variables.begin(), variables.end(), []( Variable const * v1, Variable const * v2 ){ return v1->name() < v2->name(); } ) );
 }
 
 TEST( ContainerTest, Uniquify )
@@ -126,17 +96,7 @@ TEST( ContainerTest, Uniquify )
 	QSS2 qss2( &fmu, "QSS2" );
 	QSS1 qss1( &fmu, "QSS1" );
 
-	Variables variables;
-
-	variables.push_back( &zc2 );
-	variables.push_back( &zc1 );
-	variables.push_back( &qss2 );
-	variables.push_back( &qss1 );
-
-	variables.push_back( &zc2 );
-	variables.push_back( &zc1 );
-	variables.push_back( &qss2 );
-	variables.push_back( &qss1 );
+	Variables variables( { &zc2, &zc1, &qss2, &qss1, &zc2, &zc1, &qss2, &qss1 } );
 
 	EXPECT_FALSE( is_unique( variables ) );
 	uniquify( variables );
@@ -153,10 +113,7 @@ TEST( ContainerTest, VariablesObservers )
 	h.observers().push_back( &v );
 	h.observers().push_back( &z );
 
-	Variables triggers;
-
-	triggers.push_back( &v );
-	triggers.push_back( &h );
+	Variables triggers( { &v, &h } );
 
 	Variables observers;
 

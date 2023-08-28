@@ -106,22 +106,23 @@ namespace QSS {
 		// Check for duplicate value references
 		std::vector< VariableRef > observees_refs;
 		observees_refs.reserve( observees_.size() );
-		for ( Variable * observee : observees_ ) {
+		for ( Variable const * observee : observees_ ) {
 			observees_refs.push_back( observee->var_.ref() );
 		}
 		std::sort( observees_refs.begin(), observees_refs.end() );
 		assert( std::adjacent_find( observees_refs.begin(), observees_refs.end() ) == observees_refs.end() ); // No repeat value references
 #endif
 
-		// FMU directional derivative call argument initialization
+		// FMU derivative call argument initialization
 		assert( observees_v_ref_.empty() ); // Initialization shouldn't be called twice for a variable
+		assert( observees_v_.empty() ); // Initialization shouldn't be called twice for a variable
 		assert( observees_dv_.empty() ); // Initialization shouldn't be called twice for a variable
-		observees_nv_ = observees_.size();
-		observees_v_ref_.reserve( observees_nv_ );
-		observees_dv_.reserve( observees_nv_ );
-		for ( Variable * observee : observees_ ) {
+		n_observees_ = observees_.size();
+		observees_v_ref_.reserve( n_observees_ );
+		observees_v_.resize( n_observees_ );
+		observees_dv_.resize( n_observees_ );
+		for ( Variable const * observee : observees_ ) {
 			observees_v_ref_.push_back( observee->var_.ref() );
-			observees_dv_.push_back( 0.0 ); // Actual values assigned when getting directional derivatives
 		}
 	}
 

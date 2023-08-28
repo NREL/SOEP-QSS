@@ -6,19 +6,18 @@ set INCLUDE=
 set LIB=
 set LIBPATH=
 call setIC.bat
-set CC=icl
+set CC=icx
 set FMIL_SRC_DIR=%~dp0..\..\custom
-set FMIL_INS_DIR=C:\FMIL.IC.d
+set FMIL_INS_DIR=C:\FMIL.IX.l
 if exist "%FMIL_INS_DIR%" rd /S /Q "%FMIL_INS_DIR%" >nul 2>&1
 del CMakeCache.txt >nul 2>&1
 
-set FMIL_C_FLAGS="/nologo /Wall /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DWIN32 /Od /fp:strict /GS /Gs0 /RTCsu /traceback /Z7 /Qtrapuv /check:stack,uninit /Qfp-stack-check /Qcheck-pointers:rw /Qcheck-pointers-dangling:all /MDd"
-set FMIL_CMAKE_ARGS=-DFMILIB_INSTALL_PREFIX=%FMIL_INS_DIR% %FMIL_SRC_DIR% -DCMAKE_BUILD_TYPE=Debug -DCMAKE_FMIL_C_FLAGS_DEBUG=%FMIL_C_FLAGS%
+set FMIL_C_FLAGS="/nologo /Qansi-alias /EHsc /QxHOST /Wall /Wno-unused-function /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DWIN32 /DNDEBUG /O3 /fp:fast /Qipo /MD"
+set FMIL_CMAKE_ARGS=-DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icx -DFMILIB_INSTALL_PREFIX=%FMIL_INS_DIR% %FMIL_SRC_DIR% -DCMAKE_BUILD_TYPE=Release -DCMAKE_FMIL_C_FLAGS_RELEASE=%FMIL_C_FLAGS%
 
 :: IC++ + Make
 cmake -G "MinGW Makefiles" %FMIL_CMAKE_ARGS%
 make -j%NUMBER_OF_PROCESSORS% VERBOSE=1 install
-ren %FMIL_INS_DIR%\lib\zlibd.lib zlib.lib >nul 2>&1
 
 :: IC++ + VS
 :: cmake -G "Visual Studio 17 2022" -T "Intel C++ Compiler 2023" %FMIL_CMAKE_ARGS%

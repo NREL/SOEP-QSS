@@ -1859,7 +1859,7 @@ namespace QSS {
 				}
 			}
 		}
-		sort_by_type_and_order( vars_NC ); // Put state variables first to reduce issue of directional derivatives needing observee derivatives set
+		sort_by_type( vars_NC ); // Put state variables first to reduce issue of directional derivatives needing observee derivatives set
 		assert( order_max_CI <= max_rep_order );
 		assert( order_max_NC <= max_rep_order );
 	}
@@ -2585,7 +2585,7 @@ namespace QSS {
 					} else { // Simultaneous triggers
 						eventq->top_subs< Variable >( triggers );
 						observers_s.assign( triggers );
-						sort_by_order( triggers );
+						sort_by_name( triggers );
 
 						if ( doDOut ) { // Discrete event output: pre
 							for ( Variable * trigger : triggers ) { // Triggers

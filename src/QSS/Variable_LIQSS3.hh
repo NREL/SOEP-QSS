@@ -178,7 +178,7 @@ public: // Methods
 			advance_LIQSS_simultaneous();
 		} else {
 			x_3_ = n_3();
-			fmu_set_observees_x( t0() );
+			fmu_set_observees_s( t0() );
 			l_0_ = q_c_ + ( signum( x_3_ ) * qTol );
 		}
 	}
@@ -451,7 +451,7 @@ private: // Methods
 	void
 	advance_LIQSS_simultaneous();
 
-	// Coefficient 3
+	// Coefficient 3 at Time tX
 	Real
 	n_3() const
 	{

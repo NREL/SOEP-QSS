@@ -176,7 +176,6 @@ public: // Zero-Crossing Methods
 	void
 	bump_time( Time const t_bump ) const
 	{
-//		fmu_set_x( t_bump ); //! Should not need to do this and setting event indicator variable FMU value is not proper
 		fmu_set_observees_x( t_bump );
 		x_0_bump_ = fmu_get_real();
 		if ( conditional != nullptr ) {
@@ -190,7 +189,6 @@ public: // Zero-Crossing Methods
 	void
 	re_bump_time( Time const t_bump ) const
 	{
-//		fmu_set_x( t_bump ); //! Should not need to do this and setting event indicator variable FMU value is not proper
 		fmu_set_observees_x( t_bump );
 	}
 

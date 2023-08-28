@@ -70,8 +70,10 @@ double constexpr one_sixth{ 1.0 / 6.0 };
 double constexpr one_ninth{ 1.0 / 9.0 };
 double constexpr two_thirds{ 2.0 / 3.0 };
 double constexpr pi{ 3.141592653589793115997963 }; //C++20 double constexpr pi{ std::numbers::pi };  Not working with Intel Classic C++ as of version 2021.9.0 on Windows
-double constexpr infinity{ std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() };
-double constexpr neg_infinity{ std::numeric_limits< double >::has_infinity && std::numeric_limits<double>::is_iec559 ? -std::numeric_limits< double >::infinity() : std::numeric_limits< double >::lowest() };
+double constexpr infinity{ std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() }; //! Not safe with Intel C++ with /fp:fast
+// double constexpr infinity{ std::numeric_limits< double >::max() }; //! Safe with Intel C++ with /fp:fast
+double constexpr neg_infinity{ std::numeric_limits< double >::has_infinity && std::numeric_limits<double>::is_iec559 ? -std::numeric_limits< double >::infinity() : std::numeric_limits< double >::lowest() }; //! Not safe with Intel C++ with /fp:fast
+// double constexpr neg_infinity{ std::numeric_limits< double >::lowest() }; //! Safe with Intel C++ with /fp:fast
 double constexpr half_infinity{ 0.5 * infinity };
 
 // General

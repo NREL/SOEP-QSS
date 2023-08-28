@@ -201,9 +201,8 @@ public: // Methods
 	handler( Time const t )
 	{
 		for ( Variable * observer : observers_ ) {
-			// Set observers's observee FMU values so FMU event handler computes correct new observer value
-			//! Setting state observees to x-based value: Observees may overlap: Would need to split state and non-state handlers for ideal solution
-			observer->fmu_set_observees_x( t );
+			// Set observers's observee FMU values so FMU event handler computes correct new observer value: Using continuous trajectories for best accuracy
+			observer->fmu_set_observees_x( t ); //! Observees may overlap: Evaulate whether using a merged observers observees collection is typically faster
 
 			observer->shift_handler( t ); // Set observer's handler event
 		}

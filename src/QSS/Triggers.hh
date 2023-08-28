@@ -40,9 +40,7 @@
 #include <QSS/FMU_ME.hh>
 #include <QSS/RefsDirDers.hh>
 #include <QSS/container.hh>
-#include <QSS/math.hh>
 #include <QSS/options.hh>
-#include <QSS/Range.hh>
 #include <QSS/SuperdenseTime.hh>
 
 // C++ Headers
@@ -148,22 +146,20 @@ public: // Methods
 	void
 	assign( Variables & triggers )
 	{
-		triggers_ = triggers;
-
-		if ( triggers_.empty() ) {
-			reset_specs();
+		if ( triggers.empty() ) {
+			clear();
 			return;
 		}
 
-		// Sort by order
-		assert( is_unique( triggers_ ) ); // Precondition: No duplicates
-		sort_by_order( triggers_ );
+		assert( is_unique( triggers ) ); // Precondition: No duplicates
+		assert( all_same_order( triggers ) ); // Precondition
 
-		// Set specs
-		set_specs();
+		triggers_ = triggers;
+		n_triggers_ = triggers_.size();
+		order_ = triggers_[ 0 ]->order();
 
 		// FMU pooled data set up
-		qss_ders_.clear(); qss_ders_.reserve( range_.n() );
+		qss_ders_.clear(); qss_ders_.reserve( n_triggers_ );
 		for ( Variable * trigger : triggers_ ) {
 			assert( trigger->is_QSS() );
 			qss_ders_.push_back( trigger->der().ref() );
@@ -172,39 +168,17 @@ public: // Methods
 		// Observees set up
 		observees_.clear();
 		for ( Variable * trigger : triggers_ ) {
-			for ( auto observee : trigger->observees() ) {
+			for ( Variable * observee : trigger->observees() ) {
 				observees_.push_back( observee );
 			}
 		}
 		uniquify( observees_ );
-		if ( !uni_order_ ) {
-			assert( range2_.have() );
-			observees2_.clear();
-			for ( size_type i = range2_.b(), e = range_.e(); i < e; ++i ) { // Order 2+ triggers
-				Variable * trigger( triggers_[ i ] );
-				for ( auto observee : trigger->observees() ) {
-					observees2_.push_back( observee );
-				}
-			}
-			uniquify( observees2_ );
-			if ( range3_.have() ) {
-				observees3_.clear();
-				for ( size_type i = range3_.b(), e = range_.e(); i < e; ++i ) { // Order 3+ triggers
-					Variable * trigger( triggers_[ i ] );
-					for ( auto observee : trigger->observees() ) {
-						observees3_.push_back( observee );
-					}
-				}
-				uniquify( observees3_ );
-			}
-		}
-
-		// Directional derivative observee seed array set up
-		observees_v_ref_.clear();
-		observees_dv_.clear();
-		for ( auto observee : observees_ ) {
+		n_observees_ = observees_.size();
+		observees_v_ref_.clear(); observees_v_ref_.reserve( n_observees_ );
+		observees_v_.clear(); observees_v_.resize( n_observees_ );
+		observees_dv_.clear(); observees_dv_.resize( n_observees_ );
+		for ( Variable const * observee : observees_ ) {
 			observees_v_ref_.push_back( observee->var().ref() );
-			observees_dv_.push_back( 0.0 ); // Actual values assigned when getting directional derivatives
 		}
 	}
 
@@ -212,61 +186,41 @@ public: // Methods
 	void
 	advance_QSS( Time const t, SuperdenseTime const & s )
 	{
+		assert( !triggers_.empty() );
 		assert( fmu_me_ != nullptr );
 		assert( fmu_me_->get_time() == t );
-		assert( range_.n() == qss_ders_.size() );
+		assert( qss_ders_.size() == n_triggers_ );
 
-		for ( Variable * trigger : triggers_ ) {
-			assert( trigger->is_QSS() ); // QSS triggers
+		for ( Variable * trigger : triggers_ ) { // Requantization stage 0
 			assert( trigger->tE >= t ); // Bin variables tE can be > t
 			trigger->tE = t; // Bin variables tE can be > t
 			trigger->st = s; // Set trigger superdense time
 			trigger->advance_QSS_0();
 		}
-		for ( Variable * observee : observees_ ) {
-			observee->fmu_set_s( t );
-		}
 
-		fmu_me_->get_reals( range_.n(), qss_ders_.refs.data(), qss_ders_.ders.data() );
-		for ( size_type i = range_.b(), e = range_.e(); i < e; ++i ) {
+		set_observees_values( t );
+		fmu_me_->get_reals( n_triggers_, qss_ders_.refs.data(), qss_ders_.ders.data() );
+		for ( size_type i = 0u; i < n_triggers_; ++i ) { // Requantization stage 1
 			triggers_[ i ]->advance_QSS_1( qss_ders_.ders[ i ] );
 		}
 
-		if ( range2_.have() ) { //! Could limit this to order 2+ triggers (or disallow mixed order runs)
-			set_observees_dv( t );
-			fmu_me_->get_directional_derivatives( // Get directional 2nd derivatives
-			 observees_v_ref_.data(),
-			 observees_v_ref_.size(),
-			 qss_ders_.refs.data(),
-			 qss_ders_.refs.size(),
-			 observees_dv_.data(),
-			 qss_ders_.ders.data()
-			);
-			for ( size_type i = range2_.b(), e = range_.e(); i < e; ++i ) { // Order 2+ triggers
+		if ( order_ >= 2 ) {
+			get_second_derivatives( t );
+			for ( size_type i = 0u; i < n_triggers_; ++i ) { // Requantization stage 2
 				triggers_[ i ]->advance_QSS_2_dd2( qss_ders_.ders[ i ] );
 			}
-			if ( range3_.have() ) { //! Could limit this to order 3+ triggers (or disallow mixed order runs)
+			if ( order_ >= 3 ) {
 				Time const tN( t + options::dtND );
 				fmu_me_->set_time( tN );
-				for ( Variable * observee : uni_order_ ? observees_ : observees3_ ) {
-					observee->fmu_set_s( tN );
-				}
-				set_observees_dv( tN );
-				fmu_me_->get_directional_derivatives( // Get directional 2nd derivatives at t + dtND
-				 observees_v_ref_.data(),
-				 observees_v_ref_.size(),
-				 qss_ders_.refs.data(),
-				 qss_ders_.refs.size(),
-				 observees_dv_.data(),
-				 qss_ders_.ders.data()
-				);
-				for ( size_type i = range3_.b(), e = range_.e(); i < e; ++i ) { // Order 3+ triggers
+				set_observees_values( tN );
+				get_second_derivatives( tN );
+				for ( size_type i = 0u; i < n_triggers_; ++i ) { // Requantization stage 3
 					triggers_[ i ]->advance_QSS_3_dd2( qss_ders_.ders[ i ] );
 				}
 				fmu_me_->set_time( t );
 			}
 		}
-		for ( Variable * trigger : triggers_ ) {
+		for ( Variable * trigger : triggers_ ) { // Requantization stage final
 			trigger->advance_QSS_F();
 		}
 	}
@@ -275,8 +229,8 @@ public: // Methods
 	void
 	clear()
 	{
+		n_triggers_ = 0u;
 		triggers_.clear();
-		reset_specs();
 	}
 
 public: // Iterator
@@ -327,71 +281,55 @@ public: // Subscript
 
 private: // Methods
 
-	// Reset Specs
+	// Set Observees FMU Values at Time t
 	void
-	reset_specs()
+	set_observees_values( Time const t )
 	{
-		range_.reset();
-		range2_.reset();
-		range3_.reset();
-	}
-
-	// Set Specs
-	void
-	set_specs()
-	{
-		reset_specs();
-		if ( triggers_.empty() ) return;
-
-		range_.b() = 0u;
-		range_.e() = range2_.b() = range2_.e() = range3_.b() = range3_.e() = triggers_.size();
-		for ( size_type i = 0, e = range_.e(); i < e; ++i ) {
-			int const order( triggers_[ i ]->order() );
-			if ( order >= 2 ) {
-				range2_.b() = std::min( range2_.b(), i );
-				if ( order >= 3 ) {
-					range3_.b() = std::min( range3_.b(), i );
-					break;
-				}
-			}
+		for ( size_type i = 0; i < n_observees_; ++i ) {
+#ifndef QSS_PROPAGATE_CONTINUOUS
+			observees_v_[ i ] = observees_[ i ]->q( t ); // Quantized: Traditional QSS
+#else
+			observees_v_[ i ] = observees_[ i ]->x( t ); // Continuous: Modified QSS
+#endif
 		}
-		size_type const range_n( range_.n() );
-		uni_order_ = (
-		 ( range2_.empty() || range2_.n() == range_n ) &&
-		 ( range3_.empty() || range3_.n() == range_n )
-		);
+		fmu_me_->set_reals( n_observees_, observees_v_ref_.data(), observees_v_.data() ); // Set observees FMU values
 	}
 
-	// Set Observees Directional Derivative Vector at Time t: QSS
+	// Get Second Derivatives at Time t
 	void
-	set_observees_dv( Time const t )
+	get_second_derivatives( Time const t )
 	{
-		for ( Variables::size_type i = 0, e = observees_.size(); i < e; ++i ) { // Set observee directional derivative vector
+		for ( size_type i = 0; i < n_observees_; ++i ) { // Set directional derivative seed vector
 #ifndef QSS_PROPAGATE_CONTINUOUS
 			observees_dv_[ i ] = observees_[ i ]->q1( t ); // Quantized: Traditional QSS
 #else
 			observees_dv_[ i ] = observees_[ i ]->x1( t ); // Continuous: Modified QSS
 #endif
 		}
+		fmu_me_->get_directional_derivatives(
+		 observees_v_ref_.data(),
+		 n_observees_,
+		 qss_ders_.refs.data(),
+		 n_triggers_,
+		 observees_dv_.data(),
+		 qss_ders_.ders.data()
+		); // Get 2nd derivatives
 	}
 
 private: // Data
 
 	FMU_ME * fmu_me_{ nullptr }; // FMU-ME (non-owning) pointer
 
+	// Triggers
+	size_type n_triggers_{ 0u }; // Number of triggers
+	int order_{ 0 }; // Order of triggers
 	Variables triggers_; // Triggers
 
-	// Trigger index specs
-	bool uni_order_{ false }; // Triggers all the same order?
-	Range range_; // Triggers range
-	Range range2_; // Triggers of order 2+ range
-	Range range3_; // Triggers of order 3+ range
-
 	// Observees
+	size_type n_observees_{ 0u }; // Number of triggers observees
 	Variables observees_; // Triggers observees
-	Variables observees2_; // Triggers of order 2+ observees
-	Variables observees3_; // Triggers of order 3+ observees
 	VariableRefs observees_v_ref_; // Triggers observees value references
+	Reals observees_v_; // Triggers observees values
 	Reals observees_dv_; // Triggers observees derivatives
 
 	// Trigger FMU pooled call data

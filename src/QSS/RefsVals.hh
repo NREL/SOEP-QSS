@@ -81,7 +81,7 @@ public: // Methods
 	reserve( size_type const n )
 	{
 		refs.reserve( n );
-		vals.reserve( n );
+		vals.resize( n );
 	}
 
 	// Push Back
@@ -89,7 +89,6 @@ public: // Methods
 	push_back( Ref const & ref )
 	{
 		refs.push_back( ref );
-		vals.push_back( 0.0 );
 	}
 
 public: // Data
