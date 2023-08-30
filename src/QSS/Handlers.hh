@@ -38,6 +38,7 @@
 
 // QSS Headers
 #include <QSS/FMU_ME.hh>
+#include <QSS/RefsDers.hh> //n2d
 #include <QSS/RefsDirDers.hh>
 #include <QSS/RefsVals.hh>
 #include <QSS/RefsValsDers.hh>
@@ -79,7 +80,8 @@ public: // Creation
 	// Constructor
 	explicit
 	Handlers( FMU_ME * fmu_me = nullptr ) :
-	 fmu_me_( fmu_me )
+	 fmu_me_( fmu_me ),
+	 advance_QSS_ptr( options::d2d ? &Handlers::advance_QSS_d2d : &Handlers::advance_QSS_n2d )
 	{}
 
 public: // Conversion
@@ -165,11 +167,21 @@ public: // Methods
 
 		// FMU pooled data set up
 		if ( qss_.have() ) { // State variables
-			qss_vars_.clear(); qss_vars_.reserve( qss_.n() );
-			qss_ders_.clear(); qss_ders_.reserve( qss_.n() );
-			for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
-				qss_vars_.push_back( handlers_[ i ]->var().ref() );
-				qss_ders_.push_back( handlers_[ i ]->der().ref() );
+			if ( options::d2d ) {
+				qss_vars_.clear(); qss_vars_.reserve( qss_.n() );
+				qss_ders_.clear(); qss_ders_.reserve( qss_.n() );
+				for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
+					qss_vars_.push_back( handlers_[ i ]->var().ref() );
+					qss_ders_.push_back( handlers_[ i ]->der().ref() );
+				}
+			} else {
+				assert( options::n2d );
+				qss_vars_.clear(); qss_vars_.reserve( qss_.n() );
+				qss_dn2d_.clear(); qss_dn2d_.reserve( qss_.n() );
+				for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
+					qss_vars_.push_back( handlers_[ i ]->var().ref() );
+					qss_dn2d_.push_back( handlers_[ i ]->der().ref() );
+				}
 			}
 		}
 		if ( r_.have() ) { // R variables
@@ -262,7 +274,7 @@ public: // Methods
 		if ( qss_.have() ) {
 			qss_observees_v_ref_.clear(); qss_observees_v_ref_.reserve( n_qss_observees_ );
 			qss_observees_v_.clear(); qss_observees_v_.resize( n_qss_observees_ );
-			qss_observees_dv_.clear(); qss_observees_dv_.resize( n_qss_observees_ );
+			if ( options::d2d ) { qss_observees_dv_.clear(); qss_observees_dv_.resize( n_qss_observees_ ); }
 			for ( auto observee : qss_observees_ ) {
 				qss_observees_v_ref_.push_back( observee->var().ref() );
 			}
@@ -390,6 +402,7 @@ private: // Methods
 		all_.b() = 0u;
 		all_.e() = handlers_.size();
 		size_type i( 0u );
+		order_ = 0;
 		for ( Variable * handler : handlers_ ) {
 			order_ = std::max( order_, handler->order() ); // Since ZC are sorted after B|I|D|Passive|Input we can't just look at the first variable (in case of strange model with ZC vars but no QSS vars)
 		}
@@ -453,6 +466,14 @@ private: // Methods
 	void
 	advance_QSS( Time const t )
 	{
+		(this->*advance_QSS_ptr)( t );
+	}
+
+	// Advance QSS State Handlers: Directional Second Derivatives
+	void
+	advance_QSS_d2d( Time const t )
+	{
+		assert( options::d2d );
 		assert( qss_.have() );
 		assert( fmu_me_ != nullptr );
 		assert( fmu_me_->get_time() == t );
@@ -471,15 +492,7 @@ private: // Methods
 		}
 
 		if ( order_ >= 2 ) {
-			set_qss_observees_dv( t );
-			fmu_me_->get_directional_derivatives(
-			 qss_observees_v_ref_.data(),
-			 n_qss_observees_,
-			 qss_ders_.refs.data(),
-			 qss_.n(),
-			 qss_observees_dv_.data(),
-			 qss_ders_.ders.data()
-			); // Get 2nd derivatives at t
+			get_qss_second_derivatives( t );
 			for ( size_type i = qss_.b(), e = qss_.e(), j = 0u; i < e; ++i, ++j ) { // Handler advance stage 2
 				handlers_[ i ]->advance_handler_2_dd2( qss_ders_.ders[ j ] );
 			}
@@ -487,20 +500,79 @@ private: // Methods
 				Time const tN( t + options::dtND );
 				fmu_me_->set_time( tN );
 				set_qss_observees_values( tN );
-				set_qss_observees_dv( tN );
-				fmu_me_->get_directional_derivatives(
-				 qss_observees_v_ref_.data(),
-				 n_qss_observees_,
-				 qss_ders_.refs.data(),
-				 qss_.n(),
-				 qss_observees_dv_.data(),
-				 qss_ders_.ders.data()
-				); // Get 2nd derivatives at t + dtND
+				get_qss_second_derivatives( tN );
 				for ( size_type i = qss_.b(), e = qss_.e(), j = 0u; i < e; ++i, ++j ) { // Handler advance stage 3
 					handlers_[ i ]->advance_handler_3_dd2( qss_ders_.ders[ j ] );
 				}
 				fmu_me_->set_time( t );
 			}
+		}
+	}
+
+	// Advance QSS State Handlers: Numerical Second Derivatives
+	void
+	advance_QSS_n2d( Time const t )
+	{
+		assert( options::n2d );
+		assert( qss_.have() );
+		assert( fmu_me_ != nullptr );
+		assert( fmu_me_->get_time() == t );
+		assert( qss_.n() == qss_vars_.size() );
+		assert( qss_.n() == qss_dn2d_.size() );
+
+		fmu_me_->get_reals( qss_.n(), qss_vars_.refs.data(), qss_vars_.vals.data() );
+		for ( size_type i = qss_.b(), e = qss_.e(), j = 0u; i < e; ++i, ++j ) { // Handler advance stage 0
+			assert( handlers_[ i ]->is_QSS() );
+			handlers_[ i ]->advance_handler_0( t, qss_vars_.vals[ j ] );
+		}
+
+		fmu_me_->get_reals( qss_.n(), qss_dn2d_.refs.data(), qss_dn2d_.ders.data() );
+		for ( size_type i = qss_.b(), e = qss_.e(), j = 0u; i < e; ++i, ++j ) { // Handler advance stage 1
+			handlers_[ i ]->advance_handler_1( qss_dn2d_.ders[ j ] );
+		}
+
+		if ( order_ >= 3 ) {
+			Time tN( t - options::dtND );
+			if ( fwd_time( tN ) ) { // Use centered ND formulas
+				fmu_me_->set_time( tN );
+				set_qss_observees_values( tN );
+				fmu_me_->get_reals( qss_.n(), qss_dn2d_.refs.data(), qss_dn2d_.ders.data() );
+				tN = t + options::dtND;
+				fmu_me_->set_time( tN );
+				set_qss_observees_values( tN );
+				fmu_me_->get_reals( qss_.n(), qss_dn2d_.refs.data(), qss_dn2d_.ders_p.data() );
+				for ( size_type i = qss_.b(), e = qss_.e(), j = 0u; i < e; ++i, ++j ) { // Handler advance stage 2
+					handlers_[ i ]->advance_handler_2( qss_dn2d_.ders[ j ], qss_dn2d_.ders_p[ j ] );
+				}
+				for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) { // Handler advance stage 3
+					handlers_[ i ]->advance_handler_3();
+				}
+			} else { // Use forward ND formulas
+				tN = t + options::dtND;
+				fmu_me_->set_time( tN );
+				set_qss_observees_values( tN );
+				fmu_me_->get_reals( qss_.n(), qss_dn2d_.refs.data(), qss_dn2d_.ders.data() );
+				tN = t + options::two_dtND;
+				fmu_me_->set_time( tN );
+				set_qss_observees_values( tN );
+				fmu_me_->get_reals( qss_.n(), qss_dn2d_.refs.data(), qss_dn2d_.ders_p.data() );
+				for ( size_type i = qss_.b(), e = qss_.e(), j = 0u; i < e; ++i, ++j ) { // Handler advance stage 2
+					handlers_[ i ]->advance_handler_2_forward( qss_dn2d_.ders[ j ], qss_dn2d_.ders_p[ j ] );
+				}
+				for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) { // Handler advance stage 3
+					handlers_[ i ]->advance_handler_3_forward();
+				}
+			}
+			fmu_me_->set_time( t );
+		} else if ( order_ >= 2 ) {
+			Time const tN( t + options::dtND );
+			fmu_me_->set_time( tN );
+			set_qss_observees_values( tN );
+			fmu_me_->get_reals( qss_.n(), qss_dn2d_.refs.data(), qss_dn2d_.ders_p.data() );
+			for ( size_type i = qss_.b(), e = qss_.e(), j = 0u; i < e; ++i, ++j ) { // Handler advance stage 2
+				handlers_[ i ]->advance_handler_2( qss_dn2d_.ders_p[ j ] );
+			}
+			fmu_me_->set_time( t );
 		}
 	}
 
@@ -805,10 +877,11 @@ private: // Methods
 		fmu_me_->set_reals( qss_observees_.size(), qss_observees_v_ref_.data(), qss_observees_v_.data() ); // Set observees FMU values
 	}
 
-	// Set QSS Observees Derivative Vector at Time t
+	// Get QSS Second Derivatives at Time t
 	void
-	set_qss_observees_dv( Time const t )
+	get_qss_second_derivatives( Time const t )
 	{
+		assert( options::d2d );
 		for ( size_type i = 0u; i < n_qss_observees_; ++i ) {
 #ifndef QSS_PROPAGATE_CONTINUOUS
 			qss_observees_dv_[ i ] = qss_observees_[ i ]->q1( t ); // Quantized: Traditional QSS
@@ -816,6 +889,14 @@ private: // Methods
 			qss_observees_dv_[ i ] = qss_observees_[ i ]->x1( t ); // Continuous: Modified QSS
 #endif
 		}
+		fmu_me_->get_directional_derivatives(
+		 qss_observees_v_ref_.data(),
+		 n_qss_observees_,
+		 qss_ders_.refs.data(),
+		 qss_.n(),
+		 qss_observees_dv_.data(),
+		 qss_ders_.ders.data()
+		); // Get 2nd derivatives at t
 	}
 
 	// Set Real Observees FMU Values at Time t
@@ -878,6 +959,7 @@ private: // Data
 	// Handler FMU pooled call data
 	RefsVals< Variable > qss_vars_; // QSS values
 	RefsDirDers< Variable > qss_ders_; // QSS derivatives
+	RefsDers< Variable > qss_dn2d_; //n2d QSS derivatives
 	RefsValsDers< Variable > r_vars_; // Real non-state values and derivatives
 	RefsVals< Variable > ox_vars_; // Other X-based values
 	RefsValsDers< Variable > zc_vars_; // Zero-crossing values and derivatives
@@ -902,6 +984,9 @@ private: // Data
 	VariableRefs zc_observees_v_ref_; // Zero-crossing handlers observees value references
 	Reals zc_observees_v_; // Zero-crossing handlers observees values
 	Reals zc_observees_dv_; // Zero-crossing handlers observees derivatives
+
+	// QSS advance method pointer
+	void (Handlers::*advance_QSS_ptr)( Time const t ){ nullptr };
 
 }; // Handlers
 

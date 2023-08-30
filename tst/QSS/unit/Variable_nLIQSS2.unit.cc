@@ -1,4 +1,4 @@
-// QSS::Variable_xQSS2 Unit Tests
+// QSS::Variable_nLIQSS2 Unit Tests
 //
 // Project: QSS Solver
 //
@@ -37,19 +37,18 @@
 #include <gtest/gtest.h>
 
 // QSS Headers
-#include <QSS/Variable_xQSS2.hh>
+#include <QSS/Variable_nLIQSS2.hh>
 #include <QSS/EventIndicators.hh>
 
 using namespace QSS;
 
-TEST( Variable_xQSS2Test, Basic )
+TEST( Variable_nLIQSS2Test, Basic )
 {
 	FMU_ME fmu;
 
-	Variable_xQSS2 x1( &fmu, "x1", 1.0e-4, 1.0e-6, 0.0, 42.0 );
+	Variable_nLIQSS2 x1( &fmu, "x1", 1.0e-4, 1.0e-6, 0.0, 42.0 );
 	EXPECT_EQ( 1.0e-4, x1.rTol );
 	EXPECT_EQ( 1.0e-6, x1.aTol );
-	EXPECT_EQ( std::max( x1.rTol * 42.0, x1.aTol ), x1.qTol );
 	EXPECT_EQ( 0.0, x1.tQ );
 
 	EXPECT_EQ( 42.0, x1.x( 0.0 ) );
@@ -66,10 +65,9 @@ TEST( Variable_xQSS2Test, Basic )
 	EXPECT_EQ( 0.0, x1.x2( 1.0 ) );
 	EXPECT_EQ( 0.0, x1.q2( 1.0 ) );
 
-	Variable_xQSS2 x2( &fmu, "x2", 1.0e-4, 1.0e-3, 0.0, 99.0 );
+	Variable_nLIQSS2 x2( &fmu, "x2", 1.0e-4, 1.0e-3, 0.0, 99.0 );
 	EXPECT_EQ( 1.0e-4, x2.rTol );
 	EXPECT_EQ( 1.0e-3, x2.aTol );
-	EXPECT_EQ( std::max( x2.rTol * 99.0, x2.aTol ), x2.qTol );
 	EXPECT_EQ( 0.0, x2.tQ );
 
 	EXPECT_EQ( 99.0, x2.x( 0.0 ) );
@@ -87,15 +85,15 @@ TEST( Variable_xQSS2Test, Basic )
 	EXPECT_EQ( 0.0, x1.q2( 1.0 ) );
 }
 
-TEST( Variable_xQSS2Test, Achilles )
+TEST( Variable_nLIQSS2Test, Achilles )
 {
 	std::string const model( "Achilles.fmu" );
 	if ( !path::is_file( model ) ) {
-		std::cout << ">>>>>>>>>>>> Variable_xQSS2 Achilles test not run: Achilles.fmu not present" << std::endl;
+		std::cout << ">>>>>>>>>>>> Variable_nLIQSS2 Achilles test not run: Achilles.fmu not present" << std::endl;
 		return;
 	}
 
-	options::qss = options::QSS::xQSS2;
+	options::qss = options::QSS::nLIQSS2;
 	options::specified::qss = true;
 	options::rTol = 100.0;
 	options::specified::rTol = true;
@@ -112,10 +110,10 @@ TEST( Variable_xQSS2Test, Achilles )
 	fmu.init();
 	std::cout.rdbuf( coutBuf ); // Re-redirect cout
 
-	Variable_xQSS2 * x1( dynamic_cast< Variable_xQSS2 * >( fmu.var_named( "x1" ) ) );
-	Variable_xQSS2 * x2( dynamic_cast< Variable_xQSS2 * >( fmu.var_named( "x2" ) ) );
+	Variable_nLIQSS2 * x1( dynamic_cast< Variable_nLIQSS2 * >( fmu.var_named( "x1" ) ) );
+	Variable_nLIQSS2 * x2( dynamic_cast< Variable_nLIQSS2 * >( fmu.var_named( "x2" ) ) );
 	if ( ( x1 == nullptr ) || ( x2 == nullptr ) ) {
-		std::cout << ">>>>>>>>>>>> Variable_xQSS2 Achilles test not run: Variables x1 and/or x2 not found in FMU" << std::endl;
+		std::cout << ">>>>>>>>>>>> Variable_nLIQSS2 Achilles test not run: Variables x1 and/or x2 not found in FMU" << std::endl;
 		return;
 	}
 
@@ -125,25 +123,23 @@ TEST( Variable_xQSS2Test, Achilles )
 	EXPECT_EQ( 1.0, x1->aTol );
 	EXPECT_EQ( 0.0, x1->tQ );
 	EXPECT_EQ( 0.0, x1->tX );
-	EXPECT_NEAR( 1.154700538379251, x1->tE, 1e-9 );
+	EXPECT_NEAR( 1.0690449676428, x1->tE, 1e-9 );
 	EXPECT_EQ( 0.0, x1->x( 0.0 ) );
-	EXPECT_EQ( 0.0, x1->q( 0.0 ) );
-	EXPECT_EQ( 3.0, x1->x1( 0.0 ) );
-	EXPECT_EQ( 3.0, x1->q1( 0.0 ) );
-	EXPECT_EQ( 2 * -0.75, x1->x2( 0.0 ) );
-	EXPECT_EQ( 2 * -0.75, x1->q2( 0.0 ) );
+	EXPECT_EQ( -1.0, x1->q( 0.0 ) );
+	EXPECT_EQ( 3.5, x1->x1( 0.0 ) );
+	EXPECT_EQ( 3.5, x1->q1( 0.0 ) );
+	EXPECT_NEAR( 2 * -0.875000000011283, x1->x2( 0.0 ), 1e-9 );
 
 	EXPECT_EQ( 100.0, x2->rTol );
 	EXPECT_EQ( 1.0, x2->aTol );
 	EXPECT_EQ( 0.0, x2->tQ );
 	EXPECT_EQ( 0.0, x2->tX );
-	EXPECT_NEAR( 11.54700538379251, x2->tE, 1e-9 );
+	EXPECT_NEAR( 10.690449676497, x2->tE, 1e-9 );
 	EXPECT_EQ( 2.0, x2->x( 0.0 ) );
-	EXPECT_EQ( 2.0, x2->q( 0.0 ) );
+	EXPECT_EQ( -198.0, x2->q( 0.0 ) );
 	EXPECT_EQ( 0.0, x2->x1( 0.0 ) );
 	EXPECT_EQ( 0.0, x2->q1( 0.0 ) );
-	EXPECT_EQ( 2 * -1.5, x2->x2( 0.0 ) );
-	EXPECT_EQ( 2 * -1.5, x2->q2( 0.0 ) );
+	EXPECT_EQ( -3.5, x2->x2( 0.0 ) );
 
 	double const tE( x1->tE );
 	fmu.set_time( tE );
@@ -151,21 +147,19 @@ TEST( Variable_xQSS2Test, Achilles )
 
 	EXPECT_EQ( tE, x1->tQ );
 	EXPECT_EQ( tE, x1->tX );
-	EXPECT_NEAR( 11.52772837565216, x1->tE, 1e-9 );
-	EXPECT_NEAR( 2.464101615137755, x1->x( x1->tX ), 1e-9 );
-	EXPECT_NEAR( 2.464101615137755, x1->q( x1->tQ ), 1e-9 );
-	EXPECT_NEAR( -1.232050807568877, x1->x1( x1->tX ), 1e-9 );
-	EXPECT_NEAR( -1.232050807568877, x1->q1( x1->tQ ), 1e-9 );
-	EXPECT_NEAR( 2 * -2.290063509461097, x1->x2( x1->tX ), 1e-9 );
-	EXPECT_NEAR( 2 * -2.290063509461097, x1->q2( x1->tQ ), 1e-9 );
+	EXPECT_NEAR( 2.65600355987772, x1->tE, 1e-9 );
+	EXPECT_NEAR( 2.74165738674982, x1->x( x1->tX ), 1e-9 );
+	EXPECT_NEAR( 276.907396061731, x1->q( x1->tQ ), 1e-9 );
+	EXPECT_NEAR( -435.453698030866, x1->x1( x1->tX ), 1e-9 );
+	EXPECT_NEAR( -435.453698030866, x1->q1( x1->tQ ), 1e-9 );
+	EXPECT_NEAR( 2 * 108.863424514993, x1->x2( x1->tX ), 1e-9 );
 
 	EXPECT_EQ( 0.0, x2->tQ );
 	EXPECT_EQ( tE, x2->tX );
-	EXPECT_NEAR( 21.37305817574179, x2->tE, 1e-9 );
-	EXPECT_NEAR( 2.220446049250313e-16, x2->x( x2->tX ), 1e-9 );
-	EXPECT_EQ( 2.0, x2->q( x2->tQ ) );
-	EXPECT_NEAR( -2.464101615137755, x2->x1( x2->tX ), 1e-9 );
+	EXPECT_NEAR( 2.85913578415831, x2->tE, 1e-9 );
+	EXPECT_NEAR( 2.57909249512522e-11, x2->x( x2->tX ), 1e-9 );
+	EXPECT_EQ( -198.0, x2->q( x2->tQ ) );
+	EXPECT_NEAR( -276.907396061731, x2->x1( x2->tX ), 1e-9 );
 	EXPECT_EQ( 0.0, x2->q1( x2->tQ ) );
-	EXPECT_NEAR( 2 * 0.6160254037844386, x2->x2( x2->tX ), 1e-9 );
-	EXPECT_EQ( 2 * -1.5, x2->q2( x2->tQ ) );
+	EXPECT_NEAR( 2 * 217.726849001565, x2->x2( x2->tX ), 1e-9 );
 }

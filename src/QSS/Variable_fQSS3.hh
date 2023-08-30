@@ -1,4 +1,4 @@
-// xQSS3 Variable
+// fQSS3 Variable
 //
 // Project: QSS Solver
 //
@@ -33,16 +33,16 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_Variable_xQSS3_hh_INCLUDED
-#define QSS_Variable_xQSS3_hh_INCLUDED
+#ifndef QSS_Variable_fQSS3_hh_INCLUDED
+#define QSS_Variable_fQSS3_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/Variable_QSS.hh>
 
 namespace QSS {
 
-// xQSS3 Variable
-class Variable_xQSS3 final : public Variable_QSS
+// fQSS3 Variable
+class Variable_fQSS3 final : public Variable_QSS
 {
 
 public: // Types
@@ -52,7 +52,7 @@ public: // Types
 public: // Creation
 
 	// Constructor
-	Variable_xQSS3(
+	Variable_fQSS3(
 	 FMU_ME * fmu_me,
 	 std::string const & name,
 	 Real const rTol_ = options::rTol,
@@ -448,7 +448,7 @@ private: // Data
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Continuous trajectory coefficients
 	Real q_0_{ 0.0 }, q_1_{ 0.0 }, q_2_{ 0.0 }, q_3_{ 0.0 }; // Quantized trajectory coefficients
 
-}; // Variable_xQSS3
+}; // Variable_fQSS3
 
 } // QSS
 

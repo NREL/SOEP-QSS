@@ -1,4 +1,4 @@
-// rLIQSS2 Variable
+// nrLIQSS2 Variable
 //
 // Project: QSS Solver
 //
@@ -33,16 +33,16 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_Variable_rLIQSS2_hh_INCLUDED
-#define QSS_Variable_rLIQSS2_hh_INCLUDED
+#ifndef QSS_Variable_nrLIQSS2_hh_INCLUDED
+#define QSS_Variable_nrLIQSS2_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/Variable_QSS.hh>
 
 namespace QSS {
 
-// rLIQSS2 Variable
-class Variable_rLIQSS2 final : public Variable_QSS
+// nrLIQSS2 Variable
+class Variable_nrLIQSS2 final : public Variable_QSS
 {
 
 public: // Types
@@ -52,7 +52,7 @@ public: // Types
 public: // Creation
 
 	// Constructor
-	Variable_rLIQSS2(
+	Variable_nrLIQSS2(
 	 FMU_ME * fmu_me,
 	 std::string const & name,
 	 Real const rTol_ = options::rTol,
@@ -160,7 +160,8 @@ public: // Methods
 		if ( self_observer() ) {
 			advance_LIQSS_simultaneous();
 		} else {
-			x_2_ = dd_2();
+			x_2_ = c_2( tQ, x_1_ );
+			fmu_set_observees_x( t0() );
 			l_0_ = q_c_ + ( signum( x_2_ ) * qTol );
 		}
 	}
@@ -206,7 +207,7 @@ public: // Methods
 			}
 		} else {
 			q_1_ = x_1_ = c_1();
-			x_2_ = dd_2();
+			x_2_ = c_2( tE, x_1_ );
 			if ( yoyo_ ) { // Yo-yo mode
 				x_2_ *= x_2_rlx_;
 			} else { // QSS mode
@@ -251,9 +252,9 @@ public: // Methods
 		q_1_ = x_1_ = x_1;
 	}
 
-	// QSS Advance: Stage 2: Directional 2nd Derivative
+	// QSS Advance: Stage 2
 	void
-	advance_QSS_2_dd2( Real const dd2 ) override
+	advance_QSS_2( Real const x_1_p ) override
 	{
 		set_qTol();
 		if ( self_observer() ) {
@@ -264,9 +265,49 @@ public: // Methods
 			}
 		} else {
 			if ( yoyo_ ) { // Yo-yo mode
-				advance_QSS_2_relax_yoyo( one_half * dd2 );
+				advance_QSS_2_relax_yoyo( n_2( x_1_p ) );
 			} else { // QSS mode
-				advance_QSS_2_relax_QSS( one_half * dd2 );
+				advance_QSS_2_relax_QSS( n_2( x_1_p ) );
+			}
+		}
+	}
+
+	// QSS Advance: Stage 2
+	void
+	advance_QSS_2( Real const x_1_m, Real const x_1_p ) override
+	{
+		set_qTol();
+		if ( self_observer() ) {
+			if ( yoyo_ ) { // Yo-yo mode
+				advance_QSS_2_relax_self_observer_yoyo();
+			} else { // QSS mode
+				advance_QSS_2_relax_self_observer_QSS();
+			}
+		} else {
+			if ( yoyo_ ) { // Yo-yo mode
+				advance_QSS_2_relax_yoyo( n_2( x_1_m, x_1_p ) );
+			} else { // QSS mode
+				advance_QSS_2_relax_QSS( n_2( x_1_m, x_1_p ) );
+			}
+		}
+	}
+
+	// QSS Advance: Stage 2: Forward ND
+	void
+	advance_QSS_2_forward( Real const x_1_p, Real const x_1_2p ) override
+	{
+		set_qTol();
+		if ( self_observer() ) {
+			if ( yoyo_ ) { // Yo-yo mode
+				advance_QSS_2_relax_self_observer_yoyo();
+			} else { // QSS mode
+				advance_QSS_2_relax_self_observer_QSS();
+			}
+		} else {
+			if ( yoyo_ ) { // Yo-yo mode
+				advance_QSS_2_relax_yoyo( f_2( x_1_p, x_1_2p ) );
+			} else { // QSS mode
+				advance_QSS_2_relax_QSS( f_2( x_1_p, x_1_2p ) );
 			}
 		}
 	}
@@ -291,7 +332,7 @@ public: // Methods
 		tQ = tX = t;
 		q_c_ = q_0_ = x_0_ = p_0();
 		q_1_ = x_1_ = c_1();
-		x_2_ = dd_2();
+		x_2_ = c_2( t, x_1_ );
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
@@ -318,11 +359,25 @@ public: // Methods
 		q_1_ = x_1_ = x_1;
 	}
 
-	// Handler Advance: Stage 2: Directional 2nd Derivative
+	// Handler Advance: Stage 2
 	void
-	advance_handler_2_dd2( Real const dd2 ) override
+	advance_handler_2( Real const x_1_p ) override
 	{
-		x_2_ = one_half * dd2;
+		x_2_ = n_2( x_1_p );
+	}
+
+	// Handler Advance: Stage 2
+	void
+	advance_handler_2( Real const x_1_m, Real const x_1_p ) override
+	{
+		x_2_ = n_2( x_1_m, x_1_p );
+	}
+
+	// QSS Advance: Stage 2: Forward ND
+	void
+	advance_handler_2_forward( Real const x_1_p, Real const x_1_2p ) override
+	{
+		x_2_ = f_2( x_1_p, x_1_2p );
 	}
 
 	// Handler Advance: Stage Final
@@ -355,11 +410,25 @@ public: // Methods
 		x_1_ = x_1;
 	}
 
-	// Observer Advance: Stage 2: Directional 2nd Derivative
+	// Observer Advance: Stage 2
 	void
-	advance_observer_2_dd2( Real const dd2 ) override
+	advance_observer_2( Real const x_1_p ) override
 	{
-		x_2_ = ( yoyo_ ? x_2_rlx_ * one_half * dd2 : one_half * dd2 );
+		x_2_ = ( yoyo_ ? x_2_rlx_ * n_2( x_1_p ) : n_2( x_1_p ) );
+	}
+
+	// Observer Advance: Stage 2
+	void
+	advance_observer_2( Real const x_1_m, Real const x_1_p ) override
+	{
+		x_2_ = ( yoyo_ ? x_2_rlx_ * n_2( x_1_m, x_1_p ) : n_2( x_1_m, x_1_p ) );
+	}
+
+	// Observer Advance: Stage 2: Forward ND
+	void
+	advance_observer_2_forward( Real const x_1_p, Real const x_1_2p ) override
+	{
+		x_2_ = ( yoyo_ ? x_2_rlx_ * f_2( x_1_p, x_1_2p ) : f_2( x_1_p, x_1_2p ) );
 	}
 
 	// Observer Advance: Stage Final
@@ -554,6 +623,27 @@ private: // Methods
 		yoyo_ = false;
 	}
 
+	// Coefficient 2
+	Real
+	n_2( Real const x_1_p ) const
+	{
+		return options::one_over_two_dtND * ( x_1_p - x_1_ ); //ND Forward Euler
+	}
+
+	// Coefficient 2
+	Real
+	n_2( Real const x_1_m, Real const x_1_p ) const
+	{
+		return options::one_over_four_dtND * ( x_1_p - x_1_m ); //ND Centered difference
+	}
+
+	// Coefficient 2
+	Real
+	f_2( Real const x_1_p, Real const x_1_2p ) const
+	{
+		return options::one_over_four_dtND * ( ( three * ( x_1_p - x_1_ ) ) + ( x_1_p - x_1_2p ) ); //ND Forward 3-point
+	}
+
 private: // Data
 
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous trajectory coefficients
@@ -574,7 +664,7 @@ private: // Data
 	static constexpr double dt_growth_inf_{ infinity / dt_growth_mul_ }; // Time step growth infinity threshold
 	static constexpr double x_2_rlx_{ one_half }; // 2nd order coefficient relaxation factor
 
-}; // Variable_rLIQSS2
+}; // Variable_nrLIQSS2
 
 } // QSS
 

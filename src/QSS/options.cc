@@ -48,8 +48,12 @@
 namespace QSS {
 namespace options {
 
-QSS qss( QSS::QSS2 ); // QSS method: (LI)QSS(1|2|3)
+QSS qss( QSS::QSS2 ); // QSS method: [n][r][f][LI]QSS(1|2|3)
 int order( 2 ); // QSS method order: (1|2|3)
+bool d2d( true ); // Directional state second derivatives QSS solver?
+bool n2d( false ); // Numerical state second derivatives QSS solver?
+bool rQSS( false ); // Relaxation QSS solver?
+bool fQSS( false ); // Full-order broadcast QSS solver?
 double rTol( 1.0e-4 ); // Relative tolerance
 double aTol( 1.0e-6 ); // Absolute tolerance
 double aFac( 0.01 ); // Absolute tolerance factor
@@ -81,8 +85,7 @@ std::size_t pass( 20 ); // Pass count limit
 bool cycles( false ); // Report dependency cycles?
 bool inflection( false ); // Requantize at inflections?
 double inflectionFrac( 0.02 ); // Inflection step fraction min
-bool relax( false ); // Relaxation for derivative sensitivity?
-bool cluster( false ); // Clustering with relaxation?
+bool cluster( false ); // Clustering with relaxation solver?
 bool refine( false ); // Refine FMU zero-crossing roots?
 bool perfect( false ); // Perfect FMU-ME connection sync?
 bool active( false ); // Active intermediate variables preferred?
@@ -145,7 +148,10 @@ help_display()
 {
 	std::cout << '\n' << "QSS [options] [model [model ...]]" << "\n\n";
 	std::cout << "Options:" << "\n\n";
-	std::cout << " --qss=QSS              QSS method: (x)(LI)QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
+	std::cout << " --qss=QSS              QSS method: [n][r][f][LI]QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
+	std::cout << "                                     n: Numerical state second derivatives" << '\n';
+	std::cout << "                                        r: Relaxation solver" << '\n';
+	std::cout << "                                           f: Full-order broadcast quantized representation" << '\n';
 	std::cout << " --rTol=TOL             Relative tolerance  [" << rTol << "|FMU]" << '\n';
 	std::cout << " --aTol=TOL             Absolute tolerance  [rTol*aFac*nominal]" << '\n';
 	std::cout << " --aFac=FAC             Absolute tolerance factor  [" << aFac << ']' << '\n';
@@ -170,8 +176,7 @@ help_display()
 	std::cout << " --cycles               Report dependency cycles" << '\n';
 	std::cout << " --inflection           Requantize at inflections" << '\n';
 	std::cout << " --inflectionFrac=FRAC  Inflection step fraction min  [" << inflectionFrac << ']' << '\n';
-	std::cout << " --relax[=Y|N]          Relaxation for derivative sensitivity  [N]" << '\n';
-	std::cout << " --cluster              Clustering with relaxation  [Off]" << '\n';
+	std::cout << " --cluster              Clustering with relaxation solver  [Off]" << '\n';
 	std::cout << " --refine               Refine FMU zero-crossing roots" << '\n';
 	std::cout << " --perfect              Perfect FMU-ME connection sync" << '\n';
 	std::cout << " --active               Active intermediate variables preferred  [Off]" << '\n';
@@ -257,34 +262,134 @@ process_args( Args const & args )
 			if ( qss_name == "QSS1" ) {
 				qss = QSS::QSS1;
 				order = 1;
+				d2d = true;
+				rQSS = false;
+				fQSS = false;
 			} else if ( qss_name == "QSS2" ) {
 				qss = QSS::QSS2;
 				order = 2;
+				d2d = true;
+				rQSS = false;
+				fQSS = false;
 			} else if ( qss_name == "QSS3" ) {
 				qss = QSS::QSS3;
 				order = 3;
+				d2d = true;
+				rQSS = false;
+				fQSS = false;
 			} else if ( qss_name == "LIQSS1" ) {
 				qss = QSS::LIQSS1;
 				order = 1;
+				d2d = true;
+				rQSS = false;
+				fQSS = false;
 			} else if ( qss_name == "LIQSS2" ) {
 				qss = QSS::LIQSS2;
 				order = 2;
+				d2d = true;
+				rQSS = false;
+				fQSS = false;
 			} else if ( qss_name == "LIQSS3" ) {
 				qss = QSS::LIQSS3;
 				order = 3;
-			} else if ( qss_name == "xQSS1" ) {
-				qss = QSS::xQSS1;
+				d2d = true;
+				rQSS = false;
+				fQSS = false;
+			} else if ( qss_name == "fQSS1" ) {
+				qss = QSS::fQSS1;
 				order = 1;
-			} else if ( qss_name == "xQSS2" ) {
-				qss = QSS::xQSS2;
+				d2d = true;
+				rQSS = false;
+				fQSS = true;
+			} else if ( qss_name == "fQSS2" ) {
+				qss = QSS::fQSS2;
 				order = 2;
-			} else if ( qss_name == "xQSS3" ) {
-				qss = QSS::xQSS3;
+				d2d = true;
+				rQSS = false;
+				fQSS = true;
+			} else if ( qss_name == "fQSS3" ) {
+				qss = QSS::fQSS3;
 				order = 3;
+				d2d = true;
+				rQSS = false;
+				fQSS = true;
+			} else if ( qss_name == "rQSS2" ) {
+				qss = QSS::rQSS2;
+				order = 2;
+				d2d = true;
+				rQSS = true;
+				fQSS = false;
+			} else if ( qss_name == "rLIQSS2" ) {
+				qss = QSS::rLIQSS2;
+				order = 2;
+				d2d = true;
+				rQSS = true;
+				fQSS = false;
+			} else if ( qss_name == "rfQSS2" ) {
+				qss = QSS::rfQSS2;
+				order = 2;
+				d2d = true;
+				rQSS = true;
+				fQSS = true;
+			} else if ( qss_name == "nQSS2" ) {
+				qss = QSS::nQSS2;
+				order = 2;
+				d2d = false;
+				rQSS = false;
+				fQSS = false;
+			} else if ( qss_name == "nQSS3" ) {
+				qss = QSS::nQSS3;
+				order = 3;
+				d2d = false;
+				rQSS = false;
+				fQSS = false;
+			} else if ( qss_name == "nLIQSS2" ) {
+				qss = QSS::nLIQSS2;
+				order = 2;
+				d2d = false;
+				rQSS = false;
+				fQSS = false;
+			} else if ( qss_name == "nLIQSS3" ) {
+				qss = QSS::nLIQSS3;
+				order = 3;
+				d2d = false;
+				rQSS = false;
+				fQSS = false;
+			} else if ( qss_name == "nfQSS2" ) {
+				qss = QSS::nfQSS2;
+				order = 2;
+				d2d = false;
+				rQSS = false;
+				fQSS = true;
+			} else if ( qss_name == "nfQSS3" ) {
+				qss = QSS::nfQSS3;
+				order = 3;
+				d2d = false;
+				rQSS = false;
+				fQSS = true;
+			} else if ( qss_name == "nrQSS2" ) {
+				qss = QSS::nrQSS2;
+				order = 2;
+				d2d = false;
+				rQSS = true;
+				fQSS = false;
+			} else if ( qss_name == "nrLIQSS2" ) {
+				qss = QSS::nrLIQSS2;
+				order = 2;
+				d2d = false;
+				rQSS = true;
+				fQSS = false;
+			} else if ( qss_name == "nrfQSS2" ) {
+				qss = QSS::nrfQSS2;
+				order = 2;
+				d2d = false;
+				rQSS = true;
+				fQSS = true;
 			} else {
 				std::cerr << "\nError: Unsupported QSS method: " << qss_name << std::endl;
 				fatal = true;
 			}
+			n2d = !d2d;
 		} else if ( has_option( arg, "cycles" ) ) {
 			cycles = true;
 		} else if ( has_option( arg, "inflection" ) ) {
@@ -305,20 +410,6 @@ process_args( Args const & args )
 				std::cerr << "\nWarning: inflectionFrac " << inflectionFrac << " > 1: Clipped to 1" << std::endl;
 				inflectionFrac = 1.0;
 			}
-		} else if ( has_option_value( arg, "relax" ) ) {
-			static std::string const rlx_flags( "YNTF" );
-			char const rlx( uppercased( option_value( arg, "relax" ) )[ 0 ] );
-			if ( not_any_of( rlx, rlx_flags ) ) {
-				std::cerr << "\nError: Relax option has flag not in " << rlx_flags << ": " << rlx << std::endl;
-				fatal = true;
-			}
-			if ( is_any_of( rlx, "YT" ) ) {
-				relax = true;
-			} else {
-				relax = false;
-			}
-		} else if ( has_option( arg, "relax" ) ) {
-			relax = true;
 		} else if ( has_option( arg, "cluster" ) ) {
 			cluster = true;
 		} else if ( has_option( arg, "refine" ) ) {

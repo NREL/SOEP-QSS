@@ -376,29 +376,161 @@ namespace QSS {
 		std::cerr << std::setprecision( 16 );
 		output_filter = OutputFilter( options::var );
 
-		// Report QSS method
-		if ( options::qss == options::QSS::QSS1 ) {
+		// Report QSS method and set related options (for unit testing where command line isn't processed)
+		switch ( options::qss ) {
+		case options::QSS::QSS1:
 			std::cout << "\nQSS Method: QSS1" << std::endl;
-		} else if ( options::qss == options::QSS::QSS2 ) {
+			options::order = 1;
+			options::d2d = true;
+			options::rQSS = false;
+			options::fQSS = false;
+			break;
+		case options::QSS::QSS2:
 			std::cout << "\nQSS Method: QSS2" << std::endl;
-		} else if ( options::qss == options::QSS::QSS3 ) {
+			options::order = 2;
+			options::d2d = true;
+			options::rQSS = false;
+			options::fQSS = false;
+			break;
+		case options::QSS::QSS3:
 			std::cout << "\nQSS Method: QSS3" << std::endl;
-		} else if ( options::qss == options::QSS::LIQSS1 ) {
+			options::order = 3;
+			options::d2d = true;
+			options::rQSS = false;
+			options::fQSS = false;
+			break;
+		case options::QSS::LIQSS1:
 			std::cout << "\nQSS Method: LIQSS1" << std::endl;
-		} else if ( options::qss == options::QSS::LIQSS2 ) {
+			options::order = 1;
+			options::d2d = true;
+			options::rQSS = false;
+			options::fQSS = false;
+			break;
+		case options::QSS::LIQSS2:
 			std::cout << "\nQSS Method: LIQSS2" << std::endl;
-		} else if ( options::qss == options::QSS::LIQSS3 ) {
+			options::order = 2;
+			options::d2d = true;
+			options::rQSS = false;
+			options::fQSS = false;
+			break;
+		case options::QSS::LIQSS3:
 			std::cout << "\nQSS Method: LIQSS3" << std::endl;
-		} else if ( options::qss == options::QSS::xQSS1 ) {
-			std::cout << "\nQSS Method: xQSS1" << std::endl;
-		} else if ( options::qss == options::QSS::xQSS2 ) {
-			std::cout << "\nQSS Method: xQSS2" << std::endl;
-		} else if ( options::qss == options::QSS::xQSS3 ) {
-			std::cout << "\nQSS Method: xQSS3" << std::endl;
-		} else {
-			std::cerr << "\nError: Unsupported QSS method" << std::endl;
+			options::order = 3;
+			options::d2d = true;
+			options::rQSS = false;
+			options::fQSS = false;
+			break;
+		case options::QSS::fQSS1:
+			std::cout << "\nQSS Method: fQSS1" << std::endl;
+			options::order = 1;
+			options::d2d = true;
+			options::rQSS = false;
+			options::fQSS = true;
+			break;
+		case options::QSS::fQSS2:
+			std::cout << "\nQSS Method: fQSS2" << std::endl;
+			options::order = 2;
+			options::d2d = true;
+			options::rQSS = false;
+			options::fQSS = true;
+			break;
+		case options::QSS::fQSS3:
+			std::cout << "\nQSS Method: fQSS3" << std::endl;
+			options::order = 3;
+			options::d2d = true;
+			options::rQSS = false;
+			options::fQSS = true;
+			break;
+		case options::QSS::rQSS2:
+			std::cout << "\nQSS Method: rQSS2" << std::endl;
+			options::order = 2;
+			options::d2d = true;
+			options::rQSS = true;
+			options::fQSS = false;
+			break;
+		case options::QSS::rLIQSS2:
+			std::cout << "\nQSS Method: rLIQSS2" << std::endl;
+			options::order = 2;
+			options::d2d = true;
+			options::rQSS = true;
+			options::fQSS = false;
+			break;
+		case options::QSS::rfQSS2:
+			std::cout << "\nQSS Method: rfQSS2" << std::endl;
+			options::order = 2;
+			options::d2d = true;
+			options::rQSS = true;
+			options::fQSS = true;
+			break;
+		case options::QSS::nQSS2:
+			std::cout << "\nQSS Method: nQSS2" << std::endl;
+			options::order = 2;
+			options::d2d = false;
+			options::rQSS = false;
+			options::fQSS = false;
+			break;
+		case options::QSS::nQSS3:
+			std::cout << "\nQSS Method: nQSS3" << std::endl;
+			options::order = 3;
+			options::d2d = false;
+			options::rQSS = false;
+			options::fQSS = false;
+			break;
+		case options::QSS::nLIQSS2:
+			std::cout << "\nQSS Method: nLIQSS2" << std::endl;
+			options::order = 2;
+			options::d2d = false;
+			options::rQSS = false;
+			options::fQSS = false;
+			break;
+		case options::QSS::nLIQSS3:
+			std::cout << "\nQSS Method: nLIQSS3" << std::endl;
+			options::order = 3;
+			options::d2d = false;
+			options::rQSS = false;
+			options::fQSS = false;
+			break;
+		case options::QSS::nfQSS2:
+			std::cout << "\nQSS Method: nfQSS2" << std::endl;
+			options::order = 2;
+			options::d2d = false;
+			options::rQSS = false;
+			options::fQSS = true;
+			break;
+		case options::QSS::nfQSS3:
+			std::cout << "\nQSS Method: nfQSS3" << std::endl;
+			options::order = 3;
+			options::d2d = false;
+			options::rQSS = false;
+			options::fQSS = true;
+			break;
+		case options::QSS::nrQSS2:
+			std::cout << "\nQSS Method: nrQSS2" << std::endl;
+			options::order = 2;
+			options::d2d = false;
+			options::rQSS = true;
+			options::fQSS = false;
+			break;
+		case options::QSS::nrLIQSS2:
+			std::cout << "\nQSS Method: nrLIQSS2" << std::endl;
+			options::order = 2;
+			options::d2d = false;
+			options::rQSS = true;
+			options::fQSS = false;
+			break;
+		case options::QSS::nrfQSS2:
+			std::cout << "\nQSS Method: nrfQSS2" << std::endl;
+			options::order = 2;
+			options::d2d = false;
+			options::rQSS = true;
+			options::fQSS = true;
+			break;
+		default:
+			std::cerr << "\nError: Specified QSS method is not supported" << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
+		options::n2d = !options::d2d;
+		assert( ( options::order >= 1 ) && ( options::order <= 3 ) );
 
 		// QSS time and tolerance run controls
 		t = t0; // Simulation current time
@@ -938,33 +1070,34 @@ namespace QSS {
 						Variable * qss_var( nullptr );
 						if ( inp_fxn || !options::perfect ) { // Use input variables for connections
 							Real const var_aTol( std::max( options::specified::aTol ? options::aTol : options::rTol * options::aFac * var_nominal, std::numeric_limits< Real >::min() ) ); // Use variable nominal value to set the absolute tolerance unless aTol specified
-							if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) ) {
-								qss_var = new Variable_Inp1( this, var_name, options::rTol, var_aTol, var_start, fmu_var, inp_fxn );
-							} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) ) {
-								qss_var = new Variable_Inp2( this, var_name, options::rTol, var_aTol, var_start, fmu_var, inp_fxn );
-							} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) ) {
-								qss_var = new Variable_Inp3( this, var_name, options::rTol, var_aTol, var_start, fmu_var, inp_fxn );
-							} else if ( options::qss == options::QSS::xQSS1 ) {
-								qss_var = new Variable_xInp1( this, var_name, options::rTol, var_aTol, var_start, fmu_var, inp_fxn );
-							} else if ( options::qss == options::QSS::xQSS2 ) {
-								qss_var = new Variable_xInp2( this, var_name, options::rTol, var_aTol, var_start, fmu_var, inp_fxn );
-							} else if ( options::qss == options::QSS::xQSS3 ) {
-								qss_var = new Variable_xInp3( this, var_name, options::rTol, var_aTol, var_start, fmu_var, inp_fxn );
-							} else {
-								std::cerr << " Error: Specified QSS method is not yet supported for FMUs" << std::endl;
+							switch ( options::order ) {
+							case 1:
+								if ( !options::fQSS ) {
+									qss_var = new Variable_Inp1( this, var_name, options::rTol, var_aTol, var_start, fmu_var, inp_fxn );
+								} else {
+									qss_var = new Variable_fInp1( this, var_name, options::rTol, var_aTol, var_start, fmu_var, inp_fxn );
+								}
+								break;
+							case 2:
+								if ( !options::fQSS ) {
+									qss_var = new Variable_Inp2( this, var_name, options::rTol, var_aTol, var_start, fmu_var, inp_fxn );
+								} else {
+									qss_var = new Variable_fInp2( this, var_name, options::rTol, var_aTol, var_start, fmu_var, inp_fxn );
+								}
+								break;
+							case 3:
+								if ( !options::fQSS ) {
+									qss_var = new Variable_Inp3( this, var_name, options::rTol, var_aTol, var_start, fmu_var, inp_fxn );
+								} else {
+									qss_var = new Variable_fInp3( this, var_name, options::rTol, var_aTol, var_start, fmu_var, inp_fxn );
+								}
+								break;
+							default:
+								std::cerr << " Error: Specified QSS method is not supported" << std::endl;
 								std::exit( EXIT_FAILURE );
 							}
 						} else { // Use connection variables for connections
-							if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) || ( options::qss == options::QSS::xQSS1 ) ) {
-								qss_var = new Variable_Con( this, 1, var_name, var_start, fmu_var );
-							} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) || ( options::qss == options::QSS::xQSS2 ) ) {
-								qss_var = new Variable_Con( this, 2, var_name, var_start, fmu_var );
-							} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) || ( options::qss == options::QSS::xQSS3 ) ) {
-								qss_var = new Variable_Con( this, 3, var_name, var_start, fmu_var );
-							} else {
-								std::cerr << " Error: Specified QSS method is not yet supported for FMUs" << std::endl;
-								std::exit( EXIT_FAILURE );
-							}
+							qss_var = new Variable_Con( this, options::order, var_name, var_start, fmu_var );
 						}
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ fmu_var.ref() ] = qss_var;
@@ -985,39 +1118,75 @@ namespace QSS {
 						Real const var_aTol( std::max( options::specified::aTol ? options::aTol : options::rTol * options::aFac * var_nominal, std::numeric_limits< Real >::min() ) ); // Use variable nominal value to set the absolute tolerance unless aTol specified
 						if ( var_name == "time" ) {
 							qss_var = new Variable_time( this, options::order, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
-						} else if ( options::qss == options::QSS::QSS1 ) {
-							qss_var = new Variable_QSS1( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
-						} else if ( options::qss == options::QSS::QSS2 ) {
-							if ( options::relax ) { // Relaxation
-								qss_var = new Variable_rQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
-							} else {
-								qss_var = new Variable_QSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
-							}
-						} else if ( options::qss == options::QSS::QSS3 ) {
-							qss_var = new Variable_QSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
-						} else if ( options::qss == options::QSS::LIQSS1 ) {
-							qss_var = new Variable_LIQSS1( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
-						} else if ( options::qss == options::QSS::LIQSS2 ) {
-							if ( options::relax ) { // Relaxation
-								qss_var = new Variable_rLIQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
-							} else {
-								qss_var = new Variable_LIQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
-							}
-						} else if ( options::qss == options::QSS::LIQSS3 ) {
-							qss_var = new Variable_LIQSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
-						} else if ( options::qss == options::QSS::xQSS1 ) {
-							qss_var = new Variable_xQSS1( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
-						} else if ( options::qss == options::QSS::xQSS2 ) {
-							if ( options::relax ) { // Relaxation
-								qss_var = new Variable_rxQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
-							} else {
-								qss_var = new Variable_xQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
-							}
-						} else if ( options::qss == options::QSS::xQSS3 ) {
-							qss_var = new Variable_xQSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
 						} else {
-							std::cerr << " Error: Specified QSS method is not yet supported for FMUs" << std::endl;
-							std::exit( EXIT_FAILURE );
+							switch ( options::qss ) {
+							case options::QSS::QSS1:
+								qss_var = new Variable_QSS1( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::QSS2:
+								qss_var = new Variable_QSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::QSS3:
+								qss_var = new Variable_QSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::LIQSS1:
+								qss_var = new Variable_LIQSS1( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::LIQSS2:
+								qss_var = new Variable_LIQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::LIQSS3:
+								qss_var = new Variable_LIQSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::fQSS1:
+								qss_var = new Variable_fQSS1( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::fQSS2:
+								qss_var = new Variable_fQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::fQSS3:
+								qss_var = new Variable_fQSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::rQSS2:
+								qss_var = new Variable_rQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::rLIQSS2:
+								qss_var = new Variable_rLIQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::rfQSS2:
+								qss_var = new Variable_rfQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::nQSS2:
+								qss_var = new Variable_nQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::nQSS3:
+								qss_var = new Variable_nQSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::nLIQSS2:
+								qss_var = new Variable_nLIQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::nLIQSS3:
+								qss_var = new Variable_nLIQSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::nfQSS2:
+								qss_var = new Variable_nfQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::nfQSS3:
+								qss_var = new Variable_nfQSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::nrQSS2:
+								qss_var = new Variable_nrQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::nrLIQSS2:
+								qss_var = new Variable_nrLIQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::nrfQSS2:
+								qss_var = new Variable_nrfQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							default:
+								std::cerr << " Error: Specified QSS method is not supported" << std::endl;
+								std::exit( EXIT_FAILURE );
+							}
 						}
 						vars.push_back( qss_var ); // Add to QSS variables
 						qss_var_of_ref[ fmu_var.ref() ] = qss_var;
@@ -1035,14 +1204,19 @@ namespace QSS {
 						Variable_ZC * qss_var( nullptr );
 						Real const var_rTol( options::rTol * options::zFac * options::zrFac );
 						Real const var_aTol( std::max( ( options::specified::aTol ? options::aTol : options::rTol * options::aFac * var_nominal ) * options::zFac * options::zaFac, std::numeric_limits< Real >::min() ) ); // Use variable nominal value to set the absolute tolerance unless aTol specified
-						if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) || ( options::qss == options::QSS::xQSS1 ) ) {
+
+						switch ( options::order ) {
+						case 1:
 							qss_var = new Variable_ZC1( this, var_name, var_rTol, var_aTol, options::zTol, var_start, fmu_var );
-						} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) || ( options::qss == options::QSS::xQSS2 ) ) {
+							break;
+						case 2:
 							qss_var = new Variable_ZC2( this, var_name, var_rTol, var_aTol, options::zTol, var_start, fmu_var );
-						} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) || ( options::qss == options::QSS::xQSS3 ) ) {
+							break;
+						case 3:
 							qss_var = new Variable_ZC3( this, var_name, var_rTol, var_aTol, options::zTol, var_start, fmu_var );
-						} else {
-							std::cerr << " Error: Specified QSS method is not yet supported for FMUs" << std::endl;
+							break;
+						default:
+							std::cerr << " Error: Specified QSS method is not supported" << std::endl;
 							std::exit( EXIT_FAILURE );
 						}
 						cons.push_back( new Conditional< Variable_ZC >( var_name, qss_var, eventq ) ); // Create conditional for the zero-crossing variable
@@ -1071,14 +1245,18 @@ namespace QSS {
 								std::cout << " Type: Real: Continuous: Non-Discrete: Active" << std::endl;
 								Real const var_rTol( options::rTol * options::zFac * options::zrFac );
 								Real const var_aTol( std::max( options::specified::aTol ? options::aTol : options::rTol * options::aFac * var_nominal, std::numeric_limits< Real >::min() ) ); // Use variable nominal value to set the absolute tolerance unless aTol specified
-								if ( ( options::qss == options::QSS::QSS1 ) || ( options::qss == options::QSS::LIQSS1 ) || ( options::qss == options::QSS::xQSS1 ) ) {
+								switch ( options::order ) {
+								case 1:
 									qss_var = new Variable_R1( this, var_name, var_rTol, var_aTol, var_start, fmu_var );
-								} else if ( ( options::qss == options::QSS::QSS2 ) || ( options::qss == options::QSS::LIQSS2 ) || ( options::qss == options::QSS::xQSS2 ) ) {
+									break;
+								case 2:
 									qss_var = new Variable_R2( this, var_name, var_rTol, var_aTol, var_start, fmu_var );
-								} else if ( ( options::qss == options::QSS::QSS3 ) || ( options::qss == options::QSS::LIQSS3 ) || ( options::qss == options::QSS::xQSS3 ) ) {
+									break;
+								case 3:
 									qss_var = new Variable_R3( this, var_name, var_rTol, var_aTol, var_start, fmu_var );
-								} else {
-									std::cerr << " Error: Specified QSS method is not yet supported for FMUs" << std::endl;
+									break;
+								default:
+									std::cerr << " Error: Specified QSS method is not supported" << std::endl;
 									std::exit( EXIT_FAILURE );
 								}
 							} else { // Passive

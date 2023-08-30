@@ -1,4 +1,4 @@
-// Relaxation QSS2 Variable
+// rQSS2 Variable
 //
 // Project: QSS Solver
 //
@@ -41,7 +41,7 @@
 
 namespace QSS {
 
-// Relaxation QSS2 Variable
+// rQSS2 Variable
 class Variable_rQSS2 final : public Variable_QSS
 {
 

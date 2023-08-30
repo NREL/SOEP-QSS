@@ -1,4 +1,4 @@
-// xQSS3 Input Variable
+// fQSS2 Input Variable
 //
 // Project: QSS Solver
 //
@@ -33,16 +33,16 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_Variable_xInp3_hh_INCLUDED
-#define QSS_Variable_xInp3_hh_INCLUDED
+#ifndef QSS_Variable_fInp2_hh_INCLUDED
+#define QSS_Variable_fInp2_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/Variable_Inp.hh>
 
 namespace QSS {
 
-// xQSS3 Input Variable
-class Variable_xInp3 final : public Variable_Inp
+// fQSS2 Input Variable
+class Variable_fInp2 final : public Variable_Inp
 {
 
 public: // Types
@@ -52,7 +52,7 @@ public: // Types
 public: // Creation
 
 	// Constructor
-	Variable_xInp3(
+	Variable_fInp2(
 	 FMU_ME * fmu_me,
 	 std::string const & name,
 	 Real const rTol_ = options::rTol,
@@ -61,7 +61,7 @@ public: // Creation
 	 FMU_Variable const var = FMU_Variable(),
 	 Function f = Function()
 	) :
-	 Super( fmu_me, 3, name, rTol_, aTol_, xIni_, var, f )
+	 Super( fmu_me, 2, name, rTol_, aTol_, xIni_, var, f )
 	{}
 
 public: // Predicate
@@ -80,29 +80,21 @@ public: // Property
 	x( Time const t ) const override
 	{
 		Time const tDel( t - tX );
-		return x_0_ + ( ( x_1_ + ( ( x_2_ + ( x_3_ * tDel ) ) * tDel ) ) * tDel );
+		return x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 	}
 
 	// Continuous First Derivative at Time t
 	Real
 	x1( Time const t ) const override
 	{
-		Time const tDel( t - tX );
-		return x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_ * tDel ) ) * tDel );
+		return x_1_ + ( two * x_2_ * ( t - tX ) );
 	}
 
 	// Continuous Second Derivative at Time t
 	Real
-	x2( Time const t ) const override
+	x2( Time const ) const override
 	{
-		return ( two * x_2_ ) + ( six * x_3_ * ( t - tX ) );
-	}
-
-	// Continuous Third Derivative at Time t
-	Real
-	x3( Time const ) const override
-	{
-		return six * x_3_;
+		return two * x_2_;
 	}
 
 	// Quantized Value at Time t
@@ -110,29 +102,21 @@ public: // Property
 	q( Time const t ) const override
 	{
 		Time const tDel( t - tQ );
-		return x_0_ + ( ( x_1_ + ( ( x_2_ + ( x_3_ * tDel ) ) * tDel ) ) * tDel );
+		return x_0_ + ( ( x_1_ + ( x_2_ * tDel ) ) * tDel );
 	}
 
 	// Quantized First Derivative at Time t
 	Real
 	q1( Time const t ) const override
 	{
-		Time const tDel( t - tQ );
-		return x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_ * tDel ) ) * tDel );
+		return x_1_ + ( two * x_2_ * ( t - tQ ) );
 	}
 
 	// Quantized Second Derivative at Time t
 	Real
-	q2( Time const t ) const override
+	q2( Time const ) const override
 	{
-		return ( two * x_2_ ) + ( six * x_3_ * ( t - tQ ) );
-	}
-
-	// Quantized Third Derivative at Time t
-	Real
-	q3( Time const ) const override
-	{
-		return six * x_3_;
+		return two * x_2_;
 	}
 
 public: // Methods
@@ -171,7 +155,6 @@ public: // Methods
 	init_2() override
 	{
 		x_2_ = one_half * s_.x2;
-		x_3_ = one_sixth * s_.x3;
 		tD = s_.tD;
 	}
 
@@ -182,7 +165,7 @@ public: // Methods
 		set_qTol();
 		set_tE();
 		( tE < tD ) ? add_QSS_Inp( tE ) : add_discrete( tD );
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << std::noshowpos << "   tE=" << tE << "   tD=" << tD << std::endl;
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << std::noshowpos << "   tE=" << tE << "   tD=" << tD << std::endl;
 	}
 
 	// Discrete Advance
@@ -194,12 +177,11 @@ public: // Methods
 		x_0_ = s_.x0;
 		x_1_ = s_.x1;
 		x_2_ = one_half * s_.x2;
-		x_3_ = one_sixth * s_.x3;
 		tD = s_.tD;
 		set_qTol();
 		set_tE();
 		( tE < tD ) ? shift_QSS_Inp( tE ) : shift_discrete( tD );
-		if ( options::output::d ) std::cout << "|  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << std::noshowpos << "   tE=" << tE << "   tD=" << tD << std::endl;
+		if ( options::output::d ) std::cout << "|  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << std::noshowpos << "   tE=" << tE << "   tD=" << tD << std::endl;
 		if ( observed() ) advance_observers();
 	}
 
@@ -212,12 +194,11 @@ public: // Methods
 		x_0_ = s_.x0;
 		x_1_ = s_.x1;
 		x_2_ = one_half * s_.x2;
-		x_3_ = one_sixth * s_.x3;
 		tD = s_.tD;
 		set_qTol();
 		set_tE();
 		( tE < tD ) ? shift_QSS_Inp( tE ) : shift_discrete( tD );
-		if ( options::output::d ) std::cout << "|= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << std::noshowpos << "   tE=" << tE << "   tD=" << tD << std::endl;
+		if ( options::output::d ) std::cout << "|= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << std::noshowpos << "   tE=" << tE << "   tD=" << tD << std::endl;
 	}
 
 	// QSS Advance
@@ -228,12 +209,11 @@ public: // Methods
 		x_0_ = s_.x0;
 		x_1_ = s_.x1;
 		x_2_ = one_half * s_.x2;
-		x_3_ = one_sixth * s_.x3;
 		tD = s_.tD;
 		set_qTol();
 		set_tE();
 		( tE < tD ) ? shift_QSS_Inp( tE ) : shift_discrete( tD );
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << std::noshowpos << "   tE=" << tE << "   tD=" << tD << std::endl;
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << std::noshowpos << "   tE=" << tE << "   tD=" << tD << std::endl;
 		if ( observed() ) advance_observers();
 	}
 
@@ -253,14 +233,14 @@ private: // Methods
 	{
 		assert( tQ == tX );
 		assert( dt_min <= dt_max );
-		if ( x_3_ != 0.0 ) {
-			Real const x_3_inv( one / x_3_ );
-			Time dt( std::cbrt( qTol * std::abs( x_3_inv ) ) );
+		if ( x_2_ != 0.0 ) {
+			Real const x_2_inv( one / x_2_ );
+			Time dt( std::sqrt( qTol * std::abs( x_2_inv ) ) );
 			dt = std::min( std::max( dt_infinity( dt ), dt_min ), dt_max );
 			assert( dt != infinity );
 			tE = tQ + dt;
-			if ( options::inflection && nonzero_and_signs_differ( x_2_, x_3_ ) ) { // Inflection point
-				Time const tI( tQ - ( x_2_ * ( one_third * x_3_inv ) ) );
+			if ( options::inflection && nonzero_and_signs_differ( x_1_, x_2_ ) ) { // Inflection point
+				Time const tI( tQ - ( x_1_ * ( one_half * x_2_inv ) ) );
 				if ( tQ < tI ) tE = std::min( tE, tI ); // Possible that dtI > 0 but tQ + dtI == tQ
 			}
 		} else {
@@ -271,9 +251,9 @@ private: // Methods
 
 private: // Data
 
-	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Coefficients
+	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Coefficients
 
-}; // Variable_xInp3
+}; // Variable_fInp2
 
 } // QSS
 

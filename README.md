@@ -6,8 +6,9 @@ This is a QSS solver being developed for integration into Modelon's Optimica Com
 
 Currently the code has:
 * QSS1/2/3 and LIQSS1/2/3 solvers.
-* Experimental xQSS variables with full-order broadcast representations.
-* Experimental continuous trajectory broadcasting.
+* fQSS variables that broadcast full-order quantized representations.
+* Experimental continuous trajectory broadcasting (x builds).
+* Experimental relaxation solvers for the highly sensitive derivatives as seen in many Buildings Library models.
 * Linear and nonlinear derivative function support.
 * Input variables/functions.
 * Discrete-valued variables.
@@ -27,7 +28,6 @@ Currently the code has:
 ## Plan
 
 Planned development in anticipated sequence order are:
-* Relaxation solver development to improve performance on models with highly sensitive derivatives.
 * FMU support extensions: Modelica annotations, OCT/FMIL API migration, higher derivatives, ...
 * Extended precision time handling for large time span simulation.
 * Performance improvements.
@@ -38,15 +38,17 @@ Planned development in anticipated sequence order are:
 * High-performance QSS-over-FMU solver.
 * Support a mix of different QSS solvers.
 * Modular, object-oriented code.
-* Define FMI extensions for efficient QSS support.
+* Identify potential future FMI API extensions for more efficient and robust QSS support.
 
 ## Design
 
-The design concepts are still emerging. The basic constituents of a fast QSS solver seem to be:
+The basic design concepts for a fast QSS-over-FMU solver seem to be:
 * Variables for each QSS method (QSS1/2/3, LIQSS1/2/3, ...).
 * Event queue to find the next "trigger" variable to advance.
 * Input variables/functions.
 * Continuous and discrete valued variables.
+* Call pooling to amortize the expensive FMU operations.
+* Binning: Performing simultaneous requantization of variables due to requantize near the current requantization event time to amortize the cost of FMU operations.
 
 ### Notes
 
@@ -104,14 +106,14 @@ The LIQSS3 solver now uses directional second derivatives for continuous state v
 
 An option to avoid some of the directional derivative calls via interpolation of the second derivative will be explored in the future.
 
-### xQSS Variant
+### fQSS Variant
 
-An experimental variant of the QSS method with methods named `xQSS1`, `xQSS2`, and `xQSS3` has been implemented. In this variant the broadcast (quantized) representation has the same order as the internal (continuous) representation. The concept is based on using all available knowledge of the variable trajectory in the broadcast representation. This has been found to provide significantly higher accuracy solutions at the same tolerance (or, equivalently, faster solutions at the same accuracy) for some models.
+A variant of the QSS method with methods named `fQSS1`, `fQSS2`, and `fQSS3` has been implemented. In this variant the "full-order" broadcast (quantized) representation has the same order as the internal (continuous) representation. The concept is based on using all available knowledge of the variable trajectory in the broadcast representation. This has been found to provide significantly higher accuracy solutions at the same tolerance (or, equivalently, faster solutions at the same accuracy) for some models.
 
-More experiments are needed to develop best practices for when to try xQSS but experience to date has yielded these preliminary guidelines:
-* Smooth trajectory models with precise or analytical derivatives tend to benefit most from xQSS methods
-* Numeric differentiation that the current FMU-based simulation requires injects some noise into the extra top order term of the xQSS quantized representations, which tends to shorten the time steps and thus hurt performance.
-* LIQSS methods on stiff systems did not benefit from xLIQSS since it tends to put the quantum-shifted quantized representation farther from the continuous representation.
+More experiments are needed to develop best practices for when to try fQSS but experience to date has yielded these preliminary guidelines:
+* Smooth trajectory models with precise or analytical derivatives tend to benefit most from fQSS methods
+* Numeric differentiation that the current FMU-based simulation requires injects some noise into the extra top order term of the fQSS quantized representations, which tends to shorten the time steps and thus hurt performance.
+* LIQSS methods on stiff systems did not benefit from fLIQSS since it tends to put the quantum-shifted quantized representation farther from the continuous representation.
 
 ### Event Queue
 
@@ -228,7 +230,7 @@ Models defined by FMUs following the FMI 2.0 API and built by OCT can be run by 
 In preparation for anticipated FMI API extensions to OCT's FMI Library a NextGen branch of this repository has been developed.
 NextGen assumes that the FMU can provide higher derivatives directly for a variable when its observee variables are set to their values at the evaluation time.
 This significantly simplifies the QSS code and makes it more practical to implement 3rd order QSS methods.
-It will also eliminate the order dependency flaw with QSS3+ and xQSS2+ methods.
+It will also eliminate the order dependency flaw with QSS3+ and fQSS2+ methods.
 The purpose of the NextGen branch is to show approximately how the code will look when this advanced support becomes available and to simplify migration at that time.
 Using placeholder calls to current the FMI API enables this NextGen branch code to compile and run.
 

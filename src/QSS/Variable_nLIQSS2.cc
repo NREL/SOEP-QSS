@@ -1,4 +1,4 @@
-// rLIQSS2 Variable
+// nLIQSS2 Variable
 //
 // Project: QSS Solver
 //
@@ -34,13 +34,13 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // QSS Headers
-#include <QSS/Variable_rLIQSS2.hh>
+#include <QSS/Variable_nLIQSS2.hh>
 
 namespace QSS {
 
 	// Advance Self-Observing Trigger
 	void
-	Variable_rLIQSS2::
+	Variable_nLIQSS2::
 	advance_LIQSS()
 	{
 		assert( qTol > 0.0 );
@@ -49,23 +49,35 @@ namespace QSS {
 		// Set observee FMU values at q_c_
 		fmu_set_observees_s( tE );
 
-		// Set directional derivative seed vector at q_c_
-		set_observees_dv( tE );
-
-		// Evaluate at -qTol
+		// Value at +/- qTol
 		Real const q_l( q_c_ - qTol );
+		Real const q_u( q_c_ + qTol );
+
+		// Derivative at +/- qTol
 		fmu_set_real( q_l );
 		Real const x_1_l( p_1() );
-		set_self_observees_dv( x_1_l );
-		Real const x_2_l( dd_2_use_seed() );
-		int const x_2_l_s( signum( x_2_l ) );
-
-		// Evaluate at +qTol
-		Real const q_u( q_c_ + qTol );
 		fmu_set_real( q_u );
 		Real const x_1_u( p_1() );
-		set_self_observees_dv( x_1_u );
-		Real const x_2_u( dd_2_use_seed() );
+
+		// Second derivative at +/- qTol
+		Time const dN( options::dtND );
+		Time const tN( tE + dN );
+		fmu_set_time( tN );
+		fmu_set_observees_s( tN );
+#ifndef QSS_PROPAGATE_CONTINUOUS
+		fmu_set_real( q_l + ( x_1_l * dN ) );
+#else
+		Real const x_2_dN( x_2_ * dN );
+		fmu_set_real( q_l + ( x_1_l + x_2_dN ) * dN );
+#endif
+		Real const x_2_l( options::one_over_two_dtND * ( p_1() - x_1_l ) ); //ND Forward Euler
+		int const x_2_l_s( signum( x_2_l ) );
+#ifndef QSS_PROPAGATE_CONTINUOUS
+		fmu_set_real( q_u + ( x_1_u * dN ) );
+#else
+		fmu_set_real( q_u + ( x_1_u + x_2_dN ) * dN );
+#endif
+		Real const x_2_u( options::one_over_two_dtND * ( p_1() - x_1_u ) ); //ND Forward Euler
 		int const x_2_u_s( signum( x_2_u ) );
 
 		// Set coefficients based on second derivative signs
@@ -93,10 +105,21 @@ namespace QSS {
 			q_1_ = x_1_ = ( ( ( q_u - q_0_ ) * x_1_l ) + ( ( q_0_ - q_l ) * x_1_u ) ) / ( two * qTol );
 			x_2_ = 0.0;
 #else // Compute
+			// Derivative at q_0_
+			fmu_set_time( tE );
+			fmu_set_observees_s( tE );
 			fmu_set_real( q_0_ );
 			q_1_ = x_1_ = p_1();
-			set_self_observees_dv( x_1_ );
-			x_2_ = dd_2_use_seed();
+
+			// Second derivative at q_0_
+			fmu_set_time( tN );
+			fmu_set_observees_s( tN );
+#ifndef QSS_PROPAGATE_CONTINUOUS
+			fmu_set_real( q_0_ + ( x_1_ * dN ) );
+#else
+			fmu_set_real( q_0_ + ( x_1_ + x_2_dN ) * dN );
+#endif
+			x_2_ = options::one_over_two_dtND * ( p_1() - x_1_ ); //ND Forward Euler
 #endif
 		}
 
@@ -107,33 +130,51 @@ namespace QSS {
 			// This adds $$$ root finding so maybe should be enabled by an option for production
 			// Experiment to see if this is worth it in practice
 		// }
+
+		// Reset FMU time
+		fmu_set_time( tE );
 	}
 
 	// Advance Self-Observing Trigger: Simultaneous
 	void
-	Variable_rLIQSS2::
+	Variable_nLIQSS2::
 	advance_LIQSS_simultaneous()
 	{
 		assert( qTol > 0.0 );
 		assert( self_observer() );
 
-		// Set directional derivative seed vector at q_c_
-		set_observees_dv( tE );
+		// Set observee FMU values at q_c_
+		fmu_set_observees_s( tE );
 
-		// Evaluate at -qTol
+		// Value at +/- qTol
 		Real const q_l( q_c_ - qTol );
+		Real const q_u( q_c_ + qTol );
+
+		// Derivative at +/- qTol
 		fmu_set_real( q_l );
 		Real const x_1_l( p_1() );
-		set_self_observees_dv( x_1_l );
-		Real const x_2_l( dd_2_use_seed() );
-		int const x_2_l_s( signum( x_2_l ) );
-
-		// Evaluate at +qTol
-		Real const q_u( q_c_ + qTol );
 		fmu_set_real( q_u );
 		Real const x_1_u( p_1() );
-		set_self_observees_dv( x_1_u );
-		Real const x_2_u( dd_2_use_seed() );
+
+		// Second derivative at +/- qTol
+		Time const dN( options::dtND );
+		Time const tN( tE + dN );
+		fmu_set_time( tN );
+		fmu_set_observees_s( tN );
+#ifndef QSS_PROPAGATE_CONTINUOUS
+		fmu_set_real( q_l + ( x_1_l * dN ) );
+#else
+		Real const x_2_dN( x_2_ * dN );
+		fmu_set_real( q_l + ( x_1_l + x_2_dN ) * dN );
+#endif
+		Real const x_2_l( options::one_over_two_dtND * ( p_1() - x_1_l ) ); //ND Forward Euler
+		int const x_2_l_s( signum( x_2_l ) );
+#ifndef QSS_PROPAGATE_CONTINUOUS
+		fmu_set_real( q_u + ( x_1_u * dN ) );
+#else
+		fmu_set_real( q_u + ( x_1_u + x_2_dN ) * dN );
+#endif
+		Real const x_2_u( options::one_over_two_dtND * ( p_1() - x_1_u ) ); //ND Forward Euler
 		int const x_2_u_s( signum( x_2_u ) );
 
 		// Set coefficients based on second derivative signs
@@ -160,10 +201,21 @@ namespace QSS {
 			q_1_ = x_1_ = ( ( ( q_u - l_0_ ) * x_1_l ) + ( ( l_0_ - q_l ) * x_1_u ) ) / ( two * qTol );
 			x_2_ = 0.0;
 #else // Compute
+			// Derivative at l_0_
+			fmu_set_time( tE );
+			fmu_set_observees_s( tE );
 			fmu_set_real( l_0_ );
 			q_1_ = x_1_ = p_1();
-			set_self_observees_dv( x_1_ );
-			x_2_ = dd_2_use_seed();
+
+			// Second derivative at l_0_
+			fmu_set_time( tN );
+			fmu_set_observees_s( tN );
+#ifndef QSS_PROPAGATE_CONTINUOUS
+			fmu_set_real( l_0_ + ( x_1_ * dN ) );
+#else
+			fmu_set_real( l_0_ + ( x_1_ + x_2_dN ) * dN );
+#endif
+			x_2_ = options::one_over_two_dtND * ( p_1() - x_1_ ); //ND Forward Euler
 #endif
 		}
 
@@ -175,8 +227,9 @@ namespace QSS {
 			// Experiment to see if this is worth it in practice
 		// }
 
-		// Reset FMU value
-		fmu_set_real( q_c_ );
+		// Reset FMU time and values
+		fmu_set_time( tE );
+		fmu_set_observees_s( tE );
 	}
 
 } // QSS

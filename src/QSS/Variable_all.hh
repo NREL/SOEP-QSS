@@ -43,12 +43,21 @@
 #include <QSS/Variable_LIQSS1.hh>
 #include <QSS/Variable_LIQSS2.hh>
 #include <QSS/Variable_LIQSS3.hh>
-#include <QSS/Variable_xQSS1.hh>
-#include <QSS/Variable_xQSS2.hh>
-#include <QSS/Variable_xQSS3.hh>
+#include <QSS/Variable_fQSS1.hh>
+#include <QSS/Variable_fQSS2.hh>
+#include <QSS/Variable_fQSS3.hh>
 #include <QSS/Variable_rQSS2.hh>
-#include <QSS/Variable_rxQSS2.hh>
 #include <QSS/Variable_rLIQSS2.hh>
+#include <QSS/Variable_rfQSS2.hh>
+#include <QSS/Variable_nQSS2.hh>
+#include <QSS/Variable_nQSS3.hh>
+#include <QSS/Variable_nLIQSS2.hh>
+#include <QSS/Variable_nLIQSS3.hh>
+#include <QSS/Variable_nfQSS2.hh>
+#include <QSS/Variable_nfQSS3.hh>
+#include <QSS/Variable_nrQSS2.hh>
+#include <QSS/Variable_nrLIQSS2.hh>
+#include <QSS/Variable_nrfQSS2.hh>
 #include <QSS/Variable_time.hh>
 
 // QSS Zero-Crossing Variable Headers
@@ -74,9 +83,9 @@
 #include <QSS/Variable_Inp1.hh>
 #include <QSS/Variable_Inp2.hh>
 #include <QSS/Variable_Inp3.hh>
-#include <QSS/Variable_xInp1.hh>
-#include <QSS/Variable_xInp2.hh>
-#include <QSS/Variable_xInp3.hh>
+#include <QSS/Variable_fInp1.hh>
+#include <QSS/Variable_fInp2.hh>
+#include <QSS/Variable_fInp3.hh>
 #include <QSS/Variable_InpB.hh>
 #include <QSS/Variable_InpD.hh>
 #include <QSS/Variable_InpI.hh>

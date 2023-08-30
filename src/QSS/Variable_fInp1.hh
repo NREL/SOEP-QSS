@@ -1,4 +1,4 @@
-// xQSS1 Input Variable
+// fQSS1 Input Variable
 //
 // Project: QSS Solver
 //
@@ -33,16 +33,16 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_Variable_xInp1_hh_INCLUDED
-#define QSS_Variable_xInp1_hh_INCLUDED
+#ifndef QSS_Variable_fInp1_hh_INCLUDED
+#define QSS_Variable_fInp1_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/Variable_Inp.hh>
 
 namespace QSS {
 
-// xQSS1 Input Variable
-class Variable_xInp1 final : public Variable_Inp
+// fQSS1 Input Variable
+class Variable_fInp1 final : public Variable_Inp
 {
 
 public: // Types
@@ -52,7 +52,7 @@ public: // Types
 public: // Creation
 
 	// Constructor
-	Variable_xInp1(
+	Variable_fInp1(
 	 FMU_ME * fmu_me,
 	 std::string const & name,
 	 Real const rTol_ = options::rTol,
@@ -215,7 +215,7 @@ private: // Data
 
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }; // Coefficients
 
-}; // Variable_xInp1
+}; // Variable_fInp1
 
 } // QSS
 

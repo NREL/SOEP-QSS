@@ -1,4 +1,4 @@
-// xQSS2 Variable
+// nLIQSS2 Variable
 //
 // Project: QSS Solver
 //
@@ -33,16 +33,16 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_Variable_xQSS2_hh_INCLUDED
-#define QSS_Variable_xQSS2_hh_INCLUDED
+#ifndef QSS_Variable_nLIQSS2_hh_INCLUDED
+#define QSS_Variable_nLIQSS2_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/Variable_QSS.hh>
 
 namespace QSS {
 
-// xQSS2 Variable
-class Variable_xQSS2 final : public Variable_QSS
+// nLIQSS2 Variable
+class Variable_nLIQSS2 final : public Variable_QSS
 {
 
 public: // Types
@@ -52,7 +52,7 @@ public: // Types
 public: // Creation
 
 	// Constructor
-	Variable_xQSS2(
+	Variable_nLIQSS2(
 	 FMU_ME * fmu_me,
 	 std::string const & name,
 	 Real const rTol_ = options::rTol,
@@ -64,9 +64,19 @@ public: // Creation
 	) :
 	 Super( fmu_me, 2, name, rTol_, aTol_, zTol_, xIni_, var, der ),
 	 x_0_( xIni_ ),
+	 q_c_( xIni_ ),
 	 q_0_( xIni_ )
 	{
 		set_qTol();
+	}
+
+public: // Predicate
+
+	// LIQSS Variable?
+	bool
+	is_LIQSS() const override
+	{
+		return true;
 	}
 
 public: // Property
@@ -97,22 +107,14 @@ public: // Property
 	Real
 	q( Time const t ) const override
 	{
-		Time const tDel( t - tQ );
-		return q_0_ + ( ( q_1_ + ( q_2_ * tDel ) ) * tDel );
+		return q_0_ + ( q_1_ * ( t - tQ ) );
 	}
 
 	// Quantized First Derivative at Time t
 	Real
-	q1( Time const t ) const override
+	q1( Time const ) const override
 	{
-		return q_1_ + ( two * q_2_ * ( t - tQ ) );
-	}
-
-	// Quantized Second Derivative at Time t
-	Real
-	q2( Time const ) const override
-	{
-		return two * q_2_;
+		return q_1_;
 	}
 
 public: // Methods
@@ -133,7 +135,7 @@ public: // Methods
 	init_0() override
 	{
 		init_observees();
-		fmu_set_real( q_0_ = x_0_ = xIni );
+		fmu_set_real( q_c_ = q_0_ = x_0_ = xIni );
 	}
 
 	// Initialization: Stage 1
@@ -147,17 +149,24 @@ public: // Methods
 	void
 	init_2() override
 	{
-		q_2_ = x_2_ = dd_2();
+		set_qTol();
+		if ( self_observer() ) {
+			advance_LIQSS_simultaneous();
+		} else {
+			x_2_ = c_2( tQ, x_1_ );
+			fmu_set_observees_x( t0() );
+			l_0_ = q_c_ + ( signum( x_2_ ) * qTol );
+		}
 	}
 
 	// Initialization: Stage Final
 	void
 	init_F() override
 	{
-		set_qTol();
+		q_0_ = l_0_;
 		set_tE_aligned();
 		add_QSS( tE );
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 	}
 
 	// QSS Advance
@@ -167,13 +176,18 @@ public: // Methods
 		Time const tDel( tE - tX );
 		tS = tE - tQ;
 		tQ = tX = tE;
-		q_0_ = x_0_ += ( x_1_ + ( x_2_ * tDel ) ) * tDel;
-		q_1_ = x_1_ = c_1();
-		q_2_ = x_2_ = dd_2();
+		q_c_ = x_0_ += ( x_1_ + ( x_2_ * tDel ) ) * tDel;
 		set_qTol();
+		if ( self_observer() ) {
+			advance_LIQSS();
+		} else {
+			q_1_ = x_1_ = c_1();
+			x_2_ = c_2( tE, x_1_ );
+			q_0_ = q_c_ + ( signum( x_2_ ) * qTol );
+		}
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 		if ( observed() ) advance_observers();
 		if ( connected() ) advance_connections();
 	}
@@ -185,7 +199,7 @@ public: // Methods
 		Time const tDel( tE - tX );
 		tS = tE - tQ;
 		tQ = tX = tE;
-		q_0_ = x_0_ += ( x_1_ + ( x_2_ * tDel ) ) * tDel;
+		q_c_ = q_0_ = x_0_ += ( x_1_ + ( x_2_ * tDel ) ) * tDel;
 	}
 
 	// QSS Advance: Stage 1
@@ -195,21 +209,53 @@ public: // Methods
 		q_1_ = x_1_ = x_1;
 	}
 
-	// QSS Advance: Stage 2: Directional 2nd Derivative
+	// QSS Advance: Stage 2
 	void
-	advance_QSS_2_dd2( Real const dd2 ) override
+	advance_QSS_2( Real const x_1_p ) override
 	{
-		q_2_ = x_2_ = one_half * dd2;
+		set_qTol();
+		if ( self_observer() ) {
+			advance_LIQSS_simultaneous();
+		} else {
+			x_2_ = n_2( x_1_p );
+			l_0_ = q_c_ + ( signum( x_2_ ) * qTol );
+		}
+	}
+
+	// QSS Advance: Stage 2
+	void
+	advance_QSS_2( Real const x_1_m, Real const x_1_p ) override
+	{
+		set_qTol();
+		if ( self_observer() ) {
+			advance_LIQSS_simultaneous();
+		} else {
+			x_2_ = n_2( x_1_m, x_1_p );
+			l_0_ = q_c_ + ( signum( x_2_ ) * qTol );
+		}
+	}
+
+	// QSS Advance: Stage 2: Forward ND
+	void
+	advance_QSS_2_forward( Real const x_1_p, Real const x_1_2p ) override
+	{
+		set_qTol();
+		if ( self_observer() ) {
+			advance_LIQSS_simultaneous();
+		} else {
+			x_2_ = f_2( x_1_p, x_1_2p );
+			l_0_ = q_c_ + ( signum( x_2_ ) * qTol );
+		}
 	}
 
 	// QSS Advance: Stage Final
 	void
 	advance_QSS_F() override
 	{
-		set_qTol();
+		q_0_ = l_0_;
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
+		if ( options::output::d ) std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 		if ( connected() ) advance_connections();
 	}
 
@@ -220,13 +266,13 @@ public: // Methods
 		assert( ( tQ <= t ) && ( tX <= t ) && ( t <= tE ) );
 		tS = t - tQ;
 		tQ = tX = t;
-		q_0_ = x_0_ = p_0();
+		q_c_ = q_0_ = x_0_ = p_0();
 		q_1_ = x_1_ = c_1();
-		q_2_ = x_2_ = dd_2();
+		x_2_ = c_2( t, x_1_ );
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
+		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 		if ( observed() ) advance_observers();
 		if ( connected() ) advance_connections();
 	}
@@ -238,7 +284,7 @@ public: // Methods
 		assert( ( tQ <= t ) && ( tX <= t ) && ( t <= tE ) );
 		tS = t - tQ;
 		tQ = tX = t;
-		q_0_ = x_0_ = x_0;
+		q_c_ = q_0_ = x_0_ = x_0;
 	}
 
 	// Handler Advance: Stage 1
@@ -248,11 +294,25 @@ public: // Methods
 		q_1_ = x_1_ = x_1;
 	}
 
-	// Handler Advance: Stage 2: Directional 2nd Derivative
+	// Handler Advance: Stage 2
 	void
-	advance_handler_2_dd2( Real const dd2 ) override
+	advance_handler_2( Real const x_1_p ) override
 	{
-		q_2_ = x_2_ = one_half * dd2;
+		x_2_ = n_2( x_1_p );
+	}
+
+	// Handler Advance: Stage 2
+	void
+	advance_handler_2( Real const x_1_m, Real const x_1_p ) override
+	{
+		x_2_ = n_2( x_1_m, x_1_p );
+	}
+
+	// QSS Advance: Stage 2: Forward ND
+	void
+	advance_handler_2_forward( Real const x_1_p, Real const x_1_2p ) override
+	{
+		x_2_ = f_2( x_1_p, x_1_2p );
 	}
 
 	// Handler Advance: Stage Final
@@ -262,7 +322,7 @@ public: // Methods
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "*= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
+		if ( options::output::d ) std::cout << "*= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 		if ( connected() ) advance_connections();
 	}
 
@@ -284,11 +344,25 @@ public: // Methods
 		x_1_ = x_1;
 	}
 
-	// Observer Advance: Stage 2: Directional 2nd Derivative
+	// Observer Advance: Stage 2
 	void
-	advance_observer_2_dd2( Real const dd2 ) override
+	advance_observer_2( Real const x_1_p ) override
 	{
-		x_2_ = one_half * dd2;
+		x_2_ = n_2( x_1_p );
+	}
+
+	// Observer Advance: Stage 2
+	void
+	advance_observer_2( Real const x_1_m, Real const x_1_p ) override
+	{
+		x_2_ = n_2( x_1_m, x_1_p );
+	}
+
+	// Observer Advance: Stage 2: Forward ND
+	void
+	advance_observer_2_forward( Real const x_1_p, Real const x_1_2p ) override
+	{
+		x_2_ = f_2( x_1_p, x_1_2p );
 	}
 
 	// Observer Advance: Stage Final
@@ -304,7 +378,7 @@ public: // Methods
 	void
 	advance_observer_d() const override
 	{
-		std::cout << " ^ " << name() << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q(" << std::noshowpos << tQ << std::showpos << ")]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
+		std::cout << " ^ " << name() << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q(" << std::noshowpos << tQ << std::showpos << ")]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 	}
 
 private: // Methods
@@ -313,7 +387,7 @@ private: // Methods
 	void
 	set_qTol()
 	{
-		qTol = std::max( rTol * std::abs( q_0_ ), aTol );
+		qTol = std::max( rTol * std::abs( q_c_ ), aTol );
 		assert( qTol > 0.0 );
 	}
 
@@ -350,7 +424,7 @@ private: // Methods
 	{
 		assert( tQ <= tX );
 		assert( dt_min <= dt_max );
-		Real const d_0( x_0_ - ( q_0_ + ( q_1_ * ( tX - tQ ) ) ) );
+		Real const d_0( x_0_ - ( q_c_ + ( q_1_ * ( tX - tQ ) ) ) );
 		Real const d_1( x_1_ - q_1_ );
 		Time dt;
 		if ( ( d_1 >= 0.0 ) && ( x_2_ >= 0.0 ) ) { // Upper boundary crossing
@@ -374,12 +448,42 @@ private: // Methods
 		}
 	}
 
+	// Advance Self-Observing Trigger
+	void
+	advance_LIQSS();
+
+	// Advance Self-Observing Trigger: Simultaneous
+	void
+	advance_LIQSS_simultaneous();
+
+	// Coefficient 2
+	Real
+	n_2( Real const x_1_p ) const
+	{
+		return options::one_over_two_dtND * ( x_1_p - x_1_ ); //ND Forward Euler
+	}
+
+	// Coefficient 2
+	Real
+	n_2( Real const x_1_m, Real const x_1_p ) const
+	{
+		return options::one_over_four_dtND * ( x_1_p - x_1_m ); //ND Centered difference
+	}
+
+	// Coefficient 2
+	Real
+	f_2( Real const x_1_p, Real const x_1_2p ) const
+	{
+		return options::one_over_four_dtND * ( ( three * ( x_1_p - x_1_ ) ) + ( x_1_p - x_1_2p ) ); //ND Forward 3-point
+	}
+
 private: // Data
 
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous trajectory coefficients
-	Real q_0_{ 0.0 }, q_1_{ 0.0 }, q_2_{ 0.0 }; // Quantized trajectory coefficients
+	Real q_c_{ 0.0 }, q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized trajectory coefficients
+	Real l_0_{ 0.0 }; // LIQSS-adjusted coefficient
 
-}; // Variable_xQSS2
+}; // Variable_nLIQSS2
 
 } // QSS
 

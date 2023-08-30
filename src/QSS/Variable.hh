@@ -956,10 +956,10 @@ public: // Methods
 		assert( false );
 	}
 
-	// QSS Advance: Stage 2: Directional 2nd Derivative
+	// QSS Advance: Stage 2
 	virtual
 	void
-	advance_QSS_2_dd2( Real const )
+	advance_QSS_2()
 	{
 		assert( false );
 	}
@@ -983,15 +983,23 @@ public: // Methods
 	// QSS Advance: Stage 2: Forward ND
 	virtual
 	void
+	advance_QSS_2_forward()
+	{
+		assert( false );
+	}
+
+	// QSS Advance: Stage 2: Forward ND
+	virtual
+	void
 	advance_QSS_2_forward( Real const, Real const )
 	{
 		assert( false );
 	}
 
-	// QSS Advance: Stage 3: Directional 2nd Derivative
+	// QSS Advance: Stage 2: Directional 2nd Derivative
 	virtual
 	void
-	advance_QSS_3_dd2( Real const )
+	advance_QSS_2_dd2( Real const )
 	{
 		assert( false );
 	}
@@ -1004,10 +1012,34 @@ public: // Methods
 		assert( false );
 	}
 
+	// QSS Advance: Stage 3
+	virtual
+	void
+	advance_QSS_3( Real const )
+	{
+		assert( false );
+	}
+
 	// QSS Advance: Stage 3: Forward ND
 	virtual
 	void
 	advance_QSS_3_forward()
+	{
+		assert( false );
+	}
+
+	// QSS Advance: Stage 3: Forward ND
+	virtual
+	void
+	advance_QSS_3_forward( Real const )
+	{
+		assert( false );
+	}
+
+	// QSS Advance: Stage 3: Directional 2nd Derivative
+	virtual
+	void
+	advance_QSS_3_dd2( Real const )
 	{
 		assert( false );
 	}
@@ -1087,14 +1119,6 @@ public: // Methods
 		assert( false );
 	}
 
-	// Handler Advance: Stage 2: Directional 2nd Derivative
-	virtual
-	void
-	advance_handler_2_dd2( Real const )
-	{
-		assert( false );
-	}
-
 	// Handler Advance: Stage 2
 	virtual
 	void
@@ -1119,10 +1143,10 @@ public: // Methods
 		assert( false );
 	}
 
-	// Handler Advance: Stage 3: Directional 2nd Derivative
+	// Handler Advance: Stage 2: Directional 2nd Derivative
 	virtual
 	void
-	advance_handler_3_dd2( Real const )
+	advance_handler_2_dd2( Real const )
 	{
 		assert( false );
 	}
@@ -1139,6 +1163,14 @@ public: // Methods
 	virtual
 	void
 	advance_handler_3_forward()
+	{
+		assert( false );
+	}
+
+	// Handler Advance: Stage 3: Directional 2nd Derivative
+	virtual
+	void
+	advance_handler_3_dd2( Real const )
 	{
 		assert( false );
 	}
@@ -1206,10 +1238,10 @@ public: // Methods
 		assert( false );
 	}
 
-	// Observer Advance: Stage 2: Directional 2nd Derivative
+	// Observer Advance: Stage 2
 	virtual
 	void
-	advance_observer_2_dd2( Real const )
+	advance_observer_2()
 	{
 		assert( false );
 	}
@@ -1233,7 +1265,23 @@ public: // Methods
 	// Observer Advance: Stage 2: Forward ND
 	virtual
 	void
+	advance_observer_2_forward()
+	{
+		assert( false );
+	}
+
+	// Observer Advance: Stage 2: Forward ND
+	virtual
+	void
 	advance_observer_2_forward( Real const, Real const )
+	{
+		assert( false );
+	}
+
+	// Observer Advance: Stage 2: Directional 2nd Derivative
+	virtual
+	void
+	advance_observer_2_dd2( Real const )
 	{
 		assert( false );
 	}
@@ -1254,14 +1302,6 @@ public: // Methods
 		assert( false );
 	}
 
-	// Observer Advance: Stage 3: Directional 2nd Derivative
-	virtual
-	void
-	advance_observer_3_dd2( Real const )
-	{
-		assert( false );
-	}
-
 	// Observer Advance: Stage 3
 	virtual
 	void
@@ -1274,6 +1314,14 @@ public: // Methods
 	virtual
 	void
 	advance_observer_3_forward( Real const )
+	{
+		assert( false );
+	}
+
+	// Observer Advance: Stage 3: Directional 2nd Derivative
+	virtual
+	void
+	advance_observer_3_dd2( Real const )
 	{
 		assert( false );
 	}
@@ -1775,6 +1823,16 @@ protected: // Methods: FMU
 		return p_1();
 	}
 
+	// Coefficient 1 at Time t: QSS
+	Real
+	c_1( Time const t ) const
+	{
+		assert( is_QSS() );
+		assert( fmu_get_time() == t );
+		fmu_set_observees_s( t );
+		return p_1();
+	}
+
 	// Coefficient 1 at Time tQ: X-Based R or ZC Variable
 	Real
 	X_1() const
@@ -1812,6 +1870,17 @@ protected: // Methods: FMU
 	p_2( Real const x_1, Real const x_1_p ) const
 	{
 		return options::one_over_two_dtND * ( x_1_p - x_1 ); //ND Forward Euler
+	}
+
+	// Coefficient 2 at Time t
+	Real
+	c_2( Time const t, Real const x_1 ) const
+	{
+		Time const tN( t + options::dtND );
+		fmu_set_time( tN );
+		Real const x_2( options::one_over_two_dtND * ( c_1( tN ) - x_1 ) ); //ND Forward Euler
+		fmu_set_time( t );
+		return x_2;
 	}
 
 	// Coefficient 2 Directional Derivative at Time tQ
@@ -1852,6 +1921,20 @@ protected: // Methods: FMU
 		Real const x_2( options::one_over_two_dtND * ( X_1( tN ) - x_1 ) ); //ND Forward Euler
 		fmu_set_time( tQ );
 		return x_2;
+	}
+
+	// Coefficient 3 at Time t
+	Real
+	f_3( Time const t, Real const x_1 ) const
+	{
+		Time tN( t + options::dtND );
+		fmu_set_time( tN );
+		Real const x_1_p( c_1( tN ) );
+		tN = t + options::two_dtND;
+		fmu_set_time( tN );
+		Real const x_1_2p( c_1( tN ) );
+		fmu_set_time( tQ );
+		return options::one_over_six_dtND_squared * ( ( x_1_2p - x_1_p ) + ( x_1 - x_1_p ) ); //ND Forward 3-point
 	}
 
 protected: // Methods

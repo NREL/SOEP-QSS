@@ -60,9 +60,21 @@ enum class QSS {
  LIQSS1,
  LIQSS2,
  LIQSS3,
- xQSS1,
- xQSS2,
- xQSS3
+ fQSS1,
+ fQSS2,
+ fQSS3,
+ rQSS2,
+ rLIQSS2,
+ rfQSS2,
+ nQSS2,
+ nQSS3,
+ nLIQSS2,
+ nLIQSS3,
+ nfQSS2,
+ nfQSS3,
+ nrQSS2,
+ nrLIQSS2,
+ nrfQSS2
 };
 
 // Logging Level Enumerator
@@ -255,8 +267,12 @@ private: // Data
 
 }; // DepSpecs
 
-extern QSS qss; // QSS method: (LI)QSS(1|2|3)
+extern QSS qss; // QSS method: [n][r][f][LI]QSS(1|2|3)
 extern int order; // QSS method order: (1|2|3)
+extern bool d2d; // Directional state second derivatives QSS solver?
+extern bool n2d; // Numerical state second derivatives QSS solver?
+extern bool rQSS; // Relaxation QSS solver?
+extern bool fQSS; // Full-order broadcast QSS solver?
 extern double rTol; // Relative tolerance
 extern double aTol; // Absolute tolerance
 extern double aFac; // Absolute tolerance factor
@@ -288,8 +304,7 @@ extern std::size_t pass; // Pass count limit
 extern bool cycles; // Report dependency cycles?
 extern bool inflection; // Requantize at inflections?
 extern double inflectionFrac; // Inflection step fraction min
-extern bool relax; // Relaxation for derivative sensitivity?
-extern bool cluster; // Clustering with relaxation?
+extern bool cluster; // Clustering with relaxation solver?
 extern bool refine; // Refine FMU zero-crossing roots?
 extern bool perfect; // Perfect FMU-ME connection sync?
 extern bool active; // Active intermediate variables preferred?

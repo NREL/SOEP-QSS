@@ -42,7 +42,7 @@ namespace QSS {
 std::string const &
 version()
 {
-	static std::string const version_( "0.4.0" );
+	static std::string const version_( "0.5.0" );
 	return version_;
 }
 
