@@ -272,7 +272,7 @@ private: // Static Functions
 
 private: // Static Data
 
-	static size_type constexpr capacity_{ 2048 }; // Buffer size
+	static constexpr size_type capacity_{ 2048 }; // Buffer size
 
 private: // Data
 

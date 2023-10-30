@@ -217,7 +217,7 @@ private: // Data
 
 private: // Static Data
 
-	static double constexpr bin_fac = 1.5; static_assert( bin_fac > 1.0 );
+	static constexpr double bin_fac{ 1.5 }; static_assert( bin_fac > 1.0 );
 
 }; // BinOptimizer
 

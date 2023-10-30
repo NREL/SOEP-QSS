@@ -172,7 +172,7 @@ public: // Methods
 		q_0_ = l_0_;
 		set_tE_aligned();
 		add_QSS( tE );
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 	}
 
 	// QSS Advance
@@ -198,8 +198,10 @@ public: // Methods
 				if ( ( std::abs( x_1_dif ) > yoyo_mul_ * std::abs( x_1_ - q_1_pre_ ) ) && ( ( n_yoyo_ == 0u ) || ( x_1_dif_sign == x_1_dif_sign_ ) ) ) { // Yo-yoing criteria met
 					x_1_dif_sign_ = x_1_dif_sign;
 					yoyo_ = ( ++n_yoyo_ >= m_yoyo_ );
-					x_2_ = ( yoyo_ ? x_2_rlx_ * x_2_ : x_2_ );
-					if ( yoyo_ && options::output::d ) std::cout << name() << " advance_QSS yoyo on " << tE << std::endl;
+					if ( yoyo_ ) {
+						x_2_ *= x_2_rlx_;
+						if ( options::output::d ) std::cout << name() << " advance_QSS yoyo on " << tE << std::endl;
+					}
 				} else {
 					n_yoyo_ = 0u;
 				}
@@ -216,8 +218,10 @@ public: // Methods
 				if ( ( std::abs( x_1_dif ) > yoyo_mul_ * std::abs( x_1_ - q_1_pre_ ) ) && ( ( n_yoyo_ == 0u ) || ( x_1_dif_sign == x_1_dif_sign_ ) ) ) { // Yo-yoing criteria met
 					x_1_dif_sign_ = x_1_dif_sign;
 					yoyo_ = ( ++n_yoyo_ >= m_yoyo_ );
-					x_2_ = ( yoyo_ ? x_2_rlx_ * x_2_ : x_2_ );
-					if ( yoyo_ && options::output::d ) std::cout << name() << " advance_QSS yoyo on " << tE << std::endl;
+					if ( yoyo_ ) {
+						x_2_ *= x_2_rlx_;
+						if ( options::output::d ) std::cout << name() << " advance_QSS yoyo on " << tE << std::endl;
+					}
 				} else {
 					n_yoyo_ = 0u;
 				}
@@ -226,7 +230,7 @@ public: // Methods
 		}
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 		if ( observed() ) advance_observers();
 		if ( connected() ) advance_connections();
 	}
@@ -278,7 +282,7 @@ public: // Methods
 		q_0_ = l_0_;
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
+		if ( options::output::d ) std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 		if ( connected() ) advance_connections();
 	}
 
@@ -292,11 +296,11 @@ public: // Methods
 		q_c_ = q_0_ = x_0_ = p_0();
 		q_1_ = x_1_ = c_1();
 		x_2_ = dd_2();
+		yoyo_clear();
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		yoyo_clear();
-		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
+		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 		if ( observed() ) advance_observers();
 		if ( connected() ) advance_connections();
 	}
@@ -329,11 +333,11 @@ public: // Methods
 	void
 	advance_handler_F() override
 	{
+		yoyo_clear();
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		yoyo_clear();
-		if ( options::output::d ) std::cout << "*= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
+		if ( options::output::d ) std::cout << "*= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 		if ( connected() ) advance_connections();
 	}
 
@@ -375,7 +379,7 @@ public: // Methods
 	void
 	advance_observer_d() const override
 	{
-		std::cout << " ^ " << name() << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q(" << std::noshowpos << tQ << std::showpos << ")]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << ( yoyo_ ? " yoyo" : "" ) << std::endl;
+		std::cout << " ^ " << name() << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q(" << std::noshowpos << tQ << std::showpos << ")]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << ( yoyo_ ? " yoyo" : "" ) << std::endl;
 	}
 
 private: // Methods
@@ -520,8 +524,10 @@ private: // Methods
 		if ( ( std::abs( x_1_dif ) > yoyo_mul_ * std::abs( x_1_ - q_1_pre_ ) ) && ( ( n_yoyo_ == 0u ) || ( x_1_dif_sign == x_1_dif_sign_ ) ) ) { // Yo-yoing criteria met
 			x_1_dif_sign_ = x_1_dif_sign;
 			yoyo_ = ( ++n_yoyo_ >= m_yoyo_ );
-			x_2_ = ( yoyo_ ? x_2_rlx_ * x_2_ : x_2_ );
-			if ( yoyo_ && options::output::d ) std::cout << name() << " advance_QSS yoyo on " << tE << std::endl;
+			if ( yoyo_ ) {
+				x_2_ *= x_2_rlx_;
+				if ( options::output::d ) std::cout << name() << " advance_QSS yoyo on " << tE << std::endl;
+			}
 		} else {
 			n_yoyo_ = 0u;
 		}
@@ -539,8 +545,10 @@ private: // Methods
 		if ( ( std::abs( x_1_dif ) > yoyo_mul_ * std::abs( x_1_ - q_1_pre_ ) ) && ( ( n_yoyo_ == 0u ) || ( x_1_dif_sign == x_1_dif_sign_ ) ) ) { // Yo-yoing criteria met
 			x_1_dif_sign_ = x_1_dif_sign;
 			yoyo_ = ( ++n_yoyo_ >= m_yoyo_ );
-			x_2_ = ( yoyo_ ? x_2_rlx_ * x_2_ : x_2_ );
-			if ( yoyo_ && options::output::d ) std::cout << name() << " advance_QSS yoyo on " << tE << std::endl;
+			if ( yoyo_ ) {
+				x_2_ *= x_2_rlx_;
+				if ( options::output::d ) std::cout << name() << " advance_QSS yoyo on " << tE << std::endl;
+			}
 		} else {
 			n_yoyo_ = 0u;
 		}
@@ -560,6 +568,7 @@ private: // Data
 	Real q_c_{ 0.0 }, q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized trajectory coefficients
 	Real l_0_{ 0.0 }; // LIQSS-adjusted coefficient
 
+	// Relaxation
 	Real q_1_pre_{ 0.0 }; // Previous 1st order quantized trajectory coefficient
 	Real x_1_pre_{ 0.0 }; // Previous 1st order continuous trajectory coefficient
 	Real x_2_tDel_{ 0.0 }; // x_2_ * ( tE - tX )
@@ -568,6 +577,7 @@ private: // Data
 	bool x_1_dif_sign_{ false }; // Sign of previous x_1_ - x_1_in
 	bool yoyo_{ false }; // Yo-yoing mode on?
 
+	// Yo-yoing parameters
 	static constexpr std::uint8_t m_yoyo_{ 5u }; // Number of yo-yo sequential requantization steps threshold
 	static constexpr double yoyo_mul_{ 100.0 }; // Yo-yo slope difference criterion multiplier
 	static constexpr double dt_growth_mul_{ 1.5 }; // Time step growth damping multiplier

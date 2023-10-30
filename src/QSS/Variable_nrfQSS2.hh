@@ -167,7 +167,7 @@ public: // Methods
 		set_qTol();
 		set_tE_aligned();
 		add_QSS( tE );
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 	}
 
 	// QSS Advance
@@ -181,7 +181,7 @@ public: // Methods
 		q_0_ = x_0_ += ( x_1_ + x_2_tDel_ ) * tDel;
 		if ( yoyo_ ) { // Yo-yo mode
 			q_1_ = x_1_ = c_1();
-			q_2_ = x_2_ = x_2_rlx_ * ( x_2_QSS_ = c_2( tE, x_1_ ) );
+			q_2_ = x_2_ = x_2_rlx_ * c_2( tE, x_1_ );
 		} else { // QSS mode
 			Real const x_1_in( x_1_ + ( two * x_2_tDel_ ) ); // Incoming slope
 			q_1_pre_ = q_1_;
@@ -192,8 +192,10 @@ public: // Methods
 			if ( ( std::abs( x_1_dif ) > yoyo_mul_ * std::abs( x_1_ - q_1_pre_ ) ) && ( ( n_yoyo_ == 0u ) || ( x_1_dif_sign == x_1_dif_sign_ ) ) ) { // Yo-yoing criteria met
 				x_1_dif_sign_ = x_1_dif_sign;
 				yoyo_ = ( ++n_yoyo_ >= m_yoyo_ );
-				q_2_ = x_2_ = ( yoyo_ ? x_2_rlx_ * ( x_2_QSS_ = x_2_ ) : x_2_ );
-				if ( yoyo_ && options::output::d ) std::cout << name() << " advance_QSS yoyo on " << tE << std::endl;
+				if ( yoyo_ ) {
+					q_2_ = x_2_ *= x_2_rlx_;
+					if ( options::output::d ) std::cout << name() << " advance_QSS yoyo on " << tE << std::endl;
+				}
 			} else {
 				n_yoyo_ = 0u;
 			}
@@ -201,7 +203,7 @@ public: // Methods
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << ( yoyo_ ? " yoyo" : "" ) << std::endl;
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << ( yoyo_ ? " yoyo" : "" ) << std::endl;
 		if ( observed() ) advance_observers();
 		if ( connected() ) advance_connections();
 	}
@@ -266,7 +268,7 @@ public: // Methods
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << ( yoyo_ ? " yoyo" : "" ) << std::endl;
+		if ( options::output::d ) std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << ( yoyo_ ? " yoyo" : "" ) << std::endl;
 		if ( connected() ) advance_connections();
 	}
 
@@ -280,11 +282,11 @@ public: // Methods
 		q_0_ = x_0_ = p_0();
 		q_1_ = x_1_ = c_1();
 		q_2_ = x_2_ = c_2( t, x_1_ );
+		yoyo_clear();
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		yoyo_clear();
-		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
+		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 		if ( observed() ) advance_observers();
 		if ( connected() ) advance_connections();
 	}
@@ -331,11 +333,11 @@ public: // Methods
 	void
 	advance_handler_F() override
 	{
+		yoyo_clear();
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		yoyo_clear();
-		if ( options::output::d ) std::cout << "*= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
+		if ( options::output::d ) std::cout << "*= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 		if ( connected() ) advance_connections();
 	}
 
@@ -361,21 +363,21 @@ public: // Methods
 	void
 	advance_observer_2( Real const x_1_p ) override
 	{
-		x_2_ = ( yoyo_ ? x_2_rlx_ * ( x_2_QSS_ = n_2( x_1_p ) ) : n_2( x_1_p ) );
+		x_2_ = ( yoyo_ ? x_2_rlx_ * n_2( x_1_p ) : n_2( x_1_p ) );
 	}
 
 	// Observer Advance: Stage 2
 	void
 	advance_observer_2( Real const x_1_m, Real const x_1_p ) override
 	{
-		x_2_ = ( yoyo_ ? x_2_rlx_ * ( x_2_QSS_ = n_2( x_1_m, x_1_p ) ) : n_2( x_1_m, x_1_p ) );
+		x_2_ = ( yoyo_ ? x_2_rlx_ * n_2( x_1_m, x_1_p ) : n_2( x_1_m, x_1_p ) );
 	}
 
 	// Observer Advance: Stage 2: Forward ND
 	void
 	advance_observer_2_forward( Real const x_1_p, Real const x_1_2p ) override
 	{
-		x_2_ = ( yoyo_ ? x_2_rlx_ * ( x_2_QSS_ = f_2( x_1_p, x_1_2p ) ) : f_2( x_1_p, x_1_2p ) );
+		x_2_ = ( yoyo_ ? x_2_rlx_ * f_2( x_1_p, x_1_2p ) : f_2( x_1_p, x_1_2p ) );
 	}
 
 	// Observer Advance: Stage Final
@@ -391,7 +393,7 @@ public: // Methods
 	void
 	advance_observer_d() const override
 	{
-		std::cout << " ^ " << name() << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q(" << std::noshowpos << tQ << std::showpos << ")]" << "   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << ( yoyo_ ? " yoyo" : "" ) << std::endl;
+		std::cout << " ^ " << name() << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q(" << std::noshowpos << tQ << std::showpos << ")]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << ( yoyo_ ? " yoyo" : "" ) << std::endl;
 	}
 
 private: // Methods
@@ -414,7 +416,7 @@ private: // Methods
 		if ( yoyo_ ) { // Yo-yo mode
 			if ( x_2_ != 0.0 ) {
 				Real const x_2_inv( one / x_2_ );
-				dt = dt_infinity( std::sqrt( qTol * x_2_rlx_ * std::abs( x_2_inv ) ) ); // x_2_rlx_ * std::abs( x_2_inv ) == 1 / std::abs( x_2_QSS_ )
+				dt = dt_infinity( std::sqrt( qTol * std::abs( x_2_inv ) ) );
 				assert( dt != infinity );
 				if ( nonzero_and_signs_differ( x_1_, x_2_ ) ) { // Inflection point
 					Time const dtI( -( x_1_ * ( one_half * x_2_inv ) ) );
@@ -466,16 +468,16 @@ private: // Methods
 		Real const d_0( x_0_ - ( q_0_ + ( q_1_ * ( tX - tQ ) ) ) );
 		Real const d_1( x_1_ - q_1_ );
 		Time dt;
+		if ( ( d_1 >= 0.0 ) && ( x_2_ >= 0.0 ) ) { // Upper boundary crossing
+			dt = min_root_quadratic_upper( x_2_, d_1, d_0 - qTol );
+		} else if ( ( d_1 <= 0.0 ) && ( x_2_ <= 0.0 ) ) { // Lower boundary crossing
+			dt = min_root_quadratic_lower( x_2_, d_1, d_0 + qTol );
+		} else { // Both boundaries can have crossings
+			dt = min_root_quadratic_both( x_2_, d_1, d_0 + qTol, d_0 - qTol );
+		}
+		dt = dt_infinity( dt );
+		assert( dt > 0.0 );
 		if ( yoyo_ ) { // Yo-yo mode
-			if ( ( d_1 >= 0.0 ) && ( x_2_QSS_ >= 0.0 ) ) { // Upper boundary crossing
-				dt = min_root_quadratic_upper( x_2_QSS_, d_1, d_0 - qTol );
-			} else if ( ( d_1 <= 0.0 ) && ( x_2_QSS_ <= 0.0 ) ) { // Lower boundary crossing
-				dt = min_root_quadratic_lower( x_2_QSS_, d_1, d_0 + qTol );
-			} else { // Both boundaries can have crossings
-				dt = min_root_quadratic_both( x_2_QSS_, d_1, d_0 + qTol, d_0 - qTol );
-			}
-			dt = dt_infinity( dt );
-			assert( dt > 0.0 );
 			if ( nonzero_and_signs_differ( x_1_, x_2_ ) ) { // Inflection point
 				Time const dtI( -( x_1_ / ( two * x_2_ ) ) );
 				if ( ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ) {
@@ -488,15 +490,6 @@ private: // Methods
 			}
 			dt_pre_ = dt;
 		} else { // QSS mode
-			if ( ( d_1 >= 0.0 ) && ( x_2_ >= 0.0 ) ) { // Upper boundary crossing
-				dt = min_root_quadratic_upper( x_2_, d_1, d_0 - qTol );
-			} else if ( ( d_1 <= 0.0 ) && ( x_2_ <= 0.0 ) ) { // Lower boundary crossing
-				dt = min_root_quadratic_lower( x_2_, d_1, d_0 + qTol );
-			} else { // Both boundaries can have crossings
-				dt = min_root_quadratic_both( x_2_, d_1, d_0 + qTol, d_0 - qTol );
-			}
-			dt = dt_infinity( dt );
-			assert( dt > 0.0 );
 			if ( options::inflection && nonzero_and_signs_differ( x_1_, x_2_ ) ) { // Inflection point
 				Time const dtI( -( x_1_ / ( two * x_2_ ) ) );
 				dt = ( ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ? dtI : dt );
@@ -514,7 +507,7 @@ private: // Methods
 	void
 	advance_QSS_2_relax_yoyo( Real const x_2 )
 	{
-		q_2_ = x_2_ = x_2_rlx_ * ( x_2_QSS_ = x_2 );
+		q_2_ = x_2_ = x_2_rlx_ * x_2;
 	}
 
 	// QSS Advance: Stage 2: Relaxation: QSS
@@ -528,8 +521,10 @@ private: // Methods
 		if ( ( std::abs( x_1_dif ) > yoyo_mul_ * std::abs( x_1_ - q_1_pre_ ) ) && ( ( n_yoyo_ == 0u ) || ( x_1_dif_sign == x_1_dif_sign_ ) ) ) { // Yo-yoing criteria met
 			x_1_dif_sign_ = x_1_dif_sign;
 			yoyo_ = ( ++n_yoyo_ >= m_yoyo_ );
-			q_2_ = x_2_ = ( yoyo_ ? x_2_rlx_ * ( x_2_QSS_ = x_2_ ) : x_2_ );
-			if ( yoyo_ && options::output::d ) std::cout << name() << " advance_QSS yoyo on " << tE << std::endl;
+			if ( yoyo_ ) {
+				q_2_ = x_2_ *= x_2_rlx_;
+				if ( options::output::d ) std::cout << name() << " advance_QSS yoyo on " << tE << std::endl;
+			}
 		} else {
 			n_yoyo_ = 0u;
 		}
@@ -569,15 +564,16 @@ private: // Data
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous trajectory coefficients
 	Real q_0_{ 0.0 }, q_1_{ 0.0 }, q_2_{ 0.0 }; // Quantized trajectory coefficients
 
+	// Relaxation
 	Real q_1_pre_{ 0.0 }; // Previous 1st order quantized trajectory coefficient
 	Real x_1_pre_{ 0.0 }; // Previous 1st order continuous trajectory coefficient
-	Real x_2_QSS_{ 0.0 }; // QSS 2nd order coefficient
 	Real x_2_tDel_{ 0.0 }; // x_2_ * ( tE - tX )
 	Time dt_pre_{ infinity }; // Previous time step
 	std::uint8_t n_yoyo_{ 0u }; // Number of yo-yo sequential requantization steps currently
 	bool x_1_dif_sign_{ false }; // Sign of previous x_1_ - x_1_in
 	bool yoyo_{ false }; // Yo-yoing mode on?
 
+	// Yo-yoing parameters
 	static constexpr std::uint8_t m_yoyo_{ 5u }; // Number of yo-yo sequential requantization steps threshold
 	static constexpr double yoyo_mul_{ 100.0 }; // Yo-yo slope difference criterion multiplier
 	static constexpr double dt_growth_mul_{ 1.5 }; // Time step growth damping multiplier

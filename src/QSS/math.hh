@@ -57,24 +57,24 @@ namespace QSS {
 // - Halley iterative methods were not seen to be faster in testing so far but this can be revisited.
 
 // Globals
-double constexpr zero{ 0.0 };
-double constexpr one{ 1.0 };
-double constexpr two{ 2.0 };
-double constexpr three{ 3.0 };
-double constexpr four{ 4.0 };
-double constexpr six{ 6.0 };
-double constexpr one_half{ 0.5 };
-double constexpr one_third{ 1.0 / 3.0 };
-double constexpr one_fourth{ 0.25 };
-double constexpr one_sixth{ 1.0 / 6.0 };
-double constexpr one_ninth{ 1.0 / 9.0 };
-double constexpr two_thirds{ 2.0 / 3.0 };
-double constexpr pi{ 3.141592653589793115997963 }; //C++20 double constexpr pi{ std::numbers::pi };  Not working with Intel Classic C++ as of version 2021.9.0 on Windows
-double constexpr infinity{ std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() }; //! Not safe with Intel C++ with /fp:fast
-// double constexpr infinity{ std::numeric_limits< double >::max() }; //! Safe with Intel C++ with /fp:fast
-double constexpr neg_infinity{ std::numeric_limits< double >::has_infinity && std::numeric_limits<double>::is_iec559 ? -std::numeric_limits< double >::infinity() : std::numeric_limits< double >::lowest() }; //! Not safe with Intel C++ with /fp:fast
-// double constexpr neg_infinity{ std::numeric_limits< double >::lowest() }; //! Safe with Intel C++ with /fp:fast
-double constexpr half_infinity{ 0.5 * infinity };
+static constexpr double zero{ 0.0 };
+static constexpr double one{ 1.0 };
+static constexpr double two{ 2.0 };
+static constexpr double three{ 3.0 };
+static constexpr double four{ 4.0 };
+static constexpr double six{ 6.0 };
+static constexpr double one_half{ 0.5 };
+static constexpr double one_third{ 1.0 / 3.0 };
+static constexpr double one_fourth{ 0.25 };
+static constexpr double one_sixth{ 1.0 / 6.0 };
+static constexpr double one_ninth{ 1.0 / 9.0 };
+static constexpr double two_thirds{ 2.0 / 3.0 };
+static constexpr double pi{ 3.141592653589793115997963 }; //C++20 static constexpr double pi{ std::numbers::pi };  Not working with Intel Classic C++ as of version 2021.9.0 on Windows
+static constexpr double infinity{ std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() }; //! Not safe with Intel C++ with /fp:fast
+// static constexpr double infinity{ std::numeric_limits< double >::max() }; //! Safe with Intel C++ with /fp:fast
+static constexpr double neg_infinity{ std::numeric_limits< double >::has_infinity && std::numeric_limits<double>::is_iec559 ? -std::numeric_limits< double >::infinity() : std::numeric_limits< double >::lowest() }; //! Not safe with Intel C++ with /fp:fast
+// static constexpr double neg_infinity{ std::numeric_limits< double >::lowest() }; //! Safe with Intel C++ with /fp:fast
+static constexpr double half_infinity{ 0.5 * infinity };
 
 // General
 
