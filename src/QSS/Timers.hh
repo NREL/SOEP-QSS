@@ -65,6 +65,7 @@ public: // Creation
 	{}
 
 	// Deferring Constructor
+	explicit
 	CPU( bool const )
 	{}
 
@@ -116,12 +117,14 @@ public: // Creation
 	{}
 
 	// Begin Time Constructor
+	explicit
 	Performance( Time const tb ) :
 	 cb_( cpu_time() ),
 	 tb_( tb )
 	{}
 
 	// Deferring Constructor
+	explicit
 	Performance( bool const )
 	{}
 

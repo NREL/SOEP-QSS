@@ -40,6 +40,9 @@
 #include <QSS/Target.hh>
 #include <QSS/Variable.hh>
 
+// C++ Headers
+#include <algorithm>
+
 namespace QSS {
 
 // Conditional Class Template
@@ -181,12 +184,7 @@ public: // Methods
 
 		// Flag if output connection observers
 		connected_output_observer = false;
-		for ( auto const observer : observers_ ) {
-			if ( observer->connected_output ) {
-				connected_output_observer = true;
-				break;
-			}
-		}
+		if ( std::any_of( observers_.begin(), observers_.end(), []( auto const observer ){ return observer->connected_output; } ) ) connected_output_observer = true;
 	}
 
 	// Activity Notifier

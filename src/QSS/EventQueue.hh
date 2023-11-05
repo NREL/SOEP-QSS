@@ -346,30 +346,30 @@ public: // Methods
 	Events
 	top_events() const
 	{
-		Events tops;
+		Events top_events;
 		if ( !m_.empty() ) {
 			const_iterator i( m_.begin() );
 			const_iterator const e( m_.end() );
 			SuperdenseTime const & s( i->first );
 			while ( ( i != e ) && ( i->first == s ) ) {
-				tops.push_back( i->second );
+				top_events.push_back( i->second );
 				++i;
 			}
 		}
-		return tops;
+		return top_events;
 	}
 
 	// Simultaneous Events at Front of Queue
 	void
-	top_events( Events & tops ) const
+	top_events( Events & top_events ) const
 	{
-		tops.clear();
+		top_events.clear();
 		if ( !m_.empty() ) {
 			const_iterator i( m_.begin() );
 			const_iterator const e( m_.end() );
 			SuperdenseTime const & s( i->first );
 			while ( ( i != e ) && ( i->first == s ) ) {
-				tops.push_back( i->second );
+				top_events.push_back( i->second );
 				++i;
 			}
 		}

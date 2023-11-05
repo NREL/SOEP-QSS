@@ -320,13 +320,6 @@ public: // Subscript
 
 private: // Methods
 
-	// Make Observers Collection Unique and Optionally Shrink-to-Fit
-	void
-	uniquify_observers( bool const shrink = false )
-	{
-		uniquify( observers_, shrink );
-	}
-
 	// Find Extended Computational Observers
 	void
 	find_computational_observers(
@@ -662,7 +655,7 @@ private: // Methods
 		}
 		if ( order_ >= 3 ) {
 			Time tN( t - options::dtND );
-			if ( fwd_time( tN ) ) { // Use centered ND formulas
+			if ( fwd_time( tN ) ) { // Centered ND
 				fmu_me_->set_time( tN );
 				set_qss_observees_values( tN );
 				fmu_me_->get_reals( qss_.n(), qss_dn2d_.refs.data(), qss_dn2d_.ders.data() );
@@ -676,7 +669,7 @@ private: // Methods
 				for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) { // Observer advance stage 3
 					observers_[ i ]->advance_observer_3();
 				}
-			} else { // Use forward ND formulas
+			} else { // Forward ND
 				tN = t + options::dtND;
 				fmu_me_->set_time( tN );
 				set_qss_observees_values( tN );
@@ -733,7 +726,7 @@ private: // Methods
 
 		if ( order_ >= 3 ) {
 			Time tN( t - options::dtND );
-			if ( fwd_time( tN ) ) { // Use centered ND formulas
+			if ( fwd_time( tN ) ) { // Centered ND
 				fmu_me_->set_time( tN );
 				set_r_observees_values( tN );
 				set_r_observees_dv( tN );
@@ -763,7 +756,7 @@ private: // Methods
 				for ( size_type i = r_.b(), e = r_.e(); i < e; ++i ) { // Observer advance stage 3
 					observers_[ i ]->advance_observer_3();
 				}
-			} else { // Use forward ND formulas
+			} else { // Forward ND
 				tN = t + options::dtND;
 				fmu_me_->set_time( tN );
 				set_r_observees_values( tN );
@@ -858,7 +851,7 @@ private: // Methods
 
 		if ( order_ >= 3 ) {
 			Time tN( t - options::dtND );
-			if ( fwd_time( tN ) ) { // Use centered ND formulas
+			if ( fwd_time( tN ) ) { // Centered ND
 				fmu_me_->set_time( tN );
 				set_zc_observees_values( tN );
 				set_zc_observees_dv( tN );
@@ -888,7 +881,7 @@ private: // Methods
 				for ( size_type i = zc_.b(), e = zc_.e(); i < e; ++i ) { // Observer advance stage 3
 					observers_[ i ]->advance_observer_3();
 				}
-			} else { // Use forward ND formulas
+			} else { // Forward ND
 				tN = t + options::dtND;
 				fmu_me_->set_time( tN );
 				set_zc_observees_values( tN );

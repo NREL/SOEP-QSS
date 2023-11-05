@@ -42,7 +42,7 @@
 
 // QSS Driver
 void
-run_QSS( std::vector< std::string > const args )
+run_QSS( std::vector< std::string > const args ) // Pass by value from Python sys.argv
 {
 	QSS::QSS_main( args );
 }

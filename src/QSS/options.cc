@@ -64,7 +64,9 @@ double zrFac( 10.0 ); // Zero-crossing relative tolerance factor
 double zaFac( 0.1 ); // Zero-crossing absolute tolerance factor
 double dtMin( 0.0 ); // Min time step (s)
 double dtMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Max time step (s)
-double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Inf time step (s)
+// double dtMax( std::numeric_limits< double >::max() ); // Max time step (s)
+double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Infinite time step (s)
+// double dtInf( std::numeric_limits< double >::max() ); // Infinite time step (s)
 double dtZMax( 0.01 ); // Max time step before zero-crossing (s)
 double dtZC( 1.0e-9 ); // FMU zero-crossing time step (s)
 double dtND( 1.0e-6 ); // Numeric differentiation time step (s)
@@ -319,15 +321,21 @@ process_args( Args const & args )
 				d2d = true;
 				rQSS = true;
 				fQSS = false;
-			} else if ( qss_name == "rLIQSS2" ) {
-				qss = QSS::rLIQSS2;
-				order = 2;
+			} else if ( qss_name == "rQSS3" ) {
+				qss = QSS::rQSS3;
+				order = 3;
 				d2d = true;
 				rQSS = true;
 				fQSS = false;
 			} else if ( qss_name == "rfQSS2" ) {
 				qss = QSS::rfQSS2;
 				order = 2;
+				d2d = true;
+				rQSS = true;
+				fQSS = true;
+			} else if ( qss_name == "rfQSS3" ) {
+				qss = QSS::rfQSS3;
+				order = 3;
 				d2d = true;
 				rQSS = true;
 				fQSS = true;
@@ -373,15 +381,21 @@ process_args( Args const & args )
 				d2d = false;
 				rQSS = true;
 				fQSS = false;
-			} else if ( qss_name == "nrLIQSS2" ) {
-				qss = QSS::nrLIQSS2;
-				order = 2;
+			} else if ( qss_name == "nrQSS3" ) {
+				qss = QSS::nrQSS3;
+				order = 3;
 				d2d = false;
 				rQSS = true;
 				fQSS = false;
 			} else if ( qss_name == "nrfQSS2" ) {
 				qss = QSS::nrfQSS2;
 				order = 2;
+				d2d = false;
+				rQSS = true;
+				fQSS = true;
+			} else if ( qss_name == "nrfQSS3" ) {
+				qss = QSS::nrfQSS3;
+				order = 3;
 				d2d = false;
 				rQSS = true;
 				fQSS = true;
@@ -897,12 +911,7 @@ process_args( Args const & args )
 				if ( dep_specs.empty() ) {
 					dep.all() = true;
 				} else {
-					for ( std::string const & dep_spec : dep_specs ) {
-						if ( dep_spec == "*" ) {
-							dep.all() = true;
-							break;
-						}
-					}
+					if ( std::any_of( dep_specs.begin(), dep_specs.end(), []( std::string const & dep_spec ){ return dep_spec == "*"; } ) ) dep.all() = true;
 				}
 			}
 			std::regex var_regex;

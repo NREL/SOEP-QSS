@@ -122,8 +122,8 @@ protected: // Creation
 	 Real const aTol_ = options::aTol,
 	 Real const zTol_ = options::zTol,
 	 Real const xIni_ = 0.0,
-	 FMU_Variable const var = FMU_Variable(),
-	 FMU_Variable const der = FMU_Variable()
+	 FMU_Variable const & var = FMU_Variable(),
+	 FMU_Variable const & der = FMU_Variable()
 	) :
 	 Target( name ),
 	 order_( order ),
@@ -154,8 +154,8 @@ protected: // Creation
 	 Real const rTol_ = options::rTol,
 	 Real const aTol_ = options::aTol,
 	 Real const xIni_ = 0.0,
-	 FMU_Variable const var = FMU_Variable(),
-	 FMU_Variable const der = FMU_Variable()
+	 FMU_Variable const & var = FMU_Variable(),
+	 FMU_Variable const & der = FMU_Variable()
 	) :
 	 Target( name ),
 	 order_( order ),
@@ -183,8 +183,8 @@ protected: // Creation
 	 int const order,
 	 std::string const & name,
 	 Real const xIni_ = 0.0,
-	 FMU_Variable const var = FMU_Variable(),
-	 FMU_Variable const der = FMU_Variable()
+	 FMU_Variable const & var = FMU_Variable(),
+	 FMU_Variable const & der = FMU_Variable()
 	) :
 	 Target( name ),
 	 order_( order ),
@@ -940,30 +940,6 @@ public: // Methods
 		assert( false );
 	}
 
-	// QSS Advance: Stage 1
-	virtual
-	void
-	advance_QSS_1( Real const, Real const )
-	{
-		assert( false );
-	}
-
-	// QSS Advance: Stage 1
-	virtual
-	void
-	advance_QSS_1_forward( Real const, Real const )
-	{
-		assert( false );
-	}
-
-	// QSS Advance: Stage 2
-	virtual
-	void
-	advance_QSS_2()
-	{
-		assert( false );
-	}
-
 	// QSS Advance: Stage 2
 	virtual
 	void
@@ -976,14 +952,6 @@ public: // Methods
 	virtual
 	void
 	advance_QSS_2( Real const, Real const )
-	{
-		assert( false );
-	}
-
-	// QSS Advance: Stage 2: Forward ND
-	virtual
-	void
-	advance_QSS_2_forward()
 	{
 		assert( false );
 	}
@@ -1012,26 +980,10 @@ public: // Methods
 		assert( false );
 	}
 
-	// QSS Advance: Stage 3
-	virtual
-	void
-	advance_QSS_3( Real const )
-	{
-		assert( false );
-	}
-
 	// QSS Advance: Stage 3: Forward ND
 	virtual
 	void
 	advance_QSS_3_forward()
-	{
-		assert( false );
-	}
-
-	// QSS Advance: Stage 3: Forward ND
-	virtual
-	void
-	advance_QSS_3_forward( Real const )
 	{
 		assert( false );
 	}
@@ -1230,22 +1182,6 @@ public: // Methods
 		assert( false );
 	}
 
-	// Observer Advance: Stage 1
-	virtual
-	void
-	advance_observer_1( Time const, Real const, Real const, Real const )
-	{
-		assert( false );
-	}
-
-	// Observer Advance: Stage 2
-	virtual
-	void
-	advance_observer_2()
-	{
-		assert( false );
-	}
-
 	// Observer Advance: Stage 2
 	virtual
 	void
@@ -1258,14 +1194,6 @@ public: // Methods
 	virtual
 	void
 	advance_observer_2( Real const, Real const )
-	{
-		assert( false );
-	}
-
-	// Observer Advance: Stage 2: Forward ND
-	virtual
-	void
-	advance_observer_2_forward()
 	{
 		assert( false );
 	}
@@ -1298,22 +1226,6 @@ public: // Methods
 	virtual
 	void
 	advance_observer_3_forward()
-	{
-		assert( false );
-	}
-
-	// Observer Advance: Stage 3
-	virtual
-	void
-	advance_observer_3( Real const )
-	{
-		assert( false );
-	}
-
-	// Observer Advance: Stage 3: Forward ND
-	virtual
-	void
-	advance_observer_3_forward( Real const )
 	{
 		assert( false );
 	}
@@ -1600,8 +1512,8 @@ public: // Methods: FMU
 	void
 	fmu_set_observees_x( Time const t ) const
 	{
-		for ( size_type i = 0; i < n_observees_; ++i ) { // Set observee value vector
-			observees_v_[ i ] = observees_[ i ]->x( t );
+		for ( size_type j = 0; j < n_observees_; ++j ) { // Set observee value vector
+			observees_v_[ j ] = observees_[ j ]->x( t );
 		}
 		fmu_me_->set_reals( n_observees_, observees_v_ref_.data(), observees_v_.data() ); // Set observees FMU values
 	}
@@ -1610,7 +1522,7 @@ public: // Methods: FMU
 	void
 	fmu_set_observees_x( Time const t, Variable const * const var ) const
 	{
-		for ( auto observee : observees_ ) {
+		for ( auto const observee : observees_ ) {
 			if ( ( observee != var ) || ( var->fmu_get_as_real() == var->x_0_bump ) ) observee->fmu_set_x( t );
 		}
 	}
@@ -1619,9 +1531,9 @@ public: // Methods: FMU
 	void
 	fmu_set_observees_x( Time const t, Variables const & vars ) const
 	{
-		for ( auto observee : observees_ ) {
-			Variables::const_iterator const i( std::find( vars.begin(), vars.end(), observee ) );
-			if ( ( i == vars.end() ) || ( (*i)->fmu_get_as_real() == (*i)->x_0_bump ) ) observee->fmu_set_x( t );
+		for ( auto const observee : observees_ ) {
+			Variables::const_iterator const j( std::find( vars.begin(), vars.end(), observee ) );
+			if ( ( j == vars.end() ) || ( (*j)->fmu_get_as_real() == (*j)->x_0_bump ) ) observee->fmu_set_x( t );
 		}
 	}
 
@@ -1630,11 +1542,11 @@ public: // Methods: FMU
 	fmu_set_observees_s( Time const t ) const
 	{
 		assert( is_QSS() );
-		for ( size_type i = 0; i < n_observees_; ++i ) { // Set observee value vector
+		for ( size_type j = 0; j < n_observees_; ++j ) { // Set observee value vector
 #ifndef QSS_PROPAGATE_CONTINUOUS
-			observees_v_[ i ] = observees_[ i ]->q( t ); // Quantized: Traditional QSS
+			observees_v_[ j ] = observees_[ j ]->q( t ); // Quantized: Traditional QSS
 #else
-			observees_v_[ i ] = observees_[ i ]->x( t ); // Continuous: Modified QSS
+			observees_v_[ j ] = observees_[ j ]->x( t ); // Continuous: Modified QSS
 #endif
 		}
 		fmu_me_->set_reals( n_observees_, observees_v_ref_.data(), observees_v_.data() ); // Set observees FMU values
@@ -1971,11 +1883,11 @@ protected: // Methods
 	set_observees_dv( Time const t ) const
 	{
 		assert( is_QSS() );
-		for ( size_type i = 0u; i < n_observees_; ++i ) {
+		for ( size_type j = 0u; j < n_observees_; ++j ) {
 #ifndef QSS_PROPAGATE_CONTINUOUS
-			observees_dv_[ i ] = observees_[ i ]->q1( t ); // Quantized: Traditional QSS
+			observees_dv_[ j ] = observees_[ j ]->q1( t ); // Quantized: Traditional QSS
 #else
-			observees_dv_[ i ] = observees_[ i ]->x1( t ); // Continuous: Modified QSS
+			observees_dv_[ j ] = observees_[ j ]->x1( t ); // Continuous: Modified QSS
 #endif
 		}
 	}
@@ -1985,8 +1897,8 @@ protected: // Methods
 	set_observees_dv_x( Time const t ) const
 	{
 		assert( is_R() || is_ZC() );
-		for ( size_type i = 0u; i < n_observees_; ++i ) {
-			observees_dv_[ i ] = observees_[ i ]->x1( t );
+		for ( size_type j = 0u; j < n_observees_; ++j ) {
+			observees_dv_[ j ] = observees_[ j ]->x1( t );
 		}
 	}
 

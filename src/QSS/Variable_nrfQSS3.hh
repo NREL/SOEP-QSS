@@ -1,4 +1,4 @@
-// nQSS3 Variable
+// nrfQSS3 Variable
 //
 // Project: QSS Solver
 //
@@ -33,16 +33,16 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_Variable_nQSS3_hh_INCLUDED
-#define QSS_Variable_nQSS3_hh_INCLUDED
+#ifndef QSS_Variable_nrfQSS3_hh_INCLUDED
+#define QSS_Variable_nrfQSS3_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/Variable_QSS.hh>
 
 namespace QSS {
 
-// nQSS3 Variable
-class Variable_nQSS3 final : public Variable_QSS
+// nrfQSS3 Variable
+class Variable_nrfQSS3 final : public Variable_QSS
 {
 
 public: // Types
@@ -57,7 +57,7 @@ private: // Types
 public: // Creation
 
 	// Constructor
-	Variable_nQSS3(
+	Variable_nrfQSS3(
 	 FMU_ME * fmu_me,
 	 std::string const & name,
 	 Real const rTol_ = options::rTol,
@@ -72,6 +72,15 @@ public: // Creation
 	 q_0_( xIni_ )
 	{
 		set_qTol();
+	}
+
+public: // Predicate
+
+	// Yo-yoing?
+	bool
+	yoyoing() const override
+	{
+		return yoyo_;
 	}
 
 public: // Property
@@ -111,21 +120,29 @@ public: // Property
 	q( Time const t ) const override
 	{
 		Time const tDel( t - tQ );
-		return q_0_ + ( ( q_1_ + ( q_2_ * tDel ) ) * tDel );
+		return q_0_ + ( ( q_1_ + ( ( q_2_ + ( q_3_ * tDel ) ) * tDel ) ) * tDel );
 	}
 
 	// Quantized First Derivative at Time t
 	Real
 	q1( Time const t ) const override
 	{
-		return q_1_ + ( two * q_2_ * ( t - tQ ) );
+		Time const tDel( t - tQ );
+		return q_1_ + ( ( ( two * q_2_ ) + ( three * q_3_ * tDel ) ) * tDel );
 	}
 
 	// Quantized Second Derivative at Time t
 	Real
-	q2( Time const ) const override
+	q2( Time const t ) const override
 	{
-		return two * q_2_;
+		return ( two * q_2_ ) + ( six * q_3_ * ( t - tQ ) );
+	}
+
+	// Quantized Third Derivative at Time t
+	Real
+	q3( Time const ) const override
+	{
+		return six * q_3_;
 	}
 
 public: // Methods
@@ -169,7 +186,7 @@ public: // Methods
 	void
 	init_3() override
 	{
-		x_3_ = f_3( tQ, x_1_ );
+		q_3_ = x_3_ = f_3( tQ, x_1_ );
 		fmu_set_observees_x( t0() );
 	}
 
@@ -180,7 +197,7 @@ public: // Methods
 		set_qTol();
 		set_tE_aligned();
 		add_QSS( tE );
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << q_3_ << x_delta_3 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 	}
 
 	// QSS Advance
@@ -190,19 +207,48 @@ public: // Methods
 		Time const tDel( tE - tX );
 		tS = tE - tQ;
 		tQ = tX = tE;
-		q_0_ = x_0_ += ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel;
-		q_1_ = x_1_ = c_1();
-		if ( fwd_time_ND( tE ) ) { // Centered ND
-			q_2_ = x_2_ = c_2();
-			x_3_ = n_3();
-		} else { // Forward ND
-			q_2_ = x_2_ = f_2();
-			x_3_ = f_3();
+		Real const x_3_tDel( x_3_ * tDel );
+		q_0_ = x_0_ += ( x_1_ + ( x_2_ + x_3_tDel ) * tDel ) * tDel;
+		if ( yoyo_ ) { // Yo-yo mode
+			q_1_ = x_1_ = c_1();
+			if ( fwd_time_ND( tE ) ) { // Centered ND
+				q_2_ = x_2_ = rlx_fac_ * c_2();
+				q_3_ = x_3_ = rlx_fac_ * n_3();
+			} else { // Forward ND
+				q_2_ = x_2_ = rlx_fac_ * f_2();
+				q_3_ = x_3_ = rlx_fac_ * f_3();
+			}
+		} else { // QSS mode
+			Real const x_1_in( x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_tDel ) ) * tDel ) ); // Incoming slope
+			x_1_ = c_1();
+			Real const x_1_dif( x_1_ - x_1_in );
+			Real const x_1_dif_lim( yoyo_mul_ * std::abs( x_1_ - q_1_2_ ) );
+			bool const x_1_dif_sign( bool_sign( x_1_dif ) );
+			q_1_2_ = q_1_;
+			q_1_ = x_1_;
+			if ( fwd_time_ND( tE ) ) { // Centered ND
+				q_2_ = x_2_ = c_2();
+				q_3_ = x_3_ = n_3();
+			} else { // Forward ND
+				q_2_ = x_2_ = f_2();
+				q_3_ = x_3_ = f_3();
+			}
+			if ( ( std::abs( x_1_dif ) > x_1_dif_lim ) && ( ( n_yoyo_ == 0u ) || ( !x_1_dif_sign == x_1_dif_sign_ ) ) ) { // Yo-yoing criteria met
+				x_1_dif_sign_ = x_1_dif_sign;
+				yoyo_ = ( ++n_yoyo_ >= m_yoyo_ );
+				if ( yoyo_ ) {
+					q_2_ = x_2_ *= rlx_fac_;
+					q_3_ = x_3_ *= rlx_fac_;
+					if ( options::output::d ) std::cout << name() << " yoyo on " << tE << std::endl;
+				}
+			} else {
+				n_yoyo_ = 0u;
+			}
 		}
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
+		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << q_3_ << x_delta_3 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << ( yoyo_ ? " yoyo" : "" ) << std::endl;
 		if ( observed() ) advance_observers();
 		if ( connected() ) advance_connections();
 	}
@@ -211,45 +257,69 @@ public: // Methods
 	void
 	advance_QSS_0() override
 	{
-		Time const tDel( tE - tX );
+		tDel_ = tE - tX;
 		tS = tE - tQ;
 		tQ = tX = tE;
-		q_0_ = x_0_ += ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel;
+		x_3_tDel_ = x_3_ * tDel_;
+		q_0_ = x_0_ += ( x_1_ + ( x_2_ + x_3_tDel_ ) * tDel_ ) * tDel_;
 	}
 
 	// QSS Advance: Stage 1
 	void
 	advance_QSS_1( Real const x_1 ) override
 	{
-		q_1_ = x_1_ = x_1;
+		if ( yoyo_ ) { // Yo-yo mode
+			q_1_ = x_1_ = x_1;
+		} else { // QSS mode
+			Real const x_1_in( x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_tDel_ ) ) * tDel_ ) ); // Incoming slope
+			x_1_ = x_1;
+			Real const x_1_dif( x_1_ - x_1_in );
+			Real const x_1_dif_lim( yoyo_mul_ * std::abs( x_1_ - q_1_2_ ) );
+			bool const x_1_dif_sign( bool_sign( x_1_dif ) );
+			q_1_2_ = q_1_;
+			q_1_ = x_1_;
+			if ( ( std::abs( x_1_dif ) > x_1_dif_lim ) && ( ( n_yoyo_ == 0u ) || ( !x_1_dif_sign == x_1_dif_sign_ ) ) ) { // Yo-yoing criteria met
+				x_1_dif_sign_ = x_1_dif_sign;
+				yoyo_ = ( ++n_yoyo_ >= m_yoyo_ );
+				if ( yoyo_ ) {
+					if ( options::output::d ) std::cout << name() << " yoyo on " << tE << std::endl;
+				}
+			} else {
+				n_yoyo_ = 0u;
+			}
+		}
 	}
 
 	// QSS Advance: Stage 2
 	void
 	advance_QSS_2( Real const x_1_m, Real const x_1_p ) override
 	{
-		q_2_ = x_2_ = n_2( x_1_m, x_1_p );
+		Real const x_2_qss( n_2( x_1_m, x_1_p ) );
+		q_2_ = x_2_ = ( yoyo_ ? rlx_fac_ * x_2_qss : x_2_qss );
 	}
 
 	// QSS Advance: Stage 2: Forward ND
 	void
 	advance_QSS_2_forward( Real const x_1_p, Real const x_1_2p ) override
 	{
-		q_2_ = x_2_ = f_2( x_1_p, x_1_2p );
+		Real const x_2_qss( f_2( x_1_p, x_1_2p ) );
+		q_2_ = x_2_ = ( yoyo_ ? rlx_fac_ * x_2_qss : x_2_qss );
 	}
 
 	// QSS Advance: Stage 3
 	void
 	advance_QSS_3() override
 	{
-		x_3_ = n_3();
+		Real const x_3_qss( n_3() );
+		q_3_ = x_3_ = ( yoyo_ ? rlx_fac_ * x_3_qss : x_3_qss );
 	}
 
 	// QSS Advance: Stage 3: Forward ND
 	void
 	advance_QSS_3_forward() override
 	{
-		x_3_ = f_3();
+		Real const x_3_qss( f_3() );
+		q_3_ = x_3_ = ( yoyo_ ? rlx_fac_ * x_3_qss : x_3_qss );
 	}
 
 	// QSS Advance: Stage Final
@@ -259,7 +329,7 @@ public: // Methods
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
+		if ( options::output::d ) std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << q_3_ << x_delta_3 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << ( yoyo_ ? " yoyo" : "" ) << std::endl;
 		if ( connected() ) advance_connections();
 	}
 
@@ -274,15 +344,16 @@ public: // Methods
 		q_1_ = x_1_ = c_1();
 		if ( fwd_time_ND( t ) ) { // Centered ND
 			q_2_ = x_2_ = c_2();
-			x_3_ = n_3();
+			q_3_ = x_3_ = n_3();
 		} else { // Forward ND
 			q_2_ = x_2_ = f_2();
-			x_3_ = f_3();
+			q_3_ = x_3_ = f_3();
 		}
+		yoyo_clear();
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
+		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << q_3_ << x_delta_3 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 		if ( observed() ) advance_observers();
 		if ( connected() ) advance_connections();
 	}
@@ -322,24 +393,25 @@ public: // Methods
 	void
 	advance_handler_3() override
 	{
-		x_3_ = n_3();
+		q_3_ = x_3_ = n_3();
 	}
 
 	// Handler Advance: Stage 3: Forward ND
 	void
 	advance_handler_3_forward() override
 	{
-		x_3_ = f_3();
+		q_3_ = x_3_ = f_3();
 	}
 
 	// Handler Advance: Stage Final
 	void
 	advance_handler_F() override
 	{
+		yoyo_clear();
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "*= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
+		if ( options::output::d ) std::cout << "*= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << q_3_ << x_delta_3 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
 		if ( connected() ) advance_connections();
 	}
 
@@ -365,28 +437,32 @@ public: // Methods
 	void
 	advance_observer_2( Real const x_1_m, Real const x_1_p ) override
 	{
-		x_2_ = n_2( x_1_m, x_1_p );
+		Real const x_2_qss( n_2( x_1_m, x_1_p ) );
+		x_2_ = ( yoyo_ ? rlx_fac_ * x_2_qss : x_2_qss );
 	}
 
 	// Observer Advance: Stage 2: Forward ND
 	void
 	advance_observer_2_forward( Real const x_1_p, Real const x_1_2p ) override
 	{
-		x_2_ = f_2( x_1_p, x_1_2p );
+		Real const x_2_qss( f_2( x_1_p, x_1_2p ) );
+		x_2_ = ( yoyo_ ? rlx_fac_ * x_2_qss : x_2_qss );
 	}
 
 	// Observer Advance: Stage 3
 	void
 	advance_observer_3() override
 	{
-		x_3_ = n_3();
+		Real const x_3_qss( n_3() );
+		x_3_ = ( yoyo_ ? rlx_fac_ * x_3_qss : x_3_qss );
 	}
 
 	// Observer Advance: Stage 3: Forward ND
 	void
 	advance_observer_3_forward() override
 	{
-		x_3_ = f_3();
+		Real const x_3_qss( f_3() );
+		x_3_ = ( yoyo_ ? rlx_fac_ * x_3_qss : x_3_qss );
 	}
 
 	// Observer Advance: Stage Final
@@ -402,7 +478,7 @@ public: // Methods
 	void
 	advance_observer_d() const override
 	{
-		std::cout << " ^ " << name() << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q(" << std::noshowpos << tQ << std::showpos << ")]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
+		std::cout << " ^ " << name() << '(' << tX << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << q_3_ << x_delta_3 << " [q(" << std::noshowpos << tQ << std::showpos << ")]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << ( yoyo_ ? " yoyo" : "" ) << std::endl;
 	}
 
 private: // Methods
@@ -422,19 +498,46 @@ private: // Methods
 		assert( tQ == tX );
 		assert( dt_min <= dt_max );
 		Time dt;
-		if ( x_3_ != 0.0 ) {
-			Real const x_3_inv( one / x_3_ );
-			dt = dt_infinity( std::cbrt( qTol * std::abs( x_3_inv ) ) );
-			assert( dt != infinity );
-			if ( options::inflection && nonzero_and_signs_differ( x_2_, x_3_ ) ) { // Inflection point
-				Time const dtI( -( x_2_ * ( one_third * x_3_inv ) ) );
-				dt = ( ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ? dtI : dt );
+		if ( yoyo_ ) { // Yo-yo mode
+			if ( x_3_ != 0.0 ) {
+				Real const x_3_inv( one / x_3_ );
+				dt = dt_infinity( std::cbrt( qTol * std::abs( x_3_inv ) ) );
+				assert( dt != infinity );
+				Time const dt_inflectionFrac( dt * options::inflectionFrac );
+				Time const dtI_1_root( min_root_quadratic( three * x_3_, two * x_2_, x_1_ ) ); // When 1st derivative is zero
+				Time const dtI_1( dtI_1_root > dt_inflectionFrac ? dtI_1_root : infinity );
+				Time const dtI_2_root( nonzero_and_signs_differ( x_2_, x_3_ ) ? -( x_2_ * ( one_third * x_3_inv ) ) : infinity ); // When 2nd derivative is zero
+				Time const dtI_2( dtI_2_root > dt_inflectionFrac ? dtI_2_root : infinity );
+				Time const dtI( std::min( dtI_1, dtI_2 ) );
+				if ( dtI < dt ) { // Use inflection point time step
+					dt = dtI;
+				} else { // Relax time step growth
+					dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt_growth_mul_ * dt_pre_, dt ) : dt );
+				}
+				dt = std::min( std::max( dt, dt_min ), dt_max );
+				tE = tQ + dt;
+			} else {
+				dt = dt_infinity_of_infinity();
+				dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt_growth_mul_ * dt_pre_, dt ) : dt ); // Relax time step growth
+				dt = std::min( std::max( dt, dt_min ), dt_max );
+				tE = ( dt != infinity ? tQ + dt : infinity );
 			}
-			dt = std::min( std::max( dt, dt_min ), dt_max );
-			tE = tQ + dt;
-		} else {
-			dt = std::min( std::max( dt_infinity_of_infinity(), dt_min ), dt_max );
-			tE = ( dt != infinity ? tQ + dt : infinity );
+			dt_pre_ = dt;
+		} else { // QSS mode
+			if ( x_3_ != 0.0 ) {
+				Real const x_3_inv( one / x_3_ );
+				dt = dt_infinity( std::cbrt( qTol * std::abs( x_3_inv ) ) );
+				assert( dt != infinity );
+				if ( options::inflection && nonzero_and_signs_differ( x_2_, x_3_ ) ) { // Inflection point
+					Time const dtI( -( x_2_ * ( one_third * x_3_inv ) ) ); // When 2nd derivative is zero
+					dt = ( ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ? dtI : dt );
+				}
+				dt = std::min( std::max( dt, dt_min ), dt_max );
+				tE = tQ + dt;
+			} else {
+				dt = std::min( std::max( dt_infinity_of_infinity(), dt_min ), dt_max );
+				tE = ( dt != infinity ? tQ + dt : infinity );
+			}
 		}
 		if ( tQ == tE ) {
 			tE = std::nextafter( tE, infinity );
@@ -461,10 +564,30 @@ private: // Methods
 			dt = min_root_cubic_both( x_3_, d_2, d_1, d_0 + qTol, d_0 - qTol, zTol );
 		}
 		dt = dt_infinity( dt );
-		assert( dt > 0.0 );
-		if ( options::inflection && nonzero_and_signs_differ( x_2_, x_3_ ) ) { // Inflection point
-			Time const dtI( -( x_2_ / ( three * x_3_ ) ) );
-			dt = ( ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ? dtI : dt );
+		assert( dt > 0.0 ); // Might be infinity
+		if ( yoyo_ ) { // Yo-yo mode
+			if ( x_3_ != 0.0 ) {
+				Real const x_3_inv( one / x_3_ );
+				Time const dt_inflectionFrac( dt * options::inflectionFrac );
+				Time const dtI_1_root( min_root_quadratic( three * x_3_, two * x_2_, x_1_ ) ); // When 1st derivative is zero
+				Time const dtI_1( dtI_1_root > dt_inflectionFrac ? dtI_1_root : infinity );
+				Time const dtI_2_root( nonzero_and_signs_differ( x_2_, x_3_ ) ? -( x_2_ * ( one_third * x_3_inv ) ) : infinity ); // When 2nd derivative is zero
+				Time const dtI_2( dtI_2_root > dt_inflectionFrac ? dtI_2_root : infinity );
+				Time const dtI( std::min( dtI_1, dtI_2 ) );
+				if ( dtI < dt ) { // Use inflection point time step
+					dt = dtI;
+				} else { // Relax time step growth
+					dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt_growth_mul_ * dt_pre_, dt ) : dt );
+				}
+			} else { // Relax time step growth
+				dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt_growth_mul_ * dt_pre_, dt ) : dt );
+			}
+			dt_pre_ = dt;
+		} else { // QSS mode
+			if ( options::inflection && nonzero_and_signs_differ( x_2_, x_3_ ) ) { // Inflection point
+				Time const dtI( -( x_2_ / ( three * x_3_ ) ) ); // When 2nd derivative is zero
+				dt = ( ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ? dtI : dt );
+			}
 		}
 		dt = std::min( std::max( dt, dt_min ), dt_max );
 		tE = ( dt != infinity ? tX + dt : infinity );
@@ -530,13 +653,38 @@ private: // Methods
 		return options::one_over_six_dtND_squared * ( ( x_1_2p_ - x_1_p_ ) + ( x_1_ - x_1_p_ ) ); //ND Forward 3-point
 	}
 
+	// Clear Yo-Yo State
+	void
+	yoyo_clear()
+	{
+		n_yoyo_ = 0u;
+		yoyo_ = false;
+		q_1_2_ = 0.0;
+	}
+
 private: // Data
 
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }, x_3_{ 0.0 }; // Continuous trajectory coefficients
-	Real q_0_{ 0.0 }, q_1_{ 0.0 }, q_2_{ 0.0 }; // Quantized trajectory coefficients
+	Real q_0_{ 0.0 }, q_1_{ 0.0 }, q_2_{ 0.0 }, q_3_{ 0.0 }; // Quantized trajectory coefficients
 	mutable Real x_1_m_{ 0.0 }, x_1_p_{ 0.0 }, x_1_2p_{ 0.0 }; // Trajectory coefficient 1 at numeric differentiation time offsets
 
-}; // Variable_nQSS3
+	// Relaxation
+	Real q_1_2_{ 0.0 }; // Quantized trajectory 1st order coefficient from two requantizations earlier
+	Real x_3_tDel_{ 0.0 }; // x_3_ * ( tE - tX )
+	Time tDel_{ 0.0 }; // tE - tX
+	Time dt_pre_{ infinity }; // Previous time step
+	std::uint8_t n_yoyo_{ 0u }; // Number of yo-yo sequential requantization steps currently
+	bool x_1_dif_sign_{ false }; // Sign of previous x_1_ - x_1_in
+	bool yoyo_{ false }; // Yo-yoing mode on?
+
+	// Yo-yoing parameters
+	static constexpr std::uint8_t m_yoyo_{ 5u }; // Number of yo-yo sequential requantization steps threshold
+	static constexpr double yoyo_mul_{ 100.0 }; // Yo-yo slope difference criterion multiplier
+	static constexpr double dt_growth_mul_{ 1.5 }; // Time step growth damping multiplier
+	static constexpr double dt_growth_inf_{ infinity / dt_growth_mul_ }; // Time step growth infinity threshold
+	static constexpr double rlx_fac_{ 0.25 }; // Order 2+ coefficient relaxation factor
+
+}; // Variable_nrfQSS3
 
 } // QSS
 

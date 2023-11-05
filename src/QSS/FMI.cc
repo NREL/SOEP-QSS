@@ -122,15 +122,14 @@ simulate( FMU_QSS & fmu_qss )
 	fmi2Component c( fmu_qss.fmu->capi->c );
 	fmi2Real const fmu_time( ((component_ptr_t)(fmu_qss.fmu_me.fmu->capi->c))->fmitime );
 	if ( fmu_qss.fmu_me.t < fmu_time ) { // Advance simulation to FMU time
+		fmi2EnterEventMode( c );
+		fmi2EnterContinuousTimeMode( c );
 		fmi2EventInfo eventInfo;
 		eventInfo.newDiscreteStatesNeeded = fmi2_true;
 		eventInfo.terminateSimulation = fmi2_false;
 		eventInfo.nominalsOfContinuousStatesChanged = fmi2_false;
 		eventInfo.valuesOfContinuousStatesChanged = fmi2_false;
-		eventInfo.nextEventTimeDefined = fmi2_false;
 		eventInfo.nextEventTime = -0.0; // We are using this to signal time in/out of FMU-ME!!!
-		fmi2EnterEventMode( c );
-		fmi2EnterContinuousTimeMode( c );
 		eventInfo.nextEventTimeDefined = fmi2_true;
 		fmi2Real time( fmu_qss.fmu_me.t );
 		fmi2Real const tNext( fmu_time ); // This can be a varying next step stop time to do output to another FMU
@@ -138,7 +137,7 @@ simulate( FMU_QSS & fmu_qss )
 			while ( time <= fmu_time ) {
 				while ( ( eventInfo.newDiscreteStatesNeeded == fmi2_true ) && ( eventInfo.terminateSimulation == fmi2_false ) && ( eventInfo.nextEventTime < tNext ) ) {
 					eventInfo.nextEventTime = tNext; // Signal QSS simulation pass when to stop
-					fmu_qss.fmu_me.simulate( (fmi2_event_info_t *)(&eventInfo) );
+					fmu_qss.fmu_me.simulate( reinterpret_cast< fmi2_event_info_t * >( &eventInfo ) );
 					if ( ( fmu_qss.fmu_me.t >= fmu_qss.fmu_me.tE ) || ( eventInfo.terminateSimulation ) ) {
 						eventInfo.terminateSimulation = fmi2_true;
 						eventInfo.newDiscreteStatesNeeded = fmi2_false;
@@ -232,7 +231,7 @@ fmi2SetDebugLogging(
  fmi2String const cat[]
 )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	if ( c == nullptr ) {
 		return fmi2Fatal;
@@ -354,7 +353,7 @@ fmi2EnterInitializationMode( fmi2Component c )
 fmi2Status
 fmi2ExitInitializationMode( fmi2Component c )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	fmi2Status const fmi_status( (fmi2Status)fmi2_import_exit_initialization_mode( fmu_qss.fmu_me.fmu ) );
 	return fmi_status;
@@ -363,7 +362,7 @@ fmi2ExitInitializationMode( fmi2Component c )
 fmi2Status
 fmi2EnterEventMode( fmi2Component c )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	return (fmi2Status)fmi2_import_enter_event_mode( fmu_qss.fmu_me.fmu );
 }
@@ -371,7 +370,7 @@ fmi2EnterEventMode( fmi2Component c )
 fmi2Status
 fmi2EnterContinuousTimeMode( fmi2Component c )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	fmi2_import_enter_event_mode( fmu_qss.fmu_me.fmu ); //? Keep FMUChecker happy
 	return (fmi2Status)fmi2_import_enter_continuous_time_mode( fmu_qss.fmu_me.fmu );
@@ -385,7 +384,7 @@ fmi2NewDiscreteStates(
 {
 	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
-	fmu_qss.fmu_me.simulate( (fmi2_event_info_t *)eventInfo, true );
+	fmu_qss.fmu_me.simulate( reinterpret_cast< fmi2_event_info_t * >( eventInfo ), true );
 	if ( ( fmu_qss.fmu_me.t >= fmu_qss.fmu_me.tE ) || ( eventInfo->terminateSimulation ) ) {
 		eventInfo->terminateSimulation = fmi2_true;
 		fmu_qss.fmu_me.post_simulate();
@@ -404,7 +403,7 @@ fmi2SetRealInputDerivatives(
  fmi2Real const value[]
 )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	return (fmi2Status)fmi2_import_set_real_input_derivatives( fmu_qss.fmu_me.fmu, vr, nvr, order, value );
 }
@@ -418,7 +417,7 @@ fmi2GetRealOutputDerivatives(
  fmi2Real value[]
 )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	return (fmi2Status)fmi2_import_get_real_output_derivatives( fmu_qss.fmu_me.fmu, vr, nvr, order, value );
 }
@@ -429,7 +428,7 @@ fmi2SetTime(
  fmi2Real fmitime
 )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	((component_ptr_t)c)->fmitime = fmitime;
 	return (fmi2Status)fmi2_import_set_time( fmu_qss.fmu_me.fmu, fmitime );
@@ -457,7 +456,7 @@ fmi2SetReal(
  fmi2Real const value[]
 )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	return (fmi2Status)fmi2_import_set_real( fmu_qss.fmu_me.fmu, vr, nvr, value );
 }
@@ -484,7 +483,7 @@ fmi2SetInteger(
  fmi2Integer const value[]
 )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	return (fmi2Status)fmi2_import_set_integer( fmu_qss.fmu_me.fmu, vr, nvr, value );
 }
@@ -511,7 +510,7 @@ fmi2SetBoolean(
  fmi2Boolean const value[]
 )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	return (fmi2Status)fmi2_import_set_boolean( fmu_qss.fmu_me.fmu, vr, nvr, value );
 }
@@ -538,7 +537,7 @@ fmi2SetString(
  fmi2String const value[]
 )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	return (fmi2Status)fmi2_import_set_string( fmu_qss.fmu_me.fmu, vr, nvr, value );
 }
@@ -551,7 +550,7 @@ fmi2CompletedIntegratorStep(
  fmi2Boolean * terminateSimulation
 )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	((component_ptr_t)c)->fmitime = fmu_qss.fmu_me.t;
 	return (fmi2Status)fmi2_import_completed_integrator_step( fmu_qss.fmu_me.fmu, fmi2_true, enterEventMode, terminateSimulation );
@@ -564,7 +563,7 @@ fmi2GetContinuousStates(
  std::size_t nx
 )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	(void)fmu_qss; // Suppress unused warning
 	assert( nx == 0u ); // No continuous states in FMU-QSS
@@ -579,7 +578,7 @@ fmi2SetContinuousStates(
  std::size_t nx
 )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	(void)fmu_qss; // Suppress unused warning
 	assert( nx == 0u ); // No continuous states in FMU-QSS
@@ -594,7 +593,7 @@ fmi2GetDerivatives(
  std::size_t nx
 )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	(void)fmu_qss; // Suppress unused warning
 	assert( nx == 0u ); // No continuous states in FMU-QSS
@@ -613,7 +612,7 @@ fmi2GetDirectionalDerivative(
  fmi2Real dvUnknown[]
 )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	return (fmi2Status)fmi2_import_get_directional_derivative( fmu_qss.fmu_me.fmu, vKnown_ref, nKnown, vUnknown_ref, nUnknown, dvKnown, dvUnknown ); // Note arg order switch
 }
@@ -625,7 +624,7 @@ fmi2GetEventIndicators(
  std::size_t ni
 )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	(void)fmu_qss; // Suppress unused warning
 	assert( ni == 0u );
@@ -640,7 +639,7 @@ fmi2GetNominalsOfContinuousStates(
  std::size_t nx
 )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	(void)fmu_qss; // Suppress unused warning
 	assert( nx == 0u ); // No continuous states in FMU-QSS
@@ -654,7 +653,7 @@ fmi2GetFMUstate(
  fmi2FMUstate * FMUstate
 )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	return (fmi2Status)fmi2_import_get_fmu_state( fmu_qss.fmu_me.fmu, FMUstate );
 }
@@ -665,7 +664,7 @@ fmi2SetFMUstate(
  fmi2FMUstate FMUstate
 )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	return (fmi2Status)fmi2_import_set_fmu_state( fmu_qss.fmu_me.fmu, FMUstate );
 }
@@ -678,7 +677,7 @@ fmi2SerializeFMUstate(
  std::size_t size
 )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	return (fmi2Status)fmi2_import_serialize_fmu_state( fmu_qss.fmu_me.fmu, FMUstate, serializedState, size );
 }
@@ -690,7 +689,7 @@ fmi2SerializedFMUstateSize(
  std::size_t * size
 )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	return (fmi2Status)fmi2_import_serialized_fmu_state_size( fmu_qss.fmu_me.fmu, FMUstate, size );
 }
@@ -703,7 +702,7 @@ fmi2DeSerializeFMUstate(
  fmi2FMUstate * FMUstate
 )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	return (fmi2Status)fmi2_import_de_serialize_fmu_state( fmu_qss.fmu_me.fmu, serializedState, size, FMUstate );
 }
@@ -711,7 +710,7 @@ fmi2DeSerializeFMUstate(
 fmi2Status
 fmi2Reset( fmi2Component c )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	return (fmi2Status)fmi2_import_reset( fmu_qss.fmu_me.fmu );
 }
@@ -719,7 +718,7 @@ fmi2Reset( fmi2Component c )
 fmi2Status
 fmi2Terminate( fmi2Component c )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	return (fmi2Status)fmi2_import_terminate( fmu_qss.fmu_me.fmu );
 }
@@ -727,9 +726,11 @@ fmi2Terminate( fmi2Component c )
 void
 fmi2FreeInstance( fmi2Component c )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
-	assert( c == fmu_qss.fmu->capi->c );
-	if ( ( fmu_qss.fmu != nullptr ) && ( fmu_qss.fmu->capi != nullptr ) ) fmu_qss.fmu->capi->c = nullptr;
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
+	if ( ( fmu_qss.fmu != nullptr ) && ( fmu_qss.fmu->capi != nullptr ) ) {
+		assert( c == fmu_qss.fmu->capi->c );
+		fmu_qss.fmu->capi->c = nullptr;
+	}
 	fmi2_import_free_instance( fmu_qss.fmu_me.fmu );
 }
 
@@ -739,7 +740,7 @@ fmi2FreeFMUstate(
  fmi2FMUstate * /* FMUstate */ // Unused
 )
 {
-	FMU_QSS & fmu_qss( fmu_qss_of( c ) );
+	FMU_QSS const & fmu_qss( fmu_qss_of( c ) );
 	assert( c == fmu_qss.fmu->capi->c );
 	(void)fmu_qss; // Suppress unused warning
 //	return (fmi2Status)fmi2_import_free_fmu_state( fmu_qss.fmu_me.fmu, FMUstate ) : fmi2OK );

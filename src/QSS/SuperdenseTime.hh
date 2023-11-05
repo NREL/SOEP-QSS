@@ -77,6 +77,7 @@ public: // Creation
 	SuperdenseTime() = default;
 
 	// Time Constructor
+	explicit
 	SuperdenseTime( Time const t ) :
 	 t( t )
 	{}

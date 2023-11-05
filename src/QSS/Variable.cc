@@ -88,10 +88,10 @@ namespace QSS {
 		if ( observes_ ) {
 			uniquify( observees_, true ); // Sort by address and remove duplicates and recover unused memory
 			if ( self_observer_ ) { // Set self-observee index
-				for ( size_type i = 0, e = observees_.size(); i < e; ++i ) {
-					Variable * observee( observees_[ i ] );
+				for ( size_type j = 0, e = observees_.size(); j < e; ++j ) {
+					Variable const * observee( observees_[ j ] );
 					if ( observee == this ) {
-						i_self_observee_ = i;
+						i_self_observee_ = j;
 						break;
 					}
 				}

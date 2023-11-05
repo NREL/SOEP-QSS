@@ -58,7 +58,7 @@ public: // Creation
 	 Real const rTol_ = options::rTol,
 	 Real const aTol_ = options::aTol,
 	 Real const xIni_ = 0.0,
-	 FMU_Variable const var = FMU_Variable(),
+	 FMU_Variable const & var = FMU_Variable(),
 	 Function f = Function()
 	) :
 	 Super( fmu_me, 3, name, rTol_, aTol_, xIni_, var, f )

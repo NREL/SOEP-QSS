@@ -169,8 +169,6 @@ TEST( MathTest, Nonnegative )
 TEST( MathTest, Infinityish )
 {
 	EXPECT_EQ( infinity, inf< double >() );
-	EXPECT_EQ( std::numeric_limits< double >::infinity(), inf< double >() );
-	EXPECT_EQ( std::numeric_limits< float >::infinity(), inf< float >() );
 	EXPECT_EQ( std::numeric_limits< int >::max(), inf< int >() );
 }
 

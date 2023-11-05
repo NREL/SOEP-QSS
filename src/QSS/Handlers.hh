@@ -533,7 +533,7 @@ private: // Methods
 
 		if ( order_ >= 3 ) {
 			Time tN( t - options::dtND );
-			if ( fwd_time( tN ) ) { // Use centered ND formulas
+			if ( fwd_time( tN ) ) { // Centered ND
 				fmu_me_->set_time( tN );
 				set_qss_observees_values( tN );
 				fmu_me_->get_reals( qss_.n(), qss_dn2d_.refs.data(), qss_dn2d_.ders.data() );
@@ -547,7 +547,7 @@ private: // Methods
 				for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) { // Handler advance stage 3
 					handlers_[ i ]->advance_handler_3();
 				}
-			} else { // Use forward ND formulas
+			} else { // Forward ND
 				tN = t + options::dtND;
 				fmu_me_->set_time( tN );
 				set_qss_observees_values( tN );
@@ -607,7 +607,7 @@ private: // Methods
 
 		if ( order_ >= 3 ) {
 			Time tN( t - options::dtND );
-			if ( fwd_time( tN ) ) { // Use centered ND formulas
+			if ( fwd_time( tN ) ) { // Centered ND
 				fmu_me_->set_time( tN );
 				set_r_observees_values( tN );
 				set_r_observees_dv( tN );
@@ -637,7 +637,7 @@ private: // Methods
 				for ( size_type i = r_.b(), e = r_.e(); i < e; ++i ) { // Handler advance stage 3
 					handlers_[ i ]->advance_handler_3();
 				}
-			} else { // Use forward ND formulas
+			} else { // Forward ND
 				tN = t + options::dtND;
 				fmu_me_->set_time( tN );
 				set_r_observees_values( tN );
@@ -735,7 +735,7 @@ private: // Methods
 
 		if ( order_ >= 3 ) {
 			Time tN( t - options::dtND );
-			if ( fwd_time( tN ) ) { // Use centered ND formulas
+			if ( fwd_time( tN ) ) { // Centered ND
 				fmu_me_->set_time( tN );
 				set_zc_observees_values( tN );
 				set_zc_observees_dv( tN );
@@ -765,7 +765,7 @@ private: // Methods
 				for ( size_type i = zc_.b(), e = zc_.e(); i < e; ++i ) { // Handler advance stage 3
 					handlers_[ i ]->advance_handler_3();
 				}
-			} else { // Use forward ND formulas
+			} else { // Forward ND
 				tN = t + options::dtND;
 				fmu_me_->set_time( tN );
 				set_zc_observees_values( tN );
@@ -854,14 +854,14 @@ private: // Methods
 		}
 	}
 
-	// Advance: Stage Final
-	void
-	advance_F( Time const t )
-	{
-		for ( Variable * handler : handlers_ ) {
-			handler->advance_handler_F();
-		}
-	}
+	// // Advance: Stage Final
+	// void
+	// advance_F( Time const t )
+	// {
+	// 	for ( Variable * handler : handlers_ ) {
+	// 		handler->advance_handler_F();
+	// 	}
+	// }
 
 	// Set QSS Observees FMU Values at Time t
 	void

@@ -82,6 +82,7 @@ public: // Types
 public: // Creation
 
 	// Constructor
+	explicit
 	Event(
 	 Type const typ,
 	 Target * tar = nullptr,

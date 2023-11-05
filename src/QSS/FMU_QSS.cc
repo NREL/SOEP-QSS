@@ -282,10 +282,10 @@ namespace QSS {
 			std::exit( EXIT_FAILURE );
 		}
 
-		states = (fmi2_real_t*)std::calloc( n_states, sizeof( double ) );
-		derivatives = (fmi2_real_t*)std::calloc( n_states, sizeof( double ) );
-		event_indicators = (fmi2_real_t*)std::calloc( n_event_indicators, sizeof( double ) );
-		event_indicators_last = (fmi2_real_t*)std::calloc( n_event_indicators, sizeof( double ) );
+		states = static_cast< fmi2_real_t * >( std::calloc( n_states, sizeof( double ) ) );
+		derivatives = static_cast< fmi2_real_t * >( std::calloc( n_states, sizeof( double ) ) );
+		event_indicators = static_cast< fmi2_real_t * >( std::calloc( n_event_indicators, sizeof( double ) ) );
+		event_indicators_last = static_cast< fmi2_real_t * >( std::calloc( n_event_indicators, sizeof( double ) ) );
 	}
 
 	// Pre-Simulation Setup

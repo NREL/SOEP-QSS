@@ -37,6 +37,7 @@
 #define QSS_options_hh_INCLUDED
 
 // C++ Headers
+#include <algorithm>
 #include <cstddef>
 #include <regex>
 #include <string>
@@ -64,8 +65,9 @@ enum class QSS {
  fQSS2,
  fQSS3,
  rQSS2,
- rLIQSS2,
+ rQSS3,
  rfQSS2,
+ rfQSS3,
  nQSS2,
  nQSS3,
  nLIQSS2,
@@ -73,8 +75,9 @@ enum class QSS {
  nfQSS2,
  nfQSS3,
  nrQSS2,
- nrLIQSS2,
- nrfQSS2
+ nrQSS3,
+ nrfQSS2,
+ nrfQSS3
 };
 
 // Logging Level Enumerator
@@ -102,6 +105,7 @@ public: // Types
 	{
 
 		// Variable Spec Constructor
+		explicit
 		Dependency( std::regex const & var_regex ) :
 		 spec( var_regex )
 		{}
@@ -181,10 +185,11 @@ public: // Predicate
 	has( std::string const & var_name ) const
 	{
 		if ( all_ ) return true;
-		for ( Dependency const & dependency : dependencies_ ) {
-			if ( std::regex_match( regex_string( var_name ), dependency.spec ) ) return true;
-		}
-		return false;
+		return std::any_of( dependencies_.begin(), dependencies_.end(),
+		 [ &var_name ]( Dependency const & dependency ){
+		 	return std::regex_match( regex_string( var_name ), dependency.spec );
+		 }
+		);
 	}
 
 	// Dependencies Has a Variable and Dependency?
@@ -192,14 +197,14 @@ public: // Predicate
 	has( std::string const & var_name, std::string const & dep_name ) const
 	{
 		if ( all_ ) return true;
-		for ( Dependency const & dependency : dependencies_ ) {
-			if ( std::regex_match( regex_string( var_name ), dependency.spec ) ) {
-				for ( Spec const & spec : dependency.deps ) {
-					if ( std::regex_match( regex_string( dep_name ), spec ) ) return true;
-				}
-			}
-		}
-		return false;
+		return std::any_of( dependencies_.begin(), dependencies_.end(), [ &var_name,  &dep_name ]( Dependency const & dependency )
+		{
+			return std::regex_match( regex_string( var_name ), dependency.spec ) &&
+			 std::any_of( dependency.deps.begin(), dependency.deps.end(), [ &dep_name ]( Spec const & spec )
+			{
+					return std::regex_match( regex_string( dep_name ), spec );
+			} );
+		} );
 	}
 
 public: // Property
@@ -230,7 +235,7 @@ public: // Static Methods
 	// Regex String of a Variable Spec
 	static
 	std::string
-	regex_string( std::string spec )
+	regex_string( std::string const & spec )
 	{
 		// Convert glob usage to regex (imperfect)
 		std::string re_spec;
@@ -255,7 +260,7 @@ public: // Static Methods
 	// Regex of a Variable Spec
 	static
 	std::regex
-	regex( std::string spec )
+	regex( std::string const & spec )
 	{
 		return std::regex( regex_string( spec ) ); // Can throw exception if resulting string is not a valid regex
 	}

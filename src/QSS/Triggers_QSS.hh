@@ -33,8 +33,8 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_Triggers_hh_INCLUDED
-#define QSS_Triggers_hh_INCLUDED
+#ifndef QSS_Triggers_QSS_hh_INCLUDED
+#define QSS_Triggers_QSS_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/FMU_ME.hh>
@@ -52,7 +52,7 @@ namespace QSS {
 
 // QSS Variable Triggers
 template< typename V >
-class Triggers final
+class Triggers_QSS final
 {
 
 public: // Types
@@ -76,40 +76,12 @@ public: // Creation
 
 	// Constructor
 	explicit
-	Triggers( FMU_ME * fmu_me = nullptr ) :
+	Triggers_QSS( FMU_ME * fmu_me = nullptr ) :
 	 fmu_me_( fmu_me ),
-	 advance_QSS_ptr( options::d2d ? &Triggers::advance_QSS_d2d : &Triggers::advance_QSS_n2d )
+	 advance_ptr( options::d2d ? &Triggers_QSS::advance_d2d : &Triggers_QSS::advance_n2d )
 	{}
 
-public: // Conversion
-
-	// Triggers Conversion
-	operator Variables const &() const
-	{
-		return triggers_;
-	}
-
-	// Triggers Conversion
-	operator Variables &()
-	{
-		return triggers_;
-	}
-
 public: // Predicate
-
-	// Empty?
-	bool
-	empty() const
-	{
-		return triggers_.empty();
-	}
-
-	// Have Observer(s)?
-	bool
-	have() const
-	{
-		return ( !triggers_.empty() );
-	}
 
 	// Forward Time?
 	bool
@@ -119,35 +91,15 @@ public: // Predicate
 		return t >= fmu_me_->t0;
 	}
 
-public: // Property
-
-	// Size
-	size_type
-	size() const
-	{
-		return triggers_.size();
-	}
-
-	// Triggers
-	Variables const &
-	triggers() const
-	{
-		return triggers_;
-	}
-
-	// Triggers
-	Variables &
-	triggers()
-	{
-		return triggers_;
-	}
-
 public: // Methods
 
-	// Assign a Triggers Collection
+	// QSS Advance Triggers
 	void
-	assign( Variables & triggers )
+	advance( Variables & triggers, Time const t, SuperdenseTime const & s )
 	{
+		assert( fmu_me_ != nullptr );
+		assert( fmu_me_->get_time() == t );
+
 		if ( triggers.empty() ) {
 			clear();
 			return;
@@ -156,21 +108,20 @@ public: // Methods
 		assert( is_unique( triggers ) ); // Precondition: No duplicates
 		assert( all_same_order( triggers ) ); // Precondition
 
-		triggers_ = triggers;
-		n_triggers_ = triggers_.size();
-		order_ = triggers_[ 0 ]->order();
+		n_triggers_ = triggers.size();
+		order_ = triggers[ 0 ]->order();
 
 		// FMU pooled data set up
 		if ( options::d2d ) {
 			qss_ders_.clear(); qss_ders_.reserve( n_triggers_ );
-			for ( Variable * trigger : triggers_ ) {
+			for ( Variable * trigger : triggers ) {
 				assert( trigger->is_QSS() );
 				qss_ders_.push_back( trigger->der().ref() );
 			}
 		} else {
 			assert( options::n2d );
 			qss_dn2d_.clear(); qss_dn2d_.reserve( n_triggers_ );
-			for ( Variable * trigger : triggers_ ) {
+			for ( Variable * trigger : triggers ) {
 				assert( trigger->is_QSS() );
 				qss_dn2d_.push_back( trigger->der().ref() );
 			}
@@ -178,7 +129,7 @@ public: // Methods
 
 		// Observees set up
 		observees_.clear();
-		for ( Variable * trigger : triggers_ ) {
+		for ( Variable * trigger : triggers ) {
 			for ( Variable * observee : trigger->observees() ) {
 				observees_.push_back( observee );
 			}
@@ -191,25 +142,20 @@ public: // Methods
 		for ( Variable const * observee : observees_ ) {
 			observees_v_ref_.push_back( observee->var().ref() );
 		}
-	}
 
-	// QSS Advance Triggers
-	void
-	advance_QSS( Time const t, SuperdenseTime const & s )
-	{
-		(this->*advance_QSS_ptr)( t, s );
+		(this->*advance_ptr)( triggers, t, s );
 	}
 
 	// QSS Advance Triggers: Directional Second Derivatives
 	void
-	advance_QSS_d2d( Time const t, SuperdenseTime const & s )
+	advance_d2d( Variables & triggers, Time const t, SuperdenseTime const & s )
 	{
-		assert( !triggers_.empty() );
+		assert( !triggers.empty() );
 		assert( fmu_me_ != nullptr );
 		assert( fmu_me_->get_time() == t );
 		assert( qss_ders_.size() == n_triggers_ );
 
-		for ( Variable * trigger : triggers_ ) { // Requantization stage 0
+		for ( Variable * trigger : triggers ) { // Requantization stage 0
 			assert( trigger->tE >= t ); // Bin variables tE can be > t
 			trigger->tE = t; // Bin variables tE can be > t
 			trigger->st = s; // Set trigger superdense time
@@ -219,13 +165,13 @@ public: // Methods
 		set_observees_values( t );
 		fmu_me_->get_reals( n_triggers_, qss_ders_.refs.data(), qss_ders_.ders.data() );
 		for ( size_type i = 0u; i < n_triggers_; ++i ) { // Requantization stage 1
-			triggers_[ i ]->advance_QSS_1( qss_ders_.ders[ i ] );
+			triggers[ i ]->advance_QSS_1( qss_ders_.ders[ i ] );
 		}
 
 		if ( order_ >= 2 ) {
 			get_second_derivatives( t );
 			for ( size_type i = 0u; i < n_triggers_; ++i ) { // Requantization stage 2
-				triggers_[ i ]->advance_QSS_2_dd2( qss_ders_.ders[ i ] );
+				triggers[ i ]->advance_QSS_2_dd2( qss_ders_.ders[ i ] );
 			}
 			if ( order_ >= 3 ) {
 				Time const tN( t + options::dtND );
@@ -233,26 +179,26 @@ public: // Methods
 				set_observees_values( tN );
 				get_second_derivatives( tN );
 				for ( size_type i = 0u; i < n_triggers_; ++i ) { // Requantization stage 3
-					triggers_[ i ]->advance_QSS_3_dd2( qss_ders_.ders[ i ] );
+					triggers[ i ]->advance_QSS_3_dd2( qss_ders_.ders[ i ] );
 				}
 				fmu_me_->set_time( t );
 			}
 		}
-		for ( Variable * trigger : triggers_ ) { // Requantization stage final
+		for ( Variable * trigger : triggers ) { // Requantization stage final
 			trigger->advance_QSS_F();
 		}
 	}
 
 	// QSS Advance Triggers: Numerical Second Derivatives
 	void
-	advance_QSS_n2d( Time const t, SuperdenseTime const & s )
+	advance_n2d( Variables & triggers, Time const t, SuperdenseTime const & s )
 	{
-		assert( !triggers_.empty() );
+		assert( !triggers.empty() );
 		assert( fmu_me_ != nullptr );
 		assert( fmu_me_->get_time() == t );
 		assert( qss_dn2d_.size() == n_triggers_ );
 
-		for ( Variable * trigger : triggers_ ) { // Requantization stage 0
+		for ( Variable * trigger : triggers ) { // Requantization stage 0
 			assert( trigger->tE >= t ); // Bin variables tE can be > t
 			trigger->tE = t; // Bin variables tE can be > t
 			trigger->st = s; // Set trigger superdense time
@@ -262,11 +208,11 @@ public: // Methods
 		set_observees_values( t );
 		fmu_me_->get_reals( n_triggers_, qss_dn2d_.refs.data(), qss_dn2d_.ders.data() );
 		for ( size_type i = 0u; i < n_triggers_; ++i ) { // Requantization stage 1
-			triggers_[ i ]->advance_QSS_1( qss_dn2d_.ders[ i ] );
+			triggers[ i ]->advance_QSS_1( qss_dn2d_.ders[ i ] );
 		}
 		if ( order_ >= 3 ) {
 			Time tN( t - options::dtND );
-			if ( fwd_time( tN ) ) { // Use centered ND formulas
+			if ( fwd_time( tN ) ) { // Centered ND
 				fmu_me_->set_time( tN );
 				set_observees_values( tN );
 				fmu_me_->get_reals( n_triggers_, qss_dn2d_.refs.data(), qss_dn2d_.ders.data() );
@@ -275,12 +221,12 @@ public: // Methods
 				set_observees_values( tN );
 				fmu_me_->get_reals( n_triggers_, qss_dn2d_.refs.data(), qss_dn2d_.ders_p.data() );
 				for ( size_type i = 0u; i < n_triggers_; ++i ) { // Requantization stage 2
-					triggers_[ i ]->advance_QSS_2( qss_dn2d_.ders[ i ], qss_dn2d_.ders_p[ i ] );
+					triggers[ i ]->advance_QSS_2( qss_dn2d_.ders[ i ], qss_dn2d_.ders_p[ i ] );
 				}
 				for ( size_type i = 0u; i < n_triggers_; ++i ) { // Requantization stage 3
-					triggers_[ i ]->advance_QSS_3();
+					triggers[ i ]->advance_QSS_3();
 				}
-			} else { // Use forward ND formulas
+			} else { // Forward ND
 				tN = t + options::dtND;
 				fmu_me_->set_time( tN );
 				set_observees_values( tN );
@@ -290,9 +236,9 @@ public: // Methods
 				set_observees_values( tN );
 				fmu_me_->get_reals( n_triggers_, qss_dn2d_.refs.data(), qss_dn2d_.ders_p.data() );
 				for ( size_type i = 0u; i < n_triggers_; ++i ) { // Requantization stage 2
-					triggers_[ i ]->advance_QSS_2_forward( qss_dn2d_.ders[ i ], qss_dn2d_.ders_p[ i ] );
+					triggers[ i ]->advance_QSS_2_forward( qss_dn2d_.ders[ i ], qss_dn2d_.ders_p[ i ] );
 				}
-				for ( Variable * trigger : triggers_ ) { // Requantization stage 3
+				for ( Variable * trigger : triggers ) { // Requantization stage 3
 					trigger->advance_QSS_3_forward();
 				}
 			}
@@ -303,11 +249,11 @@ public: // Methods
 			set_observees_values( tN );
 			fmu_me_->get_reals( n_triggers_, qss_dn2d_.refs.data(), qss_dn2d_.ders_p.data() );
 			for ( size_type i = 0u; i < n_triggers_; ++i ) { // Requantization stage 2
-				triggers_[ i ]->advance_QSS_2( qss_dn2d_.ders_p[ i ] );
+				triggers[ i ]->advance_QSS_2( qss_dn2d_.ders_p[ i ] );
 			}
 			fmu_me_->set_time( t );
 		}
-		for ( Variable * trigger : triggers_ ) { // Requantization stage final
+		for ( Variable * trigger : triggers ) { // Requantization stage final
 			trigger->advance_QSS_F();
 		}
 	}
@@ -317,53 +263,6 @@ public: // Methods
 	clear()
 	{
 		n_triggers_ = 0u;
-		triggers_.clear();
-	}
-
-public: // Iterator
-
-	// Begin Iterator
-	const_iterator
-	begin() const
-	{
-		return triggers_.begin();
-	}
-
-	// Begin Iterator
-	iterator
-	begin()
-	{
-		return triggers_.begin();
-	}
-
-	// End Iterator
-	const_iterator
-	end() const
-	{
-		return triggers_.end();
-	}
-
-	// End Iterator
-	iterator
-	end()
-	{
-		return triggers_.end();
-	}
-
-public: // Subscript
-
-	// Triggers[ i ]
-	Variable const *
-	operator []( size_type const i ) const
-	{
-		return triggers_[ i ];
-	}
-
-	// Triggers[ i ]
-	Variable *
-	operator []( size_type const i )
-	{
-		return triggers_[ i ];
 	}
 
 private: // Methods
@@ -411,7 +310,6 @@ private: // Data
 	// Triggers
 	size_type n_triggers_{ 0u }; // Number of triggers
 	int order_{ 0 }; // Order of triggers
-	Variables triggers_; // Triggers
 
 	// Observees
 	size_type n_observees_{ 0u }; // Number of triggers observees
@@ -425,9 +323,9 @@ private: // Data
 	RefsDers< Variable > qss_dn2d_; //n2d Triggers derivatives
 
 	// QSS advance method pointer
-	void (Triggers::*advance_QSS_ptr)( Time const t, SuperdenseTime const & s ){ nullptr };
+	void (Triggers_QSS::*advance_ptr)( Variables & triggers, Time const t, SuperdenseTime const & s ){ nullptr };
 
-}; // Triggers
+}; // Triggers_QSS
 
 } // QSS
 

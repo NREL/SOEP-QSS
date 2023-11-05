@@ -209,7 +209,7 @@ public: // Methods
 	void
 	append(
 	 Time const t,
-	 Value const v
+	 Value const & v
 	)
 	{
 		assert( t_.size() == v_.size() );

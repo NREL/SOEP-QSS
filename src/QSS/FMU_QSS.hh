@@ -58,7 +58,7 @@ public: // Types
 	using size_type = std::size_t;
 	using FMU_Value_Refs = std::vector< fmi2_value_reference_t >;
 
-	enum class FMU_Generator { Optimica, JModelica, Dymola, Other };
+	enum class FMU_Generator { Optimica, JModelica, Dymola, Other, None };
 
 public: // Creation
 
@@ -142,7 +142,7 @@ public: // Data
 	FMU_Value_Refs out_var_refs;
 	fmi2_callback_functions_t callBackFunctions;
 	jm_callbacks callbacks;
-	FMU_Generator fmu_generator;
+	FMU_Generator fmu_generator{ FMU_Generator::None };
 
 	// FMU counts
 	size_type n_states{ 0u };

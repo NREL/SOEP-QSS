@@ -92,15 +92,14 @@ simulate_fmu_qss( std::string const & path )
 	}
 
 	// Simulation
+	fmi2EnterEventMode( c );
+	fmi2EnterContinuousTimeMode( c );
 	fmi2EventInfo eventInfo;
 	eventInfo.newDiscreteStatesNeeded = fmi2_true;
 	eventInfo.terminateSimulation = fmi2_false;
 	eventInfo.nominalsOfContinuousStatesChanged = fmi2_false;
 	eventInfo.valuesOfContinuousStatesChanged = fmi2_false;
-	eventInfo.nextEventTimeDefined = fmi2_false;
 	eventInfo.nextEventTime = -0.0; // We are using this to signal time in/out of FMU-ME!!!
-	fmi2EnterEventMode( c );
-	fmi2EnterContinuousTimeMode( c );
 	eventInfo.nextEventTimeDefined = fmi2_true;
 	while ( time <= tEnd ) {
 		while ( time <= tNext ) {

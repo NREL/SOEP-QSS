@@ -64,8 +64,8 @@ public: // Creation
 	 Real const aTol_ = options::aTol,
 	 Real const zTol_ = options::zTol,
 	 Real const xIni_ = 0.0,
-	 FMU_Variable const var = FMU_Variable(),
-	 FMU_Variable const der = FMU_Variable()
+	 FMU_Variable const & var = FMU_Variable(),
+	 FMU_Variable const & der = FMU_Variable()
 	) :
 	 Super( fmu_me, 3, name, rTol_, aTol_, zTol_, xIni_, var, der ),
 	 x_0_( xIni_ ),
@@ -200,11 +200,11 @@ public: // Methods
 		tQ = tX = tE;
 		q_0_ = x_0_ += ( x_1_ + ( x_2_ + ( x_3_ * tDel ) ) * tDel ) * tDel;
 		q_1_ = x_1_ = c_1();
-		if ( fwd_time_ND( tE ) ) { // Use centered ND formulas
-			q_2_ = x_2_ = c_2( tE );
+		if ( fwd_time_ND( tE ) ) { // Centered ND
+			q_2_ = x_2_ = c_2();
 			q_3_ = x_3_ = n_3();
-		} else { // Use forward ND formulas
-			q_2_ = x_2_ = f_2( tE );
+		} else { // Forward ND
+			q_2_ = x_2_ = f_2();
 			q_3_ = x_3_ = f_3();
 		}
 		set_qTol();
@@ -280,11 +280,11 @@ public: // Methods
 		tQ = tX = t;
 		q_0_ = x_0_ = p_0();
 		q_1_ = x_1_ = c_1();
-		if ( fwd_time_ND( t ) ) { // Use centered ND formulas
-			q_2_ = x_2_ = c_2( t );
+		if ( fwd_time_ND( t ) ) { // Centered ND
+			q_2_ = x_2_ = c_2();
 			q_3_ = x_3_ = n_3();
-		} else { // Use forward ND formulas
-			q_2_ = x_2_ = f_2( t );
+		} else { // Forward ND
+			q_2_ = x_2_ = f_2();
 			q_3_ = x_3_ = f_3();
 		}
 		set_qTol();
@@ -489,31 +489,31 @@ private: // Methods
 		return options::one_over_four_dtND * ( ( x_1_p_ = x_1_p ) - ( x_1_m_ = x_1_m ) ); //ND Centered difference
 	}
 
-	// Coefficient 2 at Time t
+	// Coefficient 2 at Time tQ
 	Real
-	c_2( Time const t ) const
+	c_2() const
 	{
-		Time tN( t - options::dtND );
+		Time tN( tQ - options::dtND );
 		fmu_set_time( tN );
 		x_1_m_ = c_1( tN );
-		tN = t + options::dtND;
+		tN = tQ + options::dtND;
 		fmu_set_time( tN );
 		x_1_p_ = c_1( tN );
-		fmu_set_time( t );
+		fmu_set_time( tQ );
 		return options::one_over_four_dtND * ( x_1_p_ - x_1_m_ ); //ND Centered difference
 	}
 
-	// Coefficient 2 at Time t
+	// Coefficient 2 at Time tQ
 	Real
-	f_2( Time const t ) const
+	f_2() const
 	{
-		Time tN( t + options::dtND );
+		Time tN( tQ + options::dtND );
 		fmu_set_time( tN );
 		x_1_p_ = c_1( tN );
-		tN = t + options::two_dtND;
+		tN = tQ + options::two_dtND;
 		fmu_set_time( tN );
 		x_1_2p_ = c_1( tN );
-		fmu_set_time( t );
+		fmu_set_time( tQ );
 		return options::one_over_four_dtND * ( ( three * ( x_1_p_ - x_1_ ) ) + ( x_1_p_ - x_1_2p_ ) ); //ND Forward 3-point
 	}
 

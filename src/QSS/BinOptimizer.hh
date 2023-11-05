@@ -91,6 +91,7 @@ private: // Types
 public: // Creation
 
 	// Constructor
+	explicit
 	BinOptimizer( size_type const max_bin_size ) :
 	 max_bin_size_( max_bin_size )
 	{}
@@ -173,15 +174,14 @@ public: // Methods
 				u_ = m_;
 				m_ = Point( bin_size, velocity );
 			}
-		} else if ( bin_size > m_.bin_size ) {
+		} else {
+			assert( bin_size > m_.bin_size );
 			if ( m_.bin_size == 0u ) {
 				m_ = Point( bin_size, velocity );
 			} else {
 				l_ = m_;
 				m_ = Point( bin_size, velocity );
 			}
-		} else {
-			assert( false ); // Should not get here
 		}
 
 		// Update min/max bin size repeat counts

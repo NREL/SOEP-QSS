@@ -59,8 +59,8 @@ public: // Creation
 	 Real const aTol_ = options::aTol,
 	 Real const zTol_ = options::zTol,
 	 Real const xIni_ = 0.0,
-	 FMU_Variable const var = FMU_Variable(),
-	 FMU_Variable const der = FMU_Variable()
+	 FMU_Variable const & var = FMU_Variable(),
+	 FMU_Variable const & der = FMU_Variable()
 	) :
 	 Super( fmu_me, 2, name, rTol_, aTol_, zTol_, xIni_, var, der ),
 	 x_0_( xIni_ ),
@@ -222,32 +222,6 @@ public: // Methods
 		}
 	}
 
-	// QSS Advance: Stage 2
-	void
-	advance_QSS_2( Real const x_1_m, Real const x_1_p ) override
-	{
-		set_qTol();
-		if ( self_observer() ) {
-			advance_LIQSS_simultaneous();
-		} else {
-			x_2_ = n_2( x_1_m, x_1_p );
-			l_0_ = q_c_ + ( signum( x_2_ ) * qTol );
-		}
-	}
-
-	// QSS Advance: Stage 2: Forward ND
-	void
-	advance_QSS_2_forward( Real const x_1_p, Real const x_1_2p ) override
-	{
-		set_qTol();
-		if ( self_observer() ) {
-			advance_LIQSS_simultaneous();
-		} else {
-			x_2_ = f_2( x_1_p, x_1_2p );
-			l_0_ = q_c_ + ( signum( x_2_ ) * qTol );
-		}
-	}
-
 	// QSS Advance: Stage Final
 	void
 	advance_QSS_F() override
@@ -301,20 +275,6 @@ public: // Methods
 		x_2_ = n_2( x_1_p );
 	}
 
-	// Handler Advance: Stage 2
-	void
-	advance_handler_2( Real const x_1_m, Real const x_1_p ) override
-	{
-		x_2_ = n_2( x_1_m, x_1_p );
-	}
-
-	// QSS Advance: Stage 2: Forward ND
-	void
-	advance_handler_2_forward( Real const x_1_p, Real const x_1_2p ) override
-	{
-		x_2_ = f_2( x_1_p, x_1_2p );
-	}
-
 	// Handler Advance: Stage Final
 	void
 	advance_handler_F() override
@@ -349,20 +309,6 @@ public: // Methods
 	advance_observer_2( Real const x_1_p ) override
 	{
 		x_2_ = n_2( x_1_p );
-	}
-
-	// Observer Advance: Stage 2
-	void
-	advance_observer_2( Real const x_1_m, Real const x_1_p ) override
-	{
-		x_2_ = n_2( x_1_m, x_1_p );
-	}
-
-	// Observer Advance: Stage 2: Forward ND
-	void
-	advance_observer_2_forward( Real const x_1_p, Real const x_1_2p ) override
-	{
-		x_2_ = f_2( x_1_p, x_1_2p );
 	}
 
 	// Observer Advance: Stage Final
@@ -461,20 +407,6 @@ private: // Methods
 	n_2( Real const x_1_p ) const
 	{
 		return options::one_over_two_dtND * ( x_1_p - x_1_ ); //ND Forward Euler
-	}
-
-	// Coefficient 2
-	Real
-	n_2( Real const x_1_m, Real const x_1_p ) const
-	{
-		return options::one_over_four_dtND * ( x_1_p - x_1_m ); //ND Centered difference
-	}
-
-	// Coefficient 2
-	Real
-	f_2( Real const x_1_p, Real const x_1_2p ) const
-	{
-		return options::one_over_four_dtND * ( ( three * ( x_1_p - x_1_ ) ) + ( x_1_p - x_1_2p ) ); //ND Forward 3-point
 	}
 
 private: // Data

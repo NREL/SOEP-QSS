@@ -50,9 +50,9 @@ namespace QSS {
 		Real const vZ( z_0( tZ ) );
 		Real v( vZ ), v_p( vZ );
 		Real m( 1.0 ); // Multiplier
-		std::size_t i( 0u );
+		std::size_t j( 0u );
 		std::size_t const n( 10u ); // Max iterations
-		while ( ( ++i <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
+		while ( ( ++j <= n ) && ( ( std::abs( v ) > aTol ) || ( std::abs( v ) < std::abs( v_p ) ) ) ) {
 			Real const d( X_1( t ) );
 			if ( d == 0.0 ) break;
 			t -= m * ( v / d );
@@ -62,7 +62,7 @@ namespace QSS {
 			v_p = v;
 		}
 		if ( ( t >= tBeg ) && ( std::abs( v ) < std::abs( vZ ) ) ) tZ = t;
-		if ( ( i == n ) && ( options::output::d ) ) std::cout << "   " << name() << '(' << t << ')' << " tZ may not have converged" << std::endl;
+		if ( ( j == n ) && ( options::output::d ) ) std::cout << "   " << name() << '(' << t << ')' << " tZ may not have converged" << std::endl;
 		fmu_set_time( t_fmu );
 	}
 

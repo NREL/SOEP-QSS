@@ -84,7 +84,7 @@ namespace QSS {
 
 		// Third derivative at +/- qTol
 		Real x_3_l, x_3_u;
-		if ( fwd_time_ND( tE ) ) { // Use centered ND formulas
+		if ( fwd_time_ND( tE ) ) { // Centered ND
 			tN = tE - dN;
 			fmu_set_time( tN );
 			fmu_set_observees_s( tN );
@@ -102,7 +102,7 @@ namespace QSS {
 #endif
 			Real const x_1m_u( p_1() );
 			x_3_u = options::one_over_six_dtND_squared * ( ( x_1_p_u - x_1_u ) + ( x_1m_u - x_1_u ) ); //ND Centered difference
-		} else { // Use forward ND formulas
+		} else { // Forward ND
 			Real const dN2( options::two_dtND );
 			tN = tE + dN2;
 			fmu_set_time( tN );

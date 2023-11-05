@@ -65,6 +65,7 @@ clusters( typename Variable_QSS::Variables_QSS & vars )
 	public: // Creation
 
 		// Constructor
+		explicit
 		Node( Variable_QSS * var ) :
 		 var( var )
 		{}

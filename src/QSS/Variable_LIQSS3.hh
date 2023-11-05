@@ -59,8 +59,8 @@ public: // Creation
 	 Real const aTol_ = options::aTol,
 	 Real const zTol_ = options::zTol,
 	 Real const xIni_ = 0.0,
-	 FMU_Variable const var = FMU_Variable(),
-	 FMU_Variable const der = FMU_Variable()
+	 FMU_Variable const & var = FMU_Variable(),
+	 FMU_Variable const & der = FMU_Variable()
 	) :
 	 Super( fmu_me, 3, name, rTol_, aTol_, zTol_, xIni_, var, der ),
 	 x_0_( xIni_ ),
@@ -178,7 +178,7 @@ public: // Methods
 			advance_LIQSS_simultaneous();
 		} else {
 			x_3_ = n_3();
-			fmu_set_observees_s( t0() );
+			fmu_set_observees_x( t0() );
 			l_0_ = q_c_ + ( signum( x_3_ ) * qTol );
 		}
 	}

@@ -56,7 +56,7 @@ name_decorate( Variables & vars )
 
 	// Create name and variable counter map for each case-insensitive name
 	NameCounts name_counts;
-	for ( Variable * var : vars ) { // Initialize name count
+	for ( Variable const * var : vars ) { // Initialize name count
 		name_counts[ uppercased( var->name() ) ] = 0u;
 	}
 	VariableCounts var_counts;

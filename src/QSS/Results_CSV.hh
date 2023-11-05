@@ -72,6 +72,7 @@ public: // Creation
 	Results_CSV() = default;
 
 	// Name Constructor
+	explicit
 	Results_CSV( std::string const & nam ) :
 	 csv_file_( nam + ".csv" ),
 	 csv_stream_( csv_file_, std::ios_base::binary | std::ios_base::out )

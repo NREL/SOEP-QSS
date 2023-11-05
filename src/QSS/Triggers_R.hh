@@ -79,35 +79,7 @@ public: // Creation
 	 fmu_me_( fmu_me )
 	{}
 
-public: // Conversion
-
-	// Triggers Conversion
-	operator Variables const &() const
-	{
-		return triggers_;
-	}
-
-	// Triggers Conversion
-	operator Variables &()
-	{
-		return triggers_;
-	}
-
 public: // Predicate
-
-	// Empty?
-	bool
-	empty() const
-	{
-		return triggers_.empty();
-	}
-
-	// Have Observer(s)?
-	bool
-	have() const
-	{
-		return ( !triggers_.empty() );
-	}
 
 	// Forward Time?
 	bool
@@ -117,35 +89,15 @@ public: // Predicate
 		return t >= fmu_me_->t0;
 	}
 
-public: // Property
-
-	// Size
-	size_type
-	size() const
-	{
-		return triggers_.size();
-	}
-
-	// Triggers
-	Variables const &
-	triggers() const
-	{
-		return triggers_;
-	}
-
-	// Triggers
-	Variables &
-	triggers()
-	{
-		return triggers_;
-	}
-
 public: // Methods
 
-	// Assign a Triggers Collection
+	// QSS Advance Triggers
 	void
-	assign( Variables & triggers )
+	advance( Variables & triggers, Time const t, SuperdenseTime const & s )
 	{
+		assert( fmu_me_ != nullptr );
+		assert( fmu_me_->get_time() == t );
+
 		if ( triggers.empty() ) {
 			clear();
 			return;
@@ -154,20 +106,20 @@ public: // Methods
 		assert( is_unique( triggers ) ); // Precondition: No duplicates
 		assert( all_same_order( triggers ) ); // Precondition
 
-		triggers_ = triggers;
-		n_triggers_ = triggers_.size();
-		order_ = triggers_[ 0 ]->order();
+		triggers = triggers;
+		n_triggers_ = triggers.size();
+		order_ = triggers[ 0 ]->order();
 
 		// FMU pooled data set up
 		vars_.clear(); vars_.reserve( n_triggers_ );
-		for ( Variable * trigger : triggers_ ) {
+		for ( Variable * trigger : triggers ) {
 			assert( trigger->is_R() );
 			vars_.push_back( trigger->var().ref() );
 		}
 
 		// Observees set up
 		observees_.clear();
-		for ( Variable * trigger : triggers_ ) {
+		for ( Variable * trigger : triggers ) {
 			for ( auto observee : trigger->observees() ) {
 				observees_.push_back( observee );
 			}
@@ -180,21 +132,11 @@ public: // Methods
 		for ( Variable const * observee : observees_ ) {
 			observees_v_ref_.push_back( observee->var().ref() );
 		}
-	}
-
-	// QSS Advance Triggers
-	void
-	advance_QSS( Time const t, SuperdenseTime const & s )
-	{
-		assert( !triggers_.empty() );
-		assert( fmu_me_ != nullptr );
-		assert( fmu_me_->get_time() == t );
-		assert( vars_.size() == n_triggers_ );
 
 		set_observees_values( t );
 		fmu_me_->get_reals( n_triggers_, vars_.refs.data(), vars_.vals.data() );
 		for ( size_type i = 0u; i < n_triggers_; ++i ) { // Requantization stage 0
-			Variable * trigger( triggers_[ i ] );
+			Variable * trigger( triggers[ i ] );
 			assert( trigger->tE >= t ); // Bin variables tE can be > t
 			trigger->tE = t; // Bin variables tE can be > t
 			trigger->st = s; // Set trigger superdense time
@@ -210,12 +152,12 @@ public: // Methods
 		 vars_.ders.data()
 		);
 		for ( size_type i = 0u; i < n_triggers_; ++i ) { // Requantization stage 1
-			triggers_[ i ]->advance_QSS_1( vars_.ders[ i ] );
+			triggers[ i ]->advance_QSS_1( vars_.ders[ i ] );
 		}
 
 		if ( order_ >= 3 ) {
 			Time tN( t - options::dtND );
-			if ( fwd_time( tN ) ) { // Use centered ND formulas
+			if ( fwd_time( tN ) ) { // Centered ND
 				fmu_me_->set_time( tN );
 				set_observees_values( tN );
 				set_observees_dv( tN );
@@ -240,12 +182,12 @@ public: // Methods
 				 vars_.ders_p.data()
 				);
 				for ( size_type i = 0u; i < n_triggers_; ++i ) { // Requantization stage 2
-					triggers_[ i ]->advance_QSS_2( vars_.ders[ i ], vars_.ders_p[ i ] );
+					triggers[ i ]->advance_QSS_2( vars_.ders[ i ], vars_.ders_p[ i ] );
 				}
-				for ( Variable * trigger : triggers_ ) { // Requantization stage 3
+				for ( Variable * trigger : triggers ) { // Requantization stage 3
 					trigger->advance_QSS_3();
 				}
-			} else { // Use forward ND formulas
+			} else { // Forward ND
 				tN = t + options::dtND;
 				fmu_me_->set_time( tN );
 				set_observees_values( tN );
@@ -271,9 +213,9 @@ public: // Methods
 				 vars_.ders_p.data()
 				);
 				for ( size_type i = 0u; i < n_triggers_; ++i ) { // Requantization stage 2
-					triggers_[ i ]->advance_QSS_2_forward( vars_.ders[ i ], vars_.ders_p[ i ] );
+					triggers[ i ]->advance_QSS_2_forward( vars_.ders[ i ], vars_.ders_p[ i ] );
 				}
-				for ( Variable * trigger : triggers_ ) { // Requantization stage 3
+				for ( Variable * trigger : triggers ) { // Requantization stage 3
 					trigger->advance_QSS_3_forward();
 				}
 			}
@@ -292,11 +234,11 @@ public: // Methods
 			 vars_.ders_p.data()
 			);
 			for ( size_type i = 0u; i < n_triggers_; ++i ) { // Requantization stage 2
-				triggers_[ i ]->advance_QSS_2( vars_.ders_p[ i ] );
+				triggers[ i ]->advance_QSS_2( vars_.ders_p[ i ] );
 			}
 			fmu_me_->set_time( t );
 		}
-		for ( Variable * trigger : triggers_ ) {
+		for ( Variable * trigger : triggers ) {
 			trigger->advance_QSS_F();
 		}
 	}
@@ -306,53 +248,6 @@ public: // Methods
 	clear()
 	{
 		n_triggers_ = 0u;
-		triggers_.clear();
-	}
-
-public: // Iterator
-
-	// Begin Iterator
-	const_iterator
-	begin() const
-	{
-		return triggers_.begin();
-	}
-
-	// Begin Iterator
-	iterator
-	begin()
-	{
-		return triggers_.begin();
-	}
-
-	// End Iterator
-	const_iterator
-	end() const
-	{
-		return triggers_.end();
-	}
-
-	// End Iterator
-	iterator
-	end()
-	{
-		return triggers_.end();
-	}
-
-public: // Subscript
-
-	// Triggers_R[ i ]
-	Variable const *
-	operator []( size_type const i ) const
-	{
-		return triggers_[ i ];
-	}
-
-	// Triggers_R[ i ]
-	Variable *
-	operator []( size_type const i )
-	{
-		return triggers_[ i ];
 	}
 
 private: // Methods
@@ -383,7 +278,6 @@ private: // Data
 	// Triggers
 	size_type n_triggers_{ 0u }; // Number of triggers
 	int order_{ 0 }; // Order of triggers
-	Variables triggers_; // Triggers
 
 	// Observees
 	size_type n_observees_{ 0u }; // Number of triggers observees

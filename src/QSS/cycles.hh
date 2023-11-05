@@ -62,6 +62,7 @@ cycles( typename Variable::Variables const & vars )
 	public: // Creation
 
 		// Constructor
+		explicit
 		Node( Variable const * var ) :
 		 var( var )
 		{}

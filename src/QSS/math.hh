@@ -70,10 +70,10 @@ static constexpr double one_sixth{ 1.0 / 6.0 };
 static constexpr double one_ninth{ 1.0 / 9.0 };
 static constexpr double two_thirds{ 2.0 / 3.0 };
 static constexpr double pi{ 3.141592653589793115997963 }; //C++20 static constexpr double pi{ std::numbers::pi };  Not working with Intel Classic C++ as of version 2021.9.0 on Windows
-static constexpr double infinity{ std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() }; //! Not safe with Intel C++ with /fp:fast
-// static constexpr double infinity{ std::numeric_limits< double >::max() }; //! Safe with Intel C++ with /fp:fast
-static constexpr double neg_infinity{ std::numeric_limits< double >::has_infinity && std::numeric_limits<double>::is_iec559 ? -std::numeric_limits< double >::infinity() : std::numeric_limits< double >::lowest() }; //! Not safe with Intel C++ with /fp:fast
-// static constexpr double neg_infinity{ std::numeric_limits< double >::lowest() }; //! Safe with Intel C++ with /fp:fast
+static constexpr double infinity{ std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() }; //! std::isinf() won't work with Intel C++ with /fp:fast
+// static constexpr double infinity{ std::numeric_limits< double >::max() };
+static constexpr double neg_infinity{ std::numeric_limits< double >::has_infinity && std::numeric_limits<double>::is_iec559 ? -std::numeric_limits< double >::infinity() : std::numeric_limits< double >::lowest() };
+// static constexpr double neg_infinity{ std::numeric_limits< double >::lowest() };
 static constexpr double half_infinity{ 0.5 * infinity };
 
 // General
@@ -204,6 +204,7 @@ T
 inf()
 {
 	return std::numeric_limits< T >::has_infinity ? std::numeric_limits< T >::infinity() : std::numeric_limits< T >::max();
+	// return std::numeric_limits< T >::max();
 }
 
 // Use std::min for 2 arguments
@@ -605,6 +606,43 @@ zc_root_quadratic( T const a, T const b, T const c, T const zTol = T( 1e-6 ), T 
 				// } else {
 				// 	return root;
 				// }
+			}
+		}
+	}
+}
+
+// Min Positive Root of Quadratic Equation a x^2 + b x + c: Returns nonpositive value if no positive roots
+template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
+T
+min_root_quadratic( T const a, T const b, T const c )
+{
+	if ( a == T( 0 ) ) { // Linear
+		if ( b == T( 0 ) ) { // Constant
+			return inf< T >();
+		} else {
+			return -( c / b );
+		}
+	} else { // Quadratic
+		if ( b == T( 0 ) ) {
+			assert( -( c / a ) > T( 0 ) );
+			return std::sqrt( -( c / a ) );
+		} else {
+			T const disc( ( b * b ) - ( T( 4 ) * a * c ) );
+			if ( disc <= T( 0 ) ) { // Zero or one real root(s)
+				if ( disc == T( 0 ) ) { // One real root
+					return -( b / ( T( 2 ) * a ) );
+				} else { // Two imaginary roots
+					return T( 0 );
+				}
+			} else { // Two real roots: From https://mathworld.wolfram.com/QuadraticEquation.html for precision
+				T const q( -T( 0.5 ) * ( b + ( sign( b ) * std::sqrt( disc ) ) ) );
+				T const r1( c / q );
+				T const r2( q / a );
+				if ( r1 > T( 0 ) ) {
+					return ( r2 > T( 0 ) ? std::min( r1, r2 ) : r1 );
+				} else {
+					return r2; // Might be nonpositive
+				}
 			}
 		}
 	}

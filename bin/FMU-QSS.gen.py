@@ -60,14 +60,39 @@ def fmu_qss_gen():
     # Process arguments
     parser = argparse.ArgumentParser()
     parser.add_argument( 'ME', help = 'FMU-ME fmu or xml file', default = 'modelDescription.xml' )
-    parser.add_argument( '--qss', help = 'QSS method  (LI)QSS(1|2|3)  [QSS2]', default = 'QSS2' )
+    parser.add_argument( '--qss', help = 'QSS method  [n][r][f][LI]QSS(1|2|3)  [QSS2]', default = 'QSS2' )
     parser.add_argument( '--rTol', help = 'relative tolerance  [FMU]', type = float )
     parser.add_argument( '--aTol', help = 'absolute tolerance  [1e-6]', type = float, default = 1.0e-6 )
     parser.add_argument( '--tEnd', help = 'simulation end time  [FMU]', type = float )
     args = parser.parse_args()
     args.qss = args.qss.upper()
-    if args.qss not in ( 'QSS1', 'QSS2', 'QSS3', 'LIQSS1', 'LIQSS2', 'LIQSS3' ):
-        print( '\nUnsupported QSS method: ' + args.qss + ': Must be one of QSS1, QSS2, QSS3, LIQSS1, LIQSS2, LIQSS3' )
+    solvers = (
+     'QSS1',
+     'QSS2',
+     'QSS3',
+     'LIQSS1',
+     'LIQSS2',
+     'LIQSS3',
+     'fQSS1',
+     'fQSS2',
+     'fQSS3',
+     'rQSS2',
+     'rQSS3',
+     'rfQSS2',
+     'rfQSS3',
+     'nQSS2',
+     'nQSS3',
+     'nLIQSS2',
+     'nLIQSS3',
+     'nfQSS2',
+     'nfQSS3',
+     'nrQSS2',
+     'nrQSS3',
+     'nrfQSS2',
+     'nrfQSS3',
+    )
+    if args.qss not in solvers:
+        print( '\nUnsupported QSS method: ' + args.qss + ': Must be one of:', ', '.join( solvers ) )
         sys.exit( 1 )
     if ( args.rTol is not None ) and ( args.rTol < 0.0 ):
         print( '\nNegative rTol: ' + "{:.16f}".format( args.rTol ) )

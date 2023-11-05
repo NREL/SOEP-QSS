@@ -37,6 +37,7 @@
 #include <QSS/string.hh>
 
 // C++ Headers
+#include <algorithm>
 #include <cassert>
 #include <cctype>
 #include <sstream>
@@ -63,41 +64,40 @@ is_tail( char const * end )
 bool
 is_any_of( char const c, std::string const & s )
 {
-	for ( std::size_t i = 0, e = s.length(); i < e; ++i ) {
-		if ( c == s[ i ] ) return true;
-	}
-	return false;
+#if ( __cplusplus >= 202300L ) // C++23+
+	return s.contains( c ); // C++23
+#else
+	return std::any_of( s.begin(), s.end(), [ c ]( char const a ){ return a == c; } );
+#endif
 }
 
 // Has a Character?
 bool
 has( std::string const & s, char const c )
 {
-	for ( char const a : s ) {
-		if ( a == c ) return true;
-	}
-	return false;
+#if ( __cplusplus >= 202300L ) // C++23+
+	return s.contains( c ); // C++23
+#else
+	return std::any_of( s.begin(), s.end(), [ c ]( char const a ){ return a == c; } );
+#endif
 }
 
 // Has a Character Case-Insensitively?
 bool
 HAS( std::string const & s, char const c )
 {
-	char const b( static_cast< char >( std::tolower( c ) ) );
-	for ( char const a : s ) {
-		if ( std::tolower( a ) == b ) return true;
-	}
-	return false;
+	return std::any_of( s.begin(), s.end(), [ b = std::tolower( c ) ]( char const a ){ return std::tolower( a ) == b; } );
 }
 
 // Has any Character not in a String?
 bool
 has_any_not_of( std::string const & s, std::string const & t )
 {
-	for ( char const a : s ) {
-		if ( t.find( static_cast< char >( a ) ) == std::string::npos ) return true;
-	}
-	return false;
+#if ( __cplusplus >= 202300L ) // C++23+
+	return std::any_of( s.begin(), s.end(), [ &t ]( char const a ){ return !t.contains( a ); } );
+#else
+	return std::any_of( s.begin(), s.end(), [ &t ]( char const a ){ return t.find( a ) == std::string::npos; } );
+#endif
 }
 
 // Has a Prefix?

@@ -59,7 +59,7 @@ public: // Creation
 	 Real const aTol_ = options::aTol,
 	 Real const zTol_ = options::zTol,
 	 Real const xIni_ = 0.0,
-	 FMU_Variable const var = FMU_Variable()
+	 FMU_Variable const & var = FMU_Variable()
 	) :
 	 Super( fmu_me, 1, name, rTol_, aTol_, zTol_, xIni_, var ),
 	 x_0_( xIni_ )

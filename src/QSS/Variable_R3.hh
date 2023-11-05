@@ -58,7 +58,7 @@ public: // Creation
 	 Real const rTol_ = options::rTol,
 	 Real const aTol_ = options::aTol,
 	 Real const xIni_ = 0.0,
-	 FMU_Variable const var = FMU_Variable()
+	 FMU_Variable const & var = FMU_Variable()
 	) :
 	 Super( fmu_me, 3, name, rTol_, aTol_, xIni_, var ),
 	 x_0_( xIni_ )
@@ -222,10 +222,10 @@ public: // Methods
 		tQ = tX = tE;
 		x_0_ = r_0();
 		x_1_ = n_1();
-		if ( fwd_time_ND( tQ ) ) { // Use centered ND formulas
+		if ( fwd_time_ND( tE ) ) { // Centered ND
 			x_2_ = n_2();
 			x_3_ = n_3();
-		} else { // Use forward ND formulas
+		} else { // Forward ND
 			x_2_ = f_2();
 			x_3_ = f_3();
 		}
@@ -301,10 +301,10 @@ public: // Methods
 		tQ = tX = t;
 		x_0_ = r_f();
 		x_1_ = n_1();
-		if ( fwd_time_ND( tQ ) ) { // Use centered ND formulas
+		if ( fwd_time_ND( t ) ) { // Centered ND
 			x_2_ = n_2();
 			x_3_ = n_3();
-		} else { // Use forward ND formulas
+		} else { // Forward ND
 			x_2_ = f_2();
 			x_3_ = f_3();
 		}

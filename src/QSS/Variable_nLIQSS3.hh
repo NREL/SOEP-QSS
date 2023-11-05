@@ -64,8 +64,8 @@ public: // Creation
 	 Real const aTol_ = options::aTol,
 	 Real const zTol_ = options::zTol,
 	 Real const xIni_ = 0.0,
-	 FMU_Variable const var = FMU_Variable(),
-	 FMU_Variable const der = FMU_Variable()
+	 FMU_Variable const & var = FMU_Variable(),
+	 FMU_Variable const & der = FMU_Variable()
 	) :
 	 Super( fmu_me, 3, name, rTol_, aTol_, zTol_, xIni_, var, der ),
 	 x_0_( xIni_ ),
@@ -212,10 +212,10 @@ public: // Methods
 			advance_LIQSS();
 		} else {
 			q_1_ = x_1_ = c_1();
-			if ( fwd_time_ND( tQ ) ) { // Use centered ND formulas
+			if ( fwd_time_ND( tE ) ) { // Centered ND
 				q_2_ = x_2_ = c_2();
 				x_3_ = n_3();
-			} else { // Use forward ND formulas
+			} else { // Forward ND
 				q_2_ = x_2_ = f_2();
 				x_3_ = f_3();
 			}
@@ -305,10 +305,10 @@ public: // Methods
 		tQ = tX = t;
 		q_c_ = q_0_ = x_0_ = p_0();
 		q_1_ = x_1_ = c_1();
-		if ( fwd_time_ND( tQ ) ) { // Use centered ND formulas
+		if ( fwd_time_ND( t ) ) { // Centered ND
 			q_2_ = x_2_ = c_2();
 			x_3_ = n_3();
-		} else { // Use forward ND formulas
+		} else { // Forward ND
 			q_2_ = x_2_ = f_2();
 			x_3_ = f_3();
 		}

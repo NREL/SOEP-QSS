@@ -54,7 +54,7 @@
 #include <QSS/Range.hh>
 #include <QSS/string.hh>
 #include <QSS/Timers.hh>
-#include <QSS/Triggers.hh>
+#include <QSS/Triggers_QSS.hh>
 #include <QSS/Triggers_ZC.hh>
 #include <QSS/Triggers_R.hh>
 #include <QSS/Variable_all.hh>
@@ -133,10 +133,8 @@ namespace QSS {
 	FMU_ME::
 	var_named( std::string const & var_name ) const
 	{
-		for ( Variable const * var : vars ) {
-			if ( var->name() == var_name ) return var;
-		}
-		return nullptr; // Not found
+		auto const var_it( std::find_if( vars.begin(), vars.end(), [ &var_name ]( Variable const * var ){ return var->name() == var_name; } ) );
+		return ( var_it != vars.end() ? *var_it : nullptr );
 	}
 
 	// Variable Lookup by Name (for Testing)
@@ -144,10 +142,8 @@ namespace QSS {
 	FMU_ME::
 	var_named( std::string const & var_name )
 	{
-		for ( Variable * var : vars ) {
-			if ( var->name() == var_name ) return var;
-		}
-		return nullptr; // Not found
+		auto var_it( std::find_if( vars.begin(), vars.end(), [ &var_name ]( Variable const * var ){ return var->name() == var_name; } ) );
+		return ( var_it != vars.end() ? *var_it : nullptr );
 	}
 
 	// Initialize
@@ -448,9 +444,9 @@ namespace QSS {
 			options::rQSS = true;
 			options::fQSS = false;
 			break;
-		case options::QSS::rLIQSS2:
-			std::cout << "\nQSS Method: rLIQSS2" << std::endl;
-			options::order = 2;
+		case options::QSS::rQSS3:
+			std::cout << "\nQSS Method: rQSS3" << std::endl;
+			options::order = 3;
 			options::d2d = true;
 			options::rQSS = true;
 			options::fQSS = false;
@@ -458,6 +454,13 @@ namespace QSS {
 		case options::QSS::rfQSS2:
 			std::cout << "\nQSS Method: rfQSS2" << std::endl;
 			options::order = 2;
+			options::d2d = true;
+			options::rQSS = true;
+			options::fQSS = true;
+			break;
+		case options::QSS::rfQSS3:
+			std::cout << "\nQSS Method: rfQSS3" << std::endl;
+			options::order = 3;
 			options::d2d = true;
 			options::rQSS = true;
 			options::fQSS = true;
@@ -511,9 +514,9 @@ namespace QSS {
 			options::rQSS = true;
 			options::fQSS = false;
 			break;
-		case options::QSS::nrLIQSS2:
-			std::cout << "\nQSS Method: nrLIQSS2" << std::endl;
-			options::order = 2;
+		case options::QSS::nrQSS3:
+			std::cout << "\nQSS Method: nrQSS3" << std::endl;
+			options::order = 3;
 			options::d2d = false;
 			options::rQSS = true;
 			options::fQSS = false;
@@ -521,6 +524,13 @@ namespace QSS {
 		case options::QSS::nrfQSS2:
 			std::cout << "\nQSS Method: nrfQSS2" << std::endl;
 			options::order = 2;
+			options::d2d = false;
+			options::rQSS = true;
+			options::fQSS = true;
+			break;
+		case options::QSS::nrfQSS3:
+			std::cout << "\nQSS Method: nrfQSS3" << std::endl;
+			options::order = 3;
 			options::d2d = false;
 			options::rQSS = true;
 			options::fQSS = true;
@@ -629,7 +639,7 @@ namespace QSS {
 			std::cerr << "\nError: FMU event indicators collection lookup failed for FMU-ME " << name << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
-		for ( EventIndicator & ei : ieis->event_indicators ) {
+		for ( EventIndicator const & ei : ieis->event_indicators ) {
 			FMU_Variable & ei_var( fmu_variables[ ei.index - 1 ] );
 			ei_var.to_EventIndicator(); // Mark FMU variable as an event indicator
 			fmi2_import_variable_t * var( ei_var.var ); // == fmi2_import_get_variable( var_list, ei.index - 1 )
@@ -789,7 +799,7 @@ namespace QSS {
 		for ( FMU_Dependencies::Variables::value_type & idx_var : fmu_dependencies.variables ) { // Check for event indicator (direct) dependencies on event indicators
 			FMU_Variable const & dep_fmu_var( fmu_variables[ idx_var.first - 1 ] ); // FMU variable corresponding to the dep::Variable
 			if ( dep_fmu_var.is_EventIndicator() ) { // Event indicator
-				dep::Variable & dep_var( idx_var.second );
+				dep::Variable const & dep_var( idx_var.second );
 				for ( dep::Variable::Index const observee : dep_var.observees ) {
 					FMU_Variable const & observee_fmu_var( fmu_variables[ observee - 1 ] ); // FMU variable corresponding to the observee index
 					if ( observee_fmu_var.is_EventIndicator() ) { // Observee is an event indicator
@@ -825,10 +835,10 @@ namespace QSS {
 			}
 		}
 		fmu_dependencies.finalize();
-		for ( FMU_Dependencies::Variables::value_type & idx_var : fmu_dependencies.variables ) { // Mark variables with upstream state or event indicator observers
+		for ( FMU_Dependencies::Variables::value_type const & idx_var : fmu_dependencies.variables ) { // Mark variables with upstream state or event indicator observers
 			FMU_Variable const & dep_fmu_var( fmu_variables[ idx_var.first - 1 ] ); // FMU variable corresponding to the dep::Variable
 			if ( dep_fmu_var.is_State() || dep_fmu_var.is_Derivative() || dep_fmu_var.is_EventIndicator() ) { // State/Derivative or Event indicator
-				dep::Variable & dep_var( idx_var.second );
+				dep::Variable const & dep_var( idx_var.second );
 				mark_downstream_observees( fmu_dependencies, dep_var );
 			}
 		}
@@ -1150,11 +1160,14 @@ namespace QSS {
 							case options::QSS::rQSS2:
 								qss_var = new Variable_rQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
 								break;
-							case options::QSS::rLIQSS2:
-								qss_var = new Variable_rLIQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+							case options::QSS::rQSS3:
+								qss_var = new Variable_rQSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
 								break;
 							case options::QSS::rfQSS2:
 								qss_var = new Variable_rfQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::rfQSS3:
+								qss_var = new Variable_rfQSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
 								break;
 							case options::QSS::nQSS2:
 								qss_var = new Variable_nQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
@@ -1177,11 +1190,14 @@ namespace QSS {
 							case options::QSS::nrQSS2:
 								qss_var = new Variable_nrQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
 								break;
-							case options::QSS::nrLIQSS2:
-								qss_var = new Variable_nrLIQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+							case options::QSS::nrQSS3:
+								qss_var = new Variable_nrQSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
 								break;
 							case options::QSS::nrfQSS2:
 								qss_var = new Variable_nrfQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::nrfQSS3:
+								qss_var = new Variable_nrfQSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
 								break;
 							default:
 								std::cerr << " Error: Specified QSS method is not supported" << std::endl;
@@ -2057,7 +2073,6 @@ namespace QSS {
 		Time const dtND_min( std::max( std::abs( t0 ), std::abs( tE ) ) * std::numeric_limits< Time >::epsilon() * 2.0 );
 		Time const dtND_max( options::dtND_max );
 		Time dtND( dtND_max );
-		Time dtND_opt( dtND_ori );
 		assert( dtND_min < dtND_ori );
 
 		size_type const n_NC( vars_NC.size() );
@@ -2177,7 +2192,7 @@ namespace QSS {
 					}
 				}
 				assert( !ri.empty() );
-				dtND_opt = dtND_max * std::pow( 2.0, -static_cast< double >( ri.b() ) ); // Use largest dtND in range intersection for now
+				Time const dtND_opt( dtND_max * std::pow( 2.0, -static_cast< double >( ri.b() ) ) ); // Use largest dtND in range intersection for now
 				options::dtND_set( dtND_opt );
 				std::cout << "\nAutomatic numeric differentiation time step: " << options::dtND << " (s)" << std::endl;
 			} else {
@@ -2347,7 +2362,7 @@ namespace QSS {
 	init_F()
 	{
 		std::cout << '\n' + name + " Initialization: Stage Final =====" << std::endl;
-		for ( auto var : vars_NC ) {
+		for ( auto var : sorted_by_name( vars_NC ) ) {
 			var->init_F();
 		}
 	}
@@ -2359,13 +2374,13 @@ namespace QSS {
 	{
 		// Set variable FMU state to t0 after initialization ND steps before generating FMU local/output variable outputs at t0
 		set_time( t0 );
-		for ( auto var : state_vars ) { // State variables
+		for ( auto const var : state_vars ) { // State variables
 			var->fmu_set_x( t0 );
 		}
-		for ( auto var : vars_CI ) { // Connection input variables
+		for ( auto const var : vars_CI ) { // Connection input variables
 			var->fmu_set_x( t0 );
 		}
-		for ( auto var : vars_NC ) { // Non-zero-crossing non-connection variables
+		for ( auto const var : vars_NC ) { // Non-zero-crossing non-connection variables
 			if ( var->is_Input() ) var->fmu_set_x( t0 ); // Non-connection input variables
 		}
 	}
@@ -2531,7 +2546,7 @@ namespace QSS {
 			}
 		}
 		if ( doKOut ) { // FMU-QSS t0 smooth token outputs
-			for ( Variable * var : fmu_qss_qss_outs ) {
+			for ( Variable const * var : fmu_qss_qss_outs ) {
 				k_qss_outs.emplace_back( output_dir, var->name() + var->decoration(), 'k' );
 				k_qss_outs.back().append( t, var->k( t ) );
 			}
@@ -2604,9 +2619,9 @@ namespace QSS {
 		Variables handlers; // Reusable handlers container
 		Variable_ZCs var_ZCs; // Last zero-crossing trigger variables
 		Handlers< Variable > handlers_s( this ); // Simultaneous handlers
-		Triggers< Variable > triggers_s( this ); // Binned/simultaneous triggers
-		Triggers_ZC< Variable > triggers_zc_s( this ); // Binned/simultaneous triggers
-		Triggers_R< Variable > triggers_r_s( this ); // Binned/simultaneous triggers
+		Triggers_QSS< Variable > triggers_qss_s( this ); // Binned/simultaneous QSS triggers
+		Triggers_ZC< Variable > triggers_zc_s( this ); // Binned/simultaneous ZC triggers
+		Triggers_R< Variable > triggers_r_s( this ); // Binned/simultaneous R triggers
 		Observers< Variable > observers_s( this ); // Binned/simultaneous observers
 		bool connected_output_event( false );
 		while ( t <= tNext ) {
@@ -2623,7 +2638,7 @@ namespace QSS {
 					if ( options::output::F ) { // FMU QSS variable outputs
 						if ( n_f_outs > 0u ) { // FMU QSS variables
 							for ( size_type i = 0; i < n_f_outs; ++i ) {
-								Variable * var( f_outs_vars[ i ] );
+								Variable const * var( f_outs_vars[ i ] );
 								f_outs[ i ].append( tOut, var->x( tOut ) );
 							}
 						}
@@ -2635,7 +2650,7 @@ namespace QSS {
 //								if ( state_vars[ i ] != nullptr ) states[ i ] = state_vars[ i ]->x( tOut );
 //							}
 //							fmi2_import_set_continuous_states( fmu, states, n_states );
-							for ( auto var : vars_NC ) {
+							for ( auto const var : vars_NC ) {
 								var->fmu_set_x( tOut );
 							}
 							size_type i( 0u );
@@ -2649,7 +2664,7 @@ namespace QSS {
 					if ( options::output::K ) { // FMU-QSS smooth token outputs
 						if ( n_fmu_qss_qss_outs > 0u ) {
 							for ( size_type i = 0; i < n_fmu_qss_qss_outs; ++i ) {
-								Variable * var( fmu_qss_qss_outs[ i ] );
+								Variable const * var( fmu_qss_qss_outs[ i ] );
 								k_qss_outs[ i ].append( tOut, var->k( tOut ) );
 							}
 						}
@@ -2666,7 +2681,7 @@ namespace QSS {
 //						}
 					}
 					if ( options::csv ) {
-						for ( auto var : vars ) {
+						for ( auto const var : vars ) {
 							var->fmu_set_x( tOut );
 						}
 						for ( std::size_t i = 0, n = res_var_indexes.size(); i < n; ++i ) {
@@ -2763,7 +2778,6 @@ namespace QSS {
 					} else { // Simultaneous triggers
 						eventq->top_subs< Variable >( triggers );
 						observers_s.assign( triggers );
-						sort_by_name( triggers );
 
 						if ( doDOut ) { // Discrete event output: pre
 							for ( Variable * trigger : triggers ) { // Triggers
@@ -3035,7 +3049,7 @@ namespace QSS {
 						eventq->bin_QSS< Variable >( bin_size, bin_frac, triggers );
 						if ( options::output::d ) {
 							std::cout << "\nBin @ " << t << " trigger(s):" << '\n';
-							for ( Variable * trigger : triggers ) std::cout << "   " << trigger->name() << "  tQ-tE: " << trigger->tQ << '-' << trigger->tE << '\n';
+							for ( Variable const * trigger : sorted_by_name( triggers ) ) std::cout << "   " << trigger->name() << "  tQ-tE: " << trigger->tQ << '-' << trigger->tE << '\n';
 							std::cout << std::endl;
 						}
 						if ( triggers.size() == 1u ) trigger1 = triggers[ 0 ]; // Use single trigger processing
@@ -3079,21 +3093,11 @@ namespace QSS {
 					if ( connected ) { // Check if next event(s) will modify a connected output
 						if ( options::perfect ) { // Flag whether next event(s) will modify a connected output
 							if ( !connected_output_event ) {
-								for ( Variable const * trigger : triggers ) {
-									if ( trigger->connected_output || trigger->connected_output_observer ) {
-										connected_output_event = true;
-										break;
-									}
-								}
+								if ( std::any_of( triggers.begin(), triggers.end(), []( Variable const * trigger ){ return ( trigger->connected_output || trigger->connected_output_observer ); } ) ) connected_output_event = true;
 							}
 						} else if ( t > tPass ) { // Stop if beyond pass start time and next event(s) will modify a connected output
 							bool connected_output_next( false );
-							for ( Variable const * trigger : triggers ) {
-								if ( trigger->connected_output || trigger->connected_output_observer ) {
-									connected_output_next = true;
-									break;
-								}
-							}
+							if ( std::any_of( triggers.begin(), triggers.end(), []( Variable const * trigger ){ return ( trigger->connected_output || trigger->connected_output_observer ); } ) ) connected_output_next = true;
 							if ( connected_output_next ) break; // Exit t loop
 						}
 					}
@@ -3145,8 +3149,7 @@ namespace QSS {
 							}
 						}
 
-						triggers_s.assign( triggers );
-						triggers_s.advance_QSS( t, s );
+						triggers_qss_s.advance( triggers, t, s ); // Advance triggers
 						if ( observers_s.have() ) observers_s.advance( t ); // Advance observers
 
 						if ( doROut ) { // Requantization output: post
@@ -3181,7 +3184,7 @@ namespace QSS {
 						eventq->bin_QSS_ZC< Variable >( bin_size, bin_frac, triggers );
 						if ( options::output::d ) {
 							std::cout << "\nBin @ " << t << " trigger(s):" << '\n';
-							for ( Variable * trigger : triggers ) std::cout << "   " << trigger->name() << "  tQ-tE: " << trigger->tQ << '-' << trigger->tE << '\n';
+							for ( Variable const * trigger : sorted_by_name( triggers ) ) std::cout << "   " << trigger->name() << "  tQ-tE: " << trigger->tQ << '-' << trigger->tE << '\n';
 							std::cout << std::endl;
 						}
 						if ( triggers.size() == 1u ) trigger1 = triggers[ 0 ]; // Use single trigger processing
@@ -3204,21 +3207,11 @@ namespace QSS {
 					if ( connected ) { // Check if next event(s) will modify a connected output
 						if ( options::perfect ) { // Flag whether next event(s) will modify a connected output
 							if ( !connected_output_event ) {
-								for ( Variable const * trigger : triggers ) {
-									if ( trigger->connected_output || trigger->connected_output_observer ) {
-										connected_output_event = true;
-										break;
-									}
-								}
+								if ( std::any_of( triggers.begin(), triggers.end(), []( Variable const * trigger ){ return ( trigger->connected_output || trigger->connected_output_observer ); } ) ) connected_output_event = true;
 							}
 						} else if ( t > tPass ) { // Stop if beyond pass start time and next event(s) will modify a connected output
 							bool connected_output_next( false );
-							for ( Variable const * trigger : triggers ) {
-								if ( trigger->connected_output || trigger->connected_output_observer ) {
-									connected_output_next = true;
-									break;
-								}
-							}
+							if ( std::any_of( triggers.begin(), triggers.end(), []( Variable const * trigger ){ return ( trigger->connected_output || trigger->connected_output_observer ); } ) ) connected_output_next = true;
 							if ( connected_output_next ) break; // Exit t loop
 						}
 					}
@@ -3263,8 +3256,7 @@ namespace QSS {
 							}
 						}
 
-						triggers_zc_s.assign( triggers );
-						triggers_zc_s.advance_QSS( t, s );
+						triggers_zc_s.advance( triggers, t, s ); // Advance triggers
 
 						if ( doROut ) { // Requantization output: post
 							if ( options::output::A ) { // All variables
@@ -3294,7 +3286,7 @@ namespace QSS {
 						eventq->bin_QSS_R< Variable >( bin_size, bin_frac, triggers );
 						if ( options::output::d ) {
 							std::cout << "\nBin @ " << t << " trigger(s):" << '\n';
-							for ( Variable * trigger : triggers ) std::cout << "   " << trigger->name() << "  tQ-tE: " << trigger->tQ << '-' << trigger->tE << '\n';
+							for ( Variable const * trigger : sorted_by_name( triggers ) ) std::cout << "   " << trigger->name() << "  tQ-tE: " << trigger->tQ << '-' << trigger->tE << '\n';
 							std::cout << std::endl;
 						}
 						if ( triggers.size() == 1u ) trigger1 = triggers[ 0 ]; // Use single trigger processing
@@ -3315,21 +3307,11 @@ namespace QSS {
 					if ( connected ) { // Check if next event(s) will modify a connected output
 						if ( options::perfect ) { // Flag whether next event(s) will modify a connected output
 							if ( !connected_output_event ) {
-								for ( Variable const * trigger : triggers ) {
-									if ( trigger->connected_output || trigger->connected_output_observer ) {
-										connected_output_event = true;
-										break;
-									}
-								}
+								if ( std::any_of( triggers.begin(), triggers.end(), []( Variable const * trigger ){ return ( trigger->connected_output || trigger->connected_output_observer ); } ) ) connected_output_event = true;
 							}
 						} else if ( t > tPass ) { // Stop if beyond pass start time and next event(s) will modify a connected output
 							bool connected_output_next( false );
-							for ( Variable const * trigger : triggers ) {
-								if ( trigger->connected_output || trigger->connected_output_observer ) {
-									connected_output_next = true;
-									break;
-								}
-							}
+							if ( std::any_of( triggers.begin(), triggers.end(), []( Variable const * trigger ){ return ( trigger->connected_output || trigger->connected_output_observer ); } ) ) connected_output_next = true;
 							if ( connected_output_next ) break; // Exit t loop
 						}
 					}
@@ -3382,8 +3364,7 @@ namespace QSS {
 							}
 						}
 
-						triggers_r_s.assign( triggers );
-						triggers_r_s.advance_QSS( t, s );
+						triggers_r_s.advance( triggers, t, s ); // Advance triggers
 						if ( observers_s.have() ) observers_s.advance( t ); // Advance observers
 
 						if ( doROut ) { // Requantization output: post
@@ -3444,7 +3425,7 @@ namespace QSS {
 
 				// Local variable event outputs
 				if ( options::output::L && ( n_l_outs > 0u ) && ( options::specified::tLoc ) && ( options::tLoc.first <= t ) && ( t <= options::tLoc.second ) ) {
-					for ( auto var : vars_NC ) {
+					for ( auto const var : vars_NC ) {
 						var->fmu_set_x( t );
 					}
 					size_type i( 0u );
@@ -3587,6 +3568,7 @@ namespace QSS {
 		eventInfoMaster.terminateSimulation = fmi2_false;
 		eventInfoMaster.nominalsOfContinuousStatesChanged = fmi2_false;
 		eventInfoMaster.valuesOfContinuousStatesChanged = fmi2_false;
+		eventInfoMaster.nextEventTime = 0.0;
 		eventInfoMaster.nextEventTimeDefined = fmi2_false;
 		simulate( &eventInfoMaster );
 	}
@@ -3610,7 +3592,7 @@ namespace QSS {
 		if ( options::output::F ) { // FMU QSS variable tE outputs
 			if ( n_f_outs > 0u ) { // FMU QSS variables
 				for ( size_type i = 0; i < n_f_outs; ++i ) {
-					Variable * var( f_outs_vars[ i ] );
+					Variable const * var( f_outs_vars[ i ] );
 					f_outs[ i ].append( tE, var->x( tE ) );
 					f_outs[ i ].flush();
 				}
@@ -3623,7 +3605,7 @@ namespace QSS {
 //					if ( state_vars[ i ] != nullptr ) states[ i ] = state_vars[ i ]->x( tE );
 //				}
 //				fmi2_import_set_continuous_states( fmu, states, n_states );
-				for ( auto var : vars_NC ) {
+				for ( auto const var : vars_NC ) {
 					var->fmu_set_x( tE );
 				}
 				size_type i( 0u );
@@ -3638,7 +3620,7 @@ namespace QSS {
 		if ( options::output::K ) { // FMU-QSS smooth token outputs
 			if ( n_fmu_qss_qss_outs > 0u ) {
 				for ( size_type i = 0; i < n_fmu_qss_qss_outs; ++i ) {
-					Variable * var( fmu_qss_qss_outs[ i ] );
+					Variable const * var( fmu_qss_qss_outs[ i ] );
 					k_qss_outs[ i ].append( tE, var->k( tE ) );
 					k_qss_outs[ i ].flush();
 				}
@@ -3656,7 +3638,7 @@ namespace QSS {
 //			}
 		}
 		if ( options::csv ) {
-			for ( auto var : vars ) {
+			for ( auto const var : vars ) {
 				var->fmu_set_x( tE );
 			}
 			for ( std::size_t i = 0, n = res_var_indexes.size(); i < n; ++i ) {

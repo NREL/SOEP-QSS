@@ -47,8 +47,9 @@
 #include <QSS/Variable_fQSS2.hh>
 #include <QSS/Variable_fQSS3.hh>
 #include <QSS/Variable_rQSS2.hh>
-#include <QSS/Variable_rLIQSS2.hh>
+#include <QSS/Variable_rQSS3.hh>
 #include <QSS/Variable_rfQSS2.hh>
+#include <QSS/Variable_rfQSS3.hh>
 #include <QSS/Variable_nQSS2.hh>
 #include <QSS/Variable_nQSS3.hh>
 #include <QSS/Variable_nLIQSS2.hh>
@@ -56,8 +57,9 @@
 #include <QSS/Variable_nfQSS2.hh>
 #include <QSS/Variable_nfQSS3.hh>
 #include <QSS/Variable_nrQSS2.hh>
-#include <QSS/Variable_nrLIQSS2.hh>
+#include <QSS/Variable_nrQSS3.hh>
 #include <QSS/Variable_nrfQSS2.hh>
+#include <QSS/Variable_nrfQSS3.hh>
 #include <QSS/Variable_time.hh>
 
 // QSS Zero-Crossing Variable Headers

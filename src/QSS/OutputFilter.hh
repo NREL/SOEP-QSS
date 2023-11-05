@@ -40,6 +40,7 @@
 #include <QSS/string.hh>
 
 // C++ Headers
+#include <algorithm>
 #include <fstream>
 #include <regex>
 #include <string>
@@ -63,6 +64,7 @@ public: // Creation
 	OutputFilter() = default;
 
 	// Strings Constructor
+	explicit
 	OutputFilter( std::vector< std::string > const & var_specs )
 	{
 		for ( std::string var_spec : var_specs ) {
@@ -78,6 +80,7 @@ public: // Creation
 	}
 
 	// File Name Constructor
+	explicit
 	OutputFilter( std::string const & var_file )
 	{
 		std::ifstream var_stream( var_file, std::ios_base::binary | std::ios_base::in );
@@ -110,10 +113,7 @@ public: // Predicate
 			if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
 			return true;
 		}
-		for ( auto const & filter : filters_ ) { // Check if name matches filter
-			if ( std::regex_match( var_name, filter ) ) return true;
-		}
-		return false;
+		return std::any_of( filters_.begin(), filters_.end(), [ &var_name ]( Filter const & filter ){ return std::regex_match( var_name, filter ); } ); // Name matches filter?
 	}
 
 	// Generate QSS Outputs for a Variable with Given Name?
@@ -127,10 +127,7 @@ public: // Predicate
 			if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
 			return true;
 		}
-		for ( auto const & filter : filters_ ) { // Check if name matches filter
-			if ( std::regex_match( var_name, filter ) ) return true;
-		}
-		return false;
+		return std::any_of( filters_.begin(), filters_.end(), [ &var_name ]( Filter const & filter ){ return std::regex_match( var_name, filter ); } ); // Name matches filter?
 	}
 
 	// Generate FMU Outputs for a Variable with Given Name?
@@ -144,10 +141,7 @@ public: // Predicate
 			if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
 			return true;
 		}
-		for ( auto const & filter : filters_ ) { // Check if name matches filter
-			if ( std::regex_match( var_name, filter ) ) return true;
-		}
-		return false;
+		return std::any_of( filters_.begin(), filters_.end(), [ &var_name ]( Filter const & filter ){ return std::regex_match( var_name, filter ); } ); // Name matches filter?
 	}
 
 	// Generate Results Outputs for a Variable with Given Name?
@@ -156,10 +150,7 @@ public: // Predicate
 	{
 		if ( filters_.empty() ) return true; // Default to all signals
 		if ( var_name == "time" ) return true; // Always include time in results outputs
-		for ( auto const & filter : filters_ ) { // Check if name matches filter
-			if ( std::regex_match( var_name, filter ) ) return true;
-		}
-		return false;
+		return std::any_of( filters_.begin(), filters_.end(), [ &var_name ]( Filter const & filter ){ return std::regex_match( var_name, filter ); } ); // Name matches filter?
 	}
 
 public: // Static Methods
@@ -167,7 +158,7 @@ public: // Static Methods
 	// Regex String of a Variable Spec
 	static
 	std::string
-	regex_string( std::string spec )
+	regex_string( std::string const & spec )
 	{
 		// Convert glob usage to regex (imperfect)
 		std::string re_spec;
@@ -192,7 +183,7 @@ public: // Static Methods
 	// Regex of a Variable Spec
 	static
 	std::regex
-	regex( std::string spec )
+	regex( std::string const & spec )
 	{
 		return std::regex( regex_string( spec ) ); // Can throw exception if resulting string is not a valid regex
 	}

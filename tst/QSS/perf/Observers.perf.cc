@@ -45,7 +45,7 @@
 
 // Results
 //
-// The # triggers above which binary search became faster is show below
+// The # triggers above which binary search became faster is shown below
 //
 // The low crossovers are surprising since linear search is usually faster up to more items
 //

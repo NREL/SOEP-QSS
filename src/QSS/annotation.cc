@@ -162,7 +162,6 @@ annotation_start_handle(
 					while ( dependencies_stream >> dependency_string ) {
 						if ( is_int( dependency_string ) ) {
 							var.add_observee( int_of( dependency_string ) );
-							has_dependencies = true;
 						} else {
 							std::cerr << "\nError: XML Dependencies Element has non-integer dependencies entry: " << dependency_string << std::endl;
 							std::exit( EXIT_FAILURE );

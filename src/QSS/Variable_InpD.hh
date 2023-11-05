@@ -56,7 +56,7 @@ public: // Creation
 	 FMU_ME * fmu_me,
 	 std::string const & name,
 	 Real const xIni_ = 0.0,
-	 FMU_Variable const var = FMU_Variable(),
+	 FMU_Variable const & var = FMU_Variable(),
 	 Function f = Function()
 	) :
 	 Super( fmu_me, 0, name, xIni_, var, f )

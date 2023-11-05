@@ -619,7 +619,7 @@ public: // FMU Methods
 
 	// Set a String FMU Variable Value
 	void
-	set_string( fmi2_value_reference_t const ref, std::string const val )
+	set_string( fmi2_value_reference_t const ref, std::string const & val )
 	{
 		assert( fmu != nullptr );
 		fmi2_string_t const fst( static_cast< fmi2_string_t >( val.c_str() ) );
