@@ -155,7 +155,7 @@ public: // Methods
 		} else {
 			x_2_ = c_2( tQ, x_1_ );
 			fmu_set_observees_x( t0() );
-			l_0_ = q_c_ + ( signum( x_2_ ) * qTol );
+			q_0_ = q_c_ + ( signum( x_2_ ) * qTol );
 		}
 	}
 
@@ -163,7 +163,6 @@ public: // Methods
 	void
 	init_F() override
 	{
-		q_0_ = l_0_;
 		set_tE_aligned();
 		add_QSS( tE );
 		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
@@ -218,7 +217,7 @@ public: // Methods
 			advance_LIQSS_simultaneous();
 		} else {
 			x_2_ = n_2( x_1_p );
-			l_0_ = q_c_ + ( signum( x_2_ ) * qTol );
+			q_0_ = q_c_ + ( signum( x_2_ ) * qTol );
 		}
 	}
 
@@ -226,7 +225,6 @@ public: // Methods
 	void
 	advance_QSS_F() override
 	{
-		q_0_ = l_0_;
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
@@ -409,11 +407,26 @@ private: // Methods
 		return options::one_over_two_dtND * ( x_1_p - x_1_ ); //ND Forward Euler
 	}
 
+	// Set FMU Value for Specified Trajectory and Time Step
+	void
+	fmu_set_trajectory(
+	 Real const x_0,
+	 Real const x_1,
+	 Time const tDel
+	)
+	{
+#ifndef QSS_PROPAGATE_CONTINUOUS
+		fmu_set_real( x_0 + ( x_1 * tDel ) );
+#else
+		fmu_set_real( x_0 + ( ( x_1 + ( x_2_ * tDel ) ) * tDel ) );
+#endif
+	}
+
 private: // Data
 
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous trajectory coefficients
-	Real q_c_{ 0.0 }, q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized trajectory coefficients
-	Real l_0_{ 0.0 }; // LIQSS-adjusted coefficient
+	Real q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized trajectory coefficients
+	Real q_c_{ 0.0 }; // Quantized trajectory center coefficient
 
 }; // Variable_nLIQSS2
 

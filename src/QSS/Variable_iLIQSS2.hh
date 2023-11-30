@@ -1,4 +1,4 @@
-// LIQSS2 Variable
+// iLIQSS2 Variable
 //
 // Project: QSS Solver
 //
@@ -33,16 +33,16 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_Variable_LIQSS2_hh_INCLUDED
-#define QSS_Variable_LIQSS2_hh_INCLUDED
+#ifndef QSS_Variable_iLIQSS2_hh_INCLUDED
+#define QSS_Variable_iLIQSS2_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/Variable_QSS.hh>
 
 namespace QSS {
 
-// LIQSS2 Variable
-class Variable_LIQSS2 final : public Variable_QSS
+// iLIQSS2 Variable
+class Variable_iLIQSS2 final : public Variable_QSS
 {
 
 public: // Types
@@ -52,7 +52,7 @@ public: // Types
 public: // Creation
 
 	// Constructor
-	Variable_LIQSS2(
+	Variable_iLIQSS2(
 	 FMU_ME * fmu_me,
 	 std::string const & name,
 	 Real const rTol_ = options::rTol,
@@ -399,24 +399,13 @@ private: // Methods
 	void
 	advance_LIQSS_simultaneous();
 
-	// Set FMU Variable to Appropriate Value at Time tE
-	void
-	fmu_set_tE() const
-	{
-#ifndef QSS_PROPAGATE_CONTINUOUS
-		fmu_set_real( q_0_ ); // Quantized: Traditional QSS
-#else
-		fmu_set_real( x_0_ ); // Continuous: Modified QSS
-#endif
-	}
-
 private: // Data
 
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }, x_2_{ 0.0 }; // Continuous trajectory coefficients
 	Real q_0_{ 0.0 }, q_1_{ 0.0 }; // Quantized trajectory coefficients
 	Real q_c_{ 0.0 }; // Quantized trajectory center coefficient
 
-}; // Variable_LIQSS2
+}; // Variable_iLIQSS2
 
 } // QSS
 

@@ -93,18 +93,16 @@ Note that this differs from the literature. In some papers by the original QSS a
 
 LIQSS as described in the literature is somewhat under-defined and inconsistent in some details. Some of the key issues and how they are addressed in this code are detailed below.
 
-#### Cyclic/Order Dependency
+#### Cyclic/Sequence Dependency
 
 At startup and simultaneous requantization trigger events the LIQSS approach defined in the literature is inadequate because the quantized values depend on derivatives which, in turn, depend on other quantized values. When multiple variables' quantized values need to be set at the same time point there is, in general, a cyclic dependency among them. Approaches that were considered:
-* Single pass in arbitrary order: Leaves different representations of the same variable in the system and thus has a processing order dependency so results are dependent on the (arbitrary) order of variables in their containers.
+* Single pass in arbitrary order: Leaves different representations of the same variable in the system and thus has a variable processing sequence dependency so results are dependent on the (arbitrary) ordering of variables in their containers.
 * Multiple passes hoping for a fixed point: May not find a consistent fixed point and is still potentially order-dependent.
-* Use derivatives based on a stable LIQSS state at these events to eliminate the order dependency. This is the approach chosen and a "simultaneous" representation is used that contains the stable coefficients determined for each order pass of the algorithm, without the updates made by the highest-order LIQSS pass. This approach has the potential for solution value and derivative discontinuities at transitions between simultaneous and non-simultaneous events but no clearly better alternative is apparent.
+* Use derivatives based on a stable LIQSS state at these events to eliminate the sequence dependency. This is the approach chosen and a "simultaneous" representation is used that contains the stable coefficients determined for each order pass of the algorithm, without the updates made by the highest-order LIQSS pass. This approach has the potential for solution value and derivative discontinuities at transitions between simultaneous and non-simultaneous events but no clearly better alternative is apparent.
 
-#### LIQSS3
+#### Computed vs. Interpolated
 
-The LIQSS3 solver now uses directional second derivatives for continuous state variables. While this has accuracy and performance benefits for QSS3, for LIQSS3 there is a significant performance loss due to the use of extra per-variable directional derivative calls at the variable value +/- the quantum. These extra derivative computations that LIQSS requires are not amenable to the FMU call pooling used elsewhere to amortize the high FMU call overhead.
-
-An option to avoid some of the directional derivative calls via interpolation of the second derivative will be explored in the future.
+The default LIQSS solvers compute, rather than interpolate, the derivatives at the quantized trajectory values that the LIQSS algorithms select. While this has accuracy and performance benefits, it adds some overhead that is worse in higher order LIQSS solvers, especially for those that use directional second derivatives. Because these are per-variable computations, FMU call pooling cannot be used to amortize their cost. Additional `iLIQSS` solvers that use interpolation are provided and can be used when their lower accuracy is a beneficial tradeoff for the faster requantizations.
 
 ### fQSS Variant
 
@@ -230,7 +228,7 @@ Models defined by FMUs following the FMI 2.0 API and built by OCT can be run by 
 In preparation for anticipated FMI API extensions to OCT's FMI Library a NextGen branch of this repository has been developed.
 NextGen assumes that the FMU can provide higher derivatives directly for a variable when its observee variables are set to their values at the evaluation time.
 This significantly simplifies the QSS code and makes it more practical to implement 3rd order QSS methods.
-It will also eliminate the order dependency flaw with QSS3+ and fQSS2+ methods.
+It will also eliminate the variable processing sequence dependency flaw with QSS3+ and fQSS2+ methods.
 The purpose of the NextGen branch is to show approximately how the code will look when this advanced support becomes available and to simplify migration at that time.
 Using placeholder calls to current the FMI API enables this NextGen branch code to compile and run.
 
@@ -249,10 +247,10 @@ The test code is in `tst/QSS` and the unit tests are in `unit`.
 ### Numeric Differentiation
 
 Second order and higher derivatives are needed for QSS2+ methods. For FMUs we currently must use some numeric differentiation:
-* Continuous state variable second derivatives are obtained using FMU directional derivative calls and third derivatives are computed numerically.
+* Continuous state variable second derivatives are obtained using FMU directional derivative calls and third derivatives are computed numerically in the default QSS solvers. Alternative "n" solvers (such as nQSS2) that use numerical second and third derivatives may be useful for denser dependency models for which the current directional derivative overhead is high.
 * Zero-crossing and (non-state) real-valued variable first derivatives are obtained using FMU directional derivative calls and second and third derivatives are computed numerically.
 
-At variable initialization and other simultaneous requantization or zero-crossing handler events, the numeric differentiation currently required for QSS3 solvers has an order dependency problem: the derivative evaluations at time step offsets used to compute the numeric derivatives can depend on QSS trajectory coefficients being computed in other variables being updated, so the results can depend on the order in which variables are processed. Deferring variable trajectory updates until after all such computations can eliminate the order dependency but was found to significantly hurt solution accuracy and performance. To avoid these issues, QSS is best implemented with non-numeric higher derivatives: automatic differentiation support is being considered for future OCT releases.
+At variable initialization and other simultaneous requantization or zero-crossing handler events, the numeric differentiation currently required for QSS3 solvers has a variable processing sequence dependency problem: the derivative evaluations at time step offsets used to compute the numeric derivatives can depend on QSS trajectory coefficients being computed in other variables being updated, so the results can depend on the sequence with which variables are processed. Deferring variable trajectory updates until after all such computations can eliminate this sequence dependency but was found to significantly hurt solution accuracy and performance. To avoid these issues, QSS is best implemented with non-numeric higher derivatives: automatic differentiation support is being considered for future OCT releases.
 
 ### Numeric Bulletproofing
 

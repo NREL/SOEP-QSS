@@ -53,17 +53,19 @@
 // linear search never ends early but in QSS observers that are triggers is also probably infrequent
 //
 //						# Triggers Crossover
-// # Observers		VC		IC		GCC
-// 1					40		25		33
-// 5					16		17		17
-// 10					14		11		13
-// 20					11		8		13
-// 40					11		6		13
-// 100				6		6		13
+// # Observers		VC		VCnew	IC		IX		GCC
+// 1					40				25		  		33
+// 5					16		75		17		56		17
+// 10					14		60		11		40		13
+// 20					11				8		30		13
+// 40					11				6		20		13
+// 100				6				6		10		13
 //
 // It probably isn't worth measuring the average number of observers at run time since the speed
 // difference is not great until you get to many triggers and since there is variation among
 // compilers and hardware: a reasonable crossover (say, 16) will give near-optimal performance
+//
+// Binary search with copying is not much slower than without copying and avoids side effects
 
 
 struct Variable {
@@ -76,16 +78,21 @@ main()
 {
 	using Variables = std::vector< Variable * >;
 
-	std::size_t const N( 17 ); // Triggers count
-	std::size_t const O( 5 ); // Observers count
-	std::size_t const R( 5000000 ); // Repeat count
+	std::size_t const N( 20u ); // Triggers count
+	std::size_t const O( 10u ); // Observers count
+	std::size_t const R( 5000000u ); // Repeat count
+	std::cout << N << " triggers" << std::endl;
+	std::cout << O << " observers" << std::endl;
 
 	Variables triggers;
 	Variables triggers_reversed;
-	for ( Variables::size_type i = 0; i < N; ++i ) triggers.push_back( new Variable() );
 	for ( Variables::size_type i = 0; i < N; ++i ) {
-		for ( Variables::size_type j = 0; j < O; ++j ) {
+		triggers.push_back( new Variable() );
+	}
+	for ( Variables::size_type i = 0; i < N; ++i ) { // Add observers
+		for ( Variables::size_type j = 0; j < O; j += 2 ) {
 			triggers[i]->observers.push_back( new Variable() );
+			triggers[i]->observers.push_back( triggers[(i+N/2)%N] );
 		}
 	}
 	std::sort( triggers.begin(), triggers.end() );
@@ -108,6 +115,18 @@ main()
 		std::cout << "Linear: " << time_end - time_beg << " (s)  " << size << std::endl;
 	}
 
+	// { // Reverse: Check the cost of assigning the reversed triggers
+	// 	Variables observers;observers.reserve( N * O );
+	// 	std::size_t size( 0u );
+	// 	double const time_beg = (double)clock()/CLOCKS_PER_SEC;
+	// 	for ( std::size_t r = 0; r < R; ++r ) { observers.clear();
+	// 		triggers = triggers_reversed; // Make sort do work
+	// 		size += triggers.size()*r;
+	// 	}
+	// 	double const time_end = (double)clock()/CLOCKS_PER_SEC;
+	// 	std::cout << "Reverse: " << time_end - time_beg << " (s)  " << size << std::endl;
+	// }
+
 	{ // Binary
 		Variables observers;observers.reserve( N * O );
 		std::size_t size( 0u );
@@ -125,4 +144,22 @@ main()
 		double const time_end = (double)clock()/CLOCKS_PER_SEC;
 		std::cout << "Binary: " << time_end - time_beg << " (s)  " << size << std::endl;
 	}
+
+	// { // BinCopy
+	// 	Variables observers;observers.reserve( N * O );
+	// 	std::size_t size( 0u );
+	// 	double const time_beg = (double)clock()/CLOCKS_PER_SEC;
+	// 	for ( std::size_t r = 0; r < R; ++r ) { observers.clear();
+	// 		Variables triggers_copy( triggers_reversed ); // Make sort do work
+	// 		std::sort( triggers_copy.begin(), triggers_copy.end() );
+	// 		for ( Variable * trigger : triggers_copy ) {
+	// 			for ( Variable * observer : trigger->observers ) {
+	// 				if ( !std::binary_search( triggers_copy.begin(), triggers_copy.end(), observer ) ) observers.push_back( observer );
+	// 			}
+	// 		}
+	// 		size += observers.size();
+	// 	}
+	// 	double const time_end = (double)clock()/CLOCKS_PER_SEC;
+	// 	std::cout << "BinCopy: " << time_end - time_beg << " (s)  " << size << std::endl;
+	// }
 }

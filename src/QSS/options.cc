@@ -48,7 +48,7 @@
 namespace QSS {
 namespace options {
 
-QSS qss( QSS::QSS2 ); // QSS method: [n][r][f][LI]QSS(1|2|3)
+QSS qss( QSS::QSS2 ); // QSS method: [n][i][r][f][LI]QSS(1|2|3)
 int order( 2 ); // QSS method order: (1|2|3)
 bool d2d( true ); // Directional state second derivatives QSS solver?
 bool n2d( false ); // Numerical state second derivatives QSS solver?
@@ -150,7 +150,7 @@ help_display()
 {
 	std::cout << '\n' << "QSS [options] [model [model ...]]" << "\n\n";
 	std::cout << "Options:" << "\n\n";
-	std::cout << " --qss=QSS              QSS method: [n][r][f][LI]QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
+	std::cout << " --qss=QSS              QSS method: [n][i][r][f][LI]QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
 	std::cout << "                                     n: Numerical state second derivatives" << '\n';
 	std::cout << "                                        r: Relaxation solver" << '\n';
 	std::cout << "                                           f: Full-order broadcast quantized representation" << '\n';
@@ -315,6 +315,60 @@ process_args( Args const & args )
 				d2d = true;
 				rQSS = false;
 				fQSS = true;
+			} else if ( qss_name == "fLIQSS1" ) {
+				qss = QSS::fLIQSS1;
+				order = 1;
+				d2d = true;
+				rQSS = false;
+				fQSS = true;
+			} else if ( qss_name == "fLIQSS2" ) {
+				qss = QSS::fLIQSS2;
+				order = 2;
+				d2d = true;
+				rQSS = false;
+				fQSS = true;
+			} else if ( qss_name == "fLIQSS3" ) {
+				qss = QSS::fLIQSS3;
+				order = 3;
+				d2d = true;
+				rQSS = false;
+				fQSS = true;
+			} else if ( qss_name == "iLIQSS1" ) {
+				qss = QSS::iLIQSS1;
+				order = 1;
+				d2d = true;
+				rQSS = false;
+				fQSS = false;
+			} else if ( qss_name == "iLIQSS2" ) {
+				qss = QSS::iLIQSS2;
+				order = 2;
+				d2d = true;
+				rQSS = false;
+				fQSS = false;
+			} else if ( qss_name == "iLIQSS3" ) {
+				qss = QSS::iLIQSS3;
+				order = 3;
+				d2d = true;
+				rQSS = false;
+				fQSS = false;
+			} else if ( qss_name == "ifLIQSS1" ) {
+				qss = QSS::ifLIQSS1;
+				order = 1;
+				d2d = true;
+				rQSS = false;
+				fQSS = true;
+			} else if ( qss_name == "ifLIQSS2" ) {
+				qss = QSS::ifLIQSS2;
+				order = 2;
+				d2d = true;
+				rQSS = false;
+				fQSS = true;
+			} else if ( qss_name == "ifLIQSS3" ) {
+				qss = QSS::ifLIQSS3;
+				order = 3;
+				d2d = true;
+				rQSS = false;
+				fQSS = true;
 			} else if ( qss_name == "rQSS2" ) {
 				qss = QSS::rQSS2;
 				order = 2;
@@ -371,6 +425,42 @@ process_args( Args const & args )
 				fQSS = true;
 			} else if ( qss_name == "nfQSS3" ) {
 				qss = QSS::nfQSS3;
+				order = 3;
+				d2d = false;
+				rQSS = false;
+				fQSS = true;
+			} else if ( qss_name == "nfLIQSS2" ) {
+				qss = QSS::nfLIQSS2;
+				order = 2;
+				d2d = false;
+				rQSS = false;
+				fQSS = true;
+			} else if ( qss_name == "nfLIQSS3" ) {
+				qss = QSS::nfLIQSS3;
+				order = 3;
+				d2d = false;
+				rQSS = false;
+				fQSS = true;
+			} else if ( qss_name == "niLIQSS2" ) {
+				qss = QSS::niLIQSS2;
+				order = 2;
+				d2d = false;
+				rQSS = false;
+				fQSS = false;
+			} else if ( qss_name == "niLIQSS3" ) {
+				qss = QSS::niLIQSS3;
+				order = 3;
+				d2d = false;
+				rQSS = false;
+				fQSS = false;
+			} else if ( qss_name == "nifLIQSS2" ) {
+				qss = QSS::nifLIQSS2;
+				order = 2;
+				d2d = false;
+				rQSS = false;
+				fQSS = true;
+			} else if ( qss_name == "nifLIQSS3" ) {
+				qss = QSS::nifLIQSS3;
 				order = 3;
 				d2d = false;
 				rQSS = false;

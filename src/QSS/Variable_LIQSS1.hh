@@ -131,7 +131,7 @@ public: // Methods
 			advance_LIQSS_simultaneous();
 		} else {
 			x_1_ = p_1();
-			l_0_ = q_c_ + ( signum( x_1_ ) * qTol );
+			q_0_ = q_c_ + ( signum( x_1_ ) * qTol );
 		}
 	}
 
@@ -139,7 +139,6 @@ public: // Methods
 	void
 	init_F() override
 	{
-		q_0_ = l_0_;
 		set_tE_aligned();
 		add_QSS( tE );
 		if ( options::output::d ) std::cout << "!  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]   = " << x_0_ << x_1_ << x_delta << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
@@ -184,7 +183,7 @@ public: // Methods
 			advance_LIQSS_simultaneous();
 		} else {
 			x_1_ = x_1;
-			l_0_ = q_c_ + ( signum( x_1_ ) * qTol );
+			q_0_ = q_c_ + ( signum( x_1_ ) * qTol );
 		}
 	}
 
@@ -192,7 +191,6 @@ public: // Methods
 	void
 	advance_QSS_F() override
 	{
-		q_0_ = l_0_;
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << " [q]   = " << x_0_ << x_1_ << x_delta << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
@@ -320,11 +318,22 @@ private: // Methods
 	void
 	advance_LIQSS_simultaneous();
 
+	// Set FMU Variable to Appropriate Value at Time tE
+	void
+	fmu_set_tE() const
+	{
+#ifndef QSS_PROPAGATE_CONTINUOUS
+		fmu_set_real( q_0_ ); // Quantized: Traditional QSS
+#else
+		fmu_set_real( x_0_ ); // Continuous: Modified QSS
+#endif
+	}
+
 private: // Data
 
 	Real x_0_{ 0.0 }, x_1_{ 0.0 }; // Continuous trajectory coefficients
-	Real q_c_{ 0.0 }, q_0_{ 0.0 }; // Quantized trajectory coefficients
-	Real l_0_{ 0.0 }; // LIQSS-adjusted coefficient (deferred updates not needed with LIQSS1 if we don't allow mixed order solvers)
+	Real q_0_{ 0.0 }; // Quantized trajectory coefficients
+	Real q_c_{ 0.0 }; // Quantized trajectory center coefficient
 
 }; // Variable_LIQSS1
 

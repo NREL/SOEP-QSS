@@ -437,6 +437,69 @@ namespace QSS {
 			options::rQSS = false;
 			options::fQSS = true;
 			break;
+		case options::QSS::fLIQSS1:
+			std::cout << "\nQSS Method: fLIQSS1" << std::endl;
+			options::order = 1;
+			options::d2d = true;
+			options::rQSS = false;
+			options::fQSS = true;
+			break;
+		case options::QSS::fLIQSS2:
+			std::cout << "\nQSS Method: fLIQSS2" << std::endl;
+			options::order = 2;
+			options::d2d = true;
+			options::rQSS = false;
+			options::fQSS = true;
+			break;
+		case options::QSS::fLIQSS3:
+			std::cout << "\nQSS Method: fLIQSS3" << std::endl;
+			options::order = 3;
+			options::d2d = true;
+			options::rQSS = false;
+			options::fQSS = true;
+			break;
+		case options::QSS::iLIQSS1:
+			std::cout << "\nQSS Method: iLIQSS1" << std::endl;
+			options::order = 1;
+			options::d2d = true;
+			options::rQSS = false;
+			options::fQSS = false;
+			break;
+		case options::QSS::iLIQSS2:
+			std::cout << "\nQSS Method: iLIQSS2" << std::endl;
+			options::order = 2;
+			options::d2d = true;
+			options::rQSS = false;
+			options::fQSS = false;
+			break;
+		case options::QSS::iLIQSS3:
+			std::cout << "\nQSS Method: iLIQSS3" << std::endl;
+			options::order = 3;
+			options::d2d = true;
+			options::rQSS = false;
+			options::fQSS = false;
+			break;
+		case options::QSS::ifLIQSS1:
+			std::cout << "\nQSS Method: ifLIQSS1" << std::endl;
+			options::order = 1;
+			options::d2d = true;
+			options::rQSS = false;
+			options::fQSS = true;
+			break;
+		case options::QSS::ifLIQSS2:
+			std::cout << "\nQSS Method: ifLIQSS2" << std::endl;
+			options::order = 2;
+			options::d2d = true;
+			options::rQSS = false;
+			options::fQSS = true;
+			break;
+		case options::QSS::ifLIQSS3:
+			std::cout << "\nQSS Method: ifLIQSS3" << std::endl;
+			options::order = 3;
+			options::d2d = true;
+			options::rQSS = false;
+			options::fQSS = true;
+			break;
 		case options::QSS::rQSS2:
 			std::cout << "\nQSS Method: rQSS2" << std::endl;
 			options::order = 2;
@@ -502,6 +565,48 @@ namespace QSS {
 			break;
 		case options::QSS::nfQSS3:
 			std::cout << "\nQSS Method: nfQSS3" << std::endl;
+			options::order = 3;
+			options::d2d = false;
+			options::rQSS = false;
+			options::fQSS = true;
+			break;
+		case options::QSS::nfLIQSS2:
+			std::cout << "\nQSS Method: nfLIQSS2" << std::endl;
+			options::order = 2;
+			options::d2d = false;
+			options::rQSS = false;
+			options::fQSS = true;
+			break;
+		case options::QSS::nfLIQSS3:
+			std::cout << "\nQSS Method: nfLIQSS3" << std::endl;
+			options::order = 3;
+			options::d2d = false;
+			options::rQSS = false;
+			options::fQSS = true;
+			break;
+		case options::QSS::niLIQSS2:
+			std::cout << "\nQSS Method: niLIQSS2" << std::endl;
+			options::order = 2;
+			options::d2d = false;
+			options::rQSS = false;
+			options::fQSS = false;
+			break;
+		case options::QSS::niLIQSS3:
+			std::cout << "\nQSS Method: niLIQSS3" << std::endl;
+			options::order = 3;
+			options::d2d = false;
+			options::rQSS = false;
+			options::fQSS = false;
+			break;
+		case options::QSS::nifLIQSS2:
+			std::cout << "\nQSS Method: nifLIQSS2" << std::endl;
+			options::order = 2;
+			options::d2d = false;
+			options::rQSS = false;
+			options::fQSS = true;
+			break;
+		case options::QSS::nifLIQSS3:
+			std::cout << "\nQSS Method: nifLIQSS3" << std::endl;
 			options::order = 3;
 			options::d2d = false;
 			options::rQSS = false;
@@ -1157,6 +1262,33 @@ namespace QSS {
 							case options::QSS::fQSS3:
 								qss_var = new Variable_fQSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
 								break;
+							case options::QSS::fLIQSS1:
+								qss_var = new Variable_fLIQSS1( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::fLIQSS2:
+								qss_var = new Variable_fLIQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::fLIQSS3:
+								qss_var = new Variable_fLIQSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::iLIQSS1:
+								qss_var = new Variable_iLIQSS1( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::iLIQSS2:
+								qss_var = new Variable_iLIQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::iLIQSS3:
+								qss_var = new Variable_iLIQSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::ifLIQSS1:
+								qss_var = new Variable_ifLIQSS1( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::ifLIQSS2:
+								qss_var = new Variable_ifLIQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::ifLIQSS3:
+								qss_var = new Variable_ifLIQSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
 							case options::QSS::rQSS2:
 								qss_var = new Variable_rQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
 								break;
@@ -1186,6 +1318,24 @@ namespace QSS {
 								break;
 							case options::QSS::nfQSS3:
 								qss_var = new Variable_nfQSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::nfLIQSS2:
+								qss_var = new Variable_nfLIQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::nfLIQSS3:
+								qss_var = new Variable_nfLIQSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::niLIQSS2:
+								qss_var = new Variable_niLIQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::niLIQSS3:
+								qss_var = new Variable_niLIQSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::nifLIQSS2:
+								qss_var = new Variable_nifLIQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
+								break;
+							case options::QSS::nifLIQSS3:
+								qss_var = new Variable_nifLIQSS3( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );
 								break;
 							case options::QSS::nrQSS2:
 								qss_var = new Variable_nrQSS2( this, var_name, options::rTol, var_aTol, options::zTol, state_start, fmu_var, fmu_der );

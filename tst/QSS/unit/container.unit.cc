@@ -103,25 +103,6 @@ TEST( ContainerTest, Uniquify )
 	EXPECT_TRUE( is_unique( variables ) );
 }
 
-TEST( ContainerTest, VariablesObservers )
-{
-	FMU_ME fmu;
-	QSS2 v( &fmu, "v" );
-	QSS2 h( &fmu, "h" );
-	QSS2 z( &fmu, "z" );
-
-	h.observers().push_back( &v );
-	h.observers().push_back( &z );
-
-	Variables triggers( { &v, &h } );
-
-	Variables observers;
-
-	variables_observers( triggers, observers );
-
-	EXPECT_EQ( 1u, observers.size() ); // Only z is a non-trigger observer
-}
-
 TEST( ContainerTest, VectorRemoveValue )
 {
 	std::vector< int > v{ 99, 42, 8, 72 };

@@ -60,7 +60,7 @@ def fmu_qss_gen():
     # Process arguments
     parser = argparse.ArgumentParser()
     parser.add_argument( 'ME', help = 'FMU-ME fmu or xml file', default = 'modelDescription.xml' )
-    parser.add_argument( '--qss', help = 'QSS method  [n][r][f][LI]QSS(1|2|3)  [QSS2]', default = 'QSS2' )
+    parser.add_argument( '--qss', help = 'QSS method  [n][i][r][f][LI]QSS(1|2|3)  [QSS2]', default = 'QSS2' )
     parser.add_argument( '--rTol', help = 'relative tolerance  [FMU]', type = float )
     parser.add_argument( '--aTol', help = 'absolute tolerance  [1e-6]', type = float, default = 1.0e-6 )
     parser.add_argument( '--tEnd', help = 'simulation end time  [FMU]', type = float )
@@ -76,6 +76,15 @@ def fmu_qss_gen():
      'fQSS1',
      'fQSS2',
      'fQSS3',
+     'fLIQSS1',
+     'fLIQSS2',
+     'fLIQSS3',
+     'iLIQSS1',
+     'iLIQSS2',
+     'iLIQSS3',
+     'ifLIQSS1',
+     'ifLIQSS2',
+     'ifLIQSS3',
      'rQSS2',
      'rQSS3',
      'rfQSS2',
@@ -86,6 +95,12 @@ def fmu_qss_gen():
      'nLIQSS3',
      'nfQSS2',
      'nfQSS3',
+     'nfLIQSS2',
+     'nfLIQSS3',
+     'niLIQSS2',
+     'niLIQSS3',
+     'nifLIQSS2',
+     'nifLIQSS3',
      'nrQSS2',
      'nrQSS3',
      'nrfQSS2',

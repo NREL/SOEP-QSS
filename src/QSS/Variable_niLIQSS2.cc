@@ -1,4 +1,4 @@
-// nLIQSS2 Variable
+// niLIQSS2 Variable
 //
 // Project: QSS Solver
 //
@@ -34,13 +34,13 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // QSS Headers
-#include <QSS/Variable_nLIQSS2.hh>
+#include <QSS/Variable_niLIQSS2.hh>
 
 namespace QSS {
 
 	// Advance Self-Observing Trigger
 	void
-	Variable_nLIQSS2::
+	Variable_niLIQSS2::
 	advance_LIQSS()
 	{
 		assert( qTol > 0.0 );
@@ -83,18 +83,12 @@ namespace QSS {
 		} else if ( x_2_l_s == x_2_u_s ) { // Linear trajectory
 			assert( ( x_2_l_s == 0 ) && ( x_2_u_s == 0 ) );
 			q_0_ = q_c_;
-			fmu_set_time( tE );
-			fmu_set_observees_s( tE );
-			q_1_ = x_1_ = p_1();
+			q_1_ = x_1_ = one_half * ( x_1_l + x_1_u );
 			x_2_ = 0.0;
 		} else { // Quadratic trajectory
 			q_0_ = std::min( std::max( ( ( q_l * x_2_u ) - ( q_u * x_2_l ) ) / ( x_2_u - x_2_l ), q_l ), q_u ); // Interpolated value where 2nd derivative is ~0 (clipped in case of roundoff)
-			fmu_set_time( tE );
-			fmu_set_observees_s( tE );
-			q_1_ = x_1_ = p_1();
-			fmu_set_time( tN );
-			fmu_set_observees_s( tN );
-			x_2_ = options::one_over_two_dtND * ( p_1() - x_1_ ); //ND Forward Euler
+			q_1_ = x_1_ = ( ( ( q_u - q_0_ ) * x_1_l ) + ( ( q_0_ - q_l ) * x_1_u ) ) / ( two * qTol );
+			x_2_ = 0.0;
 		}
 
 		// Reset FMU time
@@ -103,7 +97,7 @@ namespace QSS {
 
 	// Advance Self-Observing Trigger: Simultaneous
 	void
-	Variable_nLIQSS2::
+	Variable_niLIQSS2::
 	advance_LIQSS_simultaneous()
 	{
 		assert( qTol > 0.0 );
@@ -152,16 +146,12 @@ namespace QSS {
 			q_0_ = q_c_;
 			fmu_set_time( tE );
 			fmu_set_observees_s( tE );
-			q_1_ = x_1_ = p_1();
+			q_1_ = x_1_ = one_half * ( x_1_l + x_1_u );
 			x_2_ = 0.0;
 		} else { // Quadratic trajectory
 			q_0_ = std::min( std::max( ( ( q_l * x_2_u ) - ( q_u * x_2_l ) ) / ( x_2_u - x_2_l ), q_l ), q_u ); // Interpolated value where 2nd derivative is ~0 (clipped in case of roundoff)
-			fmu_set_time( tE );
-			fmu_set_observees_s( tE );
-			q_1_ = x_1_ = p_1();
-			fmu_set_time( tN );
-			fmu_set_observees_s( tN );
-			x_2_ = options::one_over_two_dtND * ( p_1() - x_1_ ); //ND Forward Euler
+			q_1_ = x_1_ = ( ( ( q_u - q_0_ ) * x_1_l ) + ( ( q_0_ - q_l ) * x_1_u ) ) / ( two * qTol );
+			x_2_ = 0.0;
 			fmu_set_time( tE );
 			fmu_set_observees_s( tE );
 		}

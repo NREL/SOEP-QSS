@@ -1,4 +1,4 @@
-// LIQSS1 Variable
+// iLIQSS1 Variable
 //
 // Project: QSS Solver
 //
@@ -34,13 +34,13 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // QSS Headers
-#include <QSS/Variable_LIQSS1.hh>
+#include <QSS/Variable_iLIQSS1.hh>
 
 namespace QSS {
 
 	// Advance Self-Observing Trigger
 	void
-	Variable_LIQSS1::
+	Variable_iLIQSS1::
 	advance_LIQSS()
 	{
 		assert( qTol > 0.0 );
@@ -74,14 +74,13 @@ namespace QSS {
 			x_1_ = 0.0;
 		} else { // Linear trajectory
 			q_0_ = std::min( std::max( ( ( q_l * x_1_u ) - ( q_u * x_1_l ) ) / ( x_1_u - x_1_l ), q_l ), q_u ); // Interpolated value where derivative is ~0 (clipped in case of roundoff)
-			fmu_set_tE();
-			x_1_ = p_1();
+			x_1_ = 0.0;
 		}
 	}
 
 	// Advance Self-Observing Trigger: Simultaneous
 	void
-	Variable_LIQSS1::
+	Variable_iLIQSS1::
 	advance_LIQSS_simultaneous()
 	{
 		assert( qTol > 0.0 );
@@ -112,8 +111,7 @@ namespace QSS {
 			x_1_ = 0.0;
 		} else { // Linear trajectory
 			q_0_ = std::min( std::max( ( ( q_l * x_1_u ) - ( q_u * x_1_l ) ) / ( x_1_u - x_1_l ), q_l ), q_u ); // Interpolated value where derivative is ~0 (clipped in case of roundoff)
-			fmu_set_tE();
-			x_1_ = p_1();
+			x_1_ = 0.0;
 		}
 
 		// Reset FMU value

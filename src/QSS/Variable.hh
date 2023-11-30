@@ -1537,6 +1537,16 @@ public: // Methods: FMU
 		}
 	}
 
+	// Set All Observee FMU Variables to Quantized Value at Time t
+	void
+	fmu_set_observees_q( Time const t ) const
+	{
+		for ( size_type j = 0; j < n_observees_; ++j ) { // Set observee value vector
+			observees_v_[ j ] = observees_[ j ]->q( t );
+		}
+		fmu_me_->set_reals( n_observees_, observees_v_ref_.data(), observees_v_.data() ); // Set observees FMU values
+	}
+
 	// Set All Observee FMU Variables to Appropriate Value at Time t
 	void
 	fmu_set_observees_s( Time const t ) const
@@ -1904,7 +1914,7 @@ protected: // Methods
 
 	// Set Self-Observee Derivative Vector Entry
 	void
-	set_self_observees_dv( Real const x_1 )
+	set_self_dv( Real const x_1 )
 	{
 		assert( is_QSS() );
 		observees_dv_[ i_self_observee_ ] = x_1;

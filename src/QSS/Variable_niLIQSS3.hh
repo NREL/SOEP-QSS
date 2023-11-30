@@ -1,4 +1,4 @@
-// nLIQSS3 Variable
+// niLIQSS3 Variable
 //
 // Project: QSS Solver
 //
@@ -33,16 +33,16 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_Variable_nLIQSS3_hh_INCLUDED
-#define QSS_Variable_nLIQSS3_hh_INCLUDED
+#ifndef QSS_Variable_niLIQSS3_hh_INCLUDED
+#define QSS_Variable_niLIQSS3_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/Variable_QSS.hh>
 
 namespace QSS {
 
-// nLIQSS3 Variable
-class Variable_nLIQSS3 final : public Variable_QSS
+// niLIQSS3 Variable
+class Variable_niLIQSS3 final : public Variable_QSS
 {
 
 public: // Types
@@ -57,7 +57,7 @@ private: // Types
 public: // Creation
 
 	// Constructor
-	Variable_nLIQSS3(
+	Variable_niLIQSS3(
 	 FMU_ME * fmu_me,
 	 std::string const & name,
 	 Real const rTol_ = options::rTol,
@@ -596,7 +596,7 @@ private: // Data
 	Real q_c_{ 0.0 }; // Quantized trajectory center coefficient
 	mutable Real x_1_m_{ 0.0 }, x_1_p_{ 0.0 }, x_1_2p_{ 0.0 }; // Trajectory coefficient 1 at numeric differentiation time offsets
 
-}; // Variable_nLIQSS3
+}; // Variable_niLIQSS3
 
 } // QSS
 

@@ -69,7 +69,7 @@ template< typename Variables >
 bool
 is_unique( Variables const & variables )
 {
-	if ( ( variables.empty() ) || ( variables.size() == 1u ) ) return true;
+	if ( variables.size() <= 1u ) return true;
 	if ( std::is_sorted( variables.begin(), variables.end() ) ) { // Sorted
 		for ( typename Variables::size_type i = 0, e = variables.size() - 1u; i < e; ++i ) {
 			if ( variables[ i ] == variables[ i + 1 ] ) return false; // Duplicates
@@ -90,11 +90,24 @@ template< typename Variables >
 void
 uniquify( Variables & variables, bool const shrink = false )
 {
-	if ( !variables.empty() ) {
+	if ( variables.size() > 1u ) {
 		std::sort( variables.begin(), variables.end() ); // Sort
 		variables.erase( std::unique( variables.begin(), variables.end() ), variables.end() ); // Remove duplicates
-		if ( shrink ) variables.shrink_to_fit();
 	}
+	if ( shrink ) variables.shrink_to_fit();
+}
+
+// Make Variables Collection Unique and Optionally Shrink-to-Fit
+template< typename Variables >
+void
+uniquify_and_sort_by_name( Variables & variables, bool const shrink = false )
+{
+	if ( variables.size() > 1u ) {
+		std::sort( variables.begin(), variables.end() ); // Sort
+		variables.erase( std::unique( variables.begin(), variables.end() ), variables.end() ); // Remove duplicates
+		sort_by_name( variables ); // Determinism
+	}
+	if ( shrink ) variables.shrink_to_fit();
 }
 
 // Sort Variables by Type
@@ -131,38 +144,6 @@ sorted_by_name( Variables const & variables )
 	Variables sorted_variables( variables );
 	std::sort( sorted_variables.begin(), sorted_variables.end(), []( V const * v1, V const * v2 ){ return v1->name() < v2->name(); } );
 	return sorted_variables;
-}
-
-// Set up Non-Trigger Observers of Triggers
-template< typename Variables >
-void
-variables_observers( Variables & triggers, Variables & observers )
-{
-	using V = typename std::remove_pointer< typename Variables::value_type >::type;
-
-	// Combine all non-trigger observers
-	observers.clear();
-	if ( triggers.size() < 16 ) { // Linear search
-		for ( V * trigger : triggers ) {
-			for ( V * observer : trigger->observers() ) {
-				if ( std::find( triggers.begin(), triggers.end(), observer ) == triggers.end() ) observers.push_back( observer );
-			}
-		}
-	} else { // Binary search
-		std::sort( triggers.begin(), triggers.end() ); // Side effect!
-		for ( V * trigger : triggers ) {
-			for ( V * observer : trigger->observers() ) {
-				if ( !std::binary_search( triggers.begin(), triggers.end(), observer ) ) observers.push_back( observer );
-			}
-		}
-	}
-
-	// Remove duplicates and sort by type
-	if ( !observers.empty() ) {
-		std::sort( observers.begin(), observers.end() ); // Sort by address
-		observers.erase( std::unique( observers.begin(), observers.end() ), observers.end() ); // Remove duplicates
-		if ( !observers.empty() ) sort_by_type( observers );
-	}
 }
 
 // Vector Has a Value?

@@ -1,4 +1,4 @@
-// LIQSS1 Variable
+// fLIQSS1 Variable
 //
 // Project: QSS Solver
 //
@@ -34,13 +34,13 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // QSS Headers
-#include <QSS/Variable_LIQSS1.hh>
+#include <QSS/Variable_fLIQSS1.hh>
 
 namespace QSS {
 
 	// Advance Self-Observing Trigger
 	void
-	Variable_LIQSS1::
+	Variable_fLIQSS1::
 	advance_LIQSS()
 	{
 		assert( qTol > 0.0 );
@@ -64,24 +64,24 @@ namespace QSS {
 		// Set coefficients based on derivative signs
 		if ( ( x_1_l_s == -1 ) && ( x_1_u_s == -1 ) ) { // Downward linear trajectory
 			q_0_ = q_l;
-			x_1_ = x_1_l;
+			q_1_ = x_1_ = x_1_l;
 		} else if ( ( x_1_l_s == +1 ) && ( x_1_u_s == +1 ) ) { // Upward linear trajectory
 			q_0_ = q_u;
-			x_1_ = x_1_u;
+			q_1_ = x_1_ = x_1_u;
 		} else if ( x_1_l_s == x_1_u_s ) { // Constant trajectory
 			assert( ( x_1_l_s == 0 ) && ( x_1_u_s == 0 ) );
 			q_0_ = q_c_;
-			x_1_ = 0.0;
+			q_1_ = x_1_ = 0.0;
 		} else { // Linear trajectory
 			q_0_ = std::min( std::max( ( ( q_l * x_1_u ) - ( q_u * x_1_l ) ) / ( x_1_u - x_1_l ), q_l ), q_u ); // Interpolated value where derivative is ~0 (clipped in case of roundoff)
 			fmu_set_tE();
-			x_1_ = p_1();
+			q_1_ = x_1_ = p_1();
 		}
 	}
 
 	// Advance Self-Observing Trigger: Simultaneous
 	void
-	Variable_LIQSS1::
+	Variable_fLIQSS1::
 	advance_LIQSS_simultaneous()
 	{
 		assert( qTol > 0.0 );
@@ -102,18 +102,18 @@ namespace QSS {
 		// Set coefficients based on derivative signs
 		if ( ( x_1_l_s == -1 ) && ( x_1_u_s == -1 ) ) { // Downward linear trajectory
 			q_0_ = q_l;
-			x_1_ = x_1_l;
+			q_1_ = x_1_ = x_1_l;
 		} else if ( ( x_1_l_s == +1 ) && ( x_1_u_s == +1 ) ) { // Upward linear trajectory
 			q_0_ = q_u;
-			x_1_ = x_1_u;
+			q_1_ = x_1_ = x_1_u;
 		} else if ( x_1_l_s == x_1_u_s ) { // Constant trajectory
 			assert( ( x_1_l_s == 0 ) && ( x_1_u_s == 0 ) );
 			q_0_ = q_c_;
-			x_1_ = 0.0;
+			q_1_ = x_1_ = 0.0;
 		} else { // Linear trajectory
 			q_0_ = std::min( std::max( ( ( q_l * x_1_u ) - ( q_u * x_1_l ) ) / ( x_1_u - x_1_l ), q_l ), q_u ); // Interpolated value where derivative is ~0 (clipped in case of roundoff)
 			fmu_set_tE();
-			x_1_ = p_1();
+			q_1_ = x_1_ = p_1();
 		}
 
 		// Reset FMU value

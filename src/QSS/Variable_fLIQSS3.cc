@@ -1,4 +1,4 @@
-// LIQSS3 Variable
+// fLIQSS3 Variable
 //
 // Project: QSS Solver
 //
@@ -34,13 +34,13 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // QSS Headers
-#include <QSS/Variable_LIQSS3.hh>
+#include <QSS/Variable_fLIQSS3.hh>
 
 namespace QSS {
 
 	// Advance Self-Observing Trigger
 	void
-	Variable_LIQSS3::
+	Variable_fLIQSS3::
 	advance_LIQSS()
 	{
 		assert( qTol > 0.0 );
@@ -88,12 +88,12 @@ namespace QSS {
 			q_0_ = q_l;
 			q_1_ = x_1_ = x_1_l;
 			q_2_ = x_2_ = x_2_l;
-			x_3_ = x_3_l;
+			q_3_ = x_3_ = x_3_l;
 		} else if ( ( x_3_l_s == +1 ) && ( x_3_u_s == +1 ) ) { // Upward cubic trajectory
 			q_0_ = q_u;
 			q_1_ = x_1_ = x_1_u;
 			q_2_ = x_2_ = x_2_u;
-			x_3_ = x_3_u;
+			q_3_ = x_3_ = x_3_u;
 		} else if ( x_3_l_s == x_3_u_s ) { // Quadratic trajectory
 			assert( ( x_3_l_s == 0 ) && ( x_3_u_s == 0 ) );
 			q_0_ = q_c_;
@@ -101,7 +101,7 @@ namespace QSS {
 			fmu_set_observees_s( tE );
 			q_1_ = x_1_ = p_1();
 			q_2_ = x_2_ = dd_2( tE );
-			x_3_ = 0.0;
+			q_3_ = x_3_ = 0.0;
 		} else { // Cubic trajectory
 			q_0_ = std::min( std::max( ( ( q_l * x_3_u ) - ( q_u * x_3_l ) ) / ( x_3_u - x_3_l ), q_l ), q_u ); // Interpolated value where 3rd derivative is ~0 (clipped in case of roundoff)
 			fmu_set_time( tE );
@@ -110,7 +110,7 @@ namespace QSS {
 			q_2_ = x_2_ = dd_2( tE );
 			fmu_set_time( tN );
 			fmu_set_observees_s( tN );
-			x_3_ = options::one_over_three_dtND * ( dd_2( tN ) - x_2_ ); //ND Forward Euler
+			q_3_ = x_3_ = options::one_over_three_dtND * ( dd_2( tN ) - x_2_ ); //ND Forward Euler
 		}
 
 		// Reset FMU time
@@ -119,7 +119,7 @@ namespace QSS {
 
 	// Advance Self-Observing Trigger: Simultaneous
 	void
-	Variable_LIQSS3::
+	Variable_fLIQSS3::
 	advance_LIQSS_simultaneous()
 	{
 		assert( qTol > 0.0 );
@@ -167,14 +167,14 @@ namespace QSS {
 			q_0_ = q_l;
 			q_1_ = x_1_ = x_1_l;
 			q_2_ = x_2_ = x_2_l;
-			x_3_ = x_3_l;
+			q_3_ = x_3_ = x_3_l;
 			fmu_set_time( tE );
 			fmu_set_observees_s( tE );
 		} else if ( ( x_3_l_s == +1 ) && ( x_3_u_s == +1 ) ) { // Upward cubic trajectory
 			q_0_ = q_u;
 			q_1_ = x_1_ = x_1_u;
 			q_2_ = x_2_ = x_2_u;
-			x_3_ = x_3_u;
+			q_3_ = x_3_ = x_3_u;
 			fmu_set_time( tE );
 			fmu_set_observees_s( tE );
 		} else if ( x_3_l_s == x_3_u_s ) { // Quadratic trajectory
@@ -184,7 +184,7 @@ namespace QSS {
 			fmu_set_observees_s( tE );
 			q_1_ = x_1_ = p_1();
 			q_2_ = x_2_ = dd_2( tE );
-			x_3_ = 0.0;
+			q_3_ = x_3_ = 0.0;
 		} else { // Cubic trajectory
 			q_0_ = std::min( std::max( ( ( q_l * x_3_u ) - ( q_u * x_3_l ) ) / ( x_3_u - x_3_l ), q_l ), q_u ); // Interpolated value where 3rd derivative is ~0 (clipped in case of roundoff)
 			fmu_set_time( tE );
@@ -193,7 +193,7 @@ namespace QSS {
 			q_2_ = x_2_ = dd_2( tE );
 			fmu_set_time( tN );
 			fmu_set_observees_s( tN );
-			x_3_ = options::one_over_three_dtND * ( dd_2( tN ) - x_2_ ); //ND Forward Euler
+			q_3_ = x_3_ = options::one_over_three_dtND * ( dd_2( tN ) - x_2_ ); //ND Forward Euler
 			fmu_set_time( tE );
 			fmu_set_observees_s( tE );
 		}

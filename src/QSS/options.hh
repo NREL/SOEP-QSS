@@ -64,6 +64,15 @@ enum class QSS {
  fQSS1,
  fQSS2,
  fQSS3,
+ fLIQSS1,
+ fLIQSS2,
+ fLIQSS3,
+ iLIQSS1,
+ iLIQSS2,
+ iLIQSS3,
+ ifLIQSS1,
+ ifLIQSS2,
+ ifLIQSS3,
  rQSS2,
  rQSS3,
  rfQSS2,
@@ -74,6 +83,12 @@ enum class QSS {
  nLIQSS3,
  nfQSS2,
  nfQSS3,
+ nfLIQSS2,
+ nfLIQSS3,
+ niLIQSS2,
+ niLIQSS3,
+ nifLIQSS2,
+ nifLIQSS3,
  nrQSS2,
  nrQSS3,
  nrfQSS2,
@@ -272,7 +287,7 @@ private: // Data
 
 }; // DepSpecs
 
-extern QSS qss; // QSS method: [n][r][f][LI]QSS(1|2|3)
+extern QSS qss; // QSS method: [n][i][r][f][LI]QSS(1|2|3)
 extern int order; // QSS method order: (1|2|3)
 extern bool d2d; // Directional state second derivatives QSS solver?
 extern bool n2d; // Numerical state second derivatives QSS solver?

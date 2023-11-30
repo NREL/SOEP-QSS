@@ -218,21 +218,22 @@ public: // Methods
 
 	// Assign a Triggers Collection
 	void
-	assign( Variables & triggers )
+	assign( Variables const & triggers )
 	{
 		// Combine all non-trigger observers
 		observers_.clear();
-		if ( triggers.size() < 16 ) { // Linear search
+		if ( triggers.size() < 20u ) { // Linear search
 			for ( Variable * trigger : triggers ) {
 				for ( Variable * observer : trigger->observers() ) {
 					if ( std::find( triggers.begin(), triggers.end(), observer ) == triggers.end() ) observers_.push_back( observer );
 				}
 			}
 		} else { // Binary search
-			std::sort( triggers.begin(), triggers.end() ); //! Side effect!
-			for ( Variable * trigger : triggers ) {
+			Variables sorted_triggers( triggers );
+			std::sort( sorted_triggers.begin(), sorted_triggers.end() ); // Copy triggers to avoid sorting side effect causing non-deterministic results
+			for ( Variable * trigger : sorted_triggers ) {
 				for ( Variable * observer : trigger->observers() ) {
-					if ( !std::binary_search( triggers.begin(), triggers.end(), observer ) ) observers_.push_back( observer );
+					if ( !std::binary_search( sorted_triggers.begin(), sorted_triggers.end(), observer ) ) observers_.push_back( observer );
 				}
 			}
 		}
