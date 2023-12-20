@@ -429,6 +429,21 @@ public: // Methods
 		if ( connected() ) advance_connections_observer();
 	}
 
+	// Observer Advance: Stage Final: Parallel
+	void
+	advance_observer_F_parallel() override
+	{
+		set_tE_unaligned();
+	}
+
+	// Observer Advance: Stage Final: Serial
+	void
+	advance_observer_F_serial() override
+	{
+		shift_QSS( tE );
+		if ( connected() ) advance_connections_observer();
+	}
+
 	// Observer Advance: Stage d
 	void
 	advance_observer_d() const override

@@ -257,6 +257,21 @@ public: // Methods
 		crossing_detect();
 	}
 
+	// Observer Advance: Stage Final: Parallel
+	void
+	advance_observer_F_parallel() override
+	{
+		set_qTol();
+		set_tE();
+	}
+
+	// Observer Advance: Stage Final: Serial
+	void
+	advance_observer_F_serial() override
+	{
+		crossing_detect();
+	}
+
 	// Observer Advance: Stage d
 	void
 	advance_observer_d() const override

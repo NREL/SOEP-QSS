@@ -45,6 +45,8 @@
 #include <QSS/globals.hh>
 #include <QSS/math.hh>
 #include <QSS/Observers.hh>
+//#include <QSS/Observers.parallel.hh> // Parallel
+//#include <QSS/Observers.serial.hh> // Serial
 #include <QSS/options.hh>
 #include <QSS/Output.hh>
 #include <QSS/SmoothToken.hh>
@@ -1242,6 +1244,22 @@ public: // Methods
 	virtual
 	void
 	advance_observer_F()
+	{
+		assert( false );
+	}
+
+	// Observer Advance: Stage Final: Parallel
+	virtual
+	void
+	advance_observer_F_parallel()
+	{
+		assert( false );
+	}
+
+	// Observer Advance: Stage Final: Serial
+	virtual
+	void
+	advance_observer_F_serial()
 	{
 		assert( false );
 	}

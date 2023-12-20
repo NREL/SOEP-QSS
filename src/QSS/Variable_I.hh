@@ -211,6 +211,20 @@ public: // Methods
 		}
 	}
 
+	// Observer Advance: Stage Final: Parallel
+	void
+	advance_observer_F_parallel() override
+	{}
+
+	// Observer Advance: Stage Final: Serial
+	void
+	advance_observer_F_serial() override
+	{
+		if ( x_chg_ ) {
+			if ( connected() ) advance_connections_observer();
+		}
+	}
+
 	// Observer Advance: Stage d
 	void
 	advance_observer_d() const override

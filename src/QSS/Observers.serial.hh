@@ -45,11 +45,6 @@
 #include <QSS/options.hh>
 #include <QSS/Range.hh>
 
-// OpenMP Headers
-#ifdef _OPENMP
-#include <omp.h>
-#endif // _OPENMP
-
 // C++ Headers
 #include <algorithm>
 #include <cassert>
@@ -88,9 +83,6 @@ public: // Creation
 	Observers( FMU_ME * fmu_me ) :
 	 fmu_me_( fmu_me ),
 	 advance_QSS_ptr( options::d2d ? &Observers::advance_QSS_d2d : &Observers::advance_QSS_n2d )
-#ifdef _OPENMP
-	 , max_threads_( omp_get_max_threads() )
-#endif // _OPENMP
 	{}
 
 	// FMU-ME + Trigger Constructor
@@ -101,9 +93,6 @@ public: // Creation
 	 fmu_me_( fmu_me ),
 	 trigger_( trigger ),
 	 advance_QSS_ptr( options::d2d ? &Observers::advance_QSS_d2d : &Observers::advance_QSS_n2d )
-#ifdef _OPENMP
-	 , max_threads_( omp_get_max_threads() )
-#endif // _OPENMP
 	{}
 
 public: // Conversion
@@ -626,37 +615,6 @@ private: // Methods
 
 		set_qss_observees_values( t );
 		fmu_me_->get_reals( qss_.n(), qss_ders_.refs.data(), qss_ders_.ders.data() );
-#ifdef _OPENMP
-		size_type const qss_b( qss_.b() );
-		size_type const qss_e( qss_.e() );
-		if ( ( max_threads_ > 1u ) && ( qss_.n() >= max_threads_ * 32u ) ) { // Parallel
-
-		#pragma omp parallel for schedule(dynamic)
-		for ( size_type i = qss_b; i < qss_e; ++i ) { // Observer advance stage 1
-			assert( observers_[ i ]->is_QSS() );
-			observers_[ i ]->advance_observer_1( t, qss_ders_.ders[ i - qss_b ] );
-		}
-		if ( order_ >= 2 ) {
-			get_qss_second_derivatives( t );
-			#pragma omp parallel for schedule(dynamic)
-			for ( size_type i = qss_b; i < qss_e; ++i ) { // Observer advance stage 2
-				observers_[ i ]->advance_observer_2_dd2( qss_ders_.ders[ i - qss_b ] );
-			}
-			if ( order_ >= 3 ) {
-				Time const tN( t + options::dtND );
-				fmu_me_->set_time( tN );
-				set_qss_observees_values( tN );
-				get_qss_second_derivatives( tN );
-				#pragma omp parallel for schedule(dynamic)
-				for ( size_type i = qss_b; i < qss_e; ++i ) { // Observer advance stage 3
-					observers_[ i ]->advance_observer_3_dd2( qss_ders_.ders[ i - qss_b ] );
-				}
-				fmu_me_->set_time( t );
-			}
-		}
-
-		} else { // Serial
-#endif // _OPENMP
 		for ( size_type i = qss_.b(), e = qss_.e(), j = 0u; i < e; ++i, ++j ) { // Observer advance stage 1
 			assert( observers_[ i ]->is_QSS() );
 			observers_[ i ]->advance_observer_1( t, qss_ders_.ders[ j ] );
@@ -677,9 +635,6 @@ private: // Methods
 				fmu_me_->set_time( t );
 			}
 		}
-#ifdef _OPENMP
-		}
-#endif // _OPENMP
 	}
 
 	// Advance QSS State Observers: Numerical Second Derivatives
@@ -694,67 +649,6 @@ private: // Methods
 
 		set_qss_observees_values( t );
 		fmu_me_->get_reals( qss_.n(), qss_dn2d_.refs.data(), qss_dn2d_.ders.data() );
-#ifdef _OPENMP
-		size_type const qss_b( qss_.b() );
-		size_type const qss_e( qss_.e() );
-		if ( ( max_threads_ > 1u ) && ( qss_.n() >= max_threads_ * 32u ) ) { // Parallel
-
-		#pragma omp parallel for schedule(dynamic)
-		for ( size_type i = qss_b; i < qss_e; ++i ) { // Observer advance stage 1
-			assert( observers_[ i ]->is_QSS() );
-			observers_[ i ]->advance_observer_1( t, qss_dn2d_.ders[ i - qss_b ] );
-		}
-		if ( order_ >= 3 ) {
-			Time tN( t - options::dtND );
-			if ( fwd_time( tN ) ) { // Centered ND
-				fmu_me_->set_time( tN );
-				set_qss_observees_values( tN );
-				fmu_me_->get_reals( qss_.n(), qss_dn2d_.refs.data(), qss_dn2d_.ders.data() );
-				tN = t + options::dtND;
-				fmu_me_->set_time( tN );
-				set_qss_observees_values( tN );
-				fmu_me_->get_reals( qss_.n(), qss_dn2d_.refs.data(), qss_dn2d_.ders_p.data() );
-				#pragma omp parallel for schedule(dynamic)
-				for ( size_type i = qss_b; i < qss_e; ++i ) { // Observer advance stage 2
-					observers_[ i ]->advance_observer_2( qss_dn2d_.ders[ i - qss_b ], qss_dn2d_.ders_p[ i - qss_b ] );
-				}
-				#pragma omp parallel for schedule(dynamic)
-				for ( size_type i = qss_b; i < qss_e; ++i ) { // Observer advance stage 3
-					observers_[ i ]->advance_observer_3();
-				}
-			} else { // Forward ND
-				tN = t + options::dtND;
-				fmu_me_->set_time( tN );
-				set_qss_observees_values( tN );
-				fmu_me_->get_reals( qss_.n(), qss_dn2d_.refs.data(), qss_dn2d_.ders.data() );
-				tN = t + options::two_dtND;
-				fmu_me_->set_time( tN );
-				set_qss_observees_values( tN );
-				fmu_me_->get_reals( qss_.n(), qss_dn2d_.refs.data(), qss_dn2d_.ders_p.data() );
-				#pragma omp parallel for schedule(dynamic)
-				for ( size_type i = qss_b; i < qss_e; ++i ) { // Observer advance stage 2
-					observers_[ i ]->advance_observer_2_forward( qss_dn2d_.ders[ i - qss_b ], qss_dn2d_.ders_p[ i - qss_b ] );
-				}
-				#pragma omp parallel for schedule(dynamic)
-				for ( size_type i = qss_b; i < qss_e; ++i ) { // Observer advance stage 3
-					observers_[ i ]->advance_observer_3_forward();
-				}
-			}
-			fmu_me_->set_time( t );
-		} else if ( order_ >= 2 ) {
-			Time const tN( t + options::dtND );
-			fmu_me_->set_time( tN );
-			set_qss_observees_values( tN );
-			fmu_me_->get_reals( qss_.n(), qss_dn2d_.refs.data(), qss_dn2d_.ders_p.data() );
-			#pragma omp parallel for schedule(dynamic)
-			for ( size_type i = qss_b; i < qss_e; ++i ) { // Observer advance stage 2
-				observers_[ i ]->advance_observer_2( qss_dn2d_.ders_p[ i - qss_b ] );
-			}
-			fmu_me_->set_time( t );
-		}
-
-		} else { // Serial
-#endif // _OPENMP
 		for ( size_type i = qss_.b(), e = qss_.e(), j = 0u; i < e; ++i, ++j ) { // Observer advance stage 1
 			assert( observers_[ i ]->is_QSS() );
 			observers_[ i ]->advance_observer_1( t, qss_dn2d_.ders[ j ] );
@@ -802,9 +696,6 @@ private: // Methods
 			}
 			fmu_me_->set_time( t );
 		}
-#ifdef _OPENMP
-		}
-#endif // _OPENMP
 	}
 
 	// Advance Real Non-State Observers
@@ -827,109 +718,6 @@ private: // Methods
 		 r_observees_dv_.data(),
 		 r_vars_.ders.data()
 		); // Get derivatives at t
-#ifdef _OPENMP
-		size_type const r_b( r_.b() );
-		size_type const r_e( r_.e() );
-		if ( ( max_threads_ > 1u ) && ( r_.n() >= max_threads_ * 32u ) ) { // Parallel
-
-		#pragma omp parallel for schedule(dynamic)
-		for ( size_type i = r_b; i < r_e; ++i ) { // Observer advance stage 1
-			assert( observers_[ i ]->is_Active() );
-			assert( observers_[ i ]->is_R() );
-			observers_[ i ]->advance_observer_1( t, r_vars_.vals[ i - r_b ], r_vars_.ders[ i - r_b ] );
-		}
-
-		if ( order_ >= 3 ) {
-			Time tN( t - options::dtND );
-			if ( fwd_time( tN ) ) { // Centered ND
-				fmu_me_->set_time( tN );
-				set_r_observees_values( tN );
-				set_r_observees_dv( tN );
-				fmu_me_->get_directional_derivatives(
-				 r_observees_v_ref_.data(),
-				 n_r_observees_,
-				 r_vars_.refs.data(),
-				 r_.n(),
-				 r_observees_dv_.data(),
-				 r_vars_.ders.data()
-				); // Get derivatives at t - dtND
-				tN = t + options::dtND;
-				fmu_me_->set_time( tN );
-				set_r_observees_values( tN );
-				set_r_observees_dv( tN );
-				fmu_me_->get_directional_derivatives(
-				 r_observees_v_ref_.data(),
-				 n_r_observees_,
-				 r_vars_.refs.data(),
-				 r_.n(),
-				 r_observees_dv_.data(),
-				 r_vars_.ders_p.data()
-				); // Get derivatives at t + dtND
-				#pragma omp parallel for schedule(dynamic)
-				for ( size_type i = r_b; i < r_e; ++i ) { // Observer advance stage 2
-					observers_[ i ]->advance_observer_2( r_vars_.ders[ i - r_b ], r_vars_.ders_p[ i - r_b ] );
-				}
-				#pragma omp parallel for schedule(dynamic)
-				for ( size_type i = r_b; i < r_e; ++i ) { // Observer advance stage 3
-					observers_[ i ]->advance_observer_3();
-				}
-			} else { // Forward ND
-				tN = t + options::dtND;
-				fmu_me_->set_time( tN );
-				set_r_observees_values( tN );
-				set_r_observees_dv( tN );
-				fmu_me_->get_directional_derivatives(
-				 r_observees_v_ref_.data(),
-				 n_r_observees_,
-				 r_vars_.refs.data(),
-				 r_.n(),
-				 r_observees_dv_.data(),
-				 r_vars_.ders.data()
-				); // Get derivatives at t + dtND
-				tN = t + options::two_dtND;
-				fmu_me_->set_time( tN );
-				set_r_observees_values( tN );
-				set_r_observees_dv( tN );
-				fmu_me_->get_directional_derivatives(
-				 r_observees_v_ref_.data(),
-				 n_r_observees_,
-				 r_vars_.refs.data(),
-				 r_.n(),
-				 r_observees_dv_.data(),
-				 r_vars_.ders_p.data()
-				); // Get derivatives at t + 2*dtND
-				#pragma omp parallel for schedule(dynamic)
-				for ( size_type i = r_b; i < r_e; ++i ) { // Observer advance stage 2
-					observers_[ i ]->advance_observer_2_forward( r_vars_.ders[ i - r_b ], r_vars_.ders_p[ i - r_b ] );
-				}
-				#pragma omp parallel for schedule(dynamic)
-				for ( size_type i = r_b; i < r_e; ++i ) { // Observer advance stage 3
-					observers_[ i ]->advance_observer_3_forward();
-				}
-			}
-			fmu_me_->set_time( t );
-		} else if ( order_ >= 2 ) {
-			Time const tN( t + options::dtND );
-			fmu_me_->set_time( tN );
-			set_r_observees_values( tN );
-			set_r_observees_dv( tN );
-			fmu_me_->get_directional_derivatives(
-			 r_observees_v_ref_.data(),
-			 n_r_observees_,
-			 r_vars_.refs.data(),
-			 r_.n(),
-			 r_observees_dv_.data(),
-			 r_vars_.ders_p.data()
-			); // Get derivatives at t + dtND
-			#pragma omp parallel for schedule(dynamic)
-			for ( size_type i = r_b; i < r_e; ++i ) { // Observer advance stage 2
-				observers_[ i ]->advance_observer_2( r_vars_.ders_p[ i - r_b ] );
-			}
-			fmu_me_->set_time( t );
-		}
-
-		} else { // Serial
-#endif // _OPENMP
 		for ( size_type i = r_.b(), e = r_.e(), j = 0u; i < e; ++i, ++j ) { // Observer advance stage 1
 			assert( observers_[ i ]->is_Active() );
 			assert( observers_[ i ]->is_R() );
@@ -1018,9 +806,6 @@ private: // Methods
 			}
 			fmu_me_->set_time( t );
 		}
-#ifdef _OPENMP
-		}
-#endif // _OPENMP
 	}
 
 	// Advance Other X-Based Observers
@@ -1031,26 +816,10 @@ private: // Methods
 		assert( fmu_me_ != nullptr );
 		assert( fmu_me_->get_time() == t );
 
-#ifdef _OPENMP
-		size_type const ox_b( ox_.b() );
-		size_type const ox_e( ox_.e() );
-		if ( ( max_threads_ > 1u ) && ( ox_.n() >= max_threads_ * 32u ) ) { // Parallel
-
-		#pragma omp parallel for schedule(dynamic)
-		for ( size_type i = ox_b; i < ox_e; ++i ) {
-			assert( observers_[ i ]->is_BIDR() && !( observers_[ i ]->is_R() && observers_[ i ]->is_Active() ) );
-			observers_[ i ]->advance_observer_1( t );
-		}
-
-		} else { // Serial
-#endif // _OPENMP
 		for ( size_type i = ox_.b(), e = ox_.e(); i < e; ++i ) {
 			assert( observers_[ i ]->is_BIDR() && !( observers_[ i ]->is_R() && observers_[ i ]->is_Active() ) );
 			observers_[ i ]->advance_observer_1( t );
 		}
-#ifdef _OPENMP
-		}
-#endif // _OPENMP
 	}
 
 	// Advance Zero-Crossing Observers
@@ -1074,107 +843,6 @@ private: // Methods
 		 zc_observees_dv_.data(),
 		 zc_vars_.ders.data()
 		); // Get derivatives at t
-#ifdef _OPENMP
-		size_type const zc_b( zc_.b() );
-		size_type const zc_e( zc_.e() );
-		if ( ( max_threads_ > 1u ) && ( zc_.n() >= max_threads_ * 32u ) ) { // Parallel
-
-		#pragma omp parallel for schedule(dynamic)
-		for ( size_type i = zc_b; i < zc_e; ++i ) { // Observer advance stage 1
-			assert( observers_[ i ]->is_ZC() );
-			observers_[ i ]->advance_observer_1( t, zc_vars_.vals[ i - zc_b ], zc_vars_.ders[ i - zc_b ] );
-		}
-		if ( order_ >= 3 ) {
-			Time tN( t - options::dtND );
-			if ( fwd_time( tN ) ) { // Centered ND
-				fmu_me_->set_time( tN );
-				set_zc_observees_values( tN );
-				set_zc_observees_dv( tN );
-				fmu_me_->get_directional_derivatives(
-				 zc_observees_v_ref_.data(),
-				 n_zc_observees_,
-				 zc_vars_.refs.data(),
-				 zc_.n(),
-				 zc_observees_dv_.data(),
-				 zc_vars_.ders.data()
-				); // Get derivatives at t - dtND
-				tN = t + options::dtND;
-				fmu_me_->set_time( tN );
-				set_zc_observees_values( tN );
-				set_zc_observees_dv( tN );
-				fmu_me_->get_directional_derivatives(
-				 zc_observees_v_ref_.data(),
-				 n_zc_observees_,
-				 zc_vars_.refs.data(),
-				 zc_.n(),
-				 zc_observees_dv_.data(),
-				 zc_vars_.ders_p.data()
-				); // Get derivatives at t + dtND
-				#pragma omp parallel for schedule(dynamic)
-				for ( size_type i = zc_b; i < zc_e; ++i ) { // Observer advance stage 2
-					observers_[ i ]->advance_observer_2( zc_vars_.ders[ i - zc_b ], zc_vars_.ders_p[ i - zc_b ] );
-				}
-				#pragma omp parallel for schedule(dynamic)
-				for ( size_type i = zc_b; i < zc_e; ++i ) { // Observer advance stage 3
-					observers_[ i ]->advance_observer_3();
-				}
-			} else { // Forward ND
-				tN = t + options::dtND;
-				fmu_me_->set_time( tN );
-				set_zc_observees_values( tN );
-				set_zc_observees_dv( tN );
-				fmu_me_->get_directional_derivatives(
-				 zc_observees_v_ref_.data(),
-				 n_zc_observees_,
-				 zc_vars_.refs.data(),
-				 zc_.n(),
-				 zc_observees_dv_.data(),
-				 zc_vars_.ders.data()
-				); // Get derivatives at t + dtND
-				tN = t + options::two_dtND;
-				fmu_me_->set_time( tN );
-				set_zc_observees_values( tN );
-				set_zc_observees_dv( tN );
-				fmu_me_->get_directional_derivatives(
-				 zc_observees_v_ref_.data(),
-				 n_zc_observees_,
-				 zc_vars_.refs.data(),
-				 zc_.n(),
-				 zc_observees_dv_.data(),
-				 zc_vars_.ders_p.data()
-				); // Get derivatives at t + 2*dtND
-				#pragma omp parallel for schedule(dynamic)
-				for ( size_type i = zc_b; i < zc_e; ++i ) { // Observer advance stage 2
-					observers_[ i ]->advance_observer_2_forward( zc_vars_.ders[ i - zc_b ], zc_vars_.ders_p[ i - zc_b ] );
-				}
-				#pragma omp parallel for schedule(dynamic)
-				for ( size_type i = zc_b; i < zc_e; ++i ) { // Observer advance stage 3
-					observers_[ i ]->advance_observer_3_forward();
-				}
-			}
-			fmu_me_->set_time( t );
-		} else if ( order_ >= 2 ) {
-			Time const tN( t + options::dtND );
-			fmu_me_->set_time( tN );
-			set_zc_observees_values( tN );
-			set_zc_observees_dv( tN );
-			fmu_me_->get_directional_derivatives(
-			 zc_observees_v_ref_.data(),
-			 n_zc_observees_,
-			 zc_vars_.refs.data(),
-			 zc_.n(),
-			 zc_observees_dv_.data(),
-			 zc_vars_.ders_p.data()
-			); // Get derivatives at t + dtND
-			#pragma omp parallel for schedule(dynamic)
-			for ( size_type i = zc_b; i < zc_e; ++i ) { // Observer advance stage 2
-				observers_[ i ]->advance_observer_2( zc_vars_.ders_p[ i - zc_b ] );
-			}
-			fmu_me_->set_time( t );
-		}
-
-		} else { // Serial
-#endif // _OPENMP
 		for ( size_type i = zc_.b(), e = zc_.e(), j = 0u; i < e; ++i, ++j ) { // Observer advance stage 1
 			assert( observers_[ i ]->is_ZC() );
 			observers_[ i ]->advance_observer_1( t, zc_vars_.vals[ j ], zc_vars_.ders[ j ] );
@@ -1262,36 +930,15 @@ private: // Methods
 			}
 			fmu_me_->set_time( t );
 		}
-#ifdef _OPENMP
-		}
-#endif // _OPENMP
 	}
 
 	// Advance: Stage Final
 	void
 	advance_F()
 	{
-#ifdef _OPENMP
-		if ( ( max_threads_ > 1u ) && ( observers_.size() >= max_threads_ * 32u ) ) { // Parallel
-
-		#pragma omp parallel for schedule(dynamic)
-		for ( Variables::iterator observer = observers_.begin(); observer != observers_.end(); ++observer ) { // OpenMP 3.0+ supports this form
-		// for ( Variable * observer : observers_ ) { // OpenMP 5.0+ supports this form
-			(*observer)->advance_observer_F_parallel();
-		}
-
-		for ( Variable * observer : observers_ ) {
-			observer->advance_observer_F_serial();
-		}
-
-		} else { // Serial
-#endif // _OPENMP
 		for ( Variable * observer : observers_ ) {
 			observer->advance_observer_F();
 		}
-#ifdef _OPENMP
-		}
-#endif // _OPENMP
 	}
 
 	// Advance: Stage d
@@ -1308,10 +955,6 @@ private: // Methods
 	void
 	set_qss_observees_values( Time const t )
 	{
-#ifdef _OPENMP
-		if ( ( max_threads_ > 1u ) && ( n_qss_observees_ >= max_threads_ * 32u ) ) { // Parallel
-
-		#pragma omp parallel for schedule(dynamic)
 		for ( size_type i = 0u; i < n_qss_observees_; ++i ) { // Set observee value vector
 #ifndef QSS_PROPAGATE_CONTINUOUS
 			qss_observees_v_[ i ] = qss_observees_[ i ]->q( t ); // Quantized: Traditional QSS
@@ -1319,19 +962,6 @@ private: // Methods
 			qss_observees_v_[ i ] = qss_observees_[ i ]->x( t ); // Continuous: Modified QSS
 #endif
 		}
-
-		} else { // Serial
-#endif // _OPENMP
-		for ( size_type i = 0u; i < n_qss_observees_; ++i ) { // Set observee value vector
-#ifndef QSS_PROPAGATE_CONTINUOUS
-			qss_observees_v_[ i ] = qss_observees_[ i ]->q( t ); // Quantized: Traditional QSS
-#else
-			qss_observees_v_[ i ] = qss_observees_[ i ]->x( t ); // Continuous: Modified QSS
-#endif
-		}
-#ifdef _OPENMP
-		}
-#endif // _OPENMP
 		fmu_me_->set_reals( qss_observees_.size(), qss_observees_v_ref_.data(), qss_observees_v_.data() ); // Set observees FMU values
 	}
 
@@ -1341,10 +971,6 @@ private: // Methods
 	{
 		assert( options::d2d );
 
-#ifdef _OPENMP
-		if ( ( max_threads_ > 1u ) && ( n_qss_observees_ >= max_threads_ * 32u ) ) { // Parallel
-
-		#pragma omp parallel for schedule(dynamic)
 		for ( size_type i = 0u; i < n_qss_observees_; ++i ) {
 #ifndef QSS_PROPAGATE_CONTINUOUS
 			qss_observees_dv_[ i ] = qss_observees_[ i ]->q1( t ); // Quantized: Traditional QSS
@@ -1352,19 +978,6 @@ private: // Methods
 			qss_observees_dv_[ i ] = qss_observees_[ i ]->x1( t ); // Continuous: Modified QSS
 #endif
 		}
-
-		} else { // Serial
-#endif // _OPENMP
-		for ( size_type i = 0u; i < n_qss_observees_; ++i ) {
-#ifndef QSS_PROPAGATE_CONTINUOUS
-			qss_observees_dv_[ i ] = qss_observees_[ i ]->q1( t ); // Quantized: Traditional QSS
-#else
-			qss_observees_dv_[ i ] = qss_observees_[ i ]->x1( t ); // Continuous: Modified QSS
-#endif
-		}
-#ifdef _OPENMP
-		}
-#endif // _OPENMP
 		fmu_me_->get_directional_derivatives(
 		 qss_observees_v_ref_.data(),
 		 n_qss_observees_,
@@ -1379,22 +992,9 @@ private: // Methods
 	void
 	set_r_observees_values( Time const t )
 	{
-#ifdef _OPENMP
-		if ( ( max_threads_ > 1u ) && ( n_r_observees_ >= max_threads_ * 32u ) ) { // Parallel
-
-		#pragma omp parallel for schedule(dynamic)
 		for ( size_type i = 0u; i < n_r_observees_; ++i ) { // Set observee value vector
 			r_observees_v_[ i ] = r_observees_[ i ]->x( t );
 		}
-
-		} else { // Serial
-#endif // _OPENMP
-		for ( size_type i = 0u; i < n_r_observees_; ++i ) { // Set observee value vector
-			r_observees_v_[ i ] = r_observees_[ i ]->x( t );
-		}
-#ifdef _OPENMP
-		}
-#endif // _OPENMP
 		fmu_me_->set_reals( r_observees_.size(), r_observees_v_ref_.data(), r_observees_v_.data() ); // Set observees FMU values
 	}
 
@@ -1402,44 +1002,18 @@ private: // Methods
 	void
 	set_r_observees_dv( Time const t )
 	{
-#ifdef _OPENMP
-		if ( ( max_threads_ > 1u ) && ( n_r_observees_ >= max_threads_ * 32u ) ) { // Parallel
-
-		#pragma omp parallel for schedule(dynamic)
 		for ( size_type i = 0u; i < n_r_observees_; ++i ) {
 			r_observees_dv_[ i ] = r_observees_[ i ]->x1( t );
 		}
-
-		} else { // Serial
-#endif // _OPENMP
-		for ( size_type i = 0u; i < n_r_observees_; ++i ) {
-			r_observees_dv_[ i ] = r_observees_[ i ]->x1( t );
-		}
-#ifdef _OPENMP
-		}
-#endif // _OPENMP
 	}
 
 	// Set Zero-Crossing Observees FMU Values at Time t
 	void
 	set_zc_observees_values( Time const t )
 	{
-#ifdef _OPENMP
-		if ( ( max_threads_ > 1u ) && ( n_zc_observees_ >= max_threads_ * 32u ) ) { // Parallel
-
-		#pragma omp parallel for schedule(dynamic)
 		for ( size_type i = 0u; i < n_zc_observees_; ++i ) { // Set observee value vector
 			zc_observees_v_[ i ] = zc_observees_[ i ]->x( t );
 		}
-
-		} else { // Serial
-#endif // _OPENMP
-		for ( size_type i = 0u; i < n_zc_observees_; ++i ) { // Set observee value vector
-			zc_observees_v_[ i ] = zc_observees_[ i ]->x( t );
-		}
-#ifdef _OPENMP
-		}
-#endif // _OPENMP
 		fmu_me_->set_reals( zc_observees_.size(), zc_observees_v_ref_.data(), zc_observees_v_.data() ); // Set observees FMU values
 	}
 
@@ -1447,22 +1021,9 @@ private: // Methods
 	void
 	set_zc_observees_dv( Time const t )
 	{
-#ifdef _OPENMP
-		if ( ( max_threads_ > 1u ) && ( n_zc_observees_ >= max_threads_ * 32u ) ) { // Parallel
-
-		#pragma omp parallel for schedule(dynamic)
 		for ( size_type i = 0u; i < n_zc_observees_; ++i ) {
 			zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( t );
 		}
-
-		} else { // Serial
-#endif // _OPENMP
-		for ( size_type i = 0u; i < n_zc_observees_; ++i ) {
-			zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( t );
-		}
-#ifdef _OPENMP
-		}
-#endif // _OPENMP
 	}
 
 private: // Data
@@ -1516,11 +1077,6 @@ private: // Data
 
 	// QSS advance method pointer
 	void (Observers::*advance_QSS_ptr)( Time const t ){ nullptr };
-
-	// Parallel
-#ifdef _OPENMP
-	size_type const max_threads_{ 0u };
-#endif // _OPENMP
 
 }; // Observers
 
