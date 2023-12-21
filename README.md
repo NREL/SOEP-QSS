@@ -40,6 +40,64 @@ Planned development in anticipated sequence order are:
 * Modular, object-oriented code.
 * Identify potential future FMI API extensions for more efficient and robust QSS support.
 
+## Solvers
+
+QSS has a number of solvers that are variations on the base 1st, 2nd, and 3rd order solvers:
+* QSS1/2/3:  QSS solvers for non-stiff models
+* LIQSS1/2/3:  Linearly-implicit QSS solvers for stiff models
+
+The variation categories are:
+* f: Full-order quantized representation propagation
+* n: Numerical differentiation for state second derivatives (instead of analytical values from directional derivatives) for models that have high dependency density (causing slow directional derivative calls) and that are sufficiently numerically stable
+* i: LIQSS solvers using interpolation for derivatives at trajectories starting within the +/- Q tolerance band in place of more expensive directional derivatives
+* r: Relaxation solvers for models with high derivative sensitivity that can cause traditional QSS solver inefficient "yo-yoing" behavior with very small time steps
+
+The current solvers, grouped by order, are shown below.
+
+### Order 1 Solvers
+* QSS1
+* fQSS1
+* LIQSS1
+* fLIQSS1
+* iLIQSS1
+* ifLIQSS1
+
+### Order 2 Solvers
+* QSS2
+* fQSS2
+* rQSS2
+* rfQSS2
+* nQSS2
+* nfQSS2
+* nrQSS2
+* nrfQSS2
+* LIQSS2
+* fLIQSS2
+* iLIQSS2
+* ifLIQSS2
+* nLIQSS2
+* nfLIQSS2
+* niLIQSS2
+* nifLIQSS2
+
+### Order 3 Solvers
+* QSS3
+* fQSS3
+* rQSS3
+* rfQSS3
+* nQSS3
+* nfQSS3
+* nrQSS3
+* nrfQSS3
+* LIQSS3
+* fLIQSS3
+* iLIQSS3
+* ifLIQSS3
+* nLIQSS3
+* nfLIQSS3
+* niLIQSS3
+* nifLIQSS3
+
 ## Design
 
 The basic design concepts for a fast QSS-over-FMU solver seem to be:
@@ -58,7 +116,7 @@ The basic design concepts for a fast QSS-over-FMU solver seem to be:
 
 ### Variable
 
-* Hierarchy typed by the QSS solver method: This brings in some virtual functions that could be a performance bottleneck.
+* Hierarchy typed by the QSS solver method.
 * Integration and quantization are handled internally to avoid the cost of calls to other objects and passing of data packets between them.
 * Holds the iterator of its entry in the event queue to save one _O_( log N ) lookup.
 * Supports mix of different QSS method variables in the same model.
