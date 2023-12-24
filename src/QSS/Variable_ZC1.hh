@@ -168,7 +168,14 @@ public: // Methods
 		set_qTol();
 		set_tE();
 		crossing_detect();
-		if ( options::output::d ) std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << std::endl;
+	}
+
+	// QSS Advance: Stage Debug
+	void
+	advance_QSS_d() override
+	{
+		assert( options::output::d );
+		std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << std::endl;
 	}
 
 	// Zero-Crossing Advance

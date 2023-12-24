@@ -922,7 +922,7 @@ private: // Methods
 	void
 	set_zc_observees_values( Time const t )
 	{
-		for ( size_type i = 0u, e = n_zc_observees_; i < e; ++i ) { // Set observee value vector
+		for ( size_type i = 0u; i < n_zc_observees_; ++i ) { // Set observee value vector
 			zc_observees_v_[ i ] = zc_observees_[ i ]->x( t );
 		}
 		fmu_me_->set_reals( zc_observees_.size(), zc_observees_v_ref_.data(), zc_observees_v_.data() ); // Set observees FMU values
@@ -932,7 +932,7 @@ private: // Methods
 	void
 	set_zc_observees_dv( Time const t )
 	{
-		for ( size_type i = 0u, e = n_zc_observees_; i < e; ++i ) {
+		for ( size_type i = 0u; i < n_zc_observees_; ++i ) {
 			zc_observees_dv_[ i ] = zc_observees_[ i ]->x1( t );
 		}
 	}

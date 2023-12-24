@@ -962,7 +962,9 @@ namespace QSS {
 			std::cout << "\nVariable  Index: " << idx << " Ref: " << var_ref << std::endl;
 			std::cout << " Name: " << var_name << std::endl;
 			//std::cout << " FMU Variable: " << fmu_var << std::endl; //Debug/////
-			std::cout << " Desc: " << fmu_var.description() << std::endl;
+			if ( std::string const var_desc = fmu_var.description(); ! var_desc.empty() ) {
+				std::cout << " Desc: " << fmu_var.description() << std::endl;
+			}
 
 			if ( fmu_var.causality_parameter() ) {
 				std::cout << " Causality: Parameter" << std::endl;

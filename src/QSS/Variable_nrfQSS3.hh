@@ -294,16 +294,16 @@ public: // Methods
 	void
 	advance_QSS_2( Real const x_1_m, Real const x_1_p ) override
 	{
-		Real const x_2_qss( n_2( x_1_m, x_1_p ) );
-		q_2_ = x_2_ = ( yoyo_ ? rlx_fac_ * x_2_qss : x_2_qss );
+		Real const x_2_QSS( n_2( x_1_m, x_1_p ) );
+		q_2_ = x_2_ = ( yoyo_ ? rlx_fac_ * x_2_QSS : x_2_QSS );
 	}
 
 	// QSS Advance: Stage 2: Forward ND
 	void
 	advance_QSS_2_forward( Real const x_1_p, Real const x_1_2p ) override
 	{
-		Real const x_2_qss( f_2( x_1_p, x_1_2p ) );
-		q_2_ = x_2_ = ( yoyo_ ? rlx_fac_ * x_2_qss : x_2_qss );
+		Real const x_2_QSS( f_2( x_1_p, x_1_2p ) );
+		q_2_ = x_2_ = ( yoyo_ ? rlx_fac_ * x_2_QSS : x_2_QSS );
 	}
 
 	// QSS Advance: Stage 3
@@ -329,8 +329,15 @@ public: // Methods
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << q_3_ << x_delta_3 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << ( yoyo_ ? " yoyo" : "" ) << std::endl;
 		if ( connected() ) advance_connections();
+	}
+
+	// QSS Advance: Stage Debug
+	void
+	advance_QSS_d() override
+	{
+		assert( options::output::d );
+		std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << q_3_ << x_delta_3 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << ( yoyo_ ? " yoyo" : "" ) << std::endl;
 	}
 
 	// Handler Advance
@@ -437,16 +444,16 @@ public: // Methods
 	void
 	advance_observer_2( Real const x_1_m, Real const x_1_p ) override
 	{
-		Real const x_2_qss( n_2( x_1_m, x_1_p ) );
-		x_2_ = ( yoyo_ ? rlx_fac_ * x_2_qss : x_2_qss );
+		Real const x_2_QSS( n_2( x_1_m, x_1_p ) );
+		x_2_ = ( yoyo_ ? rlx_fac_ * x_2_QSS : x_2_QSS );
 	}
 
 	// Observer Advance: Stage 2: Forward ND
 	void
 	advance_observer_2_forward( Real const x_1_p, Real const x_1_2p ) override
 	{
-		Real const x_2_qss( f_2( x_1_p, x_1_2p ) );
-		x_2_ = ( yoyo_ ? rlx_fac_ * x_2_qss : x_2_qss );
+		Real const x_2_QSS( f_2( x_1_p, x_1_2p ) );
+		x_2_ = ( yoyo_ ? rlx_fac_ * x_2_QSS : x_2_QSS );
 	}
 
 	// Observer Advance: Stage 3

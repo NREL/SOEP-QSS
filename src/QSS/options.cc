@@ -86,7 +86,7 @@ bool bin_auto( false ); // Bin size automaically optimized?
 std::size_t pass( 20 ); // Pass count limit
 bool cycles( false ); // Report dependency cycles?
 bool inflection( false ); // Requantize at inflections?
-double inflectionFrac( 0.05 ); // Inflection step fraction min
+double inflectionFrac( 0.001 ); // Inflection step fraction min
 bool cluster( false ); // Clustering with relaxation solver?
 bool refine( false ); // Refine FMU zero-crossing roots?
 bool perfect( false ); // Perfect FMU-ME connection sync?

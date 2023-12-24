@@ -237,8 +237,15 @@ public: // Methods
 		set_qTol();
 		set_tE();
 		shift_QSS_R( tE );
-		if ( options::output::d ) std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << std::noshowpos << "   tE=" << tE << std::endl;
 		if ( connected() ) advance_connections();
+	}
+
+	// QSS Advance: Stage Debug
+	void
+	advance_QSS_d() override
+	{
+		assert( options::output::d );
+		std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << std::noshowpos << "   tE=" << tE << std::endl;
 	}
 
 	// Handler Advance

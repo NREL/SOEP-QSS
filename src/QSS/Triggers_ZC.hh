@@ -240,6 +240,11 @@ public: // Methods
 		for ( Variable * trigger : triggers ) {
 			trigger->advance_QSS_F();
 		}
+		if ( options::output::d ) {
+			for ( Variable * trigger : sorted_by_name( triggers ) ) { // Requantization stage debug
+				trigger->advance_QSS_d();
+			}
+		}
 	}
 
 	// Clear

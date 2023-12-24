@@ -249,8 +249,8 @@ public: // Methods
 	void
 	advance_QSS_2_dd2( Real const dd2 ) override
 	{
-		Real const x_2_qss( one_half * dd2 );
-		q_2_ = x_2_ = ( yoyo_ ? rlx_fac_ * x_2_qss : x_2_qss );
+		x_2_QSS_ = one_half * dd2;
+		q_2_ = x_2_ = ( yoyo_ ? rlx_fac_ * x_2_QSS_ : x_2_QSS_ );
 	}
 
 	// QSS Advance: Stage Final
@@ -260,8 +260,15 @@ public: // Methods
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << ( yoyo_ ? " yoyo" : "" ) << std::endl;
 		if ( connected() ) advance_connections();
+	}
+
+	// QSS Advance: Stage Debug
+	void
+	advance_QSS_d() override
+	{
+		assert( options::output::d );
+		std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << ( yoyo_ ? " yoyo" : "" ) << std::endl;
 	}
 
 	// Handler Advance
@@ -341,8 +348,8 @@ public: // Methods
 	void
 	advance_observer_2_dd2( Real const dd2 ) override
 	{
-		Real const x_2_qss( one_half * dd2 );
-		x_2_ = ( yoyo_ ? rlx_fac_ * x_2_qss : x_2_qss );
+		x_2_QSS_ = one_half * dd2;
+		x_2_ = ( yoyo_ ? rlx_fac_ * x_2_QSS_ : x_2_QSS_ );
 	}
 
 	// Observer Advance: Stage Final
@@ -396,7 +403,7 @@ private: // Methods
 		if ( yoyo_ ) { // Yo-yo mode
 			if ( x_2_ != 0.0 ) {
 				Real const x_2_inv( one / x_2_ );
-				dt = dt_infinity( std::sqrt( qTol * std::abs( x_2_inv ) ) );
+				dt = dt_infinity( std::sqrt( qTol * rlx_fac_ * std::abs( x_2_inv ) ) ); // rlx_fac_ * std::abs( x_2_inv ) == 1 / std::abs( x_2_QSS_ )
 				assert( dt != infinity );
 				if ( nonzero_and_signs_differ( x_1_, x_2_ ) ) { // Inflection point
 					Time const dtI( -( x_1_ * ( one_half * x_2_inv ) ) ); // When 1st derivative is zero
@@ -448,12 +455,12 @@ private: // Methods
 		Real const d_0( x_0_ - ( q_0_ + ( q_1_ * ( tX - tQ ) ) ) );
 		Real const d_1( x_1_ - q_1_ );
 		Time dt;
-		if ( ( d_1 >= 0.0 ) && ( x_2_ >= 0.0 ) ) { // Upper boundary crossing
-			dt = min_root_quadratic_upper( x_2_, d_1, d_0 - qTol );
-		} else if ( ( d_1 <= 0.0 ) && ( x_2_ <= 0.0 ) ) { // Lower boundary crossing
-			dt = min_root_quadratic_lower( x_2_, d_1, d_0 + qTol );
+		if ( ( d_1 >= 0.0 ) && ( x_2_QSS_ >= 0.0 ) ) { // Upper boundary crossing
+			dt = min_root_quadratic_upper( x_2_QSS_, d_1, d_0 - qTol );
+		} else if ( ( d_1 <= 0.0 ) && ( x_2_QSS_ <= 0.0 ) ) { // Lower boundary crossing
+			dt = min_root_quadratic_lower( x_2_QSS_, d_1, d_0 + qTol );
 		} else { // Both boundaries can have crossings
-			dt = min_root_quadratic_both( x_2_, d_1, d_0 + qTol, d_0 - qTol );
+			dt = min_root_quadratic_both( x_2_QSS_, d_1, d_0 + qTol, d_0 - qTol );
 		}
 		dt = dt_infinity( dt );
 		assert( dt > 0.0 ); // Might be infinity
@@ -497,6 +504,7 @@ private: // Data
 	Real q_0_{ 0.0 }, q_1_{ 0.0 }, q_2_{ 0.0 }; // Quantized trajectory coefficients
 
 	// Relaxation
+	Real x_2_QSS_{ 0.0 }; // QSS 2nd order coefficient
 	Real x_2_tDel_{ 0.0 }; // x_2_ * ( tE - tX )
 	Time dt_pre_{ infinity }; // Previous time step
 	std::uint8_t n_yoyo_{ 0u }; // Number of yo-yo sequential requantization steps currently

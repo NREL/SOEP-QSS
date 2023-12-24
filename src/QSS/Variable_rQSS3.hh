@@ -273,16 +273,16 @@ public: // Methods
 	void
 	advance_QSS_2_dd2( Real const dd2 ) override
 	{
-		Real const x_2_qss( one_half * dd2 );
-		q_2_ = x_2_ = ( yoyo_ ? rlx_fac_ * x_2_qss : x_2_qss );
+		Real const x_2_QSS( one_half * dd2 );
+		q_2_ = x_2_ = ( yoyo_ ? rlx_fac_ * x_2_QSS : x_2_QSS );
 	}
 
 	// QSS Advance: Stage 3: Directional 2nd Derivative
 	void
 	advance_QSS_3_dd2( Real const dd2_p ) override
 	{
-		Real const x_2_p( one_half * dd2_p );
-		x_3_ = ( yoyo_ ? n_3( rlx_fac_ * x_2_p ) : n_3( x_2_p ) );
+		Real const x_2_QSS_p( one_half * dd2_p );
+		x_3_ = ( yoyo_ ? n_3( rlx_fac_ * x_2_QSS_p ) : n_3( x_2_QSS_p ) );
 	}
 
 	// QSS Advance: Stage Final
@@ -292,8 +292,15 @@ public: // Methods
 		set_qTol();
 		set_tE_aligned();
 		shift_QSS( tE );
-		if ( options::output::d ) std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << ( yoyo_ ? " yoyo" : "" ) << std::endl;
 		if ( connected() ) advance_connections();
+	}
+
+	// QSS Advance: Stage Debug
+	void
+	advance_QSS_d() override
+	{
+		assert( options::output::d );
+		std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << ( yoyo_ ? " yoyo" : "" ) << std::endl;
 	}
 
 	// Handler Advance
@@ -381,16 +388,16 @@ public: // Methods
 	void
 	advance_observer_2_dd2( Real const dd2 ) override
 	{
-		Real const x_2_qss( one_half * dd2 );
-		x_2_ = ( yoyo_ ? rlx_fac_ * x_2_qss : x_2_qss );
+		Real const x_2_QSS( one_half * dd2 );
+		x_2_ = ( yoyo_ ? rlx_fac_ * x_2_QSS : x_2_QSS );
 	}
 
 	// Observer Advance: Stage 3: Directional 2nd Derivative
 	void
 	advance_observer_3_dd2( Real const dd2_p ) override
 	{
-		Real const x_2_p( one_half * dd2_p );
-		x_3_ = ( yoyo_ ? n_3( rlx_fac_ * x_2_p ) : n_3( x_2_p ) );
+		Real const x_2_QSS_p( one_half * dd2_p );
+		x_3_ = ( yoyo_ ? n_3( rlx_fac_ * x_2_QSS_p ) : n_3( x_2_QSS_p ) );
 	}
 
 	// Observer Advance: Stage Final

@@ -1006,6 +1006,14 @@ public: // Methods
 		assert( false );
 	}
 
+	// QSS Advance: Stage Debug
+	virtual
+	void
+	advance_QSS_d()
+	{
+		assert( false );
+	}
+
 	// Zero-Crossing Add Event
 	void
 	add_ZC( Time const t )
