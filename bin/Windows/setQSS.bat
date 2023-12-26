@@ -23,5 +23,7 @@ if not "%CPATH%" == "" set CPATH=%CPATH%;%PYTHON_INC%;%PYBIND_INC%
 if not "%INCLUDE%" == "" set INCLUDE=%INCLUDE%;%PYTHON_INC%;%PYBIND_INC%
 if not "%LIB%" == "" set LIB=%LIB%;%PYTHON_DIR%\libs
 
-set OMP_NUM_THREADS=6
-set OMP_WAIT_POLICY=ACTIVE
+set OMP_NUM_THREADS=4
+set OMP_PLACES=cores
+set OMP_PROC_BIND=true
+::set OMP_WAIT_POLICY=ACTIVE

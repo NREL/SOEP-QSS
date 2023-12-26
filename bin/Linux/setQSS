@@ -17,5 +17,7 @@ if [ -n "$QSS_bin" ]; then
 	fi
 fi
 
-export OMP_NUM_THREADS=6
-export OMP_WAIT_POLICY=ACTIVE
+export OMP_NUM_THREADS=4
+export OMP_PLACES=cores
+export OMP_PROC_BIND=true
+#export OMP_WAIT_POLICY=ACTIVE
