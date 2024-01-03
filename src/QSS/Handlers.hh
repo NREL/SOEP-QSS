@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2024 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -168,16 +168,16 @@ public: // Methods
 		// FMU pooled data set up
 		if ( qss_.have() ) { // State variables
 			if ( options::d2d ) {
-				qss_vars_.clear(); qss_vars_.reserve( qss_.n() );
-				qss_ders_.clear(); qss_ders_.reserve( qss_.n() );
+				qss_vars_.size_to( qss_.n() );
+				qss_ders_.size_to( qss_.n() );
 				for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
 					qss_vars_.push_back( handlers_[ i ]->var().ref() );
 					qss_ders_.push_back( handlers_[ i ]->der().ref() );
 				}
 			} else {
 				assert( options::n2d );
-				qss_vars_.clear(); qss_vars_.reserve( qss_.n() );
-				qss_dn2d_.clear(); qss_dn2d_.reserve( qss_.n() );
+				qss_vars_.size_to( qss_.n() );
+				qss_dn2d_.size_to( qss_.n() );
 				for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
 					qss_vars_.push_back( handlers_[ i ]->var().ref() );
 					qss_dn2d_.push_back( handlers_[ i ]->der().ref() );
@@ -185,19 +185,19 @@ public: // Methods
 			}
 		}
 		if ( r_.have() ) { // R variables
-			r_vars_.clear(); r_vars_.reserve( r_.n() );
+			r_vars_.size_to( r_.n() );
 			for ( size_type i = r_.b(), e = r_.e(); i < e; ++i ) {
 				r_vars_.push_back( handlers_[ i ]->var().ref() );
 			}
 		}
 		if ( ox_.have() ) { // Other X-based variables
-			ox_vars_.clear(); ox_vars_.reserve( ox_.n() );
+			ox_vars_.size_to( ox_.n() );
 			for ( size_type i = ox_.b(), e = ox_.e(); i < e; ++i ) {
 				ox_vars_.push_back( handlers_[ i ]->var().ref() );
 			}
 		}
 		if ( zc_.have() ) { // Zero-crossing variables
-			zc_vars_.clear(); zc_vars_.reserve( zc_.n() );
+			zc_vars_.size_to( zc_.n() );
 			for ( size_type i = zc_.b(), e = zc_.e(); i < e; ++i ) {
 				zc_vars_.push_back( handlers_[ i ]->var().ref() );
 			}

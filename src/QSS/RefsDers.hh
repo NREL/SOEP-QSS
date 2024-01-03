@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2024 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -69,22 +69,13 @@ public: // Property
 
 public: // Methods
 
-	// Clear
+	// Size to n
 	void
-	clear()
+	size_to( size_type const n )
 	{
-		refs.clear();
-		ders.clear();
-		ders_p.clear();
-	}
-
-	// Reserve
-	void
-	reserve( size_type const n )
-	{
-		refs.reserve( n );
-		ders.resize( n );
-		ders_p.resize( n );
+		refs.clear(); refs.reserve( n );
+		ders.clear(); ders.reserve( n );
+		ders_p.clear(); ders_p.reserve( n );
 	}
 
 	// Push Back

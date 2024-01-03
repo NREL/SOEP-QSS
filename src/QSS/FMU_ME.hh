@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2024 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -762,6 +762,8 @@ public: // Data
 	Variables vars_NZ; // Non-zero-crossing variables
 	Variables vars_CI; // Connection input variables
 	Variables vars_NC; // Non-zero-crossing non-connection variables
+	Variables vars_NA; // Non-zero-crossing non-connection active variables
+	Variables vars_ND; // Numerically differentiated variables
 	Variables_QSS state_vars; // State variables
 	Variables f_outs_vars; // Output QSS variables
 	Variables fmu_qss_qss_outs; // FMU-QSS output QSS variables

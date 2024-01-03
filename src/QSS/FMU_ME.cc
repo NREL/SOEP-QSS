@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2024 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -696,8 +696,7 @@ namespace QSS {
 		// FMU variable list
 		var_list = fmi2_import_get_variable_list( fmu, 0 ); // sort order = 0 for original order
 		size_type const n_fmu_vars( fmi2_import_get_variable_list_size( var_list ) );
-		fmu_variables.clear();
-		fmu_variables.reserve( n_fmu_vars );
+		fmu_variables.clear(); fmu_variables.reserve( n_fmu_vars );
 		// fmi2_value_reference_t const * vrs( fmi2_import_get_value_referece_list( var_list ) ); // reference is misspelled in FMIL API
 
 		// Set up FMU variable spec array
@@ -1717,8 +1716,7 @@ namespace QSS {
 				}
 			}
 			csv.labels( res_var_names );
-			res_var_vals.clear();
-			res_var_vals.resize( res_var_indexes.size() );
+			res_var_vals.clear(); res_var_vals.resize( res_var_indexes.size() );
 		}
 
 		// QSS Dependency Processing
@@ -2190,10 +2188,13 @@ namespace QSS {
 		vars_NZ.clear();
 		vars_CI.clear();
 		vars_NC.clear();
+		vars_NA.clear();
+		vars_ND.clear();
 		order_max_NC = order_max_CI = 0;
 		for ( auto var : vars ) {
 			if ( var->is_ZC() ) { // ZC variable
 				vars_ZC.push_back( var );
+				if ( var->order() >= 2 ) vars_ND.push_back( var );
 			} else { // Non-ZC variable
 				vars_NZ.push_back( var );
 				if ( var->is_connection() ) { // Connection variable
@@ -2201,11 +2202,24 @@ namespace QSS {
 					order_max_CI = std::max( order_max_CI, var->order() );
 				} else { // Non-Connection/ZC variable
 					vars_NC.push_back( var );
+					if ( var->is_Active() ) {
+						vars_NA.push_back( var );
+						if ( var->order() >= 2 ) {
+							if ( var->is_R() ) {
+								vars_ND.push_back( var );
+							} else if ( var->is_State() ) {
+								if ( !var->is_time() ) {
+									if ( options::n2d || ( var->order() >= 3 ) ) vars_ND.push_back( var );
+								}
+							}
+						}
+					}
 					order_max_NC = std::max( order_max_NC, var->order() );
 				}
 			}
 		}
 		sort_by_type( vars_NC ); // Put state variables first to reduce issue of directional derivatives needing observee derivatives set
+		sort_by_type( vars_NA ); // Put state variables first to reduce issue of directional derivatives needing observee derivatives set
 		assert( order_max_CI <= max_rep_order );
 		assert( order_max_NC <= max_rep_order );
 	}
@@ -2215,145 +2229,121 @@ namespace QSS {
 	FMU_ME::
 	dtND_optimize( Time const to )
 	{
-		// Note: Zero-crossing variables are not currently considered since they aren't integrated but it may be worth adding them
-
 		assert( options::dtND_optimizer );
 
-		if ( ( order_max_NC <= 1 ) || ( vars_NC.size() == 0u ) ) return; // Nothing to optimize
+		if ( vars_ND.size() == 0u ) { // Nothing to optimize
+			std::cout << "\nAutomatic numeric differentiation time step not set: No numerically differentiated variables" << std::endl;
+			return;
+		}
 
-		Time const dtND_ori( options::dtND );
-		Time const dtND_min( std::max( std::abs( t0 ), std::abs( tE ) ) * std::numeric_limits< Time >::epsilon() * 2.0 );
-		Time const dtND_max( options::dtND_max );
-		Time dtND( dtND_max );
-		assert( dtND_min < dtND_ori );
-
-		size_type const n_NC( vars_NC.size() );
 		using DtVec = std::vector< Time >;
+		using DerWtg = std::vector< Real >;
 		using DerVec = std::vector< Real >;
 		using DerVecs = std::vector< DerVec >;
-		DtVec dtNDs;
-		DerVecs x2( n_NC ); // Second derivatives
-		DerVecs x3( n_NC ); // Third derivatives
 
-		// Derivatives with dtND max
+		size_type const n_ND( vars_ND.size() );
+		Time const dtND_ori( options::dtND );
+		Time const dtND_max( options::dtND_max * 8.0 );
+		Time const dtEps( std::numeric_limits< Time >::epsilon() );
+		Time const dtND_min( std::min( dtEps * 1024.0, std::max( dtND_max * 0.125, dtEps * 2.0 ) ) );
+
+		// Set ND variable weighting
+		DerWtg wtg( n_ND, 1.0 ); // Variable weighting factor
+		for ( size_type i = 0; i < n_ND; ++i ) {
+			if ( vars_ND[ i ]->is_State() ) wtg[ i ] = 3.0; // State derivatives are more important to overall accuracy since they are integrated
+		}
+
+		// Collect ND variable derivative coefficients as dtND decreased
+		DtVec dtNDs; // ND time steps
+		DerVecs xc( n_ND ); // Highest order derivative coefficients
+		Time dtND( dtND_max );
 		options::dtND_set( dtND );
-		dtNDs.push_back( dtND );
-		init_2_1();
-		init_3_1();
-		for ( size_type i = 0; i < n_NC; ++i ) {
-			Real const x2_i( vars_NC[ i ]->x2( to ) );
-			x2[ i ].push_back( x2_i );
-			if ( vars_NC[ i ]->order() >= 3 ) {
-				Real const x3_i( vars_NC[ i ]->x3( to ) );
-				x3[ i ].push_back( x3_i );
-			}
-		}
-
-		// Derivatives with half dtND max
-		options::dtND_set( dtND *= 0.5 );
-		dtNDs.push_back( dtND );
-		init_2_1();
-		init_3_1();
-		for ( size_type i = 0; i < n_NC; ++i ) {
-			Real const x2_i( vars_NC[ i ]->x2( to ) );
-			x2[ i ].push_back( x2_i );
-			if ( vars_NC[ i ]->order() >= 3 ) {
-				Real const x3_i( vars_NC[ i ]->x3( to ) );
-				x3[ i ].push_back( x3_i );
-			}
-		}
-
-		// Derivatives as dtND decreases
-		while ( dtND >= dtND_min * 2.0 ) {
-			options::dtND_set( dtND *= 0.5 );
+		while ( dtND >= dtND_min ) {
 			dtNDs.push_back( dtND );
-			init_2_1();
-			init_3_1();
-			for ( size_type i = 0; i < n_NC; ++i ) {
-				Real const x2_i( vars_NC[ i ]->x2( to ) );
-				x2[ i ].push_back( x2_i );
-				Real const x3_i( vars_NC[ i ]->x3( to ) );
-				x3[ i ].push_back( x3_i );
+
+			// Initialize ND variables
+			for ( auto var : vars_ND ) {
+				var->init_2();
 			}
+			if ( options::order >= 3 ) {
+				for ( auto var : vars_ND ) {
+					var->init_3();
+				}
+			}
+
+			// Get highest order derivative coefficients
+			if ( options::order == 2 ) {
+				for ( size_type i = 0; i < n_ND; ++i ) {
+					xc[ i ].push_back( vars_ND[ i ]->x2( to ) );
+				}
+			} else if ( options::order == 3 ) {
+				for ( size_type i = 0; i < n_ND; ++i ) {
+					xc[ i ].push_back( vars_ND[ i ]->x3( to ) );
+				}
+			} else { // Shouldn't get here
+				assert( false );
+			}
+			options::dtND_set( dtND *= 0.5 );
 		}
 
 		size_type const n_dtND( dtNDs.size() );
-		if ( n_dtND >= 2u ) { // Compute and assign the optimal dtND
-			using Ranges = std::vector< Range >;
-			Ranges ranges;
-			size_type n_dtND_vars( 0u );
+		if ( n_dtND < 2u ) {
+			std::cout << "\nAutomatic numeric differentiation time step can't be set: Too few dtND samples: using dtND = " << dtND_ori << std::endl;
+			options::dtND_set( dtND_ori );
+			return;
+		}
 
-			for ( size_type i = 0; i < n_NC; ++i ) { // Each variable
-				if ( vars_NC[ i ]->order() >= 2 ) {
-					size_type l( 0u ), u( 1u );
-					Real d2_min( std::abs( x2[ i ][ 1 ] - x2[ i ][ 0 ] ) );
-					for ( size_type j = 2; j < n_dtND; ++j ) { // Each dtND interval
-						Real const d2( std::abs( x2[ i ][ j ] - x2[ i ][ j-1 ] ) );
-						if ( d2 <= d2_min ) {
-							u = j;
-							if ( d2 < d2_min ) {
-								l = j-1;
-								d2_min = d2;
-							}
+		using Ranges = std::vector< Range >;
+		using Weights = std::vector< Real >;
+		size_type n_dtND_vars( 0u );
+		Ranges ranges;
+		Weights weights;
+		for ( size_type i = 0; i < n_ND; ++i ) { // Each variable
+			DerVec const & xc_i( xc[ i ] );
+			size_type l( 0u ), u( 1u );
+			Real xd_min( std::abs( xc_i[ 1 ] - xc_i[ 0 ] ) );
+			Real xd_pre( xd_min );
+			size_type n_converging( 0u ); // Number of converging steps in a row
+			for ( size_type j = 2u; j < n_dtND; ++j ) { // Each dtND interval
+				Real const xd( std::abs( xc_i[ j ] - xc_i[ j - 1 ] ) );
+				if ( xd <= xd_pre ) { // Converging
+					if ( xd < xd_pre ) ++n_converging;
+					if ( xd <= xd_min ) {
+						u = j;
+						if ( xd < xd_min ) {
+							xd_min = xd;
+							l = j - 1;
 						}
 					}
-					if ( ( d2_min > 0.0 ) || ( u < n_dtND - 1u ) || ( l > 0u ) ) { // Add range
-						++n_dtND_vars;
-						ranges.emplace_back( l, u + 1 );
-					}
+				} else if ( n_converging >= 3u ) { // Done converging
+					break;
+				} else { // Restart converging step count
+					n_converging = 0u;
 				}
+				xd_pre = xd;
 			}
-
-			if ( order_max_NC >= 3 ) { // 3rd order
-				for ( size_type i = 0; i < n_NC; ++i ) { // Each variable
-					if ( vars_NC[ i ]->order() >= 3 ) {
-						size_type l( 0u ), u( 1u );
-						Real d3_min( std::abs( x3[ i ][ 1 ] - x3[ i ][ 0 ] ) );
-						for ( size_type j = 2; j < n_dtND; ++j ) { // Each dtND interval
-							Real const d3( std::abs( x3[ i ][ j ] - x3[ i ][ j-1 ] ) );
-							if ( d3 <= d3_min ) {
-								u = j;
-								if ( d3 < d3_min ) {
-									l = j-1;
-									d3_min = d3;
-								}
-							}
-						}
-						if ( ( d3_min > 0.0 ) || ( u < n_dtND - 1u ) || ( l > 0u ) ) { // Add range
-							++n_dtND_vars;
-							ranges.emplace_back( l, u + 1 );
-						}
-					}
-				}
+			if ( l > 0u ) { // Add range
+				++n_dtND_vars;
+				ranges.emplace_back( l, u + 1 );
+				weights.emplace_back( wtg[ i ] );
 			}
+		}
 
-			if ( n_dtND_vars > 0u ) { // Find range intersection expanding ranges if needed
-				assert( !ranges.empty() );
-				Range ri; // Intersection range
-				while ( ri.empty() ) {
-					ri = ranges[ 0 ];
-					for ( Range const & r : ranges ) {
-						ri.intersect( r );
-						if ( ri.empty() ) { // Expand ranges
-							for ( Range & re : ranges ) { // Expand range
-								if ( re.b() > 0u ) --re.b();
-								if ( re.e() < n_dtND ) ++re.e();
-							}
-							break; // Try with larger ranges
-						}
-					}
-				}
-				assert( !ri.empty() );
-				Time const dtND_opt( dtND_max * std::pow( 2.0, -static_cast< double >( ri.b() ) ) ); // Use largest dtND in range intersection for now
-				options::dtND_set( dtND_opt );
-				std::cout << "\nAutomatic numeric differentiation time step: " << options::dtND << " (s)" << std::endl;
-			} else {
-				std::cout << "\nNumeric differentiation time step can't be set automatically" << std::endl;
-				options::dtND_set( dtND_ori );
+		if ( n_dtND_vars > 0u ) { // Compute optimal dtND: Use weighted average of best time step for the ND variables
+			assert( !ranges.empty() );
+			assert( ranges.size() == n_dtND_vars );
+			size_type jo( 0u ); // Index of optimal dtND
+			Real weights_tot( 0.0 );
+			for ( size_type l = 0; l < n_dtND_vars; ++l ) {
+				Range const & range( ranges[ l ] );
+				jo += weights[ l ] * ( range.b() + range.e() );
+				weights_tot += weights[ l ];
 			}
-
+			jo /= static_cast< size_type >( weights_tot * 2 ); // Average index (rounded down)
+			options::dtND_set( dtNDs[ jo ] );
+			std::cout << "\nAutomatic numeric differentiation time step: " << options::dtND << " (s)" << std::endl;
 		} else {
-			std::cout << "\nNumeric differentiation time step can't be set automatically" << std::endl;
+			std::cout << "\nAutomatic numeric differentiation time step can't be set: using dtND = " << dtND_ori << std::endl;
 			options::dtND_set( dtND_ori );
 		}
 	}
@@ -2442,7 +2432,7 @@ namespace QSS {
 	{
 		std::cout << '\n' + name + " Initialization: Stage 1.1 =====" << std::endl;
 		get_derivatives();
-		for ( auto var : vars_NC ) {
+		for ( auto var : vars_NA ) {
 			var->init_1();
 		}
 	}
@@ -2465,7 +2455,7 @@ namespace QSS {
 	{
 		std::cout << '\n' + name + " Initialization: Stage 2.1 =====" << std::endl;
 		if ( order_max_NC >= 2 ) {
-			for ( auto var : vars_NC ) {
+			for ( auto var : vars_NA ) {
 				var->init_2();
 			}
 		}
@@ -2490,8 +2480,8 @@ namespace QSS {
 	init_3_1()
 	{
 		std::cout << '\n' + name + " Initialization: Stage 3.1 =====" << std::endl;
-		if ( order_max_NC >= 2 ) {
-			for ( auto var : vars_NC ) {
+		if ( order_max_NC >= 3 ) {
+			for ( auto var : vars_NA ) {
 				var->init_3();
 			}
 		}

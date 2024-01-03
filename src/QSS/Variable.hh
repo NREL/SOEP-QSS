@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2024 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -1805,19 +1805,12 @@ protected: // Methods: FMU
 		assert( !self_observer_ );
 		assert( fmu_me_ != nullptr );
 		assert( fmu_get_time() == t );
+		assert( n_observees_ == observees_.size() );
 		assert( n_observees_ == observees_v_ref_.size() );
 		assert( n_observees_ == observees_dv_.size() );
-		assert( n_observees_ == observees_.size() );
 		fmu_set_observees_x( t ); // Modelon indicates that observee state matters for Jacobian computation
 		set_observees_dv_x( t );
 		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), n_observees_, var_.ref(), observees_dv_.data() );
-	}
-
-	// Coefficient 2: Given Derivative
-	Real
-	p_2( Real const x_1, Real const x_1_p ) const
-	{
-		return options::one_over_two_dtND * ( x_1_p - x_1 ); //ND Forward Euler
 	}
 
 	// Coefficient 2 at Time t
@@ -1837,6 +1830,9 @@ protected: // Methods: FMU
 	{
 		assert( is_QSS() );
 		assert( fmu_get_time() == tQ );
+		assert( n_observees_ == observees_.size() );
+		assert( n_observees_ == observees_v_ref_.size() );
+		assert( n_observees_ == observees_dv_.size() );
 		set_observees_dv( tQ );
 		return one_half * fmu_me_->get_directional_derivative( observees_v_ref_.data(), n_observees_, der_.ref(), observees_dv_.data() ); // Precondition: Observees already set to value at tQ
 	}
@@ -1847,6 +1843,9 @@ protected: // Methods: FMU
 	{
 		assert( is_QSS() );
 		assert( fmu_get_time() == t );
+		assert( n_observees_ == observees_.size() );
+		assert( n_observees_ == observees_v_ref_.size() );
+		assert( n_observees_ == observees_dv_.size() );
 		set_observees_dv( t );
 		return one_half * fmu_me_->get_directional_derivative( observees_v_ref_.data(), n_observees_, der_.ref(), observees_dv_.data() ); // Precondition: Observees values set
 	}
@@ -1856,6 +1855,9 @@ protected: // Methods: FMU
 	dd_2_use_seed() const
 	{
 		assert( is_QSS() );
+		assert( n_observees_ == observees_.size() );
+		assert( n_observees_ == observees_v_ref_.size() );
+		assert( n_observees_ == observees_dv_.size() );
 		return one_half * fmu_me_->get_directional_derivative( observees_v_ref_.data(), n_observees_, der_.ref(), observees_dv_.data() ); // Precondition: Observee values set
 	}
 
@@ -1919,6 +1921,9 @@ protected: // Methods
 	set_observees_dv( Time const t ) const
 	{
 		assert( is_QSS() );
+		assert( n_observees_ == observees_.size() );
+		assert( n_observees_ == observees_v_ref_.size() );
+		assert( n_observees_ == observees_dv_.size() );
 		for ( size_type j = 0u; j < n_observees_; ++j ) {
 #ifndef QSS_PROPAGATE_CONTINUOUS
 			observees_dv_[ j ] = observees_[ j ]->q1( t ); // Quantized: Traditional QSS
@@ -1933,6 +1938,9 @@ protected: // Methods
 	set_observees_dv_x( Time const t ) const
 	{
 		assert( is_R() || is_ZC() );
+		assert( n_observees_ == observees_.size() );
+		assert( n_observees_ == observees_v_ref_.size() );
+		assert( n_observees_ == observees_dv_.size() );
 		for ( size_type j = 0u; j < n_observees_; ++j ) {
 			observees_dv_[ j ] = observees_[ j ]->x1( t );
 		}
@@ -1943,6 +1951,9 @@ protected: // Methods
 	set_self_dv( Real const x_1 )
 	{
 		assert( is_QSS() );
+		assert( n_observees_ == observees_.size() );
+		assert( n_observees_ == observees_v_ref_.size() );
+		assert( n_observees_ == observees_dv_.size() );
 		observees_dv_[ i_self_observee_ ] = x_1;
 	}
 

@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2024 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -113,14 +113,14 @@ public: // Methods
 
 		// FMU pooled data set up
 		if ( options::d2d ) {
-			qss_ders_.clear(); qss_ders_.reserve( n_triggers_ );
+			qss_ders_.size_to( n_triggers_ );
 			for ( Variable * trigger : triggers ) {
 				assert( trigger->is_QSS() );
 				qss_ders_.push_back( trigger->der().ref() );
 			}
 		} else {
 			assert( options::n2d );
-			qss_dn2d_.clear(); qss_dn2d_.reserve( n_triggers_ );
+			qss_dn2d_.size_to( n_triggers_ );
 			for ( Variable * trigger : triggers ) {
 				assert( trigger->is_QSS() );
 				qss_dn2d_.push_back( trigger->der().ref() );

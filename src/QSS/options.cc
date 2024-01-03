@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2024 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -167,7 +167,7 @@ help_display()
 	std::cout << " --dtInf=STEP           Deactivation control time step (s)  [infinity]" << '\n';
 	std::cout << " --dtZMax=STEP          Max time step before zero-crossing (s)  (0 => Off)  [" << dtZMax << ']' << '\n';
 	std::cout << " --dtZC=STEP            FMU zero-crossing time step (s)  [" << dtZC << ']' << '\n';
-	std::cout << " --dtND=STEP[:Y|U]      Numeric differentiation time step specs" << '\n';
+	std::cout << " --dtND=STEP[:Y|U]      Numeric differentiation time step specs  [" << dtND << "|Y if bare --dtND]" << '\n';
 	std::cout << "        STEP            Time step (s)  [1e-6]" << '\n';
 	std::cout << "              Y         Use automatic time step" << '\n';
 	std::cout << "              U         Upper time step for automatic scan (s)  [" << dtND_max << ']' << '\n';

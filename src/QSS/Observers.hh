@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2024 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -469,14 +469,14 @@ private: // Methods
 		// FMU pooled data set up
 		if ( qss_.have() ) { // State variables
 			if ( options::d2d ) {
-				qss_ders_.clear(); qss_ders_.reserve( qss_.n() );
+				qss_ders_.size_to( qss_.n() );
 				for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
 					assert( observers_[ i ]->is_QSS() );
 					qss_ders_.push_back( observers_[ i ]->der().ref() );
 				}
 			} else {
 				assert( options::n2d );
-				qss_dn2d_.clear(); qss_dn2d_.reserve( qss_.n() );
+				qss_dn2d_.size_to( qss_.n() );
 				for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
 					assert( observers_[ i ]->is_QSS() );
 					qss_dn2d_.push_back( observers_[ i ]->der().ref() );
@@ -484,14 +484,14 @@ private: // Methods
 			}
 		}
 		if ( r_.have() ) { // R variables
-			r_vars_.clear(); r_vars_.reserve( r_.n() );
+			r_vars_.size_to( r_.n() );
 			for ( size_type i = r_.b(), e = r_.e(); i < e; ++i ) {
 				assert( observers_[ i ]->is_R() );
 				r_vars_.push_back( observers_[ i ]->var().ref() );
 			}
 		}
 		if ( zc_.have() ) { // Zero-crossing variables
-			zc_vars_.clear(); zc_vars_.reserve( zc_.n() );
+			zc_vars_.size_to( zc_.n() );
 			for ( size_type i = zc_.b(), e = zc_.e(); i < e; ++i ) {
 				assert( observers_[ i ]->is_ZC() );
 				zc_vars_.push_back( observers_[ i ]->var().ref() );

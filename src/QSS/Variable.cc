@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2023 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2024 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -119,11 +119,11 @@ namespace QSS {
 		assert( observees_dv_.empty() ); // Initialization shouldn't be called twice for a variable
 		n_observees_ = observees_.size();
 		observees_v_ref_.reserve( n_observees_ );
-		observees_v_.resize( n_observees_ );
-		observees_dv_.resize( n_observees_ );
 		for ( Variable const * observee : observees_ ) {
 			observees_v_ref_.push_back( observee->var_.ref() );
 		}
+		observees_v_.resize( n_observees_ );
+		if ( options::d2d || ( is_R() && is_Active() ) || is_ZC() ) observees_dv_.resize( n_observees_ );
 	}
 
 	// Uniquify Observers
