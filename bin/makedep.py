@@ -20,10 +20,10 @@
 import argparse, os, re, sys
 
 # Globals
-C_ext = re.compile( '(c|cc|cpp|cxx|c\+\+|h|hh|hpp|hxx|h\+\+|ii|ipp|ixx|i\+\+)', re.I )
-C_inc = re.compile( '\s*#\s*include +<([^<>]+\.[^<>]+)>' ) # Exclude <name> C++ Standard Library headers
-C_inq = re.compile( '\s*#\s*include +"([^"]+)"' )
-C_sys = re.compile( 'sys/' ) # Exclude <sys/header> C/C++ system headers
+C_ext = re.compile( r'(c|cc|cpp|cxx|c\+\+|h|hh|hpp|hxx|h\+\+|ii|ipp|ixx|i\+\+)', re.I )
+C_inc = re.compile( r'\s*#\s*include +<([^<>]+\.[^<>]+)>' ) # Exclude <name> C++ Standard Library headers
+C_inq = re.compile( r'\s*#\s*include +"([^"]+)"' )
+C_sys = re.compile( r'sys/' ) # Exclude <sys/header> C/C++ system headers
 C_path = None
 
 # Main
@@ -87,19 +87,16 @@ def C_deps( fname, fdeps = None, par_dir = None, quoted = False, add = True ):
                 for adir in par_dir:
                     tname = os.path.join( adir, fname )
                     if os.path.isfile( tname ):
-                        if not ' ' in tname: gname = tname # Skip dependencies in paths with spaces for GNU Make compatibility
+                        if ' ' not in tname: gname = tname # Skip dependencies in paths with spaces for GNU Make compatibility
                         break
             if not gname: # Use include search path
                 for adir in C_path:
                     tname = os.path.join( adir, fname )
                     if os.path.isfile( tname ):
-                        if not ' ' in tname: gname = tname # Skip dependencies in paths with spaces for GNU Make compatibility
+                        if ' ' not in tname: gname = tname # Skip dependencies in paths with spaces for GNU Make compatibility
                         break
         if gname is None: gname = fname
-        if sys.version_info >= ( 3, 0 ):
-            dfile = open( gname, mode = 'r', newline = None )
-        else:
-            dfile = open( gname, mode = 'rU' )
+        dfile = open( gname, mode = 'r' if sys.version_info >= ( 3, 0 ) else 'rU' )
         if add: fdeps.add( fname ) # Only add dependency if it is found
         par_new = os.path.dirname( os.path.abspath( gname ) )
         if ( not par_dir ) or ( par_dir[ 0 ] != par_new ): # Push parent dir onto front of list

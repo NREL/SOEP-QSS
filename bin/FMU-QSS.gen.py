@@ -244,7 +244,7 @@ def fmu_qss_gen():
                 try:
                     derivative_of_index = int( derivative_of )
                     if i + 1 in derivatives_indexes: is_state[ derivative_of_index ] = True # Otherwise could be a non-state (internal or input) variable with a derivative
-                except Exception as err:
+                except Exception:
                     name = v.attrib[ 'name' ] if 'name' in v.attrib else ''
                     print( 'Non-integer derivative in ' + name + ': ' + str( derivative_of ) )
 
@@ -257,7 +257,7 @@ def fmu_qss_gen():
     n_input_real = n_output_real = 0
     try:
         n_input_real_max_order = n_output_real_max_order = int( args.qss[ -1 ] )
-    except Exception as err:
+    except Exception:
         print( '\nFMU-QSS XML generation failed: QSS method order not identified from last character of qss argument: ' + str( args.qss ) )
         sys.exit( 1 )
     for v in ScalarVariables:
