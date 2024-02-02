@@ -346,6 +346,7 @@ extern bool rTol; // Relative tolerance specified?
 extern bool aTol; // Absolute tolerance specified?
 extern bool zTol; // Zero-crossing tolerance specified?
 extern bool dtZC; // FMU zero-crossing time step specified?
+extern bool dtND; // Numeric differentiation time step specified?
 extern bool dtOut; // Sampled output time step specified?
 extern bool tEnd; // End time specified?
 extern bool tLoc; // Local output time range specified?

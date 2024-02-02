@@ -83,29 +83,6 @@
 
 namespace QSS {
 
-	// Default Constructor
-	FMU_ME::
-	FMU_ME() :
-	 eventq( new EventQ() )
-	{}
-
-	// FMU-ME Path Constructor
-	FMU_ME::
-	FMU_ME( std::string const & path ) :
-	 eventq( new EventQ() )
-	{
-		initialize( path, false );
-	}
-
-	// FMU-ME Path + Event Queue Constructor
-	FMU_ME::
-	FMU_ME( std::string const & path, EventQ * eventq_ ) :
-	 eventq( eventq_ ),
-	 eventq_own( false )
-	{
-		initialize( path, false );
-	}
-
 	// Destructor
 	FMU_ME::
 	~FMU_ME()
@@ -188,7 +165,7 @@ namespace QSS {
 		callbacks.context = 0;
 		context = fmi_import_allocate_context( &callbacks );
 
-		// Check FMU-ME exists and is FMI 2.0
+		// Check FMU-ME exists
 		if ( !path::is_file( path ) ) {
 			std::cerr << "\nError: FMU file not found: " << path << std::endl;
 			std::exit( EXIT_FAILURE );
@@ -196,7 +173,7 @@ namespace QSS {
 		name = path::base( path );
 		std::cout << '\n' + name + " Initialization =====" << std::endl;
 
-		// Set unzip directory
+		// Set/create FMU unzip directory
 		if ( in_place ) { // Use FMU directory
 			unzip_dir = path::dir( path );
 		} else { // Use temporary directory
@@ -207,7 +184,7 @@ namespace QSS {
 			}
 		}
 
-		// Get FMU's FMI version
+		// Get/check FMU's FMI version
 		fmi_version_enu_t const fmi_version( fmi_import_get_fmi_version( context, path.c_str(), unzip_dir.c_str() ) );
 		if ( fmi_version != fmi_version_2_0_enu ) {
 			std::cerr << "\nError: FMU-ME is not FMI 2.0" << std::endl;

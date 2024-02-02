@@ -51,6 +51,7 @@ The variation categories are:
 * n: Numerical differentiation for state second derivatives (instead of analytical values from directional derivatives) for models that have high dependency density (causing slow directional derivative calls) and that are sufficiently numerically stable
 * i: LIQSS solvers using interpolation for derivatives at trajectories starting within the +/- Q tolerance band in place of more expensive directional derivatives
 * r: Relaxation solvers for models with high derivative sensitivity that can cause traditional QSS solver inefficient "yo-yoing" behavior with very small time steps
+  * Inflection point steps are enabled with the relaxation solvers
 
 The current solvers, grouped by order, are shown below.
 

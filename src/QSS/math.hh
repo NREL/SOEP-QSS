@@ -394,6 +394,18 @@ struct Root
 
 // Linear
 
+// Root of Linear Equation a x + b: Returns nonpositive value if no positive roots
+template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
+T
+root_linear( T const a, T const b )
+{
+	if ( a == T( 0 ) ) { // Constant
+		return inf< T >();
+	} else {
+		return -( b / a );
+	}
+}
+
 // Zero-Crossing Root of Linear Equation a x + b
 template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::value >::type >
 T
@@ -624,8 +636,16 @@ min_root_quadratic( T const a, T const b, T const c )
 		}
 	} else { // Quadratic
 		if ( b == T( 0 ) ) {
-			assert( -( c / a ) > T( 0 ) );
-			return std::sqrt( -( c / a ) );
+			if ( c == T( 0 ) ) { // Double root at zero
+				return T( 0 );
+			} else {
+				T const c_a( -( c / a ) );
+				if ( c_a > T( 0 ) ) {
+					return std::sqrt( c_a );
+				} else { // Two imaginary roots
+					return T( 0 );
+				}
+			}
 		} else {
 			T const disc( ( b * b ) - ( T( 4 ) * a * c ) );
 			if ( disc <= T( 0 ) ) { // Zero or one real root(s)

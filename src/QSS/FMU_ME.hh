@@ -295,7 +295,9 @@ public: // Types
 public: // Creation
 
 	// Default Constructor
-	FMU_ME();
+	FMU_ME() :
+	 eventq( new EventQ() )
+	{}
 
 	// Copy Constructor
 	FMU_ME( FMU_ME const & ) = delete;
@@ -305,10 +307,11 @@ public: // Creation
 
 	// FMU-ME Path Constructor
 	explicit
-	FMU_ME( std::string const & path );
-
-	// FMU-ME Path + Event Queue Constructor
-	FMU_ME( std::string const & path, EventQ * eventq_ );
+	FMU_ME( std::string const & path ) :
+	 eventq( new EventQ() )
+	{
+		initialize( path, false );
+	}
 
 	// Destructor
 	~FMU_ME();
@@ -642,12 +645,12 @@ public: // FMU Methods
 		eventInfo.newDiscreteStatesNeeded = fmi2_true;
 		eventInfo.terminateSimulation = fmi2_false;
 		while ( eventInfo.newDiscreteStatesNeeded && !eventInfo.terminateSimulation ) {
-			fmi2_import_new_discrete_states( fmu, &eventInfo );
-			// fmi2_status_t const status( fmi2_import_new_discrete_states( fmu, &eventInfo ) );
-			// if ( !status_ok( status ) ) {
-			// 	// status_check( status, "fmi2_import_new_discrete_states" ); // Report status
-			// 	if ( !status_continue( status ) ) break;
-			// }
+			// fmi2_import_new_discrete_states( fmu, &eventInfo );
+			fmi2_status_t const status( fmi2_import_new_discrete_states( fmu, &eventInfo ) );
+			if ( !status_ok( status ) ) {
+				status_check( status, "fmi2_import_new_discrete_states" ); // Report status
+				if ( !status_continue( status ) ) break;
+			}
 		}
 	}
 

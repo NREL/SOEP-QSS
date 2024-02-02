@@ -241,8 +241,7 @@ public: // Methods
 	void
 	advance_QSS_2( Real const x_1_p ) override
 	{
-		x_2_QSS_ = n_2( x_1_p );
-		x_2_ = ( yoyo_ ? rlx_fac_ * x_2_QSS_ : x_2_QSS_ );
+		x_2_ = ( yoyo_ ? rlx_fac_ * n_2( x_1_p ) : n_2( x_1_p ) );
 	}
 
 	// QSS Advance: Stage Final
@@ -392,50 +391,35 @@ private: // Methods
 		assert( tQ == tX );
 		assert( dt_min <= dt_max );
 		Time dt;
-		if ( yoyo_ ) { // Yo-yo mode
-			if ( x_2_ != 0.0 ) {
-				Real const x_2_inv( one / x_2_ );
+		if ( x_2_ != 0.0 ) {
+			Real const x_2_inv( one / x_2_ );
+			if ( yoyo_ ) { // Yo-yo mode
 				dt = dt_infinity( std::sqrt( qTol * rlx_fac_ * std::abs( x_2_inv ) ) ); // rlx_fac_ * std::abs( x_2_inv ) == 1 / std::abs( x_2_QSS_ )
-				assert( dt != infinity );
-				if ( nonzero_and_signs_differ( x_1_, x_2_ ) ) { // Inflection point
-					Time const dtI( -( x_1_ * ( one_half * x_2_inv ) ) ); // When 1st derivative is zero
-					if ( ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ) {
-						dt = dtI;
-					} else {
-						dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt_growth_mul_ * dt_pre_, dt ) : dt ); // Relax time step growth
-					}
-				} else { // Relax time step growth
-					dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt_growth_mul_ * dt_pre_, dt ) : dt );
-				}
-				dt = std::min( std::max( dt, dt_min ), dt_max );
-				tE = tQ + dt;
-			} else {
-				dt = dt_infinity_of_infinity();
-				dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt_growth_mul_ * dt_pre_, dt ) : dt ); // Relax time step growth
-				dt = std::min( std::max( dt, dt_min ), dt_max );
-				tE = ( dt != infinity ? tQ + dt : infinity );
-			}
-			dt_pre_ = dt;
-		} else { // QSS mode
-			if ( x_2_ != 0.0 ) {
-				Real const x_2_inv( one / x_2_ );
+			} else { // QSS mode
 				dt = dt_infinity( std::sqrt( qTol * std::abs( x_2_inv ) ) );
-				assert( dt != infinity );
-				if ( options::inflection && nonzero_and_signs_differ( x_1_, x_2_ ) ) { // Inflection point
-					Time const dtI( -( x_1_ * ( one_half * x_2_inv ) ) ); // When 1st derivative is zero
-					dt = ( ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ? dtI : dt );
-				}
-				dt = std::min( std::max( dt, dt_min ), dt_max );
-				tE = tQ + dt;
-			} else {
-				dt = std::min( std::max( dt_infinity_of_infinity(), dt_min ), dt_max );
-				tE = ( dt != infinity ? tQ + dt : infinity );
 			}
+			assert( dt != infinity );
+			if ( nonzero_and_signs_differ( x_1_, x_2_ ) ) { // Inflection point
+				Time const dtI( -( x_1_ * ( one_half * x_2_inv ) ) ); // When 1st derivative is zero
+				if ( ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ) { // Use inflection point time step
+					dt = dtI;
+				} else if ( yoyo_ ) { // Relax time step growth
+					dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt );
+				}
+			} else if ( yoyo_ ) { // Relax time step growth
+				dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt );
+			}
+		} else {
+			dt = dt_infinity_of_infinity();
+			if ( yoyo_ ) dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt ); // Relax time step growth
 		}
+		dt = std::min( std::max( dt, dt_min ), dt_max );
+		tE = ( dt != infinity ? tQ + dt : infinity );
 		if ( tQ == tE ) {
 			tE = std::nextafter( tE, infinity );
 			dt = tE - tQ;
 		}
+		dt_pre_ = dt;
 	}
 
 	// Set End Time: Quantized and Continuous Unaligned
@@ -456,23 +440,15 @@ private: // Methods
 		}
 		dt = dt_infinity( dt );
 		assert( dt > 0.0 ); // Might be infinity
-		if ( yoyo_ ) { // Yo-yo mode
-			if ( nonzero_and_signs_differ( x_1_, x_2_ ) ) { // Inflection point
-				Time const dtI( -( x_1_ / ( two * x_2_ ) ) ); // When 1st derivative is zero
-				if ( ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ) {
-					dt = dtI;
-				} else { // Relax time step growth
-					dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt_growth_mul_ * dt_pre_, dt ) : dt );
-				}
-			} else { // Relax time step growth
-				dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt_growth_mul_ * dt_pre_, dt ) : dt );
+		if ( nonzero_and_signs_differ( x_1_, x_2_ ) ) { // Inflection point
+			Time const dtI( -( x_1_ / ( two * x_2_ ) ) ); // When 1st derivative is zero
+			if ( ( dtI < dt ) && ( dt != infinity ? dt * options::inflectionFrac : zero < dtI ) ) { // Use inflection point time step
+				dt = dtI;
+			} else if ( yoyo_ ) { // Relax time step growth
+				dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt );
 			}
-			dt_pre_ = dt;
-		} else { // QSS mode
-			if ( options::inflection && nonzero_and_signs_differ( x_1_, x_2_ ) ) { // Inflection point
-				Time const dtI( -( x_1_ / ( two * x_2_ ) ) ); // When 1st derivative is zero
-				dt = ( ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ? dtI : dt );
-			}
+		} else if ( yoyo_ ) { // Relax time step growth
+			dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt );
 		}
 		dt = std::min( std::max( dt, dt_min ), dt_max );
 		tE = ( dt != infinity ? tX + dt : infinity );
@@ -480,6 +456,7 @@ private: // Methods
 			tE = std::nextafter( tE, infinity );
 			dt = tE - tX;
 		}
+		dt_pre_ = dt;
 	}
 
 	// Clear Yo-Yo State

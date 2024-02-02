@@ -377,8 +377,8 @@ private: // Methods
 			dt = dt_infinity( std::sqrt( qTol * std::abs( x_2_inv ) ) );
 			assert( dt != infinity );
 			if ( options::inflection && nonzero_and_signs_differ( x_1_, x_2_ ) ) { // Inflection point
-				Time const dtI( -( x_1_ * ( one_half * x_2_inv ) ) );
-				dt = ( ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ? dtI : dt );
+				Time const dtI( -( x_1_ * ( one_half * x_2_inv ) ) ); // When 1st derivative is zero
+				if ( ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ) dt = dtI; // Use inflection point time step
 			}
 			dt = std::min( std::max( dt, dt_min ), dt_max );
 			tE = tQ + dt;
@@ -409,10 +409,10 @@ private: // Methods
 			dt = min_root_quadratic_both( x_2_, d_1, d_0 + qTol, d_0 - qTol );
 		}
 		dt = dt_infinity( dt );
-		assert( dt > 0.0 );
+		assert( dt > 0.0 ); // Might be infinity
 		if ( options::inflection && nonzero_and_signs_differ( x_1_, x_2_ ) ) { // Inflection point
-			Time const dtI( -( x_1_ / ( two * x_2_ ) ) );
-			dt = ( ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ? dtI : dt );
+			Time const dtI( -( x_1_ / ( two * x_2_ ) ) ); // When 1st derivative is zero
+			if ( ( dtI < dt ) && ( dt != infinity ? dt * options::inflectionFrac : zero < dtI ) ) dt = dtI; // Use inflection point time step
 		}
 		dt = std::min( std::max( dt, dt_min ), dt_max );
 		tE = ( dt != infinity ? tX + dt : infinity );

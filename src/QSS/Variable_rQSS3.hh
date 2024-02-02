@@ -197,31 +197,27 @@ public: // Methods
 		q_0_ = x_0_ += ( x_1_ + ( x_2_ + x_3_tDel ) * tDel ) * tDel;
 		if ( yoyo_ ) { // Yo-yo mode
 			q_1_ = x_1_ = c_1();
-			q_2_ = x_2_ = rlx_fac_ * dd_2();
-			x_3_ = n_3_yoyo();
+			q_2_ = x_2_ = dd_2();
+			x_3_ = rlx_fac_ * n_3();
 		} else { // QSS mode
 			Real const x_1_in( x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_tDel ) ) * tDel ) ); // Incoming slope
 			x_1_ = c_1();
 			Real const x_1_dif( x_1_ - x_1_in );
-			Real const x_1_dif_lim( yoyo_mul_ * std::abs( x_1_ - q_1_2_ ) );
+			Real const x_1_dif_lim( yoyo_mul_ * std::min( std::abs( x_1_ - q_1_2_ ), std::abs( x_1_ + q_1_2_ ) ) );
 			bool const x_1_dif_sign( bool_sign( x_1_dif ) );
 			q_1_2_ = q_1_;
 			q_1_ = x_1_;
+			q_2_ = x_2_ = dd_2();
+			x_3_ = n_3();
 			if ( ( std::abs( x_1_dif ) > x_1_dif_lim ) && ( ( n_yoyo_ == 0u ) || ( !x_1_dif_sign == x_1_dif_sign_ ) ) ) { // Yo-yoing criteria met
 				x_1_dif_sign_ = x_1_dif_sign;
 				yoyo_ = ( ++n_yoyo_ >= m_yoyo_ );
 				if ( yoyo_ ) {
-					q_2_ = x_2_ = rlx_fac_ * dd_2();
-					x_3_ = n_3_yoyo();
+					x_3_ *= rlx_fac_;
 					if ( options::output::d ) std::cout << name() << " yoyo on " << tE << std::endl;
-				} else {
-					q_2_ = x_2_ = dd_2();
-					x_3_ = n_3();
 				}
 			} else {
 				n_yoyo_ = 0u;
-				q_2_ = x_2_ = dd_2();
-				x_3_ = n_3();
 			}
 		}
 		set_qTol();
@@ -253,7 +249,7 @@ public: // Methods
 			Real const x_1_in( x_1_ + ( ( ( two * x_2_ ) + ( three * x_3_tDel_ ) ) * tDel_ ) ); // Incoming slope
 			x_1_ = x_1;
 			Real const x_1_dif( x_1_ - x_1_in );
-			Real const x_1_dif_lim( yoyo_mul_ * std::abs( x_1_ - q_1_2_ ) );
+			Real const x_1_dif_lim( yoyo_mul_ * std::min( std::abs( x_1_ - q_1_2_ ), std::abs( x_1_ + q_1_2_ ) ) );
 			bool const x_1_dif_sign( bool_sign( x_1_dif ) );
 			q_1_2_ = q_1_;
 			q_1_ = x_1_;
@@ -273,16 +269,15 @@ public: // Methods
 	void
 	advance_QSS_2_dd2( Real const dd2 ) override
 	{
-		Real const x_2_QSS( one_half * dd2 );
-		q_2_ = x_2_ = ( yoyo_ ? rlx_fac_ * x_2_QSS : x_2_QSS );
+		q_2_ = x_2_ = one_half * dd2;
 	}
 
 	// QSS Advance: Stage 3: Directional 2nd Derivative
 	void
 	advance_QSS_3_dd2( Real const dd2_p ) override
 	{
-		Real const x_2_QSS_p( one_half * dd2_p );
-		x_3_ = ( yoyo_ ? n_3( rlx_fac_ * x_2_QSS_p ) : n_3( x_2_QSS_p ) );
+		x_3_ = n_3( one_half * dd2_p );
+		if ( yoyo_ ) x_3_ *= rlx_fac_;
 	}
 
 	// QSS Advance: Stage Final
@@ -388,16 +383,15 @@ public: // Methods
 	void
 	advance_observer_2_dd2( Real const dd2 ) override
 	{
-		Real const x_2_QSS( one_half * dd2 );
-		x_2_ = ( yoyo_ ? rlx_fac_ * x_2_QSS : x_2_QSS );
+		x_2_ = x_2_QSS_ = one_half * dd2;
 	}
 
 	// Observer Advance: Stage 3: Directional 2nd Derivative
 	void
 	advance_observer_3_dd2( Real const dd2_p ) override
 	{
-		Real const x_2_QSS_p( one_half * dd2_p );
-		x_3_ = ( yoyo_ ? n_3( rlx_fac_ * x_2_QSS_p ) : n_3( x_2_QSS_p ) );
+		x_3_ = x_3_QSS_ = n_3( one_half * dd2_p );
+		if ( yoyo_ ) x_3_ *= rlx_fac_;
 	}
 
 	// Observer Advance: Stage Final
@@ -448,51 +442,47 @@ private: // Methods
 		assert( tQ == tX );
 		assert( dt_min <= dt_max );
 		Time dt;
-		if ( yoyo_ ) { // Yo-yo mode
-			if ( x_3_ != 0.0 ) {
-				Real const x_3_inv( one / x_3_ );
+		if ( x_3_ != 0.0 ) {
+			Real const x_3_inv( one / x_3_ );
+			if ( yoyo_ ) { // Yo-yo mode
+				dt = dt_infinity( one_half * std::cbrt( qTol * rlx_fac_ * std::abs( x_3_inv ) ) ); // rlx_fac_ / abs( x_3_ ) == 1 / abs( x_3_QSS_ )
+			} else { // QSS mode
 				dt = dt_infinity( std::cbrt( qTol * std::abs( x_3_inv ) ) );
-				assert( dt != infinity );
-				Time const dt_inflectionFrac( dt * options::inflectionFrac );
-				Time const dtI_1_root( min_root_quadratic( three * x_3_, two * x_2_, x_1_ ) ); // When 1st derivative is zero
-				Time const dtI_1( dtI_1_root > dt_inflectionFrac ? dtI_1_root : infinity );
-				Time const dtI_2_root( nonzero_and_signs_differ( x_2_, x_3_ ) ? -( x_2_ * ( one_third * x_3_inv ) ) : infinity ); // When 2nd derivative is zero
-				Time const dtI_2( dtI_2_root > dt_inflectionFrac ? dtI_2_root : infinity );
-				Time const dtI( std::min( dtI_1, dtI_2 ) );
-				if ( dtI < dt ) { // Use inflection point time step
-					dt = dtI;
-				} else { // Relax time step growth
-					dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt_growth_mul_ * dt_pre_, dt ) : dt );
-				}
-				dt = std::min( std::max( dt, dt_min ), dt_max );
-				tE = tQ + dt;
-			} else {
-				dt = dt_infinity_of_infinity();
-				dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt_growth_mul_ * dt_pre_, dt ) : dt ); // Relax time step growth
-				dt = std::min( std::max( dt, dt_min ), dt_max );
-				tE = ( dt != infinity ? tQ + dt : infinity );
 			}
-			dt_pre_ = dt;
-		} else { // QSS mode
-			if ( x_3_ != 0.0 ) {
-				Real const x_3_inv( one / x_3_ );
-				dt = dt_infinity( std::cbrt( qTol * std::abs( x_3_inv ) ) );
-				assert( dt != infinity );
-				if ( options::inflection && nonzero_and_signs_differ( x_2_, x_3_ ) ) { // Inflection point
-					Time const dtI( -( x_2_ * ( one_third * x_3_inv ) ) ); // When 2nd derivative is zero
-					dt = ( ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ? dtI : dt );
+			assert( dt != infinity );
+			Time const dt_inflectionFrac( dt * options::inflectionFrac );
+			Time const dtI_1_root( min_root_quadratic( three * x_3_, two * x_2_, x_1_ ) ); // When 1st derivative is zero
+			Time const dtI_1( dtI_1_root > dt_inflectionFrac ? dtI_1_root : infinity );
+			Time const dtI_2_root( nonzero_and_signs_differ( x_2_, x_3_ ) ? -( x_2_ * ( one_third * x_3_inv ) ) : infinity ); // When 2nd derivative is zero
+			Time const dtI_2( dtI_2_root > dt_inflectionFrac ? dtI_2_root : infinity );
+			Time const dtI( std::min( dtI_1, dtI_2 ) );
+			if ( dtI < dt ) { // Use inflection point time step
+				dt = dtI;
+			} else if ( yoyo_ ) { // Relax time step growth
+				dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt );
+			}
+		} else {
+			dt = dt_infinity_of_infinity();
+			if ( x_2_ != 0.0 ) {
+				Time const dt_inflectionFrac( dt != infinity ? dt * options::inflectionFrac : zero );
+				Time const dtI_1_root( -( x_1_ / ( two * x_2_ ) ) ); // When 1st derivative is zero
+				Time const dtI_1( dtI_1_root > dt_inflectionFrac ? dtI_1_root : infinity );
+				if ( dtI_1 < dt ) { // Use inflection point time step
+					dt = dtI_1;
+				} else if ( yoyo_ ) { // Relax time step growth
+					dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt );
 				}
-				dt = std::min( std::max( dt, dt_min ), dt_max );
-				tE = tQ + dt;
-			} else {
-				dt = std::min( std::max( dt_infinity_of_infinity(), dt_min ), dt_max );
-				tE = ( dt != infinity ? tQ + dt : infinity );
+			} else if ( yoyo_ ) { // Relax time step growth
+				dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt );
 			}
 		}
+		dt = std::min( std::max( dt, dt_min ), dt_max );
+		tE = ( dt != infinity ? tQ + dt : infinity );
 		if ( tQ == tE ) {
 			tE = std::nextafter( tE, infinity );
 			dt = tE - tQ;
 		}
+		dt_pre_ = dt;
 	}
 
 	// Set End Time: Quantized and Continuous Unaligned
@@ -504,39 +494,44 @@ private: // Methods
 		Time const tXQ( tX - tQ );
 		Real const d_0( x_0_ - ( q_0_ + ( q_1_ + ( q_2_ * tXQ ) ) * tXQ ) );
 		Real const d_1( x_1_ - ( q_1_ + ( two * q_2_ * tXQ ) ) );
-		Real const d_2( x_2_ - q_2_ );
+		Real const d_2( x_2_QSS_ - q_2_ );
 		Time dt;
-		if ( ( x_3_ >= 0.0 ) && ( d_2 >= 0.0 ) && ( d_1 >= 0.0 ) ) { // Upper boundary crossing
-			dt = min_root_cubic_upper( x_3_, d_2, d_1, d_0 - qTol, zTol );
-		} else if ( ( x_3_ <= 0.0 ) && ( d_2 <= 0.0 ) && ( d_1 <= 0.0 ) ) { // Lower boundary crossing
-			dt = min_root_cubic_lower( x_3_, d_2, d_1, d_0 + qTol, zTol );
+		if ( ( x_3_QSS_ >= 0.0 ) && ( d_2 >= 0.0 ) && ( d_1 >= 0.0 ) ) { // Upper boundary crossing
+			dt = min_root_cubic_upper( x_3_QSS_, d_2, d_1, d_0 - qTol, zTol );
+		} else if ( ( x_3_QSS_ <= 0.0 ) && ( d_2 <= 0.0 ) && ( d_1 <= 0.0 ) ) { // Lower boundary crossing
+			dt = min_root_cubic_lower( x_3_QSS_, d_2, d_1, d_0 + qTol, zTol );
 		} else { // Both boundaries can have crossings
-			dt = min_root_cubic_both( x_3_, d_2, d_1, d_0 + qTol, d_0 - qTol, zTol );
+			dt = min_root_cubic_both( x_3_QSS_, d_2, d_1, d_0 + qTol, d_0 - qTol, zTol );
 		}
 		dt = dt_infinity( dt );
+		if ( yoyo_ ) dt *= one_half;
 		assert( dt > 0.0 ); // Might be infinity
-		if ( yoyo_ ) { // Yo-yo mode
-			if ( x_3_ != 0.0 ) {
-				Real const x_3_inv( one / x_3_ );
-				Time const dt_inflectionFrac( dt * options::inflectionFrac );
-				Time const dtI_1_root( min_root_quadratic( three * x_3_, two * x_2_, x_1_ ) ); // When 1st derivative is zero
-				Time const dtI_1( dtI_1_root > dt_inflectionFrac ? dtI_1_root : infinity );
-				Time const dtI_2_root( nonzero_and_signs_differ( x_2_, x_3_ ) ? -( x_2_ * ( one_third * x_3_inv ) ) : infinity ); // When 2nd derivative is zero
-				Time const dtI_2( dtI_2_root > dt_inflectionFrac ? dtI_2_root : infinity );
-				Time const dtI( std::min( dtI_1, dtI_2 ) );
-				if ( dtI < dt ) { // Use inflection point time step
-					dt = dtI;
-				} else { // Relax time step growth
-					dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt_growth_mul_ * dt_pre_, dt ) : dt );
-				}
-			} else { // Relax time step growth
-				dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt_growth_mul_ * dt_pre_, dt ) : dt );
+		if ( x_3_ != 0.0 ) {
+			Real const x_3_inv( one / x_3_ );
+			Time const dt_inflectionFrac( dt != infinity ? dt * options::inflectionFrac : zero );
+			Time const dtI_1_root( min_root_quadratic( three * x_3_, two * x_2_, x_1_ ) ); // When 1st derivative is zero
+			Time const dtI_1( dtI_1_root > dt_inflectionFrac ? dtI_1_root : infinity );
+			Time const dtI_2_root( nonzero_and_signs_differ( x_2_, x_3_ ) ? -( x_2_ * ( one_third * x_3_inv ) ) : infinity ); // When 2nd derivative is zero
+			Time const dtI_2( dtI_2_root > dt_inflectionFrac ? dtI_2_root : infinity );
+			Time const dtI( std::min( dtI_1, dtI_2 ) );
+			if ( dtI < dt ) { // Use inflection point time step
+				dt = dtI;
+			} else if ( yoyo_ ) { // Relax time step growth
+				dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt );
 			}
-			dt_pre_ = dt;
-		} else { // QSS mode
-			if ( options::inflection && nonzero_and_signs_differ( x_2_, x_3_ ) ) { // Inflection point
-				Time const dtI( -( x_2_ / ( three * x_3_ ) ) ); // When 2nd derivative is zero
-				dt = ( ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ? dtI : dt );
+		} else {
+			dt = dt_infinity_of_infinity();
+			if ( x_2_ != 0.0 ) {
+				Time const dt_inflectionFrac( dt != infinity ? dt * options::inflectionFrac : zero );
+				Time const dtI_1_root( -( x_1_ / ( two * x_2_ ) ) ); // When 1st derivative is zero
+				Time const dtI_1( dtI_1_root > dt_inflectionFrac ? dtI_1_root : infinity );
+				if ( dtI_1 < dt ) { // Use inflection point time step
+					dt = dtI_1;
+				} else if ( yoyo_ ) { // Relax time step growth
+					dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt );
+				}
+			} else if ( yoyo_ ) { // Relax time step growth
+				dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt );
 			}
 		}
 		dt = std::min( std::max( dt, dt_min ), dt_max );
@@ -545,6 +540,7 @@ private: // Methods
 			tE = std::nextafter( tE, infinity );
 			dt = tE - tX;
 		}
+		dt_pre_ = dt;
 	}
 
 	// Coefficient 3 at Time tX
@@ -555,18 +551,6 @@ private: // Methods
 		fmu_set_time( tN );
 		fmu_set_observees_s( tN );
 		Real const x_2_p( dd_2( tN ) );
-		fmu_set_time( tX );
-		return options::one_over_three_dtND * ( x_2_p - x_2_ ); //ND Forward Euler
-	}
-
-	// Coefficient 3 at Time tX: Yo-yo Mode
-	Real
-	n_3_yoyo() const
-	{
-		Time const tN( tX + options::dtND );
-		fmu_set_time( tN );
-		fmu_set_observees_s( tN );
-		Real const x_2_p( rlx_fac_ * dd_2( tN ) );
 		fmu_set_time( tX );
 		return options::one_over_three_dtND * ( x_2_p - x_2_ ); //ND Forward Euler
 	}
@@ -594,6 +578,8 @@ private: // Data
 
 	// Relaxation
 	Real q_1_2_{ 0.0 }; // Quantized trajectory 1st order coefficient from two requantizations earlier
+	Real x_2_QSS_{ 0.0 }; // QSS 2nd order coefficient
+	Real x_3_QSS_{ 0.0 }; // QSS 3rd order coefficient
 	Real x_3_tDel_{ 0.0 }; // x_3_ * ( tE - tX )
 	Time tDel_{ 0.0 }; // tE - tX
 	Time dt_pre_{ infinity }; // Previous time step
@@ -606,7 +592,7 @@ private: // Data
 	static constexpr double yoyo_mul_{ 100.0 }; // Yo-yo slope difference criterion multiplier
 	static constexpr double dt_growth_mul_{ 1.5 }; // Time step growth damping multiplier
 	static constexpr double dt_growth_inf_{ infinity / dt_growth_mul_ }; // Time step growth infinity threshold
-	static constexpr double rlx_fac_{ 0.25 }; // Order 2+ coefficient relaxation factor
+	static constexpr double rlx_fac_{ 0.25 }; // Derivative relaxation factor
 
 }; // Variable_rQSS3
 
