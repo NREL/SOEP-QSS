@@ -39,11 +39,14 @@
 namespace QSS {
 
 // QSS Version
-std::string const &
+std::string
 version()
 {
 	static std::string const version_( "0.5.0" );
-	return version_;
+	static std::string const version_git_(
+#include <QSS/version_git.hh>
+	);
+	return version_ + ( version_git_.empty() ? "" : '(' + version_git_ + ')' );
 }
 
 } // QSS

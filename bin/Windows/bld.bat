@@ -18,6 +18,7 @@ if "%QSS%" == "" (
 )
 
 :: Build QSS
+git_revision.py
 cd %QSS%\src\QSS\app && call mak.bat
 
 endlocal

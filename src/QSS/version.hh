@@ -42,7 +42,7 @@
 namespace QSS {
 
 // QSS Version
-std::string const &
+std::string
 version();
 
 } // QSS

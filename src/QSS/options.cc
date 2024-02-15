@@ -48,8 +48,8 @@
 namespace QSS {
 namespace options {
 
-QSS qss( QSS::QSS2 ); // QSS method: [n][i][r][f][LI]QSS(1|2|3)
-int order( 2 ); // QSS method order: (1|2|3)
+QSS qss( QSS::QSS3 ); // QSS method: [n][i][r][f][LI]QSS(1|2|3)
+int order( 3 ); // QSS method order: (1|2|3)
 bool d2d( true ); // Directional state second derivatives QSS solver?
 bool n2d( false ); // Numerical state second derivatives QSS solver?
 bool rQSS( false ); // Relaxation QSS solver?
@@ -170,7 +170,7 @@ help_display()
 	std::cout << " --dtZC=STEP             FMU zero-crossing time step (s)  [" << dtZC << ']' << '\n';
 	std::cout << " --dtND=STEP[:AUTO|MAX]  Numeric differentiation time step  [" << dtND << ']' << '\n';
 	std::cout << "        STEP             Time step (s)  [1e-6]" << '\n';
-	std::cout << "              AUTO       Automatic time step optimization?  (Y|N)  [Y if no/bare --dtND and N otherwise]" << '\n';
+	std::cout << "              AUTO       Automatic time step optimization?  (Y|N)  [Y if bare --dtND and N otherwise]" << '\n';
 	std::cout << "                   MAX   Max automatic time step  [max(1,4*dtND)]" << '\n';
 	std::cout << " --dtCon=STEP            FMU connection sync time step (s)  [0]" << '\n';
 	std::cout << " --dtOut=STEP            Sampled output time step (s)  [computed]" << '\n';
@@ -1259,10 +1259,10 @@ process_args( Args const & args )
 
 	// Unspecified option setup
 	if ( !specified::aTol ) aTol = rTol * aFac; // Make unspecified aTol consistent with rTol * aFac
-	if ( !specified::dtND ) { // Optimize dtND if not specified
-		dtND_optimizer = true;
-		dtND_max = std::max( 4.0 * dtND, dtND_max );
-	}
+	// if ( !specified::dtND ) { // Optimize dtND if not specified // Probably want this enabled for production QSS
+	// 	dtND_optimizer = true;
+	// 	dtND_max = std::max( 4.0 * dtND, dtND_max );
+	// }
 
 	// Inter-option checks
 	if ( specified::rTol && ( rTol * zFac * zrFac >= 1.0 ) ) {

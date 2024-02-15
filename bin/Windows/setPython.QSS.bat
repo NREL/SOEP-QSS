@@ -1,21 +1,22 @@
 @echo off
 :: Python Setup
 
-if "%OCT_BIN_HOME%" == "" (
-  if exist "C:\OCT" set "OCT_BIN_HOME=C:\OCT"
-)
-
-:: Find Python: Prefer OCT Python for building QSS Python extensions that work with OCT PyFMI
-for %%V in (314 313 312 311 310 39 38 37 36 35) do (
-  if exist "%OCT_BIN_HOME%" (
-    if exist "%OCT_BIN_HOME%\Python%%V\python.exe" (
-      set "PYTHON_DIR=%OCT_BIN_HOME%\Python%%V"
-      set PYTHON_VER=%%V
-      set "PYTHONPATH=%OCT_BIN_HOME%\install\Python;%PYTHONPATH%"
-      goto Step2
-    )
-  )
-)
+:: Find Python
+:: Use OCT Python for building QSS Python extensions that work with OCT PyFMI
+@REM if "%OCT_BIN_HOME%" == "" (
+@REM   if exist "C:\OCT" set "OCT_BIN_HOME=C:\OCT"
+@REM )
+@REM for %%V in (314 313 312 311 310 39 38 37 36 35) do (
+@REM   if exist "%OCT_BIN_HOME%" (
+@REM     if exist "%OCT_BIN_HOME%\Python%%V\python.exe" (
+@REM       set "PYTHON_DIR=%OCT_BIN_HOME%\Python%%V"
+@REM       set PYTHON_VER=%%V
+@REM       set "PYTHONPATH=%OCT_BIN_HOME%\install\Python;%PYTHONPATH%"
+@REM       goto Step2
+@REM     )
+@REM   )
+@REM )
+:: Use system Python if not building Python extensions
 for %%V in (314 313 312 311 310 39 38 37 36 35) do (
   if exist C:\Python%%V\python.exe (
     set PYTHON_DIR=C:\Python%%V

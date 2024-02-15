@@ -41,16 +41,17 @@
 #include <cstddef>
 #include <limits>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace QSS {
 
 // Globals
-extern std::string const delta;
-extern std::string const x_delta;
-extern std::string const x_delta_2;
-extern std::string const x_delta_3;
-extern std::string const x_delta_4;
+constexpr std::string_view delta( "Δ" );
+constexpr std::string_view x_delta( "*Δ" );
+constexpr std::string_view x_delta_2( "*Δ²" );
+constexpr std::string_view x_delta_3( "*Δ³" );
+constexpr std::string_view x_delta_4( "*Δ⁴" );
 
 // Is char Pointer Pointing to String Whitespace Tail
 bool

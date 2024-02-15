@@ -6,7 +6,7 @@ This is a QSS solver being developed for integration into Modelon's Optimica Com
 
 Currently the code has:
 * QSS1/2/3 and LIQSS1/2/3 solvers.
-* fQSS variables that broadcast full-order quantized representations.
+* fQSS solvers that broadcast full-order quantized representations.
 * Experimental continuous trajectory broadcasting (x builds).
 * Experimental relaxation solvers for the highly sensitive derivatives as seen in many Buildings Library models.
 * Linear and nonlinear derivative function support.

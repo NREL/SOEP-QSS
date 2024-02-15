@@ -23,6 +23,7 @@
 *.so
 *.so.*
 *~
+version_git.hh
 perf.data
 .directory
 .DS_Store

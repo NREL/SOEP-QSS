@@ -60,7 +60,7 @@ def fmu_qss_gen():
     # Process arguments
     parser = argparse.ArgumentParser()
     parser.add_argument( 'ME', help = 'FMU-ME fmu or xml file', default = 'modelDescription.xml' )
-    parser.add_argument( '--qss', help = 'QSS method  [n][i][r][f][LI]QSS(1|2|3)  [QSS2]', default = 'QSS2' )
+    parser.add_argument( '--qss', help = 'QSS method  [n][i][r][f][LI]QSS(1|2|3)  [QSS3]', default = 'QSS3' )
     parser.add_argument( '--rTol', help = 'relative tolerance  [FMU]', type = float )
     parser.add_argument( '--aTol', help = 'absolute tolerance  [1e-6]', type = float, default = 1.0e-6 )
     parser.add_argument( '--tEnd', help = 'simulation end time  [FMU]', type = float )
