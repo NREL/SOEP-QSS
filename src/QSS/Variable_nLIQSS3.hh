@@ -69,8 +69,8 @@ public: // Creation
 	) :
 	 Super( fmu_me, 3, name, rTol_, aTol_, zTol_, xIni_, var, der ),
 	 x_0_( xIni_ ),
-	 q_c_( xIni_ ),
-	 q_0_( xIni_ )
+	 q_0_( xIni_ ),
+	 q_c_( xIni_ )
 	{
 		set_qTol();
 	}

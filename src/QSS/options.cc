@@ -79,6 +79,7 @@ double one_over_four_dtND( 1.0 / ( 4.0 * dtND ) );
 double one_over_six_dtND_squared( 1.0 / ( 6.0 * ( dtND * dtND ) ) );
 double dtCon( 0.0 ); // FMU connection sync time step (s)
 double dtOut( 1.0e-3 ); // Sampled output time step (s)
+double tBeg( 0.0 ); // Begin time (s)  [0|FMU]
 double tEnd( 1.0 ); // End time (s)  [1|FMU]
 std::size_t bin_size( 1u ); // Bin size max
 double bin_frac( 0.25 ); // Bin step fraction min
@@ -111,6 +112,7 @@ bool zTol( false ); // Zero-crossing/root tolerance specified?
 bool dtZC( false ); // FMU zero-crossing time step specified?
 bool dtND( false ); // Numeric differentiation time step specified?
 bool dtOut( false ); // Sampled output time step specified?
+bool tBeg( false ); // Begin time specified?
 bool tEnd( false ); // End time specified?
 bool tLoc( false ); // Local output time range specified?
 bool bin( false ); // Bin controls specified?
@@ -174,6 +176,7 @@ help_display()
 	std::cout << "                   MAX   Max automatic time step  [max(1,4*dtND)]" << '\n';
 	std::cout << " --dtCon=STEP            FMU connection sync time step (s)  [0]" << '\n';
 	std::cout << " --dtOut=STEP            Sampled output time step (s)  [computed]" << '\n';
+	std::cout << " --tBeg=TIME             Begin time (s)  [0|FMU]" << '\n';
 	std::cout << " --tEnd=TIME             End time (s)  [1|FMU]" << '\n';
 	std::cout << " --pass=COUNT            Pass count limit  [" << pass << ']' << '\n';
 	std::cout << " --cycles                Report dependency cycles" << '\n';
@@ -784,6 +787,19 @@ process_args( Args const & args )
 				std::cerr << "\nError: Nonnumeric dtOut: " << dtOut_str << std::endl;
 				fatal = true;
 			}
+		} else if ( has_option_value( arg, "tBeg" ) ) {
+			specified::tBeg = true;
+			std::string const tBeg_str( option_value( arg, "tBeg" ) );
+			if ( is_double( tBeg_str ) ) {
+				tBeg = double_of( tBeg_str );
+				if ( tBeg < 0.0 ) {
+					std::cerr << "\nError: Negative tBeg: " << tBeg_str << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::cerr << "\nError: Nonnumeric tBeg: " << tBeg_str << std::endl;
+				fatal = true;
+			}
 		} else if ( has_option_value( arg, "tEnd" ) ) {
 			specified::tEnd = true;
 			std::string const tEnd_str( option_value( arg, "tEnd" ) );
@@ -1267,6 +1283,10 @@ process_args( Args const & args )
 	// Inter-option checks
 	if ( specified::rTol && ( rTol * zFac * zrFac >= 1.0 ) ) {
 		std::cerr << "\nWarning: Zero-crossing relative tolerance: rTol * zFac * zrFac = " << rTol * zFac * zrFac << " >= 1" << std::endl;
+	}
+	if ( specified::tBeg && specified::tEnd && ( tBeg > tEnd ) ) {
+		std::cerr << "\nError: tBeg > tEnd" << std::endl;
+		fatal = true;
 	}
 
 	if ( help ) std::exit( EXIT_SUCCESS );

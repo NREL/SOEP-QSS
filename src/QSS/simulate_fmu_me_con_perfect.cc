@@ -63,7 +63,7 @@ simulate_fmu_me_con_perfect( std::vector< std::string > const & paths )
 	assert( n_models > 1u );
 	FMU_MEs fmu_mes;
 	fmu_mes.reserve( n_models );
-	Time tStart( 0.0 );
+	Time tBeg( 0.0 );
 	Time tEnd( 0.0 );
 
 	// Instantiate models
@@ -76,9 +76,9 @@ simulate_fmu_me_con_perfect( std::vector< std::string > const & paths )
 
 		// Time initialization
 		if ( i == 0 ) {
-			tStart = fmu_me.t0;
+			tBeg = fmu_me.t0;
 		} else {
-			if ( tStart != fmu_me.t0 ) {
+			if ( tBeg != fmu_me.t0 ) {
 				std::cerr << "\nError: Start times of FMU-ME differ" << std::endl;
 				std::exit( EXIT_FAILURE );
 			}
@@ -224,7 +224,7 @@ simulate_fmu_me_con_perfect( std::vector< std::string > const & paths )
 	}
 
 	// Simulation loop
-	Time time( tStart );
+	Time time( tBeg );
 	while ( time <= tEnd ) {
 		fmi2_event_info_t & eventInfo( eventInfos[ top_model ] );
 		eventInfo.newDiscreteStatesNeeded = fmi2_true;

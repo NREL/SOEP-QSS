@@ -288,8 +288,8 @@ namespace QSS {
 		}
 
 		// Get/report FMU run specs
-		fmi2_real_t const tstart( fmi2_import_get_default_experiment_start( fmu ) ); // [0.0]
-		fmi2_real_t const tstop( options::specified::tEnd ? options::tEnd : fmi2_import_get_default_experiment_stop( fmu ) ); // [1.0]
+		fmi2_real_t const tstart( options::specified::tBeg ? options::tBeg : fmi2_import_get_default_experiment_start( fmu ) );
+		fmi2_real_t const tstop( options::specified::tEnd ? options::tEnd : fmi2_import_get_default_experiment_stop( fmu ) );
 		fmi2_real_t const relativeTolerance( fmi2_import_get_default_experiment_tolerance( fmu ) ); // [0.0001]
 		fmi2_boolean_t const toleranceControlled( fmi2_false ); // FMIL says tolerance control not supported for ME
 		fmi2_boolean_t const stopTimeDefined( fmi2_true );

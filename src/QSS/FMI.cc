@@ -102,7 +102,7 @@ struct component_t
 	fmi2Boolean visible;
 
 	/* fmiInitializeSlave */
-	fmi2Real tStart;
+	fmi2Real tBeg;
 	fmi2Boolean StopTimeDefined;
 	fmi2Real tStop;
 
@@ -283,12 +283,12 @@ fmi2SetupExperiment(
 
 	// FMU-ME setup
 	fmi2_import_t * fmu( fmu_qss.fmu_me.fmu );
-	fmi2_real_t const tstart( fmi2_import_get_default_experiment_start( fmu ) ); // [0.0]
+	fmi2_real_t const tstart( fmi2_import_get_default_experiment_start( fmu ) );
 	assert( startTime == tstart ); // No control for overriding this
-	fmi2_real_t const tstop( stopTimeDefined ? stopTime : fmi2_import_get_default_experiment_stop( fmu ) ); // [1.0]
+	fmi2_real_t const tstop( stopTimeDefined ? stopTime : fmi2_import_get_default_experiment_stop( fmu ) );
 	std::cout << "\nSimulation Time Range (s):  Start: " << tstart << "  Stop: " << tstop << std::endl;
 	if ( tstart > tstop ) std::cerr << "\nError: Start Time > Stop Time" << std::endl;
-	fmi2_real_t const rTolerance( toleranceDefined ? tolerance : fmi2_import_get_default_experiment_tolerance( fmu ) ); // [0.0001]
+	fmi2_real_t const rTolerance( toleranceDefined ? tolerance : fmi2_import_get_default_experiment_tolerance( fmu ) );
 	FMU_ME & fmu_me( fmu_qss.fmu_me );
 	fmu_me.set_options( tstart, tstop, rTolerance );
 	fmi2Status const fmi_status( (fmi2Status)fmi2_import_setup_experiment( fmu, toleranceDefined, tolerance, startTime, stopTimeDefined, stopTime ) );

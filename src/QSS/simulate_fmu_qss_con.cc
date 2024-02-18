@@ -72,7 +72,7 @@ simulate_fmu_qss_con( std::vector< std::string > const & paths )
 	fmu_qsss.reserve( n_models );
 	Contexts contexts;
 	contexts.reserve( n_models );
-	Time tStart( 0.0 );
+	Time tBeg( 0.0 );
 	Time tEnd( 0.0 );
 
 	// Instantiate models
@@ -95,9 +95,9 @@ simulate_fmu_qss_con( std::vector< std::string > const & paths )
 
 		// Time initialization
 		if ( i == 0 ) {
-			tStart = fmi2_import_get_default_experiment_start( fmu_qss.fmu );
-		} else {
-			if ( tStart != fmi2_import_get_default_experiment_start( fmu_qss.fmu ) ) {
+			tBeg = options::specified::tBeg ? options::tBeg : fmi2_import_get_default_experiment_start( fmu_qss.fmu );
+		} else if ( !options::specified::tBeg ) {
+			if ( tBeg != fmi2_import_get_default_experiment_start( fmu_qss.fmu ) ) {
 				std::cerr << "\nError: Start times of FMU-QSS differ" << std::endl;
 				std::exit( EXIT_FAILURE );
 			}
@@ -110,8 +110,9 @@ simulate_fmu_qss_con( std::vector< std::string > const & paths )
 	for ( size_type i = 0; i < n_models; ++i ) {
 		fmi2Component c( contexts[ i ] );
 		FMU_ME & fmu_me( fmu_qsss[ i ]->fmu_me );
+		fmu_me.t0 = tBeg;
 		fmu_me.tE = tEnd;
-		if ( fmi2SetupExperiment( c, options::specified::rTol, options::rTol, tStart, fmi2_true, tEnd ) != fmi2OK ) {
+		if ( fmi2SetupExperiment( c, options::specified::rTol, options::rTol, tBeg, fmi2_true, tEnd ) != fmi2OK ) {
 			std::cerr << "\nError: fmi2SetupExperiment failed: " << std::endl;
 			std::exit( EXIT_FAILURE );
 		}
@@ -229,11 +230,11 @@ simulate_fmu_qss_con( std::vector< std::string > const & paths )
 		using EventQ = std::multimap< Time, Event >;
 		EventQ events;
 		for ( size_type i = 0; i < n_models; ++i ) {
-			events.insert( EventQ::value_type( tStart, i ) );
+			events.insert( EventQ::value_type( tBeg, i ) );
 		}
 
 		// Simulation loop
-		Time time( tStart );
+		Time time( tBeg );
 		while ( time <= tEnd ) {
 			auto const i1( events.begin() );
 			auto i2( i1 ); ++i2;
@@ -256,8 +257,8 @@ simulate_fmu_qss_con( std::vector< std::string > const & paths )
 	} else { // Sync every dtCon
 
 		Time const dt( options::dtCon );
-		Time time( tStart );
-		Time tNext( tStart + dt );
+		Time time( tBeg );
+		Time tNext( tBeg + dt );
 		while ( time <= tEnd ) {
 			for ( size_type i = 0; i < n_models; ++i ) {
 				fmi2Component c( contexts[ i ] );
