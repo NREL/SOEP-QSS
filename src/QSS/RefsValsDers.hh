@@ -72,12 +72,12 @@ public: // Property
 
 public: // Methods
 
-	// Size to n
+	// Reserve
 	void
-	size_to( size_type const n )
+	reserve( size_type const n )
 	{
 		refs.clear(); refs.reserve( n );
-		vals.clear(); vals.resize( n );
+		vals.clear(); vals.reserve( n );
 		ders.clear(); ders.reserve( n );
 		ders_p.clear(); ders_p.reserve( n );
 	}
@@ -87,6 +87,9 @@ public: // Methods
 	push_back( Ref const & ref )
 	{
 		refs.push_back( ref );
+		vals.push_back( 0.0 );
+		ders.push_back( 0.0 );
+		ders_p.push_back( 0.0 );
 	}
 
 public: // Data

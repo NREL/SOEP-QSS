@@ -14,7 +14,7 @@ ARFLAGS := rD
 # Commands
 CXX := g++
 CC := gcc
-AR := gcc-ar
+AR := ar
 MAKEDEPEND := makedep.py
 
 # Paths

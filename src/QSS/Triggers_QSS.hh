@@ -113,14 +113,14 @@ public: // Methods
 
 		// FMU pooled data set up
 		if ( options::d2d ) {
-			qss_ders_.size_to( n_triggers_ );
+			qss_ders_.reserve( n_triggers_ );
 			for ( Variable * trigger : triggers ) {
 				assert( trigger->is_QSS() );
 				qss_ders_.push_back( trigger->der().ref() );
 			}
 		} else {
 			assert( options::n2d );
-			qss_dn2d_.size_to( n_triggers_ );
+			qss_dn2d_.reserve( n_triggers_ );
 			for ( Variable * trigger : triggers ) {
 				assert( trigger->is_QSS() );
 				qss_dn2d_.push_back( trigger->der().ref() );

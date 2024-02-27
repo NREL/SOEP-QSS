@@ -6,19 +6,26 @@
 
 setlocal
 
-:: Set up build environment
-if not "%2" == "" (
-  call %QSS%\bin\Windows\%1\%2\setQSS.bat
+:: Set environment
+if not (%2) == () (
+  call %~dp0%1\%2\setQSS.bat
 )
 
-:: Check QSS env var is set
-if "%QSS%" == "" (
+:: Check environment
+if (%QSS%) == () (
   echo QSS environment variable is not set
   exit /B 1
 )
+if (%QSS_bin%) == () (
+  echo QSS_bin environment variable is not set
+  exit /B 1
+)
+
+:: Build FMIL
+call %FMIL%\bin\Windows\bld.bat
 
 :: Build QSS
-git_revision.py
+if exist "%QSS%\.git" (
+  git_revision.py
+)
 cd %QSS%\src\QSS\app && call mak.bat
-
-endlocal

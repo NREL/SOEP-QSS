@@ -106,12 +106,11 @@ public: // Methods
 		assert( is_unique( triggers ) ); // Precondition: No duplicates
 		assert( all_same_order( triggers ) ); // Precondition
 
-		triggers = triggers;
 		n_triggers_ = triggers.size();
 		order_ = triggers[ 0 ]->order();
 
 		// FMU pooled data set up
-		vars_.size_to( n_triggers_ );
+		vars_.reserve( n_triggers_ );
 		for ( Variable * trigger : triggers ) {
 			assert( trigger->is_R() );
 			vars_.push_back( trigger->var().ref() );

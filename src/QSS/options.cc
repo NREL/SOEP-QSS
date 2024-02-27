@@ -135,7 +135,6 @@ bool T( false ); // Time step?
 bool A( false ); // All variables?
 bool F( false ); // FMU output variables?
 bool L( false ); // FMU local variables?
-bool K( false ); // FMU-QSS smooth tokens?
 
 } // output
 
@@ -153,7 +152,7 @@ help_display()
 {
 	std::cout << '\n' << "QSS [options] [model [model ...]]" << "\n\n";
 	std::cout << "Options:" << "\n\n";
-	std::cout << " --qss=QSS               QSS method: [n][i][r][f][LI]QSS(1|2|3)  [QSS2|FMU-QSS]" << '\n';
+	std::cout << " --qss=QSS               QSS method: [n][i][r][f][LI]QSS(1|2|3)  [QSS3]" << '\n';
 	std::cout << "                                      n: Numerical state second derivatives" << '\n';
 	std::cout << "                                         r: Relaxation solver" << '\n';
 	std::cout << "                                            f: Full-order broadcast quantized representation" << '\n';
@@ -231,7 +230,6 @@ help_display()
 	std::cout << "     FMU Variables (sampled @ dtOut):" << '\n';
 	std::cout << "       F  Ouput variables" << '\n';
 	std::cout << "       L  Local variables" << '\n';
-	std::cout << "       K  FMU-QSS smooth tokens" << '\n';
 	std::cout << " --csv  Output CSV results file" << '\n';
 	std::cout << " --dot=GRAPHS  Outputs  [dre]" << '\n';
 	std::cout << "       d  Dependency graph" << '\n';
@@ -1063,7 +1061,6 @@ process_args( Args const & args )
 				output::A = has( out, 'A' );
 				output::F = has( out, 'F' );
 				output::L = has( out, 'L' );
-				output::K = has( out, 'K' );
 			} else if ( sep == '+' ) { // Add specified outputs
 				for ( char c : out ) {
 					switch ( c ) {
@@ -1108,9 +1105,6 @@ process_args( Args const & args )
 						break;
 					case 'L':
 						output::L = true;
-						break;
-					case 'K':
-						output::K = true;
 						break;
 					}
 				}
@@ -1159,9 +1153,6 @@ process_args( Args const & args )
 					case 'L':
 						output::L = false;
 						break;
-					case 'K':
-						output::K = false;
-						break;
 					}
 				}
 			} else if ( sep == ' ' ) { // Remove all outputs
@@ -1179,7 +1170,6 @@ process_args( Args const & args )
 				output::A = false;
 				output::F = false;
 				output::L = false;
-				output::K = false;
 			}
 		} else if ( has_option( arg, "out" ) ) {
 			output::d = false;
@@ -1196,7 +1186,6 @@ process_args( Args const & args )
 			output::A = false;
 			output::F = false;
 			output::L = false;
-			output::K = false;
 		} else if ( has_option( arg, "csv" ) ) {
 			csv = true;
 		} else if ( has_option_value( arg, "dot" ) ) {

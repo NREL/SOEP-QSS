@@ -101,7 +101,6 @@ namespace QSS {
 		for ( Conditional< Variable_ZC > * con : cons ) delete con;
 		for ( auto & f_out : f_outs ) f_out.flush();
 		for ( auto & l_out : l_outs ) l_out.flush();
-		for ( auto & k_out : k_qss_outs ) k_out.flush();
 		if ( eventq_own ) delete eventq;
 	}
 
@@ -765,7 +764,8 @@ namespace QSS {
 		FMU_Dependencies & fmu_dependencies( *ideps );
 		if ( !fmu_dependencies.empty() ) { // Report dependencies from XML <Dependencies> annotation section
 			std::cout << "\nDependencies:" << std::endl;
-			for ( FMU_Dependencies::Variables::value_type const & idx_var : fmu_dependencies.variables ) {
+			std::map< FMU_Dependencies::Index, FMU_Dependencies::Variable > const fmu_dep_vars( fmu_dependencies.variables.begin(), fmu_dependencies.variables.end() ); // Use std::map for deterministic display order
+			for ( FMU_Dependencies::Variables::value_type const & idx_var : fmu_dep_vars ) {
 				if ( ( idx_var.first <= 0 ) || ( idx_var.first > n_fmu_vars ) ) {
 					std::cerr << "\nError: Dependencies specified for non-existent variable index: " << idx_var.first << std::endl;
 					std::exit( EXIT_FAILURE );
@@ -1698,7 +1698,8 @@ namespace QSS {
 
 		// QSS Dependency Processing
 		std::cout << "\nQSS Dependency Processing =====" << std::endl;
-		for ( FMU_Dependencies::value_type const & idx_var : fmu_dependencies.variables ) { // Pair of index and dep::Variable
+		std::map< FMU_Dependencies::Index, FMU_Dependencies::Variable > const fmu_dep_vars( fmu_dependencies.variables.begin(), fmu_dependencies.variables.end() ); // Use std::map for deterministic display order
+		for ( FMU_Dependencies::value_type const & idx_var : fmu_dep_vars ) { // Pair of index and dep::Variable
 			FMU_Dependencies::key_type const idx( idx_var.first );
 			FMU_Variable const & fmu_var( fmu_variables[ idx - 1 ] ); // FMU variable corresponding to the dep::Variable
 			size_type const idv( fmu_var.is_Derivative() ? fmu_var.ids : idx ); // Index of the FMU variable for the QSS variable that has these dependencies
@@ -2309,15 +2310,15 @@ namespace QSS {
 		if ( n_dtND_vars > 0u ) { // Compute optimal dtND: Use weighted average of best time step for the ND variables
 			assert( !ranges.empty() );
 			assert( ranges.size() == n_dtND_vars );
-			size_type jo( 0u ); // Index of optimal dtND
+			double jo( 0.0 ); // Index of optimal dtND
 			Real weights_tot( 0.0 );
 			for ( size_type l = 0; l < n_dtND_vars; ++l ) {
 				Range const & range( ranges[ l ] );
 				jo += weights[ l ] * ( range.b() + range.e() );
 				weights_tot += weights[ l ];
 			}
-			jo /= static_cast< size_type >( weights_tot * 2 ); // Average index (rounded down)
-			options::dtND_set( dtNDs[ jo ] );
+			jo /= weights_tot * 2; // Average index
+			options::dtND_set( dtNDs[ static_cast< size_type >( jo ) ] );
 			std::cout << "\nAutomatic numeric differentiation time step: " << options::dtND << " (s)" << std::endl;
 		} else {
 			std::cout << "\nAutomatic numeric differentiation time step can't be set: using dtND = " << dtND_ori << std::endl;
@@ -2565,17 +2566,6 @@ namespace QSS {
 		}
 
 		// Output initialization
-		if ( options::output::K && ( out_var_refs.size() > 0u ) ) { // FMU t0 smooth token outputs
-			for ( auto const & var_ref : out_var_refs ) {
-				auto ivar( qss_var_of_ref.find( var_ref ) );
-				if ( ivar != qss_var_of_ref.end() ) {
-					if ( output_filter.fmu( ivar->second->name() ) ) {
-						fmu_qss_qss_outs.push_back( ivar->second );
-					}
-				}
-			}
-			n_fmu_qss_qss_outs = fmu_qss_qss_outs.size();
-		}
 		doROut = ( options::output::R && ( options::output::X || options::output::Q ) );
 		doZOut = ( options::output::Z && ( options::output::X || options::output::Q ) );
 		doDOut = ( options::output::D && ( options::output::X || options::output::Q ) );
@@ -2584,10 +2574,8 @@ namespace QSS {
 		 ( options::output::S && ( options::output::X || options::output::Q ) ) ||
 		 ( options::output::F && ( n_f_outs > 0u ) ) ||
 		 ( options::output::L && ( n_l_outs > 0u ) ) ||
-		 ( options::output::K && ( n_fmu_qss_qss_outs > 0u ) ) ||
 		 options::csv
 		);
-		doKOut = options::output::K && ( out_var_refs.size() > 0u );
 		std::string const output_dir( options::have_multiple_models() ? name : std::string() );
 		if ( ( ( options::output::R || options::output::Z || options::output::D || options::output::S ) && ( options::output::X || options::output::Q ) ) || options::output::T ) { // QSS t0 outputs
 #ifdef _WIN32
@@ -2663,16 +2651,6 @@ namespace QSS {
 				}
 				l_out.append( t, get_as_real( var ) );
 			}
-		}
-		if ( doKOut ) { // FMU-QSS t0 smooth token outputs
-			for ( Variable const * var : fmu_qss_qss_outs ) {
-				k_qss_outs.emplace_back( output_dir, var->name() + var->decoration(), 'k' );
-				k_qss_outs.back().append( t, var->k( t ) );
-			}
-//			for ( FMU_Variable const & fmu_var : fmu_qss_fmu_outs ) {
-//				k_fmu_outs.emplace_back( output_dir, fmi2_import_get_variable_name( fmu_var.var, 'k' ) );
-//				k_fmu_outs.back().append( t, get_real( fmu_var.ref() ) ); //Do SmoothToken once we can get derivatives
-//			}
 		}
 
 		// Simulation loop initialization
@@ -2779,25 +2757,6 @@ namespace QSS {
 								++i;
 							}
 						}
-					}
-					if ( options::output::K ) { // FMU-QSS smooth token outputs
-						if ( n_fmu_qss_qss_outs > 0u ) {
-							for ( size_type i = 0; i < n_fmu_qss_qss_outs; ++i ) {
-								Variable const * var( fmu_qss_qss_outs[ i ] );
-								k_qss_outs[ i ].append( tOut, var->k( tOut ) );
-							}
-						}
-//						if ( fmu_qss_fmu_outs.size() > 0u ) {
-//							set_time( tOut );
-//							for ( size_type i = 0; i < n_states; ++i ) {
-//								if ( state_vars[ i ] != nullptr ) states[ i ] = state_vars[ i ]->x( tOut );
-//							}
-//							fmi2_import_set_continuous_states( fmu, states, n_states );
-//							size_type i( n_fmu_qss_qss_outs );
-//							for ( FMU_Variable const & fmu_var : fmu_qss_qss_outs ) {
-//								k_fmu_outs[ i++ ].append( tOut, get_real( fmu_var.ref() ) ); //Do SmoothToken once we can get derivatives
-//							}
-//						}
 					}
 					if ( options::csv ) {
 						for ( auto const var : vars ) {
@@ -3735,26 +3694,6 @@ namespace QSS {
 					++i;
 				}
 			}
-		}
-		if ( options::output::K ) { // FMU-QSS smooth token outputs
-			if ( n_fmu_qss_qss_outs > 0u ) {
-				for ( size_type i = 0; i < n_fmu_qss_qss_outs; ++i ) {
-					Variable const * var( fmu_qss_qss_outs[ i ] );
-					k_qss_outs[ i ].append( tE, var->k( tE ) );
-					k_qss_outs[ i ].flush();
-				}
-			}
-//			if ( fmu_qss_fmu_outs.size() > 0u ) {
-//				set_time( tE );
-//				for ( size_type i = 0; i < n_states; ++i ) {
-//					if ( state_vars[ i ] != nullptr ) states[ i ] = state_vars[ i ]->x( tE );
-//				}
-//				fmi2_import_set_continuous_states( fmu, states, n_states );
-//				size_type i( n_fmu_qss_qss_outs );
-//				for ( FMU_Variable const & fmu_var : fmu_qss_qss_outs ) {
-//					k_fmu_outs[ i++ ].append( tE, get_real( fmu_var.ref() ) ); //Do SmoothToken once we can get derivatives
-//				}
-//			}
 		}
 		if ( options::csv ) {
 			for ( auto const var : vars ) {

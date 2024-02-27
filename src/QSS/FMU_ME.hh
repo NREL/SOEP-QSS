@@ -741,7 +741,6 @@ public: // Data
 	size_type n_event_indicators{ 0u };
 	size_type n_f_outs{ 0u };
 	size_type n_l_outs{ 0u };
-	size_type n_fmu_qss_qss_outs{ 0u };
 
 	// Timing
 	Time t0{ 0.0 }; // Simulation start time
@@ -769,7 +768,6 @@ public: // Data
 	Variables vars_ND; // Numerically differentiated variables
 	Variables_QSS state_vars; // State variables
 	Variables f_outs_vars; // Output QSS variables
-	Variables fmu_qss_qss_outs; // FMU-QSS output QSS variables
 	Var_Name_Ref var_name_ref; // Map from variable names to FMU variable value references
 	Var_Name_Var var_name_var; // Map from variable names to variables
 	Conditionals cons; // Conditionals
@@ -782,7 +780,6 @@ public: // Data
 	Var_Refs out_var_refs;
 	std::vector< Output<> > f_outs; // FMU QSS variable outputs
 	std::vector< Output<> > l_outs; // FMU local variable outputs
-	std::vector< SmoothTokenOutput > k_qss_outs; // FMU-QSS QSS variable smooth token outputs
 	int order_max_CI{ 0 }; // Connection input QSS variable max order
 	int order_max_NC{ 0 }; // Non-zero-crossing non-connection QSS variable max order
 	bool has_event_indicators{ false };
@@ -794,7 +791,6 @@ public: // Data
 	bool doDOut{ false }; // Discrete events
 	bool doTOut{ false }; // Time Steps
 	bool doSOut{ false }; // Sampled
-	bool doKOut{ false }; // Smooth token
 
 	// Results
 	Results_CSV<> csv;

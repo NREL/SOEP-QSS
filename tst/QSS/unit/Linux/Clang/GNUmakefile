@@ -20,10 +20,6 @@ DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .o,$(basename $(SRC)))
 EXE := $(BIN_PATH)/$(TAR).unit
 PATH_LIBS := $(BIN_PATH)/lib$(TAR).a
-LINK_LIBS := -ldl
-
-# Extensions
-.SUFFIXES: .h
 
 # Search Paths
 vpath %.cc  $(TST_PATH)
@@ -68,12 +64,13 @@ clean :
 
 .PHONY : run
 run : $(EXE)
-	@echo Running $(TAR) unit tests: Clang && cd $(TST_PATH) && $(EXE)
+	@echo Running $(TAR) unit tests
+	@cd $(TST_PATH) && $(EXE)
 
 $(EXE) : $(OBJ) $(PATH_LIBS)
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) >/dev/null 2>&1
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.o)) >/dev/null 2>&1
-	$(CXX) $(LDFLAGS) -o $@ $^ $(LINK_LIBS) -L$(FMIL_HOME)/lib -lfmilib -L$(GTEST_BIN) -lgtest -lpthread -ldl
+	$(CXX) $(LDFLAGS) -o $@ $^ -lfmilib -L$(GTEST_BIN) -lgtest -lpthread -ldl
 
 .PRECIOUS : $(EXE)
 

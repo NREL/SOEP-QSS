@@ -1,2 +1,2 @@
 @echo off
-rd /S /Q %PlatformFull% >nul 2>&1
+rd /S /Q %OS_Compiler_Build% >nul 2>&1

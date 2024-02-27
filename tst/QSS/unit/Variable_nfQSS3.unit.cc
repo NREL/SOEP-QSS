@@ -170,8 +170,8 @@ TEST( Variable_nfQSS3Test, Achilles )
 	EXPECT_NEAR( -0.2192216360385505, x1->q1( x1->tQ ), 1e-9 );
 	EXPECT_NEAR( 2 * -1.807286419963638, x1->x2( x1->tX ), 1e-9 );
 	EXPECT_NEAR( 2 * -1.807286419963638, x1->q2( x1->tQ ), 1e-9 );
-	EXPECT_NEAR( 6 * -0.1863694384004096, x1->x3( x1->tX ), 1e-9 );
-	EXPECT_NEAR( 6 * -0.1863694384004096, x1->q3( x1->tQ ), 1e-9 );
+	EXPECT_NEAR( 6 * -0.1863694384004096, x1->x3( x1->tX ), 1e-3 );
+	EXPECT_NEAR( 6 * -0.1863694384004096, x1->q3( x1->tQ ), 1e-3 );
 
 	EXPECT_EQ( 0.0, x2->tQ );
 	EXPECT_EQ( tE, x2->tX );

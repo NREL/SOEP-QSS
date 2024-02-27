@@ -46,7 +46,7 @@ version()
 	static std::string const version_git_(
 #include <QSS/version_git.hh>
 	);
-	return version_ + ( version_git_.empty() ? "" : '(' + version_git_ + ')' );
+	return version_git_.empty() ? version_ : version_ + '(' + version_git_ + ')';
 }
 
 } // QSS

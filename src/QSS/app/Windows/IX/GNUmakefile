@@ -17,23 +17,16 @@ include $(QSS_bin)/GNUmakeinit.mk
 QSS_SRC := $(SRC_PATH)\app\QSS.cc
 QSS_DEP := QSS.d
 QSS_OBJ := QSS.obj
-PyQSS_SRC := $(SRC_PATH)\app\PyQSS.cc
-PyQSS_DEP := PyQSS.d
-PyQSS_OBJ := PyQSS.obj
 SRC := $(notdir $(wildcard $(SRC_PATH)/*.cc))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .obj,$(basename $(SRC)))
 SLB := $(BIN_PATH)\libQSS.lib
 EXE := $(BIN_PATH)\QSS.exe
-PYD := $(BIN_PATH)\PyQSS.pyd
 
 # Rules
 
 .PHONY : exe
 exe : $(EXE)
-
-.PHONY : pyd
-pyd : $(PYD)
 
 .PHONY : lib
 lib : $(SLB)
@@ -51,7 +44,6 @@ check :
 	@echo $(OBJ)
 	@echo $(SLB)
 	@echo $(EXE)
-	@echo $(PYD)
 
 .PHONY : clear
 clear :
@@ -59,30 +51,22 @@ clear :
 
 .PHONY : clean
 clean :
-	@-DEL *.d *.obj *.pdb $(SLB) $(EXE) $(PYD) $(BIN_PATH)\QSS.* $(BIN_PATH)\PyQSS.* >nul 2>&1
+	@-DEL *.d *.obj *.pdb $(SLB) $(EXE) $(BIN_PATH)\QSS.* >nul 2>&1
 
 $(SLB) : $(OBJ)
-	@-FOR %%F in ($(filter-out $(DEP) $(QSS_DEP) $(PyQSS_DEP),$(wildcard *.d))) DO DEL %%F >nul 2>&1
-	@-FOR %%F in ($(filter-out $(OBJ) $(QSS_OBJ) $(PyQSS_OBJ),$(wildcard *.obj))) DO DEL %%F >nul 2>&1
+	@-FOR %%F in ($(filter-out $(DEP) $(QSS_DEP),$(wildcard *.d))) DO DEL %%F >nul 2>&1
+	@-FOR %%F in ($(filter-out $(OBJ) $(QSS_OBJ),$(wildcard *.obj))) DO DEL %%F >nul 2>&1
 	$(AR) $(ARFLAGS) /out:$@ $^
 
 $(QSS_OBJ) : $(QSS_SRC)
 	@$(MAKEDEPEND) $<
 	$(CXX) $(CXXFLAGS) /c $(subst /,\,$<)
 
-$(PyQSS_OBJ) : $(PyQSS_SRC)
-	@$(MAKEDEPEND) $<
-	$(CXX) $(CXXFLAGS) /c $(subst /,\,$<)
-
 $(EXE) : $(SLB) $(QSS_OBJ)
-#	$(CXX) $(CXXLINKFLAGS) /Fe:"$@" $(QSS_OBJ) $(LINKFLAGS) $(SLB) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
+#	$(CXX) $(CXXLINKFLAGS) /Fe:"$@" $(QSS_OBJ) $(LINKFLAGS) $(SLB) fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
 #	xilink needed for /Qipo or /flto
-	$(LD) $(LDFLAGS) /OUT:$@ $(QSS_OBJ) $(OBJ) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
+	$(LD) $(LDFLAGS) /OUT:$@ $(QSS_OBJ) $(OBJ) fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
 	@-DEL $(BIN_PATH)\QSS.exp $(BIN_PATH)\QSS.ilk $(BIN_PATH)\QSS.lib >nul 2>&1
-
-$(PYD) : $(SLB) $(PyQSS_OBJ)
-	$(CXX) /LD $(CXXLINKFLAGS) /Fe:"$@" $(PyQSS_OBJ) $(LINKFLAGS) $(SLB) /LIBPATH:$(FMIL_HOME)\lib fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
-	@-DEL $(BIN_PATH)\PyQSS.exp $(BIN_PATH)\PyQSS.ilk $(BIN_PATH)\PyQSS.lib >nul 2>&1
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)

@@ -372,7 +372,6 @@ extern bool T; // Time step?
 extern bool A; // All variables?
 extern bool F; // FMU output variables?
 extern bool L; // FMU local variables?
-extern bool K; // FMU-QSS smooth tokens?
 
 } // output
 

@@ -1,16 +1,11 @@
 #!/bin/bash
-if [ -f $PlatformOSCompiler/GNUmakefile ]; then
-	if [ ! -d $PlatformFull ]; then
-		mkdir -p $PlatformFull
+if [ -f $OS_Compiler/GNUmakefile ]; then
+	if [ ! -d $OS_Compiler_Build ]; then
+		mkdir -p $OS_Compiler_Build
 	fi
-	cd $PlatformFull
-	if [[ -f /usr/bin/nproc ]]; then
-		ntask=$(/usr/bin/nproc)
-	else
-		ntask=8
-	fi
-	make -O -j${ntask} --makefile=../GNUmakefile $*
+	cd $OS_Compiler_Build
+	make -O -j$(nproc) --makefile=../GNUmakefile $*
 	cd ../../..
 else
-	echo $PlatformOSCompiler/GNUmakefile not found
+	echo $OS_Compiler/GNUmakefile not found
 fi

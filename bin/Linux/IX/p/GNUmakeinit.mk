@@ -5,13 +5,9 @@
 # Platform: Linux/IX/p
 
 # Variables
-CXXFLAGS := -std=c++20 -ansi-alias -fiopenmp -xHOST -Wall -pthread -fpic -DNDEBUG -O3 -fp-model=precise -ip -inline-factor=2000 -fno-omit-frame-pointer -p
+CXXFLAGS := -std=c++20 -fiopenmp -xHOST -Wall -Wno-unknown-pragmas -Wno-unused-function -pthread -DNDEBUG -O3 -fp-model=precise -ip -fno-omit-frame-pointer -p
 #CXXFLAGS += -DQSS_PROPAGATE_CONTINUOUS # For continuous (x-trajectory) propagation
-CFLAGS := -std=c2x -ansi-alias -xHOST -Wall -pthread -fpic -DNDEBUG -O3 -fp-model=precise -ip -inline-factor=2000 -fno-omit-frame-pointer -p
-# Disabled Warnings:
-# 10441 Intel C++ Classic is deprecated
-# 11074 Inlining inhibited by size limit
-# 11075 Inlining report message
+CFLAGS := -std=c2x -xHOST -Wall -Wno-unknown-pragmas -pthread -DNDEBUG -O3 -fp-model=precise -ip -fno-omit-frame-pointer -p
 LDFLAGS := -fiopenmp -Wall -fno-omit-frame-pointer -p
 
 include $(QSS_bin)/../GNUmakeinit.mk

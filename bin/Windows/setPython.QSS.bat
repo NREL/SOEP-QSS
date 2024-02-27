@@ -3,7 +3,7 @@
 
 :: Find Python
 :: Use OCT Python for building QSS Python extensions that work with OCT PyFMI
-@REM if "%OCT_BIN_HOME%" == "" (
+@REM if (%OCT_BIN_HOME%) == () (
 @REM   if exist "C:\OCT" set "OCT_BIN_HOME=C:\OCT"
 @REM )
 @REM for %%V in (314 313 312 311 310 39 38 37 36 35) do (
@@ -17,7 +17,7 @@
 @REM   )
 @REM )
 :: Use system Python if not building Python extensions
-for %%V in (314 313 312 311 310 39 38 37 36 35) do (
+for %%V in (316 315 314 313 312 311 310 39 38 37 36 35) do (
   if exist C:\Python%%V\python.exe (
     set PYTHON_DIR=C:\Python%%V
     set PYTHON_VER=%%V

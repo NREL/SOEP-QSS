@@ -17,23 +17,16 @@ include $(QSS_bin)/GNUmakeinit.mk
 QSS_SRC := $(SRC_PATH)/app/QSS.cc
 QSS_DEP := QSS.d
 QSS_OBJ := QSS.o
-PyQSS_SRC := $(SRC_PATH)/app/PyQSS.cc
-PyQSS_DEP := PyQSS.d
-PyQSS_OBJ := PyQSS.o
 SRC := $(notdir $(wildcard $(SRC_PATH)/*.cc))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .o,$(basename $(SRC)))
 SLB := $(BIN_PATH)\libQSS.a
 EXE := $(BIN_PATH)\QSS.exe
-PYD := $(BIN_PATH)\PyQSS.pyd
 
 # Rules
 
 .PHONY : exe
 exe : $(EXE)
-
-.PHONY : pyd
-pyd : $(PYD)
 
 .PHONY : lib
 lib : $(SLB)
@@ -51,7 +44,6 @@ check :
 	@echo $(OBJ)
 	@echo $(SLB)
 	@echo $(EXE)
-	@echo $(PYD)
 
 .PHONY : clear
 clear :
@@ -59,26 +51,19 @@ clear :
 
 .PHONY : clean
 clean :
-	@-DEL *.d *.o $(SLB) $(EXE) $(PYD) $(BIN_PATH)\QSS.* $(BIN_PATH)\PyQSS.* >nul 2>&1
+	@-DEL *.d *.o $(SLB) $(EXE) $(BIN_PATH)\QSS.* >nul 2>&1
 
 $(SLB) : $(OBJ)
-	@-FOR %%F in ($(filter-out $(DEP) $(QSS_DEP) $(PyQSS_DEP),$(wildcard *.d))) DO DEL %%F >nul 2>&1
-	@-FOR %%F in ($(filter-out $(OBJ) $(QSS_OBJ) $(PyQSS_OBJ),$(wildcard *.o))) DO DEL %%F >nul 2>&1
+	@-FOR %%F in ($(filter-out $(DEP) $(QSS_DEP),$(wildcard *.d))) DO DEL %%F >nul 2>&1
+	@-FOR %%F in ($(filter-out $(OBJ) $(QSS_OBJ),$(wildcard *.o))) DO DEL %%F >nul 2>&1
 	$(AR) $(ARFLAGS) $@ $?
 
 $(QSS_OBJ) : $(QSS_SRC)
 	@$(MAKEDEPEND) $<
 	$(CXX) $(CXXFLAGS) -c -o $@ $(subst /,\,$<)
 
-$(PyQSS_OBJ) : $(PyQSS_SRC)
-	@$(MAKEDEPEND) $<
-	$(CXX) $(CXXFLAGS) -c -o $@ $(subst /,\,$<)
-
 $(EXE) : $(SLB) $(QSS_OBJ)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(QSS_OBJ) -L$(QSS_bin) -lQSS -L$(FMIL_HOME)\lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -lshlwapi
-
-$(PYD) : $(SLB) $(PyQSS_OBJ)
-	$(CXX) $(CXXFLAGS) -shared -fPIC $(LDFLAGS) -o $@ $(PyQSS_OBJ) -L$(QSS_bin) -lQSS -L$(FMIL_HOME)\lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -lshlwapi
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(QSS_OBJ) -L$(QSS_bin) -lQSS -L$(FMIL_lib) -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -lshlwapi
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)

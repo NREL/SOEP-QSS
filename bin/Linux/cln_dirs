@@ -1,2 +1,2 @@
 #!/bin/bash
-rm -rf $PlatformFull >/dev/null 2>&1
+rm -rf $OS_Compiler_Build >/dev/null 2>&1

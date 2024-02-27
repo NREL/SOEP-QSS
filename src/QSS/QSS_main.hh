@@ -43,7 +43,7 @@
 namespace QSS {
 
 // Types
-enum class ModelType { UNK, FMU_ME, FMU_QSS };
+enum class ModelType { UNK, FMU_ME };
 
 // Model Type from Name
 ModelType

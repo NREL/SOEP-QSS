@@ -41,8 +41,6 @@
 #include <QSS/simulate_fmu_me.hh>
 #include <QSS/simulate_fmu_me_con.hh>
 #include <QSS/simulate_fmu_me_con_perfect.hh>
-#include <QSS/simulate_fmu_qss.hh>
-#include <QSS/simulate_fmu_qss_con.hh>
 
 // C++ Headers
 #include <algorithm>
@@ -59,9 +57,7 @@ ModelType
 model_type_of( std::string const & model )
 {
 	if ( model.rfind( ".fmu" ) == model.length() - 4u ) { // FMU
-		if ( ( model.length() >= 9 ) && ( model.rfind( "_QSS.fmu" ) == model.length() - 8u ) ) { // FMU-QSS
-			return ModelType::FMU_QSS;
-		} else if ( model.length() >= 5 ) { // FMU-ME
+		if ( model.length() >= 5 ) { // FMU-ME
 			return ModelType::FMU_ME;
 		} else {
 			std::cerr << "Error: FMU model file name invalid: " + model << std::endl;
@@ -103,7 +99,7 @@ QSS_main( std::vector< std::string > const & args )
 			if ( model_type == ModelType::UNK ) {
 				model_type = model_type_loop;
 			} else if ( model_type != model_type_loop ) {
-				std::cerr << "Error: Models must all be code-defined, FMU-ME, or FMU-QSS" << std::endl;
+				std::cerr << "Error: Models must all FMU-ME" << std::endl;
 				std::exit( EXIT_FAILURE );
 			}
 		}
@@ -121,7 +117,7 @@ QSS_main( std::vector< std::string > const & args )
 		model_type = model_type_of( options::models[ 0 ] );
 	}
 
-	// Run FMU-ME or FMU-QSS model simulation
+	// Run FMU-ME model simulation
 	if ( options::have_multiple_models() && options::connected() ) { // Synched simulations
 		if ( model_type == ModelType::FMU_ME ) { // FMU-ME
 			if ( options::perfect ) {
@@ -129,12 +125,6 @@ QSS_main( std::vector< std::string > const & args )
 			} else {
 				simulate_fmu_me_con( options::models );
 			}
-		} else if ( model_type == ModelType::FMU_QSS ) { // FMU-QSS
-			if ( options::perfect ) {
-				std::cerr << "Error: Perfect sync only supported for FMU-ME, not FMU-QSS" << std::endl;
-				std::exit( EXIT_FAILURE );
-			}
-			simulate_fmu_qss_con( options::models );
 		} else {
 			assert( false );
 		}
@@ -146,13 +136,6 @@ QSS_main( std::vector< std::string > const & args )
 				std::string const & model( options::models[ i ] );
 				std::cout << '\n' + path::base( model ) + " Simulation =====" << std::endl;
 				simulate_fmu_me( model );
-			}
-		} else if ( model_type == ModelType::FMU_QSS ) { // FMU-QSS
-			#pragma omp parallel for schedule(dynamic) if ( n_models > 1 )
-			for ( std::int64_t i = 0; i < n_models; ++i ) {
-				std::string const & model( options::models[ i ] );
-				std::cout << '\n' + path::base( model ) + " Simulation =====" << std::endl;
-				simulate_fmu_qss( model );
 			}
 		} else {
 			assert( false );

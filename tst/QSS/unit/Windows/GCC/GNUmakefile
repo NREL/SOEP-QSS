@@ -4,8 +4,6 @@
 #
 # Platform: Windows/GCC
 
-# Note: This uses the current QSS static library: We don't update that here
-
 # Paths
 PKG_PATH := $(QSS)/src/QSS
 SRC_PATH := $(PKG_PATH)
@@ -20,12 +18,9 @@ TAR := QSS
 SRC := $(notdir $(wildcard $(TST_PATH)/*.cc))
 DEP := $(addsuffix .d,$(basename $(SRC)))
 OBJ := $(addsuffix .o,$(basename $(SRC)))
-APP_OBJ := $(filter-out $(QSS)/src/QSS/app/$(PlatformFull)/QSS.o,$(wildcard $(QSS)/src/QSS/app/$(PlatformFull)/*.o))
+APP_OBJ := $(filter-out $(QSS)/src/QSS/app/$(OS_Compiler_Build)/QSS.o,$(wildcard $(QSS)/src/QSS/app/$(OS_Compiler_Build)/*.o))
 EXE := $(BIN_PATH)\$(TAR).unit.exe
 PATH_LIBS := $(BIN_PATH)/lib$(TAR).a
-
-# Extensions
-.SUFFIXES: .h
 
 # Search Paths
 vpath %.cc  $(TST_PATH)
@@ -70,20 +65,20 @@ clean :
 
 .PHONY : run
 run : $(EXE)
-	@echo Running $(TAR) unit tests: GCC
+	@echo Running $(TAR) unit tests
 	@cd $(TST_PATH) && $(EXE)
 
 # Executable from libraries
 #$(EXE) : $(OBJ) $(PATH_LIBS)
 #	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F >nul 2>&1
 #	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.o))) DO DEL %%F >nul 2>&1
-#	$(CXX) $(LDFLAGS) -o $@ $(filter-out *.a,$^) -L$(QSS_bin) -l$(TAR) -L$(FMIL_HOME)\lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -lshlwapi -L$(GTEST_BIN) -lgtest
+#	$(CXX) $(LDFLAGS) -o $@ $(filter-out *.a,$^) -L$(QSS_bin) -l$(TAR) -L$(FMIL_lib) -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -L$(GTEST_BIN) -lgtest -lshlwapi
 
 # Executable from objects
 $(EXE) : $(OBJ) $(APP_OBJ)
 	@-FOR %%F in ($(filter-out $(DEP),$(wildcard *.d))) DO DEL %%F >nul 2>&1
 	@-FOR %%F in ($(filter-out $(OBJ),$(wildcard *.o))) DO DEL %%F >nul 2>&1
-	$(CXX) $(LDFLAGS) -o $@ $^ -L$(FMIL_HOME)\lib -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -lshlwapi -L$(GTEST_BIN) -lgtest
+	$(CXX) $(LDFLAGS) -o $@ $^ -L$(FMIL_lib) -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lzlib -L$(GTEST_BIN) -lgtest -lshlwapi
 
 .PRECIOUS : $(EXE)
 

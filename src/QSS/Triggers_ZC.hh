@@ -110,7 +110,7 @@ public: // Methods
 		order_ = triggers[ 0 ]->order();
 
 		// FMU pooled data set up
-		vars_.size_to( n_triggers_ );
+		vars_.reserve( n_triggers_ );
 		for ( Variable * trigger : triggers ) {
 			assert( trigger->is_ZC() );
 			vars_.push_back( trigger->var().ref() );

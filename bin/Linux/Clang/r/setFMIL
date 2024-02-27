@@ -1,4 +1,0 @@
-#!/bin/bash
-# FMI Library Setup
-#export FMIL_HOME=/opt/FMIL.Clang.r
-export FMIL_HOME=/opt/FMIL.GCC.r

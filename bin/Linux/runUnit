@@ -1,3 +1,8 @@
 #!/bin/bash
-# Run unit tests with a filter
-QSS.unit --gtest_filter="$1"
+# Run unit tests with or without filtering
+# Use : separator between filter patterns
+if [ -z "$1" ]; then
+  QSS.unit
+else
+  QSS.unit --gtest_filter="$1"
+fi

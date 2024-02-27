@@ -1,0 +1,11 @@
+#!/bin/bash
+# QSS Linux Intel C++ Setup
+
+if [ -f /opt/intel/oneapi/setvars.sh ]; then # oneAPI root
+	source /opt/intel/oneapi/setvars.sh
+elif [ -f ~/intel/oneapi/setvars.sh ]; then # oneAPI user
+	source ~/intel/oneapi/setvars.sh
+else
+	echo "Supported Intel compiler not found!"
+	exit 1
+fi

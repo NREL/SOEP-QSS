@@ -1,18 +1,31 @@
 #!/bin/bash
 
+# Clean QSS
+# Usage: cln [<compiler> <build>]
+# Example: cln GCC r
+
+# Set environment
+if [ "$1" != "" ] && [ "$2" != "" ]; then
+	source $(dirname $0)/$1/$2/setQSS
+fi
+
 # Check environment
 if [ -z "$QSS" ]; then
 	echo "QSS environment variable is not set"
 	exit 1
 fi
+if [ -z "$QSS_bin" ]; then
+	echo "QSS_bin environment variable is not set"
+	exit 1
+fi
 
-# Clean objects
+# Clean FMIL
+$FMIL/bin/Linux/cln
+
+# Clean
 cd $QSS/src/QSS/app && mak clean && cln_dirs
 cd $QSS/tst/QSS/unit && mak clean && cln_dirs
-
-
-# Clean binaries
-for ext in a exe pyd so
+for ext in a exe so
 do
-	rm -f $QSS_bin/*QSS.$ext
+	rm -f $QSS_bin/*QSS.$ext >/dev/null 2>&1
 done

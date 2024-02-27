@@ -1,21 +1,24 @@
 #!/bin/bash
 # QSS Linux Clang Debug Setup
 
+export OS_Compiler_Build=Linux/Clang/d
+
+export QSS=$(dirname $(dirname $(dirname $(dirname $(dirname $(readlink -m "${BASH_SOURCE[0]}"))))))
 export QSS_bin=$(dirname $(readlink -m "${BASH_SOURCE[0]}"))
 
-if [ -z "$QSS" ]; then
-	export QSS=$(dirname $(dirname $(dirname $(dirname $(dirname $(readlink -m "${BASH_SOURCE[0]}"))))))
-fi
-
-export PlatformBuild=d
-export PlatformFull=Linux/Clang/$PlatformBuild
+export FMIL=$QSS/FMIL
+export FMIL_bin=$FMIL/bin/$OS_Compiler_Build
+export FMIL_cmk=$FMIL_bin/cmk
+export FMIL_ins=$FMIL_bin/ins
+export FMIL_inc=$FMIL_ins/include
+export FMIL_lib=$FMIL_ins/lib
 
 export PATH=$PATH:$QSS_bin
 
-export LIBRARY_PATH=$QSS_bin:$LIBRARY_PATH
+export CPATH=.:$QSS/src:$FMIL_inc:$FMIL_inc/FMI:$FMIL_inc/FMI1:$FMIL_inc/FMI2:$FMIL_inc/JM
 
-export LD_LIBRARY_PATH=$QSS_bin:$LD_LIBRARY_PATH
+export LIBRARY_PATH=$QSS_bin:$FMIL_lib:$LIBRARY_PATH
 
-source setFMIL
+export LD_LIBRARY_PATH=$QSS_bin:$FMIL_lib:$LD_LIBRARY_PATH
 
 source $QSS/bin/Linux/Clang/setQSS

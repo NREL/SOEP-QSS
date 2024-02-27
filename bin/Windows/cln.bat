@@ -1,31 +1,32 @@
 @echo off
 
-:: Build QSS
+:: Clean QSS
 :: Usage: cln [<compiler> <build>]
-:: Example: bld GCC r
+:: Example: cln GCC r
 
 setlocal
 
-:: Set up build environment
-if not "%2" == "" (
-  call %QSS%\bin\Windows\%1\%2\setQSS.bat
+:: Set environment
+if not (%2) == () (
+  call %~dp0\Windows\%1\%2\setQSS.bat
 )
 
-:: Check QSS env var is set
-if "%QSS%" == "" (
+:: Check environment
+if (%QSS%) == () (
   echo QSS environment variable is not set
   exit /B 1
 )
-
-:: Clean objects
-cd %QSS%\src\QSS\app && call mak.bat clean && call cln_dirs.bat
-cd %QSS%\tst\QSS\unit && call mak.bat clean && call cln_dirs.bat
-
-:: Clean binaries
-if not "%QSS_bin%" == "" (
-  for %%e in ( a def exe exp ilk lib pdb pyd ) do (
-    del %QSS_bin%\*QSS.%%e >nul 2>&1
-  )
+if (%QSS_bin%) == () (
+  echo QSS_bin environment variable is not set
+  exit /B 1
 )
 
-endlocal
+:: Clean FMIL
+call %FMIL%\bin\Windows\cln.bat
+
+:: Clean QSS
+cd %QSS%\src\QSS\app && call mak.bat clean && call cln_dirs.bat
+cd %QSS%\tst\QSS\unit && call mak.bat clean && call cln_dirs.bat
+for %%e in ( a def exe exp ilk lib pdb ) do (
+  del %QSS_bin%\*QSS.%%e >nul 2>&1
+)

@@ -1,3 +1,0 @@
-#!/bin/bash
-# FMI Library Setup
-export FMIL_HOME=/opt/FMIL.GCC.r

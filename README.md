@@ -1,29 +1,22 @@
-# QSS Solver Prototype/Experimental Code with FMU Support
+# SOEP-QSS Solver
 
-This is a QSS solver being developed for integration into Modelon's Optimica Compiler Toolkit (OCT) as part of the "Spawn of EnergyPlus" project.
+This is a QSS solver being developed for integration into Modelon's Optimica Compiler Toolkit (OCT) as part of the "Spawn of EnergyPlus" (SOEP) project.
+This QSS solver runs over FMUs built by OCT _via_ the FMI API 2.0.
 
 ## Status
 
 Currently the code has:
-* QSS1/2/3 and LIQSS1/2/3 solvers.
-* fQSS solvers that broadcast full-order quantized representations.
-* Experimental continuous trajectory broadcasting (x builds).
-* Experimental relaxation solvers for the highly sensitive derivatives as seen in many Buildings Library models.
-* Linear and nonlinear derivative function support.
+* QSS1/2/3 and LIQSS1/2/3 first, second, and third order solvers and their variants.
+* FMU for Model Exchange simulation support.
 * Input variables/functions.
 * Discrete-valued variables.
-* Numeric differentiation support with specified or automatic ND time step.
-* Zero-crossing event support via OCT event indicator variables.
-* Conditional if and when block framework.
+* Specified or automatic numerical differentiation time step.
+* Zero-crossing event support _via_ OCT event indicator variables.
 * A simple "baseline" event queue built on `std::multimap`.
-* Simultaneous event support that produces deterministic (non-order-dependent) results.
+* Simultaneous event support that reduces nondeterministic results due to variable sequence order dependencies.
 * Numeric bulletproofing of root solvers.
-* A master algorithm with sampling and diagnostic output controls.
-* FMU for Model Exchange simulation support.
-* FMU-QSS generation and simulation support.
-* Connected FMU-ME and FMU-QSS simulation support.
+* Sampling and diagnostic output controls.
 * Binned-QSS support.
-* Experimental Python wrapping with Pybind11.
 
 ## Plan
 
@@ -52,6 +45,7 @@ The variation categories are:
 * i: LIQSS solvers using interpolation for derivatives at trajectories starting within the +/- Q tolerance band in place of more expensive directional derivatives
 * r: Relaxation solvers for models with high derivative sensitivity that can cause traditional QSS solver inefficient "yo-yoing" behavior with very small time steps
   * Inflection point steps are enabled with the relaxation solvers
+* Solver variations that do continuous trajectory broadcasting are enabled by defining `QSS_PROPAGATE_CONTINUOUS` in the compiler options.
 
 The current solvers, grouped by order, are shown below.
 
@@ -101,7 +95,7 @@ The current solvers, grouped by order, are shown below.
 
 ## Design
 
-The basic design concepts for a fast QSS-over-FMU solver seem to be:
+The basic design concepts for a fast QSS-over-FMU solver is:
 * Variables for each QSS method (QSS1/2/3, LIQSS1/2/3, ...).
 * Event queue to find the next "trigger" variable to advance.
 * Input variables/functions.
@@ -122,7 +116,7 @@ The basic design concepts for a fast QSS-over-FMU solver seem to be:
 * Holds the iterator of its entry in the event queue to save one _O_( log N ) lookup.
 * Supports mix of different QSS method variables in the same model.
 * Input, zero-crossing, and other non-continuous-state variable classes fit under the Variable hierarchy so that they can be processed along with QSS continuous-state variables.
-* Variables use the FMI 2.0 API to get derivatives.
+* Variables use the FMI 2.0 API to get derivatives and numerical differentiation to get higher derivatives that are not available _via_ the FMI API.
 
 ### Time Steps
 
@@ -136,7 +130,7 @@ Other variables might have zero derivatives at certain points, such as a variabl
 
 Deactivation is more of an issue for LIQSS methods because they set the highest derivative to zero when an interior point quantized representation start value occurs.
 
-Deactivation appears to be a fairly serious flaw in the QSS approach. To address this a time step to use as a threshold for detecting deactivation was added as an option (`dtInf`) and its use, especially for LIQSS methods, is highly recommended. (Due to numeric differentiation deactivation may cause a very smll, but not zero, highest derivative so we use a time step threshold.) To minimize effort expended on intrinsically deactivated variables a "relaxation" approach is used where the `dtInf` time step is doubled on each successive requantization while deactivation is detected. The concept of falling back to a lower-order QSS method for computing the next requantization time when deactivation occurs was found to be much less efficient and effective.
+Deactivation appears to be a fairly serious flaw in the QSS approach. To address this a time step to use as a threshold for detecting deactivation was added as an option (`dtInf`) and its use, especially for LIQSS methods, is highly recommended. (Due to numerical differentiation deactivation may cause a very smll, but not zero, highest derivative so we use a time step threshold.) To minimize effort expended on intrinsically deactivated variables a "relaxation" approach is used where the `dtInf` time step is doubled on each successive requantization while deactivation is detected. The concept of falling back to a lower-order QSS method for computing the next requantization time when deactivation occurs was found to be much less efficient and effective.
 
 #### Time Step Limits
 
@@ -198,7 +192,7 @@ Input functions may be outputs from other models/FMUs. This is discussed in the 
 
 ### Zero-Crossing Functions
 
-So-called zero-crossing functions are used by Modelica for conditional behavior: when the function crosses zero an event needs to be carried out. This might be, for instance, a thermostat control reaching a trigger temperature that needs to turn on an A/C system. Zero crossings cause (discontinuous) changes to (otherwise) continuous and discrete variables via "handler" functions.
+So-called zero-crossing functions are used by Modelica for conditional behavior: when the function crosses zero an event needs to be carried out. This might be, for instance, a thermostat control reaching a trigger temperature that needs to turn on an A/C system. Zero crossings cause (discontinuous) changes to (otherwise) continuous and discrete variables _via_ "handler" functions.
 
 In traditional solvers a zero crossing is detected after it occurs and time backtracking may be used to find its precise time of crossing. With QSS we can do better by predicting the zero crossing using the QSS-style polynomial representation, optionally refining that prediction with an iterative root finder. The zero-crossing support is integrated with the QSS system as zero-crossing variables that are somewhat analogous to the QSS variables in their use of polynomial trajectories that requantize based on specified tolerances. The predicted zero crossings are events on the QSS event queue so they are handled efficiently without a need for backtracking.
 
@@ -221,30 +215,22 @@ Zero-crossing based conditional logic can also introduce "chattering" when their
 
 ### Conditionals
 
-Modelica supports conditional behavior via "if" and "when" blocks. The QSS solver has classes representing if and when conditional blocks to provide this behavior. Each conditional block has a sequence of clauses that represent the if/elseif/else and when/elsewhen structure of the corresponding Modelica conditional. Each clause (except the else clause) contains one or more boolean or zero-crossing variables. When fully realized clauses would be able to represent logical "trees" over their variables: for now only OR logic is supported.
+Modelica supports conditional behavior _via_ "if" and "when" blocks. The QSS solver has classes representing if and when conditional blocks to provide this behavior. Each conditional block has a sequence of clauses that represent the if/elseif/else and when/elsewhen structure of the corresponding Modelica conditional. Each clause (except the else clause) contains one or more boolean or zero-crossing variables. When fully realized clauses would be able to represent logical "trees" over their variables: for now only OR logic is supported.
 
-Since FMUs are not going expose the full conditional block and clause structure to QSS via the model description XML file the conditional support has been simplified for FMUs to treat each Conditional object as a single-Variable clause.
+Since FMUs are not going expose the full conditional block and clause structure to QSS _via_ the model description XML file the conditional support has been simplified for FMUs to treat each Conditional object as a single-Variable clause.
 
 ### Connected Models
 
-Simulation of multiple subsystems models with some outputs connected to inputs in other models is important for SOEP. For this purpose the QSS application was extended to support multiple models and support for a `--con` option to specify interconnections was added. When connections are specified the models run in a synched mode to provide the "current" inputs.
+Simulation of multiple subsystems models with some outputs connected to inputs in other models is important for SOEP. For this purpose SOEP-QSS was extended to support multiple models and support for a `--con` option to specify interconnections was added. When connections are specified the models run in a synched mode to provide the "current" inputs.
 
-Each connection is specified via a command line options of this form:
+Each connection is specified _via_ a command line options of this form:
 `--con=`_model1_`.`_inp\_var_`:`_model2_`.`_out\_var_
 
-Connected model simulations are supported for FMU-QSS and FMU-ME models.
-
-#### Connected FMU-QSS Models
-
-Connected FMU-QSS models are treated as loosely coupled. Inputs manage their own state and trajectory independent of the corresponding outputs, getting the output state via "smooth tokens" that are packets containing the output value and derivative state. This loose coupling means there is some potential for discrepancy between outputs and inputs. The "smooth tokens" used to communicate output state to inputs has a next discrete even time field so that predicted discrete events will force a refresh of the inputs.
-
-There are two modes for synching the FMU-QSS models:
-1. Specifying a `--dtCon` connection sync time step will simulate each model for that time span in loops until finished. This limits the worst-case time sync error.
-2. Simulating without `--dtCon` causes a model event queue based sync that simulates each model until its next event past the first event time will modify a connected output. This allows other models to catch up before their inputs change. While the recommended approach, this does not assure perfect sync because output events do not trigger events in the corresponding inputs at the event time. It also will more accurate but less efficient than using a large enough `dtCon` to allow more events to be processed in each model simulation pass.
+Connected model simulations are supported for FMU-ME models.
 
 #### Connected FMU-ME Models
 
-There are two methods available for simulating connected FMU-ME models: a loosely coupled approach analogous to the the FMU-QSS method and a "perfect sync" approach.
+There are two methods available for simulating connected FMU-ME models: a loosely coupled approach and a "perfect sync" approach.
 
 The loosely coupled approach allows the input variable updates to lag changes to the corresponding outputs by a user-specifiable time step. Inputs also do not generate output file entries at their output variable event times. This approach is provided as a demonstration of how connected FMU-ME could be simulated from a master algorithm that doesn't allow direct communication between the FMUs: the perfect sync approach is recommended instead and should provide better accuracy and efficiency.
 
@@ -260,12 +246,12 @@ The Binned-QSS goes beyond this research by exploiting QSS to dynamically identi
 
 #### Notes
 
-* Early performance experiments with Binned-QSS are promising, showing higher performance than normal QSS even for most non-DAE (pure ODE) models.
+* Binned-QSS has higher performance than standard QSS for most models.
 * LIQSS is not fully optimized in this first Binned-QSS implementation: this will be more practical when automatic differentiation becomes available.
 * The `--bin=`_SIZE_`:`_FRAC_`:`_AUTO_ option can be used to specify the bin size and min time step fraction for binning and whether to use automatic bin size optimization.
 * A simple automatic bin size optimizer was developed for use until more large-scale models can be run to refine the design.
-* The bin size optimizer is controlled by the optional _AUTO_ field of the `--bin` option and is off by default.
-* The bin size optimizer considers CPU timing both to determine how often to compute a new recommended bin size and to compute the bin size. Since CPU timing varies with system load, the bin size optimizer causes some solution variation between runs (non-deterministic). A fixed simulation time step specified by the user could be added to allow bin size optimization without solution non-determinism but a good time step for this would need to be long enough for a CPU elapsed time that is long enough relative to the CPU clock resolution for robust solution "velocity" computation, which will depend on the system.
+  * The bin size optimizer is controlled by the optional _AUTO_ field of the `--bin` option and is off by default.
+  * The bin size optimizer considers CPU timing both to determine how often to compute a new recommended bin size and to compute the bin size. Since CPU timing varies with system load, the bin size optimizer causes some solution variation between runs (non-deterministic). A fixed simulation time step specified by the user could be added to allow bin size optimization without solution non-determinism but a good time step for this would need to be long enough for a CPU elapsed time that is long enough relative to the CPU clock resolution for robust solution "velocity" computation, which will depend on the system.
 
 ## FMU Support
 
@@ -276,7 +262,7 @@ Models defined by FMUs following the FMI 2.0 API and built by OCT can be run by 
 
 * Mixing QSS methods in an FMU simulation is not yet supported and will require a Modelica annotation to indicate QSS methods on a per-variable basis.
 * The FMU support is performance-limited by the FMI 2.0 API, which requires expensive get-all-derivatives calls where QSS needs individual derivatives.
-* Performance is limited by the use of numeric differentiation: the FMI ME 2.0 API doesn't provide higher derivatives but they may become available via FMI extensions.
+* Performance is limited by the use of numerical differentiation: the FMI ME 2.0 API doesn't provide higher derivatives but they may become available _via_ future FMI extensions.
 * Zero crossings are problematic because the FMI spec doesn't expose the dependency of variables that are modified when each zero crossing occurs. Our initial approach was to add the zero crossing variables to the Modelica models and to add their dependencies to the FMU's modelDescription.xml file. Additionally, we now support the OCT event indicator system that defines the zero crossing variables and their dependencies.
   * The OCT event indicator system is under ongoing development to refine the treatment of dependencies and reverse (handler) dependencies, such as when to short-circuit non-state variables from the dependencies.
 * Input function evaluations will be provided by OCT when QSS is integrated. For stand-alone QSS testing purposes a few input functions are provided for use with FMUs.
@@ -291,25 +277,21 @@ It will also eliminate the variable processing sequence dependency flaw with QSS
 The purpose of the NextGen branch is to show approximately how the code will look when this advanced support becomes available and to simplify migration at that time.
 Using placeholder calls to current the FMI API enables this NextGen branch code to compile and run.
 
-## FMU-QSS
-
-An FMU-QSS is an FMU that wraps an FMU for Model Exchange (FMU-ME) and only exposes inputs and outputs (including FMU-ME integrated state variables) using "SmoothToken" objects that contain values and necessary derivatives.
-
 ## Implementation
 
 ### Code Structure
 
 The source code is in `src/QSS` so that with include search paths set to `src` the includes can be of the form `#include <QSS/...>`.
 
-The test code is in `tst/QSS` and the unit tests are in `unit`.
+The test code is in `tst/QSS` and the unit tests are in `tst/QSS/unit`.
 
-### Numeric Differentiation
+### Numerical Differentiation
 
-Second order and higher derivatives are needed for QSS2+ methods. For FMUs we currently must use some numeric differentiation:
+Second order and higher derivatives are needed for QSS2+ methods. For FMUs we currently must use some numerical differentiation:
 * Continuous state variable second derivatives are obtained using FMU directional derivative calls and third derivatives are computed numerically in the default QSS solvers. Alternative "n" solvers (such as nQSS2) that use numerical second and third derivatives may be useful for denser dependency models for which the current directional derivative overhead is high.
 * Zero-crossing and (non-state) real-valued variable first derivatives are obtained using FMU directional derivative calls and second and third derivatives are computed numerically.
 
-At variable initialization and other simultaneous requantization or zero-crossing handler events, the numeric differentiation currently required for QSS3 solvers has a variable processing sequence dependency problem: the derivative evaluations at time step offsets used to compute the numeric derivatives can depend on QSS trajectory coefficients being computed in other variables being updated, so the results can depend on the sequence with which variables are processed. Deferring variable trajectory updates until after all such computations can eliminate this sequence dependency but was found to significantly hurt solution accuracy and performance. To avoid these issues, QSS is best implemented with non-numeric higher derivatives: automatic differentiation support is being considered for future OCT releases.
+At variable initialization and other simultaneous requantization or zero-crossing handler events, the numerical differentiation currently required for QSS3 solvers has a variable processing sequence dependency problem: the derivative evaluations at time step offsets used to compute the numeric derivatives can depend on QSS trajectory coefficients being computed in other variables being updated, so the results can depend on the sequence with which variables are processed. Deferring variable trajectory updates until after all such computations can eliminate this sequence dependency but was found to significantly hurt solution accuracy and performance. To avoid these issues, QSS is best implemented with non-numeric higher derivatives: automatic differentiation support is being considered for future OCT releases.
 
 ### Numeric Bulletproofing
 
@@ -334,7 +316,7 @@ Bulletproofing present in the implementation:
 * When zero crossing events cluster up closer and closer (such as a bouncing ball) eventually time may not progress and an infinite loop can occur. The bball model shows how a handler should be designed to detect and address this. For Modelica-based models such a set of rules may not be possible in which case the chattering prevention will be needed.
 
 FMU zero crossing support has some additional complications and limitations:
-* Zero-crossing functions are implicitly defined by if and when blocks in the Modelica file and are not directly exposed via the FMI API.
+* Zero-crossing functions are implicitly defined by if and when blocks in the Modelica file and are not directly exposed _via_ the FMI API.
 The OCT addresses this by generating event indicator variables that are documented as XML file annotations with the "reverse" (handler) dependencies.
 (Before this OCT capability was added we created a convention of defining output variables and their derivatives for each zero-crossing function with names of the form \_\_zc\__name_ and \_\_zc\_der\__name_ and added the reverse dependencies to the XML file `DiscreteStates` block for discrete variables and `InitialUnknowns` for continuous state variables.)
 * The FMI API doesn't expose crossing directions of interest so we enable all of them. If this will never be available we should eliminate crossing check logic to avoid wasted effort.
@@ -387,157 +369,90 @@ Performance assessments are ongoing as larger-scale models become available. Pre
 
 #### FMU Model Performance
 
-* FMU model performance is currently dominated by operations inside the FMU: no QSS solver function registers even 1% in the profile. This performance is severely hobbled by the FMI 2.0 API that is ill-suited to QSS simulation and by the need for numeric differentiation. Once the planned "atomic" (per-variable) API and higher derivatives become available via FMI extensions this performance profile should significantly improve.
+* FMU model performance is currently dominated by operations inside the FMU: no QSS solver function registers even 1% in the profile. This performance is severely hobbled by the FMI 2.0 API that is ill-suited to QSS simulation and by the need for numerical differentiation. Once the planned "atomic" (per-variable) API and higher derivatives become available _via_ FMI extensions this performance profile should significantly improve.
 * The `advance_observers` operation is also a candidate for performance gains in the FMU models.
   * The first approach is to used pooled lookup operations for the observers' derivatives (and, for zero-crossing variables, value) to reduce the FMU call overhead. This was done as a first pass for the `advance_observers` first phase operation. This provided a 15% speedup for the 4-zone ScaleTest model but no speedup for the Case600 room air model. There are other places in the code that could be refactored to use pooled FMU calls: this should improve performance but these are non-trivial code changes.
-  * FMUs are not thread-safe, inhibiting parallelization, but by pooling the observer FMU calls we can explore parallelizing the rest of the `advance_observers` operation. This was tried for the same 4-zone ScaleTest model and results with OpenMP controls tried to date yielded slowdowns, indicating that the OpenMP threading overhead dominates the loop time, so this code has been commented out for now. More FMU model parallelization experimentation is warranted.
+  * FMUs are not thread-safe, inhibiting parallelization, but by pooling the observer FMU calls we can explore parallelizing the rest of the `advance_observers` operation. This was tried for the same 4-zone ScaleTest model and results with OpenMP controls tried to date yielded slowdowns, indicating that the OpenMP threading overhead dominates the loop time. More FMU model parallelization experimentation is warranted.
 
 ### Performance: Future
 
-* Run time comparisons _vs._ [Qss Solver](https://sourceforge.net/projects/qssengine/), [Ptolemy](http://ptolemy.eecs.berkeley.edu/), and other implementations will be useful.
-* Evaluation of alternative event queue designs is likely to be worthwhile, especially once parallel processing is added.
-* Simultaneous requantization triggering: Could skip continuous representation update if a variable is not an observer of any of the requantizing variables. This would save assignments but more importantly evaluation of the highest derivative. There is some overhead in determining whether a variable qualifies. Testing so far doesn't show a significant benefit for this optimization but it should be reevaluated with real-world cases where simultaneous triggering is common.
+* Run time comparisons _vs._ [Qss Solver](https://sourceforge.net/projects/qssengine/), [Ptolemy](http://ptolemy.eecs.berkeley.edu/), and other QSS implementations have so far verified that SOEP-QSS is efficient.
+* Run time comparisions _vs._ traditional OCT PyFMI solvers have confirmed that SOEP-QSS performs well on models it is suited for, specifically lower dependency density models, models with a limited set of faster varying variables, and for larger models due to its scalability advantages.
+* QSS performance with Buildings Library models with highly sensitive variable derivative fields is an obstacle that is being worked on.
 
 ## Testing
 
-* Case runs are being compared with results from [Qss Solver](https://sourceforge.net/projects/qssengine/) and [Ptolemy](http://ptolemy.eecs.berkeley.edu/) for now.
 * Unit tests are included and will be extended for wider coverage as the code progresses.
 
 ## Building QSS
 
-Instructions for building the QSS application on different platforms follows.
+Instructions for building SOEP-QSS follows.
+
+### General
+
+* Platforms: Linux and Windows are currently supported.
+* Compilers: GCC, Intel oneAPI C++, Clang, and Visual C++ are currently supported.
+* SOEP-QSS is built from consoles configured for the desired platform, compiler, and build type by running a `setQss` script from the appropriate `bin` subdirectory.
+* SOEP-QSS can be built by running `bld` from a configured console.
+* SOEP-QSS can be cleaned up by running `cln` from a configured console.
+* The FMI Library (FMIL) is included and built automatically as part of the SOEP-QSS build process. See [`FMIL/README.md`](/FMIL/README.md) for additional details on FMIL.
+
+### Unit Tests
+
+* The unit tests use googletest. The `setGTest` scripts under `bin` set up the necessary environment variables to find googletest when you run the `setQSS` script for your compiler. If necessary you can put a custom version of `setGTest` earlier in your `PATH` to adapt it to your system.
 
 ### Linux
 
-FMIL:
-* See the FMIL directory for full information on building and using the FMIL with QSS.
-* You will need a build of the latest [FMI Library](http://www.jmodelica.org/FMILibrary).
-* If your FMI Library is not installed to directories the `setFMIL` scripts expect (such as `/opt/FMIL.GCC.r`) copy the corresponding `bin/Linux/<compiler>/setFMIL` to a directory in your PATH and adapt it to the location of you FMI Library installation.
-* FMU-QSS support needs extra FMIL headers added to the FMIL installation. For Linux this would be installed with commands of the form (adjusted for your configuration):
-  * `sudo cp <path>/FMIL/trunk/src/CAPI/include/FMI2/fmi2_capi.h /opt/FMIL.<Compiler>.<Build>/include/FMI2`
-  * `sudo cp <path>/FMIL/trunk/src/CAPI/src/FMI2/fmi2_capi_impl.h /opt/FMIL.<Compiler>.<Build>/include/src/FMI2`
-  * `sudo cp <path>/FMIL/trunk/src/Import/src/FMI/fmi_import_context_impl.h /opt/FMIL.<Compiler>.<Build>/include/FMI`
-  * `sudo cp <path>/FMIL/trunk/src/Import/src/FMI2/fmi2_import_impl.h /opt/FMIL.<Compiler>.<Build>/include/FMI2`
-  * `sudo cp <path>/FMIL/trunk/src/XML/include/FMI/*.h /opt/FMIL.<Compiler>.<Build>/include/FMI`
-  * `sudo cp <path>/FMIL/trunk/src/XML/include/FMI1/*.h /opt/FMIL.<Compiler>.<Build>/include/FMI1`
-  * `sudo cp <path>/FMIL/trunk/src/XML/include/FMI2/*.h /opt/FMIL.<Compiler>.<Build>/include/FMI2`
-  * `sudo cp <path>/FMIL/trunk/ThirdParty/Expat/expat-2.1.0/lib/expat*.h /opt/FMIL.<Compiler>.<Build>/include`
+To build SOEP-QSS on Linux:
+* `cd <SOEP-QSS_repository>`
+* `source bin/Linux/<Compiler>/r/setQSS` for release builds or `source bin/Linux/<Compiler>/d/setQSS` for debug builds
+* `bld`
 
-Googletest:
-* The unit tests use googletest. The `setGTest` scripts under `bin` set up the necessary environment variables to find googletest when you run the `setQSS` script for your compiler: put a custom version of `setGTest` in your `PATH` to adapt it to your system.
-
-To build the QSS application on Linux:
-* `cd <repository_directory>`
-* `source bin/Linux/GCC/r/setQSS` for release builds or `source bin/Linux/GCC/d/setQSS` for debug builds
-* `cd src/QSS/app`
-* `mak` (add a -j*N* make argument to override the number of parallel compile jobs)
-* Note that `-fPIC` is used to compile with GCC on Linux to share the build configuration with the FMU-QSS shared/dynamic library generation: this may add a small performance penalty for the QSS application and should not be used for production application builds.
-
-To run the QSS application:
-* `QSS` from any directory with a console configured with `setQSS`
+To run SOEP-QSS on Linux:
+* `QSS <model>.fmu [options]` from any directory with a console configured with `setQSS`.
 * `QSS --help` will show the command line usage/options.
 
 To build and run the unit tests on Linux:
-* The unit tests are in the `tst/QSS/unit` directory and can be built and run with the command `mak run`.
-
-To run the tests that exercise an FMU place a binary compatible build of the tested FMUs in the `unit/Linux/<compiler>/d` directory before running the unit tests.
-At this time an Achilles.fmu FMU built from Achilles.mo in the SOEP-QSS-Test repository can be used by the tests.
+* The unit tests are in the `tst/QSS/unit` directory and can be built and run from that directory with the command `mak run`.
+* To run the tests that exercise an FMU place a binary compatible build of the tested FMUs in the `tst/QSS/unit` directory before running the unit tests. At this time these FMUs built from models in the SOEP-QSS-Test repository can be used by the tests:
+  * Achilles
+  * BouncingBall
+  * InputFunction
 
 ### Windows
 
-#### Note
+To build SOEP-QSS on Windows:
+* `cd <SOEP-QSS_repository>`
+* `bin\Windows\<Compiler>\r\setQSS` for release builds or `bin\Windows\<Compiler>\d\setQSS` for debug builds
+* `bld`
 
-FMIL:
-* You will need a build of the latest [FMI Library](http://www.jmodelica.org/FMILibrary).
-* If your FMI Library is not installed to directories the `setFMIL` scripts expect (such as `C:\FMIL.VC.r`) copy the corresponding `bin\Windows\<compiler>\setFMIL.bat` to a directory in your PATH and adapt it to the location of you FMI Library installation.
-* FMU-QSS support needs extra FMIL headers added to the FMIL installation. For Linux this would be installed with commands of the form (adjusted for your configuration):
-  * `copy \Projects\FMIL\trunk\src\CAPI\include\FMI2\fmi2_capi.h C:\FMIL.<Compiler>.<Build>\include\FMI2`
-  * `copy \Projects\FMIL\trunk\src\CAPI\src\FMI2\fmi2_capi_impl.h C:\FMIL.<Compiler>.<Build>\include\src\FMI2`
-  * `copy \Projects\FMIL\trunk\src\Import\src\FMI\fmi_import_context_impl.h C:\FMIL.<Compiler>.<Build>\include\FMI`
-  * `copy \Projects\FMIL\trunk\src\Import\src\FMI2\fmi2_import_impl.h C:\FMIL.<Compiler>.<Build>\include\FMI2`
-  * `copy \Projects\FMIL\trunk\src\XML\include\FMI\*.h C:\FMIL.<Compiler>.<Build>\include\FMI`
-  * `copy \Projects\FMIL\trunk\src\XML\include\FMI1\*.h C:\FMIL.<Compiler>.<Build>\include\FMI1`
-  * `copy \Projects\FMIL\trunk\src\XML\include\FMI2\*.h C:\FMIL.<Compiler>.<Build>\include\FMI2`
-
-Googletest:
-* The unit tests use googletest. The `setGTest` scripts under `bin` set up the necessary environment variables to find googletest when you run the `setQSS` script for your compiler: put a custom version of `setGTest.bat` in your `PATH` to adapt it to your system.
-
-To build the QSS application on Windows:
-* `cd <repository_directory>`
-* `bin\Windows\VC\r\setQSS` for VC++ release builds or `bin\Windows\VC\d\setQSS` for VC++ debug builds (or similarly with GCC or with IC for Intel C++)
-* `cd src\QSS\app`
-* `mak` (add a -j*N* make argument to override the number of parallel compile jobs)
-
-To run the QSS application:
-* `QSS` from any directory with a console configured with `setQSS`
+To run SOEP-QSS on Windows:
+* `QSS <model>.fmu [options]` from any directory with a console configured with `setQSS`.
 * `QSS --help` will show the command line usage/options.
 
 To build and run the unit tests on Windows:
-* The unit tests are in the `tst\QSS\unit` directory and can be built and run with the command `mak run`.
-
-To run the tests that exercise an FMU place a binary compatible build of the tested FMUs in the `unit\Windows\<compiler>\d` directory before running the unit tests.
-At this time an Achilles.fmu FMU built from Achilles.mo in the SOEP-QSS-Test repository can be used by the tests.
+* The unit tests are in the `tst\QSS\unit` directory and can be built and run from that directory with the command `mak run`.
+* To run the tests that exercise an FMU place a binary compatible build of the tested FMUs in the `tst\QSS\unit` directory before running the unit tests. At this time these FMUs built from models in the SOEP-QSS-Test repository can be used by the tests:
+  * Achilles
+  * BouncingBall
+  * InputFunction
 
 ## Running QSS
 
-The QSS solver application can run both code-defined and FMU-based test cases. FMU for Model Exchange .fmu files can be run if properly adapted for QSS with respect to zero-crossing variables and dependencies. FMU-QSS .fmu files can also be run but they must have names of the form `<FMU=ME_name>_QSS.fmu` to be recognized as FMU-QSS FMUs.
+The SOEP-QSS solver can run FMU-based test cases.
+FMU for Model Exchange .fmu files can be run if properly adapted for QSS with respect to zero-crossing variables and dependencies.
+The `bld.py` script in the `bin` directory of the [SOEP-QSS-Test](https://github.com/NREL/SOEP-QSS-Test.git) repository will build FMUs with the necessary support for SOEP-QSS by default.
 
 There are command line options to select the QSS method, set quantization tolerances, output and differentiation time steps, and output selection controls.
+* The full options can be shown by running `QSS --help`
 * Relative tolerance is taken from the FMU if available by default but can be overridden with the `--rTol` command line option.
 * Absolute tolerances are computed by default from the FMU variable nominal values and the `--aFac` command line option but can be overridden with a constant value using the `--aTol` command line option.
-* QSS variable continuous and/or quantized trajectory values can be output at their requantization events.
-* QSS variable continuous and/or quantized trajectory output at a regular sampling time step interval can be enabled.
-* FMU outputs can be generated for FMU model runs.
-* Diagnostic output can be enabled, which includes a line for each quantization-related variable update.
-
-To run QSS with one of the code-defined models:
-* `QSS <model> [options]`
+* QSS variable continuous and/or quantized trajectory signals can be output at requantization events, zero-crossing events, discrete events, and at a specified sampling interval.
+  * Sampling step outputs are computed from variable trajectories and do not cause additional integration steps.
+* Outputs can be generated for FMU local and output variables.
+* Diagnostic output can be enabled, which prints a full variable update history.
 
 To run QSS with an FMU:
 * `QSS <model>.fmu [options]`
 
-Run `QSS --help` to see the command line usage.
-
-## Building an FMU-QSS
-
-Instructions for building an FMU-QSS from an FMU-ME (FMU for Model Exchange) follows.
-* The [fmu-uuid](https://github.com/viproma/fmu-uuid) application must be on your PATH to generate and FMU-QSS with GUID checking.
-* The same FMIL setup and `setQSS` console configuration as for the QSS application is assumed.
-* The `FMU-QSS.gen.py` (Python 2.7 or 3.x) script generates the FMU-QSS from an FMU-ME adapted for QSS use.
-* From a console configured with `setQSS` move to an empty working directory and copy in the FMU-ME .fmu file.
-* Run `FMU-QSS.gen.py <FMU-ME_name>.fmu` to start the generation process.
-  * Additional options can be seen by running `FMU-QSS.gen.py --help`.
-* This will generate the FMU-QSS `modelDescription.xml` file, build the FMU-QSS shared/dynamic library, and zip the FMU-QSS into a file with a name of the form `<FMU=ME_name>_QSS.fmu`. The FMU-ME fmu is embedded in the `resources` folder within the FMU-QSS .fmu zip file.
-
-## Running an FMU-QSS
-
-To run an FMU-QSS:
-* `QSS <FMU-QSS>.fmu [options]`
-
-Run `QSS --help` to see the command line usage.
-
-## Running Multiple FMU-QSS
-
-To run multiple FMU-QSS simply enter all of them on the command line:
-* `QSS <FMU-QSS_1>.fmu <FMU-QSS_2>.fmu ... [options]`
-
-Input/output connections between models can be specified via command line options of the form:
-`--con=`_model1_`.`_inp\_var_`:`_model2_`.`_out\_var_
-
-Run `QSS --help` to see the command line usage.
-
-## PyQSS
-
-To prepare for integration into PyFMI support for building a Python wrapper for QSS was developed and is included.
-A Python front end to QSS can be built by running the `mak pyd` command from the `app` subdirectory of `src`.
-This builds the `PyQSS` shared/dynamic library that can be imported as a Python module.
-(`PyQSS` is not built by the `bld` or default `mak` commands.)
-A simple front end script, `QSS.py`, is included.
-To run QSS from the Python front end use:
-* `QSS.py <arguments> [options]`
-
-### Notes
-
-* Pybind11 does not work with the Windows MinGW GCC compilers with the stock Python binary distribution that is built with Visual C++.
-* To use `PyQSS` with PyFMI it must be built with the same Python version that PyFMI runs under.
-  To support this usage the Windows environment setup uses the OCT Python installation, if present, in favor of the primary system Python.
+Run `QSS --help` to see the full command line usage.

@@ -320,7 +320,6 @@ namespace QSS {
 			fmu_set_observees_s( tN );
 			Real const x_1_p( p_1() );
 			q_2_ = x_2_ = options::one_over_two_dtND * ( x_1_p - x_1_ ); //ND Forward Euler
-			Real const dN2( options::two_dtND );
 			tN = tE + dN2;
 			fmu_set_time( tN );
 			fmu_set_observees_s( tN );

@@ -1,16 +1,8 @@
 #!/bin/bash
-# Intel C++ Wrapped Header Compile for Syntax-Checking
+# Intel C++ Header Compile Syntax
 
-if [ -f $1 ]; then
-	case $1 in
-	*.c)
-		CHeader=$1
-		;;
-	*)
-		CxxHeader=$1
-		;;
-	esac
-elif [ -f $1.h   ]; then CHeader=$1.h
+if [ -f $1       ]; then CxxHeader=$1
+elif [ -f $1.h   ]; then CxxHeader=$1.h
 elif [ -f $1.hh  ]; then CxxHeader=$1.hh
 elif [ -f $1.hpp ]; then CxxHeader=$1.hpp
 elif [ -f $1.hxx ]; then CxxHeader=$1.hxx
@@ -18,22 +10,12 @@ elif [ -f $1.ii  ]; then CxxHeader=$1.ii
 fi
 
 if [[ $CxxHeader ]]; then
-	cchHeader=$CxxHeader
-	cchSource=$CxxHeader.cc
-elif [[ $CHeader ]]; then
-	cchHeader=$CHeader
-	cchSource=$CHeader.c
+	shift
 else
-	echo ERROR: Header file with that name not found
+	echo ERROR: C++ header file with that name not found
 	exit 1
 fi
 
-if [ -f $cchSource ]; then
-	echo ERROR: Target source file exists: $cchSource
-	exit 1
-fi
-
-echo -e \#include \"$cchHeader\" > $cchSource
-shift
-ccs $cchSource $@
-rm -f $cchSource
+echo -e \#include \"$CxxHeader\" > $CxxHeader.cc
+ccs $CxxHeader.cc $@
+rm -f $CxxHeader.cc

@@ -38,14 +38,17 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Python imports
-import os, re, subprocess, sys
+import os
+import re
+import subprocess
+import sys
 from pathlib import Path
 
 # Globals
 version_git_re = re.compile( r'^\"([a-f0-9]{7})\"$' )
 
 try: # Get current git revision
-    version_git = subprocess.check_output( [ 'git', 'rev-parse', '--short', 'HEAD' ], shell=True ).decode('ascii').strip()
+    version_git = subprocess.check_output( [ 'git', 'rev-parse', '--short', 'HEAD' ], shell=(os.name=='nt') ).decode('ascii').strip()
 except:
     version_git = ''
 

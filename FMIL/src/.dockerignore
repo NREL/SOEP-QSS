@@ -1,0 +1,14 @@
+# Files that will not be copied to the Docker image:
+
+/.git/
+/.vs/
+
+/build-*/
+/CMakeFiles/
+/doc/
+/install-*/
+/out/
+/testlogs-*/
+
+/CMakeSettings.json
+/CMakeCache.txt
