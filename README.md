@@ -392,7 +392,7 @@ Instructions for building SOEP-QSS follows.
 
 * Platforms: Linux and Windows are currently supported.
 * Compilers: GCC, Intel oneAPI C++, Clang, and Visual C++ are currently supported.
-* SOEP-QSS is built from consoles configured for the desired platform, compiler, and build type by running a `setQss` script from the appropriate `bin` subdirectory.
+* SOEP-QSS is built from consoles configured for the desired platform, compiler, and build type by running a `setQSS` script from the appropriate `bin` subdirectory.
 * SOEP-QSS can be built by running `bld` from a configured console.
 * SOEP-QSS can be cleaned up by running `cln` from a configured console.
 * The FMI Library (FMIL) is included and built automatically as part of the SOEP-QSS build process. See [`FMIL/README.md`](/FMIL/README.md) for additional details on FMIL.

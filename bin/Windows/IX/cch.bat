@@ -8,6 +8,7 @@ if exist %1.h   set CxxHeader=%1.h
 if exist %1.hh  set CxxHeader=%1.hh
 if exist %1.hpp set CxxHeader=%1.hpp
 if exist %1.hxx set CxxHeader=%1.hxx
+if exist %1.ii  set CxxHeader=%1.ii
 
 if (%CxxHeader%)==() goto NoSourceError
 

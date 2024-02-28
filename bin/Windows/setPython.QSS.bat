@@ -73,5 +73,5 @@ set "PYTHON_LIB=%PYTHON_LIB_DIR%\python%PYTHON_VER%.lib"
 set PY_PYTHON=%PYTHON_VER:~0,1%.%PYTHON_VER:~1%
 set PYTHONDONTWRITEBYTECODE=x
 
-echo. "%PATH%" | findstr /C:"%PYTHON_DIR%;%PYTHON_DIR%\Scripts;%PYTHON_DIR%\Tools\scripts" >nul 2>&1
-if errorlevel 1 set "PATH=%PATH%;%PYTHON_DIR%;%PYTHON_DIR%\Scripts;%PYTHON_DIR%\Tools\scripts"
+echo. "%Path%" | findstr /C:"%PYTHON_DIR%;%PYTHON_DIR%\Scripts;%PYTHON_DIR%\Tools\scripts" >nul 2>&1
+if errorlevel 1 set "Path=%Path%;%PYTHON_DIR%;%PYTHON_DIR%\Scripts;%PYTHON_DIR%\Tools\scripts"

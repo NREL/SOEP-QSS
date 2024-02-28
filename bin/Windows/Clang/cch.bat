@@ -1,5 +1,5 @@
 @echo off
-:: GCC C++ Header Compile Syntax
+:: Clang C++ Header Compile Syntax
 
 setlocal
 
