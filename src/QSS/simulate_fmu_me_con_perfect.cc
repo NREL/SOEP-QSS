@@ -63,8 +63,8 @@ simulate_fmu_me_con_perfect( std::vector< std::string > const & paths )
 	assert( n_models > 1u );
 	FMU_MEs fmu_mes;
 	fmu_mes.reserve( n_models );
-	Time tBeg( 0.0 );
-	Time tEnd( 0.0 );
+	Time tStart( 0.0 );
+	Time tStop( 0.0 );
 
 	// Instantiate models
 	for ( size_type i = 0; i < n_models; ++i ) {
@@ -76,23 +76,23 @@ simulate_fmu_me_con_perfect( std::vector< std::string > const & paths )
 
 		// Time initialization
 		if ( i == 0 ) {
-			tBeg = fmu_me.t0;
+			tStart = fmu_me.t0;
 		} else {
-			if ( tBeg != fmu_me.t0 ) {
+			if ( tStart != fmu_me.t0 ) {
 				std::cerr << "\nError: Start times of FMU-ME differ" << std::endl;
 				std::exit( EXIT_FAILURE );
 			}
 		}
-		tEnd = std::max( tEnd, fmu_me.tE ); // Use max of specified end times
+		tStop = std::max( tStop, fmu_me.tE ); // Use max of specified stop times
 
 		// Pre-simulation setup
 		fmu_me.pre_simulate();
 	}
 
 	// Set uniform end time
-	tEnd = ( options::specified::tEnd ? options::tEnd : tEnd );
+	tStop = ( options::specified::tStop ? options::tStop : tStop );
 	for ( size_type i = 0; i < n_models; ++i ) {
-		fmu_mes[ i ]->tE = tEnd;
+		fmu_mes[ i ]->tE = tStop;
 	}
 
 	// Connect model inputs to outputs
@@ -224,8 +224,8 @@ simulate_fmu_me_con_perfect( std::vector< std::string > const & paths )
 	}
 
 	// Simulation loop
-	Time time( tBeg );
-	while ( time <= tEnd ) {
+	Time time( tStart );
+	while ( time <= tStop ) {
 		fmi2_event_info_t & eventInfo( eventInfos[ top_model ] );
 		eventInfo.newDiscreteStatesNeeded = fmi2_true;
 		eventInfo.nextEventTimeDefined = fmi2_false;

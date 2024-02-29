@@ -1,8 +1,8 @@
 @echo off
 
-:: Build FMIL
-:: Usage: bld [<compiler> <build>]
-:: Example: bld GCC r
+:: Clean FMIL CMake
+:: Usage: cln [<compiler> <build>]
+:: Example: cln GCC r
 
 setlocal
 
@@ -17,6 +17,5 @@ if (%FMIL_bin%) == () (
   exit /B 1
 )
 
-:: Build
-call %FMIL_bin%\bld.bat
-rd /S /Q %FMIL_ins%\doc >nul 2>&1
+:: Clean
+rd /S /Q %FMIL_cmk% >nul 2>&1

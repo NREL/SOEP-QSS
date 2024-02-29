@@ -64,8 +64,8 @@ simulate_fmu_me_con( std::vector< std::string > const & paths )
 	assert( n_models > 1u );
 	FMU_MEs fmu_mes;
 	fmu_mes.reserve( n_models );
-	Time tBeg( 0.0 );
-	Time tEnd( 0.0 );
+	Time tStart( 0.0 );
+	Time tStop( 0.0 );
 
 	// Instantiate models
 	for ( size_type i = 0; i < n_models; ++i ) {
@@ -77,23 +77,23 @@ simulate_fmu_me_con( std::vector< std::string > const & paths )
 
 		// Time initialization
 		if ( i == 0 ) {
-			tBeg = fmu_me.t0;
+			tStart = fmu_me.t0;
 		} else {
-			if ( tBeg != fmu_me.t0 ) {
+			if ( tStart != fmu_me.t0 ) {
 				std::cerr << "\nError: Start times of FMU-ME differ" << std::endl;
 				std::exit( EXIT_FAILURE );
 			}
 		}
-		tEnd = std::max( tEnd, fmu_me.tE ); // Use max of specified end times
+		tStop = std::max( tStop, fmu_me.tE ); // Use max of specified stop times
 
 		// Pre-simulation setup
 		fmu_me.pre_simulate();
 	}
 
 	// Set uniform end time
-	tEnd = ( options::specified::tEnd ? options::tEnd : tEnd );
+	tStop = ( options::specified::tStop ? options::tStop : tStop );
 	for ( size_type i = 0; i < n_models; ++i ) {
-		fmu_mes[ i ]->tE = tEnd;
+		fmu_mes[ i ]->tE = tStop;
 	}
 
 	// Connect model inputs to outputs
@@ -218,12 +218,12 @@ simulate_fmu_me_con( std::vector< std::string > const & paths )
 		using EventQ = std::multimap< Time, Event >;
 		EventQ events;
 		for ( size_type i = 0; i < n_models; ++i ) {
-			events.insert( EventQ::value_type( tBeg, i ) );
+			events.insert( EventQ::value_type( tStart, i ) );
 		}
 
 		// Simulation loop
-		Time time( tBeg );
-		while ( time <= tEnd ) {
+		Time time( tStart );
+		while ( time <= tStop ) {
 			auto const i1( events.begin() );
 			auto i2( i1 ); ++i2;
 			Time const t2( i2->first );
@@ -231,7 +231,7 @@ simulate_fmu_me_con( std::vector< std::string > const & paths )
 			fmi2_event_info_t & eventInfo( eventInfos[ i ] );
 			eventInfo.newDiscreteStatesNeeded = fmi2_true;
 			eventInfo.nextEventTimeDefined = fmi2_true;
-			eventInfo.nextEventTime = tEnd; // Signal QSS simulation pass to advance time until connected output will be modified
+			eventInfo.nextEventTime = tStop; // Signal QSS simulation pass to advance time until connected output will be modified
 			fmu_mes[ i ]->simulate( &eventInfo, true );
 			events.erase( i1 );
 			events.insert( EventQ::value_type( eventInfo.terminateSimulation ? infinity : eventInfo.nextEventTime, i ) );
@@ -241,9 +241,9 @@ simulate_fmu_me_con( std::vector< std::string > const & paths )
 	} else { // Sync every dtCon
 
 		Time const dt( options::dtCon );
-		Time time( tBeg );
-		Time tNext( tBeg + dt );
-		while ( time <= tEnd ) {
+		Time time( tStart );
+		Time tNext( tStart + dt );
+		while ( time <= tStop ) {
 			for ( size_type i = 0; i < n_models; ++i ) {
 				fmi2_event_info_t & eventInfo( eventInfos[ i ] );
 				if ( !eventInfo.terminateSimulation ) {
@@ -251,7 +251,7 @@ simulate_fmu_me_con( std::vector< std::string > const & paths )
 					eventInfo.nextEventTimeDefined = fmi2_true;
 					eventInfo.nextEventTime = tNext; // Signal QSS simulation pass when to stop
 					FMU_ME & fmu_me( *fmu_mes[ i ] );
-					if ( fmu_me.t <= tEnd ) fmu_me.simulate( &eventInfo, true );
+					if ( fmu_me.t <= tStop ) fmu_me.simulate( &eventInfo, true );
 				}
 			}
 			time = tNext;

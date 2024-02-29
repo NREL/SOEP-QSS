@@ -358,8 +358,8 @@ public: // Simulation Methods
 	// Options Setup
 	void
 	set_options(
-	 Real const tBeg,
-	 Real const tEnd,
+	 Real const tStart,
+	 Real const tStop,
 	 Real const rTolerance
 	);
 

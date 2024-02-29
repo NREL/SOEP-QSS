@@ -287,8 +287,8 @@ namespace QSS {
 		}
 
 		// Get/report FMU run specs
-		fmi2_real_t const tstart( options::specified::tBeg ? options::tBeg : fmi2_import_get_default_experiment_start( fmu ) );
-		fmi2_real_t const tstop( options::specified::tEnd ? options::tEnd : fmi2_import_get_default_experiment_stop( fmu ) );
+		fmi2_real_t const tstart( options::specified::tStart ? options::tStart : fmi2_import_get_default_experiment_start( fmu ) );
+		fmi2_real_t const tstop( options::specified::tStop ? options::tStop : fmi2_import_get_default_experiment_stop( fmu ) );
 		fmi2_real_t const relativeTolerance( fmi2_import_get_default_experiment_tolerance( fmu ) ); // [0.0001]
 		fmi2_boolean_t const toleranceControlled( fmi2_false ); // FMIL says tolerance control not supported for ME
 		fmi2_boolean_t const stopTimeDefined( fmi2_true );
@@ -317,13 +317,13 @@ namespace QSS {
 	void
 	FMU_ME::
 	set_options(
-	 Real const tBeg,
-	 Real const tEnd,
+	 Real const tStart,
+	 Real const tStop,
 	 Real const rTolerance
 	)
 	{
-		t0 = tBeg;
-		tE = tEnd;
+		t0 = tStart;
+		tE = tStop;
 		options::dtMin = std::max( options::dtMin, 2.0 * std::numeric_limits< Time >::epsilon() * std::max( std::abs( t0 ), std::abs( tE ) ) ); // Prevent t + dt == t
 		options::dtMax = std::max( options::dtMax, options::dtMin );
 		rTol = rTolerance;
@@ -2724,8 +2724,8 @@ namespace QSS {
 		while ( t <= tNext ) {
 			t = eventq->top_time();
 			if ( doSOut ) { // QSS and/or FMU sampled outputs
-				Time const tStop( std::min( t, tNext ) );
-				while ( tOut < tStop ) {
+				Time const tOutStop( std::min( t, tNext ) );
+				while ( tOut < tOutStop ) {
 					set_time( tOut );
 					if ( options::output::S ) { // QSS outputs
 						for ( auto var : vars ) {

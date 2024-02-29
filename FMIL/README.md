@@ -1,6 +1,6 @@
 # FMI Library (FMIL) in SOEP-QSS
 
-FMIL 2.4.3 is integrated into the SOEP-QSS respository and is automatically built when QSS is built.
+FMIL 2.4.1 is integrated into the SOEP-QSS respository and is automatically built when QSS is built.
 * QSS uses a slightly modified version of FMIL.
 * Building FMIL requires CMake and GNU Make.
 
@@ -15,7 +15,6 @@ FMIL 2.4.3 is integrated into the SOEP-QSS respository and is automatically buil
 
 ## Directories
 * `bin`  FMIL build scripts for supported platforms and compilers. Also contains CMake and FMIL installation directories for FMIL builds.
-* `doc`  FMIL documents.
 * `src`  FMIL (slightly modified) source code.
 
 ## Notes

@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Build QSS
+# Usage: bld [<compiler> <build>]
+# Example: bld GCC r
+
+# Set environment
+if [ "$1" != "" ] && [ "$2" != "" ]; then
+	source $(dirname $0)/$1/$2/setQSS
+fi
+
+# Check environment
+if [ -z "$QSS" ]; then
+	echo "QSS environment variable is not set"
+	exit 1
+fi
+if [ -z "$QSS_bin" ]; then
+	echo "QSS_bin environment variable is not set"
+	exit 1
+fi
+
+# Use existing FMIL build
+# $FMIL/bin/Linux/bld
+
+# Build QSS
+if [ -d "$QSS/.git" ]; then
+	git_revision.py
+fi
+cd $QSS/src/QSS/app && mak

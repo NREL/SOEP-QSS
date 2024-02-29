@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Build FMIL
-# Usage: bld [<compiler> <build>]
-# Example: bld GCC r
+# Clean FMIL CMake
+# Usage: cln [<compiler> <build>]
+# Example: cln GCC r
 
 # Set environment
 if [ "$1" != "" ] && [ "$2" != "" ]; then
@@ -15,6 +15,5 @@ if [ -z "$FMIL_bin" ]; then
 	exit 1
 fi
 
-# Build
-$FMIL_bin/bld
-rm -rf $FMIL_ins/doc >/dev/null 2>&1
+# Clean
+rm -rf $FMIL_cmk >/dev/null 2>&1

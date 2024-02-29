@@ -316,8 +316,8 @@ extern double one_over_four_dtND; // 1 / ( 4 * dtND )
 extern double one_over_six_dtND_squared; // 1 / ( 6 * dtND^2 )
 extern double dtCon; // FMU connection sync time step (s)
 extern double dtOut; // Sampled output time step (s)
-extern double tBeg; // Begin time (s)
-extern double tEnd; // End time (s)
+extern double tStart; // Start time (s)
+extern double tStop; // Stop time (s)
 extern std::size_t bin_size; // Bin size max
 extern double bin_frac; // Bin step fraction min
 extern bool bin_auto; // Bin size automaically optimized?
@@ -349,8 +349,8 @@ extern bool zTol; // Zero-crossing tolerance specified?
 extern bool dtZC; // FMU zero-crossing time step specified?
 extern bool dtND; // Numeric differentiation time step specified?
 extern bool dtOut; // Sampled output time step specified?
-extern bool tBeg; // Begin time specified?
-extern bool tEnd; // End time specified?
+extern bool tStart; // Start time specified?
+extern bool tStop; // Stop time specified?
 extern bool tLoc; // Local output time range specified?
 extern bool bin; // Bin controls specified?
 
