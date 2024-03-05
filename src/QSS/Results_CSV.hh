@@ -50,6 +50,7 @@
 #include <vector>
 #if ( __cplusplus >= 201703L ) && ( ( _MSC_VER >= 1922 ) || ( ( __GNUC__ >= 11 ) && !defined(__llvm__) && !defined(__INTEL_COMPILER) && !defined(__INTEL_LLVM_COMPILER) ) ) // C++17+ // VS 16.2+ and GCC 11+ have floating point to_chars support
 #include <charconv>
+#include <cmath>
 #endif
 
 namespace QSS {
@@ -138,29 +139,10 @@ public: // Methods
 	values( Values const & values )
 	{
 		if ( values.empty() ) return;
-		csv_stream_ << std::setprecision( 16 );
-		csv_stream_ << values[ 0 ];
-		for ( size_type i = 1, n = values.size(); i < n; ++i ) csv_stream_ << ',' << values[ i ];
+		csv_stream_ << std::right << std::scientific << std::setprecision( 15 );
+		csv_stream_ << std::setw( 23 ) << values[ 0 ];
+		for ( size_type i = 1, n = values.size(); i < n; ++i ) csv_stream_ << ',' << std::setw( 23 ) << values[ i ];
 		csv_stream_ << '\n';
-	}
-
-private: // Static Functions
-
-	// Precision and Width Scientific-Formatted String of a double
-	static
-	std::string
-	sci( double const num )
-	{
-#if ( __cplusplus >= 201703L ) && ( ( _MSC_VER >= 1922 ) || ( ( __GNUC__ >= 11 ) && !defined(__llvm__) && !defined(__INTEL_COMPILER) && !defined(__INTEL_LLVM_COMPILER) ) ) // C++17+ // VS 16.2+ and GCC 11+ have floating point to_chars support
-		std::string num_string( 23, ' ' );
-		char * xb( num_string.data() + 1u );
-		char * xe( xb + 22u );
-		std::to_chars_result const x_res( std::to_chars( ( std::signbit( num ) ? xb : xb + 1u ), xe, num, std::chars_format::scientific, 15 ) );
-		if ( x_res.ec == std::errc{} ) return num_string; // Fall through on error
-#endif
-		std::ostringstream num_stream;
-		num_stream << std::right << std::uppercase << std::scientific << std::setprecision( 16 ) << std::setw( 23 ) << num;
-		return num_stream.str();
 	}
 
 private: // Data
@@ -170,7 +152,7 @@ private: // Data
 
 }; // Results_CSV
 
-#if ( __cplusplus >= 201703L ) && ( ( _MSC_VER >= 1922 ) || ( ( __GNUC__ >= 11 ) && !defined(__llvm__) && !defined(__INTEL_COMPILER) && !defined(__INTEL_LLVM_COMPILER) ) ) // C++17+ // VS 16.2+ and GCC 11+ have floating point to_chars support
+#if ( __cplusplus >= 201703L ) && ( ( _MSC_VER >= 1924 ) || ( ( __GNUC__ >= 11 ) && !defined(__llvm__) ) || ( defined(__llvm__) && ( !defined(__APPLE_CC__) && ( __clang_major__ >= 14 ) ) || ( defined( __APPLE_CC__ ) && ( __clang_major__ >= 15 ) ) ) ) // C++17+
 
 	// Write Values Line: double Specialization
 	template<>
@@ -182,21 +164,13 @@ private: // Data
 		if ( values.empty() ) return;
 		std::string v_string( 23u, ' ' );
 		char * const v0( v_string.data() );
-		char * vb( v0 + 1u );
-		char * vc( vb + 1u );
-		char * ve( vb + 22u );
-		int const precision( 15 );
+		char * const ve( v0 + 23u );
 		for ( size_type i = 0, n = values.size(); i < n; ++i ) {
+			v_string[ 0 ] = v_string[ 1 ] = ' ';
 			double const v( values[ i ] );
-			char * vB;
-			if ( std::signbit( v ) ) {
-				vB = vb;
-			} else {
-				vB = vc;
-				*vb = ' ';
-			}
-			std::to_chars_result const v_res( std::to_chars( vB, ve, v, std::chars_format::scientific, precision ) );
-			if ( v_res.ec != std::errc{} ) v_string.replace( 0u, 23u, sci( v ) ); // Error: fallback code
+			std::string::size_type const off( ( std::signbit( v ) ? 0u : 1u ) + ( ( v != 0.0 ) && ( ( std::abs( v ) >= 1.0e100 ) || ( std::abs( v ) < 1.0e-99 ) ) ? 0u : 1u ) );
+			std::to_chars_result const v_res( std::to_chars( v0 + off, ve, v, std::chars_format::scientific, 15 ) );
+			assert( v_res.ec == std::errc{} );
 			char * vp( v_res.ptr );
 			while ( vp < ve ) *(vp++) = ' ';
 			if ( i > 0u ) csv_stream_ << ',';

@@ -50,6 +50,7 @@
 #include <vector>
 #if ( __cplusplus >= 201703L ) && ( ( _MSC_VER >= 1922 ) || ( ( __GNUC__ >= 11 ) && !defined(__llvm__) && !defined(__INTEL_COMPILER) && !defined(__INTEL_LLVM_COMPILER) ) ) // C++17+ // VS 16.2+ and GCC 11+ have floating point to_chars support
 #include <charconv>
+#include <cmath>
 #endif
 
 namespace QSS {
@@ -242,32 +243,13 @@ public: // Methods
 		assert( t_.size() <= capacity_ );
 		if ( t_.size() == 0u ) return;
 		std::ofstream s( file_, std::ios_base::binary | std::ios_base::out | std::ios_base::app );
-		s << std::setprecision( 16 );
+		s << std::right << std::scientific << std::setprecision( 15 );
 		for ( size_type i = 0, e = t_.size(); i < e; ++i ) {
-			s << t_[ i ] << ' ' << v_[ i ] << '\n';
+			s << std::setw( 23 ) << t_[ i ] << ' ' << std::setw( 23 ) << v_[ i ] << '\n';
 		}
 		s.close();
 		t_.clear();
 		v_.clear();
-	}
-
-private: // Static Functions
-
-	// Precision and Width Scientific-Formatted String of a double
-	static
-	std::string
-	sci( double const num )
-	{
-#if ( __cplusplus >= 201703L ) && ( ( _MSC_VER >= 1922 ) || ( ( __GNUC__ >= 11 ) && !defined(__llvm__) && !defined(__INTEL_COMPILER) && !defined(__INTEL_LLVM_COMPILER) ) ) // C++17+ // VS 16.2+ and GCC 11+ have floating point to_chars support
-		std::string num_string( 23, ' ' );
-		char * xb( num_string.data() + 1u );
-		char * xe( xb + 22u );
-		std::to_chars_result const x_res( std::to_chars( ( std::signbit( num ) ? xb : xb + 1u ), xe, num, std::chars_format::scientific, 15 ) );
-		if ( x_res.ec == std::errc{} ) return num_string; // Fall through on error
-#endif
-		std::ostringstream num_stream;
-		num_stream << std::right << std::uppercase << std::scientific << std::setprecision( 16 ) << std::setw( 23 ) << num;
-		return num_stream.str();
 	}
 
 private: // Static Data
@@ -283,7 +265,7 @@ private: // Data
 
 }; // Output
 
-#if ( __cplusplus >= 201703L ) && ( ( _MSC_VER >= 1922 ) || ( ( __GNUC__ >= 11 ) && !defined(__llvm__) && !defined(__INTEL_COMPILER) && !defined(__INTEL_LLVM_COMPILER) ) ) // C++17+ // VS 16.2+ and GCC 11+ have floating point to_chars support
+#if ( __cplusplus >= 201703L ) && ( ( _MSC_VER >= 1924 ) || ( ( __GNUC__ >= 11 ) && !defined(__llvm__) ) || ( defined(__llvm__) && ( !defined(__APPLE_CC__) && ( __clang_major__ >= 14 ) ) || ( defined( __APPLE_CC__ ) && ( __clang_major__ >= 15 ) ) ) ) // C++17+
 
 	// Flush Buffers to File: double Specialization
 	template<>
@@ -299,37 +281,23 @@ private: // Data
 		std::string tv_string( 48u, ' ' );
 		tv_string[ 47 ] = '\n';
 		char * const t0( tv_string.data() );
-		char * tb( t0 + 1u );
-		char * tc( tb + 1u );
-		char * te( tb + 22u );
-		char * vb( t0 + 25u );
-		char * vc( vb + 1u );
-		char * ve( vb + 22u );
-		int const precision( 15 );
+		char * const te( t0 + 23u );
+		char * const v0( t0 + 24u );
+		char * const ve( v0 + 23u );
 		for ( size_type i = 0, e = t_.size(); i < e; ++i ) {
+			tv_string[ 0 ] = tv_string[ 1 ] = tv_string[ 24 ] = tv_string[ 25 ] = ' ';
+
 			Time const t( t_[ i ] );
-			char * tB;
-			if ( std::signbit( t ) ) {
-				tB = tb;
-			} else {
-				tB = tc;
-				*tb = ' ';
-			}
-			std::to_chars_result const t_res( std::to_chars( tB, te, t, std::chars_format::scientific, precision ) );
-			if ( t_res.ec != std::errc{} ) tv_string.replace( 0u, 23u, sci( t ) ); // Error: fallback code
+			std::string::size_type const t_off( ( std::signbit( t ) ? 0u : 1u ) + ( ( t != 0.0 ) && ( ( std::abs( t ) >= 1.0e100 ) || ( std::abs( t ) < 1.0e-99 ) ) ? 0u : 1u ) );
+			std::to_chars_result const t_res( std::to_chars( t0 + t_off, te, t, std::chars_format::scientific, 15 ) );
+			assert( t_res.ec == std::errc{} );
 			char * tp( t_res.ptr );
 			while ( tp < te ) *(tp++) = ' ';
 
 			double const v( v_[ i ] );
-			char * vB;
-			if ( std::signbit( v ) ) {
-				vB = vb;
-			} else {
-				vB = vc;
-				*vb = ' ';
-			}
-			std::to_chars_result const v_res( std::to_chars( vB, ve, v, std::chars_format::scientific, precision ) );
-			if ( v_res.ec != std::errc{} ) tv_string.replace( 24u, 23u, sci( v ) ); // Error: fallback code
+			std::string::size_type const v_off( ( std::signbit( v ) ? 0u : 1u ) + ( ( v != 0.0 ) && ( ( std::abs( v ) >= 1.0e100 ) || ( std::abs( v ) < 1.0e-99 ) ) ? 0u : 1u ) );
+			std::to_chars_result const v_res( std::to_chars( v0 + v_off, ve, v, std::chars_format::scientific, 15 ) );
+			assert( v_res.ec == std::errc{} );
 			char * vp( v_res.ptr );
 			while ( vp < ve ) *(vp++) = ' ';
 

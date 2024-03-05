@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Build FMIL
+# Usage: bld [<compiler> <build>]
+# Example: bld GCC r
+
+# Set environment
+if [ "$1" != "" ] && [ "$2" != "" ]; then
+	source $(dirname $0)/$1/$2/setQSS
+fi
+
+# Check environment
+if [ -z "$FMIL_bin" ]; then
+	echo "FMIL_bin environment variable is not set"
+	exit 1
+fi
+
+# Build
+$FMIL_bin/bld
+rm -rf $FMIL_ins/doc >/dev/null 2>&1

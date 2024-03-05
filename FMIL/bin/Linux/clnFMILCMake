@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Clean FMIL CMake
+# Usage: cln [<compiler> <build>]
+# Example: cln GCC r
+
+# Set environment
+if [ "$1" != "" ] && [ "$2" != "" ]; then
+	source $(dirname $0)/$1/$2/setQSS
+fi
+
+# Check environment
+if [ -z "$FMIL_bin" ]; then
+	echo "FMIL_bin environment variable is not set"
+	exit 1
+fi
+
+# Clean
+rm -rf $FMIL_cmk >/dev/null 2>&1
