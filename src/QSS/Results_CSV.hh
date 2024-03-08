@@ -48,7 +48,7 @@
 #include <string>
 #include <type_traits>
 #include <vector>
-#if ( __cplusplus >= 201703L ) && ( ( _MSC_VER >= 1922 ) || ( ( __GNUC__ >= 11 ) && !defined(__llvm__) && !defined(__INTEL_COMPILER) && !defined(__INTEL_LLVM_COMPILER) ) ) // C++17+ // VS 16.2+ and GCC 11+ have floating point to_chars support
+#if ( __cplusplus >= 201703L ) && ( ( _MSC_VER >= 1924 ) || ( ( __GNUC__ >= 11 ) && !defined(__llvm__) ) || ( defined(__llvm__) && ( !defined(__APPLE_CC__) && ( __clang_major__ >= 14 ) ) || ( defined( __APPLE_CC__ ) && ( __clang_major__ >= 15 ) ) ) ) // C++17+
 #include <charconv>
 #include <cmath>
 #endif

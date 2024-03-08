@@ -70,7 +70,7 @@ run : $(EXE)
 $(EXE) : $(OBJ) $(PATH_LIBS)
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) >/dev/null 2>&1
 	@-rm -f $(filter-out $(OBJ),$(wildcard *.o)) >/dev/null 2>&1
-	$(CXX) $(LDFLAGS) -o $@ $^ -lfmilib -L$(GTEST_BIN) -lgtest -lpthread -ldl
+	$(CXX) $(LDFLAGS) -o $@ $^ -lfmilib -L$(GTEST_BIN) -lgtest -lpthread -ldl -lubsan
 
 .PRECIOUS : $(EXE)
 

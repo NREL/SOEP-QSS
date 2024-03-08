@@ -63,7 +63,7 @@ $(QSS_OBJ) : $(QSS_SRC)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 $(EXE) : $(SLB) $(QSS_OBJ)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(QSS_OBJ) -ldl -L$(QSS_bin) -lQSS -L$(FMIL_lib) -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lz
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(QSS_OBJ) -ldl -L$(QSS_bin) -lQSS -L$(FMIL_lib) -lfmilib -lfmiimport -lfmicapi -lfmixml -lexpat -ljmutils -lfmizip -lminizip -lz $(LINKLIBS)
 
 # Dependencies
 ifneq ($(MAKECMDGOALS),dep)

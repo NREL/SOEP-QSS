@@ -1315,7 +1315,7 @@ private: // Methods
 		if ( ( max_threads_ > 1u ) && ( observers_.size() >= max_threads_ * 64u ) ) { // Parallel
 
 		#pragma omp parallel for schedule(static)
-		for ( Variables::iterator observer = observers_.begin(); observer != observers_.end(); ++observer ) { // OpenMP 3.0+ supports this form
+		for ( typename Variables::iterator observer = observers_.begin(); observer != observers_.end(); ++observer ) { // OpenMP 3.0+ supports this form
 		// for ( Variable * observer : observers_ ) { // OpenMP 5.0+ supports this form
 			(*observer)->advance_observer_F_parallel();
 		}
@@ -1554,7 +1554,7 @@ private: // Data
 
 	// Parallel
 #ifdef _OPENMP
-	size_type const max_threads_{ 0u };
+	size_type max_threads_{ 0u };
 #endif // _OPENMP
 
 }; // Observers
