@@ -20,9 +20,15 @@ if (%QSS_bin%) == () (
   echo QSS_bin environment variable is not set
   exit /B 1
 )
+if (%FMIL_lib%) == () (
+  echo FMIL_lib environment variable is not set
+  exit /B 1
+)
 
-:: Use existing FMIL build
-:: call %FMIL%\bin\Windows\bld.bat
+:: Build FMIL
+if not exist "%FMIL_lib%\" (
+  call %FMIL%\bin\Windows\bld.bat
+)
 
 :: Build QSS
 if exist "%QSS%\.git" (

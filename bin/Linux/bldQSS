@@ -18,9 +18,15 @@ if [ -z "$QSS_bin" ]; then
 	echo "QSS_bin environment variable is not set"
 	exit 1
 fi
+if [ -z "$FMIL_lib" ]; then
+	echo "FMIL_lib environment variable is not set"
+	exit 1
+fi
 
-# Use existing FMIL build
-# $FMIL/bin/Linux/bld
+# Build FMIL
+if [ ! -d "$FMIL_lib" ]; then
+	$FMIL/bin/Linux/bld
+fi
 
 # Build QSS
 if [ -d "$QSS/.git" ]; then
