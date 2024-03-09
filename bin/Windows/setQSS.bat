@@ -8,7 +8,7 @@ set QSS=%QSS:~0,-13%
 
 set Path=%Path%;%QSS%\bin\Windows;%QSS%\bin
 
-call setPython.QSS.bat
+call setQSS_Python.bat
 
 set OMP_NUM_THREADS=4
 set OMP_PLACES=cores

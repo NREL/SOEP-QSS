@@ -12,8 +12,8 @@ set FMIL=%QSS%\FMIL
 
 set Path=%Path%;%QSS%\bin\%OS_Compiler%
 
-call setClang.bat
-call setVC.bat
-call setGTest.bat
+call setQSS_Clang.bat
+call setQSS_Clang_GTest.bat
+call setQSS_VC.bat
 
 %~dp0..\setQSS.bat

@@ -44,7 +44,6 @@ ins/
 *.mof
 *.mos
 *.out
-*.xml
 
 fmu-uuid
 bin/Linux/**/QSS*

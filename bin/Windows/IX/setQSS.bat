@@ -12,7 +12,7 @@ set FMIL=%QSS%\FMIL
 
 set Path=%Path%;%QSS%\bin\%OS_Compiler%
 
-call setIX.bat
-call setGTest.bat
+call setQSS_IX.bat
+call setQSS_IX_GTest.bat
 
 %~dp0..\setQSS.bat

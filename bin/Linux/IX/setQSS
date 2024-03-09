@@ -11,7 +11,7 @@ export FMIL=$QSS/FMIL
 
 export PATH=$PATH:$QSS/bin/$OS_Compiler
 
-source setIX
-source setGTest
+source setQSS_IX
+source setQSS_IX_GTest
 
 source $QSS/bin/Linux/setQSS

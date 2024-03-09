@@ -11,6 +11,6 @@ export FMIL=$QSS/FMIL
 
 export PATH=$PATH:$QSS/bin/$OS_Compiler
 
-source setGTest
+source setQSS_Clang_GTest
 
 source $QSS/bin/Linux/setQSS
