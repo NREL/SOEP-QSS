@@ -726,8 +726,7 @@ process_args( Args const & args )
 					std::cerr << "\nError: Nonpositive dtND: " << dtND << std::endl;
 					fatal = true;
 				}
-			} else if ( ( dtND_args.size() == 1u ) && ( is_any_of( dtND_args[ 0 ][ 0 ], "YyTtOo" ) ) ) { // dtND optimizer on
-				dtND_optimizer = true;
+				dtND_optimizer = false;
 			} else {
 				std::cerr << "\nError: Nonnumeric dtND: " << dtND_str << std::endl;
 				fatal = true;
@@ -735,7 +734,7 @@ process_args( Args const & args )
 			if ( dtND_args.size() > 1u ) {
 				bool const dtND_arg_1_char( dtND_args[ 1 ].length() == 1u );
 				char const dtND_arg_1( dtND_args[ 1 ][ 0 ] );
-				if ( dtND_arg_1_char && is_any_of( dtND_arg_1, "YyTtOo" ) ) { // dtND optimizer on
+				if ( dtND_arg_1_char && is_any_of( dtND_arg_1, "YyTt" ) ) { // dtND optimizer on
 					dtND_optimizer = true;
 				} else if ( dtND_arg_1_char && is_any_of( dtND_arg_1, "NnFf" ) ) { // dtND optimizer off
 					dtND_optimizer = false;
