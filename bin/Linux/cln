@@ -6,7 +6,7 @@
 
 # Set environment
 if [ "$1" != "" ] && [ "$2" != "" ]; then
-	source $(dirname $0)/$1/$2/setQSS
+	source "$(dirname "$(readlink -m "${BASH_SOURCE[0]}")")/$1/$2/setQSS"
 fi
 
 # Check environment
@@ -23,8 +23,8 @@ fi
 $FMIL/bin/Linux/cln
 
 # Clean
-cd $QSS/src/QSS/app && mak clean && cln_dirs
-cd $QSS/tst/QSS/unit && mak clean && cln_dirs
+cd "$QSS/src/QSS/app" && mak clean && cln_dirs
+cd "$QSS/tst/QSS/unit" && mak clean && cln_dirs
 for ext in a exe so
 do
 	rm -f $QSS_bin/*QSS.$ext >/dev/null 2>&1

@@ -20,4 +20,4 @@ set INCLUDE=.;%INCLUDE%;%QSS%\src;%FMIL_inc%;%FMIL_inc%\FMI;%FMIL_inc%\FMI1;%FMI
 
 set LIB=%LIB%;%QSS_bin%;%FMIL_lib%
 
-%~dp0..\setQSS.bat
+"%~dp0..\setQSS.bat"

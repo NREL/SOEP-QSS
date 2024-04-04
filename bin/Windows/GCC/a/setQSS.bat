@@ -1,7 +1,7 @@
 @echo off
-:: QSS Windows GCC Debug Setup
+:: QSS Windows GCC Debug+Analyzer Setup
 
-set OS_Compiler_Build=Windows\GCC\d
+set OS_Compiler_Build=Windows\GCC\a
 
 set QSS_bin=%~dp0
 set QSS_bin=%QSS_bin:~0,-1%

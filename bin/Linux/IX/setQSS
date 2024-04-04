@@ -4,7 +4,7 @@
 export OS_Compiler=Linux/IX
 
 if [ -z "$QSS" ]; then
-	export QSS=$(dirname $(dirname $(dirname $(dirname $(readlink -m "${BASH_SOURCE[0]}")))))
+	export QSS=$(dirname "$(dirname "$(dirname "$(dirname "$(readlink -m "${BASH_SOURCE[0]}")")")")")
 fi
 
 export FMIL=$QSS/FMIL
@@ -14,4 +14,4 @@ export PATH=$PATH:$QSS/bin/$OS_Compiler
 source setQSS_IX
 source setQSS_IX_GTest
 
-source $QSS/bin/Linux/setQSS
+source "$QSS/bin/Linux/setQSS"

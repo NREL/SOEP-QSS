@@ -3,7 +3,7 @@
 
 set OS_Compiler=Windows\Clang
 
-if not (%QSS%) == () goto Step2
+if not "%QSS%" == "" goto Step2
 set QSS=%~dp0
 set QSS=%QSS:~0,-19%
 :Step2
@@ -16,4 +16,4 @@ call setQSS_Clang.bat
 call setQSS_Clang_GTest.bat
 call setQSS_VC.bat
 
-%~dp0..\setQSS.bat
+"%~dp0..\setQSS.bat"

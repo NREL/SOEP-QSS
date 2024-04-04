@@ -3,8 +3,8 @@
 
 export OS_Compiler_Build=Linux/Clang/r
 
-export QSS=$(dirname $(dirname $(dirname $(dirname $(dirname $(readlink -m "${BASH_SOURCE[0]}"))))))
-export QSS_bin=$(dirname $(readlink -m "${BASH_SOURCE[0]}"))
+export QSS=$(dirname "$(dirname "$(dirname "$(dirname "$(dirname "$(readlink -m "${BASH_SOURCE[0]}")")")")")")
+export QSS_bin=$(dirname "$(readlink -m "${BASH_SOURCE[0]}")")
 
 export FMIL=$QSS/FMIL
 export FMIL_bin=$FMIL/bin/$OS_Compiler_Build
@@ -21,4 +21,4 @@ export LIBRARY_PATH=$QSS_bin:$FMIL_lib:$LIBRARY_PATH
 
 export LD_LIBRARY_PATH=$QSS_bin:$FMIL_lib:$LD_LIBRARY_PATH
 
-source $QSS/bin/Linux/Clang/setQSS
+source "$QSS/bin/Linux/Clang/setQSS"

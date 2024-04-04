@@ -6,7 +6,7 @@
 
 # Set environment
 if [ "$1" != "" ] && [ "$2" != "" ]; then
-	source $(dirname $0)/$1/$2/setQSS
+	source "$(dirname "$(readlink -m "${BASH_SOURCE[0]}")")/$1/$2/setQSS"
 fi
 
 # Check environment
@@ -26,4 +26,4 @@ $FMIL/bin/Linux/bld
 if [ -d "$QSS/.git" ]; then
 	git_revision.py
 fi
-cd $QSS/src/QSS/app && mak
+cd "$QSS/src/QSS/app" && mak
