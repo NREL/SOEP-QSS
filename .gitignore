@@ -9,7 +9,6 @@
 *.ipch
 *.lib
 *.log
-*.map
 *.o
 *.o-*
 *.obj
@@ -48,3 +47,5 @@ ins/
 fmu-uuid
 bin/Linux/**/QSS*
 bin/Linux/**/*.unit
+
+!*.a/

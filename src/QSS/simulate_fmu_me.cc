@@ -34,8 +34,14 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // QSS Headers
+#include <QSS/cpu_time.hh>
 #include <QSS/simulate_fmu_me.hh>
 #include <QSS/FMU_ME.hh>
+
+// OpenMP Headers
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 namespace QSS {
 
@@ -43,10 +49,18 @@ namespace QSS {
 void
 simulate_fmu_me( std::string const & path )
 {
+double const cpu_time_beg( cpu_time() );
+#ifdef _OPENMP
+double const wall_time_beg( omp_get_wtime() );
+#endif
 	FMU_ME fmu_me( path );
 	fmu_me.instantiate();
 	fmu_me.pre_simulate();
 	fmu_me.init();
+	std::cerr << "\nSetup CPU time:  " << cpu_time() - cpu_time_beg << std::endl;
+#ifdef _OPENMP
+	std::cerr << "Setup wall time: " << omp_get_wtime() - wall_time_beg << std::endl;
+#endif
 	fmu_me.simulate();
 	fmu_me.post_simulate();
 }
