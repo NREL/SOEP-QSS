@@ -22,4 +22,4 @@ set LIBRARY_PATH=%QSS_bin%;%FMIL_lib%;%LIBRARY_PATH%
 
 set LD_LIBRARY_PATH=%QSS_bin%;%FMIL_lib%;%LD_LIBRARY_PATH%
 
-%~dp0..\setQSS.bat
+"%~dp0..\setQSS.bat"

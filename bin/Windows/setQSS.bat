@@ -1,7 +1,7 @@
 @echo off
 :: QSS Windows Setup
 
-if not (%QSS%) == () goto Step2
+if not "%QSS%" == "" goto Step2
 set QSS=%~dp0
 set QSS=%QSS:~0,-13%
 :Step2

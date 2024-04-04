@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # Build FMIL
-# Usage: bld [<compiler> <build>]
-# Example: bld GCC r
+# Usage: bldFMIL [<compiler> <build>]
+# Example: bldFMIL GCC r
 
 # Set environment
 if [ "$1" != "" ] && [ "$2" != "" ]; then
-	source $(dirname $0)/$1/$2/setQSS
+	source "$(dirname "$(readlink -m "${BASH_SOURCE[0]}")")/$1/$2/setQSS"
 fi
 
 # Check environment
@@ -16,5 +16,5 @@ if [ -z "$FMIL_bin" ]; then
 fi
 
 # Build
-$FMIL_bin/bld
-rm -rf $FMIL_ins/doc >/dev/null 2>&1
+"$FMIL_bin/bld"
+rm -rf "$FMIL_ins/doc" >/dev/null 2>&1

@@ -7,22 +7,22 @@
 setlocal
 
 :: Set environment
-if not (%2) == () (
-  call %~dp0\Windows\%1\%2\setQSS.bat
+if not "%2" == "" (
+  call "%~dp0\Windows\%1\%2\setQSS.bat"
 )
 
 :: Check environment
-if (%QSS%) == () (
+if "%QSS%" == "" (
   echo QSS environment variable is not set
   exit /B 1
 )
-if (%QSS_bin%) == () (
+if "%QSS_bin%" == "" (
   echo QSS_bin environment variable is not set
   exit /B 1
 )
 
 :: Clean FMIL
-call %FMIL%\bin\Windows\cln.bat
+call "%FMIL%\bin\Windows\cln.bat"
 
 :: Clean QSS
 cd %QSS%\src\QSS\app && call mak.bat clean && call cln_dirs.bat

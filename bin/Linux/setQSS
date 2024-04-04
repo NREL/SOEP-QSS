@@ -2,7 +2,7 @@
 # QSS Linux Setup
 
 if [ -z "$QSS" ]; then
-	export QSS=$(dirname $(dirname $(dirname $(readlink -m "${BASH_SOURCE[0]}"))))
+	export QSS=$(dirname "$(dirname "$(dirname "$(readlink -m "${BASH_SOURCE[0]}")")")")
 fi
 
 export PATH=$PATH:$QSS/bin/Linux:$QSS/bin

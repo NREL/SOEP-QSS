@@ -65,7 +65,7 @@ clean :
 .PHONY : run
 run : $(EXE)
 	@echo Running $(TAR) unit tests
-	@cd $(TST_PATH) && $(EXE)
+	@cd "$(TST_PATH)" && "$(EXE)"
 
 $(EXE) : $(OBJ) $(PATH_LIBS)
 	@-rm -f $(filter-out $(DEP),$(wildcard *.d)) >/dev/null 2>&1

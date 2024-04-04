@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # Build QSS
-# Usage: bld [<compiler> <build>]
-# Example: bld GCC r
+# Usage: bldQSS [<compiler> <build>]
+# Example: bldQSS GCC r
 
 # Set environment
 if [ "$1" != "" ] && [ "$2" != "" ]; then
-	source $(dirname $0)/$1/$2/setQSS
+	source "$(dirname "$(readlink -m "${BASH_SOURCE[0]}")")/$1/$2/setQSS"
 fi
 
 # Check environment
@@ -32,4 +32,4 @@ fi
 if [ -d "$QSS/.git" ]; then
 	git_revision.py
 fi
-cd $QSS/src/QSS/app && mak
+cd "$QSS/src/QSS/app" && mak

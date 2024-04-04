@@ -13,14 +13,14 @@ export C_FLAGS="-std=c2x -xHOST -Wall -Wno-unknown-pragmas -Wno-unused-function 
 
 # Enter CMake directory
 if [ ! -d "$FMIL_cmk" ]; then
-	mkdir -p $FMIL_cmk >/dev/null 2>&1
+	mkdir -p "$FMIL_cmk" >/dev/null 2>&1
 fi
-cd $FMIL_cmk
+cd "$FMIL_cmk"
 
 # Run CMake if needed
 if [ ! -f "Makefile" ]; then
 	export CMAKE_COLOR_DIAGNOSTICS=OFF
-	cmake -G Unix\ Makefiles $QSS/FMIL/src -DFMILIB_INSTALL_PREFIX=$FMIL_ins -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS_RELEASE="$C_FLAGS"
+	cmake -G Unix\ Makefiles $QSS/FMIL/src -DFMILIB_INSTALL_PREFIX="$FMIL_ins" -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS_RELEASE="$C_FLAGS"
 fi
 
 # Run GNU Make

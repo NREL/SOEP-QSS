@@ -1,5 +1,5 @@
 @echo off
-if (%OS_Compiler%) == () (
+if "%OS_Compiler%" == "" (
   echo OS_Compiler environment variable is not set
   exit /B 1
 )

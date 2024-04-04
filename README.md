@@ -396,6 +396,7 @@ Instructions for building SOEP-QSS follows.
 * SOEP-QSS can be built by running `bld` from a configured console.
 * SOEP-QSS can be cleaned up by running `cln` from a configured console.
 * The FMI Library (FMIL) is included and built automatically as part of the SOEP-QSS build process. See [`FMIL/README.md`](/FMIL/README.md) for additional details on FMIL.
+* Don't install QSS to a path with spaces in it: GNU Make doesn't handle spaces
 
 ### Unit Tests
 

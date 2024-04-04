@@ -7,22 +7,22 @@
 setlocal
 
 :: Set environment
-if not (%2) == () (
-  call %~dp0%1\%2\setQSS.bat
+if not "%2" == "" (
+  call "%~dp0%1\%2\setQSS.bat"
 )
 
 :: Check environment
-if (%QSS%) == () (
+if "%QSS%" == "" (
   echo QSS environment variable is not set
   exit /B 1
 )
-if (%QSS_bin%) == () (
+if "%QSS_bin%" == "" (
   echo QSS_bin environment variable is not set
   exit /B 1
 )
 
 :: Build FMIL
-call %FMIL%\bin\Windows\bld.bat
+call "%FMIL%\bin\Windows\bld.bat"
 
 :: Build QSS
 if exist "%QSS%\.git" (

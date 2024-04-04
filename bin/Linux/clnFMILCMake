@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # Clean FMIL CMake
-# Usage: cln [<compiler> <build>]
-# Example: cln GCC r
+# Usage: clnFMILCMake [<compiler> <build>]
+# Example: clnFMILCMake GCC r
 
 # Set environment
 if [ "$1" != "" ] && [ "$2" != "" ]; then
-	source $(dirname $0)/$1/$2/setQSS
+	source "$(dirname "$(readlink -m "${BASH_SOURCE[0]}")")/$1/$2/setQSS"
 fi
 
 # Check environment
@@ -16,4 +16,4 @@ if [ -z "$FMIL_bin" ]; then
 fi
 
 # Clean
-rm -rf $FMIL_cmk >/dev/null 2>&1
+rm -rf "$FMIL_cmk" >/dev/null 2>&1
