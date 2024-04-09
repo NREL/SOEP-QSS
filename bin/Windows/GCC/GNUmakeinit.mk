@@ -6,7 +6,7 @@
 
 # Extensions
 .SUFFIXES: # Clear default extensions
-.SUFFIXES: .cc .cpp .c .hh .hpp .h .d .o .exe .a .lib .def .dll
+.SUFFIXES: .cc .cpp .hh .hpp .h .d .o .exe .a .lib .def .dll
 
 # Flags
 ARFLAGS := rD
@@ -24,7 +24,6 @@ BIN_PATH := $(QSS_bin)
 # Search Paths
 vpath %.cc  $(SRC_PATH) $(SRC_PATH)\app
 vpath %.cpp $(SRC_PATH)
-vpath %.c   $(SRC_PATH)
 vpath %.hh  $(INC_PATH)
 vpath %.hpp $(INC_PATH)
 vpath %.h   $(INC_PATH)
@@ -44,9 +43,6 @@ vpath %.dll $(BIN_PATH)
 %.d : %.cpp
 	@$(MAKEDEPEND) $<
 
-%.d : %.c
-	@$(MAKEDEPEND) $<
-
 %.o : %.cc
 	@$(MAKEDEPEND) $<
 	$(CXX) $(CXXFLAGS) -c -o $@ $(subst /,\,$<)
@@ -54,10 +50,6 @@ vpath %.dll $(BIN_PATH)
 %.o : %.cpp
 	@$(MAKEDEPEND) $<
 	$(CXX) $(CXXFLAGS) -c -o $@ $(subst /,\,$<)
-
-%.o : %.c
-	@$(MAKEDEPEND) $<
-	$(CC) $(CFLAGS) -c -o $@ $(subst /,\,$<)
 
 %.lib : %.o
 	$(AR) $(ARFLAGS) $@ $?

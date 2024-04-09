@@ -2687,6 +2687,7 @@ namespace QSS {
 		std::cerr << std::setprecision( 16 );
 
 		if ( options::output::d ) std::cout << '\n' + name + " Simulation Loop =====" << std::endl;
+		if ( t == t0 ) std::cout << '\r' + name + " Simulation   0% =====" << std::endl;
 
 		// Timing setup
 		Time const tSim( tE - t0 ); // Simulation time span expected

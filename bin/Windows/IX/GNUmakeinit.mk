@@ -6,7 +6,7 @@
 
 # Extensions
 .SUFFIXES: # Clear default extensions
-.SUFFIXES: .cc .cpp .c .hh .hpp .h .d .obj .exe .lib .def .dll
+.SUFFIXES: .cc .cpp .hh .hpp .h .d .obj .exe .lib .def .dll
 
 # Flags
 ARFLAGS := /nologo
@@ -25,7 +25,6 @@ BIN_PATH := $(QSS_bin)
 # Search Paths
 vpath %.cc  $(SRC_PATH) $(SRC_PATH)\app
 vpath %.cpp $(SRC_PATH)
-vpath %.c   $(SRC_PATH)
 vpath %.hh  $(INC_PATH)
 vpath %.hpp $(INC_PATH)
 vpath %.h   $(INC_PATH)
@@ -44,9 +43,6 @@ vpath %.dll $(BIN_PATH)
 %.d : %.cpp
 	@$(MAKEDEPEND) $<
 
-%.d : %.c
-	@$(MAKEDEPEND) $<
-
 %.obj : %.cc
 	@$(MAKEDEPEND) $<
 	$(CXX) $(CXXFLAGS) /c /Fo:"$@" $(subst /,\,$<)
@@ -54,10 +50,6 @@ vpath %.dll $(BIN_PATH)
 %.obj : %.cpp
 	@$(MAKEDEPEND) $<
 	$(CXX) $(CXXFLAGS) /c /Fo:"$@" $(subst /,\,$<)
-
-%.obj : %.c
-	@$(MAKEDEPEND) $<
-	$(CC) $(CFLAGS) /c /Fo:"$@" $(subst /,\,$<)
 
 # Library from objects: Rebuild whole library ($^ instead of $?): Could do remove then add but fails for new lib
 %.lib : %.obj
