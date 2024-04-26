@@ -84,7 +84,7 @@ struct Variable final
 	{
 		assert( std::is_sorted( observees.begin(), observees.end() ) ); // Require sorted
 		Observees::const_iterator const i( std::lower_bound( observees.begin(), observees.end(), idx_, []( Index const & observee_idx, Index const & index ){ return observee_idx < index; } ) );
-		return ( ( i != observees.end() ) && ( *i == idx_ ) );
+		return ( i != observees.end() ) && ( *i == idx_ );
 	}
 
 	// Variable Index
@@ -173,7 +173,22 @@ public: // Predicate
 	bool
 	has( Index const idx ) const
 	{
-		return ( variables.find( idx ) != variables.end() );
+#if ( __cplusplus >= 202002L ) // C++20+
+		return variables.contains( idx );
+#else
+		return variables.find( idx ) != variables.end();
+#endif
+	}
+
+	// Has a Variable?
+	bool
+	contains( Index const idx ) const
+	{
+#if ( __cplusplus >= 202002L ) // C++20+
+		return variables.contains( idx );
+#else
+		return variables.find( idx ) != variables.end();
+#endif
 	}
 
 public: // Property

@@ -122,7 +122,7 @@ public: // Predicate
 	bool
 	have() const
 	{
-		return ( !observers_.empty() );
+		return !observers_.empty();
 	}
 
 	// Have Connected Output Observer(s)?
@@ -225,7 +225,13 @@ public: // Methods
 		if ( triggers.size() < 20u ) { // Linear search
 			for ( Variable * trigger : triggers ) {
 				for ( Variable * observer : trigger->observers() ) {
-					if ( std::find( triggers.begin(), triggers.end(), observer ) == triggers.end() ) observers_.push_back( observer );
+#if ( __cplusplus >= 202302L ) // C++23+
+					if ( !std::ranges::contains( triggers, observer ) ) {
+#else
+					if ( std::find( triggers.begin(), triggers.end(), observer ) == triggers.end() ) {
+#endif
+						observers_.push_back( observer );
+					}
 				}
 			}
 		} else { // Binary search
@@ -233,7 +239,9 @@ public: // Methods
 			std::sort( sorted_triggers.begin(), sorted_triggers.end() );
 			for ( Variable * trigger : sorted_triggers ) {
 				for ( Variable * observer : trigger->observers() ) {
-					if ( !std::binary_search( sorted_triggers.begin(), sorted_triggers.end(), observer ) ) observers_.push_back( observer );
+					if ( !std::binary_search( sorted_triggers.begin(), sorted_triggers.end(), observer ) ) {
+						observers_.push_back( observer );
+					}
 				}
 			}
 		}
@@ -331,7 +339,11 @@ private: // Methods
 	{
 		assert( trigger_ != nullptr );
 		for ( Variable * observer : observers ) {
+#if ( __cplusplus >= 202002L ) // C++20+
+			if ( !observers_checked.contains( observer ) ) { // Observer not already processed
+#else
 			if ( observers_checked.find( observer ) == observers_checked.end() ) { // Observer not already processed
+#endif
 				observers_checked.insert( observer );
 				if ( observer == trigger_ ) continue; // Trigger isn't a computational observer: Don't need to signal it when it updates
 				if ( observer->is_Active() ) observers_set.insert( observer ); // Active => Computational
@@ -355,7 +367,11 @@ private: // Methods
 		assert( trigger_ != nullptr );
 		for ( Variable * observer : observers ) {
 			if ( observer->not_State() ) { // X-based
+#if ( __cplusplus >= 202002L ) // C++20+
+				if ( !observers_checked.contains( observer ) ) { // Observer not already processed
+#else
 				if ( observers_checked.find( observer ) == observers_checked.end() ) { // Observer not already processed
+#endif
 					observers_checked.insert( observer );
 					if ( observer == trigger_ ) continue; // Trigger isn't a computational observer: Don't need to signal it when it updates
 					if ( observer->is_Active() ) observers_set.insert( observer ); // Active => Computational

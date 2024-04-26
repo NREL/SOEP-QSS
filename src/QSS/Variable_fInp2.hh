@@ -245,7 +245,7 @@ private: // Methods
 			}
 		} else {
 			Time const dt( std::min( std::max( dt_infinity_of_infinity(), dt_min ), dt_max ) );
-			tE = ( dt != infinity ? tQ + dt : infinity );
+			tE = dt != infinity ? tQ + dt : infinity;
 		}
 	}
 

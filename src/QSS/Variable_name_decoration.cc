@@ -68,7 +68,7 @@ name_decorate( Variables & vars )
 	for ( Variable * var : vars ) { // Increment name count and set variable count
 		if ( name_counts[ uppercased( var->name() ) ] > 1u ) { // Has collisions: decorate
 			std::string dec( '.' + std::to_string( var_counts[ var ] ) );
-			while ( std::find_if( vars.begin(), vars.end(), [ &var, &dec ]( Variable * v ){ return ( v->name() == var->name() + dec ); } ) != vars.end() ) {
+			while ( std::find_if( vars.begin(), vars.end(), [ &var, &dec ]( Variable * v ){ return v->name() == var->name() + dec; } ) != vars.end() ) {
 				dec += '_'; // In case the count-appended name conflicts
 			}
 			var->decorate_out( dec );
@@ -107,7 +107,7 @@ name_decorations( Names & names, Decs & decs )
 		std::string dec;
 		if ( name_counts[ uppercased( name ) ] > 1u ) { // Has collisions: decorate
 			dec = '.' + std::to_string( var_counts[ name ] );
-			while ( std::find_if( names.begin(), names.end(), [ &name, &dec ]( Name const & nam ){ return ( nam == name + dec ); } ) != names.end() ) {
+			while ( std::find_if( names.begin(), names.end(), [ &name, &dec ]( Name const & nam ){ return nam == name + dec; } ) != names.end() ) {
 				dec += '_'; // In case the count-appended name conflicts
 			}
 		}

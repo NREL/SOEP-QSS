@@ -99,63 +99,63 @@ public: // Predicate
 	bool
 	is_discrete() const
 	{
-		return ( typ_ == Type::Discrete );
+		return typ_ == Type::Discrete;
 	}
 
 	// Zero-Crossing Event?
 	bool
 	is_ZC() const
 	{
-		return ( typ_ == Type::ZC );
+		return typ_ == Type::ZC;
 	}
 
 	// Conditional Event?
 	bool
 	is_conditional() const
 	{
-		return ( typ_ == Type::Conditional );
+		return typ_ == Type::Conditional;
 	}
 
 	// Handler Event?
 	bool
 	is_handler() const
 	{
-		return ( typ_ == Type::Handler );
+		return typ_ == Type::Handler;
 	}
 
 	// QSS Event?
 	bool
 	is_QSS() const
 	{
-		return ( typ_ == Type::QSS );
+		return typ_ == Type::QSS;
 	}
 
 	// QSS ZC Event?
 	bool
 	is_QSS_ZC() const
 	{
-		return ( typ_ == Type::QSS_ZC );
+		return typ_ == Type::QSS_ZC;
 	}
 
 	// QSS R Event?
 	bool
 	is_QSS_R() const
 	{
-		return ( typ_ == Type::QSS_R );
+		return typ_ == Type::QSS_R;
 	}
 
 	// QSS Input Event?
 	bool
 	is_QSS_Inp() const
 	{
-		return ( typ_ == Type::QSS_Inp );
+		return typ_ == Type::QSS_Inp;
 	}
 
 	// Observer Event?
 	bool
 	is_observer() const
 	{
-		return ( typ_ == Type::Observer );
+		return typ_ == Type::Observer;
 	}
 
 public: // Property

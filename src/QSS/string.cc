@@ -50,15 +50,15 @@ is_tail( char const * end )
 {
 	if ( end == nullptr ) return false;
 	while ( std::isspace( *end ) ) ++end;
-	return ( *end == '\0' );
+	return *end == '\0';
 }
 
 // char is in a string?
 bool
 is_any_of( char const c, std::string const & s )
 {
-#if ( __cplusplus >= 202300L ) // C++23+
-	return s.contains( c ); // C++23
+#if ( __cplusplus >= 202302L ) // C++23+
+	return s.contains( c );
 #else
 	return std::any_of( s.begin(), s.end(), [ c ]( char const a ){ return a == c; } );
 #endif
@@ -68,8 +68,8 @@ is_any_of( char const c, std::string const & s )
 bool
 has( std::string const & s, char const c )
 {
-#if ( __cplusplus >= 202300L ) // C++23+
-	return s.contains( c ); // C++23
+#if ( __cplusplus >= 202302L ) // C++23+
+	return s.contains( c );
 #else
 	return std::any_of( s.begin(), s.end(), [ c ]( char const a ){ return a == c; } );
 #endif
@@ -86,7 +86,7 @@ HAS( std::string const & s, char const c )
 bool
 has_any_not_of( std::string const & s, std::string const & t )
 {
-#if ( __cplusplus >= 202300L ) // C++23+
+#if ( __cplusplus >= 202302L ) // C++23+
 	return std::any_of( s.begin(), s.end(), [ &t ]( char const a ){ return !t.contains( a ); } );
 #else
 	return std::any_of( s.begin(), s.end(), [ &t ]( char const a ){ return t.find( a ) == std::string::npos; } );

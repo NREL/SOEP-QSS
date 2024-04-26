@@ -100,6 +100,7 @@ InpOut con; // Map from input variables to output variables
 DepSpecs dep; // Additional forward dependencies
 bool csv( false ); // CSV results file?
 std::pair< double, double > tLoc( 0.0, 0.0 ); // Local output time range (s)
+std::string clu; // Variable cluster file
 std::string var; // Variable output filter file
 Models models; // Name of model(s) or FMU(s)
 
@@ -181,7 +182,7 @@ help_display()
 	std::cout << " --cycles                Report dependency cycles" << '\n';
 	std::cout << " --inflection            Requantize at inflections" << '\n';
 	std::cout << " --inflectionFrac=FRAC   Inflection step fraction min  [" << inflectionFrac << ']' << '\n';
-	std::cout << " --cluster               Clustering with relaxation solver  [Off]" << '\n';
+	std::cout << " --cluster               Cluster identification via dependency cycles  [Off]" << '\n';
 	std::cout << " --refine                Refine FMU zero-crossing roots" << '\n';
 	std::cout << " --perfect               Perfect FMU-ME connection sync" << '\n';
 	std::cout << " --active                Active intermediate variables preferred  [Off]" << '\n';
@@ -196,14 +197,14 @@ help_display()
 	std::cout << "       debug" << '\n';
 	std::cout << "       all" << '\n';
 	std::cout << " --fxn=INP:FXN  FMU input variable function  [step[0|start,1,1]]" << '\n';
-	std::cout << "       INP can be <model>.<var> with 2+ models" << '\n';
+	std::cout << "       INP can be <model>.<variable> with 2+ models" << '\n';
 	std::cout << "           FXN is function spec:" << '\n';
 	std::cout << "           constant[c] => c" << '\n';
 	std::cout << "           sin[a,b,c] => a * sin( b * t ) + c" << '\n';
 	std::cout << "           step[h0,h,d] => h0 + h * floor( t / d )" << '\n';
 	std::cout << "           toggle[h0,h,d] => h0 + h * ( floor( t / d ) % 2 )" << '\n';
 	std::cout << " --con=INP:OUT  Connect FMU input and output variables" << '\n';
-	std::cout << "       INP and OUT syntax is <model>.<var>" << '\n';
+	std::cout << "       INP and OUT syntax is <model>.<variable>" << '\n';
 	std::cout << " --dep=VAR[:DEP[,DEP,...]]  FMU dependencies to add" << '\n';
 	std::cout << "       VAR  Variable (name or glob/regex)" << '\n';
 	std::cout << "            No VAR => All variables" << '\n';
@@ -236,6 +237,7 @@ help_display()
 	std::cout << "       r  Computational Observer graph" << '\n';
 	std::cout << "       e  Computational Observee graph" << '\n';
 	std::cout << " --tLoc=TIME1:TIME2  FMU local variable full output time range (s)" << '\n';
+	std::cout << " --clu=FILE  Variable cluster spec file" << '\n';
 	std::cout << " --var=FILE  Variable output spec file" << '\n';
 	std::cout << '\n';
 }
@@ -1274,10 +1276,17 @@ process_args( Args const & args )
 				std::cerr << "\nError: tLoc not in TIME1:TIME2 format: " << tLoc_str << std::endl;
 				fatal = true;
 			}
+		} else if ( has_option_value( arg, "clu" ) ) {
+			clu = option_value( arg, "clu" );
+			if ( !path::is_file( clu ) ) {
+				std::cerr << "\nError: File specified in --clu option not found: " << clu << std::endl;
+				fatal = true;
+			}
 		} else if ( has_option_value( arg, "var" ) ) {
 			var = option_value( arg, "var" );
 			if ( !path::is_file( var ) ) {
-				std::cerr << "\nError: File specified in --var option not found: " << var << ": Output filtering disabled" << std::endl;
+				std::cerr << "\nError: File specified in --var option not found: " << var << std::endl;
+				fatal = true;
 			}
 		} else if ( arg[ 0 ] == '-' ) {
 			std::cerr << "\nError: Unsupported option: " << arg << std::endl;
@@ -1302,6 +1311,10 @@ process_args( Args const & args )
 		std::cerr << "\nError: tStart > tStop" << std::endl;
 		fatal = true;
 	}
+	if ( cluster && !clu.empty() ) {
+		std::cerr << "\nError: Both --cluseter and --clu specified" << std::endl;
+		fatal = true;
+	}
 
 	if ( help ) std::exit( EXIT_SUCCESS );
 	if ( version_arg ) std::exit( EXIT_SUCCESS );
@@ -1318,14 +1331,14 @@ process_args( Args const & args )
 bool
 have_multiple_models()
 {
-	return ( models.size() > 1u );
+	return models.size() > 1u;
 }
 
 // Input-output connections?
 bool
 connected()
 {
-	return ( !con.empty() );
+	return !con.empty();
 }
 
 // Set dtOut to Default for a Given Time Span

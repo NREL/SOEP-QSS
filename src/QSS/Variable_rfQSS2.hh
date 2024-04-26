@@ -249,7 +249,7 @@ public: // Methods
 	void
 	advance_QSS_2_dd2( Real const dd2 ) override
 	{
-		q_2_ = x_2_ = ( yoyo_ ? rlx_fac_ * one_half * dd2 : one_half * dd2 );
+		q_2_ = x_2_ = yoyo_ ? rlx_fac_ * one_half * dd2 : one_half * dd2;
 	}
 
 	// QSS Advance: Stage Final
@@ -348,7 +348,7 @@ public: // Methods
 	advance_observer_2_dd2( Real const dd2 ) override
 	{
 		x_2_QSS_ = one_half * dd2;
-		x_2_ = ( yoyo_ ? rlx_fac_ * x_2_QSS_ : x_2_QSS_ );
+		x_2_ = yoyo_ ? rlx_fac_ * x_2_QSS_ : x_2_QSS_;
 	}
 
 	// Observer Advance: Stage Final
@@ -412,17 +412,17 @@ private: // Methods
 				if ( ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ) { // Use inflection point time step
 					dt = dtI;
 				} else if ( yoyo_ ) { // Relax time step growth
-					dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt );
+					dt = dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt;
 				}
 			} else if ( yoyo_ ) { // Relax time step growth
-				dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt );
+				dt = dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt;
 			}
 		} else {
 			dt = dt_infinity_of_infinity();
-			if ( yoyo_ ) dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt ); // Relax time step growth
+			if ( yoyo_ ) dt = dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt; // Relax time step growth
 		}
 		dt = std::min( std::max( dt, dt_min ), dt_max );
-		tE = ( dt != infinity ? tQ + dt : infinity );
+		tE = dt != infinity ? tQ + dt : infinity;
 		if ( tQ == tE ) {
 			tE = std::nextafter( tE, infinity );
 			dt = tE - tQ;
@@ -453,13 +453,13 @@ private: // Methods
 			if ( ( dtI < dt ) && ( dt != infinity ? dt * options::inflectionFrac : zero < dtI ) ) { // Use inflection point time step
 				dt = dtI;
 			} else if ( yoyo_ ) { // Relax time step growth
-				dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt );
+				dt = dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt;
 			}
 		} else if ( yoyo_ ) { // Relax time step growth
-			dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt );
+			dt = dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt;
 		}
 		dt = std::min( std::max( dt, dt_min ), dt_max );
-		tE = ( dt != infinity ? tX + dt : infinity );
+		tE = dt != infinity ? tX + dt : infinity;
 		if ( tX == tE ) {
 			tE = std::nextafter( tE, infinity );
 			dt = tE - tX;

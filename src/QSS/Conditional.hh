@@ -277,7 +277,11 @@ private: // Methods
 	 VariablesSet & observers_set
 	)
 	{
+#if ( __cplusplus >= 202002L ) // C++20+
+		if ( !observers_checked.contains( observer ) ) { // Observer not already processed
+#else
 		if ( observers_checked.find( observer ) == observers_checked.end() ) { // Observer not already processed
+#endif
 			observers_checked.insert( observer );
 			if ( observer->is_Active() ) { // Active => Computational
 				observers_set.insert( observer );

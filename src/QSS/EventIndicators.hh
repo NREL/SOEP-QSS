@@ -89,7 +89,16 @@ struct FMU_EventIndicators final
 	{
 		assert( std::is_sorted( event_indicators.begin(), event_indicators.end() ) );
 		EventIndicators::const_iterator i( std::lower_bound( event_indicators.begin(), event_indicators.end(), idx, []( EventIndicator const & ei, EventIndicator::Index const index ){ return ei.index < index; } ) );
-		return ( ( i != event_indicators.end() ) && ( i->index == idx ) );
+		return ( i != event_indicators.end() ) && ( i->index == idx );
+	}
+
+	// Has an EventIndicator for a Variable?
+	bool
+	contains( EventIndicator::Index const idx ) const
+	{
+		assert( std::is_sorted( event_indicators.begin(), event_indicators.end() ) );
+		EventIndicators::const_iterator i( std::lower_bound( event_indicators.begin(), event_indicators.end(), idx, []( EventIndicator const & ei, EventIndicator::Index const index ){ return ei.index < index; } ) );
+		return ( i != event_indicators.end() ) && ( i->index == idx );
 	}
 
 	// Get EventIndicator for a Variable
@@ -98,7 +107,7 @@ struct FMU_EventIndicators final
 	{
 		assert( std::is_sorted( event_indicators.begin(), event_indicators.end() ) );
 		EventIndicators::const_iterator i( std::lower_bound( event_indicators.begin(), event_indicators.end(), idx, []( EventIndicator const & ei, EventIndicator::Index const index ){ return ei.index < index; } ) );
-		return ( ( i != event_indicators.end() ) && ( i->index == idx ) ? &(*i) : nullptr );
+		return ( i != event_indicators.end() ) && ( i->index == idx ) ? &(*i) : nullptr;
 	}
 
 	// Get EventIndicator for a Variable
@@ -107,7 +116,7 @@ struct FMU_EventIndicators final
 	{
 		assert( std::is_sorted( event_indicators.begin(), event_indicators.end() ) );
 		EventIndicators::iterator i( std::lower_bound( event_indicators.begin(), event_indicators.end(), idx, []( EventIndicator const & ei, EventIndicator::Index const index ){ return ei.index < index; } ) );
-		return ( ( i != event_indicators.end() ) && ( i->index == idx ) ? &(*i) : nullptr );
+		return ( i != event_indicators.end() ) && ( i->index == idx ) ? &(*i) : nullptr;
 	}
 
 	// Add an Event Indicator

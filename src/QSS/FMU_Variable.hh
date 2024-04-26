@@ -146,70 +146,70 @@ public: // Predicate: Variable Type
 	bool
 	is_None() const
 	{
-		return ( typ == Typ::None );
+		return typ == Typ::None;
 	}
 
 	// Real?
 	bool
 	is_Real() const
 	{
-		return ( typ == Typ::Real );
+		return typ == Typ::Real;
 	}
 
 	// Integer?
 	bool
 	is_Integer() const
 	{
-		return ( typ == Typ::Integer );
+		return typ == Typ::Integer;
 	}
 
 	// Boolean?
 	bool
 	is_Boolean() const
 	{
-		return ( typ == Typ::Boolean );
+		return typ == Typ::Boolean;
 	}
 
 	// String?
 	bool
 	is_String() const
 	{
-		return ( typ == Typ::String );
+		return typ == Typ::String;
 	}
 
 	// Enum?
 	bool
 	is_Enum() const
 	{
-		return ( typ == Typ::Enum );
+		return typ == Typ::Enum;
 	}
 
 	// Discrete?
 	bool
 	is_Discrete() const
 	{
-		return ( cat == Cat::Discrete );
+		return cat == Cat::Discrete;
 	}
 
 	// Continuous?
 	bool
 	is_Continuous() const
 	{
-		return ( cat == Cat::Continuous );
+		return cat == Cat::Continuous;
 	}
 
 	// State?
 	bool
 	is_State() const
 	{
-		return ( ( idd != 0u ) && !is_ei );
+		return ( idd != 0u ) && !is_ei;
 	}
 
 	// Derivative?
 	bool
 	is_Derivative() const
 	{
-		return ( ids != 0u );
+		return ids != 0u;
 	}
 
 	// Event Indicator?
@@ -225,49 +225,49 @@ public: // Predicate: Causality
 	bool
 	causality_parameter() const
 	{
-		return ( var != nullptr ? fmi2_import_get_causality( var ) == fmi2_causality_enu_parameter : false );
+		return var != nullptr ? fmi2_import_get_causality( var ) == fmi2_causality_enu_parameter : false;
 	}
 
 	// Parameter?
 	bool
 	causality_calculated_parameter() const
 	{
-		return ( var != nullptr ? fmi2_import_get_causality( var ) == fmi2_causality_enu_calculated_parameter : false );
+		return var != nullptr ? fmi2_import_get_causality( var ) == fmi2_causality_enu_calculated_parameter : false;
 	}
 
 	// Input?
 	bool
 	causality_input() const
 	{
-		return ( var != nullptr ? fmi2_import_get_causality( var ) == fmi2_causality_enu_input : false );
+		return var != nullptr ? fmi2_import_get_causality( var ) == fmi2_causality_enu_input : false;
 	}
 
 	// Output?
 	bool
 	causality_output() const
 	{
-		return ( var != nullptr ? fmi2_import_get_causality( var ) == fmi2_causality_enu_output : false );
+		return var != nullptr ? fmi2_import_get_causality( var ) == fmi2_causality_enu_output : false;
 	}
 
 	// Local?
 	bool
 	causality_local() const
 	{
-		return ( var != nullptr ? fmi2_import_get_causality( var ) == fmi2_causality_enu_local : false );
+		return var != nullptr ? fmi2_import_get_causality( var ) == fmi2_causality_enu_local : false;
 	}
 
 	// Independent?
 	bool
 	causality_independent() const
 	{
-		return ( var != nullptr ? fmi2_import_get_causality( var ) == fmi2_causality_enu_independent : false );
+		return var != nullptr ? fmi2_import_get_causality( var ) == fmi2_causality_enu_independent : false;
 	}
 
 	// Unknown?
 	bool
 	causality_unknown() const
 	{
-		return ( var != nullptr ? fmi2_import_get_causality( var ) == fmi2_causality_enu_unknown : true );
+		return var != nullptr ? fmi2_import_get_causality( var ) == fmi2_causality_enu_unknown : true;
 	}
 
 public: // Predicate: Variability
@@ -276,42 +276,42 @@ public: // Predicate: Variability
 	bool
 	variability_constant() const
 	{
-		return ( var != nullptr ? fmi2_import_get_variability( var ) == fmi2_variability_enu_constant : false );
+		return var != nullptr ? fmi2_import_get_variability( var ) == fmi2_variability_enu_constant : false;
 	}
 
 	// Fixed?
 	bool
 	variability_fixed() const
 	{
-		return ( var != nullptr ? fmi2_import_get_variability( var ) == fmi2_variability_enu_fixed : false );
+		return var != nullptr ? fmi2_import_get_variability( var ) == fmi2_variability_enu_fixed : false;
 	}
 
 	// Tunable?
 	bool
 	variability_tunable() const
 	{
-		return ( var != nullptr ? fmi2_import_get_variability( var ) == fmi2_variability_enu_tunable : false );
+		return var != nullptr ? fmi2_import_get_variability( var ) == fmi2_variability_enu_tunable : false;
 	}
 
 	// Discrete?
 	bool
 	variability_discrete() const
 	{
-		return ( var != nullptr ? fmi2_import_get_variability( var ) == fmi2_variability_enu_discrete : false );
+		return var != nullptr ? fmi2_import_get_variability( var ) == fmi2_variability_enu_discrete : false;
 	}
 
 	// Continuous?
 	bool
 	variability_continuous() const
 	{
-		return ( var != nullptr ? fmi2_import_get_variability( var ) == fmi2_variability_enu_continuous : false );
+		return var != nullptr ? fmi2_import_get_variability( var ) == fmi2_variability_enu_continuous : false;
 	}
 
 	// Unknown?
 	bool
 	variability_unknown() const
 	{
-		return ( var != nullptr ? fmi2_import_get_variability( var ) == fmi2_variability_enu_unknown : true );
+		return var != nullptr ? fmi2_import_get_variability( var ) == fmi2_variability_enu_unknown : true;
 	}
 
 public: // Predicate: Initial
@@ -320,28 +320,28 @@ public: // Predicate: Initial
 	bool
 	initial_exact() const
 	{
-		return ( var != nullptr ? fmi2_import_get_initial( var ) == fmi2_initial_enu_exact : false );
+		return var != nullptr ? fmi2_import_get_initial( var ) == fmi2_initial_enu_exact : false;
 	}
 
 	// Approx?
 	bool
 	initial_approx() const
 	{
-		return ( var != nullptr ? fmi2_import_get_initial( var ) == fmi2_initial_enu_approx : false );
+		return var != nullptr ? fmi2_import_get_initial( var ) == fmi2_initial_enu_approx : false;
 	}
 
 	// Calculated?
 	bool
 	initial_calculated() const
 	{
-		return ( var != nullptr ? fmi2_import_get_initial( var ) == fmi2_initial_enu_calculated : false );
+		return var != nullptr ? fmi2_import_get_initial( var ) == fmi2_initial_enu_calculated : false;
 	}
 
 	// Unknown?
 	bool
 	initial_unknown() const
 	{
-		return ( var != nullptr ? fmi2_import_get_initial( var ) == fmi2_initial_enu_unknown : true );
+		return var != nullptr ? fmi2_import_get_initial( var ) == fmi2_initial_enu_unknown : true;
 	}
 
 public: // Predicate: Start
@@ -350,7 +350,7 @@ public: // Predicate: Start
 	bool
 	has_start() const
 	{
-		return ( var != nullptr ? fmi2_import_get_variable_has_start( var ) == 1 : false );
+		return var != nullptr ? fmi2_import_get_variable_has_start( var ) == 1 : false;
 	}
 
 public: // Property
@@ -359,7 +359,7 @@ public: // Property
 	fmi2_value_reference_t
 	ref() const
 	{
-		return ( var != nullptr ? fmi2_import_get_variable_vr( var ) : fmi2_value_reference_t( 0u ) );
+		return var != nullptr ? fmi2_import_get_variable_vr( var ) : fmi2_value_reference_t( 0u );
 	}
 
 	// Index
@@ -394,14 +394,14 @@ public: // Property
 	std::string
 	name() const
 	{
-		return ( var != nullptr ? std::string( fmi2_import_get_variable_name( var ) ) : std::string() );
+		return var != nullptr ? std::string( fmi2_import_get_variable_name( var ) ) : std::string();
 	}
 
 	// Description
 	std::string
 	description() const
 	{
-		return ( ( var != nullptr ) && fmi2_import_get_variable_description( var ) ? std::string( fmi2_import_get_variable_description( var ) ) : std::string() );
+		return ( var != nullptr ) && fmi2_import_get_variable_description( var ) ? std::string( fmi2_import_get_variable_description( var ) ) : std::string();
 	}
 
 	// Real Variable
@@ -505,7 +505,7 @@ public: // Operator
 	bool
 	operator <( FMU_Variable const & v1, FMU_Variable const & v2 )
 	{
-		return ( v1.idx < v2.idx );
+		return v1.idx < v2.idx;
 	}
 
 public: // I/O

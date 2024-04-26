@@ -251,7 +251,7 @@ public: // Methods
 		advance_pre( t );
 		tS = t - tQ;
 		tQ = tX = t;
-		x_0_ = ( !handler_modified_ && ( t == tZ_last ) ? 0.0 : x_0 ); // Force exact zero if at zero-crossing time
+		x_0_ = !handler_modified_ && ( t == tZ_last ) ? 0.0 : x_0; // Force exact zero if at zero-crossing time
 		x_1_ = x_1;
 	}
 
@@ -321,7 +321,7 @@ private: // Methods
 		assert( dt_min <= dt_max );
 		Time dt( x_1_ != 0.0 ? qTol / std::abs( x_1_ ) : infinity );
 		dt = std::min( std::max( dt_infinity( dt ), dt_min ), dt_max );
-		tE = ( dt != infinity ? tQ + dt : infinity );
+		tE = dt != infinity ? tQ + dt : infinity;
 		x_mag_update( x_0_ );
 	}
 
@@ -356,7 +356,7 @@ private: // Methods
 	{
 		assert( tB >= tX );
 		set_tZ();
-		tZ = ( tZ > tB ? tZ : infinity );
+		tZ = tZ > tB ? tZ : infinity;
 	}
 
 	// Zero Crossing Detection and Set Next Crossing Time

@@ -359,7 +359,7 @@ private: // Methods
 			tE = tQ + dt;
 		} else {
 			dt = std::min( std::max( dt_infinity_of_infinity(), dt_min ), dt_max );
-			tE = ( dt != infinity ? tQ + dt : infinity );
+			tE = dt != infinity ? tQ + dt : infinity;
 		}
 		if ( tQ == tE ) {
 			tE = std::nextafter( tE, infinity );
@@ -392,7 +392,7 @@ private: // Methods
 			}
 		}
 		dt = std::min( std::max( dt, dt_min ), dt_max );
-		tE = ( dt != infinity ? tX + dt : infinity );
+		tE = dt != infinity ? tX + dt : infinity;
 		if ( tX == tE ) {
 			tE = std::nextafter( tE, infinity );
 			dt = tE - tX;

@@ -155,7 +155,23 @@ public: // Types
 		bool
 		has( FVP * fmu_var_ptr ) const
 		{
-			return ( map_.find( FMUVarPtr( fmu_var_ptr ) ) != map_.end() );
+#if ( __cplusplus >= 202002L ) // C++20+
+			return map_.contains( FMUVarPtr( fmu_var_ptr ) );
+#else
+			return map_.find( FMUVarPtr( fmu_var_ptr ) ) != map_.end();
+#endif
+		}
+
+		// Has a Variable?
+		template< typename FVP >
+		bool
+		contains( FVP * fmu_var_ptr ) const
+		{
+#if ( __cplusplus >= 202002L ) // C++20+
+			return map_.contains( FMUVarPtr( fmu_var_ptr ) );
+#else
+			return map_.find( FMUVarPtr( fmu_var_ptr ) ) != map_.end();
+#endif
 		}
 
 	public: // Property
@@ -461,7 +477,7 @@ public: // FMU Methods
 	init_derivatives()
 	{
 		if ( derivatives != nullptr ) delete derivatives;
-		derivatives = ( n_derivatives > 0u ? new fmi2_real_t[ n_derivatives ] : nullptr );
+		derivatives = n_derivatives > 0u ? new fmi2_real_t[ n_derivatives ] : nullptr;
 	}
 
 	// Get a Real FMU Variable Value
@@ -594,7 +610,7 @@ public: // FMU Methods
 		fmi2_status_t const fmi_status = fmi2_import_get_boolean( fmu, &ref, std::size_t( 1u ), &fbt );
 		assert( status_check( fmi_status, "get_boolean" ) );
 		(void)fmi_status; // Suppress unused warning
-		return ( fbt != 0 );
+		return fbt != 0;
 	}
 
 	// Set an Boolean FMU Variable Value
@@ -635,7 +651,7 @@ public: // FMU Methods
 	Real
 	get_as_real( FMU_Variable const & var ) const
 	{
-		return ( var.is_Real() ? get_real( var.ref() ) : ( var.is_Integer() ? Real( get_integer( var.ref() ) ) : ( var.is_Boolean() ? Real( get_boolean( var.ref() ) ) : 0.0 ) ) );
+		return var.is_Real() ? get_real( var.ref() ) : ( var.is_Integer() ? Real( get_integer( var.ref() ) ) : ( var.is_Boolean() ? Real( get_boolean( var.ref() ) ) : 0.0 ) );
 	}
 
 	// Discrete Event Processing

@@ -120,7 +120,7 @@ sort_by_type( Variables & variables )
 	 []( V const * v1, V const * v2 ){
 		int const v1_i( v1->var_sort_index() );
 		int const v2_i( v2->var_sort_index() );
-//		return ( v1_i < v2_i ); // Don't sort by name => Non-deterministic order-dependent results
+//		return v1_i < v2_i; // Don't sort by name => Non-deterministic order-dependent results
 //		return ( v1_i < v2_i ) || ( ( v1_i == v2_i ) && ( v1 < v2 ) ); // Also sort by address for deterministic order-dependent results: Faster than sorting by name
 		return ( v1_i < v2_i ) || ( ( v1_i == v2_i ) && ( v1->name() < v2->name() ) ); // Also sort by name for deterministic output and order-dependent results
 	} );
@@ -132,7 +132,7 @@ void
 sort_by_name( Variables & variables )
 {
 	using V = typename std::remove_pointer< typename Variables::value_type >::type;
-	std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return ( v1->name() < v2->name() ); } );
+	std::sort( variables.begin(), variables.end(), []( V const * v1, V const * v2 ){ return v1->name() < v2->name(); } );
 }
 
 // Copy of Variables Sorted by Name
@@ -151,7 +151,23 @@ template< typename T >
 bool
 vector_has( std::vector< T > const & c, T const & t )
 {
+#if ( __cplusplus >= 202302L ) // C++23+
+	return std::ranges::contains( c, t );
+#else
 	return std::find( c.begin(), c.end(), t ) != c.end();
+#endif
+}
+
+// Vector Has a Value?
+template< typename T >
+bool
+vector_contains( std::vector< T > const & c, T const & t )
+{
+#if ( __cplusplus >= 202302L ) // C++23+
+	return std::ranges::contains( c, t );
+#else
+	return std::find( c.begin(), c.end(), t ) != c.end();
+#endif
 }
 
 // Remove Elements of a Vector with a Value

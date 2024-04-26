@@ -37,11 +37,12 @@
 #include <QSS/FMU_ME.hh>
 #include <QSS/annotation.hh>
 #include <QSS/BinOptimizer.hh>
-#include <QSS/clusters.hh>
+#include <QSS/Clusters.hh>
 #include <QSS/Conditional.hh>
 #include <QSS/container.hh>
 #include <QSS/cpu_time.hh>
 #include <QSS/cycles.hh>
+#include <QSS/dependency_clusters.hh>
 #include <QSS/EventIndicators.hh>
 #include <QSS/Function_Inp_constant.hh>
 #include <QSS/Function_Inp_sin.hh>
@@ -79,6 +80,7 @@
 #include <iostream>
 #include <iterator>
 #include <limits>
+#include <unordered_set>
 #include <utility>
 
 namespace QSS {
@@ -110,7 +112,7 @@ namespace QSS {
 	var_named( std::string const & var_name ) const
 	{
 		auto const var_it( std::find_if( vars.begin(), vars.end(), [ &var_name ]( Variable const * var ){ return var->name() == var_name; } ) );
-		return ( var_it != vars.end() ? *var_it : nullptr );
+		return var_it != vars.end() ? *var_it : nullptr;
 	}
 
 	// Variable Lookup by Name (for Testing)
@@ -119,7 +121,7 @@ namespace QSS {
 	var_named( std::string const & var_name )
 	{
 		auto var_it( std::find_if( vars.begin(), vars.end(), [ &var_name ]( Variable const * var ){ return var->name() == var_name; } ) );
-		return ( var_it != vars.end() ? *var_it : nullptr );
+		return var_it != vars.end() ? *var_it : nullptr;
 	}
 
 	// Initialize
@@ -1765,7 +1767,7 @@ namespace QSS {
 					std::string const der_name( fmi2_import_get_variable_name( der ) );
 					// std::cout << " Name: " << der_name << std::endl;
 					fmi2_import_real_variable_t * der_real( fmi2_import_get_variable_as_real( der ) );
-					assert( fmu_dvrs.find( der_real ) != fmu_dvrs.end() );
+					assert( fmu_dvrs.contains( der_real ) );
 					size_type const idx( fmu_dvrs[ der_real ].idx );
 					auto const ivar( fmu_idxs.find( idx ) );
 					if ( ivar != fmu_idxs.end() ) {
@@ -2558,17 +2560,74 @@ namespace QSS {
 
 		// Find continuous state variable self-dependency cycles (clusters): After computational observees set up
 		if ( options::cluster ) {
-			std::cout << '\n' + name + " Clustering =====" << std::endl;
-			clusters< Variable, Variable_QSS >( state_vars );
+			std::cout << '\n' + name + " Dependency Clustering =====" << std::endl;
+			dependency_clusters< Variable, Variable_QSS >( state_vars );
 			for ( Variable_QSS * var : state_vars ) {
 				var->uniquify_cluster();
+				if ( options::output::d && var->has_cluster() ) { // Show cluster
+					std::cout << '\n' << var->name() << " cluster:" << '\n';
+					for ( Variable_QSS const * clu_var : var->cluster ) {
+						std::cout << ' ' << clu_var->name() << '\n';
+					}
+				}
 			}
 		}
 
+		// Add specified variable clusters
+		if ( !options::clu.empty() ) {
+			Clusters const clusters( options::clu );
+			std::vector< Variable_QSS::Variables_QSS > var_clusters;
+			for ( Cluster const & cluster : clusters ) { // Assemble variable clusters
+				Variable_QSS::Variables_QSS var_cluster;
+				for ( Variable_QSS * var : state_vars ) {
+					if ( cluster( var->name() ) ) {
+						var_cluster.push_back( var );
+					}
+				}
+				if ( !var_cluster.empty() ) var_clusters.push_back( var_cluster );
+			}
+			{ // Check for variable(s) in multiple clusters
+				std::unordered_set< Variable_QSS * > var_cluster_set;
+				for ( Variable_QSS::Variables_QSS const & var_cluster : var_clusters ) {
+					for ( Variable_QSS * var : var_cluster ) {
+#if ( __cplusplus >= 202002L ) // C++20+
+						if ( var_cluster_set.contains( var ) ) {
+#else
+						if ( var_cluster_set.find( var ) != var_cluster_set.end() ) {
+#endif
+							std::cerr << "\nError: Variable matches multiple cluster specs: " << var->name() << std::endl;
+							std::exit( EXIT_FAILURE );
+						}
+						var_cluster_set.insert( var );
+					}
+				}
+			}
+			for ( Variable_QSS::Variables_QSS const & var_cluster : var_clusters ) { // Add the cluster variables to each's cluster
+				for ( Variable_QSS * tar : var_cluster ) {
+					for ( Variable_QSS * var : var_cluster ) {
+						if ( var != tar ) {
+							tar->cluster.push_back( var );
+						}
+					}
+				}
+			}
+			if ( options::output::d ) { // Show the clusters
+				for ( Variable_QSS::Variables_QSS const & var_cluster : var_clusters ) {
+					for ( Variable_QSS const * tar : var_cluster ) {
+						std::cout << '\n' << tar->name() << " cluster:" << std::endl;
+						for ( Variable_QSS const * var : tar->cluster ) {
+							std::cout << " " << var->name() << std::endl;
+						}
+					}
+				}
+			}
+			options::cluster = true; // To activate cluster use during simulation
+		}
+
 		// Output initialization
-		doROut = ( options::output::R && ( options::output::X || options::output::Q ) );
-		doZOut = ( options::output::Z && ( options::output::X || options::output::Q ) );
-		doDOut = ( options::output::D && ( options::output::X || options::output::Q ) );
+		doROut = options::output::R && ( options::output::X || options::output::Q );
+		doZOut = options::output::Z && ( options::output::X || options::output::Q );
+		doDOut = options::output::D && ( options::output::X || options::output::Q );
 		doTOut = options::output::T;
 		doSOut = (
 		 ( options::output::S && ( options::output::X || options::output::Q ) ) ||
@@ -2687,7 +2746,7 @@ namespace QSS {
 		std::cerr << std::setprecision( 16 );
 
 		if ( options::output::d ) std::cout << '\n' + name + " Simulation Loop =====" << std::endl;
-		if ( t == t0 ) std::cout << '\r' + name + " Simulation   0% =====" << std::endl;
+		if ( t == t0 ) std::cout << '\r' + name + " Simulation   0% =====" << std::flush;
 
 		// Timing setup
 		Time const tSim( tE - t0 ); // Simulation time span expected
@@ -2713,7 +2772,6 @@ namespace QSS {
 
 		// Simulation loop
 		Variables triggers; // Reusable triggers container
-		Variables cluster_triggers; // Reusable cluster triggers container
 		Variables handlers; // Reusable handlers container
 		Variable_ZCs var_ZCs; // Last zero-crossing trigger variables
 		Handlers< Variable > handlers_s( this ); // Simultaneous handlers
@@ -3135,7 +3193,7 @@ namespace QSS {
 					} else if ( eventq->single() ) { // Single trigger
 						trigger1 = event.sub< Variable >();
 						triggers.clear();
-						triggers.push_back( trigger1 ); // For coding convenience below
+						triggers.push_back( trigger1 ); // For clustering coding convenience below
 					} else { // Simultaneous triggers
 						eventq->top_subs< Variable >( triggers );
 					}
@@ -3149,34 +3207,34 @@ namespace QSS {
 
 					// Clustering
 					if ( options::cluster ) {
-						cluster_triggers.clear();
 						for ( Variable * trigger : triggers ) {
-							if ( trigger->yoyoing() ) { // Yo-yoing
+//							if ( trigger->yoyoing() ) { // Yo-yoing
 								Variable_QSS * trigger_QSS( dynamic_cast< Variable_QSS * >( trigger ) );
 								if ( trigger_QSS->has_cluster() ) { // Use cluster
 									for ( Variable_QSS * var : trigger_QSS->cluster ) {
-										cluster_triggers.push_back( var );
+#if ( __cplusplus >= 202302L ) // C++23+
+										if ( !std::ranges::contains( triggers, var ) ) {
+#else
+										if ( std::find( triggers.begin(), triggers.end(), var ) == triggers.end() ) {
+#endif
+											triggers.push_back( var );
+										}
+									}
 								}
-								}
-							}
+//							}
 						}
-						if ( !cluster_triggers.empty() ) {
-							uniquify( cluster_triggers );
-							triggers.insert( triggers.end(), cluster_triggers.begin(), cluster_triggers.end() ); // Merge in the cluster triggers
-							uniquify( triggers );
-							if ( triggers.size() > 1u ) trigger1 = nullptr;
-						}
+						if ( triggers.size() > 1u ) trigger1 = nullptr;
 					}
 
 					// Connected
 					if ( connected ) { // Check if next event(s) will modify a connected output
 						if ( options::perfect ) { // Flag whether next event(s) will modify a connected output
 							if ( !connected_output_event ) {
-								if ( std::any_of( triggers.begin(), triggers.end(), []( Variable const * trigger ){ return ( trigger->connected_output || trigger->connected_output_observer ); } ) ) connected_output_event = true;
+								if ( std::any_of( triggers.begin(), triggers.end(), []( Variable const * trigger ){ return trigger->connected_output || trigger->connected_output_observer; } ) ) connected_output_event = true;
 							}
 						} else if ( t > tPass ) { // Stop if beyond pass start time and next event(s) will modify a connected output
 							bool connected_output_next( false );
-							if ( std::any_of( triggers.begin(), triggers.end(), []( Variable const * trigger ){ return ( trigger->connected_output || trigger->connected_output_observer ); } ) ) connected_output_next = true;
+							if ( std::any_of( triggers.begin(), triggers.end(), []( Variable const * trigger ){ return trigger->connected_output || trigger->connected_output_observer; } ) ) connected_output_next = true;
 							if ( connected_output_next ) break; // Exit t loop
 						}
 					}
@@ -3286,11 +3344,11 @@ namespace QSS {
 					if ( connected ) { // Check if next event(s) will modify a connected output
 						if ( options::perfect ) { // Flag whether next event(s) will modify a connected output
 							if ( !connected_output_event ) {
-								if ( std::any_of( triggers.begin(), triggers.end(), []( Variable const * trigger ){ return ( trigger->connected_output || trigger->connected_output_observer ); } ) ) connected_output_event = true;
+								if ( std::any_of( triggers.begin(), triggers.end(), []( Variable const * trigger ){ return trigger->connected_output || trigger->connected_output_observer; } ) ) connected_output_event = true;
 							}
 						} else if ( t > tPass ) { // Stop if beyond pass start time and next event(s) will modify a connected output
 							bool connected_output_next( false );
-							if ( std::any_of( triggers.begin(), triggers.end(), []( Variable const * trigger ){ return ( trigger->connected_output || trigger->connected_output_observer ); } ) ) connected_output_next = true;
+							if ( std::any_of( triggers.begin(), triggers.end(), []( Variable const * trigger ){ return trigger->connected_output || trigger->connected_output_observer; } ) ) connected_output_next = true;
 							if ( connected_output_next ) break; // Exit t loop
 						}
 					}
@@ -3386,11 +3444,11 @@ namespace QSS {
 					if ( connected ) { // Check if next event(s) will modify a connected output
 						if ( options::perfect ) { // Flag whether next event(s) will modify a connected output
 							if ( !connected_output_event ) {
-								if ( std::any_of( triggers.begin(), triggers.end(), []( Variable const * trigger ){ return ( trigger->connected_output || trigger->connected_output_observer ); } ) ) connected_output_event = true;
+								if ( std::any_of( triggers.begin(), triggers.end(), []( Variable const * trigger ){ return trigger->connected_output || trigger->connected_output_observer; } ) ) connected_output_event = true;
 							}
 						} else if ( t > tPass ) { // Stop if beyond pass start time and next event(s) will modify a connected output
 							bool connected_output_next( false );
-							if ( std::any_of( triggers.begin(), triggers.end(), []( Variable const * trigger ){ return ( trigger->connected_output || trigger->connected_output_observer ); } ) ) connected_output_next = true;
+							if ( std::any_of( triggers.begin(), triggers.end(), []( Variable const * trigger ){ return trigger->connected_output || trigger->connected_output_observer; } ) ) connected_output_next = true;
 							if ( connected_output_next ) break; // Exit t loop
 						}
 					}
@@ -3583,7 +3641,7 @@ namespace QSS {
 		// Reporting
 		if ( t >= tE ) {
 			if ( !options::output::d ) std::cout << '\r' + name + " Simulation 100% =====" << std::endl;
-			std::cout << '\n' + name + " Simulation Complete =====" << std::endl;
+			std::cout << '\n' + name + " Simulation Complete =====" << '\n' << std::endl;
 			if ( n_discrete_events > 0 ) std::cout << n_discrete_events << " discrete event passes" << std::endl;
 			if ( n_QSS_events > 0 ) std::cout << n_QSS_events << " requantization event passes" << std::endl;
 			if ( n_QSS_simultaneous_events > 0 ) std::cout << n_QSS_simultaneous_events << " simultaneous/binned requantization event passes" << std::endl;

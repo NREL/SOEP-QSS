@@ -96,7 +96,22 @@ public: // Predicate
 	bool
 	has( SuperdenseTime const & s ) const
 	{
-		return ( m_.find( s ) != m_.end() );
+#if ( __cplusplus >= 202002L ) // C++20+
+		return m_.contains( s );
+#else
+		return m_.find( s ) != m_.end();
+#endif
+	}
+
+	// Has Event at SuperdenseTime s?
+	bool
+	contains( SuperdenseTime const & s ) const
+	{
+#if ( __cplusplus >= 202002L ) // C++20+
+		return m_.contains( s );
+#else
+		return m_.find( s ) != m_.end();
+#endif
 	}
 
 	// Single Trigger Target at Front of Queue?
@@ -107,9 +122,9 @@ public: // Predicate
 			const_iterator i( m_.begin() );
 			const_iterator const event1( i );
 			const_iterator const event2( ++i );
-			return ( event1->first != event2->first );
+			return event1->first != event2->first;
 		} else {
-			return ( m_.size() == 1u );
+			return m_.size() == 1u;
 		}
 	}
 
@@ -121,7 +136,7 @@ public: // Predicate
 			const_iterator i( m_.begin() );
 			const_iterator const event1( i );
 			const_iterator const event2( ++i );
-			return ( event1->first == event2->first );
+			return event1->first == event2->first;
 		} else {
 			return false;
 		}
@@ -534,7 +549,7 @@ public: // Methods
 	void
 	set_active_time()
 	{
-		s_ = ( !m_.empty() ? m_.begin()->first : sZero_ );
+		s_ = !m_.empty() ? m_.begin()->first : sZero_;
 		t_ = s_.t;
 	}
 

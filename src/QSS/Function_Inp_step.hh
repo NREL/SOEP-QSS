@@ -112,7 +112,7 @@ public: // Property
 	{
 		Real const n_next( std::floor( t / d_ ) + 1.0 );
 		Real const t_next( d_ * n_next );
-		return ( t_next > t ? t_next : d_ * ( n_next + 1.0 ) );
+		return t_next > t ? t_next : d_ * ( n_next + 1.0 );
 	}
 
 private: // Methods
@@ -122,7 +122,7 @@ private: // Methods
 	step_number( Time const t ) const
 	{
 		Real const ftd( std::floor( t / d_ ) );
-		return ( d_ * ( ftd + 1.0 ) > t ? ftd : ftd + 1.0 );
+		return d_ * ( ftd + 1.0 ) > t ? ftd : ftd + 1.0;
 	}
 
 private: // Data

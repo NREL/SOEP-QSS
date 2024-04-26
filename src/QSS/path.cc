@@ -90,9 +90,9 @@ is_file( std::string const & name )
 	if ( name.empty() ) return false;
 	struct stat stat_buf;
 #ifdef _WIN32
-	return ( ( stat( name.c_str(), &stat_buf ) == 0 ) && S_ISREG( stat_buf.st_mode ) && ( stat_buf.st_mode & _S_IREAD ) );
+	return ( stat( name.c_str(), &stat_buf ) == 0 ) && S_ISREG( stat_buf.st_mode ) && ( stat_buf.st_mode & _S_IREAD );
 #else
-	return ( ( stat( name.c_str(), &stat_buf ) == 0 ) && S_ISREG( stat_buf.st_mode ) && ( stat_buf.st_mode & S_IRUSR ) );
+	return ( stat( name.c_str(), &stat_buf ) == 0 ) && S_ISREG( stat_buf.st_mode ) && ( stat_buf.st_mode & S_IRUSR );
 #endif
 }
 
@@ -136,12 +136,12 @@ make_dir( std::string const & dir )
 {
 #ifdef _WIN32
 #ifdef __MINGW32__
-	return ( ( mkdir( dir.c_str() ) == 0 ) || ( errno == EEXIST ) );
+	return ( mkdir( dir.c_str() ) == 0 ) || ( errno == EEXIST );
 #else
-	return ( ( _mkdir( dir.c_str() ) == 0 ) || ( errno == EEXIST ) );
+	return ( _mkdir( dir.c_str() ) == 0 ) || ( errno == EEXIST );
 #endif
 #else
-	return ( ( mkdir( dir.c_str(), S_IRWXU ) == 0 ) || ( errno == EEXIST ) );
+	return ( mkdir( dir.c_str(), S_IRWXU ) == 0 ) || ( errno == EEXIST );
 #endif
 }
 

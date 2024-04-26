@@ -75,14 +75,14 @@ public: // Property
 	Time
 	operator()() const
 	{
-		return ( cpu_time() - cb_ );
+		return cpu_time() - cb_;
 	}
 
 	// Elapsed Time
 	Time
 	elapsed() const
 	{
-		return ( cpu_time() - cb_ );
+		return cpu_time() - cb_;
 	}
 
 public: // Method
@@ -141,14 +141,14 @@ public: // Property
 	Time
 	operator()() const
 	{
-		return ( cpu_time() - cb_ );
+		return cpu_time() - cb_;
 	}
 
 	// Elapsed Time
 	Time
 	elapsed() const
 	{
-		return ( cpu_time() - cb_ );
+		return cpu_time() - cb_;
 	}
 
 	// Solution "Velocity"
@@ -157,7 +157,7 @@ public: // Property
 	{
 		assert( tb_ <= tn );
 		Time const te( elapsed() );
-		return ( te > 0.0 ? ( tn - tb_ ) / te : ( tb_ < tn ? infinity : 0.0 ) );
+		return te > 0.0 ? ( tn - tb_ ) / te : ( tb_ < tn ? infinity : 0.0 );
 	}
 
 	// Solution "Velocity" for a Given Elapsed Time
@@ -165,7 +165,7 @@ public: // Property
 	operator()( Time const tn, Time const te ) const
 	{
 		assert( tb_ <= tn );
-		return ( te > 0.0 ? ( tn - tb_ ) / te : ( tb_ < tn ? infinity : 0.0 ) );
+		return te > 0.0 ? ( tn - tb_ ) / te : ( tb_ < tn ? infinity : 0.0 );
 	}
 
 public: // Method

@@ -148,7 +148,7 @@ public: // Types
 		bool
 		any() const
 		{
-			return ( !deps.empty() );
+			return !deps.empty();
 		}
 
 		// Size
@@ -178,7 +178,7 @@ public: // Predicate
 	bool
 	any() const
 	{
-		return ( !dependencies_.empty() );
+		return !dependencies_.empty();
 	}
 
 	// All Depend on All?
@@ -337,7 +337,8 @@ extern InpOut con; // Map from input variables to output variables
 extern DepSpecs dep; // Additional forward dependencies
 extern bool csv; // CSV results file?
 extern std::pair< double, double > tLoc; // Local output time range (s)
-extern std::string var; // Variable output filter file
+extern std::string clu; // Variable cluster spec file
+extern std::string var; // Variable output spec file
 extern Models models; // Name of model(s) or FMU(s)
 
 namespace specified {

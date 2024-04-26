@@ -1,4 +1,4 @@
-// QSS Output Filter Class
+// QSS Variable Cluster Class
 //
 // Project: QSS Solver
 //
@@ -33,15 +33,14 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_OutputFilter_hh_INCLUDED
-#define QSS_OutputFilter_hh_INCLUDED
+#ifndef QSS_Cluster_hh_INCLUDED
+#define QSS_Cluster_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/string.hh>
 
 // C++ Headers
 #include <algorithm>
-#include <fstream>
 #include <iostream>
 #include <regex>
 #include <string>
@@ -49,8 +48,8 @@
 
 namespace QSS {
 
-// QSS Output Filter Class
-class OutputFilter final
+// QSS Variable Cluster Class
+class Cluster final
 {
 
 public: // Types
@@ -61,47 +60,24 @@ public: // Types
 
 public: // Creation
 
-	// Default Constructor
-	OutputFilter() = default;
-
 	// Strings Constructor
 	explicit
-	OutputFilter( std::vector< std::string > const & var_specs )
+	Cluster( std::vector< std::string > const & var_specs )
 	{
 		for ( std::string var_spec : var_specs ) {
 			if ( !strip( var_spec ).empty() ) { // Add to filter
 				try {
 					filters_.push_back( std::regex( regex_string( var_spec ) ) );
 				} catch (...) {
-					std::cerr << "\nError: Skipping output filter spec that yields invalid regex: " << var_spec << std::endl;
+					std::cerr << "\nError: Skipping cluster spec that yields invalid regex: " << var_spec << std::endl;
 				}
 			}
-		}
-	}
-
-	// File Name Constructor
-	explicit
-	OutputFilter( std::string const & var_file )
-	{
-		std::ifstream var_stream( var_file, std::ios_base::binary | std::ios_base::in );
-		if ( var_stream.is_open() ) {
-			std::string line;
-			while ( std::getline( var_stream, line ) ) {
-				if ( ( !strip( line ).empty() ) && ( line[ 0 ] != '#' ) ) { // Add to filter
-					try {
-						filters_.push_back( std::regex( regex_string( line ) ) );
-					} catch (...) {
-						std::cerr << "\nError: Skipping --var filter line that yields invalid regex: " << line << std::endl;
-					}
-				}
-			}
-			var_stream.close();
 		}
 	}
 
 public: // Predicate
 
-	// Generate QSS Outputs for a Variable with Given Name?
+	// Variable Name Matches Filter(s)?
 	bool
 	operator ()( std::string const & var_name ) const
 	{
@@ -112,43 +88,6 @@ public: // Predicate
 			if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
 			return true;
 		}
-		return std::any_of( filters_.begin(), filters_.end(), [ &var_name ]( Filter const & filter ){ return std::regex_match( var_name, filter ); } ); // Name matches filter?
-	}
-
-	// Generate QSS Outputs for a Variable with Given Name?
-	bool
-	qss( std::string const & var_name ) const
-	{
-		if ( filters_.empty() ) { // Default filtering
-			if ( var_name == "time" ) return false; // Omit time variable
-			if ( has_prefix( var_name, "der(" ) && has_suffix( var_name, ")" ) ) return false; // Omit derivatives
-			if ( ( var_name[ 0 ] == '_' ) && !has_prefix( var_name, "_eventIndicator_" ) ) return false; // Omit internals except for event indicators
-			if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
-			return true;
-		}
-		return std::any_of( filters_.begin(), filters_.end(), [ &var_name ]( Filter const & filter ){ return std::regex_match( var_name, filter ); } ); // Name matches filter?
-	}
-
-	// Generate FMU Outputs for a Variable with Given Name?
-	bool
-	fmu( std::string const & var_name ) const
-	{
-		if ( filters_.empty() ) { // Default filtering
-			if ( var_name == "time" ) return false; // Omit time variable
-			if ( has_prefix( var_name, "der(" ) && has_suffix( var_name, ")" ) ) return false; // Omit derivatives
-			if ( ( var_name[ 0 ] == '_' ) && !has_prefix( var_name, "_eventIndicator_" ) ) return false; // Omit internals except for event indicators
-			if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
-			return true;
-		}
-		return std::any_of( filters_.begin(), filters_.end(), [ &var_name ]( Filter const & filter ){ return std::regex_match( var_name, filter ); } ); // Name matches filter?
-	}
-
-	// Generate Results Outputs for a Variable with Given Name?
-	bool
-	res( std::string const & var_name ) const
-	{
-		if ( filters_.empty() ) return true; // Default to all signals
-		if ( var_name == "time" ) return true; // Always include time in results outputs
 		return std::any_of( filters_.begin(), filters_.end(), [ &var_name ]( Filter const & filter ){ return std::regex_match( var_name, filter ); } ); // Name matches filter?
 	}
 
@@ -191,7 +130,7 @@ private: // Data
 
 	Filters filters_; // Variable name filters
 
-}; // OutputFilter
+}; // Cluster
 
 } // QSS
 

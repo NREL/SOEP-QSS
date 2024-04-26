@@ -91,7 +91,7 @@ simulate_fmu_me_con( std::vector< std::string > const & paths )
 	}
 
 	// Set uniform end time
-	tStop = ( options::specified::tStop ? options::tStop : tStop );
+	tStop = options::specified::tStop ? options::tStop : tStop;
 	for ( size_type i = 0; i < n_models; ++i ) {
 		fmu_mes[ i ]->tE = tStop;
 	}

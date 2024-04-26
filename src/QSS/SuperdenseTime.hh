@@ -184,7 +184,7 @@ public: // Comparison: SuperdenseTime [?] SuperdenseTime
 	bool
 	same_time( SuperdenseTime const & s1, SuperdenseTime const & s2 )
 	{
-		return ( s1.t == s2.t );
+		return s1.t == s2.t;
 	}
 
 	// Same Pass?
@@ -200,7 +200,7 @@ public: // Comparison: SuperdenseTime [?] SuperdenseTime
 	bool
 	same_type( SuperdenseTime const & s1, SuperdenseTime const & s2 )
 	{
-		return ( s1.o == s2.o );
+		return s1.o == s2.o;
 	}
 
 public: // Comparison: SuperdenseTime [?] Time
@@ -210,7 +210,7 @@ public: // Comparison: SuperdenseTime [?] Time
 	bool
 	operator ==( SuperdenseTime const & s1, Time const t2 )
 	{
-		return ( s1.t == t2 );
+		return s1.t == t2;
 	}
 
 	// SuperdenseTime != Time
@@ -218,7 +218,7 @@ public: // Comparison: SuperdenseTime [?] Time
 	bool
 	operator !=( SuperdenseTime const & s1, Time const t2 )
 	{
-		return ( s1.t != t2 );
+		return s1.t != t2;
 	}
 
 	// SuperdenseTime < Time
@@ -226,7 +226,7 @@ public: // Comparison: SuperdenseTime [?] Time
 	bool
 	operator <( SuperdenseTime const & s1, Time const t2 )
 	{
-		return ( s1.t < t2 );
+		return s1.t < t2;
 	}
 
 	// SuperdenseTime <= Time
@@ -234,7 +234,7 @@ public: // Comparison: SuperdenseTime [?] Time
 	bool
 	operator <=( SuperdenseTime const & s1, Time const t2 )
 	{
-		return ( s1.t <= t2 );
+		return s1.t <= t2;
 	}
 
 	// SuperdenseTime >= Time
@@ -242,7 +242,7 @@ public: // Comparison: SuperdenseTime [?] Time
 	bool
 	operator >=( SuperdenseTime const & s1, Time const t2 )
 	{
-		return ( s1.t >= t2 );
+		return s1.t >= t2;
 	}
 
 	// SuperdenseTime > Time
@@ -250,7 +250,7 @@ public: // Comparison: SuperdenseTime [?] Time
 	bool
 	operator >( SuperdenseTime const & s1, Time const t2 )
 	{
-		return ( s1.t > t2 );
+		return s1.t > t2;
 	}
 
 public: // Comparison: Time [?] SuperdenseTime
@@ -260,7 +260,7 @@ public: // Comparison: Time [?] SuperdenseTime
 	bool
 	operator ==( Time const s1, SuperdenseTime const & s2 )
 	{
-		return ( s1 == s2.t );
+		return s1 == s2.t;
 	}
 
 	// Time != SuperdenseTime
@@ -268,7 +268,7 @@ public: // Comparison: Time [?] SuperdenseTime
 	bool
 	operator !=( Time const s1, SuperdenseTime const & s2 )
 	{
-		return ( s1 != s2.t );
+		return s1 != s2.t;
 	}
 
 	// Time < SuperdenseTime
@@ -276,7 +276,7 @@ public: // Comparison: Time [?] SuperdenseTime
 	bool
 	operator <( Time const s1, SuperdenseTime const & s2 )
 	{
-		return ( s1 < s2.t );
+		return s1 < s2.t;
 	}
 
 	// Time <= SuperdenseTime
@@ -284,7 +284,7 @@ public: // Comparison: Time [?] SuperdenseTime
 	bool
 	operator <=( Time const s1, SuperdenseTime const & s2 )
 	{
-		return ( s1 <= s2.t );
+		return s1 <= s2.t;
 	}
 
 	// Time >= SuperdenseTime
@@ -292,7 +292,7 @@ public: // Comparison: Time [?] SuperdenseTime
 	bool
 	operator >=( Time const s1, SuperdenseTime const & s2 )
 	{
-		return ( s1 >= s2.t );
+		return s1 >= s2.t;
 	}
 
 	// Time > SuperdenseTime
@@ -300,7 +300,7 @@ public: // Comparison: Time [?] SuperdenseTime
 	bool
 	operator >( Time const s1, SuperdenseTime const & s2 )
 	{
-		return ( s1 > s2.t );
+		return s1 > s2.t;
 	}
 
 public: // I/O

@@ -111,7 +111,7 @@ public: // Predicate
 	bool
 	have() const
 	{
-		return ( !handlers_.empty() );
+		return !handlers_.empty();
 	}
 
 	// Forward Time?

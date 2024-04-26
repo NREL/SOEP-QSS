@@ -113,7 +113,7 @@ public: // Property
 	{
 		Real const n_next( std::floor( t / d_ ) + 1.0 );
 		Real const t_next( d_ * n_next );
-		return ( t_next > t ? t_next : d_ * ( n_next + 1.0 ) );
+		return t_next > t ? t_next : d_ * ( n_next + 1.0 );
 	}
 
 private: // Methods

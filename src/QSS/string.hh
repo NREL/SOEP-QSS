@@ -65,7 +65,7 @@ is_int( std::string const & s )
 	char const * str( s.c_str() );
 	char * end;
 	long int const i( std::strtol( str, &end, 10 ) );
-	return ( ( end != str ) && is_tail( end ) && ( std::numeric_limits< int >::min() <= i ) && ( i <= std::numeric_limits< int >::max() ) );
+	return ( end != str ) && is_tail( end ) && ( std::numeric_limits< int >::min() <= i ) && ( i <= std::numeric_limits< int >::max() );
 }
 
 // string is Readable as a size?
@@ -76,7 +76,7 @@ is_size( std::string const & s )
 	char const * str( s.c_str() );
 	char * end;
 	static_cast< void >( std::strtoull( str, &end, 10 ) );
-	return ( ( end != str ) && is_tail( end ) );
+	return ( end != str ) && is_tail( end );
 }
 
 // string is Readable as a double?
@@ -87,7 +87,7 @@ is_double( std::string const & s )
 	char const * str( s.c_str() );
 	char * end;
 	static_cast< void >( std::strtod( str, &end ) );
-	return ( ( end != str ) && is_tail( end ) );
+	return ( end != str ) && is_tail( end );
 }
 
 // char is in a string?

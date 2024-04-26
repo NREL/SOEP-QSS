@@ -120,7 +120,7 @@ public: // Property
 			} else { // Both boundaries can have crossings
 				dt_bump = min_root_quadratic_both( x_2_, x_1_t, bTol, -bTol );
 			}
-			if ( ( dt_bump <= 0.0 ) || ( dt_bump == infinity ) ) dt_bump = ( x_1_t != 0.0 ? bTol / std::abs( x_1_t ) : options::dtZC ); // Fall back to 1st order estimate
+			if ( ( dt_bump <= 0.0 ) || ( dt_bump == infinity ) ) dt_bump = x_1_t != 0.0 ? bTol / std::abs( x_1_t ) : options::dtZC; // Fall back to 1st order estimate
 			return t + dt_bump;
 		} else {
 			return t + options::dtZC;
@@ -294,7 +294,7 @@ public: // Methods
 		advance_pre( t );
 		tS = t - tQ;
 		tQ = tX = t;
-		x_0_ = ( !handler_modified_ && ( t == tZ_last ) ? 0.0 : x_0 ); // Force exact zero if at zero-crossing time
+		x_0_ = !handler_modified_ && ( t == tZ_last ) ? 0.0 : x_0; // Force exact zero if at zero-crossing time
 		x_1_ = x_1;
 	}
 
@@ -382,13 +382,13 @@ private: // Methods
 			assert( dt != infinity );
 			if ( options::inflection && nonzero_and_signs_differ( x_1_, x_2_ ) ) { // Inflection point
 				Time const dtI( -( x_1_ * ( one_half * x_2_inv ) ) );
-				dt = ( ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ? dtI : dt );
+				dt = ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ? dtI : dt;
 			}
 			dt = std::min( std::max( dt, dt_min ), dt_max );
 			tE = tQ + dt;
 		} else {
 			dt = std::min( std::max( dt_infinity_of_infinity(), dt_min ), dt_max );
-			tE = ( dt != infinity ? tQ + dt : infinity );
+			tE = dt != infinity ? tQ + dt : infinity;
 		}
 		if ( tQ == tE ) {
 			tE = std::nextafter( tE, infinity );
@@ -429,7 +429,7 @@ private: // Methods
 		// Find root of continuous trajectory: Only robust for small active segments with continuous trajectory close to function
 		Time const dB( tB - tX );
 		assert( dB >= 0.0 );
-		Real const x_0( ( tB == tZ_last ) && !( handler_modified_ = ( fmu_get_real() != x_0_bump_ ) ) ? 0.0 : x_0_ + ( x_1_ * dB ) + ( x_2_ * square( dB ) ) );
+		Real const x_0( ( tB == tZ_last ) && !( handler_modified_ = fmu_get_real() != x_0_bump_ ) ? 0.0 : x_0_ + ( x_1_ * dB ) + ( x_2_ * square( dB ) ) );
 		Real const x_1( x_1_ + ( two * x_2_ * dB ) );
 		Time const dt( zc_root_quadratic( x_2_, x_1, x_0, zTol, x_mag_ ) ); // Positive root using trajectory shifted to tB
 		assert( dt > 0.0 );

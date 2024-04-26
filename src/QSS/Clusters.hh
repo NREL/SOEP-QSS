@@ -1,4 +1,4 @@
-// Index Range Class
+// QSS Variable Clusters Class
 //
 // Project: QSS Solver
 //
@@ -33,34 +33,61 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_Range_hh_INCLUDED
-#define QSS_Range_hh_INCLUDED
+#ifndef QSS_Clusters_hh_INCLUDED
+#define QSS_Clusters_hh_INCLUDED
+
+// QSS Headers
+#include <QSS/Cluster.hh>
+#include <QSS/string.hh>
 
 // C++ Headers
-#include <cstddef>
-#include <limits>
-#include <utility>
+#include <cassert>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <vector>
 
 namespace QSS {
 
-// Index Range
-class Range final
+// QSS Variable Clusters Class
+class Clusters final
 {
 
 public: // Types
 
-	using size_type = std::size_t;
+	using ClusterSpecs = std::vector< Cluster >;
+	using const_iterator = ClusterSpecs::const_iterator;
+	using iterator = ClusterSpecs::iterator;
+	using size_type = ClusterSpecs::size_type;
+	using index_type = size_type;
 
 public: // Creation
 
-	// Default Constructor
-	Range() = default;
-
-	// Indexes Constructor
-	Range( size_type const b, size_type const e ) :
-	 b_( b ),
-	 e_( e )
-	{}
+	// File Name Constructor
+	explicit
+	Clusters( std::string const & var_file )
+	{
+		std::ifstream var_stream( var_file, std::ios_base::binary | std::ios_base::in );
+		if ( var_stream.is_open() ) {
+			std::string line;
+			std::vector< std::string > specs; // Specs for the current cluster
+			while ( std::getline( var_stream, line ) ) {
+				strip( line );
+				if ( line.empty() ) { // Set up to create new cluster
+					if ( !specs.empty() ) { // Save previous cluster if any
+						clusters_.push_back( Cluster( specs ) );
+						specs.clear();
+					}
+				} else if ( line[ 0 ] != '#' ) { // Add to current cluster
+					specs.push_back( line );
+				}
+			}
+			var_stream.close();
+			if ( !specs.empty() ) {
+				clusters_.push_back( Cluster( specs ) );
+			}
+		}
+	}
 
 public: // Predicate
 
@@ -68,128 +95,62 @@ public: // Predicate
 	bool
 	empty() const
 	{
-		return b_ >= e_;
+		return clusters_.empty();
 	}
 
-	// Have?
-	bool
-	have() const
+public: // Subscript
+
+	// Get a Cluster
+	Cluster const &
+	operator []( index_type const idx ) const
 	{
-		return b_ < e_;
+		assert( idx < clusters_.size() );
+		return clusters_[ idx ];
 	}
 
-	// Began?
-	bool
-	began() const
+	// Get a Cluster
+	Cluster &
+	operator []( index_type const idx )
 	{
-		return b_ < std::numeric_limits< size_type >::max();
+		assert( idx < clusters_.size() );
+		return clusters_[ idx ];
 	}
 
-	// Intersects a Range?
-	bool
-	intersects( Range const & r ) const
+public: // Iterator
+
+	// Begin Iterator
+	const_iterator
+	begin() const
 	{
-		if ( empty() || r.empty() ) {
-			return false;
-		} else {
-			return ( b_ <= r.e_ ) && ( r.b_ <= e_ );
-		}
+		return clusters_.begin();
 	}
 
-public: // Property
-
-	// Size
-	size_type
-	size() const
+	// Begin Iterator
+	iterator
+	begin()
 	{
-		return b_ < e_ ? e_ - b_ : 0u;
+		return clusters_.begin();
 	}
 
-	// Begin Index
-	size_type
-	b() const
+	// End Iterator
+	const_iterator
+	end() const
 	{
-		return b_;
+		return clusters_.end();
 	}
 
-	// Begin Index
-	size_type &
-	b()
+	// End Iterator
+	iterator
+	end()
 	{
-		return b_;
-	}
-
-	// End Index
-	size_type
-	e() const
-	{
-		return e_;
-	}
-
-	// End Index
-	size_type &
-	e()
-	{
-		return e_;
-	}
-
-	// Size
-	size_type
-	n() const
-	{
-		return b_ < e_ ? e_ - b_ : 0u;
-	}
-
-public: // Methods
-
-	// Assign
-	void
-	assign( size_type const b, size_type const e )
-	{
-		b_ = b;
-		e_ = e;
-	}
-
-	// Intersect with a Range
-	void
-	intersect( Range const & r )
-	{
-		b_ = std::max( b_, r.b_ );
-		e_ = std::min( e_, r.e_ );
-	}
-
-	// Reset
-	void
-	reset()
-	{
-		b_ = std::numeric_limits< size_type >::max();
-		e_ = 0u;
-	}
-
-	// Swap
-	void
-	swap( Range & r )
-	{
-		std::swap( b_, r.b_ );
-		std::swap( e_, r.e_ );
-	}
-
-public: // Friend Functions
-
-	// Swap
-	friend
-	void
-	swap( Range & r1, Range & r2 )
-	{
-		r1.swap( r2 );
+		return clusters_.end();
 	}
 
 private: // Data
 
-	size_type b_{ std::numeric_limits< size_type >::max() }; // Begin index
-	size_type e_{ 0u }; // End index (1 beyond last item)
+	ClusterSpecs clusters_; // Variable_QSS clusters
 
-}; // Range
+}; // Clusters
 
 } // QSS
 

@@ -134,7 +134,22 @@ protected: // Predicate
 	bool
 	has( Crossing const c ) const
 	{
-		return ( std::find( crossings_.begin(), crossings_.end(), c ) != crossings_.end() );
+#if ( __cplusplus >= 202302L ) // C++23+
+		return std::ranges::contains( crossings_, c );
+#else
+		return std::find( crossings_.begin(), crossings_.end(), c ) != crossings_.end();
+#endif
+	}
+
+	// Has Crossing Type?
+	bool
+	contains( Crossing const c ) const
+	{
+#if ( __cplusplus >= 202302L ) // C++23+
+		return std::ranges::contains( crossings_, c );
+#else
+		return std::find( crossings_.begin(), crossings_.end(), c ) != crossings_.end();
+#endif
 	}
 
 public: // Property
@@ -143,7 +158,7 @@ public: // Property
 	bool
 	is_tZ_last( Time const t ) const
 	{
-		return ( t == tZ_last );
+		return t == tZ_last;
 	}
 
 	// Zero-Crossing Bump Time for FMU Detection
@@ -329,12 +344,12 @@ protected: // Static Methods
 	crossing_type( T const val1, T const val2 )
 	{
 		if ( val1 == T( 0 ) ) {
-			return ( val2 > T( 0 ) ? Crossing::UpZP : ( val2 == T( 0 ) ? Crossing::Flat : Crossing::DnZN ) );
+			return val2 > T( 0 ) ? Crossing::UpZP : ( val2 == T( 0 ) ? Crossing::Flat : Crossing::DnZN );
 		} else if ( val2 == T( 0 ) ) {
-			return ( val1 > T( 0 ) ? Crossing::DnPZ : Crossing::UpNZ );
+			return val1 > T( 0 ) ? Crossing::DnPZ : Crossing::UpNZ;
 		} else {
 			assert( val1 != val2 );
-			return ( val1 > T( 0 ) ? Crossing::DnPN : Crossing::UpNP );
+			return val1 > T( 0 ) ? Crossing::DnPN : Crossing::UpNP;
 		}
 	}
 

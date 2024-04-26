@@ -524,25 +524,24 @@ private: // Methods
 			if ( dtI < dt ) { // Use inflection point time step
 				dt = dtI;
 			} else if ( yoyo_ ) { // Relax time step growth
-				dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt );
+				dt = dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt;
 			}
 		} else {
 			dt = dt_infinity_of_infinity();
-			if ( x_2_ != 0.0 ) {
-				Time const dt_inflectionFrac( dt != infinity ? dt * options::inflectionFrac : zero );
+			if ( ( x_2_ != 0.0 ) && ( dt != infinity ) ) {
 				Time const dtI_1_root( -( x_1_ / ( two * x_2_ ) ) ); // When 1st derivative is zero
-				Time const dtI_1( dtI_1_root > dt_inflectionFrac ? dtI_1_root : infinity );
+				Time const dtI_1( dtI_1_root > dt * options::inflectionFrac ? dtI_1_root : infinity );
 				if ( dtI_1 < dt ) { // Use inflection point time step
 					dt = dtI_1;
 				} else if ( yoyo_ ) { // Relax time step growth
-					dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt );
+					dt = dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt;
 				}
 			} else if ( yoyo_ ) { // Relax time step growth
-				dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt );
+				dt = dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt;
 			}
 		}
 		dt = std::min( std::max( dt, dt_min ), dt_max );
-		tE = ( dt != infinity ? tQ + dt : infinity );
+		tE = dt != infinity ? tQ + dt : infinity;
 		if ( tQ == tE ) {
 			tE = std::nextafter( tE, infinity );
 			dt = tE - tQ;
@@ -571,9 +570,9 @@ private: // Methods
 		dt = dt_infinity( dt );
 		if ( yoyo_ ) dt *= one_half;
 		assert( dt > 0.0 ); // Might be infinity
-		if ( x_3_ != 0.0 ) {
+		if ( ( x_3_ != 0.0 ) && ( dt != infinity ) ) {
 			Real const x_3_inv( one / x_3_ );
-			Time const dt_inflectionFrac( dt != infinity ? dt * options::inflectionFrac : zero );
+			Time const dt_inflectionFrac( dt * options::inflectionFrac );
 			Time const dtI_1_root( min_root_quadratic( three * x_3_, two * x_2_, x_1_ ) ); // When 1st derivative is zero
 			Time const dtI_1( dtI_1_root > dt_inflectionFrac ? dtI_1_root : infinity );
 			Time const dtI_2_root( nonzero_and_signs_differ( x_2_, x_3_ ) ? -( x_2_ * ( one_third * x_3_inv ) ) : infinity ); // When 2nd derivative is zero
@@ -582,25 +581,24 @@ private: // Methods
 			if ( dtI < dt ) { // Use inflection point time step
 				dt = dtI;
 			} else if ( yoyo_ ) { // Relax time step growth
-				dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt );
+				dt = dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt;
 			}
 		} else {
 			dt = dt_infinity_of_infinity();
-			if ( x_2_ != 0.0 ) {
-				Time const dt_inflectionFrac( dt != infinity ? dt * options::inflectionFrac : zero );
+			if ( ( x_2_ != 0.0 ) && ( dt != infinity ) ) {
 				Time const dtI_1_root( -( x_1_ / ( two * x_2_ ) ) ); // When 1st derivative is zero
-				Time const dtI_1( dtI_1_root > dt_inflectionFrac ? dtI_1_root : infinity );
+				Time const dtI_1( dtI_1_root > dt * options::inflectionFrac ? dtI_1_root : infinity );
 				if ( dtI_1 < dt ) { // Use inflection point time step
 					dt = dtI_1;
 				} else if ( yoyo_ ) { // Relax time step growth
-					dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt );
+					dt = dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt;
 				}
 			} else if ( yoyo_ ) { // Relax time step growth
-				dt = ( dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt );
+				dt = dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt;
 			}
 		}
 		dt = std::min( std::max( dt, dt_min ), dt_max );
-		tE = ( dt != infinity ? tX + dt : infinity );
+		tE = dt != infinity ? tX + dt : infinity;
 		if ( tX == tE ) {
 			tE = std::nextafter( tE, infinity );
 			dt = tE - tX;

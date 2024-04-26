@@ -297,7 +297,7 @@ private: // Methods
 		assert( dt_min <= dt_max );
 		Time dt( x_1_ != 0.0 ? qTol / std::abs( x_1_ ) : infinity );
 		dt = std::min( std::max( dt_infinity( dt ), dt_min ), dt_max );
-		tE = ( dt != infinity ? tQ + dt : infinity );
+		tE = dt != infinity ? tQ + dt : infinity;
 	}
 
 	// Set End Time: Quantized and Continuous Unaligned
@@ -311,7 +311,7 @@ private: // Methods
 		 ( x_1_ < 0.0 ? ( q_0_ - qTol - x_0_ ) / x_1_ :
 		 infinity ) ) );
 		dt = std::min( std::max( dt_infinity( dt ), dt_min ), dt_max );
-		tE = ( dt != infinity ? tX + dt : infinity );
+		tE = dt != infinity ? tX + dt : infinity;
 	}
 
 private: // Data

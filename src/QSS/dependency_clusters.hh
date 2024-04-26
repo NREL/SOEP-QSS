@@ -33,8 +33,8 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef QSS_clusters_hh_INCLUDED
-#define QSS_clusters_hh_INCLUDED
+#ifndef QSS_dependency_clusters_hh_INCLUDED
+#define QSS_dependency_clusters_hh_INCLUDED
 
 // QSS Headers
 #include <QSS/options.hh>
@@ -50,7 +50,7 @@ namespace QSS {
 // QSS State Dependency Cycle Clusters
 template< typename Variable, typename Variable_QSS >
 void
-clusters( typename Variable_QSS::Variables_QSS & vars )
+dependency_clusters( typename Variable_QSS::Variables_QSS & vars )
 {
 
 	// Node
@@ -76,7 +76,7 @@ clusters( typename Variable_QSS::Variables_QSS & vars )
 		Node *
 		child()
 		{
-			return ( i != observees.end() ? *i : nullptr );
+			return i != observees.end() ? *i : nullptr;
 		}
 
 	public: // Methods
@@ -150,7 +150,7 @@ clusters( typename Variable_QSS::Variables_QSS & vars )
 					node->leave();
 					branch.pop_front();
 					step = Step::Pop;
-					node = ( !branch.empty() ? branch.front() : nullptr );
+					node = !branch.empty() ? branch.front() : nullptr;
 				} else { // Move down branch to first child
 					node = child;
 					branch.push_front( node );
@@ -176,7 +176,7 @@ clusters( typename Variable_QSS::Variables_QSS & vars )
 					}
 					branch.pop_front();
 					step = Step::Pop;
-					node = ( !branch.empty() ? branch.front() : nullptr );
+					node = !branch.empty() ? branch.front() : nullptr;
 				} else { // Moved up from child
 					assert( step == Step::Pop );
 					if ( node->advance_child() ) { // Move down branch to next child
@@ -187,7 +187,7 @@ clusters( typename Variable_QSS::Variables_QSS & vars )
 						node->leave();
 						branch.pop_front();
 						step = Step::Pop;
-						node = ( !branch.empty() ? branch.front() : nullptr );
+						node = !branch.empty() ? branch.front() : nullptr;
 					}
 				}
 			}

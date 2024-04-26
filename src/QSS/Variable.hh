@@ -485,14 +485,14 @@ public: // Property
 	int
 	var_sort_index() const
 	{
-		return ( is_state() ? 0 : ( is_R() && is_Active() ? 1 : ( is_ZC() ? 3 : 2 ) ) ); // Order: State -> active R -> Passive|Boolean|Integer|Discrete|Input -> ZC
+		return is_state() ? 0 : ( is_R() && is_Active() ? 1 : ( is_ZC() ? 3 : 2 ) ); // Order: State -> active R -> Passive|Boolean|Integer|Discrete|Input -> ZC
 	}
 
 	// State Sorting Index
 	int
 	state_sort_index() const
 	{
-		return ( is_state() ? 0 : 1 );
+		return is_state() ? 0 : 1;
 	}
 
 	// Output File Name Decoration
@@ -1900,7 +1900,7 @@ protected: // Methods
 			dt_inf_rlx_ = std::max( 0.5 * dt_inf_rlx_, dt ); // Reduce relaxation step (side effect)
 		} else { // Apply deactivation control
 			Time const dt_rlx( dt_inf_rlx_ ); // Relaxation step
-			dt_inf_rlx_ = ( dt_inf_rlx_ < half_infinity ? std::min( 2.0 * dt_inf_rlx_, dt ) : dt ); // Increase relaxation step (side effect)
+			dt_inf_rlx_ = dt_inf_rlx_ < half_infinity ? std::min( 2.0 * dt_inf_rlx_, dt ) : dt; // Increase relaxation step (side effect)
 			dt = dt_rlx;
 		}
 		return dt;
@@ -1912,7 +1912,7 @@ protected: // Methods
 	{
 		if ( dt_inf_ == infinity ) return infinity; // Deactivation control is disabled
 		Time const dt( dt_inf_rlx_ );// Apply deactivation control: Limit step to relaxation step
-		dt_inf_rlx_ = ( dt_inf_rlx_ < half_infinity ? 2.0 * dt_inf_rlx_ : infinity ); // Increase relaxation step (side effect)
+		dt_inf_rlx_ = dt_inf_rlx_ < half_infinity ? 2.0 * dt_inf_rlx_ : infinity; // Increase relaxation step (side effect)
 		return dt;
 	}
 
@@ -1968,7 +1968,11 @@ private: // Methods
 	)
 	{
 		for ( Variable * observee : observees ) {
+#if ( __cplusplus >= 202002L ) // C++20+
+			if ( !observees_checked.contains( observee ) ) { // Observee not already processed
+#else
 			if ( observees_checked.find( observee ) == observees_checked.end() ) { // Observee not already processed
+#endif
 				observees_checked.insert( observee );
 				if ( observee->is_state() || observee->is_Input() ) { // State or input => Computational
 					observees_set.insert( observee );

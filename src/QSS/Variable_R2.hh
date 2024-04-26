@@ -382,13 +382,13 @@ private: // Methods
 			assert( dt != infinity );
 			if ( options::inflection && nonzero_and_signs_differ( x_1_, x_2_ ) ) { // Inflection point
 				Time const dtI( -( x_1_ * ( one_half * x_2_inv ) ) );
-				dt = ( ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ? dtI : dt );
+				dt = ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ? dtI : dt;
 			}
 			dt = std::min( std::max( dt, dt_min ), dt_max );
 			tE = tQ + dt;
 		} else {
 			dt = std::min( std::max( dt_infinity_of_infinity(), dt_min ), dt_max );
-			tE = ( dt != infinity ? tQ + dt : infinity );
+			tE = dt != infinity ? tQ + dt : infinity;
 		}
 		if ( tQ == tE ) {
 			tE = std::nextafter( tE, infinity );

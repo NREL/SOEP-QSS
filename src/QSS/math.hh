@@ -83,7 +83,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 bool
 bool_sign( T const x )
 {
-	return ( x < T( 0 ) ? false : true );
+	return x < T( 0 ) ? false : true;
 }
 
 // Sign: Returns Passed Type as Integer
@@ -91,7 +91,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 int
 int_sign( T const x )
 {
-	return ( x < T( 0 ) ? -1 : +1 );
+	return x < T( 0 ) ? -1 : +1;
 }
 
 // Sign: Returns Passed Type
@@ -99,7 +99,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 T
 sign( T const x )
 {
-	return ( x < T( 0 ) ? T( -1 ) : T( +1 ) );
+	return x < T( 0 ) ? T( -1 ) : T( +1 );
 }
 
 // Signs of 2 Values Same?
@@ -107,7 +107,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 bool
 signs_same( T const x, T const y )
 {
-	return ( sign( x ) == sign( y ) );
+	return sign( x ) == sign( y );
 }
 
 // Signs of 2 Values Differ?
@@ -115,7 +115,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 bool
 signs_differ( T const x, T const y )
 {
-	return ( sign( x ) != sign( y ) );
+	return sign( x ) != sign( y );
 }
 
 // Signs of 2 Values Same and Values are Non-Zero?
@@ -123,7 +123,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 bool
 nonzero_and_signs_same( T const x, T const y )
 {
-	return ( ( ( x < T( 0 ) ) && ( y < T( 0 ) ) ) || ( ( x > T( 0 ) ) && ( y > T( 0 ) ) ) );
+	return ( ( x < T( 0 ) ) && ( y < T( 0 ) ) ) || ( ( x > T( 0 ) ) && ( y > T( 0 ) ) );
 }
 
 // Signs of 2 Values Differ and Values are Non-Zero?
@@ -131,7 +131,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 bool
 nonzero_and_signs_differ( T const x, T const y )
 {
-	return ( ( ( x < T( 0 ) ) && ( y > T( 0 ) ) ) || ( ( x > T( 0 ) ) && ( y < T( 0 ) ) ) );
+	return ( ( x < T( 0 ) ) && ( y > T( 0 ) ) ) || ( ( x > T( 0 ) ) && ( y < T( 0 ) ) );
 }
 
 // Signum: Returns Passed Type
@@ -139,7 +139,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 T
 sgn( T const x )
 {
-	return ( x < T( 0 ) ? T( -1 ) : ( x > T( 0 ) ? T( +1 ) : T( 0 ) ) );
+	return x < T( 0 ) ? T( -1 ) : ( x > T( 0 ) ? T( +1 ) : T( 0 ) );
 }
 
 // Signum: Returns int
@@ -147,7 +147,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 int
 signum( T const x )
 {
-	return ( x < T( 0 ) ? -1 : ( x > T( 0 ) ? +1 : 0 ) );
+	return x < T( 0 ) ? -1 : ( x > T( 0 ) ? +1 : 0 );
 }
 
 // Signums of 2 Values Same?
@@ -155,7 +155,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 bool
 signums_same( T const x, T const y )
 {
-	return ( signum( x ) == signum( y ) );
+	return signum( x ) == signum( y );
 }
 
 // Signums of 2 Values Differ?
@@ -163,7 +163,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 bool
 signums_differ( T const x, T const y )
 {
-	return ( signum( x ) != signum( y ) );
+	return signum( x ) != signum( y );
 }
 
 // Square
@@ -215,7 +215,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 T
 min( T const x, T const y, T const z )
 {
-	return ( x < y ? ( x < z ? x : z ) : ( y < z ? y : z ) );
+	return x < y ? ( x < z ? x : z ) : ( y < z ? y : z );
 }
 
 // Min of 4+ Values
@@ -231,7 +231,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 T
 min_nonnegative_or_zero( T const x, T const y )
 {
-	return ( x >= T( 0 ) ? ( y >= T( 0 ) ? std::min( x, y ) : x ) : ( y >= T( 0 ) ? y : T( 0 ) ) );
+	return x >= T( 0 ) ? ( y >= T( 0 ) ? std::min( x, y ) : x ) : ( y >= T( 0 ) ? y : T( 0 ) );
 }
 
 // Min Positive of 2 Values or Zero
@@ -239,7 +239,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 T
 min_positive_or_zero( T const x, T const y )
 {
-	return ( x > T( 0 ) ? ( y > T( 0 ) ? std::min( x, y ) : x ) : ( y > T( 0 ) ? y : T( 0 ) ) );
+	return x > T( 0 ) ? ( y > T( 0 ) ? std::min( x, y ) : x ) : ( y > T( 0 ) ? y : T( 0 ) );
 }
 
 // Min Positive of 3 Values or Zero
@@ -247,9 +247,9 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 T
 min_positive_or_zero( T const x, T const y, T const z )
 {
-	return ( x > T( 0 ) ?
+	return x > T( 0 ) ?
 	 ( y > T( 0 ) ? ( z > T( 0 ) ? min( x, y, z ) : std::min( x, y ) ) : ( z > T( 0 ) ? std::min( x, z ) : x ) ) : // x > 0
-	 ( y > T( 0 ) ? ( z > T( 0 ) ? std::min( y, z ) : y ) : ( z > T( 0 ) ? z : T( 0 ) ) ) ); // x < 0
+	 ( y > T( 0 ) ? ( z > T( 0 ) ? std::min( y, z ) : y ) : ( z > T( 0 ) ? z : T( 0 ) ) ); // x < 0
 }
 
 // Min Positive of 2 Values or Infinity
@@ -257,7 +257,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 T
 min_positive_or_infinity( T const x, T const y )
 {
-	return ( x > T( 0 ) ? ( y > T( 0 ) ? std::min( x, y ) : x ) : ( y > T( 0 ) ? y : inf< T >() ) );
+	return x > T( 0 ) ? ( y > T( 0 ) ? std::min( x, y ) : x ) : ( y > T( 0 ) ? y : inf< T >() );
 }
 
 // Min Positive of 3 Values or Infinity
@@ -265,9 +265,9 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 T
 min_positive_or_infinity( T const x, T const y, T const z )
 {
-	return ( x > T( 0 ) ?
+	return x > T( 0 ) ?
 	 ( y > T( 0 ) ? ( z > T( 0 ) ? min( x, y, z ) : std::min( x, y ) ) : ( z > T( 0 ) ? std::min( x, z ) : x ) ) : // x > 0
-	 ( y > T( 0 ) ? ( z > T( 0 ) ? std::min( y, z ) : y ) : ( z > T( 0 ) ? z : inf< T >() ) ) ); // x < 0
+	 ( y > T( 0 ) ? ( z > T( 0 ) ? std::min( y, z ) : y ) : ( z > T( 0 ) ? z : inf< T >() ) ); // x < 0
 }
 
 // Use std::max for 2 arguments
@@ -278,7 +278,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 T
 max( T const x, T const y, T const z )
 {
-	return ( x < y ? ( y < z ? z : y ) : ( x < z ? z : x ) );
+	return x < y ? ( y < z ? z : y ) : ( x < z ? z : x );
 }
 
 // Max of 4+ Values
@@ -294,7 +294,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 T
 nonnegative( T const r )
 {
-	return ( r > T( 0 ) ? r : T( 0 ) );
+	return r > T( 0 ) ? r : T( 0 );
 }
 
 // Value if Positive or Infinity
@@ -302,7 +302,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 T
 positive_or_infinity( T const r )
 {
-	return ( r > T( 0 ) ? r : inf< T >() );
+	return r > T( 0 ) ? r : inf< T >();
 }
 
 // x == y Within Specified Relative or Absolute Tolerances?
@@ -312,7 +312,7 @@ eq_tol( T const & x, T const & y, T const & r_tol, T const & a_tol = T( 0 ) )
 {
 	assert( r_tol >= T( 0 ) );
 	assert( a_tol >= T( 0 ) );
-	return ( std::abs( x - y ) <= std::max( r_tol * std::max( std::abs( x ), std::abs( y ) ), a_tol ) );
+	return std::abs( x - y ) <= std::max( r_tol * std::max( std::abs( x ), std::abs( y ) ), a_tol );
 }
 
 // Sorted Array of 3 Values Making Non-Positive Values Infinity
@@ -335,7 +335,7 @@ T
 zc_root_cull( T const root, T const val, T const zMag = T( 1e-6 ) )
 {
 	assert( zMag >= T( 0 ) );
-	return ( std::abs( val ) >= zMag ? root : inf< T >() );
+	return std::abs( val ) >= zMag ? root : inf< T >();
 }
 
 // Zero-Crossing Root if Given Magnitude Meets Anti-Chatter Zero Crossing Tolerance or Infinity
@@ -345,7 +345,7 @@ zc_root_cull_mag( T const root, T const mag, T const zMag = T( 1e-6 ) )
 {
 	assert( mag >= T( 0 ) );
 	assert( zMag >= T( 0 ) );
-	return ( mag >= zMag ? root : inf< T >() );
+	return mag >= zMag ? root : inf< T >();
 }
 
 // Real-Valued Root
@@ -466,7 +466,7 @@ newton_positive_root_quadratic( T const a, T b, T c, T x, T zTol = T( 1e-6 ) )
 			v = ( xb * x ) + c; // Value at new guess
 			if ( v == T( 0 ) ) return Root( x, T( 0 ) ); // Done
 		}
-		return ( std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : Root( x_p, v_p, zTol ) );
+		return std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : Root( x_p, v_p, zTol );
 	}
 }
 
@@ -510,7 +510,7 @@ halley_positive_root_quadratic( T const a, T b, T c, T x, T zTol = T( 1e-6 ) )
 			v = ( xb * x ) + c; // Value at new guess
 			if ( v == T( 0 ) ) return Root( x, T( 0 ) ); // Done
 		}
-		return ( std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : Root( x_p, v_p, zTol ) );
+		return std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : Root( x_p, v_p, zTol );
 	}
 }
 
@@ -538,7 +538,7 @@ critical_point_magnitude_quadratic( T const a, T const b, T const c, T const t )
 	} else { // Critical point: Root of linear 2 a x + b
 		T const a_inv( T( 1 ) / a );
 		T const root( -( one_half * b * a_inv ) );
-		return ( root < t ? std::abs( c - ( one_fourth * square( b ) * a_inv ) ) : T( 0 ) );
+		return root < t ? std::abs( c - ( one_fourth * square( b ) * a_inv ) ) : T( 0 );
 	}
 }
 
@@ -565,7 +565,7 @@ zc_root_quadratic( T const a, T const b, T const c, T const zTol = T( 1e-6 ), T 
 			}
 		} else if ( b == T( 0 ) ) {
 			T const zMag( xMag < zTol ? zTol : T( 0 ) );
-			return ( signs_differ( a, c ) ? zc_root_cull( std::sqrt( -( c / a ) ), c, zMag ) : inf< T >() ); // Extremum is at 0 with value c
+			return signs_differ( a, c ) ? zc_root_cull( std::sqrt( -( c / a ) ), c, zMag ) : inf< T >(); // Extremum is at 0 with value c
 		} else {
 			T const bb( b * b );
 			T const four_a( T( 4 ) * a );
@@ -573,7 +573,7 @@ zc_root_quadratic( T const a, T const b, T const c, T const zTol = T( 1e-6 ), T 
 			if ( disc <= T( 0 ) ) { // Zero or one real root(s)
 				if ( disc == T( 0 ) ) { // One real (double) root
 					T const zMag( xMag < zTol ? zTol : T( 0 ) );
-					return ( signs_differ( a, b ) ? zc_root_cull( -( b / ( T( 2 ) * a ) ), c, zMag ) : inf< T >() ); // Root is also extremum
+					return signs_differ( a, b ) ? zc_root_cull( -( b / ( T( 2 ) * a ) ), c, zMag ) : inf< T >(); // Root is also extremum
 				} else { // No real roots
 					return inf< T >();
 				}
@@ -614,7 +614,7 @@ zc_root_quadratic( T const a, T const b, T const c, T const zTol = T( 1e-6 ), T 
 				// Refine root: Probably not needed
 				// if ( root != inf< T >() ) {
 				// 	Root< T > const rr( iterative_positive_root_quadratic( a, b, c, root, zTol ) ); // Refined root
-				// 	return ( rr ? rr.x : root );
+				// 	return rr ? rr.x : root;
 				// } else {
 				// 	return root;
 				// }
@@ -659,7 +659,7 @@ min_root_quadratic( T const a, T const b, T const c )
 				T const r1( c / q );
 				T const r2( q / a );
 				if ( r1 > T( 0 ) ) {
-					return ( r2 > T( 0 ) ? std::min( r1, r2 ) : r1 );
+					return r2 > T( 0 ) ? std::min( r1, r2 ) : r1;
 				} else {
 					return r2; // Might be nonpositive
 				}
@@ -886,7 +886,7 @@ min_root_quadratic_both_c( T const a, T const b, T const cl, T const cu )
 			} else {
 				if ( rootl >= T( 0 ) ) {
 					if ( rootu >= T( 0 ) ) {
-						return ( rootl <= rootu ? std::make_pair( rootl, cl ) : std::make_pair( rootu, cu ) );
+						return rootl <= rootu ? std::make_pair( rootl, cl ) : std::make_pair( rootu, cu );
 					} else {
 						return std::make_pair( rootl, cl );
 					}
@@ -923,7 +923,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 T
 cubic_cull( T const a, T const b, T const r )
 {
-	return ( r > T( 0 ) ? ( ( T( 3 ) * r * r ) + ( T( 2 ) * a * r ) + b >= T( 0 ) ? r : T( 0 ) ) : T( 0 ) );
+	return r > T( 0 ) ? ( ( T( 3 ) * r * r ) + ( T( 2 ) * a * r ) + b >= T( 0 ) ? r : T( 0 ) ) : T( 0 );
 }
 
 // Root of Monic Cubic Equation x^3 + a x^2 + b x + c if it is Positive and Crosses Downward or Zero
@@ -931,7 +931,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 T
 cubic_cull_lower( T const a, T const b, T const r )
 {
-	return ( ( r > T( 0 ) ) && ( ( T( 3 ) * r * r ) + ( T( 2 ) * a * r ) + b <= T( 0 ) ) ? r : T( 0 ) );
+	return ( r > T( 0 ) ) && ( ( T( 3 ) * r * r ) + ( T( 2 ) * a * r ) + b <= T( 0 ) ) ? r : T( 0 );
 }
 
 // Root of Monic Cubic Equation x^3 + a x^2 + b x + c if it is Positive and Crosses Upward or Zero
@@ -939,7 +939,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 T
 cubic_cull_upper( T const a, T const b, T const r )
 {
-	return ( ( r > T( 0 ) ) && ( ( T( 3 ) * r * r ) + ( T( 2 ) * a * r ) + b >= T( 0 ) ) ? r : T( 0 ) );
+	return ( r > T( 0 ) ) && ( ( T( 3 ) * r * r ) + ( T( 2 ) * a * r ) + b >= T( 0 ) ) ? r : T( 0 );
 }
 
 // Newton Iterative Positive Root Near x=0 of Monic Cubic Equation x^3 + a x^2 + b x + c
@@ -986,7 +986,7 @@ newton_small_positive_root_cubic_monic( T const a, T const b, T const c, T const
 		v = ( r * x ) + c; // Value at x
 		if ( v == T( 0 ) ) return Root( x, T( 0 ) ); // Done
 	}
-	return ( std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : Root( x_p, v_p, zTol ) );
+	return std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : Root( x_p, v_p, zTol );
 }
 
 // Halley Iterative Positive Root Near x=0 of Monic Cubic Equation x^3 + a x^2 + b x + c
@@ -1036,7 +1036,7 @@ halley_small_positive_root_cubic_monic( T const a, T const b, T const c, T const
 		v = ( r * x ) + c; // Value at x
 		if ( v == T( 0 ) ) return Root( x, T( 0 ) ); // Done
 	}
-	return ( std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : Root( x_p, v_p, zTol ) );
+	return std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : Root( x_p, v_p, zTol );
 }
 
 // Iterative Positive Root Near x=0 of Monic Cubic Equation x^3 + a x^2 + b x + c
@@ -1075,7 +1075,7 @@ newton_positive_root_cubic_monic( T const a, T const b, T const c, T x, T const 
 		v = ( r * x ) + c; // Value at new guess
 		if ( v == T( 0 ) ) return Root( x, T( 0 ) ); // Done
 	}
-	return ( std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : Root( x_p, v_p, zTol ) );
+	return std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : Root( x_p, v_p, zTol );
 }
 
 // Halley Iterative Positive Root Near Given Guess of Monic Cubic Equation x^3 + a x^2 + b x + c
@@ -1108,7 +1108,7 @@ halley_positive_root_cubic_monic( T const a, T const b, T const c, T x, T const 
 		v = ( r * x ) + c; // Value at x
 		if ( v == T( 0 ) ) return Root( x, T( 0 ) ); // Done
 	}
-	return ( std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : Root( x_p, v_p, zTol ) );
+	return std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : Root( x_p, v_p, zTol );
 }
 
 // Iterative Positive Root Near Given Guess of Monic Cubic Equation x^3 + a x^2 + b x + c
@@ -1141,7 +1141,7 @@ critical_point_magnitude_cubic( T const a, T const b, T const c, T const d, T co
 			if ( c == T( 0 ) ) {
 				if ( nonzero_and_signs_differ( A, B ) ) { // One positive critical point at x=-B/A
 					T const root( -( B / A ) );
-					return ( root < t ? std::abs( cubic( a, b, c, d, root ) ) : T( 0 ) );
+					return root < t ? std::abs( cubic( a, b, c, d, root ) ) : T( 0 );
 				} else { // No positive critical points
 					return T( 0 );
 				}
@@ -1149,7 +1149,7 @@ critical_point_magnitude_cubic( T const a, T const b, T const c, T const d, T co
 				assert( c != T( 0 ) );
 				if ( signs_differ( A, c ) ) { // One positive critical point at x=sqrt(-c/A)
 					T const root( std::sqrt( -( c / A ) ) );
-					return ( root < t ? std::abs( cubic( a, b, c, d, root ) ) : T( 0 ) );
+					return root < t ? std::abs( cubic( a, b, c, d, root ) ) : T( 0 );
 				} else { // No positive critical points
 					return T( 0 );
 				}
@@ -1160,7 +1160,7 @@ critical_point_magnitude_cubic( T const a, T const b, T const c, T const d, T co
 				} else if ( disc == T( 0 ) ) { // One real (double) root of quadratic
 					if ( signs_differ( A, B ) ) { // Positive critical point at x=-B/2A
 						T const root( -( B / ( T( 2 ) * A ) ) );
-						return ( root < t ? std::abs( cubic( a, b, c, d, root ) ) : T( 0 ) );
+						return root < t ? std::abs( cubic( a, b, c, d, root ) ) : T( 0 );
 					} else {
 						return T( 0 );
 					}
@@ -1195,7 +1195,7 @@ critical_point_magnitude_cubic_monic( T const a, T const b, T const c, T const t
 			if ( C == T( 0 ) ) {
 				if ( B < T( 0 ) ) { // One positive critical point at x=-B
 					T const root( -B );
-					return ( root < t ? std::abs( cubic_monic( a, b, c, root ) ) : T( 0 ) );
+					return root < t ? std::abs( cubic_monic( a, b, c, root ) ) : T( 0 );
 				} else { // No positive critical points
 					return T( 0 );
 				}
@@ -1203,7 +1203,7 @@ critical_point_magnitude_cubic_monic( T const a, T const b, T const c, T const t
 				assert( C != T( 0 ) );
 				if ( C < T( 0 ) ) { // One positive critical point at x=sqrt(-C)
 					T const root( std::sqrt( -C ) );
-					return ( root < t ? std::abs( cubic_monic( a, b, c, root ) ) : T( 0 ) );
+					return root < t ? std::abs( cubic_monic( a, b, c, root ) ) : T( 0 );
 				} else { // No positive critical points
 					return T( 0 );
 				}
@@ -1214,7 +1214,7 @@ critical_point_magnitude_cubic_monic( T const a, T const b, T const c, T const t
 				} else if ( disc == T( 0 ) ) { // One real (double) root of quadratic
 					if ( B < T( 0 ) ) { // Positive critical point at x=-B/2
 						T const root( -( one_half * B ) );
-						return ( root < t ? std::abs( cubic_monic( a, b, c, root ) ) : T( 0 ) );
+						return root < t ? std::abs( cubic_monic( a, b, c, root ) ) : T( 0 );
 					} else {
 						return T( 0 );
 					}

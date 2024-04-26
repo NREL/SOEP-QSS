@@ -102,7 +102,7 @@ public: // Predicate
 	bool
 	valid() const
 	{
-		return ( ( 0u < l_.bin_size ) && ( l_.bin_size < m_.bin_size ) && ( m_.bin_size < u_.bin_size ) );
+		return ( 0u < l_.bin_size ) && ( l_.bin_size < m_.bin_size ) && ( m_.bin_size < u_.bin_size );
 	}
 
 public: // Property
@@ -205,7 +205,7 @@ private: // Methods
 	Velocity
 	interp( Point const a, Point const b, size_type const s )
 	{
-		return ( b.bin_size != a.bin_size ? a.velocity + ( ( s - a.bin_size ) * ( b.velocity - a.velocity ) / ( b.bin_size - a.bin_size ) ) : infinity );
+		return b.bin_size != a.bin_size ? a.velocity + ( ( s - a.bin_size ) * ( b.velocity - a.velocity ) / ( b.bin_size - a.bin_size ) ) : infinity;
 	}
 
 private: // Data
