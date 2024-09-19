@@ -56,9 +56,9 @@ using Time = double;
 TEST( EventQueueTest, Basic )
 {
 	Variables vars;
-	vars.reserve( 10 ); // Prevent reallocation
+	vars.reserve( 10u ); // Prevent reallocation
 	EventQ events;
-	for ( Variables::size_type i = 0; i < 10; ++i ) {
+	for ( Variables::size_type i = 0u; i < 10u; ++i ) {
 		vars.emplace_back( V() );
 		events.add_QSS( Time( i ), &vars[ i ] );
 	}
@@ -67,7 +67,7 @@ TEST( EventQueueTest, Basic )
 	EXPECT_EQ( 10u, events.size() );
 	EXPECT_EQ( &vars[ 0 ], events.top_target() );
 	EXPECT_EQ( Time( 0.0 ), events.top_time() );
-	for ( Variables::size_type i = 0; i < 10; ++i ) {
+	for ( Variables::size_type i = 0u; i < 10u; ++i ) {
 		SuperdenseTime const s( Time( i ), 0, EventQ::Off::QSS );
 		EXPECT_TRUE( events.has( s ) );
 		EXPECT_EQ( 1u, events.count( s ) );

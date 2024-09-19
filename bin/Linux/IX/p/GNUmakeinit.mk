@@ -5,7 +5,7 @@
 # Platform: Linux/IX/p
 
 # Variables
-CXXFLAGS := -std=c++20 -fiopenmp -xHOST -Wall -Wno-unknown-pragmas -Wno-unused-function -pthread -DNDEBUG -O3 -fp-model=precise -fno-omit-frame-pointer -p
+CXXFLAGS := -std=c++20 -fiopenmp -xHOST -Wall -Wno-unknown-pragmas -Wno-unused-function -pthread -DNDEBUG -O3 -fp-model=precise -ftz -fno-omit-frame-pointer -p
 #CXXFLAGS += -DQSS_PROPAGATE_CONTINUOUS # For continuous (x-trajectory) propagation
 LDFLAGS := -fiopenmp -Wall -fno-omit-frame-pointer -p
 

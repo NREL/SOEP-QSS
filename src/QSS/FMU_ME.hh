@@ -500,6 +500,7 @@ public: // FMU Methods
 		fmi2_status_t const fmi_status = fmi2_import_set_real( fmu, &ref, std::size_t( 1u ), &val );
 		assert( status_check( fmi_status, "set_real" ) );
 		(void)fmi_status; // Suppress unused warning
+		(void)get_real( ref ); //! Work-around for unexpected OCT directional derivatives
 	}
 
 	// Get Real FMU Variable Values
@@ -520,6 +521,7 @@ public: // FMU Methods
 		fmi2_status_t const fmi_status = fmi2_import_set_real( fmu, refs, n, vals );
 		assert( status_check( fmi_status, "set_reals" ) );
 		(void)fmi_status; // Suppress unused warning
+		std::vector< Real > get_vals( n ); get_reals( n, refs, get_vals.data() ); //! Work-around for unexpected OCT directional derivatives
 	}
 
 	// Get a Derivative: First call get_derivatives

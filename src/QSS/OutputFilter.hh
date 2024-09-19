@@ -109,7 +109,7 @@ public: // Predicate
 			if ( var_name == "time" ) return false; // Omit time variable
 			if ( has_prefix( var_name, "der(" ) && has_suffix( var_name, ")" ) ) return false; // Omit derivatives
 			if ( ( var_name[ 0 ] == '_' ) && !has_prefix( var_name, "_eventIndicator_" ) ) return false; // Omit internals except for event indicators
-			if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
+			if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5u ) ) ) return false; // Omit temporary variables
 			return true;
 		}
 		return std::any_of( filters_.begin(), filters_.end(), [ &var_name ]( Filter const & filter ){ return std::regex_match( var_name, filter ); } ); // Name matches filter?
@@ -123,7 +123,7 @@ public: // Predicate
 			if ( var_name == "time" ) return false; // Omit time variable
 			if ( has_prefix( var_name, "der(" ) && has_suffix( var_name, ")" ) ) return false; // Omit derivatives
 			if ( ( var_name[ 0 ] == '_' ) && !has_prefix( var_name, "_eventIndicator_" ) ) return false; // Omit internals except for event indicators
-			if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
+			if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5u ) ) ) return false; // Omit temporary variables
 			return true;
 		}
 		return std::any_of( filters_.begin(), filters_.end(), [ &var_name ]( Filter const & filter ){ return std::regex_match( var_name, filter ); } ); // Name matches filter?
@@ -137,7 +137,7 @@ public: // Predicate
 			if ( var_name == "time" ) return false; // Omit time variable
 			if ( has_prefix( var_name, "der(" ) && has_suffix( var_name, ")" ) ) return false; // Omit derivatives
 			if ( ( var_name[ 0 ] == '_' ) && !has_prefix( var_name, "_eventIndicator_" ) ) return false; // Omit internals except for event indicators
-			if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5 ) ) ) return false; // Omit temporary variables
+			if ( has_prefix( var_name, "temp_" ) && is_int( var_name.substr( 5u ) ) ) return false; // Omit temporary variables
 			return true;
 		}
 		return std::any_of( filters_.begin(), filters_.end(), [ &var_name ]( Filter const & filter ){ return std::regex_match( var_name, filter ); } ); // Name matches filter?

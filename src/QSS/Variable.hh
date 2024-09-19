@@ -136,8 +136,7 @@ protected: // Creation
 	 xIni( xIni_ ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
-	 dt_inf_( options::dtInf ),
-	 dt_inf_rlx_( dt_inf_ == infinity ? infinity : dt_inf_ ),
+	 dt_inf_rlx_( options::dtInf == infinity ? infinity : options::dtInf ),
 	 observers_( fmu_me, this ),
 	 fmu_me_( fmu_me ),
 	 var_( var ),
@@ -167,8 +166,7 @@ protected: // Creation
 	 xIni( xIni_ ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
-	 dt_inf_( options::dtInf ),
-	 dt_inf_rlx_( dt_inf_ == infinity ? infinity : dt_inf_ ),
+	 dt_inf_rlx_( options::dtInf == infinity ? infinity : options::dtInf ),
 	 observers_( fmu_me, this ),
 	 fmu_me_( fmu_me ),
 	 var_( var ),
@@ -194,8 +192,7 @@ protected: // Creation
 	 xIni( xIni_ ),
 	 dt_min( options::dtMin ),
 	 dt_max( options::dtMax ),
-	 dt_inf_( options::dtInf ),
-	 dt_inf_rlx_( dt_inf_ == infinity ? infinity : dt_inf_ ),
+	 dt_inf_rlx_( options::dtInf == infinity ? infinity : options::dtInf ),
 	 observers_( fmu_me, this ),
 	 fmu_me_( fmu_me ),
 	 var_( var ),
@@ -1168,6 +1165,14 @@ public: // Methods
 		observers_.advance( tQ );
 	}
 
+	// Advance Handler Observers
+	void
+	advance_handler_observers()
+	{
+		if ( options::dtInfReset ) observers_.dt_infinity_reset();
+		observers_.advance( tQ );
+	}
+
 	// Observer Advance: Stage 1
 	virtual
 	void
@@ -1278,6 +1283,14 @@ public: // Methods
 	advance_observer_d() const
 	{
 		assert( false );
+	}
+
+	// Infinite Time Step Control Reset
+	void
+	dt_infinity_reset()
+	{
+		assert( options::dtInfReset );
+		dt_inf_rlx_ = options::dtInf == infinity ? infinity : options::dtInf;
 	}
 
 public: // Methods: Output
@@ -1538,7 +1551,7 @@ public: // Methods: FMU
 	void
 	fmu_set_observees_x( Time const t ) const
 	{
-		for ( size_type j = 0; j < n_observees_; ++j ) { // Set observee value vector
+		for ( size_type j = 0u; j < n_observees_; ++j ) { // Set observee value vector
 			observees_v_[ j ] = observees_[ j ]->x( t );
 		}
 		fmu_me_->set_reals( n_observees_, observees_v_ref_.data(), observees_v_.data() ); // Set observees FMU values
@@ -1567,7 +1580,7 @@ public: // Methods: FMU
 	void
 	fmu_set_observees_q( Time const t ) const
 	{
-		for ( size_type j = 0; j < n_observees_; ++j ) { // Set observee value vector
+		for ( size_type j = 0u; j < n_observees_; ++j ) { // Set observee value vector
 			observees_v_[ j ] = observees_[ j ]->q( t );
 		}
 		fmu_me_->set_reals( n_observees_, observees_v_ref_.data(), observees_v_.data() ); // Set observees FMU values
@@ -1578,7 +1591,7 @@ public: // Methods: FMU
 	fmu_set_observees_s( Time const t ) const
 	{
 		assert( is_QSS() );
-		for ( size_type j = 0; j < n_observees_; ++j ) { // Set observee value vector
+		for ( size_type j = 0u; j < n_observees_; ++j ) { // Set observee value vector
 #ifndef QSS_PROPAGATE_CONTINUOUS
 			observees_v_[ j ] = observees_[ j ]->q( t ); // Quantized: Traditional QSS
 #else
@@ -1588,16 +1601,77 @@ public: // Methods: FMU
 		fmu_me_->set_reals( n_observees_, observees_v_ref_.data(), observees_v_.data() ); // Set observees FMU values
 	}
 
-protected: // Methods: FMU
+protected: // Methods
 
-	// Boolean Value at Time tQ: Don't Set Observees
-	Boolean
-	b_f() const
+	// Infinite Time Step Control Processing for Given Time Step
+	Time
+	dt_infinity( Time dt ) const
 	{
-		assert( is_Boolean() );
-		assert( fmu_get_time() == tQ );
-		return fmu_get_boolean();
+		if ( options::dtInf == infinity ) return dt; // Deactivation control is disabled
+		if ( dt <= options::dtInf ) { // Keep step
+			dt_inf_rlx_ = std::max( dtInfRlxInv * dt_inf_rlx_, options::dtInf ); // Reduce relaxation step (side effect)
+		} else if ( dt <= dt_inf_rlx_ ) { // Keep step
+			dt_inf_rlx_ = std::max( dtInfRlxInv * dt_inf_rlx_, dt ); // Reduce relaxation step (side effect)
+		} else { // Apply deactivation control
+			Time const dt_rlx( dt_inf_rlx_ ); // Relaxation step
+			dt_inf_rlx_ = std::min( dt_inf_rlx_ < half_infinity ? std::min( dtInfRlxMul * dt_inf_rlx_, dt ) : dt, options::dtInfMax ); // Increase relaxation step (side effect)
+			dt = dt_rlx;
+		}
+		return dt;
 	}
+
+	// Infinite Time Step Control Processing
+	Time
+	dt_infinity_of_infinity() const
+	{
+		if ( options::dtInf == infinity ) return infinity; // Deactivation control is disabled
+		Time const dt( dt_inf_rlx_ );// Apply deactivation control: Limit step to relaxation step
+		dt_inf_rlx_ = std::min( dt_inf_rlx_ < half_infinity ? dtInfRlxMul * dt_inf_rlx_ : infinity, options::dtInfMax ); // Increase relaxation step (side effect)
+		return dt;
+	}
+
+	// Set Observees Derivative Vector at Time t
+	void
+	set_observees_dv( Time const t ) const
+	{
+		assert( is_QSS() );
+		assert( n_observees_ == observees_.size() );
+		assert( n_observees_ == observees_v_ref_.size() );
+		assert( n_observees_ == observees_dv_.size() );
+		for ( size_type j = 0u; j < n_observees_; ++j ) {
+#ifndef QSS_PROPAGATE_CONTINUOUS
+			observees_dv_[ j ] = observees_[ j ]->q1( t ); // Quantized: Traditional QSS
+#else
+			observees_dv_[ j ] = observees_[ j ]->x1( t ); // Continuous: Modified QSS
+#endif
+		}
+	}
+
+	// Set Observees Derivative Vector at Time t: X-Based
+	void
+	set_observees_dv_x( Time const t ) const
+	{
+		assert( is_R() || is_ZC() );
+		assert( n_observees_ == observees_.size() );
+		assert( n_observees_ == observees_v_ref_.size() );
+		assert( n_observees_ == observees_dv_.size() );
+		for ( size_type j = 0u; j < n_observees_; ++j ) {
+			observees_dv_[ j ] = observees_[ j ]->x1( t );
+		}
+	}
+
+	// Set Self-Observee Derivative Vector Entry
+	void
+	set_self_dv( Real const x_1 )
+	{
+		assert( is_QSS() );
+		assert( n_observees_ == observees_.size() );
+		assert( n_observees_ == observees_v_ref_.size() );
+		assert( n_observees_ == observees_dv_.size() );
+		observees_dv_[ i_self_observee_ ] = x_1;
+	}
+
+protected: // Methods: FMU
 
 	// Boolean Value at Time tQ: X-Based
 	Boolean
@@ -1619,13 +1693,13 @@ protected: // Methods: FMU
 		return fmu_get_boolean();
 	}
 
-	// Integer Coefficient 0 at Time tQ: Don't Set Observees
-	Integer
-	i_f() const
+	// Boolean Value at Time tQ: Don't Set Observees
+	Boolean
+	b_dso_0() const
 	{
-		assert( is_Integer() );
+		assert( is_Boolean() );
 		assert( fmu_get_time() == tQ );
-		return fmu_get_integer();
+		return fmu_get_boolean();
 	}
 
 	// Integer Coefficient 0 at Time tQ: X-Based
@@ -1648,13 +1722,13 @@ protected: // Methods: FMU
 		return fmu_get_integer();
 	}
 
-	// Discrete Value at Time tQ: Don't Set Observees
-	Real
-	d_f() const
+	// Integer Coefficient 0 at Time tQ: Don't Set Observees
+	Integer
+	i_dso_0() const
 	{
-		assert( is_D() );
+		assert( is_Integer() );
 		assert( fmu_get_time() == tQ );
-		return fmu_get_real();
+		return fmu_get_integer();
 	}
 
 	// Discrete Value at Time tQ: X-Based
@@ -1677,11 +1751,11 @@ protected: // Methods: FMU
 		return fmu_get_real();
 	}
 
-	// Real Value at Time tQ: Don't Set Observees
+	// Discrete Value at Time tQ: Don't Set Observees
 	Real
-	r_f() const
+	d_dso_0() const
 	{
-		assert( is_R() );
+		assert( is_D() );
 		assert( fmu_get_time() == tQ );
 		return fmu_get_real();
 	}
@@ -1706,31 +1780,20 @@ protected: // Methods: FMU
 		return fmu_get_real();
 	}
 
+	// Real Value at Time tQ: Don't Set Observees
+	Real
+	r_dso_0() const
+	{
+		assert( is_R() );
+		assert( fmu_get_time() == tQ );
+		return fmu_get_real();
+	}
+
 	// Value: Don't Set Observees
 	Real
 	p_0() const
 	{
 		return fmu_get_real();
-	}
-
-	// Value at Time tQ: QSS
-	Real
-	c_0() const
-	{
-		assert( is_QSS() );
-		assert( fmu_get_time() == tQ );
-		fmu_set_observees_s( tQ );
-		return p_0();
-	}
-
-	// Value at Time t: QSS
-	Real
-	c_0( Time const t ) const
-	{
-		assert( is_QSS() );
-		assert( fmu_get_time() == t );
-		fmu_set_observees_s( t );
-		return p_0();
 	}
 
 	// Value at Time tQ: X-Based
@@ -1740,7 +1803,7 @@ protected: // Methods: FMU
 		assert( is_ZC() );
 		assert( fmu_get_time() == tQ );
 		fmu_set_observees_x( tQ );
-		return p_0();
+		return fmu_get_real();
 	}
 
 	// Value at Time t: X-Based
@@ -1750,15 +1813,14 @@ protected: // Methods: FMU
 		assert( is_ZC() );
 		assert( fmu_get_time() == t );
 		fmu_set_observees_x( t );
-		return p_0();
+		return fmu_get_real();
 	}
 
 	// Coefficient 1: Observees Set
 	Real
 	p_1() const
 	{
-		assert( fmu_me_ != nullptr );
-		return fmu_me_->get_real( der_.ref() );
+		return fmu_get_derivative();
 	}
 
 	// Coefficient 1 at Time tQ: QSS
@@ -1789,9 +1851,9 @@ protected: // Methods: FMU
 		assert( !self_observer_ );
 		assert( fmu_me_ != nullptr );
 		assert( fmu_get_time() == tQ );
+		assert( n_observees_ == observees_.size() );
 		assert( n_observees_ == observees_v_ref_.size() );
 		assert( n_observees_ == observees_dv_.size() );
-		assert( n_observees_ == observees_.size() );
 		fmu_set_observees_x( tQ ); // Modelon indicates that observee state matters for Jacobian computation
 		set_observees_dv_x( tQ );
 		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), n_observees_, var_.ref(), observees_dv_.data() );
@@ -1809,6 +1871,36 @@ protected: // Methods: FMU
 		assert( n_observees_ == observees_v_ref_.size() );
 		assert( n_observees_ == observees_dv_.size() );
 		fmu_set_observees_x( t ); // Modelon indicates that observee state matters for Jacobian computation
+		set_observees_dv_x( t );
+		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), n_observees_, var_.ref(), observees_dv_.data() );
+	}
+
+	// Coefficient 1 at Time tQ: X-Based R or ZC Variable: Don't Set Observee Values
+	Real
+	X_dso_1() const
+	{
+		assert( is_R() || is_ZC() );
+		assert( !self_observer_ );
+		assert( fmu_me_ != nullptr );
+		assert( fmu_get_time() == tQ );
+		assert( n_observees_ == observees_.size() );
+		assert( n_observees_ == observees_v_ref_.size() );
+		assert( n_observees_ == observees_dv_.size() );
+		set_observees_dv_x( tQ );
+		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), n_observees_, var_.ref(), observees_dv_.data() );
+	}
+
+	// Coefficient 1 at Time t: X-Based R or ZC Variable: Don't Set Observee Values
+	Real
+	X_dso_1( Time const t ) const
+	{
+		assert( is_R() || is_ZC() );
+		assert( !self_observer_ );
+		assert( fmu_me_ != nullptr );
+		assert( fmu_get_time() == t );
+		assert( n_observees_ == observees_.size() );
+		assert( n_observees_ == observees_v_ref_.size() );
+		assert( n_observees_ == observees_dv_.size() );
 		set_observees_dv_x( t );
 		return fmu_me_->get_directional_derivative( observees_v_ref_.data(), n_observees_, var_.ref(), observees_dv_.data() );
 	}
@@ -1887,76 +1979,6 @@ protected: // Methods: FMU
 		return options::one_over_six_dtND_squared * ( ( x_1_2p - x_1_p ) + ( x_1 - x_1_p ) ); //ND Forward 3-point
 	}
 
-protected: // Methods
-
-	// Infinite Aligned Time Step Processing
-	Time
-	dt_infinity( Time dt ) const
-	{
-		if ( dt_inf_ == infinity ) return dt; // Deactivation control is disabled
-		if ( dt <= dt_inf_ ) { // Keep step
-			dt_inf_rlx_ = std::max( 0.5 * dt_inf_rlx_, dt_inf_ ); // Reduce relaxation step (side effect)
-		} else if ( dt <= dt_inf_rlx_ ) { // Keep step
-			dt_inf_rlx_ = std::max( 0.5 * dt_inf_rlx_, dt ); // Reduce relaxation step (side effect)
-		} else { // Apply deactivation control
-			Time const dt_rlx( dt_inf_rlx_ ); // Relaxation step
-			dt_inf_rlx_ = dt_inf_rlx_ < half_infinity ? std::min( 2.0 * dt_inf_rlx_, dt ) : dt; // Increase relaxation step (side effect)
-			dt = dt_rlx;
-		}
-		return dt;
-	}
-
-	// Infinite Aligned Time Step Processing
-	Time
-	dt_infinity_of_infinity() const
-	{
-		if ( dt_inf_ == infinity ) return infinity; // Deactivation control is disabled
-		Time const dt( dt_inf_rlx_ );// Apply deactivation control: Limit step to relaxation step
-		dt_inf_rlx_ = dt_inf_rlx_ < half_infinity ? 2.0 * dt_inf_rlx_ : infinity; // Increase relaxation step (side effect)
-		return dt;
-	}
-
-	// Set Observees Derivative Vector at Time t
-	void
-	set_observees_dv( Time const t ) const
-	{
-		assert( is_QSS() );
-		assert( n_observees_ == observees_.size() );
-		assert( n_observees_ == observees_v_ref_.size() );
-		assert( n_observees_ == observees_dv_.size() );
-		for ( size_type j = 0u; j < n_observees_; ++j ) {
-#ifndef QSS_PROPAGATE_CONTINUOUS
-			observees_dv_[ j ] = observees_[ j ]->q1( t ); // Quantized: Traditional QSS
-#else
-			observees_dv_[ j ] = observees_[ j ]->x1( t ); // Continuous: Modified QSS
-#endif
-		}
-	}
-
-	// Set Observees Derivative Vector at Time t: X-Based
-	void
-	set_observees_dv_x( Time const t ) const
-	{
-		assert( is_R() || is_ZC() );
-		assert( n_observees_ == observees_.size() );
-		assert( n_observees_ == observees_v_ref_.size() );
-		assert( n_observees_ == observees_dv_.size() );
-		for ( size_type j = 0u; j < n_observees_; ++j ) {
-			observees_dv_[ j ] = observees_[ j ]->x1( t );
-		}
-	}
-
-	// Set Self-Observee Derivative Vector Entry
-	void
-	set_self_dv( Real const x_1 )
-	{
-		assert( is_QSS() );
-		assert( n_observees_ == observees_.size() );
-		assert( n_observees_ == observees_v_ref_.size() );
-		assert( n_observees_ == observees_dv_.size() );
-		observees_dv_[ i_self_observee_ ] = x_1;
-	}
-
 private: // Methods
 
 	// Find Short-Circuited Computational State and Input Observees
@@ -2007,7 +2029,6 @@ public: // Data
 private: // Data
 
 	// Time steps
-	Time dt_inf_{ infinity }; // Time step inf
 	mutable Time dt_inf_rlx_{ infinity }; // Relaxed time step inf
 
 	// Observers
@@ -2040,6 +2061,11 @@ private: // Data
 	Output<> out_x_; // Continuous trajectory output
 	Output<> out_q_; // Quantized trajectory output
 	Output<> out_t_; // Time step output
+
+private: // Static Data
+
+	static constexpr double dtInfRlxMul{ 2.0 };
+	static constexpr double dtInfRlxInv{ 1.0 / dtInfRlxMul };
 
 }; // Variable
 

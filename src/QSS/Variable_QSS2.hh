@@ -226,7 +226,7 @@ public: // Methods
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
-		if ( observed() ) advance_observers();
+		if ( observed() ) advance_handler_observers();
 		if ( connected() ) advance_connections();
 	}
 
@@ -337,6 +337,7 @@ private: // Methods
 	{
 		assert( tQ == tX );
 		assert( dt_min <= dt_max );
+		clip();
 		Time dt;
 		if ( x_2_ != 0.0 ) {
 			Real const x_2_inv( one / x_2_ );
@@ -364,6 +365,7 @@ private: // Methods
 	{
 		assert( tQ <= tX );
 		assert( dt_min <= dt_max );
+		clip_x();
 		Real const d_0( x_0_ - ( q_0_ + ( q_1_ * ( tX - tQ ) ) ) );
 		Real const d_1( x_1_ - q_1_ );
 		Time dt;
@@ -387,6 +389,30 @@ private: // Methods
 		if ( tX == tE ) {
 			tE = std::nextafter( tE, infinity );
 			dt = tE - tX;
+		}
+	}
+
+	// Clip Small Trajectory Coefficients
+	void
+	clip()
+	{
+		if ( options::clipping ) {
+			if ( std::abs( x_0_ ) <= options::clip ) x_0_ = 0.0;
+			if ( std::abs( x_1_ ) <= options::clip ) x_1_ = 0.0;
+			if ( std::abs( x_2_ ) <= options::clip ) x_2_ = 0.0;
+			if ( std::abs( q_0_ ) <= options::clip ) q_0_ = 0.0;
+			if ( std::abs( q_1_ ) <= options::clip ) q_1_ = 0.0;
+		}
+	}
+
+	// Clip Small x Trajectory Coefficients
+	void
+	clip_x()
+	{
+		if ( options::clipping ) {
+			if ( std::abs( x_0_ ) <= options::clip ) x_0_ = 0.0;
+			if ( std::abs( x_1_ ) <= options::clip ) x_1_ = 0.0;
+			if ( std::abs( x_2_ ) <= options::clip ) x_2_ = 0.0;
 		}
 	}
 

@@ -224,7 +224,7 @@ public: // Methods
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << " [q]   = " << x_0_ << x_1_ << x_delta << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
-		if ( observed() ) advance_observers();
+		if ( observed() ) advance_handler_observers();
 		if ( connected() ) advance_connections();
 	}
 
@@ -320,6 +320,7 @@ private: // Methods
 	{
 		assert( tQ == tX );
 		assert( dt_min <= dt_max );
+		clip();
 		Time dt( x_1_ != 0.0 ? qTol / std::abs( x_1_ ) : infinity );
 		dt = std::min( std::max( dt_infinity( dt ), dt_min ), dt_max );
 		tE = dt != infinity ? tQ + dt : infinity;
@@ -331,12 +332,36 @@ private: // Methods
 	{
 		assert( tQ <= tX );
 		assert( dt_min <= dt_max );
+		clip_x();
 		Time dt(
 		 ( x_1_ > 0.0 ? ( q_c_ + qTol - x_0_ ) / x_1_ :
 		 ( x_1_ < 0.0 ? ( q_c_ - qTol - x_0_ ) / x_1_ :
 		 infinity ) ) );
 		dt = std::min( std::max( dt_infinity( dt ), dt_min ), dt_max );
 		tE = dt != infinity ? tX + dt : infinity;
+	}
+
+	// Clip Small Trajectory Coefficients
+	void
+	clip()
+	{
+		if ( options::clipping ) {
+			if ( std::abs( x_0_ ) <= options::clip ) x_0_ = 0.0;
+			if ( std::abs( x_1_ ) <= options::clip ) x_1_ = 0.0;
+			if ( std::abs( q_c_ ) <= options::clip ) q_c_ = 0.0;
+			if ( std::abs( q_0_ ) <= options::clip ) q_0_ = 0.0;
+			if ( std::abs( q_1_ ) <= options::clip ) q_1_ = 0.0;
+		}
+	}
+
+	// Clip Small x Trajectory Coefficients
+	void
+	clip_x()
+	{
+		if ( options::clipping ) {
+			if ( std::abs( x_0_ ) <= options::clip ) x_0_ = 0.0;
+			if ( std::abs( x_1_ ) <= options::clip ) x_1_ = 0.0;
+		}
 	}
 
 	// Advance Self-Observing Trigger

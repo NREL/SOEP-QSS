@@ -11,7 +11,7 @@ if "%FMIL_bin%" == "" (
 
 :: Set build-specific variables
 set CC=gcc
-set C_FLAGS=-pipe -std=c2x -march=native -Wall -Wno-address -Wno-unknown-pragmas -Wno-implicit-fallthrough -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-but-set-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wno-sign-compare -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -Wno-implicit-function-declaration -Wno-old-style-definition -Wno-attributes -Wno-misleading-indentation -Wno-strict-aliasing -Wno-stringop-truncation -Wno-maybe-uninitialized -DNDEBUG -O3 -ffloat-store -fno-stack-protector -finline-limit=2000
+set C_FLAGS=-pipe -std=c2x -march=native -Wall -Wno-address -Wno-unknown-pragmas -Wno-implicit-fallthrough -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-but-set-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wno-sign-compare -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -Wno-implicit-function-declaration -Wno-old-style-definition -Wno-attributes -Wno-misleading-indentation -Wno-strict-aliasing -Wno-stringop-truncation -Wno-maybe-uninitialized -DNDEBUG -O3 -ffloat-store -mdaz-ftz -fno-stack-protector -finline-limit=2000
 
 :: Enter CMake directory
 if not exist %FMIL_cmk% md %FMIL_cmk% >nul 2>&1

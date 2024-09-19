@@ -24,14 +24,14 @@ FMIL 2.4.1 is integrated into the SOEP-QSS respository and is automatically buil
 
 ### Windows
 * MinGW make 4.4.1 has a bug preventing the -O / --output-sync option from working in FMIL builds so parallel compilation output is jumbled.
-* The debug zlib library is named zlibd.lib with Windows Visual C++ and Intel C++ builds. We rename it to zlib.lib to keep the build setup simpler.
+* The debug zlib library is named zlibd.lib with Windows Visual C++ and Intel C++ builds. We copy it to zlib.lib to keep the build setup simpler.
 
 ### Intel C++
 * Intel C++ scripts are in the `IX` directories under `FMIL/bin`.
 * On Windows Intel oneAPI C++ currently gives the best SOEP-QSS performance and has the most current OpenMP support so it is recommended for SOEP-QSS Windows builds.
 * The LLVM-based Intel C++ compiler (icx) does not currently succeed in building FMIL so the GCC (on Linux) or Visual C++ (on Windows) FMIL builds are used.
 * The Intel "Classic" C++ compiler has been removed from oneAPI and is no longer supported for SOEP-QSS.
-* The debug zlib library is named zlibd.lib with Windows Intel C++ builds: we rename it to zlib.lib to keep the build setup simpler.
+* The debug zlib library is named zlibd.lib with Windows Intel C++ builds: we copy it to zlib.lib to keep the build setup simpler.
 
 ### Visual C++
 * Visual C++ scripts are in the `VC` directories under `FMIL/bin`.

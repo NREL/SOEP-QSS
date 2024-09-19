@@ -249,6 +249,16 @@ public: // Methods
 		set_up();
 	}
 
+	// Infinite Time Step Control Reset
+	void
+	dt_infinity_reset()
+	{
+		assert( options::dtInfReset );
+		for ( Variable * observer : observers_ ) { // Reset dtInf relaxation state
+			observer->dt_infinity_reset();
+		}
+	}
+
 	// Advance
 	void
 	advance( Time const t )
@@ -485,14 +495,14 @@ private: // Methods
 		// FMU pooled data set up
 		if ( qss_.have() ) { // State variables
 			if ( options::d2d ) {
-				qss_ders_.reserve( qss_.n() );
+				qss_ders_.clear_and_reserve( qss_.n() );
 				for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
 					assert( observers_[ i ]->is_QSS() );
 					qss_ders_.push_back( observers_[ i ]->der().ref() );
 				}
 			} else {
 				assert( options::n2d );
-				qss_dn2d_.reserve( qss_.n() );
+				qss_dn2d_.clear_and_reserve( qss_.n() );
 				for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
 					assert( observers_[ i ]->is_QSS() );
 					qss_dn2d_.push_back( observers_[ i ]->der().ref() );
@@ -500,14 +510,14 @@ private: // Methods
 			}
 		}
 		if ( r_.have() ) { // R variables
-			r_vars_.reserve( r_.n() );
+			r_vars_.clear_and_reserve( r_.n() );
 			for ( size_type i = r_.b(), e = r_.e(); i < e; ++i ) {
 				assert( observers_[ i ]->is_R() );
 				r_vars_.push_back( observers_[ i ]->var().ref() );
 			}
 		}
 		if ( zc_.have() ) { // Zero-crossing variables
-			zc_vars_.reserve( zc_.n() );
+			zc_vars_.clear_and_reserve( zc_.n() );
 			for ( size_type i = zc_.b(), e = zc_.e(); i < e; ++i ) {
 				assert( observers_[ i ]->is_ZC() );
 				zc_vars_.push_back( observers_[ i ]->var().ref() );

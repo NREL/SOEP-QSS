@@ -9,7 +9,7 @@ fi
 
 # Set build-specific variables
 export CC=icx
-export C_FLAGS="-std=c2x -xHOST -Wall -Wno-unknown-pragmas -Wno-unused-function -pthread -DNDEBUG -O3 -fp-model=precise -fno-omit-frame-pointer -p"
+export C_FLAGS="-std=c2x -xHOST -Wall -Wno-unknown-pragmas -Wno-unused-function -pthread -DNDEBUG -O3 -fp-model=precise -ftz -fno-omit-frame-pointer -p"
 
 # Enter CMake directory
 if [ ! -d "$FMIL_cmk" ]; then

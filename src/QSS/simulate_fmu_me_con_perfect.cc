@@ -67,7 +67,7 @@ simulate_fmu_me_con_perfect( std::vector< std::string > const & paths )
 	Time tStop( 0.0 );
 
 	// Instantiate models
-	for ( size_type i = 0; i < n_models; ++i ) {
+	for ( size_type i = 0u; i < n_models; ++i ) {
 		std::string const & path( paths[ i ] );
 		fmu_mes.emplace_back( new FMU_ME( path ) );
 		FMU_ME & fmu_me( *fmu_mes[ i ] );
@@ -91,7 +91,7 @@ simulate_fmu_me_con_perfect( std::vector< std::string > const & paths )
 
 	// Set uniform end time
 	tStop = options::specified::tStop ? options::tStop : tStop;
-	for ( size_type i = 0; i < n_models; ++i ) {
+	for ( size_type i = 0u; i < n_models; ++i ) {
 		fmu_mes[ i ]->tE = tStop;
 	}
 
@@ -105,7 +105,7 @@ simulate_fmu_me_con_perfect( std::vector< std::string > const & paths )
 		ModelRef out_ref( 0u, nullptr );
 		bool inp_found( false );
 		bool out_found( false );
-		for ( size_type i = 0; i < n_models; ++i ) {
+		for ( size_type i = 0u; i < n_models; ++i ) {
 			FMU_ME & fmu_me( *fmu_mes[ i ] );
 			std::string const & model( fmu_me.name );
 			if ( has_prefix( inp, model + '.' ) ) {
@@ -161,47 +161,47 @@ simulate_fmu_me_con_perfect( std::vector< std::string > const & paths )
 	}
 
 	// Initialize models
-	for ( size_type i = 0; i < n_models; ++i ) {
+	for ( size_type i = 0u; i < n_models; ++i ) {
 		fmu_mes[ i ]->init_0_0();
 	}
-	for ( size_type i = 0; i < n_models; ++i ) {
+	for ( size_type i = 0u; i < n_models; ++i ) {
 		fmu_mes[ i ]->init_0_1();
 	}
-	for ( size_type i = 0; i < n_models; ++i ) {
+	for ( size_type i = 0u; i < n_models; ++i ) {
 		fmu_mes[ i ]->init_0_2();
 	}
-	for ( size_type i = 0; i < n_models; ++i ) {
+	for ( size_type i = 0u; i < n_models; ++i ) {
 		fmu_mes[ i ]->init_1_1();
 	}
-	for ( size_type i = 0; i < n_models; ++i ) {
+	for ( size_type i = 0u; i < n_models; ++i ) {
 		fmu_mes[ i ]->init_1_2();
 	}
-	for ( size_type i = 0; i < n_models; ++i ) {
+	for ( size_type i = 0u; i < n_models; ++i ) {
 		fmu_mes[ i ]->init_2_1();
 	}
-	for ( size_type i = 0; i < n_models; ++i ) {
+	for ( size_type i = 0u; i < n_models; ++i ) {
 		fmu_mes[ i ]->init_2_2();
 	}
-	for ( size_type i = 0; i < n_models; ++i ) {
+	for ( size_type i = 0u; i < n_models; ++i ) {
 		fmu_mes[ i ]->init_3_1();
 	}
-	for ( size_type i = 0; i < n_models; ++i ) {
+	for ( size_type i = 0u; i < n_models; ++i ) {
 		fmu_mes[ i ]->init_ZC();
 	}
-	for ( size_type i = 0; i < n_models; ++i ) {
+	for ( size_type i = 0u; i < n_models; ++i ) {
 		fmu_mes[ i ]->init_F();
 	}
-	for ( size_type i = 0; i < n_models; ++i ) {
+	for ( size_type i = 0u; i < n_models; ++i ) {
 		fmu_mes[ i ]->init_t0();
 	}
-	for ( size_type i = 0; i < n_models; ++i ) {
+	for ( size_type i = 0u; i < n_models; ++i ) {
 		fmu_mes[ i ]->init_pre_simulate();
 	}
 
 	// EventInfo setup
 	std::vector< fmi2_event_info_t > eventInfos;
 	eventInfos.reserve( n_models );
-	for ( size_type i = 0; i < n_models; ++i ) {
+	for ( size_type i = 0u; i < n_models; ++i ) {
 		fmi2_event_info_t eventInfo;
 		eventInfo.newDiscreteStatesNeeded = fmi2_true;
 		eventInfo.terminateSimulation = fmi2_false;
@@ -245,12 +245,12 @@ simulate_fmu_me_con_perfect( std::vector< std::string > const & paths )
 	}
 
 	// Post-simulate
-	for ( size_type i = 0; i < n_models; ++i ) {
+	for ( size_type i = 0u; i < n_models; ++i ) {
 		fmu_mes[ i ]->post_simulate();
 	}
 
 	// Cleanup
-	for ( size_type i = 0; i < n_models; ++i ) {
+	for ( size_type i = 0u; i < n_models; ++i ) {
 		delete fmu_mes[ i ];
 	}
 }

@@ -39,6 +39,7 @@
 // QSS Headers
 #include <QSS/Target.hh>
 #include <QSS/Variable.hh>
+#include <QSS/options.hh>
 
 // C++ Headers
 #include <algorithm>
@@ -109,14 +110,14 @@ public: // Predicate
 	bool
 	empty() const
 	{
-		return false;
+		return observers_.empty();
 	}
 
-	// Valid?
+	// Self Handler?
 	bool
-	valid() const
+	self_handler() const
 	{
-		return true;
+		return self_handler_;
 	}
 
 public: // Property
@@ -125,7 +126,7 @@ public: // Property
 	size_type
 	size() const
 	{
-		return 1u;
+		return observers_.size();
 	}
 
 	// Variable_ZC
@@ -175,16 +176,24 @@ public: // Methods
 	init_observers()
 	{
 		uniquify( observers_ );
+		bool const no_observers( observers_.empty() ); // No (active or passive) observers?
 		short_circuit_passive_observers();
 		assert( var_ != nullptr );
-		std::cout << '\n' << var_->name() << " Conditional Computational Observers:" << std::endl;
-		for ( Variable const * observer : sorted_by_name( observers_ ) ) {
-			std::cout << ' ' << observer->name() << std::endl;
+		if ( observers_.empty() ) { // No handlers => Passive EI
+			std::cout << '\n' << var_->name() << " Conditional Computational Observers: None: Passive: " << ( no_observers ? " No Handlers" : "Passive Handler(s)" ) << std::endl;
+			connected_output_observer = false;
+		} else if ( ( observers_.size() == 1u ) && ( observers_[ 0 ]->is_ZC() ) ) { // Self handler => Active EI with passive observer(s)
+			assert( static_cast< Variable_ZC * >( observers_[ 0 ] ) == var_ );
+			std::cout << '\n' << var_->name() << " Conditional Computational Observers: None: Active" << std::endl;
+			self_handler_ = true;
+			connected_output_observer = false;
+		} else { // Active EI with active observer(s)
+			std::cout << '\n' << var_->name() << " Conditional Computational Observers:" << std::endl;
+			for ( Variable const * observer : sorted_by_name( observers_ ) ) {
+				std::cout << ' ' << observer->name() << std::endl;
+			}
+			connected_output_observer = std::any_of( observers_.begin(), observers_.end(), []( auto const observer ){ return observer->connected_output; } ); // Flag if output connection observers
 		}
-
-		// Flag if output connection observers
-		connected_output_observer = false;
-		if ( std::any_of( observers_.begin(), observers_.end(), []( auto const observer ){ return observer->connected_output; } ) ) connected_output_observer = true;
 	}
 
 	// Activity Notifier
@@ -192,18 +201,6 @@ public: // Methods
 	activity( Time const t )
 	{
 		shift_conditional( t );
-	}
-
-	// Set Observer FMU Value and Shift Handler Event
-	void
-	handler( Time const t )
-	{
-		for ( Variable * observer : observers_ ) {
-			// Set observers's observee FMU values so FMU event handler computes correct new observer value: Using continuous trajectories for best accuracy
-			observer->fmu_set_observees_x( t ); //! Observees may overlap: Evaulate whether using a merged observers observees collection is typically faster
-
-			observer->shift_handler( t ); // Set observer's handler event
-		}
 	}
 
 	// Add Event at Time Infinity
@@ -235,7 +232,7 @@ public: // Methods
 	advance_conditional()
 	{
 		assert( var_ != nullptr );
-		if ( var_->is_tZ_last( st.t ) ) handler( st.t );
+		if ( var_->is_tZ_last( st.t ) ) prep_handlers( st.t );
 		shift_conditional();
 	}
 
@@ -252,21 +249,32 @@ private: // Methods
 	void
 	short_circuit_passive_observers()
 	{
-		if ( ! observers_.empty() ) {
+		assert( var_ != nullptr );
+		if ( observers_.empty() ) { // No handler(s)
+			if ( ( options::EI == 0 ) || ( options::EI == 2 ) ) { // Track EIs without handlers
+				observers_.push_back( var_ ); // Make the ZC a self-handler to enable zero-crossing event processing
+			}
+		} else { // Handler(s) present (may be passive)
 			VariablesSet observers_checked;
 			VariablesSet observers_set;
 			for ( Variable * observer : observers_ ) {
-				if ( observer->is_Active() ) { // Keep it
+				if ( observer->is_ZC() ) { // ZC => Not a handler
+					observers_checked.insert( observer );
+				} else if ( observer->is_Active() ) { // Active => Computational
 					observers_set.insert( observer );
 					observers_checked.insert( observer );
-				} else { // Short-circuit it
+				} else { // Passive: Short-circuit it
 					assert( observer->is_Passive() );
 					find_computational_observers( observer, observers_checked, observers_set );
 				}
 			}
 			observers_.assign( observers_set.begin(), observers_set.end() ); // Swap in the computational observers
+			if ( observers_.empty() ) { // Passive handler(s) only
+				if ( options::EI < 2 ) { // Track EIs with only passive handler(s)
+					observers_.push_back( var_ ); // Make the ZC a self-handler to enable zero-crossing event processing so (passive) handlers are updated at zero-crossing events
+				}
+			}
 		}
-		if ( observers_.empty() ) observers_.push_back( var_ ); // No active handler variables: Enable zero-crossing event processing with self-observation
 	}
 
 	// Find Short-Circuited Computational Observers
@@ -283,13 +291,31 @@ private: // Methods
 		if ( observers_checked.find( observer ) == observers_checked.end() ) { // Observer not already processed
 #endif
 			observers_checked.insert( observer );
-			if ( observer->is_Active() ) { // Active => Computational
+			if ( observer->is_ZC() ) { // ZC => Not a handler
+				// Done with this observer
+			} else if ( observer->is_Active() ) { // Active => Computational
 				observers_set.insert( observer );
-			} else { // Traverse dependency sub-graph
-				for ( Variable * oo : observer->observers() ) { // Recurse
+			} else { // Passive: Short-circuit it
+				for ( Variable * oo : observer->observers() ) { // Recurse: Traverse dependency sub-graph
 					find_computational_observers( oo, observers_checked, observers_set );
 				}
 			}
+		}
+	}
+
+	// Prepare Handlers: Set Observer FMU Value and Shift Handler Event
+	void
+	prep_handlers( Time const t )
+	{
+		for ( Variable * observer : observers_ ) {
+			if ( observer->is_ZC() ) { // ZC "self-handler" is used to trigger (passive) handler events: Handler advance is not run on the ZC variable
+				assert( static_cast< Variable_ZC * >( observer ) == var_ ); // The ZC variable is added as its own handler
+				assert( observers_.size() == 1u ); // Only one ZC handler is added
+			} else { // Set observers's observee FMU values so FMU event handler computes correct new observer value: Using continuous trajectories for best accuracy
+				observer->fmu_set_observees_x( t ); //! Observer observees may overlap: Evaulate whether using a merged observers observees collection is typically faster
+			}
+			observer->fmu_set_x( t ); // Handler derivative, not value, may be set by the FMU event so we set the FMU value at the zero-crossing time here
+			observer->shift_handler( t ); // Set observer's handler event
 		}
 	}
 
@@ -298,6 +324,7 @@ private: // Data
 	Variable_ZC * var_{ nullptr }; // Event indicator variable
 	Variables observers_; // Variables dependent on this one (modified by handler)
 	EventQ * eventq_{ nullptr }; // Event queue
+	bool self_handler_{ false }; // Self handler?
 
 }; // Conditional
 

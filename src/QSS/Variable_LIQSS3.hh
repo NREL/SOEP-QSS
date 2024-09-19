@@ -285,7 +285,7 @@ public: // Methods
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
-		if ( observed() ) advance_observers();
+		if ( observed() ) advance_handler_observers();
 		if ( connected() ) advance_connections();
 	}
 
@@ -410,6 +410,7 @@ private: // Methods
 	{
 		assert( tQ == tX );
 		assert( dt_min <= dt_max );
+		clip();
 		Time dt;
 		if ( x_3_ != 0.0 ) {
 			Real const x_3_inv( one / x_3_ );
@@ -417,10 +418,11 @@ private: // Methods
 			assert( dt != infinity );
 			if ( options::inflection ) {
 				Time const dt_inflectionFrac( dt * options::inflectionFrac );
+				Time const dt_inflectionFrac2( dt * options::inflectionFrac2 );
 				Time const dtI_1_root( min_root_quadratic( three * x_3_, two * x_2_, x_1_ ) ); // When 1st derivative is zero
 				Time const dtI_1( dtI_1_root > dt_inflectionFrac ? dtI_1_root : infinity );
 				Time const dtI_2_root( nonzero_and_signs_differ( x_2_, x_3_ ) ? -( x_2_ * ( one_third * x_3_inv ) ) : infinity ); // When 2nd derivative is zero
-				Time const dtI_2( dtI_2_root > dt_inflectionFrac ? dtI_2_root : infinity );
+				Time const dtI_2( dtI_2_root > dt_inflectionFrac2 ? dtI_2_root : infinity );
 				Time const dtI( std::min( dtI_1, dtI_2 ) );
 				if ( dtI < dt ) dt = dtI; // Use inflection point time step
 			}
@@ -446,6 +448,7 @@ private: // Methods
 	{
 		assert( tQ <= tX );
 		assert( dt_min <= dt_max );
+		clip_x();
 		Time const tXQ( tX - tQ );
 		Real const d_0( x_0_ - ( q_c_ + ( q_1_ + ( q_2_ * tXQ ) ) * tXQ ) );
 		Real const d_1( x_1_ - ( q_1_ + ( two * q_2_ * tXQ ) ) );
@@ -464,10 +467,11 @@ private: // Methods
 			if ( x_3_ != 0.0 ) {
 				Real const x_3_inv( one / x_3_ );
 				Time const dt_inflectionFrac( dt * options::inflectionFrac );
+				Time const dt_inflectionFrac2( dt * options::inflectionFrac2 );
 				Time const dtI_1_root( min_root_quadratic( three * x_3_, two * x_2_, x_1_ ) ); // When 1st derivative is zero
 				Time const dtI_1( dtI_1_root > dt_inflectionFrac ? dtI_1_root : infinity );
 				Time const dtI_2_root( nonzero_and_signs_differ( x_2_, x_3_ ) ? -( x_2_ * ( one_third * x_3_inv ) ) : infinity ); // When 2nd derivative is zero
-				Time const dtI_2( dtI_2_root > dt_inflectionFrac ? dtI_2_root : infinity );
+				Time const dtI_2( dtI_2_root > dt_inflectionFrac2 ? dtI_2_root : infinity );
 				Time const dtI( std::min( dtI_1, dtI_2 ) );
 				if ( dtI < dt ) dt = dtI; // Use inflection point time step
 			} else if ( nonzero_and_signs_differ( x_1_, x_2_ ) ) {
@@ -481,6 +485,34 @@ private: // Methods
 		if ( tX == tE ) {
 			tE = std::nextafter( tE, infinity );
 			dt = tE - tX;
+		}
+	}
+
+	// Clip Small Trajectory Coefficients
+	void
+	clip()
+	{
+		if ( options::clipping ) {
+			if ( std::abs( x_0_ ) <= options::clip ) x_0_ = 0.0;
+			if ( std::abs( x_1_ ) <= options::clip ) x_1_ = 0.0;
+			if ( std::abs( x_2_ ) <= options::clip ) x_2_ = 0.0;
+			if ( std::abs( x_3_ ) <= options::clip ) x_3_ = 0.0;
+			if ( std::abs( q_c_ ) <= options::clip ) q_c_ = 0.0;
+			if ( std::abs( q_0_ ) <= options::clip ) q_0_ = 0.0;
+			if ( std::abs( q_1_ ) <= options::clip ) q_1_ = 0.0;
+			if ( std::abs( q_2_ ) <= options::clip ) q_2_ = 0.0;
+		}
+	}
+
+	// Clip Small x Trajectory Coefficients
+	void
+	clip_x()
+	{
+		if ( options::clipping ) {
+			if ( std::abs( x_0_ ) <= options::clip ) x_0_ = 0.0;
+			if ( std::abs( x_1_ ) <= options::clip ) x_1_ = 0.0;
+			if ( std::abs( x_2_ ) <= options::clip ) x_2_ = 0.0;
+			if ( std::abs( x_3_ ) <= options::clip ) x_3_ = 0.0;
 		}
 	}
 

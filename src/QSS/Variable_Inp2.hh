@@ -225,6 +225,7 @@ private: // Methods
 	{
 		assert( tQ == tX );
 		assert( dt_min <= dt_max );
+		clip();
 		if ( x_2_ != 0.0 ) {
 			Real const x_2_inv( one / x_2_ );
 			Time dt( std::sqrt( qTol * std::abs( x_2_inv ) ) );
@@ -238,6 +239,17 @@ private: // Methods
 		} else {
 			Time const dt( std::min( std::max( dt_infinity_of_infinity(), dt_min ), dt_max ) );
 			tE = dt != infinity ? tQ + dt : infinity;
+		}
+	}
+
+	// Clip Small Trajectory Coefficients
+	void
+	clip()
+	{
+		if ( options::clipping ) {
+			if ( std::abs( x_0_ ) <= options::clip ) x_0_ = 0.0;
+			if ( std::abs( x_1_ ) <= options::clip ) x_1_ = 0.0;
+			if ( std::abs( x_2_ ) <= options::clip ) x_2_ = 0.0;
 		}
 	}
 

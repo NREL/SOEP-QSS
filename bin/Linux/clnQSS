@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Clean QSS
+# Usage: clnQSS [<compiler> <build>]
+# Example: cln GCCQSS r
+
+# Set environment
+if [ "$1" != "" ] && [ "$2" != "" ]; then
+	source "$(dirname "$(readlink -m "${BASH_SOURCE[0]}")")/$1/$2/setQSS"
+fi
+
+# Check environment
+if [ -z "$QSS" ]; then
+	echo "QSS environment variable is not set"
+	exit 1
+fi
+if [ -z "$QSS_bin" ]; then
+	echo "QSS_bin environment variable is not set"
+	exit 1
+fi
+
+# Clean
+cd "$QSS/src/QSS/app" && mak clean && cln_dirs
+cd "$QSS/tst/QSS/unit" && mak clean && cln_dirs
+for ext in a exe so
+do
+	rm -f $QSS_bin/*QSS.$ext >/dev/null 2>&1
+done

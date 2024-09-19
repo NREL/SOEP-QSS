@@ -24,5 +24,5 @@ if not exist Makefile (
 )
 
 :: Run GNU Make
-make -j%NUMBER_OF_PROCESSORS% install
-ren "%FMIL_ins%\lib\zlibd.lib" zlib.lib >nul 2>&1
+call make -j%NUMBER_OF_PROCESSORS% install
+copy "%FMIL_lib%\zlibd.lib" "%FMIL_lib%\zlib.lib" >nul 2>&1

@@ -241,7 +241,7 @@ namespace QSS {
 		if ( unit_defs != nullptr ) {
 			size_type const n_units( fmi2_import_get_unit_definitions_number( unit_defs ) );
 			std::cout << "\nUnits: " << n_units << " units defined" << std::endl;
-//			for ( size_type i = 0; i < n_units; ++i ) {
+//			for ( size_type i = 0u; i < n_units; ++i ) {
 //				fmi2_import_unit_t * unit( fmi2_import_get_unit( unit_defs, static_cast< unsigned >( i ) ) );
 //				if ( unit != nullptr ) {
 //					std::string const unit_name( fmi2_import_get_unit_name( unit ) );
@@ -661,7 +661,7 @@ namespace QSS {
 		fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 		// if ( options::output::d ) {
 		// 	std::cout << "FMU event indicators: Pre-simulation:" << std::endl;
-		// 	for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
+		// 	for ( size_type k = 0u; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
 		// }
 
 		// FMU Query: Model
@@ -680,7 +680,7 @@ namespace QSS {
 		// Set up FMU variable spec array
 		std::cout << "\nFMU Variable Processing: " << n_fmu_vars << " Variables =====" << std::endl;
 		std::unordered_map< fmi2_import_real_variable_t *, fmi2_import_variable_t * > fmu_real_to_var_map; // FMU real to generic variable pointer map
-		for ( size_type i = 0; i < n_fmu_vars; ++i ) {
+		for ( size_type i = 0u; i < n_fmu_vars; ++i ) {
 			size_type const idx( i + 1 ); // FMU variable index
 			fmi2_import_variable_t * var( fmi2_import_get_variable( var_list, i ) );
 			std::string const var_name( fmi2_import_get_variable_name( var ) );
@@ -790,7 +790,7 @@ namespace QSS {
 		std::cout << "\nFMU Derivative Processing: " << n_derivatives << " Derivatives =====" << std::endl;
 		// fmi2_value_reference_t const * drs( fmi2_import_get_value_referece_list( der_list ) ); // reference is spelled wrong in FMIL API
 		std::unordered_multimap< fmi2_value_reference_t, FMU_Variable::Index > fmu_ref_to_state; // Reference to FMU_Variable map to check for duplicate state variable reference numbers
-		for ( size_type i = 0; i < n_derivatives; ++i ) { // i is also index into states and x_nominal arrays
+		for ( size_type i = 0u; i < n_derivatives; ++i ) { // i is also index into states and x_nominal arrays
 			fmi2_import_variable_t * der( fmi2_import_get_variable( der_list, i ) );
 			std::string const der_name( fmi2_import_get_variable_name( der ) );
 			Index const der_idx( fmi2_import_get_variable_original_order( der ) + 1u ); // fmi2_import_get_variable_original_order returns 0-based index
@@ -857,7 +857,7 @@ namespace QSS {
 				dep::Variable & dep_var( idx_var.second );
 				dep::Variable::Observees & dep_var_observees( dep_var.observees );
 				dep::Variable::Observees new_dep_var_observees;
-				for ( dep::Variable::Observees::size_type ioe = 0; ioe < dep_var_observees.size(); ++ioe ) {
+				for ( dep::Variable::Observees::size_type ioe = 0u; ioe < dep_var_observees.size(); ++ioe ) {
 					dep::Variable::Index const ide( dep_var_observees[ ioe ] );
 					FMU_Variable const & observee_fmu_var( fmu_variables[ ide - 1 ] ); // FMU variable corresponding to the dep::Variable
 					if ( observee_fmu_var.is_Derivative() ) { // Observee is a derivative
@@ -928,7 +928,7 @@ namespace QSS {
 
 		// QSS Variable Processing
 		std::cout << "\nQSS Variable Processing =====" << std::endl;
-		for ( size_type i = 0; i < n_fmu_vars; ++i ) {
+		for ( size_type i = 0u; i < n_fmu_vars; ++i ) {
 			FMU_Variable & fmu_var( fmu_variables[ i ] );
 			size_type const idx( i + 1 );
 			assert( idx == fmu_var.idx );
@@ -1055,7 +1055,7 @@ namespace QSS {
 								std::exit( EXIT_FAILURE );
 							}
 							std::string const fxn_name( fxn_spec.substr( 0u, ilb ) );
-							std::string const fxn_args( fxn_spec.substr( ilb + 1, irb - ( ilb + 1 ) ) );
+							std::string const fxn_args( fxn_spec.substr( ilb + 1u, irb - ( ilb + 1u ) ) );
 							if ( fxn_name == "constant" ) {
 								if ( is_double( fxn_args ) ) {
 									inp_fxn = Function_Inp_constant( double_of( fxn_args ) ); // Constant start value
@@ -1654,7 +1654,7 @@ namespace QSS {
 			Var_Names sorted_var_names( var_names );
 			std::sort( sorted_var_names.begin(), sorted_var_names.end() );
 			std::string repeat_name;
-			for ( Var_Names::size_type i = 0, l = var_names.size() - 1; i < l; ++i ) {
+			for ( Var_Names::size_type i = 0, l = var_names.size() - 1u; i < l; ++i ) {
 				if ( ( var_names[ i ] == var_names[ i + 1 ] ) && ( var_names[ i ] != repeat_name ) ) { // New repeat name
 					repeat_name = var_names[ i ];
 					std::cerr << " Error: Variable name repeats: " << repeat_name << std::endl;
@@ -1687,7 +1687,7 @@ namespace QSS {
 			csv.init( name );
 			Var_Names res_var_names;
 			res_var_indexes.clear();
-			for ( size_type i = 0; i < n_fmu_vars; ++i ) {
+			for ( size_type i = 0u; i < n_fmu_vars; ++i ) {
 				Name const & var_name( var_names[ i ] );
 				if ( output_filter.res( var_name ) ) {
 					res_var_names.push_back( var_name );
@@ -1711,7 +1711,8 @@ namespace QSS {
 				dep::Variable::Observees const & fmu_dependencies_var_observees( fmu_dependencies_var.observees );
 				if ( !fmu_dependencies_var_observees.empty() ) {
 					Variable * qss_var( i_qss_var->second ); // QSS variable that gets these observees
-					std::cout << "\n" << qss_var->name() << " observes:" << std::endl;
+					bool const not_ZC( qss_var->not_ZC() );
+					std::cout << "\n " << qss_var->name() << " observes:" << std::endl;
 					// Should not be any temporaries in the XML now
 					// if ( qss_var->is_Boolean() && has_prefix( qss_var->name(), "temp_" ) && ( fmu_dependencies_var_observees.size() == 1u ) ) { // Boolean variable with one observee: Check if temporary variable OCT inserts for an event indicator
 					// 	dep::Variable::Index const observee_idx( fmu_dependencies_var_observees[ 0 ] );
@@ -1743,8 +1744,10 @@ namespace QSS {
 							// 		}
 							// 	}
 							// }
-							qss_var->observe( qss_observee_var );
-							std::cout << "  " << qss_observee_var->name() << std::endl;
+							if ( not_ZC || qss_observee_var->not_ZC() ) { // Not both EIs: OCT has these for now but <Outputs> has the direct dependencies for EIs so we omit these here
+								qss_var->observe( qss_observee_var );
+								std::cout << "  " << qss_observee_var->name() << std::endl;
+							}
 						}
 					}
 				}
@@ -1761,7 +1764,7 @@ namespace QSS {
 			fmi2_import_get_derivatives_dependencies( fmu, &startIndex, &dependency, &factorKind );
 			if ( startIndex != nullptr ) { // Derivatives dependency info present in XML
 				std::cout << "\n<Derivatives> =====" << std::endl;
-				for ( size_type i = 0; i < n_derivatives; ++i ) {
+				for ( size_type i = 0u; i < n_derivatives; ++i ) {
 					// std::cout << "\nDerivative  Ref: " << drs[ i ] << std::endl;
 					fmi2_import_variable_t * der( fmi2_import_get_variable( der_list, i ) );
 					std::string const der_name( fmi2_import_get_variable_name( der ) );
@@ -1774,6 +1777,7 @@ namespace QSS {
 						Variable * var( ivar->second );
 						// std::cout << " Var: " << var->name() << "  Index: " << idx << std::endl;
 						std::cout << "\n " << der_name << ':' << std::endl;
+						assert( der_name == "der(" + var->name() + ')' );
 						for ( size_type j = startIndex[ i ]; j < startIndex[ i + 1 ]; ++j ) {
 							size_type const dep_idx( dependency[ j ] );
 							// std::cout << "  Dep Index: " << dep_idx << std::endl;
@@ -1799,10 +1803,11 @@ namespace QSS {
 							auto const idep( fmu_idxs.find( dep_idx ) ); //Do Add support for input variable dependents
 							if ( idep != fmu_idxs.end() ) {
 								Variable * dep( idep->second );
-								var->observe( dep );
-								std::cout << "  " << dep->name() << std::endl;
-							// } else {
-								//std::cout << "   Note: FMU-ME derivative " << der_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl;
+								if ( dep != var ) { // <Dependencies> has direct der->state dependencies but <Derivatives> has short-circuited ones (including drilling through event indicators) so we skip them here
+									var->observe( dep );
+									std::cout << "  " << dep->name() << std::endl;
+								}
+								// else { std::cout << "   Note: FMU-ME derivative " << der_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl; }
 							}
 						}
 					} else {
@@ -1826,7 +1831,7 @@ namespace QSS {
 		// 	if ( startIndex != nullptr ) { // InitialUnknowns dependency info present in XML
 		// 		std::cout << "\n<InitialUnknowns> =====" << std::endl;
 		// 		// fmi2_value_reference_t const * inu_vrs( fmi2_import_get_value_referece_list( inu_list ) ); // reference is spelled wrong in FMIL API
-		// 		for ( size_type i = 0; i < n_inu_vars; ++i ) {
+		// 		for ( size_type i = 0u; i < n_inu_vars; ++i ) {
 		// 			// std::cout << "\nInitialUnknown Variable  Ref: " << inu_vrs[ i ] << std::endl;
 		// 			fmi2_import_variable_t * inu( fmi2_import_get_variable( inu_list, i ) );
 		// 			// if ( fmi2_import_get_variability( inu ) != fmi2_variability_enu_continuous ) {
@@ -1896,7 +1901,7 @@ namespace QSS {
 			if ( startIndex != nullptr ) { // Discrete dependency info present in XML
 				std::cout << "\n<DiscreteStates> =====" << std::endl;
 				// fmi2_value_reference_t const * dis_vrs( fmi2_import_get_value_referece_list( dis_list ) ); // reference is spelled wrong in FMIL API
-				for ( size_type i = 0; i < n_dis_vars; ++i ) {
+				for ( size_type i = 0u; i < n_dis_vars; ++i ) {
 					// std::cout << "\nDiscrete Variable  Ref: " << dis_vrs[ i ] << std::endl;
 					fmi2_import_variable_t * dis( fmi2_import_get_variable( dis_list, i ) );
 					assert( fmi2_import_get_variability( dis ) == fmi2_variability_enu_discrete );
@@ -1998,7 +2003,7 @@ namespace QSS {
 			if ( startIndex != nullptr ) { // Dependency info present in XML
 				std::cout << "\n<Outputs> =====" << std::endl;
 				// fmi2_value_reference_t const * out_vrs( fmi2_import_get_value_referece_list( out_list ) ); // reference is spelled wrong in FMIL API
-				for ( size_type i = 0; i < n_out_vars; ++i ) {
+				for ( size_type i = 0u; i < n_out_vars; ++i ) {
 					// std::cout << "\nOutput Variable  Ref: " << out_vrs[ i ] << std::endl;
 					fmi2_import_variable_t * out( fmi2_import_get_variable( out_list, i ) );
 					std::string const out_name( fmi2_import_get_variable_name( out ) );
@@ -2121,12 +2126,14 @@ namespace QSS {
 			std::ofstream dependency_graph( name + ".Dependency.gv", std::ios_base::binary | std::ios_base::out );
 			dependency_graph << "digraph " << name << " {\n";
 			dependency_graph << "  label=\"" << name << " Direct Dependency Graph\"; labelloc=\"t\"\n";
-			for ( auto var : sorted_by_name( vars ) ) { // Variable dependencies
+			for ( auto var : sorted_by_name( vars ) ) { // Observees
 				var->uniquify_observees();
 				for ( auto o : sorted_by_name( var->observees() ) ) {
 					dependency_graph << "  \"" << var->name() << "\" -> \"" << o->name() << "\"\n";
 				}
-				if ( var->is_ZC() ) { // Dependencies of variables modified when event indicators fire
+			}
+			for ( auto var : sorted_by_name( vars ) ) { // Handlers (variables modified when event indicators fire)
+				if ( var->is_ZC() ) {
 					for ( auto o : sorted_by_name( static_cast< Variable_ZC * >( var )->conditional->observers() ) ) {
 						dependency_graph << "  \"" << o->name() << "\" -> \"" << var->name() << "\" [ color=\"darkseagreen\", style=\"dashed\"]\n";
 					}
@@ -2229,7 +2236,7 @@ namespace QSS {
 
 		// Set ND variable weighting
 		DerWtg wtg( n_ND, 1.0 ); // Variable weighting factor
-		for ( size_type i = 0; i < n_ND; ++i ) {
+		for ( size_type i = 0u; i < n_ND; ++i ) {
 			if ( vars_ND[ i ]->is_State() ) wtg[ i ] = 3.0; // State derivatives are more important to overall accuracy since they are integrated
 		}
 
@@ -2253,11 +2260,11 @@ namespace QSS {
 
 			// Get highest order derivative coefficients
 			if ( options::order == 2 ) {
-				for ( size_type i = 0; i < n_ND; ++i ) {
+				for ( size_type i = 0u; i < n_ND; ++i ) {
 					xc[ i ].push_back( vars_ND[ i ]->x2( to ) );
 				}
 			} else if ( options::order == 3 ) {
-				for ( size_type i = 0; i < n_ND; ++i ) {
+				for ( size_type i = 0u; i < n_ND; ++i ) {
 					xc[ i ].push_back( vars_ND[ i ]->x3( to ) );
 				}
 			} else { // Shouldn't get here
@@ -2278,7 +2285,7 @@ namespace QSS {
 		size_type n_dtND_vars( 0u );
 		Ranges ranges;
 		Weights weights;
-		for ( size_type i = 0; i < n_ND; ++i ) { // Each variable
+		for ( size_type i = 0u; i < n_ND; ++i ) { // Each variable
 			DerVec const & xc_i( xc[ i ] );
 			size_type l( 0u ), u( 1u );
 			Real xd_min( std::abs( xc_i[ 1 ] - xc_i[ 0 ] ) );
@@ -2314,7 +2321,7 @@ namespace QSS {
 			assert( ranges.size() == n_dtND_vars );
 			double jo( 0.0 ); // Index of optimal dtND
 			Real weights_tot( 0.0 );
-			for ( size_type l = 0; l < n_dtND_vars; ++l ) {
+			for ( size_type l = 0u; l < n_dtND_vars; ++l ) {
 				Range const & range( ranges[ l ] );
 				jo += weights[ l ] * ( range.b() + range.e() );
 				weights_tot += weights[ l ];
@@ -2517,19 +2524,21 @@ namespace QSS {
 			con->init_observers();
 		}
 
+		// Flag passive ZCs
+		for ( auto var : vars_ZC ) {
+			assert( dynamic_cast< Variable_ZC * >( var ) != nullptr );
+			Variable_ZC * zc( static_cast< Variable_ZC * >( var ) );
+			zc->flag_passive();
+		}
+
 		// Generate computational observee graph
 		if ( options::dot_graph::e ) {
 			std::ofstream observee_graph( name + ".Observee.gv", std::ios_base::binary | std::ios_base::out );
 			observee_graph << "digraph " << name << " {\n";
 			observee_graph << "  label=\"" << name << " Computational Observee Graph\"; labelloc=\"t\"\n";
-			for ( auto var : sorted_by_name( vars ) ) { // Variable dependencies
-				for ( auto o : sorted_by_name( var->observees() ) ) {
+			for ( auto var : sorted_by_name( vars ) ) {
+				for ( auto o : sorted_by_name( var->observees() ) ) { // Observees
 					observee_graph << "  \"" << var->name() << "\" -> \"" << o->name() << "\"\n";
-				}
-				if ( var->is_ZC() ) { // Dependencies of variables modified when event indicators fire
-					for ( auto o : sorted_by_name( static_cast< Variable_ZC * >( var )->conditional->observers() ) ) {
-						observee_graph << "  \"" << o->name() << "\" -> \"" << var->name() << "\" [ color=\"darkseagreen\", style=\"dashed\"]\n";
-					}
 				}
 			}
 			observee_graph << "}\n";
@@ -2541,14 +2550,15 @@ namespace QSS {
 			std::ofstream observer_graph( name + ".Observer.gv", std::ios_base::binary | std::ios_base::out );
 			observer_graph << "digraph " << name << " {\n";
 			observer_graph << "  label=\"" << name << " Computational Observer Graph\"; labelloc=\"t\"\n";
-			for ( auto var : sorted_by_name( vars ) ) { // Variable dependencies
-				for ( auto o : sorted_by_name( var->observers() ) ) {
+			for ( auto var : sorted_by_name( vars ) ) {
+				for ( auto o : sorted_by_name( var->observers() ) ) { // Observers
 					observer_graph << "  \"" << o->name() << "\" -> \"" << var->name() << "\"\n";
 				}
-				if ( var->is_ZC() ) { // Dependencies of variables modified when event indicators fire
-					for ( auto o : sorted_by_name( static_cast< Variable_ZC * >( var )->conditional->observers() ) ) {
-						observer_graph << "  \"" << o->name() << "\" -> \"" << var->name() << "\" [ color=\"darkseagreen\", style=\"dashed\"]\n";
-					}
+			}
+			for ( auto var : sorted_by_name( vars_ZC ) ) { // Handlers (variables modified when event indicators fire)
+				assert( var->is_ZC() );
+				for ( auto o : sorted_by_name( static_cast< Variable_ZC * >( var )->conditional->observers() ) ) {
+					observer_graph << "  \"" << o->name() << "\" -> \"" << var->name() << "\" [ color=\"darkseagreen\", style=\"dashed\"]\n";
 				}
 			}
 			observer_graph << "}\n";
@@ -2746,7 +2756,9 @@ namespace QSS {
 		std::cerr << std::setprecision( 16 );
 
 		if ( options::output::d ) std::cout << '\n' + name + " Simulation Loop =====" << std::endl;
-		if ( t == t0 ) std::cout << '\r' + name + " Simulation   0% =====" << std::flush;
+		if ( !options::output::d ) {
+			if ( t == t0 ) std::cout << '\r' + name + " Simulation   0% =====" << std::flush;
+		}
 
 		// Timing setup
 		Time const tSim( tE - t0 ); // Simulation time span expected
@@ -2793,7 +2805,7 @@ namespace QSS {
 					}
 					if ( options::output::F ) { // FMU QSS variable outputs
 						if ( n_f_outs > 0u ) { // FMU QSS variables
-							for ( size_type i = 0; i < n_f_outs; ++i ) {
+							for ( size_type i = 0u; i < n_f_outs; ++i ) {
 								Variable const * var( f_outs_vars[ i ] );
 								f_outs[ i ].append( tOut, var->x( tOut ) );
 							}
@@ -2802,7 +2814,7 @@ namespace QSS {
 					if ( options::output::L ) { // FMU local variable outputs
 						if ( n_l_outs > 0u ) { // FMU local variables
 							set_time( tOut );
-//							for ( size_type i = 0; i < n_states; ++i ) {
+//							for ( size_type i = 0u; i < n_states; ++i ) {
 //								if ( state_vars[ i ] != nullptr ) states[ i ] = state_vars[ i ]->x( tOut );
 //							}
 //							fmi2_import_set_continuous_states( fmu, states, n_states );
@@ -2973,8 +2985,9 @@ namespace QSS {
 							}
 						}
 					}
-					t_bump = std::min( t_bump, tE );
+					t_bump = std::min( t_bump, tE ); // Don't go past simulation end time or event loop will fail
 				} else if ( event.is_conditional() ) { // Conditional event(s)
+					if ( options::output::d ) std::cout << "Zero-crossing conditional event(s): Time = " << s.t << std::endl;
 					while ( eventq->top_superdense_time() == s ) {
 						Conditional< Variable_ZC > * trigger( eventq->top_sub< Conditional< Variable_ZC > >() );
 						trigger->st = s; // Set trigger superdense time
@@ -2995,7 +3008,7 @@ namespace QSS {
 					fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 					// if ( options::output::d ) {
 					// 	std::cout << "FMU event indicators: Handler event processing start @ t=" << t_pre_bump << std::endl;
-					// 	for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
+					// 	for ( size_type k = 0u; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
 					// }
 					fmi2_import_enter_event_mode( fmu );
 					do_event_iteration();
@@ -3017,12 +3030,12 @@ namespace QSS {
 					fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 					// if ( options::output::d ) {
 					// 	std::cout << "FMU event indicators: Handler event processing start @ t=" << t_bump << std::endl;
-					// 	for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
+					// 	for ( size_type k = 0u; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
 					// }
 
 					// Check if an event indicator has triggered
 					bool zero_crossing_event( false );
-					for ( size_type k = 0; k < n_event_indicators; ++k ) {
+					for ( size_type k = 0u; k < n_event_indicators; ++k ) {
 						if ( ( event_indicators[ k ] >= 0.0 ) != ( event_indicators_last[ k ] > 0.0 ) ) {
 							zero_crossing_event = true;
 							break;
@@ -3039,18 +3052,29 @@ namespace QSS {
 						fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 						// if ( options::output::d ) {
 						// 	std::cout << "FMU event indicators: Handler event processing after event iteration @ t=" << t << std::endl;
-						// 	for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
+						// 	for ( size_type k = 0u; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
 						// }
 					} else {
 						if ( options::output::d ) std::cout << "Zero-crossing does not trigger FMU-ME event at t=" << t << std::endl;
 					}
 
 					// Perform handler operations on QSS side
+					Variable * handler( nullptr );
+					size_type n_handlers( 0u );
+					if ( eventq->single() ) { // Single handler
+						handler = event.handler_sub< Variable >();
+						n_handlers = ( handler == nullptr ? 0u : 1u );
+					} else { // Simultaneous handlers
+						eventq->top_handler_subs< Variable >( handlers );
+						n_handlers = handlers.size();
+						if ( n_handlers == 1u ) handler = handlers[ 0 ];
+					}
 					if ( enterEventMode || zero_crossing_event ) {
 						set_time( t ); // Reset FMU to event time
-						if ( eventq->single() ) { // Single handler
-							Variable * handler( event.sub< Variable >() );
 
+						if ( n_handlers == 0u ) { // No (non-ZC) handlers
+							// No action
+						} else if ( n_handlers == 1u ) { // Single (non-ZC) handler
 							for ( Variable_ZC const * trigger : var_ZCs ) { // Un-bump time
 								trigger->un_bump_time( t, handler );
 							}
@@ -3060,6 +3084,7 @@ namespace QSS {
 								handler->observers_out_pre( t );
 							}
 
+							if ( options::dtInfReset ) handler->dt_infinity_reset(); // Reset dtInf relaxation state
 							handler->advance_handler( t );
 
 							if ( doROut ) { // Handler output: post
@@ -3072,8 +3097,8 @@ namespace QSS {
 									handler->observers_out_post( t );
 								}
 							}
-						} else { // Simultaneous handlers
-							eventq->top_subs< Variable >( handlers );
+						} else { // Simultaneous (non-ZC) handlers
+							assert( n_handlers > 1u );
 							observers_s.assign( handlers );
 
 							for ( Variable_ZC const * trigger : var_ZCs ) { // Un-bump time
@@ -3093,7 +3118,10 @@ namespace QSS {
 
 							handlers_s.assign( handlers );
 							handlers_s.advance( t );
-							if ( observers_s.have() ) observers_s.advance( t ); // Advance observers
+							if ( observers_s.have() ) {
+								if ( options::dtInfReset ) observers_s.dt_infinity_reset(); // Reset dtInf relaxation state
+								observers_s.advance( t ); // Advance observers
+							}
 
 							if ( doROut ) { // Handler output: post
 								if ( options::output::A ) { // All variables
@@ -3113,7 +3141,7 @@ namespace QSS {
 							}
 						}
 
-						if ( t < tE ) { // Re-run FMU event processing after handlers run since event indicator signs may have changed (such as in "bounce" events)
+						if ( ( n_handlers > 0u ) && ( t < tE ) ) { // Re-run FMU event processing after handlers run since event indicator signs may have changed (such as in "bounce" events)
 
 							// Re-bump zero-crossing state
 							t_bump = t; // Bump time for FMU zero crossing detection
@@ -3133,12 +3161,12 @@ namespace QSS {
 							fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 							// if ( options::output::d ) {
 							// 	std::cout << "FMU event indicators: Handler event processing after re-bump @ t=" << t << std::endl;
-							// 	for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
+							// 	for ( size_type k = 0u; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
 							// }
 
 							// Check if an event indicator has triggered
 							zero_crossing_event = false;
-							for ( size_type k = 0; k < n_event_indicators; ++k ) {
+							for ( size_type k = 0u; k < n_event_indicators; ++k ) {
 								if ( ( event_indicators[ k ] >= 0.0 ) != ( event_indicators_last[ k ] > 0.0 ) ) {
 									zero_crossing_event = true;
 									break;
@@ -3155,7 +3183,7 @@ namespace QSS {
 								fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 								// if ( options::output::d ) {
 								// 	std::cout << "FMU event indicators: Handler event processing after re-bump event iteration @ t=" << t << std::endl;
-								// 	for ( size_type k = 0; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
+								// 	for ( size_type k = 0u; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
 								// }
 							} else {
 								if ( options::output::d ) std::cout << "Zero-crossing handler re-bump does not trigger FMU-ME event at t=" << t << std::endl;
@@ -3163,15 +3191,22 @@ namespace QSS {
 						}
 
 					} else { // Update event queue entries for no-action handler event
-						if ( eventq->single() ) { // Single handler
-							Variable * handler( event.sub< Variable >() );
-							handler->no_advance_handler();
-						} else { // Simultaneous handlers
-							eventq->top_subs< Variable >( handlers );
+						if ( n_handlers == 0u ) { // No (non-ZC) handlers
+							// No action
+						} else if ( eventq->single() ) { // Single (non-ZC) handler
+							Variable * handler( event.handler_sub< Variable >() );
+							if ( handler != nullptr ) handler->no_advance_handler();
+						} else { // Simultaneous (non-ZC) handlers
+							eventq->top_handler_subs< Variable >( handlers );
 							for ( Variable * handler : handlers ) {
 								handler->no_advance_handler();
 							}
 						}
+					}
+
+					// Clear conditional event of self-handler ZCs
+					for ( Variable_ZC * trigger : var_ZCs ) {
+						if ( trigger->self_handler() ) trigger->clear_conditional_event();
 					}
 
 					// Restore FMU simulation time
@@ -3614,7 +3649,7 @@ namespace QSS {
 // Not sure we need to set continuous states: It would be a performance hit
 //ZC and this wipes out ZC bump values between ZC and Handler event calls
 //			set_time( tProc );
-//			for ( size_type i = 0; i < n_states; ++i ) {
+//			for ( size_type i = 0u; i < n_states; ++i ) {
 //				if ( state_vars[ i ] != nullptr ) states[ i ] = state_vars[ i ]->x( tProc );
 //			}
 //			fmi2_import_set_continuous_states( fmu, states, n_states );
@@ -3728,7 +3763,7 @@ namespace QSS {
 		}
 		if ( options::output::F ) { // FMU QSS variable tE outputs
 			if ( n_f_outs > 0u ) { // FMU QSS variables
-				for ( size_type i = 0; i < n_f_outs; ++i ) {
+				for ( size_type i = 0u; i < n_f_outs; ++i ) {
 					Variable const * var( f_outs_vars[ i ] );
 					f_outs[ i ].append( tE, var->x( tE ) );
 					f_outs[ i ].flush();
@@ -3738,7 +3773,7 @@ namespace QSS {
 		if ( options::output::L ) { // FMU local variable tE outputs
 			if ( n_l_outs > 0u ) { // FMU local variables
 				set_time( tE );
-//				for ( size_type i = 0; i < n_states; ++i ) {
+//				for ( size_type i = 0u; i < n_states; ++i ) {
 //					if ( state_vars[ i ] != nullptr ) states[ i ] = state_vars[ i ]->x( tE );
 //				}
 //				fmi2_import_set_continuous_states( fmu, states, n_states );

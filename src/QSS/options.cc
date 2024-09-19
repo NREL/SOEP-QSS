@@ -65,8 +65,11 @@ double zaFac( 0.1 ); // Zero-crossing absolute tolerance factor
 double dtMin( 0.0 ); // Min time step (s)
 double dtMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Max time step (s)
 // double dtMax( std::numeric_limits< double >::max() ); // Max time step (s)
-double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Infinite time step (s)
-// double dtInf( std::numeric_limits< double >::max() ); // Infinite time step (s)
+double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Inf time step (s)
+// double dtInf( std::numeric_limits< double >::max() ); // Inf time step (s)
+double dtInfMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Max inf time step (s)
+// double dtInfMax( std::numeric_limits< double >::max() ); // Max inf time step (s)
+bool dtInfReset{ false }; // Reset inf time step relaxation at zero-crossings?
 double dtZMax( 0.01 ); // Max time step before zero-crossing (s)
 double dtZC( 1.0e-9 ); // FMU zero-crossing time step (s)
 double dtND( 1.0e-6 ); // Numeric differentiation time step (s)
@@ -81,18 +84,22 @@ double dtCon( 0.0 ); // FMU connection sync time step (s)
 double dtOut( 1.0e-3 ); // Sampled output time step (s)
 double tStart( 0.0 ); // Start time (s)  [0|FMU]
 double tStop( 1.0 ); // Stop time (s)  [1|FMU]
+double clip( 1.0e-100 ); // Trajectory coefficient clip-to-zero level
+bool clipping( true ); // Trajectory coefficient clip-to-zero level active?
 std::size_t bin_size( 1u ); // Bin size max
 double bin_frac( 0.25 ); // Bin step fraction min
 bool bin_auto( false ); // Bin size automaically optimized?
 std::size_t pass( 20 ); // Pass count limit
 bool cycles( false ); // Report dependency cycles?
 bool inflection( false ); // Requantize at inflections?
-double inflectionFrac( 0.001 ); // Inflection step fraction min
+double inflectionFrac( 0.001 ); // Derivative inflection step fraction min
+double inflectionFrac2( 0.005 ); // Second derivative inflection step fraction min
 bool cluster( false ); // Clustering with relaxation solver?
 bool refine( false ); // Refine FMU zero-crossing roots?
 bool perfect( false ); // Perfect FMU-ME connection sync?
 bool active( false ); // Active intermediate variables preferred?
 bool passive( true ); // Passive intermediate variables preferred?
+int EI( 0 ); // Event indicator mode  (0|1|2|3)  [0]
 bool steps( false ); // Generate requantization step count file?
 LogLevel log( LogLevel::warning ); // Logging level
 InpFxn fxn; // Map from input variables to function specs
@@ -167,7 +174,8 @@ help_display()
 	std::cout << " --zaFac=FAC             Zero-crossing absolute tolerance factor  [" << zaFac << ']' << '\n';
 	std::cout << " --dtMin=STEP            Min time step (s)  [0]" << '\n';
 	std::cout << " --dtMax=STEP            Max time step (s)  [infinity]" << '\n';
-	std::cout << " --dtInf=STEP            Deactivation control time step (s)  [infinity]" << '\n';
+	std::cout << " --dtInf=STEP[:MAX]      Deactivation control time step (s)  [infinity:infinity]" << '\n';
+	std::cout << " --dtInfReset            Reset deactivation control time step at zero-crossings  [Off]" << '\n';
 	std::cout << " --dtZMax=STEP           Max time step before zero-crossing (s)  (0 => Off)  [" << dtZMax << ']' << '\n';
 	std::cout << " --dtZC=STEP             FMU zero-crossing time step (s)  [" << dtZC << ']' << '\n';
 	std::cout << " --dtND=STEP[:AUTO|MAX]  Numeric differentiation time step  [" << dtND << ']' << '\n';
@@ -178,15 +186,24 @@ help_display()
 	std::cout << " --dtOut=STEP            Sampled output time step (s)  [computed]" << '\n';
 	std::cout << " --tStart=TIME           Start time (s)  [0|FMU]" << '\n';
 	std::cout << " --tStop=TIME            Stop time (s)  [1|FMU]" << '\n';
+	std::cout << " --clip=LEVEL            Trajectory coefficient clip-to-zero level  [" << clip << ']' << '\n';
 	std::cout << " --pass=COUNT            Pass count limit  [" << pass << ']' << '\n';
 	std::cout << " --cycles                Report dependency cycles" << '\n';
 	std::cout << " --inflection            Requantize at inflections" << '\n';
-	std::cout << " --inflectionFrac=FRAC   Inflection step fraction min  [" << inflectionFrac << ']' << '\n';
+	std::cout << " --inflectionFrac=FRAC   Derivative inflection step fraction min  [" << inflectionFrac << ']' << '\n';
+	std::cout << " --inflectionFrac2=FRAC  Second derivative inflection step fraction min  [" << inflectionFrac2 << ']' << '\n';
 	std::cout << " --cluster               Cluster identification via dependency cycles  [Off]" << '\n';
 	std::cout << " --refine                Refine FMU zero-crossing roots" << '\n';
 	std::cout << " --perfect               Perfect FMU-ME connection sync" << '\n';
 	std::cout << " --active                Active intermediate variables preferred  [Off]" << '\n';
 	std::cout << " --passive               Passive intermediate variables preferred  [On]" << '\n';
+	std::cout << " --EI=EIMODE             Event indicator mode  (0|1|2|3)  [0]" << '\n';
+	std::cout << "      0                  All event indicators actively tracked (slowest)" << '\n';
+	std::cout << "      1                  Don't track event indicators without observers" << '\n';
+	std::cout << "                         Asserts that use them are not checked" << '\n';
+	std::cout << "      2                  Don't track event indicators with only passive observer(s)" << '\n';
+	std::cout << "                         Outputs of those passive variables may be incorrect" << '\n';
+	std::cout << "      3                  Combination of modes 1 and 2 (fastest)" << '\n';
 	std::cout << " --steps                 Generate step count file for FMU" << '\n';
 	std::cout << " --log=LEVEL             Logging level  [warning]" << '\n';
 	std::cout << "       fatal" << '\n';
@@ -500,8 +517,12 @@ process_args( Args const & args )
 			n2d = !d2d;
 		} else if ( has_option( arg, "cycles" ) ) {
 			cycles = true;
+		} else if ( has_option( arg, "no-cycles" ) ) {
+			cycles = false;
 		} else if ( has_option( arg, "inflection" ) ) {
 			inflection = true;
+		} else if ( has_option( arg, "no-inflection" ) ) {
+			inflection = false;
 		} else if ( has_option_value( arg, "inflectionFrac" ) ) {
 			std::string const inflectionFrac_str( option_value( arg, "inflectionFrac" ) );
 			if ( is_double( inflectionFrac_str ) ) {
@@ -518,20 +539,56 @@ process_args( Args const & args )
 				std::cerr << "\nWarning: inflectionFrac " << inflectionFrac << " > 1: Clipped to 1" << std::endl;
 				inflectionFrac = 1.0;
 			}
+		} else if ( has_option_value( arg, "inflectionFrac2" ) ) {
+			std::string const inflectionFrac2_str( option_value( arg, "inflectionFrac2" ) );
+			if ( is_double( inflectionFrac2_str ) ) {
+				inflectionFrac2 = double_of( inflectionFrac2_str );
+				if ( inflectionFrac2 < 0.0 ) {
+					std::cerr << "\nError: Negative inflectionFrac2: " << inflectionFrac2_str << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::cerr << "\nError: Nonnumeric inflectionFrac2: " << inflectionFrac2_str << std::endl;
+				fatal = true;
+			}
+			if ( inflectionFrac2 > 1.0 ) {
+				std::cerr << "\nWarning: inflectionFrac2 " << inflectionFrac2 << " > 1: Clipped to 1" << std::endl;
+				inflectionFrac2 = 1.0;
+			}
 		} else if ( has_option( arg, "cluster" ) ) {
 			cluster = true;
+		} else if ( has_option( arg, "no-cluster" ) ) {
+			cluster = false;
 		} else if ( has_option( arg, "refine" ) ) {
 			refine = true;
+		} else if ( has_option( arg, "no-refine" ) ) {
+			refine = false;
 		} else if ( has_option( arg, "perfect" ) ) {
 			perfect = true;
+		} else if ( has_option( arg, "no-perfect" ) ) {
+			perfect = false;
 		} else if ( has_option( arg, "active" ) ) {
 			active = true;
 			passive = false;
 		} else if ( has_option( arg, "passive" ) ) {
 			active = false;
 			passive = true;
+		} else if ( has_option_value( arg, "EI" ) ) {
+			std::string const EI_str( option_value( arg, "EI" ) );
+			if ( is_int( EI_str ) ) {
+				EI = int_of( EI_str );
+				if ( ( EI < 0 ) || ( EI > 3 ) ) {
+					std::cerr << "\nError: Illegal EI: " << EI_str << std::endl;
+					fatal = true;
+				}
+			} else {
+				std::cerr << "\nError: Non-integer EI: " << EI_str << std::endl;
+				fatal = true;
+			}
 		} else if ( has_option( arg, "steps" ) ) {
 			steps = true;
+		} else if ( has_option( arg, "no-steps" ) ) {
+			steps = false;
 		} else if ( has_option_value( arg, "log" ) ) { // Accept PyFMI numeric logging levels for scripting convenience
 			std::string const log_str( lowercased( option_value( arg, "log" ) ) );
 			if ( ( log_str == "fatal" ) || ( log_str == "f" ) || ( log_str == "0" ) ) {
@@ -682,17 +739,48 @@ process_args( Args const & args )
 				fatal = true;
 			}
 		} else if ( has_option_value( arg, "dtInf" ) ) {
-			std::string const dtInf_str( option_value( arg, "dtInf" ) );
+			std::string dtInf_str( option_value( arg, "dtInf" ) );
+			std::string::size_type const isep( dtInf_str.find( ':' ) );
+			std::string dtInfMax_str;
+			if ( isep != std::string::npos ) { // dtInfMax specified
+				dtInfMax_str = std::string_view( dtInf_str ).substr( isep + 1u );
+				strip( dtInfMax_str );
+				dtInf_str.erase( isep );
+				strip( dtInf_str );
+			}
 			if ( is_double( dtInf_str ) ) {
 				dtInf = double_of( dtInf_str );
 				if ( dtInf < 0.0 ) {
 					std::cerr << "\nError: Negative dtInf: " << dtInf_str << std::endl;
 					fatal = true;
 				}
+				if ( dtInfMax_str.empty() ) { // dtInfMax not specified
+					dtInfMax = infinity;
+				} else { // dtInfMax specified
+					if ( is_double( dtInfMax_str ) ) {
+						dtInfMax = double_of( dtInfMax_str );
+						if ( dtInfMax < 0.0 ) {
+							std::cerr << "\nError: Negative dtInfMax: " << dtInfMax_str << std::endl;
+							fatal = true;
+						} else if ( dtInfMax < dtInf ) {
+							std::cerr << "\nError: dtInfMax < dtInf: " << dtInfMax_str << std::endl;
+							fatal = true;
+						}
+					} else {
+						std::cerr << "\nError: Nonnumeric dtInfMax: " << dtInfMax_str << std::endl;
+						fatal = true;
+					}
+				}
+			} else if ( dtInf_str.empty() ) { // Override to disable dtInf
+				dtInf = dtInfMax = std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max(); // Inf time step (s)
+//				dtInf = dtInfMax = std::numeric_limits< double >::max(); // Inf time step (s)
 			} else {
 				std::cerr << "\nError: Nonnumeric dtInf: " << dtInf_str << std::endl;
 				fatal = true;
 			}
+		} else if ( has_option( arg, "dtInf" ) || has_option( arg, "no-dtInf" ) ) { // Override to disable dtInf
+			dtInf = dtInfMax = std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max(); // Inf time step (s)
+//			dtInf = dtInfMax = std::numeric_limits< double >::max(); // Inf time step (s)
 		} else if ( has_option_value( arg, "dtZMax" ) ) {
 			std::string const dtZMax_str( option_value( arg, "dtZMax" ) );
 			if ( is_double( dtZMax_str ) ) {
@@ -705,6 +793,10 @@ process_args( Args const & args )
 				std::cerr << "\nError: Nonnumeric dtZMax: " << dtZMax_str << std::endl;
 				fatal = true;
 			}
+		} else if ( has_option( arg, "dtInfReset" ) ) {
+			dtInfReset = true;
+		} else if ( has_option( arg, "no-dtInfReset" ) ) {
+			dtInfReset = false;
 		} else if ( has_option_value( arg, "dtZC" ) ) {
 			specified::dtZC = true;
 			std::string const dtZC_str( option_value( arg, "dtZC" ) );
@@ -838,6 +930,24 @@ process_args( Args const & args )
 				std::cerr << "\nError: Nonnumeric tStop: " << tStop_str << std::endl;
 				fatal = true;
 			}
+		} else if ( has_option_value( arg, "clip" ) ) {
+			std::string const clip_str( option_value( arg, "clip" ) );
+			if ( is_double( clip_str ) ) {
+				clip = double_of( clip_str );
+				if ( clip < 0.0 ) {
+					std::cerr << "\nError: Negative clip: " << clip_str << std::endl;
+					fatal = true;
+				} else if ( clip >= 1.0e-25 ) {
+					std::cerr << "\nWarning: Large clip specfied: " << clip_str << std::endl;
+				}
+			} else {
+				std::cerr << "\nError: Nonnumeric clip: " << clip_str << std::endl;
+				fatal = true;
+			}
+		} else if ( has_option( arg, "clip" ) ) {
+			clipping = true;
+		} else if ( has_option( arg, "no-clip" ) ) {
+			clipping = false;
 		} else if ( has_option( arg, "bin" ) ) {
 			specified::bin = true;
 			bin_size = std::numeric_limits< std::size_t >::max();
@@ -1215,6 +1325,8 @@ process_args( Args const & args )
 			output::L = false;
 		} else if ( has_option( arg, "csv" ) ) {
 			csv = true;
+		} else if ( has_option( arg, "no-csv" ) ) {
+			csv = false;
 		} else if ( has_option_value( arg, "dot" ) ) {
 			static std::string const dot_flags( "dre" );
 			std::string const dot( option_value( arg, "dot" ) );
@@ -1234,11 +1346,15 @@ process_args( Args const & args )
 			dot_graph::d = true;
 			dot_graph::r = true;
 			dot_graph::e = true;
+		} else if ( has_option( arg, "no-dot" ) ) {
+			dot_graph::d = false;
+			dot_graph::r = false;
+			dot_graph::e = false;
 		} else if ( has_option_value( arg, "tLoc" ) ) {
 			specified::tLoc = true;
 			std::string const tLoc_str( option_value( arg, "tLoc" ) );
 			std::vector< std::string > const tLoc_tokens( split( tLoc_str, ':' ) );
-			if ( tLoc_tokens.size() == 2 ) { // Process/check time range
+			if ( tLoc_tokens.size() == 2u ) { // Process/check time range
 
 				// Begin time
 				std::string tLoc_beg_str( tLoc_tokens[ 0 ] );
@@ -1314,6 +1430,12 @@ process_args( Args const & args )
 	if ( cluster && !clu.empty() ) {
 		std::cerr << "\nError: Both --cluseter and --clu specified" << std::endl;
 		fatal = true;
+	}
+	if ( dtInf == infinity ) {
+		dtInfReset = false;
+	}
+	if ( clip == infinity ) {
+		clipping = false;
 	}
 
 	if ( help ) std::exit( EXIT_SUCCESS );

@@ -128,6 +128,28 @@ public: // Predicate
 		return detected_crossing_;
 	}
 
+	// Active?
+	bool
+	active() const
+	{
+		return !passive_;
+	}
+
+	// Passive?
+	bool
+	passive() const
+	{
+		return passive_;
+	}
+
+	// Self Handler?
+	bool
+	self_handler() const
+	{
+		assert( conditional != nullptr );
+		return conditional->self_handler();
+	}
+
 protected: // Predicate
 
 	// Has Crossing Type?
@@ -172,7 +194,7 @@ public: // Methods
 	void
 	add_observer( Variable * observer )
 	{
-		assert( in_conditional() );
+		assert( conditional != nullptr );
 		assert( observer != nullptr );
 		conditional->add_observer( observer );
 	}
@@ -183,6 +205,17 @@ public: // Methods
 	{
 		init_observees();
 		init_0();
+	}
+
+	// Flag if passive
+	void
+	flag_passive()
+	{
+		passive_ = conditional->empty();
+		if ( passive_ ) { // Disable requantization and zero-crossing events
+			tE = tZ = infinity;
+			shift_ZC( infinity );
+		}
 	}
 
 public: // Zero-Crossing Methods
@@ -221,6 +254,13 @@ public: // Zero-Crossing Methods
 	{
 		handler_modified_ = ( fmu_get_real() != x_0_bump_ );
 		fmu_set_observees_x( t, handlers );
+	}
+
+	// Clear Conditional Event
+	void
+	clear_conditional_event()
+	{
+		( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 	}
 
 public: // Crossing Methods
@@ -379,6 +419,7 @@ public: // Data
 protected: // Data
 
 	bool zChatter_{ false }; // Zero-crossing chatter control active?
+	bool passive_{ false }; // Passive?
 	Real x_mag_{ 0.0 }; // Max trajectory magnitude since last zero crossing
 	bool check_crossing_{ false }; // Check for zero crossing?
 	bool detected_crossing_{ false }; // Unpredicted zero crossing detected?

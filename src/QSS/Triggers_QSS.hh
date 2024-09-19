@@ -113,14 +113,14 @@ public: // Methods
 
 		// FMU pooled data set up
 		if ( options::d2d ) {
-			qss_ders_.reserve( n_triggers_ );
+			qss_ders_.clear_and_reserve( n_triggers_ );
 			for ( Variable * trigger : triggers ) {
 				assert( trigger->is_QSS() );
 				qss_ders_.push_back( trigger->der().ref() );
 			}
 		} else {
 			assert( options::n2d );
-			qss_dn2d_.reserve( n_triggers_ );
+			qss_dn2d_.clear_and_reserve( n_triggers_ );
 			for ( Variable * trigger : triggers ) {
 				assert( trigger->is_QSS() );
 				qss_dn2d_.push_back( trigger->der().ref() );
@@ -281,7 +281,7 @@ private: // Methods
 	void
 	set_observees_values( Time const t )
 	{
-		for ( size_type i = 0; i < n_observees_; ++i ) {
+		for ( size_type i = 0u; i < n_observees_; ++i ) {
 #ifndef QSS_PROPAGATE_CONTINUOUS
 			observees_v_[ i ] = observees_[ i ]->q( t ); // Quantized: Traditional QSS
 #else
@@ -296,7 +296,7 @@ private: // Methods
 	get_second_derivatives( Time const t )
 	{
 		assert( options::d2d );
-		for ( size_type i = 0; i < n_observees_; ++i ) { // Set directional derivative seed vector
+		for ( size_type i = 0u; i < n_observees_; ++i ) { // Set directional derivative seed vector
 #ifndef QSS_PROPAGATE_CONTINUOUS
 			observees_dv_[ i ] = observees_[ i ]->q1( t ); // Quantized: Traditional QSS
 #else

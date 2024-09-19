@@ -157,7 +157,7 @@ public: // Methods
 		assert( tX <= t );
 		tS = t - tQ;
 		tQ = tX = t;
-		Real const x_new( d_f() );
+		Real const x_new( d_dso_0() );
 		if ( x_ != x_new ) {
 			x_ = x_new;
 			if ( options::output::d ) std::cout << "*  " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << std::endl;

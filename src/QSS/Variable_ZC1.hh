@@ -73,6 +73,7 @@ public: // Property
 	Real
 	x( Time const t ) const override
 	{
+		if ( passive_ ) return z_0( t );
 		return x_0_ + ( x_1_ * ( t - tX ) );
 	}
 
@@ -80,13 +81,15 @@ public: // Property
 	Real
 	x1( Time const ) const override
 	{
+		assert( !passive_ );
 		return x_1_;
 	}
 
 	// Quantized Value at Time t
 	Real
-	q( Time const ) const override
+	q( Time const t ) const override
 	{
+		if ( passive_ ) return z_0( t );
 		return x_0_;
 	}
 
@@ -133,6 +136,7 @@ public: // Methods
 	void
 	advance_QSS() override
 	{
+		assert( !passive_ );
 		advance_pre( tE );
 		tS = tE - tQ;
 		tQ = tX = tE;
@@ -148,6 +152,7 @@ public: // Methods
 	void
 	advance_QSS_0( Real const x_0 ) override
 	{
+		assert( !passive_ );
 		advance_pre( tE );
 		tS = tE - tQ;
 		tQ = tX = tE;
@@ -158,6 +163,7 @@ public: // Methods
 	void
 	advance_QSS_1( Real const x_1 ) override
 	{
+		assert( !passive_ );
 		x_1_ = x_1;
 	}
 
@@ -165,6 +171,7 @@ public: // Methods
 	void
 	advance_QSS_F() override
 	{
+		assert( !passive_ );
 		set_qTol();
 		set_tE();
 		crossing_detect();
@@ -174,6 +181,7 @@ public: // Methods
 	void
 	advance_QSS_d() override
 	{
+		assert( !passive_ );
 		assert( options::output::d );
 		std::cout << "!= " << name() << '(' << tQ << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << std::endl;
 	}
@@ -192,61 +200,11 @@ public: // Methods
 		if ( options::output::d ) std::cout << "Z  " << name() << '(' << tZ_last << ')' << "   tE=" << tE << "   tZ=" << tZ << std::endl;
 	}
 
-	// Handler Advance
-	void
-	advance_handler( Time const t ) override
-	{
-		assert( ( tX <= t ) && ( t <= tE ) );
-		advance_pre( t );
-		tS = t - tQ;
-		tQ = tX = t;
-		x_0_ = p_0();
-		x_1_ = n_1();
-		set_qTol();
-		set_tE();
-		crossing_detect();
-		if ( options::output::d ) std::cout << "*  " << name() << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << std::endl;
-	}
-
-	// Handler Advance: Stage 0
-	void
-	advance_handler_0( Time const t, Real const x_0 ) override
-	{
-		assert( ( tX <= t ) && ( t <= tE ) );
-		advance_pre( t );
-		tS = t - tQ;
-		tQ = tX = t;
-		x_0_ = x_0;
-	}
-
-	// Handler Advance: Stage 1
-	void
-	advance_handler_1( Real const x_1 ) override
-	{
-		x_1_ = x_1;
-	}
-
-	// Handler Advance: Stage Final
-	void
-	advance_handler_F() override
-	{
-		set_qTol();
-		set_tE();
-		crossing_detect();
-		if ( options::output::d ) std::cout << "*= " << name() << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << std::endl;
-	}
-
-	// Handler No-Advance
-	void
-	no_advance_handler() override
-	{
-		crossing_detect();
-	}
-
 	// Observer Advance: Stage 1
 	void
 	advance_observer_1( Time const t, Real const x_0, Real const x_1 ) override
 	{
+		if ( passive_ ) return;
 		assert( ( tX <= t ) && ( t <= tE ) );
 		advance_pre( t );
 		tS = t - tQ;
@@ -259,6 +217,7 @@ public: // Methods
 	void
 	advance_observer_F() override
 	{
+		if ( passive_ ) return;
 		set_qTol();
 		set_tE();
 		crossing_detect();
@@ -268,6 +227,7 @@ public: // Methods
 	void
 	advance_observer_F_parallel() override
 	{
+		if ( passive_ ) return;
 		set_qTol();
 		set_tE();
 	}
@@ -276,6 +236,7 @@ public: // Methods
 	void
 	advance_observer_F_serial() override
 	{
+		if ( passive_ ) return;
 		crossing_detect();
 	}
 
@@ -283,6 +244,7 @@ public: // Methods
 	void
 	advance_observer_d() const override
 	{
+		if ( passive_ ) return;
 		std::cout << " ^ " << name() << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << std::noshowpos << "   tE=" << tE << "   tZ=" << tZ << std::endl;
 	}
 
@@ -319,6 +281,7 @@ private: // Methods
 	{
 		assert( tQ == tX );
 		assert( dt_min <= dt_max );
+		clip();
 		Time dt( x_1_ != 0.0 ? qTol / std::abs( x_1_ ) : infinity );
 		dt = std::min( std::max( dt_infinity( dt ), dt_min ), dt_max );
 		tE = dt != infinity ? tQ + dt : infinity;
@@ -386,11 +349,21 @@ private: // Methods
 		fixup_tE();
 	}
 
+	// Clip Small Trajectory Coefficients
+	void
+	clip()
+	{
+		if ( options::clipping ) {
+			if ( std::abs( x_0_ ) <= options::clip ) x_0_ = 0.0;
+			if ( std::abs( x_1_ ) <= options::clip ) x_1_ = 0.0;
+		}
+	}
+
 	// Coefficient 1 at Time tQ
 	Real
 	n_1() const
 	{
-		return X_1();
+		return X_dso_1();
 	}
 
 private: // Data

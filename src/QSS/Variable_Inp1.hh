@@ -199,9 +199,20 @@ private: // Methods
 	{
 		assert( tQ == tX );
 		assert( dt_min <= dt_max );
+		clip();
 		Time dt( x_1_ != 0.0 ? qTol / std::abs( x_1_ ) : infinity );
 		dt = std::min( std::max( dt_infinity( dt ), dt_min ), dt_max );
 		tE = dt != infinity ? tQ + dt : infinity;
+	}
+
+	// Clip Small Trajectory Coefficients
+	void
+	clip()
+	{
+		if ( options::clipping ) {
+			if ( std::abs( x_0_ ) <= options::clip ) x_0_ = 0.0;
+			if ( std::abs( x_1_ ) <= options::clip ) x_1_ = 0.0;
+		}
 	}
 
 private: // Data

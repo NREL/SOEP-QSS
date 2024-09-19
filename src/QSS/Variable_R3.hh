@@ -221,7 +221,7 @@ public: // Methods
 		tS = tE - tQ;
 		tQ = tX = tE;
 		x_0_ = r_0();
-		x_1_ = n_1();
+		x_1_ = n_dso_1();
 		if ( fwd_time_ND( tE ) ) { // Centered ND
 			x_2_ = n_2();
 			x_3_ = n_3();
@@ -306,7 +306,7 @@ public: // Methods
 		assert( ( tX <= t ) && ( t <= tE ) );
 		tS = t - tQ;
 		tQ = tX = t;
-		x_0_ = r_f();
+		x_0_ = r_dso_0();
 		x_1_ = n_1();
 		if ( fwd_time_ND( t ) ) { // Centered ND
 			x_2_ = n_2();
@@ -319,7 +319,7 @@ public: // Methods
 		set_tE();
 		shift_QSS_R( tE );
 		if ( options::output::d ) std::cout << "*  " << name() << '(' << tX << ')' << " = " << std::showpos << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << x_3_ << x_delta_3 << std::noshowpos << "   tE=" << tE << std::endl;
-		if ( observed() ) advance_observers();
+		if ( observed() ) advance_handler_observers();
 		if ( connected() ) advance_connections();
 	}
 
@@ -474,6 +474,7 @@ private: // Methods
 	{
 		assert( tQ == tX );
 		assert( dt_min <= dt_max );
+		clip();
 		Time dt;
 		if ( x_3_ != 0.0 ) {
 			Real const x_3_inv( one / x_3_ );
@@ -495,11 +496,30 @@ private: // Methods
 		}
 	}
 
+	// Clip Small Trajectory Coefficients
+	void
+	clip()
+	{
+		if ( options::clipping ) {
+			if ( std::abs( x_0_ ) <= options::clip ) x_0_ = 0.0;
+			if ( std::abs( x_1_ ) <= options::clip ) x_1_ = 0.0;
+			if ( std::abs( x_2_ ) <= options::clip ) x_2_ = 0.0;
+			if ( std::abs( x_3_ ) <= options::clip ) x_3_ = 0.0;
+		}
+	}
+
 	// Coefficient 1 at Time tQ
 	Real
 	n_1() const
 	{
 		return X_1();
+	}
+
+	// Coefficient 1 at Time tQ: Don't Set Observees
+	Real
+	n_dso_1() const
+	{
+		return X_dso_1();
 	}
 
 	// Coefficient 2 at Time tQ

@@ -5,7 +5,7 @@
 # Platform: Windows/Clang/d
 
 # Variables
-CXXFLAGS := -pipe -std=c++20 -pedantic -fopenmp=libomp -march=native -Wall -Wextra -Wno-unknown-pragmas -Wimplicit-fallthrough -O0 -ffp-model=strict -ftrapv -fstack-protector -fms-runtime-lib=dll_dbg -ggdb
+CXXFLAGS := -pipe -std=c++20 -pedantic -fopenmp=libomp -march=native -Wall -Wextra -Wno-unknown-pragmas -Wimplicit-fallthrough -O0 -ffp-model=strict -mdaz-ftz -ftrapv -fstack-protector -fms-runtime-lib=dll_dbg -ggdb
 # -fsanitize=undefined not used because current Clang only ships with a release mode ubsan library
 CXXFLAGS += -Wno-unused-function -Wno-unused-parameter -Wno-invalid-utf8 # For FMIL
 CXXFLAGS += -Wno-unused-local-typedef # Suppress false-positive warnings

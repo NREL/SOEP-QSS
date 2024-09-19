@@ -285,7 +285,7 @@ public: // Methods
 		set_tE_aligned();
 		shift_QSS( tE );
 		if ( options::output::d ) std::cout << "*  " << name() << '(' << tQ << ')' << " = " << std::showpos << q_0_ << q_1_ << x_delta << q_2_ << x_delta_2 << " [q]   = " << x_0_ << x_1_ << x_delta << x_2_ << x_delta_2 << " [x]" << std::noshowpos << "   tE=" << tE << std::endl;
-		if ( observed() ) advance_observers();
+		if ( observed() ) advance_handler_observers();
 		if ( connected() ) advance_connections();
 	}
 
@@ -347,8 +347,7 @@ public: // Methods
 	void
 	advance_observer_2_dd2( Real const dd2 ) override
 	{
-		x_2_QSS_ = one_half * dd2;
-		x_2_ = yoyo_ ? rlx_fac_ * x_2_QSS_ : x_2_QSS_;
+		x_2_ = yoyo_ ? rlx_fac_ * one_half * dd2 : one_half * dd2;
 	}
 
 	// Observer Advance: Stage Final
@@ -398,36 +397,37 @@ private: // Methods
 	{
 		assert( tQ == tX );
 		assert( dt_min <= dt_max );
+		clip();
 		Time dt;
+		Time dt_pre;
 		if ( x_2_ != 0.0 ) {
 			Real const x_2_inv( one / x_2_ );
-			if ( yoyo_ ) { // Yo-yo mode
-				dt = dt_infinity( std::sqrt( qTol * rlx_fac_ * std::abs( x_2_inv ) ) ); // rlx_fac_ * std::abs( x_2_inv ) == 1 / std::abs( x_2_QSS_ )
-			} else { // QSS mode
-				dt = dt_infinity( std::sqrt( qTol * std::abs( x_2_inv ) ) );
-			}
+			dt = dt_infinity( std::sqrt( qTol * std::abs( x_2_inv ) ) );
 			assert( dt != infinity );
+			dt_pre = dt;
 			if ( nonzero_and_signs_differ( x_1_, x_2_ ) ) { // Inflection point
 				Time const dtI( -( x_1_ * ( one_half * x_2_inv ) ) ); // When 1st derivative is zero
 				if ( ( dtI < dt ) && ( dt * options::inflectionFrac < dtI ) ) { // Use inflection point time step
 					dt = dtI;
 				} else if ( yoyo_ ) { // Relax time step growth
-					dt = dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt;
+					dt_pre = dt = dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt;
 				}
 			} else if ( yoyo_ ) { // Relax time step growth
-				dt = dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt;
+				dt_pre = dt = dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt;
 			}
 		} else {
 			dt = dt_infinity_of_infinity();
 			if ( yoyo_ ) dt = dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt; // Relax time step growth
+			dt_pre = dt;
 		}
+		dt_pre_ = dt_pre;
 		dt = std::min( std::max( dt, dt_min ), dt_max );
 		tE = dt != infinity ? tQ + dt : infinity;
 		if ( tQ == tE ) {
 			tE = std::nextafter( tE, infinity );
 			dt = tE - tQ;
+			dt_pre_ = std::max( dt_pre_, dt );
 		}
-		dt_pre_ = dt;
 	}
 
 	// Set End Time: Quantized and Continuous Unaligned
@@ -436,35 +436,63 @@ private: // Methods
 	{
 		assert( tQ <= tX );
 		assert( dt_min <= dt_max );
+		clip_x();
 		Real const d_0( x_0_ - ( q_0_ + ( q_1_ * ( tX - tQ ) ) ) );
 		Real const d_1( x_1_ - q_1_ );
 		Time dt;
-		if ( ( d_1 >= 0.0 ) && ( x_2_QSS_ >= 0.0 ) ) { // Upper boundary crossing
-			dt = min_root_quadratic_upper( x_2_QSS_, d_1, d_0 - qTol );
-		} else if ( ( d_1 <= 0.0 ) && ( x_2_QSS_ <= 0.0 ) ) { // Lower boundary crossing
-			dt = min_root_quadratic_lower( x_2_QSS_, d_1, d_0 + qTol );
+		if ( ( d_1 >= 0.0 ) && ( x_2_ >= 0.0 ) ) { // Upper boundary crossing
+			dt = min_root_quadratic_upper( x_2_, d_1, d_0 - qTol );
+		} else if ( ( d_1 <= 0.0 ) && ( x_2_ <= 0.0 ) ) { // Lower boundary crossing
+			dt = min_root_quadratic_lower( x_2_, d_1, d_0 + qTol );
 		} else { // Both boundaries can have crossings
-			dt = min_root_quadratic_both( x_2_QSS_, d_1, d_0 + qTol, d_0 - qTol );
+			dt = min_root_quadratic_both( x_2_, d_1, d_0 + qTol, d_0 - qTol );
 		}
 		dt = dt_infinity( dt );
 		assert( dt > 0.0 ); // Might be infinity
+		Time dt_pre( dt );
 		if ( nonzero_and_signs_differ( x_1_, x_2_ ) ) { // Inflection point
 			Time const dtI( -( x_1_ / ( two * x_2_ ) ) ); // When 1st derivative is zero
 			if ( ( dtI < dt ) && ( dt != infinity ? dt * options::inflectionFrac : zero < dtI ) ) { // Use inflection point time step
 				dt = dtI;
 			} else if ( yoyo_ ) { // Relax time step growth
-				dt = dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt;
+				dt_pre = dt = dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt;
 			}
 		} else if ( yoyo_ ) { // Relax time step growth
-			dt = dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt;
+			dt_pre = dt = dt_pre_ < dt_growth_inf_ ? std::min( dt, dt_growth_mul_ * dt_pre_ ) : dt;
 		}
+		dt_pre_ = dt_pre;
 		dt = std::min( std::max( dt, dt_min ), dt_max );
 		tE = dt != infinity ? tX + dt : infinity;
 		if ( tX == tE ) {
 			tE = std::nextafter( tE, infinity );
 			dt = tE - tX;
+			dt_pre_ = std::max( dt_pre_, dt );
 		}
-		dt_pre_ = dt;
+	}
+
+	// Clip Small Trajectory Coefficients
+	void
+	clip()
+	{
+		if ( options::clipping ) {
+			if ( std::abs( x_0_ ) <= options::clip ) x_0_ = 0.0;
+			if ( std::abs( x_1_ ) <= options::clip ) x_1_ = 0.0;
+			if ( std::abs( x_2_ ) <= options::clip ) x_2_ = 0.0;
+			if ( std::abs( q_0_ ) <= options::clip ) q_0_ = 0.0;
+			if ( std::abs( q_1_ ) <= options::clip ) q_1_ = 0.0;
+			if ( std::abs( q_2_ ) <= options::clip ) q_2_ = 0.0;
+		}
+	}
+
+	// Clip Small x Trajectory Coefficients
+	void
+	clip_x()
+	{
+		if ( options::clipping ) {
+			if ( std::abs( x_0_ ) <= options::clip ) x_0_ = 0.0;
+			if ( std::abs( x_1_ ) <= options::clip ) x_1_ = 0.0;
+			if ( std::abs( x_2_ ) <= options::clip ) x_2_ = 0.0;
+		}
 	}
 
 	// Clear Yo-Yo State
@@ -481,7 +509,6 @@ private: // Data
 	Real q_0_{ 0.0 }, q_1_{ 0.0 }, q_2_{ 0.0 }; // Quantized trajectory coefficients
 
 	// Relaxation
-	Real x_2_QSS_{ 0.0 }; // QSS 2nd order coefficient
 	Real x_2_tDel_{ 0.0 }; // x_2_ * ( tE - tX )
 	Time dt_pre_{ infinity }; // Previous time step
 	std::uint8_t n_yoyo_{ 0u }; // Number of yo-yo sequential requantization steps currently

@@ -304,6 +304,8 @@ extern double zaFac; // Zero-crossing absolute tolerance factor
 extern double dtMin; // Min time step (s)
 extern double dtMax; // Max time step (s)
 extern double dtInf; // Inf time step (s)
+extern double dtInfMax; // Max inf time step (s)
+extern bool dtInfReset; // Reset inf time step relaxation at zero-crossings?
 extern double dtZMax; // Max time step before zero-crossing (s)
 extern double dtZC; // FMU zero-crossing time step (s)
 extern double dtND; // Numeric differentiation time step (s)
@@ -318,18 +320,22 @@ extern double dtCon; // FMU connection sync time step (s)
 extern double dtOut; // Sampled output time step (s)
 extern double tStart; // Start time (s)
 extern double tStop; // Stop time (s)
+extern double clip; // Trajectory coefficient clip-to-zero level
+extern bool clipping; // Trajectory coefficient clip-to-zero level active?
 extern std::size_t bin_size; // Bin size max
 extern double bin_frac; // Bin step fraction min
 extern bool bin_auto; // Bin size automaically optimized?
 extern std::size_t pass; // Pass count limit
 extern bool cycles; // Report dependency cycles?
 extern bool inflection; // Requantize at inflections?
-extern double inflectionFrac; // Inflection step fraction min
+extern double inflectionFrac; // Derivative inflection step fraction min
+extern double inflectionFrac2; // Second derivative inflection step fraction min
 extern bool cluster; // Clustering with relaxation solver?
 extern bool refine; // Refine FMU zero-crossing roots?
 extern bool perfect; // Perfect FMU-ME connection sync?
 extern bool active; // Active intermediate variables preferred?
 extern bool passive; // Passive intermediate variables preferred?
+extern int EI; // Event indicator mode  (0|1|2|3)  [0]
 extern bool steps; // Generate requantization step count file?
 extern LogLevel log; // Logging level
 extern InpFxn fxn; // Map from input variables to function specs

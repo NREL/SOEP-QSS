@@ -7,4 +7,4 @@ if [ -f $1.cc ]; then
   shift
 fi
 
-icpx -std=c++20 -fiopenmp -xHOST -Wall -Wno-unknown-pragmas -Wno-unused-function -pthread -DNDEBUG -O3 -fp-model=precise $CxxSource $@ $OutputSpec
+icpx -std=c++20 -fiopenmp -xHOST -Wall -Wno-unknown-pragmas -Wno-unused-function -pthread -DNDEBUG -O3 -fp-model=precise -ftz $CxxSource $@ $OutputSpec

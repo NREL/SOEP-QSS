@@ -460,13 +460,13 @@ newton_positive_root_quadratic( T const a, T b, T c, T x, T zTol = T( 1e-6 ) )
 			if ( s == T( 0 ) ) return Root( x, v, zTol ); // Stop
 			x_p = x;
 			x -= v / s; // New guess
-			if ( x <= T( 0 ) ) return Root( x_p, v_p, zTol ); // Stop
+			if ( x <= T( 0 ) ) return ( x_p > T( 0 ) ? Root( x_p, v_p, zTol ) : Root< T >() ); // Stop
 			v_p = v;
 			xb = x + b;
 			v = ( xb * x ) + c; // Value at new guess
 			if ( v == T( 0 ) ) return Root( x, T( 0 ) ); // Done
 		}
-		return std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : Root( x_p, v_p, zTol );
+		return std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : ( x_p > T( 0 ) ? Root( x_p, v_p, zTol ) : Root< T >() );
 	}
 }
 
@@ -504,13 +504,13 @@ halley_positive_root_quadratic( T const a, T b, T c, T x, T zTol = T( 1e-6 ) )
 			if ( u == T( 0 ) ) return Root( x, v, zTol ); // Stop
 			x_p = x;
 			x -= ( v * s ) / u;
-			if ( x <= T( 0 ) ) return Root( x_p, v_p, zTol ); // Stop
+			if ( x <= T( 0 ) ) return ( x_p > T( 0 ) ? Root( x_p, v_p, zTol ) : Root< T >() ); // Stop
 			v_p = v;
 			xb = x + b;
 			v = ( xb * x ) + c; // Value at new guess
 			if ( v == T( 0 ) ) return Root( x, T( 0 ) ); // Done
 		}
-		return std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : Root( x_p, v_p, zTol );
+		return std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : ( x_p > T( 0 ) ? Root( x_p, v_p, zTol ) : Root< T >() );
 	}
 }
 
@@ -754,7 +754,7 @@ min_root_quadratic_both( T const a, T const b, T const cl, T const cu )
 	} else if ( a == T( 0 ) ) { // Linear
 		if ( b == T( 0 ) ) { // Constant
 			return inf< T >();
-		} else if ( b <= T( 0 ) ) {
+		} else if ( b < T( 0 ) ) {
 			return -( cl / b );
 		} else {
 			return -( cu / b );
@@ -829,7 +829,7 @@ min_root_quadratic_both_c( T const a, T const b, T const cl, T const cu )
 	} else if ( a == T( 0 ) ) { // Linear
 		if ( b == T( 0 ) ) { // Constant
 			return std::make_pair( inf< T >(), T( 0 ) );
-		} else if ( b <= T( 0 ) ) {
+		} else if ( b < T( 0 ) ) {
 			return std::make_pair( -( cl / b ), cl );
 		} else {
 			return std::make_pair( -( cu / b ), cu );
@@ -979,14 +979,14 @@ newton_small_positive_root_cubic_monic( T const a, T const b, T const c, T const
 		if ( s == T( 0 ) ) return Root( x, v, zTol ); // Stop
 		x_p = x;
 		x -= v / s; // New guess
-		if ( x <= T( 0 ) ) return Root( x_p, v_p, zTol ); // Stop
+		if ( x <= T( 0 ) ) return ( x_p > T( 0 ) ? Root( x_p, v_p, zTol ) : Root< T >() ); // Stop
 		v_p = v;
 		q = x + a;
 		r = ( q * x ) + b;
 		v = ( r * x ) + c; // Value at x
 		if ( v == T( 0 ) ) return Root( x, T( 0 ) ); // Done
 	}
-	return std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : Root( x_p, v_p, zTol );
+	return std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : ( x_p > T( 0 ) ? Root( x_p, v_p, zTol ) : Root< T >() );
 }
 
 // Halley Iterative Positive Root Near x=0 of Monic Cubic Equation x^3 + a x^2 + b x + c
@@ -1028,7 +1028,7 @@ halley_small_positive_root_cubic_monic( T const a, T const b, T const c, T const
 		if ( u == T( 0 ) ) return Root( x, v, zTol ); // Stop
 		x_p = x;
 		x -= ( T( 2 ) * v * s ) / u; // New guess
-		if ( x <= T( 0 ) ) return Root( x_p, v_p, zTol ); // Stop
+		if ( x <= T( 0 ) ) return ( x_p > T( 0 ) ? Root( x_p, v_p, zTol ) : Root< T >() ); // Stop
 		v_p = v;
 		q = x + a;
 		x_q = x + q;
@@ -1036,7 +1036,7 @@ halley_small_positive_root_cubic_monic( T const a, T const b, T const c, T const
 		v = ( r * x ) + c; // Value at x
 		if ( v == T( 0 ) ) return Root( x, T( 0 ) ); // Done
 	}
-	return std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : Root( x_p, v_p, zTol );
+	return std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : ( x_p > T( 0 ) ? Root( x_p, v_p, zTol ) : Root< T >() );
 }
 
 // Iterative Positive Root Near x=0 of Monic Cubic Equation x^3 + a x^2 + b x + c
@@ -1068,14 +1068,14 @@ newton_positive_root_cubic_monic( T const a, T const b, T const c, T x, T const 
 		if ( s == T( 0 ) ) return Root( x, v, zTol ); // Stop
 		x_p = x;
 		x -= v / s; // New guess
-		if ( x <= T( 0 ) ) return Root( x_p, v_p, zTol ); // Stop
+		if ( x <= T( 0 ) ) return ( x_p > T( 0 ) ? Root( x_p, v_p, zTol ) : Root< T >() ); // Stop
 		v_p = v;
 		q = x + a;
 		r = ( q * x ) + b;
 		v = ( r * x ) + c; // Value at new guess
 		if ( v == T( 0 ) ) return Root( x, T( 0 ) ); // Done
 	}
-	return std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : Root( x_p, v_p, zTol );
+	return std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : ( x_p > T( 0 ) ? Root( x_p, v_p, zTol ) : Root< T >() );
 }
 
 // Halley Iterative Positive Root Near Given Guess of Monic Cubic Equation x^3 + a x^2 + b x + c
@@ -1100,7 +1100,7 @@ halley_positive_root_cubic_monic( T const a, T const b, T const c, T x, T const 
 		if ( u == T( 0 ) ) return Root( x, v, zTol ); // Stop
 		x_p = x;
 		x -= ( T( 2 ) * v * s ) / u; // New guess
-		if ( x <= T( 0 ) ) return Root( x_p, v_p, zTol ); // Stop
+		if ( x <= T( 0 ) ) return ( x_p > T( 0 ) ? Root( x_p, v_p, zTol ) : Root< T >() ); // Stop
 		v_p = v;
 		q = x + a;
 		x_q = x + q;
@@ -1108,7 +1108,7 @@ halley_positive_root_cubic_monic( T const a, T const b, T const c, T x, T const 
 		v = ( r * x ) + c; // Value at x
 		if ( v == T( 0 ) ) return Root( x, T( 0 ) ); // Done
 	}
-	return std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : Root( x_p, v_p, zTol );
+	return std::abs( v ) <= std::abs( v_p ) ? Root( x, v, zTol ) : ( x_p > T( 0 ) ? Root( x_p, v_p, zTol ) : Root< T >() );
 }
 
 // Iterative Positive Root Near Given Guess of Monic Cubic Equation x^3 + a x^2 + b x + c

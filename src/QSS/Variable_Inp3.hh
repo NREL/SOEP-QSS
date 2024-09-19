@@ -137,6 +137,7 @@ public: // Methods
 		init_observers();
 		init_1();
 		init_2();
+		init_3();
 		init_F();
 	}
 
@@ -163,6 +164,12 @@ public: // Methods
 	init_2() override
 	{
 		x_2_ = one_half * s_.x2;
+	}
+
+	// Initialization: Stage 3
+	void
+	init_3() override
+	{
 		x_3_ = one_sixth * s_.x3;
 		tD = s_.tD;
 	}
@@ -245,6 +252,7 @@ private: // Methods
 	{
 		assert( tQ == tX );
 		assert( dt_min <= dt_max );
+		clip();
 		if ( x_3_ != 0.0 ) {
 			Real const x_3_inv( one / x_3_ );
 			Time dt( std::cbrt( qTol * std::abs( x_3_inv ) ) );
@@ -258,6 +266,18 @@ private: // Methods
 		} else {
 			Time const dt( std::min( std::max( dt_infinity_of_infinity(), dt_min ), dt_max ) );
 			tE = dt != infinity ? tQ + dt : infinity;
+		}
+	}
+
+	// Clip Small Trajectory Coefficients
+	void
+	clip()
+	{
+		if ( options::clipping ) {
+			if ( std::abs( x_0_ ) <= options::clip ) x_0_ = 0.0;
+			if ( std::abs( x_1_ ) <= options::clip ) x_1_ = 0.0;
+			if ( std::abs( x_2_ ) <= options::clip ) x_2_ = 0.0;
+			if ( std::abs( x_3_ ) <= options::clip ) x_3_ = 0.0;
 		}
 	}
 

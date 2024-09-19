@@ -35,11 +35,14 @@
 
 // QSS Headers
 #include <QSS/QSS_main.hh>
+#include <QSS/denormals_to_zero.hh>
 
 // QSS Solver Main
 int
 main( int argc, char * argv[] )
 {
+	// Set denormals to flush to zero
+	QSS::denormals_to_zero();
 
 	// Collect command line arguments
 	std::vector< std::string > args;

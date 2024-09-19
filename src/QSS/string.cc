@@ -103,7 +103,7 @@ has_prefix( std::string const & s, std::string const & pre )
 	} else if ( s.length() < pre_len ) {
 		return false;
 	} else {
-		for ( std::string::size_type i = 0; i < pre_len; ++i ) {
+		for ( std::string::size_type i = 0u; i < pre_len; ++i ) {
 			if ( s[ i ] != pre[ i ] ) return false;
 		}
 		return true;
@@ -123,7 +123,7 @@ has_suffix( std::string const & s, std::string const & suf )
 			return false;
 		} else {
 			std::string::size_type const del_len( s_len - suf_len );
-			for ( std::string::size_type i = 0; i < suf_len; ++i ) {
+			for ( std::string::size_type i = 0u; i < suf_len; ++i ) {
 				if ( s[ del_len + i ] != suf[ i ] ) return false;
 			}
 			return true;
@@ -141,7 +141,7 @@ has_option( std::string const & s, std::string const & option )
 	} else if ( ( s[ 0 ] != '-' ) || ( s[ 1 ] != '-' ) ) {
 		return false;
 	} else {
-		for ( std::string::size_type i = 0; i < option_len; ++i ) {
+		for ( std::string::size_type i = 0u; i < option_len; ++i ) {
 			if ( std::tolower( s[ i + 2 ] ) != std::tolower( option[ i ] ) ) return false;
 		}
 		return true;
@@ -158,7 +158,7 @@ has_option_value( std::string const & s, std::string const & option )
 	} else if ( ( s[ 0 ] != '-' ) || ( s[ 1 ] != '-' ) ) {
 		return false;
 	} else {
-		for ( std::string::size_type i = 0; i < option_len; ++i ) {
+		for ( std::string::size_type i = 0u; i < option_len; ++i ) {
 			if ( std::tolower( s[ i + 2 ] ) != std::tolower( option[ i ] ) ) return false;
 		}
 		return is_any_of( s[ option_len + 2u ], "=:+-" );
@@ -211,8 +211,8 @@ strip( std::string & s )
 		if ( ( ib == std::string::npos ) || ( ie == std::string::npos ) ) { // All of string is whitespace
 			s.clear();
 		} else {
-			if ( ie < s.length() - 1 ) s.erase( ie + 1 );
-			if ( ib > 0 ) s.erase( 0, ib );
+			if ( ie < s.length() - 1u ) s.erase( ie + 1u );
+			if ( ib > 0u ) s.erase( 0u, ib );
 		}
 	}
 	return s;

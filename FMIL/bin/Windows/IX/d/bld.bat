@@ -11,7 +11,7 @@ if "%FMIL_bin%" == "" (
 
 :: Set build-specific variables
 set CC=icx
-set C_FLAGS=/nologo /Qstd:c2x /Wall /Wno-unused-function /DNOMINMAX /DWIN32_LEAN_AND_MEAN /Od /fp:strict /GS /Gs0 /RTCsu /Z7 /MDd
+set C_FLAGS=/nologo /Qstd:c2x /Wall /Wno-unused-function /DNOMINMAX /DWIN32_LEAN_AND_MEAN /Od /fp:precise /Qftz /GS /Gs0 /RTCsu /Z7 /MDd
 
 :: Enter CMake directory
 if not exist %FMIL_cmk% md %FMIL_cmk% >nul 2>&1
@@ -24,5 +24,5 @@ if not exist Makefile (
 )
 
 :: Run GNU Make
-make -j%NUMBER_OF_PROCESSORS% install
-ren "%FMIL_ins%\lib\zlibd.lib" zlib.lib >nul 2>&1
+call make -j%NUMBER_OF_PROCESSORS% install
+copy "%FMIL_lib%\zlibd.lib" "%FMIL_lib%\zlib.lib" >nul 2>&1

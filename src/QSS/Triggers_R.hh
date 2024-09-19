@@ -110,7 +110,7 @@ public: // Methods
 		order_ = triggers[ 0 ]->order();
 
 		// FMU pooled data set up
-		vars_.reserve( n_triggers_ );
+		vars_.clear_and_reserve( n_triggers_ );
 		for ( Variable * trigger : triggers ) {
 			assert( trigger->is_R() );
 			vars_.push_back( trigger->var().ref() );
@@ -260,7 +260,7 @@ private: // Methods
 	void
 	set_observees_values( Time const t )
 	{
-		for ( size_type i = 0; i < n_observees_; ++i ) {
+		for ( size_type i = 0u; i < n_observees_; ++i ) {
 			observees_v_[ i ] = observees_[ i ]->x( t );
 		}
 		fmu_me_->set_reals( n_observees_, observees_v_ref_.data(), observees_v_.data() ); // Set observees FMU values

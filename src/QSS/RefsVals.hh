@@ -68,9 +68,17 @@ public: // Property
 
 public: // Methods
 
-	// Reserve
+	// Clear
 	void
-	reserve( size_type const n )
+	clear()
+	{
+		refs.clear();
+		vals.clear();
+	}
+
+	// Clear and Reserve
+	void
+	clear_and_reserve( size_type const n )
 	{
 		refs.clear(); refs.reserve( n );
 		vals.clear(); vals.reserve( n );

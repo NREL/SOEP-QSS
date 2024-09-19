@@ -11,7 +11,7 @@ if "%FMIL_bin%" == "" (
 
 :: Set build-specific variables
 set CC=clang
-set C_FLAGS=-pipe -std=c2x -march=native -Wall -Wno-unused-function -Wno-unused-local-typedef -Wno-unused-label -Wno-unused-parameter -Wno-unused-but-set-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wno-sign-compare -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -Wno-implicit-function-declaration -Wno-misleading-indentation -Wno-pointer-bool-conversion -Wno-parentheses-equality -Wno-incompatible-pointer-types-discards-qualifiers -Wno-extra-tokens -Wno-shift-negative-value -O0 -ffp-model=strict -ftrapv -fstack-protector -ggdb
+set C_FLAGS=-pipe -std=c2x -march=native -Wall -Wno-unused-function -Wno-unused-local-typedef -Wno-unused-label -Wno-unused-parameter -Wno-unused-but-set-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wno-sign-compare -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -Wno-implicit-function-declaration -Wno-misleading-indentation -Wno-pointer-bool-conversion -Wno-parentheses-equality -Wno-incompatible-pointer-types-discards-qualifiers -Wno-extra-tokens -Wno-shift-negative-value -O0 -ffp-model=strict -mdaz-ftz -ftrapv -fstack-protector -ggdb
 :: -fsanitize=undefined not used because current Clang only ships with a release mode ubsan library
 
 :: Enter CMake directory

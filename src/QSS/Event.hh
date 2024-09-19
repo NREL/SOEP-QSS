@@ -213,6 +213,16 @@ public: // Property
 		return static_cast< S * >( tar_ );
 	}
 
+	// Target Handler Subtype
+	template< typename S >
+	S *
+	handler_sub()
+	{
+		assert( dynamic_cast< S * >( tar_ ) != nullptr );
+		S * s( static_cast< S * >( tar_ ) );
+		return s->not_ZC() ? s : nullptr;
+	}
+
 	// Value
 	Real
 	val() const

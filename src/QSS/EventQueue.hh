@@ -249,7 +249,7 @@ public: // Property
 		return m_.begin()->second.template sub< S >();
 	}
 
-	// Top Event Target
+	// Top Event Target Subtype
 	template< typename S >
 	S *
 	top_sub()
@@ -453,6 +453,24 @@ public: // Methods
 			SuperdenseTime const & s( i->first );
 			while ( ( i != e ) && ( i->first == s ) ) {
 				subs.push_back( i->second.template sub< S >() );
+				++i;
+			}
+		}
+	}
+
+	// Simultaneous Handler Trigger Target Subtypes at Front of Queue
+	template< typename S >
+	void
+	top_handler_subs( std::vector< S * > & subs )
+	{
+		subs.clear();
+		if ( !m_.empty() ) {
+			iterator i( m_.begin() );
+			iterator const e( m_.end() );
+			SuperdenseTime const & s( i->first );
+			while ( ( i != e ) && ( i->first == s ) ) {
+				S * s( i->second.template sub< S >() );
+				if ( s->not_ZC() ) subs.push_back( s );
 				++i;
 			}
 		}

@@ -292,7 +292,7 @@ std::string
 un_uri( std::string const & uri )
 {
 	std::string path( uri );
-	if ( has_prefix( path, "file://" ) ) path.erase( 0, 7 );
+	if ( has_prefix( path, "file://" ) ) path.erase( 0u, 7u );
 	path = std::regex_replace( path, std::regex( "%20" ), " " );
 	path = std::regex_replace( path, std::regex( "%21" ), "!" );
 	path = std::regex_replace( path, std::regex( "%23" ), "#" );

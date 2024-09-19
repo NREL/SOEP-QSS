@@ -9,7 +9,7 @@ fi
 
 # Set build-specific variables
 export CC=gcc
-export C_FLAGS="-pipe -std=c2x -march=native -Wall -Wno-address -Wno-unknown-pragmas -Wno-implicit-fallthrough -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-but-set-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wno-sign-compare -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -Wno-implicit-function-declaration -Wno-old-style-definition -Wno-attributes -Wno-misleading-indentation -Wno-strict-aliasing -Wno-stringop-truncation -O0 -ffloat-store -fsignaling-nans -ftrapv -fstack-protector -fsanitize=undefined -ggdb"
+export C_FLAGS="-pipe -std=c2x -march=native -Wall -Wno-address -Wno-unknown-pragmas -Wno-implicit-fallthrough -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-but-set-parameter -Wno-unused-variable -Wno-unused-but-set-variable -Wno-sign-compare -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -Wno-implicit-function-declaration -Wno-old-style-definition -Wno-attributes -Wno-misleading-indentation -Wno-strict-aliasing -Wno-stringop-truncation -O0 -ffloat-store -mdaz-ftz -fsignaling-nans -ftrapv -fstack-protector -fsanitize=undefined -ggdb"
 
 # Enter CMake directory
 if [ ! -d "$FMIL_cmk" ]; then

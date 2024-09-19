@@ -150,7 +150,7 @@ public: // Methods
 		assert( tX <= t );
 		tS = t - tQ;
 		tQ = tX = t;
-		Boolean const x_new( b_f() );
+		Boolean const x_new( b_dso_0() );
 		if ( x_ != x_new ) {
 			x_ = x_new;
 			if ( options::output::d ) std::cout << "*  " << name() << '(' << tX << ')' << " = " << x_ << std::endl;

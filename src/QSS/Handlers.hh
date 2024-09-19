@@ -168,16 +168,16 @@ public: // Methods
 		// FMU pooled data set up
 		if ( qss_.have() ) { // State variables
 			if ( options::d2d ) {
-				qss_vars_.reserve( qss_.n() );
-				qss_ders_.reserve( qss_.n() );
+				qss_vars_.clear_and_reserve( qss_.n() );
+				qss_ders_.clear_and_reserve( qss_.n() );
 				for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
 					qss_vars_.push_back( handlers_[ i ]->var().ref() );
 					qss_ders_.push_back( handlers_[ i ]->der().ref() );
 				}
 			} else {
 				assert( options::n2d );
-				qss_vars_.reserve( qss_.n() );
-				qss_dn2d_.reserve( qss_.n() );
+				qss_vars_.clear_and_reserve( qss_.n() );
+				qss_dn2d_.clear_and_reserve( qss_.n() );
 				for ( size_type i = qss_.b(), e = qss_.e(); i < e; ++i ) {
 					qss_vars_.push_back( handlers_[ i ]->var().ref() );
 					qss_dn2d_.push_back( handlers_[ i ]->der().ref() );
@@ -185,19 +185,19 @@ public: // Methods
 			}
 		}
 		if ( r_.have() ) { // R variables
-			r_vars_.reserve( r_.n() );
+			r_vars_.clear_and_reserve( r_.n() );
 			for ( size_type i = r_.b(), e = r_.e(); i < e; ++i ) {
 				r_vars_.push_back( handlers_[ i ]->var().ref() );
 			}
 		}
 		if ( ox_.have() ) { // Other X-based variables
-			ox_vars_.reserve( ox_.n() );
+			ox_vars_.clear_and_reserve( ox_.n() );
 			for ( size_type i = ox_.b(), e = ox_.e(); i < e; ++i ) {
 				ox_vars_.push_back( handlers_[ i ]->var().ref() );
 			}
 		}
 		if ( zc_.have() ) { // Zero-crossing variables
-			zc_vars_.reserve( zc_.n() );
+			zc_vars_.clear_and_reserve( zc_.n() );
 			for ( size_type i = zc_.b(), e = zc_.e(); i < e; ++i ) {
 				zc_vars_.push_back( handlers_[ i ]->var().ref() );
 			}
@@ -307,16 +307,17 @@ public: // Methods
 	{
 		assert( fmu_me_ != nullptr );
 		assert( fmu_me_->get_time() == t );
+		if ( options::dtInfReset ) {
+			for ( Variable * handler : handlers_ ) { // Reset dtInf relaxation state
+				handler->dt_infinity_reset();
+			}
+		}
 		if ( qss_.have() ) advance_QSS( t ); // QSS state variables
 		if ( r_.have() ) advance_R( t ); // Real variables
 		if ( ox_.have() ) advance_OX( t ); // Other X-based variables
 		if ( qss_.have() ) advance_QSS_F( t );
 		if ( r_.have() ) advance_R_F( t );
 		if ( ox_.have() ) advance_OX_F( t );
-		if ( zc_.have() ) { // Zero-crossing variables
-			advance_ZC( t );
-			advance_ZC_F( t );
-		}
 		// advance_F( t ); // Using this instead of the other advance_*_F calls above uses old observee values for the observing event indicators, which probably doesn't make sense
 		// if ( options::output::d ) advance_d(); // Currently advance_handler_F calls do diagnostic output
 	}
@@ -704,120 +705,6 @@ private: // Methods
 		}
 	}
 
-	// Advance Zero-Crossing Handlers
-	void
-	advance_ZC( Time const t )
-	{
-		assert( zc_.have() );
-		assert( fmu_me_ != nullptr );
-		assert( fmu_me_->get_time() == t );
-		assert( fmu_me_->has_event_indicators );
-		assert( zc_.n() == zc_vars_.size() );
-
-		fmu_me_->get_reals( zc_.n(), zc_vars_.refs.data(), zc_vars_.vals.data() );
-		for ( size_type i = zc_.b(), e = zc_.e(), j = 0u; i < e; ++i, ++j ) { // Handler advance stage 0
-			handlers_[ i ]->advance_handler_0( t, zc_vars_.vals[ j ] );
-		}
-
-		set_zc_observees_dv( t );
-		fmu_me_->get_directional_derivatives(
-		 zc_observees_v_ref_.data(),
-		 n_zc_observees_,
-		 zc_vars_.refs.data(),
-		 zc_.n(),
-		 zc_observees_dv_.data(),
-		 zc_vars_.ders.data()
-		); // Get derivatives at t
-		for ( size_type i = zc_.b(), e = zc_.e(), j = 0u; i < e; ++i, ++j ) { // Handler advance stage 1
-			assert( handlers_[ i ]->is_ZC() );
-			handlers_[ i ]->advance_handler_1( zc_vars_.ders[ j ] );
-		}
-
-		if ( order_ >= 3 ) {
-			Time tN( t - options::dtND );
-			if ( fwd_time( tN ) ) { // Centered ND
-				fmu_me_->set_time( tN );
-				set_zc_observees_values( tN );
-				set_zc_observees_dv( tN );
-				fmu_me_->get_directional_derivatives(
-				 zc_observees_v_ref_.data(),
-				 n_zc_observees_,
-				 zc_vars_.refs.data(),
-				 zc_.n(),
-				 zc_observees_dv_.data(),
-				 zc_vars_.ders.data()
-				); // Get derivatives at t - dtND
-				tN = t + options::dtND;
-				fmu_me_->set_time( tN );
-				set_zc_observees_values( tN );
-				set_zc_observees_dv( tN );
-				fmu_me_->get_directional_derivatives(
-				 zc_observees_v_ref_.data(),
-				 n_zc_observees_,
-				 zc_vars_.refs.data(),
-				 zc_.n(),
-				 zc_observees_dv_.data(),
-				 zc_vars_.ders_p.data()
-				); // Get derivatives at t + dtND
-				for ( size_type i = zc_.b(), e = zc_.e(), j = 0u; i < e; ++i, ++j ) { // Handler advance stage 2
-					handlers_[ i ]->advance_handler_2( zc_vars_.ders[ j ], zc_vars_.ders_p[ j ] );
-				}
-				for ( size_type i = zc_.b(), e = zc_.e(); i < e; ++i ) { // Handler advance stage 3
-					handlers_[ i ]->advance_handler_3();
-				}
-			} else { // Forward ND
-				tN = t + options::dtND;
-				fmu_me_->set_time( tN );
-				set_zc_observees_values( tN );
-				set_zc_observees_dv( tN );
-				fmu_me_->get_directional_derivatives(
-				 zc_observees_v_ref_.data(),
-				 n_zc_observees_,
-				 zc_vars_.refs.data(),
-				 zc_.n(),
-				 zc_observees_dv_.data(),
-				 zc_vars_.ders.data()
-				); // Get derivatives at t + dtND
-				tN = t + options::two_dtND;
-				fmu_me_->set_time( tN );
-				set_zc_observees_values( tN );
-				set_zc_observees_dv( tN );
-				fmu_me_->get_directional_derivatives(
-				 zc_observees_v_ref_.data(),
-				 n_zc_observees_,
-				 zc_vars_.refs.data(),
-				 zc_.n(),
-				 zc_observees_dv_.data(),
-				 zc_vars_.ders_p.data()
-				); // Get derivatives at t + 2*dtND
-				for ( size_type i = zc_.b(), e = zc_.e(), j = 0u; i < e; ++i, ++j ) { // Handler advance stage 2
-					handlers_[ i ]->advance_handler_2_forward( zc_vars_.ders[ j ], zc_vars_.ders_p[ j ] );
-				}
-				for ( size_type i = zc_.b(), e = zc_.e(); i < e; ++i ) { // Handler advance stage 3
-					handlers_[ i ]->advance_handler_3_forward();
-				}
-			}
-			fmu_me_->set_time( t );
-		} else if ( order_ >= 2 ) {
-			Time const tN( t + options::dtND );
-			fmu_me_->set_time( tN );
-			set_zc_observees_values( tN );
-			set_zc_observees_dv( tN );
-			fmu_me_->get_directional_derivatives(
-			 zc_observees_v_ref_.data(),
-			 n_zc_observees_,
-			 zc_vars_.refs.data(),
-			 zc_.n(),
-			 zc_observees_dv_.data(),
-			 zc_vars_.ders_p.data()
-			); // Get derivatives at t + dtND
-			for ( size_type i = zc_.b(), e = zc_.e(), j = 0u; i < e; ++i, ++j ) { // Handler advance stage 2
-				handlers_[ i ]->advance_handler_2( zc_vars_.ders_p[ j ] );
-			}
-			fmu_me_->set_time( t );
-		}
-	}
-
 	// Advance QSS State Handlers: Stage Final
 	void
 	advance_QSS_F( Time const t )
@@ -841,15 +728,6 @@ private: // Methods
 	advance_OX_F( Time const t )
 	{
 		for ( size_type i = ox_.b(), e = ox_.e(); i < e; ++i ) {
-			handlers_[ i ]->advance_handler_F();
-		}
-	}
-
-	// Advance Zero-Crossing Handlers: Stage Final
-	void
-	advance_ZC_F( Time const t )
-	{
-		for ( size_type i = zc_.b(), e = zc_.e(); i < e; ++i ) {
 			handlers_[ i ]->advance_handler_F();
 		}
 	}
