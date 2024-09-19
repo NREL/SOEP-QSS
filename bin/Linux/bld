@@ -20,10 +20,11 @@ if [ -z "$QSS_bin" ]; then
 fi
 
 # Build FMIL
-$FMIL/bin/Linux/bld
+"$FMIL/bin/Linux/bld"
 
 # Build QSS
 if [ -d "$QSS/.git" ]; then
 	git_revision.py
 fi
 cd "$QSS/src/QSS/app" && mak
+rm -f "$QSS/src/QSS/version_git.hh" >/dev/nul/ 2>&1

@@ -25,8 +25,8 @@ if "%QSS_bin%" == "" (
 call "%FMIL%\bin\Windows\cln.bat"
 
 :: Clean QSS
-cd %QSS%\src\QSS\app && call mak.bat clean && call cln_dirs.bat
-cd %QSS%\tst\QSS\unit && call mak.bat clean && call cln_dirs.bat
+cd "%QSS%\src\QSS\app" && call mak.bat clean && call cln_dirs.bat
+cd "%QSS%\tst\QSS\unit" && call mak.bat clean && call cln_dirs.bat
 for %%e in ( a def exe exp ilk lib pdb ) do (
-  del %QSS_bin%\*QSS.%%e >nul 2>&1
+  del "%QSS_bin%\*QSS.%%e" >nul 2>&1
 )

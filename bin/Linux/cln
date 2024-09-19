@@ -20,12 +20,12 @@ if [ -z "$QSS_bin" ]; then
 fi
 
 # Clean FMIL
-$FMIL/bin/Linux/cln
+"$FMIL/bin/Linux/cln"
 
 # Clean
 cd "$QSS/src/QSS/app" && mak clean && cln_dirs
 cd "$QSS/tst/QSS/unit" && mak clean && cln_dirs
 for ext in a exe so
 do
-	rm -f $QSS_bin/*QSS.$ext >/dev/null 2>&1
+	rm -f "$QSS_bin/*QSS.$ext" >/dev/null 2>&1
 done

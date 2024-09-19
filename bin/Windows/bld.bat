@@ -28,4 +28,5 @@ call "%FMIL%\bin\Windows\bld.bat"
 if exist "%QSS%\.git" (
   git_revision.py
 )
-cd %QSS%\src\QSS\app && call mak.bat
+cd "%QSS%\src\QSS\app" && call mak.bat
+del "%QSS%\src\QSS\version_git.hh" >nul 2>&1
