@@ -1,0 +1,17 @@
+#!/bin/bash
+# QSS Linux Intel C++ Setup
+
+export OS_Compiler=Linux/IC
+
+if [ -z "$QSS" ]; then
+	export QSS=$(dirname "$(dirname "$(dirname "$(dirname "$(readlink -m "${BASH_SOURCE[0]}")")")")")
+fi
+
+export FMIL=$QSS/FMIL
+
+export PATH=$PATH:$QSS/bin/$OS_Compiler
+
+source setQSS_IC
+source setQSS_IC_GTest
+
+source "$QSS/bin/Linux/setQSS"
