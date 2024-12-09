@@ -7,7 +7,7 @@ export QSS=$(dirname "$(dirname "$(dirname "$(dirname "$(dirname "$(readlink -m 
 export QSS_bin=$(dirname "$(readlink -m "${BASH_SOURCE[0]}")")
 
 export FMIL=$QSS/FMIL
-export FMIL_bin=$FMIL/bin/$OS_Compiler_Build
+export FMIL_bin=$FMIL/bin/Linux/Clang/r
 export FMIL_cmk=$FMIL_bin/cmk
 export FMIL_ins=$FMIL_bin/ins
 export FMIL_inc=$FMIL_ins/include

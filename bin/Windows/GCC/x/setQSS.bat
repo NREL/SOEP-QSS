@@ -8,7 +8,7 @@ set QSS_bin=%QSS_bin:~0,-1%
 set QSS=%QSS_bin:~0,-18%
 
 set FMIL=%QSS%\FMIL
-set FMIL_bin=%FMIL%\bin\%OS_Compiler_Build%
+set FMIL_bin=%FMIL%\bin\Windows\GCC\r
 set FMIL_cmk=%FMIL_bin%\cmk
 set FMIL_ins=%FMIL_bin%\ins
 set FMIL_inc=%FMIL_ins%\include

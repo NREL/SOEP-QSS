@@ -1,7 +1,7 @@
 #!/bin/bash
 # Intel C++ Header Compile Syntax
 
-if [ -f $1       ]; then CxxHeader=$1
+if   [ -f $1     ]; then CxxHeader=$1
 elif [ -f $1.h   ]; then CxxHeader=$1.h
 elif [ -f $1.hh  ]; then CxxHeader=$1.hh
 elif [ -f $1.hpp ]; then CxxHeader=$1.hpp

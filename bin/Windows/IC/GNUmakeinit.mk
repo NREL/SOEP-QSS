@@ -14,8 +14,8 @@ ARFLAGS := /nologo
 # Commands
 CXX := icx
 CC := icx-cc
-AR := xilib
-LD := xilink
+AR := lib
+LD := link
 MAKEDEPEND := makedep.py --inc=INCLUDE
 
 # Paths

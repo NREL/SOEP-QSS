@@ -63,9 +63,8 @@ $(QSS_OBJ) : $(QSS_SRC)
 	$(CXX) $(CXXFLAGS) /c $(subst /,\,$<)
 
 $(EXE) : $(SLB) $(QSS_OBJ)
-#	$(CXX) $(CXXLINKFLAGS) /Fe:"$@" $(QSS_OBJ) $(LINKFLAGS) $(SLB) fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
-#	xilink needed for /Qipo or /flto
-	$(LD) $(LDFLAGS) /OUT:$@ $(QSS_OBJ) $(OBJ) fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
+	$(CXX) $(CXXLINKFLAGS) /Fe:"$@" $(QSS_OBJ) $(LINKFLAGS) $(SLB) fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
+#	$(LD) $(LDFLAGS) /OUT:$@ $(QSS_OBJ) $(OBJ) fmilib.lib fmiimport.lib fmicapi.lib fmixml.lib libexpat.lib jmutils.lib fmizip.lib minizip.lib zlib.lib shlwapi.lib
 	@-DEL $(BIN_PATH)\QSS.exp $(BIN_PATH)\QSS.ilk $(BIN_PATH)\QSS.lib >nul 2>&1
 
 # Dependencies

@@ -22,27 +22,23 @@ for %%V in (316 315 314 313 312 311 310 39 38 37 36 35) do (
     set PYTHON_DIR=C:\Python%%V
     set PYTHON_VER=%%V
     goto Step2
-  ) else (
-  if exist C:\Python\libs\python%%V.lib (
+  ) else if exist C:\Python\libs\python%%V.lib (
     set PYTHON_DIR=C:\Python
     set PYTHON_VER=%%V
     goto Step2
-  ) else (
-  if exist "C:\Program Files\Python%%V\python.exe" (
+  ) else if exist "C:\Program Files\Python%%V\python.exe" (
     set "PYTHON_DIR=C:\Program Files\Python%%V"
     set PYTHON_VER=%%V
     goto Step2
-  ) else (
-  if exist "C:\Program Files\Python\libs\python%%V.lib" (
+  ) else if exist "C:\Program Files\Python\libs\python%%V.lib" (
     set "PYTHON_DIR=C:\Program Files\Python"
     set PYTHON_VER=%%V
     goto Step2
-  ) else (
-  if exist "C:%HOMEPATH%\AppData\Local\Programs\Python\Python%%V\python.exe" (
+  ) else if exist "C:%HOMEPATH%\AppData\Local\Programs\Python\Python%%V\python.exe" (
     set "PYTHON_DIR=C:%HOMEPATH%\AppData\Local\Programs\Python\Python%%V"
     set PYTHON_VER=%%V
     goto Step2
-  )))))
+  )
 )
 
 :: Look for Anaconda installation
@@ -50,17 +46,15 @@ if exist "C:%HOMEPATH%\Anaconda3\python.exe" (
   set "PYTHON_DIR=C:%HOMEPATH%\Anaconda3"
   set PYTHON_VER=3
   goto Step2
-) else (
-if exist "C:%HOMEPATH%\AppData\Local\Continuum\anaconda3\python.exe" (
+) else if exist "C:%HOMEPATH%\AppData\Local\Continuum\anaconda3\python.exe" (
   set "PYTHON_DIR=C:%HOMEPATH%\AppData\Local\Continuum\anaconda3"
   set PYTHON_VER=3
   goto Step2
-) else (
-if exist "C:\ProgramData\Miniconda3\python.exe" (
+) else if exist "C:\ProgramData\Miniconda3\python.exe" (
   set "PYTHON_DIR=C:%HOMEPATH%\Anaconda3"
   set PYTHON_VER=3
   goto Step2
-)))
+)
 
 echo Python not found
 exit /B 1

@@ -63,12 +63,9 @@ double zFac( 1.0 ); // Zero-crossing tolerance factor
 double zrFac( 10.0 ); // Zero-crossing relative tolerance factor
 double zaFac( 0.1 ); // Zero-crossing absolute tolerance factor
 double dtMin( 0.0 ); // Min time step (s)
-double dtMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Max time step (s)
-// double dtMax( std::numeric_limits< double >::max() ); // Max time step (s)
-double dtInf( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Inf time step (s)
-// double dtInf( std::numeric_limits< double >::max() ); // Inf time step (s)
-double dtInfMax( std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() ); // Max inf time step (s)
-// double dtInfMax( std::numeric_limits< double >::max() ); // Max inf time step (s)
+double dtMax( infinity ); // Max time step (s)
+double dtInf( infinity ); // Inf time step (s)
+double dtInfMax( infinity ); // Max inf time step (s)
 bool dtInfReset{ false }; // Reset inf time step relaxation at zero-crossings?
 double dtZMax( 0.01 ); // Max time step before zero-crossing (s)
 double dtZC( 1.0e-9 ); // FMU zero-crossing time step (s)
@@ -772,15 +769,13 @@ process_args( Args const & args )
 					}
 				}
 			} else if ( dtInf_str.empty() ) { // Override to disable dtInf
-				dtInf = dtInfMax = std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max(); // Inf time step (s)
-//				dtInf = dtInfMax = std::numeric_limits< double >::max(); // Inf time step (s)
+				dtInf = dtInfMax = infinity; // Inf time step (s)
 			} else {
 				std::cerr << "\nError: Nonnumeric dtInf: " << dtInf_str << std::endl;
 				fatal = true;
 			}
 		} else if ( has_option( arg, "dtInf" ) || has_option( arg, "no-dtInf" ) ) { // Override to disable dtInf
-			dtInf = dtInfMax = std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max(); // Inf time step (s)
-//			dtInf = dtInfMax = std::numeric_limits< double >::max(); // Inf time step (s)
+			dtInf = dtInfMax = infinity; // Inf time step (s)
 		} else if ( has_option_value( arg, "dtZMax" ) ) {
 			std::string const dtZMax_str( option_value( arg, "dtZMax" ) );
 			if ( is_double( dtZMax_str ) ) {

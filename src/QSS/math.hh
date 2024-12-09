@@ -70,10 +70,13 @@ static constexpr double one_sixth{ 1.0 / 6.0 };
 static constexpr double one_ninth{ 1.0 / 9.0 };
 static constexpr double two_thirds{ 2.0 / 3.0 };
 static constexpr double pi{ 3.141592653589793115997963 }; //C++20 static constexpr double pi{ std::numbers::pi };  Not working with Intel Classic C++ as of version 2021.9.0 on Windows
-static constexpr double infinity{ std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() }; //! std::isinf() won't work with Intel C++ with /fp:fast
-// static constexpr double infinity{ std::numeric_limits< double >::max() };
+#ifndef QSS_FP_FAST
+static constexpr double infinity{ std::numeric_limits< double >::has_infinity ? std::numeric_limits< double >::infinity() : std::numeric_limits< double >::max() };
 static constexpr double neg_infinity{ std::numeric_limits< double >::has_infinity && std::numeric_limits<double>::is_iec559 ? -std::numeric_limits< double >::infinity() : std::numeric_limits< double >::lowest() };
-// static constexpr double neg_infinity{ std::numeric_limits< double >::lowest() };
+#else //! std::isinf() and std::isnan() won't work with "fast" floating point options like Intel C++ /fp:fast
+static constexpr double infinity{ std::numeric_limits< double >::max() };
+static constexpr double neg_infinity{ std::numeric_limits< double >::lowest() };
+#endif
 static constexpr double half_infinity{ 0.5 * infinity };
 
 // General
@@ -203,8 +206,7 @@ template< typename T, class = typename std::enable_if< std::is_arithmetic< T >::
 T
 inf()
 {
-	return std::numeric_limits< T >::has_infinity ? std::numeric_limits< T >::infinity() : std::numeric_limits< T >::max();
-	// return std::numeric_limits< T >::max();
+	return infinity;
 }
 
 // Use std::min for 2 arguments
