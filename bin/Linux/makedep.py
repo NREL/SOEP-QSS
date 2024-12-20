@@ -9,8 +9,8 @@
 # Copyright (c) 2000-2024 Objexx Engineering, Inc. All Rights Reserved.
 
 # Notes:
-# . Dependency files generated are for use with GNU make
-# . Only processes C/C++ with supported file name extensions
+# . Dependency files for use with GNU make
+# . Only processes files with supported source C/C++ extensions
 # . Leaves specified paths on prerequisites but does not add path where found
 # . Adds a line with all prerequisites as targets to avoid make error if one is removed or renamed
 # . Include search path defaults to environment variables:
@@ -65,10 +65,7 @@ def main():
     # Build dependencies
     tar = obj_name + ' ' + dep_name
     dep = [ src_name ]
-    if C_ext.match( src_ext ):
-        dep_list = list( C_deps( os.path.abspath( arg.source ), add = False ) )
-    else:
-        assert False, 'Not a recognized C/C++ file name extension: ' + str( src_ext )
+    dep_list = list( C_deps( os.path.abspath( arg.source ), add = False ) )
     dep_list.sort()
     dep.extend( dep_list )
     dep_str = ' '.join( dep )
