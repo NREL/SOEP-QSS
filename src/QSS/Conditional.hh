@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2024 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2025 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -236,6 +236,15 @@ public: // Methods
 		shift_conditional();
 	}
 
+	// Run Handler
+	void
+	advance_conditional_join()
+	{
+		assert( var_ != nullptr );
+		if ( var_->is_tZ_last( st.t ) ) prep_handlers_join( st.t );
+		shift_conditional();
+	}
+
 	// Remove Associated Zero-Crossing Variable
 	void
 	rem_variable()
@@ -312,10 +321,30 @@ private: // Methods
 				assert( static_cast< Variable_ZC * >( observer ) == var_ ); // The ZC variable is added as its own handler
 				assert( observers_.size() == 1u ); // Only one ZC handler is added
 			} else { // Set observers's observee FMU values so FMU event handler computes correct new observer value: Using continuous trajectories for best accuracy
-				observer->fmu_set_observees_x( t ); //! Observer observees may overlap: Evaulate whether using a merged observers observees collection is typically faster
+// Setting all handler observee state now!
+//				observer->fmu_set_observees_x( t ); //! Observer observees may overlap: Evaulate whether using a merged observers observees collection is typically faster
 			}
-			observer->fmu_set_x( t ); // Handler derivative, not value, may be set by the FMU event so we set the FMU value at the zero-crossing time here
+// Setting all handler observee state now!
+//			observer->fmu_set_x( t ); // Handler derivative, not value, may be set by the FMU event so we set the FMU value at the zero-crossing time here
 			observer->shift_handler( t ); // Set observer's handler event
+		}
+	}
+
+	// Prepare Handlers: Set Observer FMU Value and Shift Handler Event Joining Any Handler(s) at Front of Queue
+	void
+	prep_handlers_join( Time const t )
+	{
+		for ( Variable * observer : observers_ ) {
+			if ( observer->is_ZC() ) { // ZC "self-handler" is used to trigger (passive) handler events: Handler advance is not run on the ZC variable
+				assert( static_cast< Variable_ZC * >( observer ) == var_ ); // The ZC variable is added as its own handler
+				assert( observers_.size() == 1u ); // Only one ZC handler is added
+			} else { // Set observers's observee FMU values so FMU event handler computes correct new observer value: Using continuous trajectories for best accuracy
+// Setting all handler observee state now!
+//				observer->fmu_set_observees_x( t ); //! Observer observees may overlap: Evaulate whether using a merged observers observees collection is typically faster
+			}
+// Setting all handler observee state now!
+//			observer->fmu_set_x( t ); // Handler derivative, not value, may be set by the FMU event so we set the FMU value at the zero-crossing time here
+			observer->shift_handler_join( t ); // Set observer's handler event
 		}
 	}
 

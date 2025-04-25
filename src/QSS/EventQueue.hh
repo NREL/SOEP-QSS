@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2024 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2025 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -667,27 +667,27 @@ public: // Handler Event Methods
 		return m_.emplace( SuperdenseTime( infinity, 0, Off::Handler ), EventT( Type::Handler, tar ) );
 	}
 
-	// Shift Handler Event
-	iterator
-	shift_handler(
-	 Time const t,
-	 Real const val,
-	 iterator const i
-	)
-	{
-		assert( t_ == s_.t );
-		assert( t == t_ );
-		Index const idx( s_.o < Off::Handler ? s_.i : s_.i + 1u );
-		Target * tar( i->second.tar() );
-		SuperdenseTime const & s( i->first );
-		if ( ( s.t == t ) && ( s.i == idx ) && ( s.o == Off::Handler ) ) { // Target already has event in same pass
-			EventT const & e( i->second );
-			assert( e.is_handler() );
-			if ( e.val() != val ) std::cerr << "Error: Conditional handler events in the same pass but with different values occurred for: " << tar->name() << std::endl;
-		}
-		m_.erase( i );
-		return m_.emplace( SuperdenseTime( t, idx, Off::Handler ), EventT( Type::Handler, tar, val ) );
-	}
+	// // Shift Handler Event
+	// iterator
+	// shift_handler(
+	//  Time const t,
+	//  Real const val,
+	//  iterator const i
+	// )
+	// {
+	// 	assert( t_ == s_.t );
+	// 	assert( t == t_ );
+	// 	Index const idx( s_.o < Off::Handler ? s_.i : s_.i + 1u );
+	// 	Target * tar( i->second.tar() );
+	// 	SuperdenseTime const & s( i->first );
+	// 	if ( ( s.t == t ) && ( s.i == idx ) && ( s.o == Off::Handler ) ) { // Target already has event in same pass
+	// 		EventT const & e( i->second );
+	// 		assert( e.is_handler() );
+	// 		if ( e.val() != val ) std::cerr << "Error: Conditional handler events in the same pass but with different values occurred for: " << tar->name() << std::endl;
+	// 	}
+	// 	m_.erase( i );
+	// 	return m_.emplace( SuperdenseTime( t, idx, Off::Handler ), EventT( Type::Handler, tar, val ) );
+	// }
 
 	// Shift Handler Event
 	iterator
@@ -711,6 +711,21 @@ public: // Handler Event Methods
 		Target * tar( i->second.tar() );
 		m_.erase( i );
 		return m_.emplace( SuperdenseTime( infinity, 0, Off::Handler ), EventT( Type::Handler, tar ) );
+	}
+
+	// Shift Handler Event Joining Any Handler(s) at Front of Queue
+	iterator
+	shift_handler_join(
+	 Time const t,
+	 iterator const i
+	)
+	{
+		assert( t_ == s_.t );
+		assert( t == t_ );
+		Index const idx( s_.o <= Off::Handler ? s_.i : s_.i + 1u );
+		Target * tar( i->second.tar() );
+		m_.erase( i );
+		return m_.emplace( SuperdenseTime( t, idx, Off::Handler ), EventT( Type::Handler, tar ) );
 	}
 
 public: // QSS Event Methods

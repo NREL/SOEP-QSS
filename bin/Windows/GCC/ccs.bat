@@ -10,4 +10,4 @@ if exist %1.cxx set CxxSource=%1.cxx
 if not "%CxxSource%" == "" shift
 
 :Compile
-g++ -pipe -std=c++20 -pedantic -fopenmp -Wall -Wextra -Wno-unknown-pragmas -Wno-attributes -Wimplicit-fallthrough=5 -fsyntax-only -x c++ -c %1 %2 %3 %4 %5 %6 %7 %8 %9 %CxxSource%
+g++ -pipe -std=c++20 -pedantic -fopenmp -Wall -Wextra -Wno-unknown-pragmas -Wno-attributes -Wimplicit-fallthrough=5 -fsyntax-only -x c++ -c %* %CxxSource%

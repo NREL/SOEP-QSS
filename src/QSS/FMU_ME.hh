@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2024 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2025 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -60,9 +60,6 @@ namespace QSS {
 
 // Forward
 class Target;
-
-
-// Forward
 class Variable;
 class Variable_QSS;
 class Variable_ZC;
@@ -291,6 +288,7 @@ public: // Types
 	using Index = size_type;
 	using Time = double;
 	using Real = double;
+	using Reals = std::vector< Real >;
 	using Integer = int;
 	using Boolean = bool;
 	using EventQ = EventQueue< Target >;
@@ -300,10 +298,12 @@ public: // Types
 	using Var_Name_Var = std::unordered_map< std::string, Variable * >; // Map from variable names to variables
 	using Var_Name_Ref = std::unordered_map< std::string, fmi2_value_reference_t >; // Map from variable names to FMU variable value references
 	using Ref_Var = std::unordered_map< fmi2_value_reference_t, Variable * >;
-	using Var_Refs = std::vector< fmi2_value_reference_t >;
+	using VariableRef = fmi2_value_reference_t;
+	using VariableRefs = std::vector< VariableRef >;
 	using Conditionals = std::vector< Conditional< Variable_ZC > * >;
 	using FMU_Variables = std::vector< FMU_Variable >;
 	using FMU_Idxs = std::unordered_map< Index, Variable * >; // Map from FMU variable indexes to QSS Variables
+	using FMU_EIs = std::vector< Variable_ZC * >; // Map from FMU event indicator indexes to QSS ZC Variables
 	using SmoothTokenOutput = Output< SmoothToken >;
 	using Counts = std::unordered_map< Variable const *, Index >; // Map from Variables to counters
 	using DepIdxSet = std::unordered_set< dep::Variable::Index >;
@@ -691,6 +691,10 @@ private: // Methods
 	void
 	mark_downstream_observees( FMU_Dependencies const & fmu_dependencies, dep::Variable const & dep_var );
 
+	// Prepare All Handlers' Observees for Handler Processing at Predicted Zero-Crossing
+	void
+	prep_all_handlers_observees( Time const t );
+
 private: // Static Methods
 
 	// FMI Status OK Check
@@ -784,6 +788,10 @@ public: // Data
 	Variables vars_NC; // Non-zero-crossing non-connection variables
 	Variables vars_NA; // Non-zero-crossing non-connection active variables
 	Variables vars_ND; // Numerically differentiated variables
+	Variables vars_HA; // All handlers
+	Variables vars_HO; // All handlers' observees
+	VariableRefs vars_HO_ref; // All handlers' observees value references
+	Reals vars_HO_val; // All handlers' observees values
 	Variables_QSS state_vars; // State variables
 	Variables f_outs_vars; // Output QSS variables
 	Var_Name_Ref var_name_ref; // Map from variable names to FMU variable value references
@@ -794,8 +802,9 @@ public: // Data
 	FMUVarLookup fmu_outs; // FMU output variables lookup
 	FMUVarLookup fmu_dvrs; // FMU derivative to variable lookup
 	FMU_Idxs fmu_idxs; // FMU variable index to QSS variable lookup
+	FMU_EIs fmu_eis; // FMU event indicator index to QSS ZC variable lookup
 	Ref_Var qss_var_of_ref;
-	Var_Refs out_var_refs;
+	VariableRefs out_var_refs;
 	std::vector< Output<> > f_outs; // FMU QSS variable outputs
 	std::vector< Output<> > l_outs; // FMU local variable outputs
 	int order_max_CI{ 0 }; // Connection input QSS variable max order

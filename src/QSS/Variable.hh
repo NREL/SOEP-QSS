@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2024 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2025 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -476,6 +476,13 @@ public: // Property
 	order() const
 	{
 		return order_;
+	}
+
+	// FMU Value Reference
+	VariableRef
+	ref() const
+	{
+		return var_.ref();
 	}
 
 	// Variable Sorting Index
@@ -1052,6 +1059,13 @@ public: // Methods
 	shift_handler()
 	{
 		event_ = eventq_->shift_handler( event_ );
+	}
+
+	// Handler Shift Event to Time t Joining Any Handler(s) at Front of Queue
+	void
+	shift_handler_join( Time const t )
+	{
+		event_ = eventq_->shift_handler_join( t, event_ );
 	}
 
 	// Handler Advance

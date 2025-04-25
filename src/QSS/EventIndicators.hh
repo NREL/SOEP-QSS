@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2024 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2025 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -51,6 +51,11 @@ struct EventIndicator final
 	using size_type = std::size_t;
 	using Index = size_type;
 
+	// Constructor
+	EventIndicator( size_type const ei_i ) :
+	 ei_index( ei_i )
+	{}
+
 	// Less Than Comparison for Sorting
 	friend
 	bool
@@ -60,7 +65,8 @@ struct EventIndicator final
 	}
 
 	// Data
-	Index index{ 0u }; // Index of variable
+	Index index{ 0u }; // FMU variable index
+	Index ei_index{ 0u }; // FMU event indicator index
 
 }; // EventIndicator
 
@@ -68,6 +74,7 @@ struct EventIndicator final
 struct FMU_EventIndicators final
 {
 	// Types
+	using size_type = std::vector< EventIndicator >::size_type;
 	using EventIndicators = std::vector< EventIndicator >;
 
 	// Constructor
@@ -99,6 +106,13 @@ struct FMU_EventIndicators final
 		assert( std::is_sorted( event_indicators.begin(), event_indicators.end() ) );
 		EventIndicators::const_iterator i( std::lower_bound( event_indicators.begin(), event_indicators.end(), idx, []( EventIndicator const & ei, EventIndicator::Index const index ){ return ei.index < index; } ) );
 		return ( i != event_indicators.end() ) && ( i->index == idx );
+	}
+
+	// Size
+	size_type
+	size() const
+	{
+		return event_indicators.size();
 	}
 
 	// Get EventIndicator for a Variable

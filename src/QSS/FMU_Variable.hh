@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2024 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2025 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -58,8 +58,6 @@ public: // Types
 	using Integer = fmi2_integer_t;
 	using Boolean = fmi2_boolean_t;
 	using String = fmi2_string_t;
-
-public: // Types
 
 	enum class Typ { None, Real, Integer, Boolean, String, Enum }; // Variable value type
 	enum class Cat { None, Discrete, Continuous }; // Variable value category
@@ -462,12 +460,13 @@ public: // Methods
 		cat = Cat::Discrete;
 	}
 
-	// Set Real Variable to Event Indicator on Model Information
+	// Set Real Variable to Event Indicator Based on Model Information
 	void
-	to_EventIndicator()
+	to_EventIndicator( Index const i )
 	{
 		assert( typ == Typ::Real );
 		is_ei = true;
+		iei = i;
 	}
 
 	// Set State Index
@@ -563,6 +562,7 @@ public: // Data
 	Index ids{ 0u }; // FMU state index (for derivatives)
 	Index idd{ 0u }; // FMU derivative index (for states (or event indicators if/when they get derivatives))
 	Index isa{ 0u }; // FMU variable state/derivative/nominal array index (0-based)
+	Index iei{ 0u }; // FMU event indicator index
 	Typ typ{ Typ::None }; // FMU Variable value type
 	Cat cat{ Cat::None }; // FMU Variable value subtype
 	bool is_ei{ false }; // FMU Variable is an event indicator?

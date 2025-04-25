@@ -10,4 +10,4 @@ if exist %1.cxx set CxxSource=%1.cxx
 if not "%CxxSource%" == "" shift
 
 :Compile
-icx /nologo /Qstd:c++20 /Qansi-alias /Qiopenmp /EHsc /Wall /Wno-unknown-pragmas /DNOMINMAX /DWIN32_LEAN_AND_MEAN /Zs /c %1 %2 %3 %4 %5 %6 %7 %8 %9 %CxxSource%
+icx /nologo /Qstd:c++20 /Qansi-alias /Qiopenmp /EHsc /Wall /Wno-unknown-pragmas /DNOMINMAX /DWIN32_LEAN_AND_MEAN /Zs /c %* %CxxSource%

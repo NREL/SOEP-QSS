@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2024 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2025 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -48,6 +48,9 @@
 
 namespace QSS {
 
+// Globals
+static std::size_t ei_index( 0u );
+
 // XML Callbacks Global
 fmi2_xml_callbacks_t xml_callbacks = {
  annotation_start_handle,
@@ -81,15 +84,15 @@ annotation_start_handle(
 			fmu_eventindicators.inEventIndicators = true;
 			std::cout << "\nEventIndicators" << std::endl;
 		} else if ( fmu_eventindicators.inEventIndicators && ( std::strcmp( elm, "Element" ) == 0 ) ) {
-			int i( 0 );
-			EventIndicator ei;
+			std::size_t i( 0u );
+			EventIndicator ei( ei_index++ );
 			bool has_index( false );
 			// bool has_reverseDependencies( false );
 			assert( attr[ i ] != nullptr );
 			while ( attr[ i ] ) {
 				if ( std::strcmp( attr[ i ], "index" ) == 0 ) {
 					if ( has_index ) std::cerr << "\nWarning: XML EventIndicators Element has multiple index attributes: Last one is used" << std::endl;
-					std::string const index_string( attr[ i + 1 ] );
+					std::string const index_string( attr[ i + 1u ] );
 					if ( is_int( index_string ) ) {
 						ei.index = int_of( index_string );
 					} else {
@@ -99,7 +102,7 @@ annotation_start_handle(
 					has_index = true;
 				} else if ( std::strcmp( attr[ i ], "reverseDependencies" ) == 0 ) {
 					// if ( has_reverseDependencies ) std::cerr << "\nWarning: XML EventIndicators Element has multiple reverseDependencies attributes: Last one is used" << std::endl;
-					// std::istringstream reverseDependencies_stream( attr[ i + 1 ] );
+					// std::istringstream reverseDependencies_stream( attr[ i + 1u ] );
 					// std::string reverseDependency_string;
 					// while ( reverseDependencies_stream >> reverseDependency_string ) {
 					// 	if ( is_int( reverseDependency_string ) ) {
@@ -139,7 +142,7 @@ annotation_start_handle(
 			fmu_dependencies.inDependencies = true;
 			std::cout << "\nDependencies" << std::endl;
 		} else if ( fmu_dependencies.inDependencies && ( std::strcmp( elm, "Element" ) == 0 ) ) {
-			int i( 0 );
+			std::size_t i( 0u );
 			FMU_Dependencies::Variable var;
 			bool has_index( false );
 			bool has_dependencies( false );
@@ -147,7 +150,7 @@ annotation_start_handle(
 			while ( attr[ i ] ) {
 				if ( std::strcmp( attr[ i ], "index" ) == 0 ) {
 					if ( has_index ) std::cerr << "\nWarning: XML Dependencies Element has multiple index attributes: Last one is used" << std::endl;
-					std::string const index_string( attr[ i + 1 ] );
+					std::string const index_string( attr[ i + 1u ] );
 					if ( is_int( index_string ) ) {
 						var.index( int_of( index_string ) );
 					} else {
@@ -157,7 +160,7 @@ annotation_start_handle(
 					has_index = true;
 				} else if ( std::strcmp( attr[ i ], "dependencies" ) == 0 ) {
 					if ( has_dependencies ) std::cerr << "\nWarning: XML Dependencies Element has multiple dependencies attributes: Last one is used" << std::endl;
-					std::istringstream dependencies_stream( attr[ i + 1 ] );
+					std::istringstream dependencies_stream( attr[ i + 1u ] );
 					std::string dependency_string;
 					while ( dependencies_stream >> dependency_string ) {
 						if ( is_int( dependency_string ) ) {
@@ -202,7 +205,7 @@ annotation_end_handle(
 	if ( std::strcmp( elm, "EventIndicators" ) == 0 ) { // EventIndicators section end
 		if ( fmu_eventindicators.inEventIndicators ) {
 			fmu_eventindicators.inEventIndicators = false;
-			fmu_eventindicators.sort();
+			// fmu_eventindicators.sort(); // Don't sort yet: The order in XML is the order of FMU's event_indicators and we need to use that later
 		} else {
 			std::cerr << "\nError: XML OCT annotations EventIndicators block is ill-formed" << std::endl;
 			std::exit( EXIT_FAILURE );
@@ -210,7 +213,7 @@ annotation_end_handle(
 	} else if ( std::strcmp( elm, "Dependencies" ) == 0 ) { // Dependencies section end
 		if ( fmu_dependencies.inDependencies ) {
 			fmu_dependencies.inDependencies = false;
-			//fmu_dependencies.finalize(); // Defer this until after processing in FMU_ME::pre_simulate()
+			// fmu_dependencies.finalize(); // Defer this until after processing in FMU_ME::pre_simulate()
 		} else {
 			std::cerr << "\nError: XML OCT annotations Dependencies block is ill-formed" << std::endl;
 			std::exit( EXIT_FAILURE );

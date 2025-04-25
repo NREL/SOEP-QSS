@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2024 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2025 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -73,8 +73,10 @@ protected: // Creation
 	 FMU_Variable const & der = FMU_Variable()
 	) :
 	 Super( fmu_me, order, name, rTol_, aTol_, zTol_, xIni_, var, der ),
+	 ei_index( var.iei ),
 	 zChatter_( zTol_ > 0.0 )
 	{
+		assert( var.is_EventIndicator() );
 		add_crossings_Dn_Up(); // FMI API doesn't currently expose crossing information
 	}
 
@@ -345,6 +347,14 @@ public: // Crossing Methods
 		return *this;
 	}
 
+	// Set Crossing Type from Values
+	template< typename T >
+	void
+	set_crossing( T const val_old, T const val_new )
+	{
+		crossing = crossing_type( val_old, val_new );
+	}
+
 protected: // Methods
 
 	// Set Trajectory Magnitude to Zero
@@ -369,9 +379,9 @@ protected: // Methods
 	void
 	fixup_tE()
 	{
-		if ( ( options::dtZMax > 0.0 ) && ( tZ <= tE ) && ( tX < tZ - options::dtZMax ) ) { // Move tE before tZ
-			tE = tZ - options::dtZMax;
-			shift_QSS_ZC( tE );
+		if ( ( options::dtZMax > 0.0 ) && ( tZ <= tE ) && ( tX < tZ - options::dtZMax ) ) { // Move tE before tZ but after tZ_last
+			tE = std::max( std::max( tX, tZ_last ) * ( 1.0 + 2.0 * std::numeric_limits< Time >::epsilon() ), tZ - options::dtZMax );
+			( tE < tZ ) ? shift_QSS_ZC( tE ) : shift_ZC( tZ );
 		}
 	}
 
@@ -381,15 +391,15 @@ protected: // Static Methods
 	template< typename T >
 	static
 	Crossing
-	crossing_type( T const val1, T const val2 )
+	crossing_type( T const val_old, T const val_new )
 	{
-		if ( val1 == T( 0 ) ) {
-			return val2 > T( 0 ) ? Crossing::UpZP : ( val2 == T( 0 ) ? Crossing::Flat : Crossing::DnZN );
-		} else if ( val2 == T( 0 ) ) {
-			return val1 > T( 0 ) ? Crossing::DnPZ : Crossing::UpNZ;
+		if ( val_old == T( 0 ) ) {
+			return val_new > T( 0 ) ? Crossing::UpZP : ( val_new == T( 0 ) ? Crossing::Flat : Crossing::DnZN );
+		} else if ( val_new == T( 0 ) ) {
+			return val_old > T( 0 ) ? Crossing::DnPZ : Crossing::UpNZ;
 		} else {
-			assert( val1 != val2 );
-			return val1 > T( 0 ) ? Crossing::DnPN : Crossing::UpNP;
+			assert( val_old != val_new );
+			return val_old > T( 0 ) ? Crossing::DnPN : Crossing::UpNP;
 		}
 	}
 
@@ -410,6 +420,7 @@ protected: // Static Methods
 
 public: // Data
 
+	size_type ei_index{ 0u }; // FMU event indicator index
 	Time tZ{ infinity }; // Zero-crossing time: tQ <= tZ and tX <= tZ
 	Time tZ_last{ neg_infinity }; // Zero-crossing time of last crossing
 	Crossing crossing{ Crossing::Flat }; // Zero-crossing type

@@ -5,7 +5,7 @@
 // Developed by Objexx Engineering, Inc. (https://objexx.com) under contract to
 // the National Renewable Energy Laboratory of the U.S. Department of Energy
 //
-// Copyright (c) 2017-2024 Objexx Engineering, Inc. All rights reserved.
+// Copyright (c) 2017-2025 Objexx Engineering, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -723,7 +723,7 @@ namespace QSS {
 		}
 		for ( EventIndicator const & ei : ieis->event_indicators ) {
 			FMU_Variable & ei_var( fmu_variables[ ei.index - 1 ] );
-			ei_var.to_EventIndicator(); // Mark FMU variable as an event indicator
+			ei_var.to_EventIndicator( ei.ei_index ); // Mark FMU variable as an event indicator and set its FMU event indicator index
 			fmi2_import_variable_t * var( ei_var.var ); // == fmi2_import_get_variable( var_list, ei.index - 1 )
 			std::string const var_name( ei_var.name() ); // == fmi2_import_get_variable_name( var )
 			if ( ( fmi2_import_get_variable_base_type( var ) == fmi2_base_type_real ) && ( fmi2_import_get_variability( var ) == fmi2_variability_enu_continuous ) ) {
@@ -1379,7 +1379,7 @@ namespace QSS {
 					} else if ( fmu_var.causality_output() || fmu_var.causality_local() ) {
 						Variable * qss_var( nullptr );
 						if ( fmu_var.is_Discrete() ) { // Continous in theory but actually discrete
-							if ( fmu_var.has_upstream_state_or_ei_observer && options::active ) { // Active
+							if ( fmu_var.has_upstream_state_or_ei_observer || options::active ) { // Active
 								std::cout << " Type: Real: Continuous: De Facto Discrete: Active" << std::endl;
 								qss_var = new Variable_D( this, var_name, var_start, fmu_var );
 							} else { // Passive
@@ -1387,7 +1387,7 @@ namespace QSS {
 								qss_var = new Variable_DP( this, var_name, var_start, fmu_var );
 							}
 						} else { // Continuous
-							if ( ( fmu_var.has_upstream_state_or_ei_observer && options::active ) /* //Do || is connected */ ) { // Active
+							if ( ( fmu_var.has_upstream_state_or_ei_observer || options::active ) /* //Do || is connected */ ) { // Active
 								std::cout << " Type: Real: Continuous: Non-Discrete: Active" << std::endl;
 								Real const var_rTol( options::rTol * options::zFac * options::zrFac );
 								Real const var_aTol( std::max( options::specified::aTol ? options::aTol : options::rTol * options::aFac * var_nominal, std::numeric_limits< Real >::min() ) ); // Use variable nominal value to set the absolute tolerance unless aTol specified
@@ -1440,7 +1440,7 @@ namespace QSS {
 						fmu_idxs[ idx ] = qss_var; // Add to map from FMU variable index to QSS variable
 					} else if ( fmu_var.causality_output() || fmu_var.causality_local() ) { // Output or local
 						Variable * qss_var( nullptr );
-						if ( fmu_var.has_upstream_state_or_ei_observer && options::active ) { // Active
+						if ( fmu_var.has_upstream_state_or_ei_observer || options::active ) { // Active
 							std::cout << " Type: Real: Discrete: " << ( fmu_var.causality_output() ? "Output" : "Local" ) << ": Active" << std::endl;
 							qss_var = new Variable_D( this, var_name, var_start, fmu_var );
 						} else { // Passive
@@ -1524,7 +1524,7 @@ namespace QSS {
 
 					} else if ( fmu_var.causality_output() || fmu_var.causality_local() ) { // Output or local
 						Variable * qss_var( nullptr );
-						if ( fmu_var.has_upstream_state_or_ei_observer && options::active ) { // Active
+						if ( fmu_var.has_upstream_state_or_ei_observer || options::active ) { // Active
 							std::cout << " Type: Integer: Discrete: " << ( fmu_var.causality_output() ? "Output" : "Local" ) << ": Active" << std::endl;
 							qss_var = new Variable_I( this, var_name, var_start, fmu_var );
 						} else { // Passive
@@ -1607,7 +1607,7 @@ namespace QSS {
 						fmu_idxs[ idx ] = qss_var; // Add to map from FMU variable index to QSS variable
 					} else if ( fmu_var.causality_output() || fmu_var.causality_local() ) { // Output or local
 						Variable * qss_var( nullptr );
-						if ( fmu_var.has_upstream_state_or_ei_observer && options::active ) { // Active
+						if ( fmu_var.has_upstream_state_or_ei_observer || options::active ) { // Active
 							std::cout << " Type: Boolean: Discrete: " << ( fmu_var.causality_output() ? "Output" : "Local" ) << ": Active" << std::endl;
 							qss_var = new Variable_B( this, var_name, var_start, fmu_var );
 						} else { // Passive
@@ -1697,6 +1697,17 @@ namespace QSS {
 			csv.labels( res_var_names );
 			res_var_vals.clear(); res_var_vals.resize( res_var_indexes.size() );
 		}
+
+		// Event indicator to Variable_ZC lookup setup
+		fmu_eis.clear();
+		fmu_eis.reserve( ieis->size() );
+		for ( EventIndicator const & ei : ieis->event_indicators ) {
+			FMU_Variable & ei_var( fmu_variables[ ei.index - 1 ] );
+			Variable_ZC * var_ZC( dynamic_cast< Variable_ZC * >( fmu_idxs[ ei_var.idx ] ) );
+			assert( var_ZC != nullptr );
+			fmu_eis.push_back( var_ZC );
+		}
+		ieis->sort(); // Now we can sort the event indicators by their FMU variable index
 
 		// QSS Dependency Processing
 		std::cout << "\nQSS Dependency Processing =====" << std::endl;
@@ -2177,11 +2188,17 @@ namespace QSS {
 		vars_NC.clear();
 		vars_NA.clear();
 		vars_ND.clear();
+		vars_HA.clear();
 		order_max_NC = order_max_CI = 0;
 		for ( auto var : vars ) {
 			if ( var->is_ZC() ) { // ZC variable
 				vars_ZC.push_back( var );
 				if ( var->order() >= 2 ) vars_ND.push_back( var );
+				for ( Variable * observer : dynamic_cast< Variable_ZC const * >( var )->conditional->observers() ) {
+					if ( observer->not_ZC() ) { // ZC "self-handler" is used to trigger (passive) handler events: Handler advance is not run on the ZC variable
+						vars_HA.push_back( observer );
+					}
+				}
 			} else { // Non-ZC variable
 				vars_NZ.push_back( var );
 				if ( var->is_connection() ) { // Connection variable
@@ -2207,6 +2224,7 @@ namespace QSS {
 		}
 		sort_by_type( vars_NC ); // Put state variables first to reduce issue of directional derivatives needing observee derivatives set
 		sort_by_type( vars_NA ); // Put state variables first to reduce issue of directional derivatives needing observee derivatives set
+		uniquify( vars_HA ); // Remove duplicates from handlers collecton
 		assert( order_max_CI <= max_rep_order );
 		assert( order_max_NC <= max_rep_order );
 	}
@@ -2524,6 +2542,21 @@ namespace QSS {
 			con->init_observers();
 		}
 
+		// Set up all handlers' observees collections
+		vars_HO.clear();
+		vars_HO_ref.clear();
+		vars_HO_val.clear();
+		for ( Variable * handler : vars_HA ) {
+			for ( Variable * observee : handler->observees() ) {
+				vars_HO.push_back( observee );
+			}
+		}
+		uniquify( vars_HO ); // Remove duplicates from handlers' observees collection
+		for ( Variable * observee : vars_HO ) {
+			vars_HO_ref.push_back( observee->ref() );
+			vars_HO_val.push_back( 0.0 );
+		}
+
 		// Flag passive ZCs
 		for ( auto var : vars_ZC ) {
 			assert( dynamic_cast< Variable_ZC * >( var ) != nullptr );
@@ -2785,7 +2818,8 @@ namespace QSS {
 		// Simulation loop
 		Variables triggers; // Reusable triggers container
 		Variables handlers; // Reusable handlers container
-		Variable_ZCs var_ZCs; // Last zero-crossing trigger variables
+		Variable_ZCs var_ZCs_predicted; // Predicted zero-crossing trigger variables
+		Variable_ZCs var_ZCs_detected; // FMU-detected zero-crossing trigger variables
 		Handlers< Variable > handlers_s( this ); // Simultaneous handlers
 		Triggers_QSS< Variable > triggers_qss_s( this ); // Binned/simultaneous QSS triggers
 		Triggers_ZC< Variable > triggers_zc_s( this ); // Binned/simultaneous ZC triggers
@@ -2869,6 +2903,7 @@ namespace QSS {
 					}
 				}
 
+				// Set up for the next QSS event pass
 				set_time( t );
 				Event< Target > & event( eventq->top() );
 				SuperdenseTime const s( eventq->top_superdense_time() );
@@ -2898,6 +2933,19 @@ namespace QSS {
 						break;
 					}
 				}
+
+				// Do event mode processing if previous step indicated it is needed
+				if ( enterEventMode ) {
+					if ( options::output::d ) std::cout << "Pre-step event mode processing tiggered by enterEventMode" << std::endl;
+					fmi2_import_enter_event_mode( fmu );
+					do_event_iteration();
+					fmi2_import_enter_continuous_time_mode( fmu );
+					fmi2_import_get_continuous_states( fmu, states, n_states );
+					fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
+					enterEventMode = fmi2_false;
+				}
+
+				// Process the next QSS event(s)
 				eventq->set_active_time();
 				if ( event.is_discrete() ) { // Discrete event(s)
 					++n_discrete_events;
@@ -2965,11 +3013,11 @@ namespace QSS {
 					}
 				} else if ( event.is_ZC() ) { // Zero-crossing event(s)
 					++n_ZC_events;
-					var_ZCs.clear();
+					var_ZCs_predicted.clear();
 					t_bump = t; // Bump time for FMU zero-crossing detection
 					while ( eventq->top_superdense_time() == s ) { // Set bump time and do zero-crossing outputs
 						Variable_ZC * trigger( eventq->top_sub< Variable_ZC >() );
-						var_ZCs.push_back( trigger );
+						var_ZCs_predicted.push_back( trigger );
 						assert( eq_tol( trigger->tZ, t, 1e-15 ) );
 						trigger->st = s; // Set trigger superdense time
 						trigger->advance_ZC();
@@ -2986,46 +3034,78 @@ namespace QSS {
 						}
 					}
 					t_bump = std::min( t_bump, tE ); // Don't go past simulation end time or event loop will fail
+
+					// Sort the ZC trigger variables in FMU event indicator index order for efficient comparison with the FMU-detected events
+					std::sort( var_ZCs_predicted.begin(), var_ZCs_predicted.end(), []( Variable_ZC const * var_1, Variable_ZC const * var_2 ){ return var_1->ei_index < var_2->ei_index; } );
 				} else if ( event.is_conditional() ) { // Conditional event(s)
 					if ( options::output::d ) std::cout << "Zero-crossing conditional event(s): Time = " << s.t << std::endl;
 					while ( eventq->top_superdense_time() == s ) {
-						Conditional< Variable_ZC > * trigger( eventq->top_sub< Conditional< Variable_ZC > >() );
-						trigger->st = s; // Set trigger superdense time
-						trigger->advance_conditional(); // Set handler observee state before FMU event detection and shift conditional's next event to t=infinity
+						Conditional< Variable_ZC > * conditional( eventq->top_sub< Conditional< Variable_ZC > >() );
+						conditional->st = s; // Set conditional superdense time
+						conditional->advance_conditional(); // Set handler observee state before FMU event detection and shift conditional's next event to t=infinity
+					}
+					prep_all_handlers_observees( t ); // Now we set all handlers' observee state because FMU will process unpredicted zero-crossings
+					for ( Variable * handler : vars_HA ) {
+						handler->fmu_set_x( t ); // Handler derivative, not value, may be set by the FMU event so we set the FMU value at the zero-crossing time here
 					}
 				} else if ( event.is_handler() ) { // Zero-crossing handler event(s)
+					if ( options::output::d ) std::cout << "Zero-crossing handler event for: " << event.tar()->name() << "  Time = " << s.t << std::endl;
 
-					// Pre-zero-crossing time bump to set event indicator state before the crossing so FMU can detect relevant crossings
+					// Pre-zero-crossing time bump (back) to set event indicator state before the crossing so FMU can detect relevant crossings
 
 					Time const t_pre_bump( ( 2.0 * t ) - t_bump ); // Pre-bump time for FMU crossing detection
 					if ( options::output::d ) std::cout << "Zero-crossing handler event(s): Pre-bump time = " << t_pre_bump << std::endl;
 					set_time( t_pre_bump ); // Set FMU to pre-bump time
-					for ( Variable_ZC const * trigger : var_ZCs ) { // Advance zero-crossing variables observees to pre-bump time
-						trigger->bump_time( t_pre_bump );
+					// for ( Variable_ZC const * trigger : var_ZCs_predicted ) { // Advance predicted zero-crossing variables observees to pre-bump time // DOES USING THIS INSTEAD OF BELOW EVER ALTER RESULTS?????????????????????????
+					// 	trigger->bump_time( t_pre_bump );
+					// }
+					for ( Variable const * var_ZC : vars_ZC ) { // Advance all zero-crossing variables observees to pre-bump time
+						dynamic_cast< Variable_ZC const * >( var_ZC )->bump_time( t_pre_bump );
 					}
 
-					// Get event indicators
+					// Get baseline event indicators before the predicted crossing
 					fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 					// if ( options::output::d ) {
 					// 	std::cout << "FMU event indicators: Handler event processing start @ t=" << t_pre_bump << std::endl;
 					// 	for ( size_type k = 0u; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
 					// }
+
+					// FMU event processing pass    // IS THIS NEEDED??????????????????????????????????????????????????????????????????????????????
 					fmi2_import_enter_event_mode( fmu );
 					do_event_iteration();
 					fmi2_import_enter_continuous_time_mode( fmu );
 					fmi2_import_get_continuous_states( fmu, states, n_states );
+					std::swap( event_indicators, event_indicators_last ); // Save previous event indicators for zero crossing check
 					fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 
-					// Zero-crossing time bump to try and get the FMU to detect relevant crossings
+					// Set up for pre-bump and bump time crossing event detection
+					bool zero_crossing_event( false );
+					var_ZCs_detected.clear();
+
+					// Check if any event indicators have triggered at pre-bump time       // DO WE NEED THIS PASS ???????????????????????????????????????????????????????????????????
+					for ( size_type k = 0u; k < n_event_indicators; ++k ) {
+						if ( ( event_indicators[ k ] >= 0.0 ) != ( event_indicators_last[ k ] > 0.0 ) ) {
+							zero_crossing_event = true;
+							Variable_ZC * var_ZC( fmu_eis[ k ] );
+							var_ZC->set_crossing( event_indicators_last[ k ], event_indicators[ k ] );
+							var_ZCs_detected.push_back( var_ZC );
+						}
+					}
+
+					// Zero-crossing time bump (forward) to try and get the FMU to detect relevant crossings
 
 					if ( options::output::d ) std::cout << "Zero-crossing handler event(s): Bump time = " << t_bump << std::endl;
 					set_time( t_bump ); // Set FMU to bump time
-					for ( Variable_ZC const * trigger : var_ZCs ) { // Advance zero-crossing variables observees to bump time
-						trigger->bump_time( t_bump );
-						if ( options::output::d ) std::cout << "  " << trigger->name() << " bump value = " << trigger->fmu_get_real() << std::endl;
+					// for ( Variable_ZC const * trigger : var_ZCs_predicted ) { // Advance predicted zero-crossing variables observees to bump time // DOES USING THIS INSTEAD OF BELOW EVER ALTER RESULTS?????????????????????????
+					// 	trigger->bump_time( t_bump );
+					// 	if ( options::output::d ) std::cout << "  " << trigger->name() << " bump value = " << trigger->fmu_get_real() << std::endl;
+					// }
+					for ( Variable const * var_ZC : vars_ZC ) { // Advance all zero-crossing variables observees to bump time
+						dynamic_cast< Variable_ZC const * >( var_ZC )->bump_time( t_bump );
+						if ( options::output::d ) std::cout << "  " << var_ZC->name() << " bump value = " << var_ZC->fmu_get_real() << std::endl;
 					}
 
-					// Get event indicators
+					// Get event indicators after the predicted crossing
 					std::swap( event_indicators, event_indicators_last ); // Save previous event indicators for zero crossing check
 					fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
 					// if ( options::output::d ) {
@@ -3033,32 +3113,83 @@ namespace QSS {
 					// 	for ( size_type k = 0u; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
 					// }
 
-					// Check if an event indicator has triggered
-					bool zero_crossing_event( false );
+					// Check if any event indicators have triggered
 					for ( size_type k = 0u; k < n_event_indicators; ++k ) {
 						if ( ( event_indicators[ k ] >= 0.0 ) != ( event_indicators_last[ k ] > 0.0 ) ) {
 							zero_crossing_event = true;
-							break;
+							Variable_ZC * var_ZC( fmu_eis[ k ] );
+							var_ZC->set_crossing( event_indicators_last[ k ], event_indicators[ k ] );
+							var_ZCs_detected.push_back( var_ZC );
 						}
 					}
 
 					// FMU zero-crossing event processing
-					if ( enterEventMode || zero_crossing_event ) {
-						if ( options::output::d ) std::cout << "Zero-crossing triggers FMU-ME event at t=" << t << std::endl;
+					if ( zero_crossing_event ) {
+						if ( options::output::d ) {
+							std::cout << "Predicted zero-crossing triggers FMU-ME event at t=" << t << " for:" << std::endl;
+							for ( Variable_ZC const * var : var_ZCs_detected ) {
+								std::cout << "  " << var->name() << std::endl;
+							}
+						}
 						fmi2_import_enter_event_mode( fmu );
 						do_event_iteration();
 						fmi2_import_enter_continuous_time_mode( fmu );
 						fmi2_import_get_continuous_states( fmu, states, n_states );
+						std::swap( event_indicators, event_indicators_last ); // Save previous event indicators for zero crossing check  //?????? THIS PICKS HANDLER RESET VALUE AS ANOTHER "CROSSING" IF HANDLER BOUNCES VALUE SO DON'T SWAP HERE ?????????
 						fmi2_import_get_event_indicators( fmu, event_indicators, n_event_indicators );
-						// if ( options::output::d ) {
-						// 	std::cout << "FMU event indicators: Handler event processing after event iteration @ t=" << t << std::endl;
-						// 	for ( size_type k = 0u; k < n_event_indicators; ++k ) std::cout << event_indicators[ k ] << std::endl;
-						// }
+
+						// Check if any event indicators have triggered due to the event processing
+						bool zero_crossing_event_post( false );
+						for ( size_type k = 0u; k < n_event_indicators; ++k ) {
+							if ( ( event_indicators[ k ] >= 0.0 ) != ( event_indicators_last[ k ] > 0.0 ) ) {
+								zero_crossing_event_post = true;
+								Variable_ZC * var_ZC( fmu_eis[ k ] );
+								var_ZC->set_crossing( event_indicators_last[ k ], event_indicators[ k ] );
+								var_ZCs_detected.push_back( var_ZC ); // It is possible that a duplicate gets added here but that is OK wrt correct handling below
+							}
+						}
+						uniquify( var_ZCs_detected ); // Eliminate duplicates
+						std::sort( var_ZCs_detected.begin(), var_ZCs_detected.end(), []( Variable_ZC const * var_1, Variable_ZC const * var_2 ){ return var_1->ei_index < var_2->ei_index; } ); // Sort by FMU event indicator index
+						if ( zero_crossing_event_post && options::output::d ) {
+							std::cout << "FMU zero-crossing event handling triggers FMU-ME event at t=" << t << " for:" << std::endl;
+							for ( Variable_ZC const * var : var_ZCs_detected ) {
+								std::cout << "  " << var->name() << std::endl;
+							}
+						}
+
+						// Process FMU-detected ZC triggers
+						if ( var_ZCs_detected != var_ZCs_predicted ) {
+							Variable_ZC::size_type ip( 0u ); // Index into predicted zero-crossing variables
+							for ( Variable_ZC * var_detected : var_ZCs_detected ) {
+								bool predicted( false );
+								auto const eiid( var_detected->ei_index );
+								while ( ip < var_ZCs_predicted.size() ) {
+									Variable_ZC * var_predicted( var_ZCs_predicted[ ip ] );
+									auto const eiip( var_predicted->ei_index );
+									if ( eiip < eiid ) {
+										++ip;
+									} else if ( eiip == eiid ) {
+										predicted = true;
+										break;
+									} else {
+										break;
+									}
+								}
+								if ( !predicted ) {
+									var_detected->st = s; // Set trigger superdense time
+									++c_ZC_events[ var_detected ];
+									var_detected->tZ = t;
+									var_detected->advance_ZC();
+									var_detected->conditional->st = s;
+									var_detected->conditional->advance_conditional_join();
+								}
+							}
+						}
 					} else {
 						if ( options::output::d ) std::cout << "Zero-crossing does not trigger FMU-ME event at t=" << t << std::endl;
 					}
 
-					// Perform handler operations on QSS side
+					// Get handlers of predicted zero-crossing variable conditionals (need to pull them off queue even if they aren't active in FMU-detected zero crossings)
 					Variable * handler( nullptr );
 					size_type n_handlers( 0u );
 					if ( eventq->single() ) { // Single handler
@@ -3069,14 +3200,19 @@ namespace QSS {
 						n_handlers = handlers.size();
 						if ( n_handlers == 1u ) handler = handlers[ 0 ];
 					}
-					if ( enterEventMode || zero_crossing_event ) {
+
+					// QSS handler updates
+					if ( zero_crossing_event ) {
 						set_time( t ); // Reset FMU to event time
 
 						if ( n_handlers == 0u ) { // No (non-ZC) handlers
 							// No action
 						} else if ( n_handlers == 1u ) { // Single (non-ZC) handler
-							for ( Variable_ZC const * trigger : var_ZCs ) { // Un-bump time
-								trigger->un_bump_time( t, handler );
+							// for ( Variable_ZC const * trigger : var_ZCs_predicted ) { // Un-bump time
+							// 	trigger->un_bump_time( t, handler );
+							// }
+							for ( Variable const * var_ZC : vars_ZC ) { // Un-bump time on all zero-crossing variables
+								dynamic_cast< Variable_ZC const * >( var_ZC )->un_bump_time( t, handler );
 							}
 
 							if ( doROut ) { // Handler output: pre
@@ -3101,8 +3237,11 @@ namespace QSS {
 							assert( n_handlers > 1u );
 							observers_s.assign( handlers );
 
-							for ( Variable_ZC const * trigger : var_ZCs ) { // Un-bump time
-								trigger->un_bump_time( t, handlers );
+							// for ( Variable_ZC const * trigger : var_ZCs_predicted ) { // Un-bump time
+							// 	trigger->un_bump_time( t, handlers );
+							// }
+							for ( Variable const * var_ZC : vars_ZC ) { // Un-bump time on all zero-crossing variables
+								dynamic_cast< Variable_ZC const * >( var_ZC )->un_bump_time( t, handlers );
 							}
 
 							if ( doROut ) { // Handler output: pre
@@ -3145,13 +3284,13 @@ namespace QSS {
 
 							// Re-bump zero-crossing state
 							t_bump = t; // Bump time for FMU zero crossing detection
-							for ( Variable_ZC const * trigger : var_ZCs ) {
+							for ( Variable_ZC const * trigger : var_ZCs_predicted ) {
 								t_bump = std::max( t_bump, trigger->tZC_bump( t ) );
 							}
 							t_bump = std::min( t_bump, tE ); // Don't go past simulation end time or event loop will fail
 							if ( options::output::d ) std::cout << "Zero-crossing handler event(s): Re-bump time = " << t_bump << std::endl;
 							set_time( t_bump ); // Advance FMU to bump time
-							for ( Variable_ZC const * trigger : var_ZCs ) {
+							for ( Variable_ZC const * trigger : var_ZCs_predicted ) {
 								trigger->re_bump_time( t_bump );
 								if ( options::output::d ) std::cout << "  " << trigger->name() << " re-bump value = " << trigger->fmu_get_real() << std::endl;
 							}
@@ -3205,7 +3344,7 @@ namespace QSS {
 					}
 
 					// Clear conditional event of self-handler ZCs
-					for ( Variable_ZC * trigger : var_ZCs ) {
+					for ( Variable_ZC * trigger : var_ZCs_predicted ) {
 						if ( trigger->self_handler() ) trigger->clear_conditional_event();
 					}
 
@@ -3833,6 +3972,18 @@ namespace QSS {
 				}
 			}
 		}
+	}
+
+	// Prepare All Handlers' Observees for Handler Processing at Predicted Zero-Crossing
+	void
+	FMU_ME::
+	prep_all_handlers_observees( Time const t )
+	{
+		size_type n_observees( vars_HO.size() );
+		for ( size_type j = 0u; j < n_observees; ++j ) { // Set observee value vector
+			vars_HO_val[ j ] = vars_HO[ j ]->x( t );
+		}
+		set_reals( n_observees, vars_HO_ref.data(), vars_HO_val.data() ); // Set observees FMU values
 	}
 
 	// FMI Status Check/Report
