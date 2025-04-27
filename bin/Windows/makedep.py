@@ -6,7 +6,7 @@
 #
 # Version: 1.0.0
 #
-# Copyright (c) 2000-2024 Objexx Engineering, Inc. All Rights Reserved.
+# Copyright (c) 2000-2025 Objexx Engineering, Inc. All rights reserved.
 
 # Notes:
 # . Dependency files for use with GNU make
