@@ -1,5 +1,5 @@
-@echo off
 :: Visual C++ Build Release
+@echo off
 
 setlocal
 

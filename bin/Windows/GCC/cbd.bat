@@ -1,5 +1,5 @@
-@echo off
 :: GCC C++ Build Debug
+@echo off
 
 setlocal
 

@@ -163,19 +163,24 @@ public: // Methods
 			if ( options::output::d ) std::cout << "*  " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << std::endl;
 			if ( observed() ) advance_observers();
 			if ( connected() ) advance_connections();
+		} else {
+			if ( options::output::d ) std::cout << "*= " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << " (unchanged)" << std::endl;
 		}
 		shift_handler();
 	}
 
 	// Handler Advance: Stage 0
 	void
-	advance_handler_0( Time const t, Real const x_0 ) override
+	advance_handler_0( Time const t, Real const x_0, bool & chg ) override
 	{
 		assert( tX <= t );
 		tS = t - tQ;
 		tQ = tX = t;
 		x_chg_ = ( x_ != x_0 );
-		if ( x_chg_ ) x_ = x_0;
+		if ( x_chg_ ) {
+			x_ = x_0;
+			chg = true;
+		}
 	}
 
 	// Handler Advance: Stage Final
@@ -185,6 +190,8 @@ public: // Methods
 		if ( x_chg_ ) {
 			if ( options::output::d ) std::cout << "*= " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << std::endl;
 			if ( connected() ) advance_connections();
+		} else {
+			if ( options::output::d ) std::cout << "*= " << name() << '(' << tX << ')' << " = " << std::showpos << x_ << std::noshowpos << " (unchanged)" << std::endl;
 		}
 		shift_handler();
 	}

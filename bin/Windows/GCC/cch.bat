@@ -1,5 +1,5 @@
-@echo off
 :: GCC C++ Header Compile Syntax
+@echo off
 
 setlocal
 

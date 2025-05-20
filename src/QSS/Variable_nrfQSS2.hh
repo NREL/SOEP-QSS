@@ -190,7 +190,7 @@ public: // Methods
 			bool const x_1_dif_sign( bool_sign( x_1_dif ) );
 			q_1_ = x_1_;
 			x_2_ = c_2( tE, x_1_ );
-			if ( ( std::abs( x_1_dif ) > x_1_dif_lim ) && ( ( n_yoyo_ == 0u ) || ( x_1_dif_sign == x_1_dif_sign_ ) ) ) { // Yo-yoing criteria met
+			if ( ( x_1_dif_lim > 0.0 ) && ( std::abs( x_1_dif ) > x_1_dif_lim ) && ( ( n_yoyo_ == 0u ) || ( x_1_dif_sign == x_1_dif_sign_ ) ) ) { // Yo-yoing criteria met
 				x_1_dif_sign_ = x_1_dif_sign;
 				yoyo_ = ( ++n_yoyo_ >= m_yoyo_ );
 				if ( yoyo_ ) {
@@ -234,7 +234,7 @@ public: // Methods
 			Real const x_1_dif_lim( yoyo_mul_ * std::abs( x_1_ - q_1_ ) );
 			bool const x_1_dif_sign( bool_sign( x_1_dif ) );
 			q_1_ = x_1_;
-			if ( ( std::abs( x_1_dif ) > x_1_dif_lim ) && ( ( n_yoyo_ == 0u ) || ( x_1_dif_sign == x_1_dif_sign_ ) ) ) { // Yo-yoing criteria met
+			if ( ( x_1_dif_lim > 0.0 ) && ( std::abs( x_1_dif ) > x_1_dif_lim ) && ( ( n_yoyo_ == 0u ) || ( x_1_dif_sign == x_1_dif_sign_ ) ) ) { // Yo-yoing criteria met
 				x_1_dif_sign_ = x_1_dif_sign;
 				yoyo_ = ( ++n_yoyo_ >= m_yoyo_ );
 				if ( yoyo_ ) {

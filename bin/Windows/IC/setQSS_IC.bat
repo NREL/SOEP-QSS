@@ -1,5 +1,5 @@
-@echo off
 :: Intel Compiler Setup
+@echo off
 
 :: oneAPI root setup
 if "%ONEAPI_ROOT%" == "" (

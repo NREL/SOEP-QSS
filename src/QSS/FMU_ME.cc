@@ -918,11 +918,22 @@ namespace QSS {
 			}
 		}
 		fmu_dependencies.finalize();
-		for ( FMU_Dependencies::Variables::value_type const & idx_var : fmu_dependencies.variables ) { // Mark variables with upstream state or event indicator observers
+		for ( FMU_Dependencies::Variables::value_type & idx_var : fmu_dependencies.variables ) { // Mark handler FMU variables
+			FMU_Variable & dep_fmu_var( fmu_variables[ idx_var.first - 1 ] ); // FMU variable corresponding to the dep::Variable
+			dep::Variable const & dep_var( idx_var.second );
+			for ( dep::Variable::Index const observee : dep_var.observees ) {
+				FMU_Variable const & observee_fmu_var( fmu_variables[ observee - 1 ] ); // FMU variable corresponding to the observee index
+				if ( observee_fmu_var.is_EventIndicator() ) { // Observee is event indicator => Parent variable is a handler
+					dep_fmu_var.is_handler = true;
+					break;
+				}
+			}
+		}
+		for ( FMU_Dependencies::Variables::value_type const & idx_var : fmu_dependencies.variables ) { // Mark handler variables with upstream state or event indicator observers
 			FMU_Variable const & dep_fmu_var( fmu_variables[ idx_var.first - 1 ] ); // FMU variable corresponding to the dep::Variable
 			if ( dep_fmu_var.is_State() || dep_fmu_var.is_Derivative() || dep_fmu_var.is_EventIndicator() ) { // State/Derivative or Event indicator
 				dep::Variable const & dep_var( idx_var.second );
-				mark_downstream_observees( fmu_dependencies, dep_var );
+				mark_active_downstream_observees( fmu_dependencies, dep_var );
 			}
 		}
 
@@ -1379,7 +1390,7 @@ namespace QSS {
 					} else if ( fmu_var.causality_output() || fmu_var.causality_local() ) {
 						Variable * qss_var( nullptr );
 						if ( fmu_var.is_Discrete() ) { // Continous in theory but actually discrete
-							if ( fmu_var.has_upstream_state_or_ei_observer || options::active ) { // Active
+							if ( fmu_var.must_be_active || options::active ) { // Active
 								std::cout << " Type: Real: Continuous: De Facto Discrete: Active" << std::endl;
 								qss_var = new Variable_D( this, var_name, var_start, fmu_var );
 							} else { // Passive
@@ -1387,7 +1398,8 @@ namespace QSS {
 								qss_var = new Variable_DP( this, var_name, var_start, fmu_var );
 							}
 						} else { // Continuous
-							if ( ( fmu_var.has_upstream_state_or_ei_observer || options::active ) /* //Do || is connected */ ) { // Active
+							if ( fmu_var.must_be_active || options::active ) { // Active
+//							if ( fmu_var.must_be_active || options::active || var is connected ) { // Active
 								std::cout << " Type: Real: Continuous: Non-Discrete: Active" << std::endl;
 								Real const var_rTol( options::rTol * options::zFac * options::zrFac );
 								Real const var_aTol( std::max( options::specified::aTol ? options::aTol : options::rTol * options::aFac * var_nominal, std::numeric_limits< Real >::min() ) ); // Use variable nominal value to set the absolute tolerance unless aTol specified
@@ -1440,7 +1452,7 @@ namespace QSS {
 						fmu_idxs[ idx ] = qss_var; // Add to map from FMU variable index to QSS variable
 					} else if ( fmu_var.causality_output() || fmu_var.causality_local() ) { // Output or local
 						Variable * qss_var( nullptr );
-						if ( fmu_var.has_upstream_state_or_ei_observer || options::active ) { // Active
+						if ( fmu_var.must_be_active || options::active ) { // Active
 							std::cout << " Type: Real: Discrete: " << ( fmu_var.causality_output() ? "Output" : "Local" ) << ": Active" << std::endl;
 							qss_var = new Variable_D( this, var_name, var_start, fmu_var );
 						} else { // Passive
@@ -1524,7 +1536,7 @@ namespace QSS {
 
 					} else if ( fmu_var.causality_output() || fmu_var.causality_local() ) { // Output or local
 						Variable * qss_var( nullptr );
-						if ( fmu_var.has_upstream_state_or_ei_observer || options::active ) { // Active
+						if ( fmu_var.must_be_active || options::active ) { // Active
 							std::cout << " Type: Integer: Discrete: " << ( fmu_var.causality_output() ? "Output" : "Local" ) << ": Active" << std::endl;
 							qss_var = new Variable_I( this, var_name, var_start, fmu_var );
 						} else { // Passive
@@ -1607,7 +1619,7 @@ namespace QSS {
 						fmu_idxs[ idx ] = qss_var; // Add to map from FMU variable index to QSS variable
 					} else if ( fmu_var.causality_output() || fmu_var.causality_local() ) { // Output or local
 						Variable * qss_var( nullptr );
-						if ( fmu_var.has_upstream_state_or_ei_observer || options::active ) { // Active
+						if ( fmu_var.must_be_active || options::active ) { // Active
 							std::cout << " Type: Boolean: Discrete: " << ( fmu_var.causality_output() ? "Output" : "Local" ) << ": Active" << std::endl;
 							qss_var = new Variable_B( this, var_name, var_start, fmu_var );
 						} else { // Passive
@@ -1723,7 +1735,7 @@ namespace QSS {
 				if ( !fmu_dependencies_var_observees.empty() ) {
 					Variable * qss_var( i_qss_var->second ); // QSS variable that gets these observees
 					bool const not_ZC( qss_var->not_ZC() );
-					std::cout << "\n " << qss_var->name() << " observes:" << std::endl;
+					std::cout << "\n " << fmu_var.name() << " observes:" << std::endl; // FMU variable name shows der() on derivatives to distinguish them from the associated state (unlike qss_var->name())
 					// Should not be any temporaries in the XML now
 					// if ( qss_var->is_Boolean() && has_prefix( qss_var->name(), "temp_" ) && ( fmu_dependencies_var_observees.size() == 1u ) ) { // Boolean variable with one observee: Check if temporary variable OCT inserts for an event indicator
 					// 	dep::Variable::Index const observee_idx( fmu_dependencies_var_observees[ 0 ] );
@@ -1814,12 +1826,11 @@ namespace QSS {
 							auto const idep( fmu_idxs.find( dep_idx ) ); //Do Add support for input variable dependents
 							if ( idep != fmu_idxs.end() ) {
 								Variable * dep( idep->second );
-								if ( dep != var ) { // <Dependencies> has direct der->state dependencies but <Derivatives> has short-circuited ones (including drilling through event indicators) so we skip them here
+								// if ( dep != var ) { // <Dependencies> has direct der->state dependencies but <Derivatives> has short-circuited ones (including drilling through event indicators) so we skip them here // This alters some results so some of the <Derivatives> der->state dependencies are needed but missing from <Dependencies>
 									var->observe( dep );
 									std::cout << "  " << dep->name() << std::endl;
-								}
-								// else { std::cout << "   Note: FMU-ME derivative " << der_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl; }
-							}
+								// }
+							} // else { std::cout << "   Note: FMU-ME derivative " << der_name << " has dependency with index " << dep_idx << " that is not a QSS variable" << std::endl; }
 						}
 					} else {
 						std::cerr << "   Error: QSS variable with index " << idx << " referenced in derivative not found" << std::endl;
@@ -2222,8 +2233,8 @@ namespace QSS {
 				}
 			}
 		}
-		sort_by_type( vars_NC ); // Put state variables first to reduce issue of directional derivatives needing observee derivatives set
-		sort_by_type( vars_NA ); // Put state variables first to reduce issue of directional derivatives needing observee derivatives set
+		sort_by_type( vars_NC ); // Put state variables first to reduce issue of directional derivatives depending on observee derivatives
+		sort_by_type( vars_NA ); // Put state variables first to reduce issue of directional derivatives depending on observee derivatives
 		uniquify( vars_HA ); // Remove duplicates from handlers collecton
 		assert( order_max_CI <= max_rep_order );
 		assert( order_max_NC <= max_rep_order );
@@ -3049,7 +3060,7 @@ namespace QSS {
 						handler->fmu_set_x( t ); // Handler derivative, not value, may be set by the FMU event so we set the FMU value at the zero-crossing time here
 					}
 				} else if ( event.is_handler() ) { // Zero-crossing handler event(s)
-					if ( options::output::d ) std::cout << "Zero-crossing handler event for: " << event.tar()->name() << "  Time = " << s.t << std::endl;
+					if ( options::output::d ) std::cout << "Zero-crossing handler event(s): Time = " << s.t << std::endl;
 
 					// Pre-zero-crossing time bump (back) to set event indicator state before the crossing so FMU can detect relevant crossings
 
@@ -3189,7 +3200,7 @@ namespace QSS {
 						if ( options::output::d ) std::cout << "Zero-crossing does not trigger FMU-ME event at t=" << t << std::endl;
 					}
 
-					// Get handlers of predicted zero-crossing variable conditionals (need to pull them off queue even if they aren't active in FMU-detected zero crossings)
+					// Get handlers of detected zero-crossing variable conditionals (need to pull them off queue even if they aren't active in FMU-detected zero crossings)
 					Variable * handler( nullptr );
 					size_type n_handlers( 0u );
 					if ( eventq->single() ) { // Single handler
@@ -3256,13 +3267,13 @@ namespace QSS {
 							}
 
 							handlers_s.assign( handlers );
-							handlers_s.advance( t );
-							if ( observers_s.have() ) {
+							bool const chg( handlers_s.advance( t ) );
+							if ( observers_s.have() && chg ) {
 								if ( options::dtInfReset ) observers_s.dt_infinity_reset(); // Reset dtInf relaxation state
 								observers_s.advance( t ); // Advance observers
 							}
 
-							if ( doROut ) { // Handler output: post
+							if ( doROut && chg ) { // Handler output: post
 								if ( options::output::A ) { // All variables
 									for ( auto var : vars ) {
 										var->out( t );
@@ -3956,19 +3967,27 @@ namespace QSS {
 		}
 	}
 
-	// Mark FMU Variables with Upstream State or Event Indicator Observees
+	// Mark FMU Variables That Must be Active: Handlers with Upstream State or Event Indicator Observers
 	void
 	FMU_ME::
-	mark_downstream_observees( FMU_Dependencies const & fmu_dependencies, dep::Variable const & dep_var )
+	mark_active_downstream_observees( FMU_Dependencies const & fmu_dependencies, dep::Variable const & dep_var )
 	{
 		for ( dep::Variable::Index const observee : dep_var.observees ) {
 			FMU_Variable & observee_fmu_var( fmu_variables[ observee - 1 ] ); // FMU variable corresponding to the observee index
-			if ( !observee_fmu_var.has_upstream_state_or_ei_observer ) { // Not yet marked
-				observee_fmu_var.has_upstream_state_or_ei_observer = true; // Mark it
-				if ( !( observee_fmu_var.is_State() || observee_fmu_var.is_Derivative() || observee_fmu_var.is_EventIndicator() ) ) { // State/Derivative or Event indicator sub-graph will be root of another marking pass
-					if ( fmu_dependencies.has( observee ) ) {
-						mark_downstream_observees( fmu_dependencies, fmu_dependencies[ observee ] ); // Recurse
-					}
+			if ( observee_fmu_var.must_be_active_scanned ) { // Already subgraph scanned
+				// Stop scan
+			} else if ( observee_fmu_var.must_be_active ) { // Already active and subgraph scanned
+				// Stop scan
+			} else if ( observee_fmu_var.is_State() || observee_fmu_var.is_Derivative() || observee_fmu_var.is_EventIndicator() ) { // State/Derivative or Event indicator sub-graph will be root of another marking pass
+				observee_fmu_var.must_be_active_scanned = true;
+				// Stop scan
+			} else { // Mark active if handler
+				observee_fmu_var.must_be_active_scanned = true;
+				if ( observee_fmu_var.is_handler ) { // Must be active
+					observee_fmu_var.must_be_active = true; // Mark it
+				}
+				if ( fmu_dependencies.has( observee ) ) { // Scan from observee
+					mark_active_downstream_observees( fmu_dependencies, fmu_dependencies[ observee ] ); // Recurse
 				}
 			}
 		}

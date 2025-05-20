@@ -1,5 +1,5 @@
-@echo off
 :: Build FMIL Windows GCC Release x
+@echo off
 
 setlocal
 

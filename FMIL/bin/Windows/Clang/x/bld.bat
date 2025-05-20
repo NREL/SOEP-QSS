@@ -1,5 +1,5 @@
-@echo off
 :: Build FMIL Windows Clang Release x
+@echo off
 
 setlocal
 

@@ -58,7 +58,7 @@ double rTol( 1.0e-4 ); // Relative tolerance
 double aTol( 1.0e-6 ); // Absolute tolerance
 double aFac( 0.01 ); // Absolute tolerance factor
 double zTol( 1.0e-6 ); // Zero-crossing/root tolerance
-double zMul( 10.0 ); // Zero-crossing tolerance bump multiplier
+double zMul( 100.0 ); // Zero-crossing tolerance bump multiplier
 double zFac( 1.0 ); // Zero-crossing tolerance factor
 double zrFac( 10.0 ); // Zero-crossing relative tolerance factor
 double zaFac( 0.1 ); // Zero-crossing absolute tolerance factor
@@ -94,8 +94,8 @@ double inflectionFrac2( 0.005 ); // Second derivative inflection step fraction m
 bool cluster( false ); // Clustering with relaxation solver?
 bool refine( false ); // Refine FMU zero-crossing roots?
 bool perfect( false ); // Perfect FMU-ME connection sync?
-bool active( true ); // Active intermediate variables preferred?
-bool passive( false ); // Passive intermediate variables preferred?
+bool active( false ); // Active intermediate variables preferred?
+bool passive( !active ); // Passive intermediate variables preferred?
 int EI( 0 ); // Event indicator mode  (0|1|2|3)  [0]
 bool steps( false ); // Generate requantization step count file?
 LogLevel log( LogLevel::warning ); // Logging level
@@ -192,8 +192,8 @@ help_display()
 	std::cout << " --cluster               Cluster identification via dependency cycles  [Off]" << '\n';
 	std::cout << " --refine                Refine FMU zero-crossing roots" << '\n';
 	std::cout << " --perfect               Perfect FMU-ME connection sync" << '\n';
-	std::cout << " --active                Active intermediate variables preferred  [On]" << '\n';
-	std::cout << " --passive               Passive intermediate variables preferred  [Off]" << '\n';
+	std::cout << " --active                Active intermediate variables preferred  [" << ( active ? "On" : "Off" ) << "]" << '\n';
+	std::cout << " --passive               Passive intermediate variables preferred  [" << ( passive ? "On" : "Off" ) << "]" << '\n';
 	std::cout << " --EI=EIMODE             Event indicator mode  (0|1|2|3)  [0]" << '\n';
 	std::cout << "      0                  All event indicators actively tracked (slowest)" << '\n';
 	std::cout << "      1                  Don't track event indicators without observers" << '\n';

@@ -1,5 +1,5 @@
-@echo off
 :: GCC C++ Compile Syntax
+@echo off
 
 setlocal
 

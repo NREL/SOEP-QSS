@@ -156,20 +156,25 @@ public: // Methods
 			if ( options::output::d ) std::cout << "*  " << name() << '(' << tX << ')' << " = " << x_ << std::endl;
 			if ( observed() ) advance_observers();
 			if ( connected() ) advance_connections();
+		} else {
+			if ( options::output::d ) std::cout << "*= " << name() << '(' << tX << ')' << " = " << x_ << " (unchanged)" << std::endl;
 		}
 		shift_handler();
 	}
 
 	// Handler Advance: Stage 0
 	void
-	advance_handler_0( Time const t, Real const x_0 ) override
+	advance_handler_0( Time const t, Real const x_0, bool & chg ) override
 	{
 		assert( tX <= t );
 		tS = t - tQ;
 		tQ = tX = t;
 		Boolean const x_new( static_cast< Boolean >( x_0 ) );
 		x_chg_ = ( x_ != x_new );
-		if ( x_chg_ ) x_ = x_new;
+		if ( x_chg_ ) {
+			x_ = x_new;
+			chg = true;
+		}
 	}
 
 	// Handler Advance: Stage Final
@@ -179,6 +184,8 @@ public: // Methods
 		if ( x_chg_ ) {
 			if ( options::output::d ) std::cout << "*= " << name() << '(' << tX << ')' << " = " << x_ << std::endl;
 			if ( connected() ) advance_connections();
+		} else {
+			if ( options::output::d ) std::cout << "*= " << name() << '(' << tX << ')' << " = " << x_ << " (unchanged)" << std::endl;
 		}
 		shift_handler();
 	}

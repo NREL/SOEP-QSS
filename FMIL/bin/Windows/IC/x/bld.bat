@@ -1,5 +1,5 @@
-@echo off
 :: Build FMIL Windows Intel C++ Release x
+@echo off
 
 setlocal
 

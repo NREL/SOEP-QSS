@@ -1,5 +1,5 @@
-@echo off
 :: Visual C++ Compiler Setup
+@echo off
 
 :: VS2022
 if exist "%PROGRAMFILES%\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" (

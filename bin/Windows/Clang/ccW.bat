@@ -1,3 +1,3 @@
-@echo off
 :: Clang C++ Compile Warnings
+@echo off
 clang++ -pipe -std=c++20 -pedantic -fopenmp -Wall -Wextra -Wno-unknown-pragmas -Wimplicit-fallthrough=5 -Weffc++ -c %*

@@ -177,7 +177,7 @@ public: // Methods
 	{
 		uniquify( observers_ );
 		bool const no_observers( observers_.empty() ); // No (active or passive) observers?
-		short_circuit_passive_observers();
+		process_observers();
 		assert( var_ != nullptr );
 		if ( observers_.empty() ) { // No handlers => Passive EI
 			std::cout << '\n' << var_->name() << " Conditional Computational Observers: None: Passive: " << ( no_observers ? " No Handlers" : "Passive Handler(s)" ) << std::endl;
@@ -254,9 +254,9 @@ public: // Methods
 
 private: // Methods
 
-	// Short-Circuit Passive Observers
+	// Process Observers
 	void
-	short_circuit_passive_observers()
+	process_observers()
 	{
 		assert( var_ != nullptr );
 		if ( observers_.empty() ) { // No handler(s)
@@ -272,41 +272,15 @@ private: // Methods
 				} else if ( observer->is_Active() ) { // Active => Computational
 					observers_set.insert( observer );
 					observers_checked.insert( observer );
-				} else { // Passive: Short-circuit it
+				} else { // Passive
 					assert( observer->is_Passive() );
-					find_computational_observers( observer, observers_checked, observers_set );
+					// Passive handler should not have any computational observers
 				}
 			}
 			observers_.assign( observers_set.begin(), observers_set.end() ); // Swap in the computational observers
 			if ( observers_.empty() ) { // Passive handler(s) only
 				if ( options::EI < 2 ) { // Track EIs with only passive handler(s)
 					observers_.push_back( var_ ); // Make the ZC a self-handler to enable zero-crossing event processing so (passive) handlers are updated at zero-crossing events
-				}
-			}
-		}
-	}
-
-	// Find Short-Circuited Computational Observers
-	void
-	find_computational_observers(
-	 Variable * observer,
-	 VariablesSet & observers_checked,
-	 VariablesSet & observers_set
-	)
-	{
-#if ( __cplusplus >= 202002L ) // C++20+
-		if ( !observers_checked.contains( observer ) ) { // Observer not already processed
-#else
-		if ( observers_checked.find( observer ) == observers_checked.end() ) { // Observer not already processed
-#endif
-			observers_checked.insert( observer );
-			if ( observer->is_ZC() ) { // ZC => Not a handler
-				// Done with this observer
-			} else if ( observer->is_Active() ) { // Active => Computational
-				observers_set.insert( observer );
-			} else { // Passive: Short-circuit it
-				for ( Variable * oo : observer->observers() ) { // Recurse: Traverse dependency sub-graph
-					find_computational_observers( oo, observers_checked, observers_set );
 				}
 			}
 		}

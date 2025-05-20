@@ -1,5 +1,5 @@
-@echo off
 :: Visual C++ Build Debug
+@echo off
 
 setlocal
 

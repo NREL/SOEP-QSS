@@ -1,5 +1,5 @@
-@echo off
 :: Build FMIL Windows Visual C++ Debug
+@echo off
 
 setlocal
 

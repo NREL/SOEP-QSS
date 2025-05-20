@@ -1,14 +1,15 @@
-@echo off
 :: GCC Compiler Setup
+@echo off
 
 :: Put a custom version earlier in your PATH to adapt to your system
 
-:: Put installed GCC at front of PATH to avoid using (old) GCC bundled with OCT
 set GCC=C:\MinGW
-set Path=%GCC%\bin;%Path%
+set "PATH=%PATH%;%GCC%\bin"
+:: Put installed GCC at front of PATH to avoid using (old) GCC bundled with OCT
+:: set "PATH=%GCC%\bin;%PATH%"
 
 if  "%CPATH%" == "" (
   set CPATH=.
 ) else (
-  set CPATH=%CPATH%;.
+  set "CPATH=%CPATH%;."
 )

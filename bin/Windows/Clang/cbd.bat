@@ -1,5 +1,5 @@
-@echo off
 :: Clang C++ Build Debug
+@echo off
 
 setlocal
 

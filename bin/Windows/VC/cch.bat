@@ -1,5 +1,5 @@
-@echo off
 :: Visual C++ Header Compile Syntax
+@echo off
 
 setlocal
 

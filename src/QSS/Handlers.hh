@@ -302,7 +302,7 @@ public: // Methods
 	}
 
 	// Advance
-	void
+	bool
 	advance( Time const t )
 	{
 		assert( fmu_me_ != nullptr );
@@ -312,14 +312,27 @@ public: // Methods
 				handler->dt_infinity_reset();
 			}
 		}
-		if ( qss_.have() ) advance_QSS( t ); // QSS state variables
-		if ( r_.have() ) advance_R( t ); // Real variables
-		if ( ox_.have() ) advance_OX( t ); // Other X-based variables
+
+		bool chg( false );
+		if ( qss_.have() ) { // QSS state variables
+			advance_QSS( t );
+			chg = true;
+		}
+		if ( r_.have() ) { // Real variables
+			advance_R( t );
+			chg = true;
+		}
+		if ( ox_.have() ) { // Other X-based variables
+			advance_OX( t, chg );
+		}
+
 		if ( qss_.have() ) advance_QSS_F( t );
 		if ( r_.have() ) advance_R_F( t );
 		if ( ox_.have() ) advance_OX_F( t );
 		// advance_F( t ); // Using this instead of the other advance_*_F calls above uses old observee values for the observing event indicators, which probably doesn't make sense
 		// if ( options::output::d ) advance_d(); // Currently advance_handler_F calls do diagnostic output
+
+		return chg;
 	}
 
 	// Clear
@@ -693,7 +706,7 @@ private: // Methods
 
 	// Advance Other X-Based Handlers
 	void
-	advance_OX( Time const t )
+	advance_OX( Time const t, bool & chg )
 	{
 		assert( ox_.have() );
 		assert( fmu_me_ != nullptr );
@@ -701,7 +714,7 @@ private: // Methods
 
 		fmu_me_->get_reals( ox_.n(), ox_vars_.refs.data(), ox_vars_.vals.data() );
 		for ( size_type i = ox_.b(), e = ox_.e(), j = 0u; i < e; ++i, ++j ) {
-			handlers_[ i ]->advance_handler_0( t, ox_vars_.vals[ j ] );
+			handlers_[ i ]->advance_handler_0( t, ox_vars_.vals[ j ], chg );
 		}
 	}
 

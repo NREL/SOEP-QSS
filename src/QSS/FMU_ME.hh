@@ -465,7 +465,7 @@ public: // FMU Methods
 	set_time( Time const t_fmu_new )
 	{
 		assert( fmu != nullptr );
-		fmi2_import_set_time( fmu, t_fmu = t_fmu_new );
+		fmi2_import_set_time( fmu, t_fmu = t_fmu_new ); // This doesn't set the FMU time variable value!
 //Do Use below instead when not doing forward time bumps for numeric differentiation or zero crossing
 //		fmi2_status_t const fmi_status = fmi2_import_set_time( fmu, t_fmu = t_fmu_new );
 //		assert( status_check( fmi_status, "set_time" );
@@ -687,9 +687,9 @@ private: // Methods
 	void
 	subgraph_ei_observees( FMU_Dependencies const & fmu_dependencies, dep::Variable::Observees const & observees, DepIdxSet & nei_observees, DepIdxSet & ei_observees ) const;
 
-	// Mark FMU Variables with Upstream State or Event Indicator Observees
+	// Mark FMU Variables That Must be Active: Handlers with Upstream State or Event Indicator Observers
 	void
-	mark_downstream_observees( FMU_Dependencies const & fmu_dependencies, dep::Variable const & dep_var );
+	mark_active_downstream_observees( FMU_Dependencies const & fmu_dependencies, dep::Variable const & dep_var );
 
 	// Prepare All Handlers' Observees for Handler Processing at Predicted Zero-Crossing
 	void

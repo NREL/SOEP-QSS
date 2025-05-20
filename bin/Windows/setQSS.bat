@@ -1,12 +1,12 @@
-@echo off
 :: QSS Windows Setup
+@echo off
 
 if not "%QSS%" == "" goto Step2
-set QSS=%~dp0
-set QSS=%QSS:~0,-13%
+set "QSS=%~dp0"
+set "QSS=%QSS:~0,-13%"
 :Step2
 
-set Path=%Path%;%QSS%\bin\Windows;%QSS%\bin
+set "PATH=%PATH%;%QSS%\bin\Windows;%QSS%\bin"
 
 call setQSS_Python.bat
 

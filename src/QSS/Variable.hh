@@ -424,6 +424,13 @@ public: // Predicate
 		return self_observer_; // Self-observer <=> self-observee for QSS purposes
 	}
 
+	// Handler?
+	bool
+	handler() const
+	{
+		return var_.is_handler;
+	}
+
 	// Observed?
 	bool
 	observed() const
@@ -1080,6 +1087,14 @@ public: // Methods
 	virtual
 	void
 	advance_handler_0( Time const, Real const )
+	{
+		assert( false );
+	}
+
+	// Handler Advance: Stage 0
+	virtual
+	void
+	advance_handler_0( Time const, Real const, bool & chg )
 	{
 		assert( false );
 	}

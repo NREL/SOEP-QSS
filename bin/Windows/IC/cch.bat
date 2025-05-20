@@ -1,5 +1,5 @@
-@echo off
 :: Intel C++ Header Compile Syntax
+@echo off
 
 setlocal
 

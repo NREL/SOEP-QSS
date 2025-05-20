@@ -1,5 +1,5 @@
-@echo off
 :: Build FMIL Windows Clang Debug
+@echo off
 
 setlocal
 

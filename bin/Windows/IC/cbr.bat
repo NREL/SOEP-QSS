@@ -1,5 +1,5 @@
-@echo off
 :: Intel C++ Build Release
+@echo off
 
 setlocal
 

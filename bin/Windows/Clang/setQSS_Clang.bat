@@ -1,5 +1,5 @@
-@echo off
 :: Clang Compiler Setup
+@echo off
 
 :: Put a custom version earlier in your PATH to adapt to your system
 
@@ -12,10 +12,10 @@ if exist "%ProgramFiles%\LLVM" (
   echo Clang not found!
   exit /B 1
 )
-set "Path=%Path%;%Clang%\bin"
+set "PATH=%PATH%;%Clang%\bin"
 
 if  "%CPATH%" == "" (
   set CPATH=.
 ) else (
-  set CPATH=%CPATH%;.
+  set "CPATH=%CPATH%;."
 )

@@ -1,5 +1,5 @@
-@echo off
 :: Build FMIL Windows GCC Debug+Analyzer
+@echo off
 
 setlocal
 
